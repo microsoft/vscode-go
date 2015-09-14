@@ -4,18 +4,18 @@
 
 'use strict';
 
-import monaco = require('monaco');
+import vscode = require('vscode');
 import cp = require('child_process');
 
-class DeclartionSupport implements monaco.Modes.IDeclarationSupport {
+class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 
-	private modelService: monaco.Services.IModelService;
+	private modelService: vscode.Services.IModelService;
 
-	constructor(modelService: monaco.Services.IModelService) {
+	constructor(modelService: vscode.Services.IModelService) {
 		this.modelService = modelService;
 	}
 
-	public findDeclaration(resource:monaco.URI, position:monaco.IPosition, token: monaco.CancellationToken):Promise<monaco.Modes.IReference> {
+	public findDeclaration(resource:vscode.URI, position:vscode.IPosition, token: vscode.CancellationToken):Promise<vscode.Modes.IReference> {
 
 		return new Promise((resolve, reject) => {
 			var path = resource.fsPath;
@@ -35,7 +35,7 @@ class DeclartionSupport implements monaco.Modes.IDeclarationSupport {
 					var result = stdout.toString();
 					var lines = result.split('\n');
 					var [_, file, line, col] = /(.*):(\d+):(\d+)/.exec(lines[0]);
-					var definitionResource = monaco.URI.file(file);
+					var definitionResource = vscode.URI.file(file);
 					return resolve({
 						resource: definitionResource,
 						range: {

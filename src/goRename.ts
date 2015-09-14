@@ -4,18 +4,18 @@
 
 'use strict';
 
-import monaco = require('monaco');
+import vscode = require('vscode');
 import cp = require('child_process');
 
-class RenameSupport implements monaco.Modes.IRenameSupport {
+class RenameSupport implements vscode.Modes.IRenameSupport {
 
-	private modelService: monaco.Services.IModelService;
+	private modelService: vscode.Services.IModelService;
 
-	constructor(modelService: monaco.Services.IModelService) {
+	constructor(modelService: vscode.Services.IModelService) {
 		this.modelService = modelService;
 	}
 
-	public rename(resource:monaco.URI, position:monaco.IPosition, newName: string, token: monaco.CancellationToken): Promise<monaco.Modes.IRenameResult> {
+	public rename(resource:vscode.URI, position:vscode.IPosition, newName: string, token: vscode.CancellationToken): Promise<vscode.Modes.IRenameResult> {
 		return new Promise((resolve, reject) => {
 			var path = resource.fsPath;
 			var model = this.modelService.getModel(resource);

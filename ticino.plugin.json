@@ -8,11 +8,5 @@
 			"extensions": [ ".go" ],
 			"aliases": [ "Go" ]
 		}]
-	},
-	"scripts": {
-		"compile": "node ../../node_modules/gulp/bin/gulp.js --gulpfile ../../gulpfile.plugins.js compile-plugin:vs.language.go"
-	},
-	"_bundling": [
-		{ "name": "./out/goMain" }
-	]
+	}
 }

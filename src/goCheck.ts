@@ -4,7 +4,7 @@
 
 'use strict';
 
-import monaco = require('monaco');
+import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import os = require('os');

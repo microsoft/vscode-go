@@ -11,30 +11,30 @@ import DeclarationSupport = require('./goDeclaration');
 import FormattingSupport = require('./goFormat');
 import RenameSupport = require('./goRename');
 import {check, ICheckResult} from './goCheck';
-import monaco = require('monaco');
+import vscode = require('vscode');
 
-monaco.Modes.registerMonarchDefinition('go', languageDef);
-monaco.Modes.SuggestSupport.register('go', new SuggestSupport(monaco.Services.ModelService));
-monaco.Modes.ExtraInfoSupport.register('go', new ExtraInfoSupport(monaco.Services.ModelService));
-monaco.Modes.DeclarationSupport.register('go', new DeclarationSupport(monaco.Services.ModelService));
-monaco.Modes.FormattingSupport.register('go', new FormattingSupport(monaco.Services.ModelService));
-monaco.Modes.RenameSupport.register('go', new RenameSupport(monaco.Services.ModelService));
+vscode.Modes.registerMonarchDefinition('go', languageDef);
+vscode.Modes.SuggestSupport.register('go', new SuggestSupport(vscode.Services.ModelService));
+vscode.Modes.ExtraInfoSupport.register('go', new ExtraInfoSupport(vscode.Services.ModelService));
+vscode.Modes.DeclarationSupport.register('go', new DeclarationSupport(vscode.Services.ModelService));
+vscode.Modes.FormattingSupport.register('go', new FormattingSupport(vscode.Services.ModelService));
+vscode.Modes.RenameSupport.register('go', new RenameSupport(vscode.Services.ModelService));
 
 function mapSeverityToMonacoSeverity(sev: string) {
 	switch(sev) {
-		case "error": return monaco.Services.Severity.Error;
-		case "warning": return monaco.Services.Severity.Warning;
-		default: return monaco.Services.Severity.Error;
+		case "error": return vscode.Services.Severity.Error;
+		case "warning": return vscode.Services.Severity.Warning;
+		default: return vscode.Services.Severity.Error;
 	}
 }
 
-var watcher = monaco.Services.FileSystemEventService.createWatcher();
+var watcher = vscode.Services.FileSystemEventService.createWatcher();
 watcher.onFileChange(fileSystemEvent => {
 	if(fileSystemEvent.resource.fsPath.indexOf('.go') !== -1) {
 		check(fileSystemEvent.resource.fsPath).then(errors => {
-			monaco.Services.MarkerService.changeAll('go', errors.map(error => {
-				var targetResource = monaco.URI.file(error.file);
-				var model = monaco.Services.ModelService.getModel(targetResource);
+			vscode.Services.MarkerService.changeAll('go', errors.map(error => {
+				var targetResource = vscode.URI.file(error.file);
+				var model = vscode.Services.ModelService.getModel(targetResource);
 				var startColumn = 0;
 				var endColumn = 1;
 				if(model) {
@@ -61,7 +61,7 @@ watcher.onFileChange(fileSystemEvent => {
 				};
 			}));
 		}).catch(err => {
-			monaco.showMessage(monaco.MessageSeverity.Information, "Error: " + err);
+			vscode.shell.showErrorMessage("Error: " + err);
 		});
 	}
 });

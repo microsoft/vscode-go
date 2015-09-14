@@ -1,0 +1,17 @@
+{
+	"version": "0.1.0",
+	"configurations": [
+		{
+			"name": "Launch Extension",
+			"type": "extensionHost",
+			// path to VSCode executable
+			"runtimeExecutable": "${execPath}",
+			// force VSCode to create a new window and pass this project as an additonal plugin location
+			"args": [ "--new-window", "--extensionDevelopmentWorkspacePath=${workspaceRoot}" ],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outDir": "out",
+			"task": "build"
+		}
+	]
+}

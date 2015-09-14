@@ -1,0 +1,7 @@
+{
+	"compilerOptions": {
+		"module": "amd",
+		"outDir": "out",
+		"sourceMap": true
+	}
+}

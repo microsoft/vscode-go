@@ -4,7 +4,7 @@
 
 'use strict';
 
-import monaco = require('monaco');
+import vscode = require('vscode');
 import cp = require('child_process');
 
 function monacoTypeFromGoCodeClass(kind: string): string {
@@ -27,18 +27,18 @@ interface GoCodeSuggestion {
 	type: string;
 }
 
-class SuggestSupport implements monaco.Modes.ISuggestSupport {
+class SuggestSupport implements vscode.Modes.ISuggestSupport {
 
 	public triggerCharacters = ['.'];
 	public excludeTokens = ['string', 'comment', 'numeric'];
 
-	private modelService: monaco.Services.IModelService;
+	private modelService: vscode.Services.IModelService;
 
-	constructor(modelService: monaco.Services.IModelService) {
+	constructor(modelService: vscode.Services.IModelService) {
 		this.modelService = modelService;
 	}
 
-	public suggest(resource: monaco.URI, position: monaco.IPosition, token: monaco.CancellationToken): Promise<monaco.Modes.ISuggestions[]> {
+	public suggest(resource: vscode.URI, position: vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.ISuggestions[]> {
 		return new Promise((resolve, reject) => {
 			var path = resource.fsPath;
 			var model = this.modelService.getModel(resource);

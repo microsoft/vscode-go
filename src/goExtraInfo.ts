@@ -4,18 +4,18 @@
 
 'use strict';
 
-import monaco = require('monaco');
+import vscode = require('vscode');
 import cp = require('child_process');
 
-class ExtraInfoSupport implements monaco.Modes.IExtraInfoSupport {
+class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 
-	private modelService: monaco.Services.IModelService;
+	private modelService: vscode.Services.IModelService;
 
-	constructor(modelService: monaco.Services.IModelService) {
+	constructor(modelService: vscode.Services.IModelService) {
 		this.modelService = modelService;
 	}
 
-	public computeInfo(resource:monaco.URI, position:monaco.IPosition, token: monaco.CancellationToken): Promise<monaco.Modes.IComputeExtraInfoResult> {
+	public computeInfo(resource:vscode.URI, position:vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.IComputeExtraInfoResult> {
 
 		return new Promise((resolve, reject) => {
 			var path = resource.fsPath;

@@ -4,20 +4,20 @@
 
 'use strict';
 
-import monaco = require('monaco');
+import vscode = require('vscode');
 import cp = require('child_process');
 
-class FormattingSupport implements monaco.Modes.IFormattingSupport {
+class FormattingSupport implements vscode.Modes.IFormattingSupport {
 
-	private modelService: monaco.Services.IModelService;
+	private modelService: vscode.Services.IModelService;
 
 	public autoFormatTriggerCharacters: string[] = [';', '}', '\n'];
 
-	constructor(modelService: monaco.Services.IModelService) {
+	constructor(modelService: vscode.Services.IModelService) {
 		this.modelService = modelService;
 	}
 
-	public formatDocument(resource: monaco.URI, options: monaco.Modes.IFormattingOptions, token: monaco.CancellationToken):Promise<monaco.Models.ISingleEditOperation[]> {
+	public formatDocument(resource: vscode.URI, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken):Promise<vscode.Models.ISingleEditOperation[]> {
 		return new Promise((resolve, reject) => {
 			var path = resource.fsPath;
 			var model = this.modelService.getModel(resource);

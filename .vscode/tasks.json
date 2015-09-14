@@ -1,0 +1,29 @@
+// Available variables which can be used inside of strings.
+// ${workspaceRoot}: the root folder of the team
+// ${file}: the current opened file
+// ${fileBasename}: the current opened file's basename
+// ${fileDirname}: the current opened file's dirname
+// ${fileExtname}: the current opened file's extension
+// ${cwd}: the current working directory of the spawned process
+
+// A task runner that calls the Typescript compiler (tsc) and
+// compiles the extension.
+{
+	"version": "0.1.0",
+
+	// The command is tsc. Assumes that tsc 1.5.x or higher has been installed using npm install -g typescript
+	"command": "tsc",
+
+	// The command is a shell script
+	"isShellCommand": true,
+
+	// Show the output window only if unrecognized errors occur.
+	"showOutput": "silent",
+
+	// args is the HelloWorld program to compile.
+	"args": [],
+
+	// use the standard tsc problem matcher to find compile problems
+	// in the output.
+	"problemMatcher": "$tsc"
+}

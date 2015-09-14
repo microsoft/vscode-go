@@ -4,9 +4,9 @@
 
 'use strict';
 
-import monaco = require('monaco');
+import vscode = require('vscode');
 
-var language: monaco.Modes.ILanguage = {
+var language: vscode.Modes.ILanguage = {
 
   displayName:    'Go',
   name:           'go',
