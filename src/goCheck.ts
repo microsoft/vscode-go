@@ -62,7 +62,7 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 	var golint = !lintOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
 		var cwd = path.dirname(filename)
 		var golint = path.join(process.env["GOPATH"], "bin", "golint");
-		cp.execFile("golint", [filename], {cwd: cwd}, (err, stdout, stderr) => {
+		cp.execFile(golint, [filename], {cwd: cwd}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
 					vscode.shell.showInformationMessage("The 'golint' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install.");

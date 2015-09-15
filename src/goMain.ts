@@ -35,7 +35,7 @@ function mapSeverityToMonacoSeverity(sev: string) {
 	}
 }
 
-monaco.Services.ConfigurationService.loadConfiguration('go').then(config => {
+monaco.Services.ConfigurationService.loadConfiguration('go').then((config = {}) => {
 	var watcher = monaco.Services.FileSystemEventService.createWatcher();
 	watcher.onFileChange(fileSystemEvent => {
 		if(fileSystemEvent.resource.fsPath.indexOf('.go') !== -1) {
