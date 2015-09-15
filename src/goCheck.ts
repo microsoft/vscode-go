@@ -8,6 +8,19 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import os = require('os');
+import fs = require('fs');
+
+//TODO: Less hacky?
+var go : string;
+if(process.env.GOROOT) {
+	go = path.join(process.env["GOROOT"], "bin", "go");
+} else if(process.env.PATH) {
+	var pathparts = (<string>process.env.PATH).split((<any>path).delimiter);
+	go = pathparts.map(dir => path.join(dir, 'go' + (os.platform() == "win32" ? ".exe" : ""))).filter(candidate => fs.existsSync(candidate))[0];
+}
+if(!go) {
+	vscode.shell.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.  Set location manual in 'go.goroot' setting.");
+}
 
 export interface ICheckResult {
 	file: string;
@@ -16,16 +29,20 @@ export interface ICheckResult {
 	severity: string;
 }
 
-export function check(filename: string): Promise<ICheckResult[]> {
-	var gobuild = new Promise((resolve, reject) => {
+export function check(filename: string, buildOnSave = true, lintOnSave = true, vetOnSave = true): Promise<ICheckResult[]> {
+	var gobuild = !buildOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
 		var tmppath = path.normalize(path.join(os.tmpdir(), "go-code-check"))
 		var cwd = path.dirname(filename)
 		var args = ["build", "-o", tmppath, "."];
 		if(filename.match(/_test.go$/i)) {
 			args = ['test', '-copybinary', '-o', tmppath, '-c', '.']
 		}
-		var process = cp.execFile("go", args, {cwd: cwd}, (err, stdout, stderr) => {
+		cp.execFile(go, args, {cwd: cwd}, (err, stdout, stderr) => {
 			try {
+				if (err && (<any>err).code == "ENOENT") {
+					vscode.shell.showInformationMessage("The 'go' compiler is not available.  Install Go from http://golang.org/dl/.");
+					return resolve([]);
+				}
 				var lines = stderr.toString().split('\n');
 				var ret: ICheckResult[] = [];
 				for(var i = 1; i < lines.length; i++) {
@@ -42,10 +59,15 @@ export function check(filename: string): Promise<ICheckResult[]> {
 		});
 	});
 
-	var golint = new Promise((resolve, reject) => {
+	var golint = !lintOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
 		var cwd = path.dirname(filename)
-		var process = cp.execFile("golint", [filename], {cwd: cwd}, (err, stdout, stderr) => {
+		var golint = path.join(process.env["GOPATH"], "bin", "golint");
+		cp.execFile("golint", [filename], {cwd: cwd}, (err, stdout, stderr) => {
 			try {
+				if (err && (<any>err).code == "ENOENT") {
+					vscode.shell.showInformationMessage("The 'golint' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install.");
+					return resolve([]);
+				}
 				var lines = stdout.toString().split('\n');
 				var ret: ICheckResult[] = [];
 				for(var i = 0; i < lines.length; i++) {
@@ -62,10 +84,14 @@ export function check(filename: string): Promise<ICheckResult[]> {
 		});
 	});
 
-	var govet = new Promise((resolve, reject) => {
+	var govet = !vetOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
 		var cwd = path.dirname(filename)
-		var process = cp.execFile("go", ["tool", "vet", filename], {cwd: cwd}, (err, stdout, stderr) => {
+		cp.execFile(go, ["tool", "vet", filename], {cwd: cwd}, (err, stdout, stderr) => {
 			try {
+				if (err && (<any>err).code == "ENOENT") {
+					vscode.shell.showInformationMessage("The 'go tool vet' compiler is not available.  Install Go from http://golang.org/dl/.");
+					return resolve([]);
+				}
 				var lines = stdout.toString().split('\n');
 				var ret: ICheckResult[] = [];
 				for(var i = 0; i < lines.length; i++) {

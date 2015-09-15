@@ -6,6 +6,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
+import path = require('path');
 
 class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 
@@ -18,19 +19,26 @@ class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 	public computeInfo(resource:vscode.URI, position:vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.IComputeExtraInfoResult> {
 
 		return new Promise((resolve, reject) => {
-			var path = resource.fsPath;
+			var filename = resource.fsPath;
 			var model = this.modelService.getModel(resource);
 			var wordAtPosition = model.getWordAtPosition(position);
 
 			// compute the file offset for position
-			var offset = position.column;
-			for (var row = 1; row < position.lineNumber; row++) {
-				offset += model.getLineMaxColumn(row);
-			}
+			var offset = model.getValueInRange({
+				startLineNumber: 0,
+				startColumn: 0,
+				endLineNumber: position.lineNumber,
+				endColumn: position.column
+			}).length;
+
+			var godef = path.join(process.env["GOPATH"], "bin", "godef");
 
 			// Spawn `godef` process
-			var process = cp.execFile("godef", ["-t", "-i", "-f", path, "-o", offset.toString()], {}, (err, stdout, stderr) => {
+			var p = cp.execFile(godef, ["-t", "-i", "-f", filename, "-o", offset.toString()], {}, (err, stdout, stderr) => {
 				try {
+					if (err && (<any>err).code == "ENOENT") {
+						vscode.shell.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");
+					}
 					if (err) return resolve(null);
 					var result = stdout.toString();
 					var lines = result.split('\n');
@@ -51,7 +59,7 @@ class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 					reject(e);
 				}
 			});
-			process.stdin.end(model.getValue());
+			p.stdin.end(model.getValue());
 		});
 	}
 }

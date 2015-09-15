@@ -6,6 +6,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
+import path = require('path');
 
 function monacoTypeFromGoCodeClass(kind: string): string {
 	switch (kind) {
@@ -40,7 +41,7 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 
 	public suggest(resource: vscode.URI, position: vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.ISuggestions[]> {
 		return new Promise((resolve, reject) => {
-			var path = resource.fsPath;
+			var filename = resource.fsPath;
 			var model = this.modelService.getModel(resource);
 
 			// get current word
@@ -51,14 +52,21 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 			}
 
 			// compute the file offset for position
-			var offset = position.column - 1;
-			for (var row = 1; row < position.lineNumber; row++) {
-				offset += model.getLineMaxColumn(row);
-			}
+			var offset = model.getValueInRange({
+				startLineNumber: 0,
+				startColumn: 0,
+				endLineNumber: position.lineNumber,
+				endColumn: position.column
+			}).length;
+
+			var gocode = path.join(process.env["GOPATH"], "bin", "gocode");
 
 			// Spawn `gocode` process
-			var process = cp.execFile("gocode", ["-f=json", "autocomplete", path, "c" + offset], {}, (err, stdout, stderr) => {
+			var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "" + offset], {}, (err, stdout, stderr) => {
 				try {
+					if (err && (<any>err).code == "ENOENT") {
+						vscode.shell.showInformationMessage("The 'gocode' command is not available.  Use 'go get -u github.com/nsf/gocode' to install.");
+					}
 					if (err) return reject(err);
 					var results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 					var suggestions = results[1].map(suggest => {
@@ -74,7 +82,7 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 					reject(e);
 				}
 			});
-			process.stdin.end(model.getValue());
+			p.stdin.end(model.getValue());
 
 		});
 	}
