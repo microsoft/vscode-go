@@ -4,6 +4,10 @@
 
 'use strict';
 
+import fs = require('fs');
+import path = require('path');
+import cp = require('child_process');
+
 import SuggestSupport = require('./goSuggest');
 import ExtraInfoSupport = require('./goExtraInfo');
 import DeclarationSupport = require('./goDeclaration');
@@ -22,9 +26,38 @@ monaco.Modes.RenameSupport.register('go', new RenameSupport(monaco.Services.Mode
 
 // TODO: There should be a better way to do this?
 monaco.Services.ConfigurationService.loadConfiguration('go').then(config => {
+	
+	// Make sure GOPATH is set
 	if(!process.env["GOPATH"] && config.gopath) {
 		process.env["GOPATH"] = config.gopath;
 	}
+	
+	// Offer to install any missing tools
+	var tools = {
+		gorename: "golang.org/x/tools/cmd/gorename",
+		gocode: "github.com/nsf/gocode",
+		goreturns: "sourcegraph.com/sqs/goreturns",
+		godef: "github.com/rogpeppe/godef",
+		golint: "github.com/golang/lint/golint",
+		"go-find-references": "github.com/redefiance/go-find-references"
+	}
+	var keys = Object.keys(tools)
+	Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
+		return fs.exists(path.join(process.env["GOPATH"], 'bin', tool), exists => exists ? null : tools[tool]);
+	}))).then(res => {
+		var missing = res.filter(x => x != null);
+		if(missing.length > 0) {
+			monaco.shell.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", { 
+				title: "Install", 
+				command: () => {
+					missing.forEach(tool  => {
+						console.log(tools[tool]);
+						cp.execSync("go get -u -v " + tools[tool]);
+					});
+				}
+			});		
+		}
+	});
 });
 
 function mapSeverityToMonacoSeverity(sev: string) {
