@@ -16,7 +16,18 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 		this.modelService = modelService;
 	}
 
-	public findReferences(resource:vscode.URI, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Promise<vscode.Modes.IReference[]> {
+	public findReferences(resource:vscode.URI, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+		return vscode.workspace.anyDirty().then(anyDirty => {
+			if (anyDirty) {
+				vscode.workspace.saveAll(false).then(() => {
+					return this.doFindReferences(resource, position, includeDeclaration, token);
+				});
+			}
+			return this.doFindReferences(resource, position, includeDeclaration, token);
+		});
+	}
+
+	private doFindReferences(resource:vscode.URI, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
 		return new Promise((resolve, reject) => {
 			var filename = resource.fsPath;
 			var cwd = path.dirname(filename)
@@ -35,7 +46,6 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 
 			var gofindreferences = path.join(process.env["GOPATH"], "bin", "go-find-references");
 
-			// TODO: Should really check if any ".go" files are dirty and block find-references
 			cp.execFile(gofindreferences, ["-file", filename, "-offset", offset.toString()], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {

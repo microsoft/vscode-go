@@ -1,7 +1,12 @@
 // Place your settings in this file to overwrite default and user settings.
 {
 	"files.exclude": {
-		"out": false,
+		"out": true,
 		"typings": false
+	},
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/bower_components": true,
+		"out/": true
 	}
 }
