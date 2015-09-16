@@ -16,7 +16,18 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 		this.modelService = modelService;
 	}
 
-	public findReferences(resource:vscode.URI, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Promise<vscode.Modes.IReference[]> {
+	public findReferences(resource:vscode.URI, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+		return vscode.workspace.anyDirty().then(anyDirty => {
+			if (anyDirty) {
+				vscode.workspace.saveAll(false).then(() => {
+					return this.doFindReferences(resource, position, includeDeclaration, token);
+				});
+			}
+			return this.doFindReferences(resource, position, includeDeclaration, token);
+		});
+	}
+
+	doFindReferences(resource:vscode.URI, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
 		return new Promise((resolve, reject) => {
 			var filename = resource.fsPath;
 			var cwd = path.dirname(filename)

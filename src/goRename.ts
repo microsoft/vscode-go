@@ -16,7 +16,18 @@ class RenameSupport implements vscode.Modes.IRenameSupport {
 		this.modelService = modelService;
 	}
 
-	public rename(resource:vscode.URI, position:vscode.IPosition, newName: string, token: vscode.CancellationToken): Promise<vscode.Modes.IRenameResult> {
+	public rename(resource:vscode.URI, position:vscode.IPosition, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
+		return vscode.workspace.anyDirty().then(anyDirty => {
+			if (anyDirty) {
+				vscode.workspace.saveAll(false).then(() => {
+					return this.doRename(resource, position, newName, token);
+				});
+			}
+			return this.doRename(resource, position, newName, token);
+		});
+	}
+
+	public doRename(resource:vscode.URI, position:vscode.IPosition, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
 		return new Promise((resolve, reject) => {
 			var filename = resource.fsPath;
 			var model = this.modelService.getModel(resource);
