@@ -27,7 +27,7 @@ class RenameSupport implements vscode.Modes.IRenameSupport {
 		});
 	}
 
-	public doRename(resource:vscode.URI, position:vscode.IPosition, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
+	private doRename(resource:vscode.URI, position:vscode.IPosition, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
 		return new Promise((resolve, reject) => {
 			var filename = resource.fsPath;
 			var model = this.modelService.getModel(resource);
@@ -42,7 +42,6 @@ class RenameSupport implements vscode.Modes.IRenameSupport {
 
 			var gorename = path.join(process.env["GOPATH"], "bin", "gorename");
 
-			// TODO: Should really check if any ".go" files are dirty and block rename
 			cp.execFile(gorename, ["-offset", filename+":#"+offset, "-to", newName], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {

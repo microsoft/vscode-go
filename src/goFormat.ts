@@ -25,6 +25,7 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 	}
 
 	public formatDocument(resource: vscode.URI, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken):Thenable<vscode.Models.ISingleEditOperation[]> {
+		// TODO: We don't really need to save all the buffers, just the one for 'resource'.
 		return vscode.workspace.anyDirty().then(anyDirty => {
 			if (anyDirty) {
 				vscode.workspace.saveAll(false).then(() => {
@@ -35,14 +36,13 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 		});
 	}
 
-	public doFormatDocument(resource: vscode.URI, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken):Thenable<vscode.Models.ISingleEditOperation[]> {
+	private doFormatDocument(resource: vscode.URI, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken):Thenable<vscode.Models.ISingleEditOperation[]> {
 		return new Promise((resolve, reject) => {
 			var filename = resource.fsPath;
 			var model = this.modelService.getModel(resource);
 
 			var goreturns = path.join(process.env["GOPATH"], "bin", this.formatCommand);
 
-			// TODO: Should really check if the model is dirty and block formatting
 			cp.execFile(goreturns, [filename], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
