@@ -6,7 +6,7 @@
 
 import vscode = require('vscode');
 
-var language: vscode.Modes.ILanguage = {
+var language = <vscode.Modes.ILanguage> {
 
   displayName:    'Go',
   name:           'go',
