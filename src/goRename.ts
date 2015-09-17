@@ -29,7 +29,7 @@ class RenameSupport implements vscode.Modes.IRenameSupport {
 
 	private doRename(resource:vscode.URI, position:vscode.IPosition, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
 		return new Promise((resolve, reject) => {
-			var filename = resource.fsPath;
+			var filename = this.canonicalizeForWindows(resource.fsPath);
 			var model = this.modelService.getModel(resource);
 
 			// compute the file offset for position
@@ -62,6 +62,12 @@ class RenameSupport implements vscode.Modes.IRenameSupport {
 		});
 	}
 
+	canonicalizeForWindows(filename:string):string {
+		// capitalize drive letter on Windows otherwise gorename cannot find the package
+		if (/^[a-z]:\\/.test(filename))
+			return filename.charAt(0).toUpperCase() + filename.slice(1);
+		return filename;
+	}
 }
 
 export = RenameSupport
