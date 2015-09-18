@@ -25,8 +25,13 @@ export function activate() {
 	vscode.Modes.FormattingSupport.register('go', new FormattingSupport(vscode.Services.ModelService, vscode.Services.ConfigurationService));
 	vscode.Modes.RenameSupport.register('go', new RenameSupport(vscode.Services.ModelService));
 
+	setupGoPathAndOfferToInstallTools();
+	startBuildOnSaveWatcher();
+}
+
+function setupGoPathAndOfferToInstallTools() {
 	// TODO: There should be a better way to do this?
-	vscode.Services.ConfigurationService.loadConfiguration('go').then(config => {
+	vscode.Services.ConfigurationService.loadConfiguration('go').then((config = {}) => {
 
 		// Make sure GOPATH is set
 		if(!process.env["GOPATH"] && config.gopath) {
@@ -64,14 +69,17 @@ export function activate() {
 			}
 		});
 	});
-
-function mapSeverityToMonacoSeverity(sev: string) {
-	switch(sev) {
-		case "error": return vscode.Services.Severity.Error;
-		case "warning": return vscode.Services.Severity.Warning;
-		default: return vscode.Services.Severity.Error;
-	}
 }
+
+function startBuildOnSaveWatcher() {
+
+	function mapSeverityToMonacoSeverity(sev: string) {
+		switch(sev) {
+			case "error": return vscode.Services.Severity.Error;
+			case "warning": return vscode.Services.Severity.Warning;
+			default: return vscode.Services.Severity.Error;
+		}
+	}
 
 	vscode.Services.ConfigurationService.loadConfiguration('go').then((config = {}) => {
 		var watcher = vscode.Services.FileSystemEventService.createWatcher();
