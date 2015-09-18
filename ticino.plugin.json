@@ -8,6 +8,12 @@
 			"extensions": [ ".go" ],
 			"aliases": [ "Go" ]
 		}],
+		"debugAdapter": [{
+			"type": "go",
+			"enableBreakpointsFor": { "languageIds": ["go"] },
+			"program": "/Users/lukeh/dd/opendebug-mock/plugins/vs.debug.mock/debugAdapter/mock/openDebugMock.js",
+			"runtime": "node"
+		}],
 		"configuration": {
 			"type": "object",
 			"title": "Go configuration",
