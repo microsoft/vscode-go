@@ -29,7 +29,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 
 	private doFindReferences(resource:vscode.URI, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
 		return new Promise((resolve, reject) => {
-			var filename = resource.fsPath;
+			var filename = this.canonicalizeForWindows(resource.fsPath);
 			var cwd = path.dirname(filename)
 			var model = this.modelService.getModel(resource);
 
@@ -78,6 +78,14 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 				}
 			});
 		});
+	}
+
+	private canonicalizeForWindows(filename:string):string {
+		// convert backslashes to forward slashes on Windows
+		// otherwise go-find-references returns no matches
+		if (/^[a-z]:\\/.test(filename))
+			return filename.replace(/\\/g, '/');
+		return filename;
 	}
 
 }
