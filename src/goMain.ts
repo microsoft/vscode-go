@@ -35,7 +35,7 @@ export function activate() {
 
 		// Offer to install any missing tools
 		var tools = {
-			gorenameX: "golang.org/x/tools/cmd/gorename",
+			gorename: "golang.org/x/tools/cmd/gorename",
 			gocode: "github.com/nsf/gocode",
 			goreturns: "sourcegraph.com/sqs/goreturns",
 			godef: "github.com/rogpeppe/godef",
