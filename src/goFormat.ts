@@ -24,7 +24,7 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 		});
 	}
 
-	public formatDocument(resource: vscode.URI, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken):Thenable<vscode.Models.ISingleEditOperation[]> {
+	public formatDocument(resource: vscode.Uri, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken):Thenable<vscode.Models.ISingleEditOperation[]> {
 		// TODO: We don't really need to save all the buffers, just the one for 'resource'.
 		return vscode.workspace.anyDirty().then(anyDirty => {
 			if (anyDirty) {
@@ -36,7 +36,7 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 		});
 	}
 
-	private doFormatDocument(resource: vscode.URI, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken):Thenable<vscode.Models.ISingleEditOperation[]> {
+	private doFormatDocument(resource: vscode.Uri, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken):Thenable<vscode.Models.ISingleEditOperation[]> {
 		return new Promise((resolve, reject) => {
 			var filename = resource.fsPath;
 			var model = this.modelService.getModel(resource);

@@ -16,7 +16,7 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 		this.modelService = modelService;
 	}
 
-	public findDeclaration(resource:vscode.URI, position:vscode.IPosition, token: vscode.CancellationToken):Promise<vscode.Modes.IReference> {
+	public findDeclaration(resource:vscode.Uri, position:vscode.IPosition, token: vscode.CancellationToken):Promise<vscode.Modes.IReference> {
 
 		return new Promise((resolve, reject) => {
 			var filename = resource.fsPath;
@@ -43,7 +43,7 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 					var result = stdout.toString();
 					var lines = result.split('\n');
 					var [_, file, line, col] = /(.*):(\d+):(\d+)/.exec(lines[0]);
-					var definitionResource = vscode.URI.file(file);
+					var definitionResource = vscode.Uri.file(file);
 					return resolve({
 						resource: definitionResource,
 						range: {

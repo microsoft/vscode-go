@@ -26,12 +26,12 @@ monaco.Modes.RenameSupport.register('go', new RenameSupport(monaco.Services.Mode
 
 // TODO: There should be a better way to do this?
 monaco.Services.ConfigurationService.loadConfiguration('go').then(config => {
-	
+
 	// Make sure GOPATH is set
 	if(!process.env["GOPATH"] && config.gopath) {
 		process.env["GOPATH"] = config.gopath;
 	}
-	
+
 	// Offer to install any missing tools
 	var tools = {
 		gorename: "golang.org/x/tools/cmd/gorename",
@@ -47,15 +47,15 @@ monaco.Services.ConfigurationService.loadConfiguration('go').then(config => {
 	}))).then(res => {
 		var missing = res.filter(x => x != null);
 		if(missing.length > 0) {
-			monaco.shell.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", { 
-				title: "Install", 
+			monaco.shell.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
+				title: "Install",
 				command: () => {
 					missing.forEach(tool  => {
 						console.log(tools[tool]);
 						cp.execSync("go get -u -v " + tools[tool]);
 					});
 				}
-			});		
+			});
 		}
 	});
 });
@@ -74,7 +74,7 @@ monaco.Services.ConfigurationService.loadConfiguration('go').then((config = {}) 
 		if(fileSystemEvent.resource.fsPath.indexOf('.go') !== -1) {
 			check(fileSystemEvent.resource.fsPath, config['buildOnSave'], config['lintOnSave'], config['vetOnSave']).then(errors => {
 				monaco.Services.MarkerService.changeAll('go', errors.map(error => {
-					var targetResource = monaco.URI.file(error.file);
+					var targetResource = monaco.Uri.file(error.file);
 					var model = monaco.Services.ModelService.getModel(targetResource);
 					var startColumn = 0;
 					var endColumn = 1;

@@ -16,7 +16,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 		this.modelService = modelService;
 	}
 
-	public findReferences(resource:vscode.URI, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+	public findReferences(resource:vscode.Uri, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
 		return vscode.workspace.anyDirty().then(anyDirty => {
 			if (anyDirty) {
 				vscode.workspace.saveAll(false).then(() => {
@@ -27,7 +27,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 		});
 	}
 
-	private doFindReferences(resource:vscode.URI, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+	private doFindReferences(resource:vscode.Uri, position:vscode.IPosition, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
 		return new Promise((resolve, reject) => {
 			var filename = this.canonicalizeForWindows(resource.fsPath);
 			var cwd = path.dirname(filename)
@@ -61,7 +61,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 						var match = /(.*):(\d+):(\d+)/.exec(lines[i]);
 						if(!match) continue;
 						var [_, file, lineStr, colStr] = match;
-						var referenceResource = vscode.URI.file(path.resolve(cwd, file));
+						var referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 						results.push({
 							resource: referenceResource,
 							range: {

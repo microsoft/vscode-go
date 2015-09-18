@@ -16,7 +16,7 @@ class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 		this.modelService = modelService;
 	}
 
-	public computeInfo(resource:vscode.URI, position:vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.IComputeExtraInfoResult> {
+	public computeInfo(resource:vscode.Uri, position:vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.IComputeExtraInfoResult> {
 
 		return new Promise((resolve, reject) => {
 			var filename = resource.fsPath;

@@ -39,7 +39,7 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 		this.modelService = modelService;
 	}
 
-	public suggest(resource: vscode.URI, position: vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.ISuggestions[]> {
+	public suggest(resource: vscode.Uri, position: vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.ISuggestions[]> {
 		return new Promise((resolve, reject) => {
 			var filename = resource.fsPath;
 			var model = this.modelService.getModel(resource);
