@@ -35,7 +35,7 @@ export function activate() {
 
 		// Offer to install any missing tools
 		var tools = {
-			gorename: "golang.org/x/tools/cmd/gorename",
+			gorenameX: "golang.org/x/tools/cmd/gorename",
 			gocode: "github.com/nsf/gocode",
 			goreturns: "sourcegraph.com/sqs/goreturns",
 			godef: "github.com/rogpeppe/godef",
@@ -53,25 +53,32 @@ export function activate() {
 		}))).then(res => {
 			var missing = res.filter(x => x != null);
 			if(missing.length > 0) {
-				vscode.shell.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
-					title: "Install",
-					command: () => {
-						missing.forEach(tool  => {
-							cp.execSync("go get -u -v " + tools[tool]);
-						});
-					}
+				let status = vscode.languages.addWarningLanguageStatus("go", "Analysis Tools Missing", () => {
+					promptForInstall(missing, tools, status);
 				});
 			}
 		});
 	});
 
-function mapSeverityToMonacoSeverity(sev: string) {
-	switch(sev) {
-		case "error": return vscode.Services.Severity.Error;
-		case "warning": return vscode.Services.Severity.Warning;
-		default: return vscode.Services.Severity.Error;
+	function promptForInstall(missing: string[], tools, status: vscode.Disposable) {
+		vscode.shell.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
+			title: "Install",
+			command: () => {
+				missing.forEach(tool  => {
+					cp.execSync("go get -u -v " + tools[tool]);
+				});
+			}
+		});
+		status.dispose();
 	}
-}
+
+	function mapSeverityToMonacoSeverity(sev: string) {
+		switch(sev) {
+			case "error": return vscode.Services.Severity.Error;
+			case "warning": return vscode.Services.Severity.Warning;
+			default: return vscode.Services.Severity.Error;
+		}
+	}
 
 	vscode.Services.ConfigurationService.loadConfiguration('go').then((config = {}) => {
 		var watcher = vscode.Services.FileSystemEventService.createWatcher();
