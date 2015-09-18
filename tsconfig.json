@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"module": "amd",
+		"module": "commonjs",
 		"outDir": "out",
 		"sourceMap": true
 	}

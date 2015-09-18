@@ -8,11 +8,11 @@
 			"runtimeExecutable": "${execPath}",
 			// force VSCode to create a new window and pass this project as an additonal plugin location
 			// add workspace path to %GOPATH% so that there is some meaningful contents
-			"args": [ "--new-window", "--extensionDevelopmentWorkspacePath=${workspaceRoot}", "C:\\Users\\egamma\\Projects\\tries\\go" ],
+			"args": [ "--new-window", "--extensionDevelopmentWorkspacePath=${workspaceRoot}", "C:\\dd\\go" ],
 			"stopOnEntry": false,
 			"sourceMaps": true,
 			"outDir": "out",
-			"task": "tsc"
+			"preLaunchTask": "tsc"
 		}
 	]
 }
