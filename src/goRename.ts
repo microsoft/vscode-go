@@ -63,10 +63,11 @@ class RenameSupport implements vscode.Modes.IRenameSupport {
 	}
 
 	canonicalizeForWindows(filename:string):string {
-		// capitalize drive letter on Windows otherwise gorename cannot find the package
-		if (/^[a-z]:\\/.test(filename))
-			return filename.charAt(0).toUpperCase() + filename.slice(1);
-		return filename;
+		// capitalization of the GOPATH root must match GOPATH exactly
+		var gopath: string = process.env['GOPATH']
+		if(!gopath) return filename;
+		if(filename.toLowerCase().substring(0, gopath.length) != gopath.toLowerCase()) return filename;
+		return gopath + filename.slice(gopath.length); 
 	}
 }
 

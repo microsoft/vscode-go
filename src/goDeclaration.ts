@@ -42,7 +42,11 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 					if (err) return resolve(null);
 					var result = stdout.toString();
 					var lines = result.split('\n');
-					var [_, file, line, col] = /(.*):(\d+):(\d+)/.exec(lines[0]);
+					// TODO: Goto def on a package name import will return juts a plain
+					// path to a folder here - can we go to a folder?
+					var match = /(.*):(\d+):(\d+)/.exec(lines[0]);
+					if(!match) return resolve(null);
+					var [_, file, line, col] = match;
 					var definitionResource = vscode.Uri.file(file);
 					return resolve({
 						resource: definitionResource,

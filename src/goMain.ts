@@ -45,7 +45,7 @@ function setupGoPathAndOfferToInstallTools() {
 			goreturns: "sourcegraph.com/sqs/goreturns",
 			godef: "github.com/rogpeppe/godef",
 			golint: "github.com/golang/lint/golint",
-			"go-find-references": "github.com/redefiance/go-find-references"
+			"go-find-references": "github.com/lukehoban/go-find-references"
 		}
 		var keys = Object.keys(tools)
 		Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
