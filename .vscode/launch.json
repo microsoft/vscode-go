@@ -18,7 +18,7 @@
 			"name": "debug-debugger",
 			"type": "node",
 			"program": "./out/debugAdapter/openDebugMock.js",
-			"stopOnEntry": true,
+			"stopOnEntry": false,
 			"args": [ "--server=4711" ],
 			"sourceMaps": false,
 			"outDir": "out/debugAdapter"
