@@ -13,6 +13,15 @@
 			"sourceMaps": true,
 			"outDir": "out",
 			"preLaunchTask": "tsc"
+		},
+		{
+			"name": "debug-debugger",
+			"type": "node",
+			"program": "./out/debugAdapter/openDebugMock.js",
+			"stopOnEntry": true,
+			"args": [ "--server=4711" ],
+			"sourceMaps": false,
+			"outDir": "out/debugAdapter"
 		}
 	]
 }

@@ -11,7 +11,7 @@
 		"debugAdapter": [{
 			"type": "go",
 			"enableBreakpointsFor": { "languageIds": ["go"] },
-			"program": "/Users/lukeh/dd/opendebug-mock/plugins/vs.debug.mock/debugAdapter/mock/openDebugMock.js",
+			"program": "./out/debugAdapter/openDebugMock.js",
 			"runtime": "node"
 		}],
 		"configuration": {
