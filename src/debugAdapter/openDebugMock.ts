@@ -12,41 +12,66 @@ import {Client, RPCConnection} from 'json-rpc2';
 interface DebuggerState {
 	exited: boolean;
 	exitStatus: number;
-	breakPoint: {
-		addr: number;
-		continue: boolean;
-		file: string;
-		functionName: string;
-		goroutine: boolean;
-		id: number;
-		line: number;
-		stacktrace: number;
-	}
+	breakPoint: DebugBreakpoint;
 	breakPointInfo: {};
-	currentThread: {
-		file: string;
-		id: number;
-		line: number;
-		pc: number;
-	};
-	currentGoroutine: {
-		file: string;
-		function: {
-			args: {};
-			goType: number;
-			locals: {};
-			name: string;
-			type: number;
-			value: number;
-		};
-		id: number;
-		line: number;
-		pc: number;
-	};
+	currentThread: DebugThread;
+	currentGoroutine: DebugGoroutine;
+}
+
+interface DebugBreakpoint {
+	addr: number;
+	continue: boolean;
+	file: string;
+	functionName?: string;
+	goroutine: boolean;
+	id: number;
+	line: number;
+	stacktrace: number;
+	variables?: DebugVariable[];
+}
+
+interface DebugThread {
+	file: string;
+	id: number;
+	line: number;
+	pc: number;
+	function?: DebugFunction;
+};
+
+interface DebugLocation {
+	pc: number;
+	file: string;
+	line: number;
+	function: DebugFunction;
+}
+
+interface DebugFunction {
+	name: string;
+	value: number;
+	type: number;
+	goType: number;
+	args: DebugVariable[];
+	locals: DebugVariable[];
+}
+
+interface DebugVariable {
+	name: string;
+	value: string;
+	type: string;
+}
+
+interface DebugGoroutine {
+	id: number;
+	pc: number;
+	file: string;
+	line: number;
+	function: DebugFunction;
 }
 
 interface DebuggerCommand {
 	name: string;
+	threadID?: number;
+	goroutineID?: number;
 }
 
 class Delve {
@@ -127,16 +152,12 @@ class MockDebugSession extends DebugSession {
 		
 		this.delve = new Delve(args.program);
 		
-		this.delve.call('ProcessPid', [], (err, result) =>{
+		this.delve.call<DebuggerState>('State', [], (err, result) =>{
 			if(err) return console.log("ERROR: "+ err);
 			console.log("RESULT: " + result);
-			// if (args.stopOnEntry) {
-			// 	this._currentLine = 0;
-				this.sendResponse(response);
-				this.sendEvent(new StoppedEvent("entry", 4711));
-			// } else {
-			// 	this.continueRequest(response);
-			// }
+			this.debugState = result;
+			this.sendResponse(response);
+			this.sendEvent(new StoppedEvent("entry", 4711));
 		});
 	}
 
@@ -175,22 +196,23 @@ class MockDebugSession extends DebugSession {
 	}
 
 	protected stackTraceRequest(response: OpenDebugProtocol.StackTraceResponse, args: OpenDebugProtocol.StackTraceArguments): void {
-
-		var frames = new Array<StackFrame>();
-		
-		frames.push(new StackFrame(
-			this.debugState.breakPoint.stacktrace, 
-			this.debugState.breakPoint.functionName, 
-			new Source(basename(this._sourceFile), 
-			this.convertDebuggerPathToClient(this._sourceFile)), 
-			this.convertDebuggerLineToClient(this._currentLine), 
-			0)
-		);
-		
-		response.body = {
-			stackFrames: frames
-		};
-		this.sendResponse(response);
+		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: 1, depth: args.levels }], (err, locations) => {	
+			console.log(locations);
+			var stackFrames = locations.map((location, i) => 
+				new StackFrame(
+					i,
+					location.function ? location.function.name : "<unknown>",
+					new Source(
+						basename(location.file),
+						this.convertDebuggerPathToClient(location.file)
+					),
+					this.convertDebuggerLineToClient(location.line),
+					0
+				)
+			);
+			response.body = { stackFrames };
+			this.sendResponse(response);				
+		});
 	}
 
 	protected scopesRequest(response: OpenDebugProtocol.ScopesResponse, args: OpenDebugProtocol.ScopesArguments): void {
