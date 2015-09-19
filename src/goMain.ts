@@ -65,7 +65,7 @@ export function activate() {
 			title: "Install",
 			command: () => {
 				missing.forEach(tool  => {
-					cp.execSync("go get -u -v " + tools[tool]);
+					vscode.shell.runInTerminal("go", ["get", "-u", "-v", tool], { cwd: process.env['GOPATH'] });
 				});
 			}
 		});
