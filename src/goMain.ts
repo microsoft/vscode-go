@@ -58,16 +58,23 @@ function setupGoPathAndOfferToInstallTools() {
 		}))).then(res => {
 			var missing = res.filter(x => x != null);
 			if(missing.length > 0) {
-				vscode.shell.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
-					title: "Install",
-					command: () => {
-						missing.forEach(tool  => {
-							cp.execSync("go get -u -v " + tools[tool]);
-						});
-					}
+				let status = vscode.languages.addWarningLanguageStatus("go", "Analysis Tools Missing", () => {
+					promptForInstall(missing, status);
 				});
 			}
 		});
+		
+		function promptForInstall(missing: string[], status: vscode.Disposable) {
+			vscode.shell.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
+				title: "Install",
+				command: () => {
+					missing.forEach(tool  => {
+						vscode.shell.runInTerminal("go", ["get", "-u", "-v", tool], { cwd: process.env['GOPATH'] });
+					});
+				}
+			});
+			status.dispose();
+		}
 	});
 }
 
