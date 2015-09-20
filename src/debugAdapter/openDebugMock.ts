@@ -187,12 +187,16 @@ class MockDebugSession extends DebugSession {
 	}
 
 	protected threadsRequest(response: OpenDebugProtocol.ThreadsResponse): void {
-		response.body = {
-			threads: [
-				new Thread(4711, "thread 1")
-			]
-		};
-		this.sendResponse(response);
+		this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
+			var threads = goroutines.map(goroutine =>
+				new Thread(
+					goroutine.id, 
+					goroutine.function ? goroutine.function.name : (goroutine.file + "@" + goroutine.line)
+				)
+			);
+			response.body = { threads };
+			this.sendResponse(response);
+		});
 	}
 
 	protected stackTraceRequest(response: OpenDebugProtocol.StackTraceResponse, args: OpenDebugProtocol.StackTraceArguments): void {
@@ -216,11 +220,7 @@ class MockDebugSession extends DebugSession {
 	}
 
 	protected scopesRequest(response: OpenDebugProtocol.ScopesResponse, args: OpenDebugProtocol.ScopesArguments): void {
-
 		const frameReference = args.frameId;
-		//const frame = this._frameHandles.get(frameReference);
-		//const frameIx = frame.index;
-		//const frameThis = this.getValueFromCache(frame.receiver);
 		var i = frameReference;
 
 		var scopes = new Array<Scope>();
@@ -236,46 +236,27 @@ class MockDebugSession extends DebugSession {
 	}
 
 	protected variablesRequest(response: OpenDebugProtocol.VariablesResponse, args: OpenDebugProtocol.VariablesArguments): void {
-		var variables = [];
-		var id = this._variableHandles.get(args.variablesReference);
-		if (id != null) {
-			variables.push({
-				name: id + "_i",
-				value: "123",
+		this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: 1, frame: 0 }], (err, vars) => {	
+			console.log(vars);
+			var variables = vars.map((v, i) => ({ 
+				name: v.name,
+				value: v.value,
 				variablesReference: 0
-			});
-			variables.push({
-				name: id + "_f",
-				value: "3.14",
-				variablesReference: 0
-			});
-			variables.push({
-				name: id + "_s",
-				value: "hello world",
-				variablesReference: 0
-			});
-			variables.push({
-				name: id + "_o",
-				value: "Object",
-				variablesReference: this._variableHandles.create("object_")
-			});
-		}
-
-		response.body = {
-			variables: variables
-		};
-		this.sendResponse(response);
+			}));
+			response.body = { variables };
+			this.sendResponse(response);				
+		});
 	}
 
 	protected continueRequest(response: OpenDebugProtocol.ContinueResponse): void {
-		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, result) => {
-			console.log(result);
-			if(result.exited) {
+		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
+			console.log(state);
+			if(state.exited) {
 				this.sendEvent(new TerminatedEvent());	
 			} else {
-				this._sourceFile = result.breakPoint.file;
-				this._currentLine = result.breakPoint.line;
-				this.debugState = result;
+				this._sourceFile = state.breakPoint.file;
+				this._currentLine = state.breakPoint.line;
+				this.debugState = state;
 				this.sendEvent(new StoppedEvent("breakpoint", 4711));
 			}
 		});
