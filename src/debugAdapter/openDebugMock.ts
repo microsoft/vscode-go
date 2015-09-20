@@ -200,7 +200,16 @@ class MockDebugSession extends DebugSession {
 	}
 
 	protected stackTraceRequest(response: OpenDebugProtocol.StackTraceResponse, args: OpenDebugProtocol.StackTraceArguments): void {
-		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: 1, depth: args.levels }], (err, locations) => {	
+		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: 1, depth: args.levels }], (err, locations) => {
+			// if(err) {
+			// 	// This happens on entry...
+			// 	console.log("Stack trace failed");
+			// 	response.body = {
+			// 		stackFrames: []
+			// 	}
+			// 	// this.sendResponse(response);
+			// 	// return;
+			// }
 			console.log(locations);
 			var stackFrames = locations.map((location, i) => 
 				new StackFrame(
@@ -264,17 +273,30 @@ class MockDebugSession extends DebugSession {
 	}
 
 	protected nextRequest(response: OpenDebugProtocol.NextResponse): void {
-		for (var ln = this._currentLine+1; ln < this._sourceLines.length; ln++) {
-			if (this._sourceLines[ln].trim().length > 0) {   // find next non-empty line
-				this._currentLine = ln;
-				this.sendResponse(response);
+		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
+			console.log(state);
+			if(state.exited) {
+				this.sendEvent(new TerminatedEvent());	
+			} else {
+				this._sourceFile = state.breakPoint.file;
+				this._currentLine = state.breakPoint.line;
+				this.debugState = state;
 				this.sendEvent(new StoppedEvent("step", 4711));
-				return;
 			}
-		}
+		});
 		this.sendResponse(response);
-		// no more lines: run to end
-		this.sendEvent(new TerminatedEvent());
+		
+		// for (var ln = this._currentLine+1; ln < this._sourceLines.length; ln++) {
+		// 	if (this._sourceLines[ln].trim().length > 0) {   // find next non-empty line
+		// 		this._currentLine = ln;
+		// 		this.sendResponse(response);
+		// 		this.sendEvent(new StoppedEvent("step", 4711));
+		// 		return;
+		// 	}
+		// }
+		// this.sendResponse(response);
+		// // no more lines: run to end
+		// this.sendEvent(new TerminatedEvent());
 	}
 
 	protected evaluateRequest(response: OpenDebugProtocol.EvaluateResponse, args: OpenDebugProtocol.EvaluateArguments): void {
