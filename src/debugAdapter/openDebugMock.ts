@@ -104,7 +104,7 @@ class Delve {
 				console.log(str);
 			});
 			this.debugProcess.on('close', function(code) {
-				throw new Error(code);
+				console.error("Process exiting with code: " + code);
 			});
 		});
 	}
@@ -116,52 +116,54 @@ class Delve {
 			callback(err, null);
 		});
 	}
+	
+	close() {
+		this.debugProcess.kill();	
+	}
 }
 
 class MockDebugSession extends DebugSession {
 
 	private _sourceFile: string;
 	private _currentLine: number;
-	private _sourceLines: string[];
-	private _breakPoints: any;
 	private _variableHandles: Handles<string>;
 	
 	private debugState: DebuggerState;
-	private debugProcess: ChildProcess;
 	private delve: Delve;
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
 		this._sourceFile = null;
-		this._sourceLines = [];
 		this._currentLine = 0;
-		this._breakPoints = {};
 		this._variableHandles = new Handles<string>();
+		this.debugState = null;
+		this.delve = null;
 	}
 
 	protected initializeRequest(response: OpenDebugProtocol.InitializeResponse, args: OpenDebugProtocol.InitializeRequestArguments): void {
-		console.log("initializeRequest");
-		// give UI a chance to set breakpoints
+		console.log("InitializeRequest");
 		this.sendResponse(response);
+		console.log("InitializeResponse")
 		this.sendEvent(new InitializedEvent());
+		console.log("InitializeEvent");
 	}
 
 	protected launchRequest(response: OpenDebugProtocol.LaunchResponse, args: OpenDebugProtocol.LaunchRequestArguments): void {
-		this._sourceFile = args.program;
-		this._sourceLines = readFileSync(this._sourceFile).toString().split('\n');
-		
+		// Launch the Delve debugger on the program
 		this.delve = new Delve(args.program);
-		
-		this.delve.call<DebuggerState>('State', [], (err, result) =>{
-			if(err) return console.log("ERROR: "+ err);
-			console.log("RESULT: " + result);
-			this.debugState = result;
-			this.sendResponse(response);
-			this.sendEvent(new StoppedEvent("entry", 4711));
-		});
+		// TODO: This isn't quite right - may not want to blindly continue on start.
+		this.continueRequest(response);
+	}
+	
+	protected disconnectRequest(response: OpenDebugProtocol.DisconnectResponse): void {
+		console.log("DisconnectRequest");
+		this.delve.close();
+		super.disconnectRequest(response);
+		console.log("DisconnectResponse");		
 	}
 
 	protected setBreakPointsRequest(response: OpenDebugProtocol.SetBreakpointsResponse, args: OpenDebugProtocol.SetBreakpointsArguments): void {
+		console.log("SetBreakPointsRequest")
 		var breakpoints = [];
 		for(var i = 0; i < args.lines.length; i++) {
 			var line = args.lines[i];
@@ -181,12 +183,14 @@ class MockDebugSession extends DebugSession {
 				if(breakpoints.length == args.lines.length) {
 					response.body = { breakpoints };
 					this.sendResponse(response);
+					console.log("SetBreakPointsResponse")
 				}
 			});		
 		}
 	}
 
 	protected threadsRequest(response: OpenDebugProtocol.ThreadsResponse): void {
+		console.log("ThreadsRequest")
 		this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
 			var threads = goroutines.map(goroutine =>
 				new Thread(
@@ -196,20 +200,18 @@ class MockDebugSession extends DebugSession {
 			);
 			response.body = { threads };
 			this.sendResponse(response);
+			console.log("ThreadsResponse")
+			console.log(threads);
 		});
 	}
 
 	protected stackTraceRequest(response: OpenDebugProtocol.StackTraceResponse, args: OpenDebugProtocol.StackTraceArguments): void {
+		console.log("StackTraceRequest")
 		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: 1, depth: args.levels }], (err, locations) => {
-			// if(err) {
-			// 	// This happens on entry...
-			// 	console.log("Stack trace failed");
-			// 	response.body = {
-			// 		stackFrames: []
-			// 	}
-			// 	// this.sendResponse(response);
-			// 	// return;
-			// }
+			if(err) {
+				console.error("Failed to produce stack trace!")
+				return;
+			}
 			console.log(locations);
 			var stackFrames = locations.map((location, i) => 
 				new StackFrame(
@@ -224,11 +226,13 @@ class MockDebugSession extends DebugSession {
 				)
 			);
 			response.body = { stackFrames };
-			this.sendResponse(response);				
+			this.sendResponse(response);
+			console.log("StackTraceResponse");				
 		});
 	}
 
 	protected scopesRequest(response: OpenDebugProtocol.ScopesResponse, args: OpenDebugProtocol.ScopesArguments): void {
+		console.log("ScopesRequest")
 		const frameReference = args.frameId;
 		var i = frameReference;
 
@@ -242,9 +246,11 @@ class MockDebugSession extends DebugSession {
 			scopes: scopes
 		};
 		this.sendResponse(response);
+		console.log("ScopesResponse")
 	}
 
 	protected variablesRequest(response: OpenDebugProtocol.VariablesResponse, args: OpenDebugProtocol.VariablesArguments): void {
+		console.log("VariablesRequest");
 		this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: 1, frame: 0 }], (err, vars) => {	
 			console.log(vars);
 			var variables = vars.map((v, i) => ({ 
@@ -253,55 +259,58 @@ class MockDebugSession extends DebugSession {
 				variablesReference: 0
 			}));
 			response.body = { variables };
-			this.sendResponse(response);				
+			this.sendResponse(response);	
+			console.log("VariablesResponse");			
 		});
 	}
 
 	protected continueRequest(response: OpenDebugProtocol.ContinueResponse): void {
+		console.log("ContinueRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
 			console.log(state);
 			if(state.exited) {
+				this.sendResponse(response);
+				console.log("ContinueResponse");
 				this.sendEvent(new TerminatedEvent());	
+				console.log("TerminatedEvent");
 			} else {
 				this._sourceFile = state.breakPoint.file;
 				this._currentLine = state.breakPoint.line;
 				this.debugState = state;
-				this.sendEvent(new StoppedEvent("breakpoint", 4711));
+				this.sendResponse(response);
+				console.log("ContinueResponse");
+				this.sendEvent(new StoppedEvent("breakpoint", this.debugState.currentGoroutine.id));
+				console.log("StoppedEvent('breakpoint')");
 			}
 		});
-		this.sendResponse(response);
 	}
 
 	protected nextRequest(response: OpenDebugProtocol.NextResponse): void {
+		console.log("NextRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
 			console.log(state);
 			if(state.exited) {
-				this.sendEvent(new TerminatedEvent());	
+				this.sendResponse(response);
+				console.log("NextResponse")
+				this.sendEvent(new TerminatedEvent());
+				console.log("TerminatedEvent");
 			} else {
 				this._sourceFile = state.breakPoint.file;
 				this._currentLine = state.breakPoint.line;
 				this.debugState = state;
-				this.sendEvent(new StoppedEvent("step", 4711));
+				this.sendResponse(response);
+				console.log("NextResponse")
+				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
+				console.log("StoppedEvent('step')");
 			}
 		});
-		this.sendResponse(response);
-		
-		// for (var ln = this._currentLine+1; ln < this._sourceLines.length; ln++) {
-		// 	if (this._sourceLines[ln].trim().length > 0) {   // find next non-empty line
-		// 		this._currentLine = ln;
-		// 		this.sendResponse(response);
-		// 		this.sendEvent(new StoppedEvent("step", 4711));
-		// 		return;
-		// 	}
-		// }
-		// this.sendResponse(response);
-		// // no more lines: run to end
-		// this.sendEvent(new TerminatedEvent());
 	}
 
 	protected evaluateRequest(response: OpenDebugProtocol.EvaluateResponse, args: OpenDebugProtocol.EvaluateArguments): void {
+		console.log("EvaluateRequest");
 		response.body = { result: "evaluate(" + args.expression + ")", variablesReference: 0 };
 		this.sendResponse(response);
+		console.log("EvaluateResponse");
 	}
 }
 

@@ -20,7 +20,7 @@
 			"program": "./out/debugAdapter/openDebugMock.js",
 			"stopOnEntry": false,
 			"args": [ "--server=4711" ],
-			"sourceMaps": false,
+			"sourceMaps": true,
 			"outDir": "out/debugAdapter"
 		}
 	]
