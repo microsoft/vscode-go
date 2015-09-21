@@ -128,6 +128,7 @@ class MockDebugSession extends DebugSession {
 	private _currentLine: number;
 	private _variableHandles: Handles<string>;
 	
+	private breakpoints: Map<string, DebugBreakpoint[]>;
 	private debugState: DebuggerState;
 	private delve: Delve;
 
@@ -138,6 +139,7 @@ class MockDebugSession extends DebugSession {
 		this._variableHandles = new Handles<string>();
 		this.debugState = null;
 		this.delve = null;
+		this.breakpoints = new Map<string, DebugBreakpoint[]>();
 	}
 
 	protected initializeRequest(response: OpenDebugProtocol.InitializeResponse, args: OpenDebugProtocol.InitializeRequestArguments): void {
@@ -164,15 +166,19 @@ class MockDebugSession extends DebugSession {
 
 	protected setBreakPointsRequest(response: OpenDebugProtocol.SetBreakpointsResponse, args: OpenDebugProtocol.SetBreakpointsArguments): void {
 		console.log("SetBreakPointsRequest")
-		var breakpoints = [];
+		var breakpoints: OpenDebugProtocol.Breakpoint[] = [];
+		if(!this.breakpoints[args.source.path])  { 
+			this.breakpoints[args.source.path] = []; 
+		}
+		// TODO - Clear out all previous breakpoints in this file before recreating the ones requested
 		for(var i = 0; i < args.lines.length; i++) {
 			var line = args.lines[i];
 			var file = args.source.path;
-			this.delve.call('CreateBreakpoint', [{file, line}], (err, result) => { 
-				if(result) {
+			this.delve.call<DebugBreakpoint>('CreateBreakpoint', [{file, line}], (err, breakpoint) => { 
+				if(breakpoint) {
 					breakpoints.push({
 						verified: true,
-						line: (<any>result).line
+						line: breakpoint.line
 					})
 				} else {
 					breakpoints.push({
@@ -180,6 +186,7 @@ class MockDebugSession extends DebugSession {
 						line: args.lines[i]
 					})
 				}
+				this.breakpoints[args.source.path].push(breakpoint);
 				if(breakpoints.length == args.lines.length) {
 					response.body = { breakpoints };
 					this.sendResponse(response);
@@ -207,7 +214,7 @@ class MockDebugSession extends DebugSession {
 
 	protected stackTraceRequest(response: OpenDebugProtocol.StackTraceResponse, args: OpenDebugProtocol.StackTraceArguments): void {
 		console.log("StackTraceRequest")
-		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: 1, depth: args.levels }], (err, locations) => {
+		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: args.threadId, depth: args.levels }], (err, locations) => {
 			if(err) {
 				console.error("Failed to produce stack trace!")
 				return;
@@ -233,35 +240,68 @@ class MockDebugSession extends DebugSession {
 
 	protected scopesRequest(response: OpenDebugProtocol.ScopesResponse, args: OpenDebugProtocol.ScopesArguments): void {
 		console.log("ScopesRequest")
-		const frameReference = args.frameId;
-		var i = frameReference;
-
 		var scopes = new Array<Scope>();
-
-		scopes.push(new Scope("Local", this._variableHandles.create("local_" + i), false));
-		scopes.push(new Scope("Closure", this._variableHandles.create("closure_" + i), false));
-		scopes.push(new Scope("Global", this._variableHandles.create("global_" + i), true));
-
-		response.body = {
-			scopes: scopes
-		};
+		scopes.push(new Scope("Local", this._variableHandles.create("local_" + args.frameId), false));
+		scopes.push(new Scope("Args", this._variableHandles.create("args_" + args.frameId), false));
+		//scopes.push(new Scope("Thread", this._variableHandles.create("threadpackage_" + args.frameId), false));
+		//scopes.push(new Scope("Package", this._variableHandles.create("package_" + args.frameId), false));
+		response.body = { scopes };
 		this.sendResponse(response);
 		console.log("ScopesResponse")
 	}
 
 	protected variablesRequest(response: OpenDebugProtocol.VariablesResponse, args: OpenDebugProtocol.VariablesArguments): void {
 		console.log("VariablesRequest");
-		this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: 1, frame: 0 }], (err, vars) => {	
-			console.log(vars);
-			var variables = vars.map((v, i) => ({ 
-				name: v.name,
-				value: v.value,
-				variablesReference: 0
-			}));
-			response.body = { variables };
-			this.sendResponse(response);	
-			console.log("VariablesResponse");			
-		});
+		var req = this._variableHandles.get(args.variablesReference);
+		var parts = req.split('_');
+		var kind = parts[0];
+		var frame = +parts[1];
+		switch(kind) {
+			case "local":
+				this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, vars) => {	
+					console.log(vars);
+					var variables = vars.map((v, i) => ({ 
+						name: v.name,
+						value: v.value,
+						variablesReference: 0
+					}));
+					response.body = { variables };
+					this.sendResponse(response);	
+					console.log("VariablesResponse");			
+				});
+				break;
+			case "args":
+				this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, vars) => {	
+					console.log(vars);
+					var variables = vars.map((v, i) => ({ 
+						name: v.name,
+						value: v.value,
+						variablesReference: 0
+					}));
+					response.body = { variables };
+					this.sendResponse(response);	
+					console.log("VariablesResponse");			
+				});
+				break;
+			// case "package":
+			// 	this.delve.call<DebugVariable[]>('ListPackageVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, vars) => {	
+			// 		console.log(vars);
+			// 		var variables = vars.map((v, i) => ({ 
+			// 			name: v.name,
+			// 			value: v.value,
+			// 			variablesReference: 0
+			// 		}));
+			// 		response.body = { variables };
+			// 		this.sendResponse(response);	
+			// 		console.log("VariablesResponse");			
+			// 	});
+			// 	break;
+			default:
+				console.error("Unknown variable request: " + kind);
+				response.body = { variables: [] };
+				this.sendResponse(response);	
+				console.log("VariablesResponse");
+		}
 	}
 
 	protected continueRequest(response: OpenDebugProtocol.ContinueResponse): void {
@@ -269,20 +309,18 @@ class MockDebugSession extends DebugSession {
 		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
 			console.log(state);
 			if(state.exited) {
-				this.sendResponse(response);
-				console.log("ContinueResponse");
 				this.sendEvent(new TerminatedEvent());	
 				console.log("TerminatedEvent");
 			} else {
 				this._sourceFile = state.breakPoint.file;
 				this._currentLine = state.breakPoint.line;
 				this.debugState = state;
-				this.sendResponse(response);
-				console.log("ContinueResponse");
 				this.sendEvent(new StoppedEvent("breakpoint", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('breakpoint')");
 			}
 		});
+		this.sendResponse(response);
+		console.log("ContinueResponse");
 	}
 
 	protected nextRequest(response: OpenDebugProtocol.NextResponse): void {
@@ -290,20 +328,47 @@ class MockDebugSession extends DebugSession {
 		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
 			console.log(state);
 			if(state.exited) {
-				this.sendResponse(response);
-				console.log("NextResponse")
 				this.sendEvent(new TerminatedEvent());
 				console.log("TerminatedEvent");
 			} else {
 				this._sourceFile = state.breakPoint.file;
 				this._currentLine = state.breakPoint.line;
 				this.debugState = state;
-				this.sendResponse(response);
-				console.log("NextResponse")
 				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('step')");
 			}
 		});
+		this.sendResponse(response);
+		console.log("NextResponse")
+	}
+	
+	protected stepInRequest(response: OpenDebugProtocol.StepInResponse) : void {
+		console.log("StepInRequest")
+		this.delve.call<DebuggerState>('Command', [{ name: 'step' }], (err, state) => {
+			console.log(state);
+			if(state.exited) {
+				this.sendEvent(new TerminatedEvent());
+				console.log("TerminatedEvent");
+			} else {
+				this._sourceFile = state.breakPoint.file;
+				this._currentLine = state.breakPoint.line;
+				this.debugState = state;
+				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
+				console.log("StoppedEvent('step')");
+			}
+		});
+		this.sendResponse(response);
+		console.log("StepInResponse")
+	}
+
+	protected stepOutRequest(response: OpenDebugProtocol.StepOutResponse) : void {
+		console.error('Not yet implemented: stepOutRequest');
+		this.sendResponse(response);
+	}
+	
+	protected pauseRequest(response: OpenDebugProtocol.PauseResponse) : void {
+		console.error('Not yet implemented: pauseRequest');
+		this.sendResponse(response);
 	}
 
 	protected evaluateRequest(response: OpenDebugProtocol.EvaluateResponse, args: OpenDebugProtocol.EvaluateArguments): void {
