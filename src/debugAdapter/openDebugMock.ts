@@ -241,8 +241,10 @@ class MockDebugSession extends DebugSession {
 	protected scopesRequest(response: OpenDebugProtocol.ScopesResponse, args: OpenDebugProtocol.ScopesArguments): void {
 		console.log("ScopesRequest")
 		var scopes = new Array<Scope>();
+		// Locals includes both locals and arguments
 		scopes.push(new Scope("Local", this._variableHandles.create("local_" + args.frameId), false));
-		scopes.push(new Scope("Args", this._variableHandles.create("args_" + args.frameId), false));
+		// TODO: Let user see package vars and thread local package vars.
+		//       The former in particular is a very large set of variables.
 		//scopes.push(new Scope("Thread", this._variableHandles.create("threadpackage_" + args.frameId), false));
 		//scopes.push(new Scope("Package", this._variableHandles.create("package_" + args.frameId), false));
 		response.body = { scopes };
@@ -258,29 +260,19 @@ class MockDebugSession extends DebugSession {
 		var frame = +parts[1];
 		switch(kind) {
 			case "local":
-				this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, vars) => {	
-					console.log(vars);
-					var variables = vars.map((v, i) => ({ 
-						name: v.name,
-						value: v.value,
-						variablesReference: 0
-					}));
-					response.body = { variables };
-					this.sendResponse(response);	
-					console.log("VariablesResponse");			
-				});
-				break;
-			case "args":
-				this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, vars) => {	
-					console.log(vars);
-					var variables = vars.map((v, i) => ({ 
-						name: v.name,
-						value: v.value,
-						variablesReference: 0
-					}));
-					response.body = { variables };
-					this.sendResponse(response);	
-					console.log("VariablesResponse");			
+				this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, locals) => {	
+					console.log(locals);
+					this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, args) => {
+						console.log(args);
+						var variables = args.concat(locals).map((v, i) => ({ 
+							name: v.name,
+							value: v.value,
+							variablesReference: 0
+						}));
+						response.body = { variables };
+						this.sendResponse(response);	
+						console.log("VariablesResponse");
+					});			
 				});
 				break;
 			// case "package":
