@@ -8,6 +8,7 @@ import {readFileSync} from 'fs';
 import {basename, dirname} from 'path';
 import {spawn, ChildProcess} from 'child_process';
 import {Client, RPCConnection} from 'json-rpc2';
+import * as path from 'path';
 
 interface DebuggerState {
 	exited: boolean;
@@ -81,7 +82,9 @@ class Delve {
 	constructor(program: string) {
 		this.connection = new Promise((resolve, reject) => {
 			var serverRunning = false;
-			this.debugProcess = spawn('/Users/lukeh/dd/go/bin/dlv', ['debug',  '--headless=true', '--listen=127.0.0.1:2345', '--log', program], { cwd: dirname(program) });
+			// TODO: Make this more robust.
+			var dlv = path.join(process.env["GOPATH"], "bin", "dlv");
+			this.debugProcess = spawn(dlv, ['debug',  '--headless=true', '--listen=127.0.0.1:2345', '--log', program], { cwd: dirname(program) });
 			
 			function connectClient() {
 				var client = Client.$create(2345, '127.0.0.1');

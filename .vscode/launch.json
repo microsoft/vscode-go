@@ -9,10 +9,9 @@
 			// force VSCode to create a new window and pass this project as an additonal plugin location
 			// add workspace path to %GOPATH% so that there is some meaningful contents
 			"args": [ "--new-window", "--extensionDevelopmentWorkspacePath=${workspaceRoot}" ],
-			"stopOnEntry": false,
+			"stopOnEntry": true,
 			"sourceMaps": true,
-			"outDir": "out",
-			"preLaunchTask": "tsc"
+			"outDir": "out"
 		},
 		{
 			"name": "debug-debugger",

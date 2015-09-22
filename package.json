@@ -1,16 +1,22 @@
 {
-  "name": "go-cde",
+  "name": "go-code",
   "version": "1.0.0",
   "description": "Go support for Visual Studio Code",
   "author": {
     "name": "Microsoft Corporation"
   },
   "private": true,
-  "dependencies": {
-    "json-rpc2": "^1.0.2"
-  },
   "repository": {
     "type": "git",
     "url": "https://monacotools.visualstudio.com/DefaultCollection/Monaco/_git/go-code"
+  },
+  "scripts": {
+    "prepublish": "tsc"
+  },
+  "dependencies": {
+    "json-rpc2": "^1.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^1.6.2"
   }
 }
