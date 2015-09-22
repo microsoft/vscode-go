@@ -82,7 +82,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 ## Demos
 
 ### IDE Features
-![IDE](http://i.giphy.com/3oEduO9Rx6awkds4es.gif)
+![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
 
 ### Debugger
-![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
+![IDE](http://i.giphy.com/3oEduO9Rx6awkds4es.gif)
