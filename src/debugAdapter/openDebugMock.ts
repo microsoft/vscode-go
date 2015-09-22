@@ -3,7 +3,7 @@
  *--------------------------------------------------------*/
 
 import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, Thread, StackFrame, Scope, Source} from './common/debugSession';
-import {Handles} from './common/Handles';
+import {Handles} from './common/handles';
 import {readFileSync} from 'fs';
 import {basename, dirname} from 'path';
 import {spawn, ChildProcess} from 'child_process';
