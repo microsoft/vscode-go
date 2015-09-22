@@ -15,7 +15,11 @@ This Code extension adds rich language support for the Go language, including:
 
 ## Using
 
-Clone this repo into your Code extensions folder and run `npm install`.
+First, you will need to install a dogfood build of Visual Studio Code, for example build [2945a564](https://monacotools.visualstudio.com/DefaultCollection/_git/Monaco/commit/2945a564bb3c116665cc80f24ad176df255adbc0) for [Mac](https://ticino.blob.core.windows.net/build/2945a564bb3c116665cc80f24ad176df255adbc0/VSCode-darwin.zip?st=2015-09-21T21%3A32%3A43Z&se=2015-09-21T23%3A37%3A43Z&sp=r&sv=2014-02-14&sr=b&sig=tX090NW5sxOptKQDJ%2FMny%2BweVban3chLZUaw4t8eCCw%3D), [Linux (x64)](https://ticino.blob.core.windows.net/build/2945a564bb3c116665cc80f24ad176df255adbc0/VSCode-linux-x64.zip?st=2015-09-21T21%3A32%3A43Z&se=2015-09-21T23%3A37%3A43Z&sp=r&sv=2014-02-14&sr=b&sig=CwfkOdf%2FJKJbTjpMmJyF93djfN%2F16fFx5cs0B5E51%2FA%3D), [Windows](https://ticino.blob.core.windows.net/build/2945a564bb3c116665cc80f24ad176df255adbc0/VSCodeSetup.exe?st=2015-09-21T21%3A32%3A43Z&se=2015-09-21T23%3A37%3A43Z&sp=r&sv=2014-02-14&sr=b&sig=pkxQMStGayThmgSW4SHsg9DdGyTQ6bpHQl1EeQU2wxs%3D).
+
+__Note__: Once you’ve installed this, do not accept any automatic updates.  If you do, you will be reverted to publicly released builds.  If you find the popups annoying, you can disable automatic update.
+
+Next, clone this repo into your Code extensions folder and run `npm install`.
 
 ```bash
 cd ~/.vscode/extensions/
