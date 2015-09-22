@@ -49,7 +49,7 @@ Once this is installed, go to the Code debug viewlet and select the configuratio
 }
 ```
 
-## Building & Running
+## Building and Debugging the Extension
 
 You can set up a development environment for debugging the extension uring extension development.
 
@@ -76,12 +76,16 @@ You can now hit breakpoints and step through the extension.
 
 The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, the extension will offer to install them for you.
 
-- gorename: `go get golang.org/x/tools/cmd/gorename`
-- gocode: `go get -u github.com/nsf/gocode`
-- goreturns: `go get -u sourcegraph.com/sqs/goreturns`
-- godef: `go get -v github.com/rogpeppe/godef`
-- golint: `go get -u github.com/golang/lint/golint`
-- go-find-references: `go get -v github.com/redefiance/go-find-references`
+- gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
+- gocode: `go get -u -v github.com/nsf/gocode`
+- goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
+- godef: `go get -u -v github.com/rogpeppe/godef`
+- golint: `go get -u -v github.com/golang/lint/golint`
+- go-find-references: `go get -u -v github.com/lukehoban/go-find-references`
+
+And for debugging:
+
+- delve: `go get -u -v github.com/derekparker/delve/cmd/dlv`
 
 ## Demos
 
