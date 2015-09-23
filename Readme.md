@@ -3,7 +3,7 @@
 This Code extension adds rich language support for the Go language, including:
 
 - Colorization
-- Completions Lists (using `gocode`)
+- Completion Lists (using `gocode`)
 - Snippets
 - Quick Info (using `godef`)
 - Goto Definition (using `godef`)
@@ -34,7 +34,7 @@ In a terminal window with the GOPATH environment variable set to the GOPATH you 
 
 ### _Optional_: Debugging
 
-To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/wiki/Building) for full details.  This is not support right now on Windows, and on OS X it requires creatinga  self-signed cert to sign the `dlv` binary with.
+To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/wiki/Building) for full details.  This is not yet supported on Windows, and on OS X it requires creating a self-signed cert to sign the `dlv` binary.
 
 Once this is installed, go to the Code debug viewlet and select the configuration gear, placing the following in your launch.json:
 
@@ -53,9 +53,9 @@ Once this is installed, go to the Code debug viewlet and select the configuratio
 
 ## Building and Debugging the Extension
 
-You can set up a development environment for debugging the extension uring extension development.
+You can set up a development environment for debugging the extension during extension development.
 
-First make sure you do not have the extension installed in `~/.vscode/extensions`.  Then clone the repo somewhere else on your machine, and run `npm install` and open a development instance of Code.
+First make sure you do not have the extension installed in `~/.vscode/extensions`.  Then clone the repo somewhere else on your machine, run `npm install` and open a development instance of Code.
 
 ```bash
 rm -rf ~/.vscode/extensions/go-code
@@ -66,13 +66,15 @@ npm install
 code . 
 ```
 
-To build, use the `Tasks: Run Build Task` command (cmd-shift-B).
+To build, use the `Tasks: Run Build Task` command (cmd-shift-B).  This will start a build watcher so that .ts files are compiled on save.
 
-To debug, go to the Debug viewlet and select `Launch Extension` then hit play (F5).
+You can now go to the Debug viewlet and select `Launch Extension` then hit play (F5).
 
-In the `[Extension Development Host]` instance, open your GOPATH folder, then close and re-run the `Launch Extension` debug target to attach to launch and attach to an instance of Code opened to your GOAPTH.
+In the `[Extension Development Host]` instance, open your GOPATH folder.  
 
 You can now hit breakpoints and step through the extension.
+
+If you make edits in the extension `.ts` files, just reload (`cmd-r`) the `[Extension Development Host]` instance of Code to load in the new extension code.  The debugging instance will automatically reattach. 
 
 ## Tools
 
