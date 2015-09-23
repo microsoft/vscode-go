@@ -32,6 +32,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 			var filename = this.canonicalizeForWindows(resource.fsPath);
 			var cwd = path.dirname(filename)
 			var model = this.modelService.getModel(resource);
+			var workspaceRoot = vscode.workspace.getPath();
 
 			// get current word
 			var wordAtPosition = model.getWordAtPosition(position);
@@ -46,14 +47,13 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 
 			var gofindreferences = path.join(process.env["GOPATH"], "bin", "go-find-references");
 
-			cp.execFile(gofindreferences, ["-file", filename, "-offset", offset.toString()], {}, (err, stdout, stderr) => {
+			cp.execFile(gofindreferences, ["-file", filename, "-offset", offset.toString(), "-root", workspaceRoot], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
-						vscode.shell.showInformationMessage("The 'go-find-references' command is not available.  Use 'go get -v github.com/redefiance/go-find-references' to install.");
+						vscode.shell.showInformationMessage("The 'go-find-references' command is not available.  Use 'go get -v github.com/lukehoban/go-find-references' to install.");
 						return resolve(null);
 					}
-					if (err) return reject("Cannot find references due to errors: " + err);
-
+					
 					var lines = stdout.toString().split('\n');
 					var results: vscode.Modes.IReference[] = [];
 					for(var i = 0; i < lines.length; i+=2) {
