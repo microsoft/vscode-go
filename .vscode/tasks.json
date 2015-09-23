@@ -12,7 +12,7 @@
 	"version": "0.1.0",
 
 	// The command is tsc. Assumes that tsc 1.5.x or higher has been installed using npm install -g typescript
-	"command": "tsc",
+	"command": "node_modules/.bin/tsc",
 
 	// The command is a shell script
 	"isShellCommand": true,
