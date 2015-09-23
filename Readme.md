@@ -13,6 +13,8 @@ This Code extension adds rich language support for the Go language, including:
 - Format (using `goreturns` or `goimports` or `gofmt`)
 - [partially implemented] Debugging (using `delve`)
 
+For bug reports and/or feedback, email `lukeh` or [open a bug ](https://monacotools.visualstudio.com/DefaultCollection/Monaco/_workItems#_a=new&witd=Bug&%5BSystem.Title%5D=Go%3A&%5BSystem.AreaPath%5D=Monaco%5CGo) under the `Monaco\Go` area path.
+
 ## Using
 
 First, you will need to install a dogfood build of Visual Studio Code, for example build that includes the commit 2945a564. The builds for the different platforms are available [here](https://ticino-builds.azurewebsites.net) and you have to search for the build with the desired commit.
