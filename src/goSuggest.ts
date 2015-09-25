@@ -33,7 +33,7 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 	public triggerCharacters = ['.'];
 	public excludeTokens = ['string', 'comment', 'numeric'];
 
-	public suggest(document: vscode.Document, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Modes.ISuggestions[]> {
+	public suggest(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Modes.ISuggestions[]> {
 		return new Promise((resolve, reject) => {
 			var filename = document.getUri().fsPath;
 

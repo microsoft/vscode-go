@@ -10,18 +10,13 @@ import path = require('path');
 
 class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 
-	public findReferences(document: vscode.Document, position:vscode.Position, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
-		return vscode.workspace.anyDirty().then(anyDirty => {
-			if (anyDirty) {
-				vscode.workspace.saveAll(false).then(() => {
-					return this.doFindReferences(document, position, includeDeclaration, token);
-				});
-			}
-			return this.doFindReferences(document, position, includeDeclaration, token);
+	public findReferences(document: vscode.TextDocument, position:vscode.Position, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+		return vscode.workspace.saveAll(false).then(() => {
+				return this.doFindReferences(document, position, includeDeclaration, token);
 		});
 	}
 
-	private doFindReferences(document:vscode.Document, position:vscode.Position, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+	private doFindReferences(document:vscode.TextDocument, position:vscode.Position, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
 		return new Promise((resolve, reject) => {
 			var filename = this.canonicalizeForWindows(document.getUri().fsPath);
 			var cwd = path.dirname(filename)

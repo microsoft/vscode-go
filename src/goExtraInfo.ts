@@ -11,7 +11,7 @@ import path = require('path');
 class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 
 
-	public computeInfo(document:vscode.Document, position:vscode.Position, token: vscode.CancellationToken): Promise<vscode.Modes.IComputeExtraInfoResult> {
+	public computeInfo(document:vscode.TextDocument, position:vscode.Position, token: vscode.CancellationToken): Promise<vscode.Modes.IComputeExtraInfoResult> {
 
 		return new Promise((resolve, reject) => {
 			var filename = document.getUri().fsPath;

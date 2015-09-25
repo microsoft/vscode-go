@@ -31,7 +31,7 @@ export function activate() {
 
 function setupGoPathAndOfferToInstallTools() {
 	// TODO: There should be a better way to do this?
-	vscode.plugins.getConfigurationObject('go').getValue<string>('gopath').then(gopath => {
+	vscode.extensions.getConfigurationMemento('go').getValue<string>('gopath').then(gopath => {
 
 		// Make sure GOPATH is set
 		if(!process.env["GOPATH"] && gopath) {
@@ -96,15 +96,15 @@ function startBuildOnSaveWatcher() {
 		}
 	}
 
-	vscode.plugins.getConfigurationObject('go').getValues().then((config = {}) => {
-		vscode.workspace.onDidSaveDocument(document => {
+	vscode.extensions.getConfigurationMemento('go').getValues().then((config = {}) => {
+		vscode.workspace.onDidSaveTextDocument(document => {
 			check(document.getUri().fsPath, config['buildOnSave'], config['lintOnSave'], config['vetOnSave']).then(errors => {
 				if (_diagnostics) {
 					_diagnostics.dispose();
 				}
 				var diagnostics = errors.map(error => {
 					let targetResource = vscode.Uri.file(error.file);
-					let document = vscode.workspace.getDocument(targetResource);
+					let document = vscode.workspace.getTextDocument(targetResource);
 					let startColumn = 0;
 					let endColumn = 1;
 					if (document) {

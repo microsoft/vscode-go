@@ -10,7 +10,7 @@ import path = require('path');
 
 class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 
-	public findDeclaration(document:vscode.Document, position:vscode.Position, token: vscode.CancellationToken):Thenable<vscode.Modes.IReference> {
+	public findDeclaration(document:vscode.TextDocument, position:vscode.Position, token: vscode.CancellationToken):Thenable<vscode.Modes.IReference> {
 
 		return new Promise((resolve, reject) => {
 

@@ -10,18 +10,13 @@ import path = require('path');
 
 class RenameSupport implements vscode.Modes.IRenameSupport {
 
-	public rename(document:vscode.Document, position:vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
-		return vscode.workspace.anyDirty().then(anyDirty => {
-			if (anyDirty) {
-				vscode.workspace.saveAll(false).then(() => {
-					return this.doRename(document, position, newName, token);
-				});
-			}
+	public rename(document:vscode.TextDocument, position:vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
+		return vscode.workspace.saveAll(false).then(() => {
 			return this.doRename(document, position, newName, token);
 		});
 	}
 
-	private doRename(document:vscode.Document, position:vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
+	private doRename(document:vscode.TextDocument, position:vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
 		return new Promise((resolve, reject) => {
 			var filename = this.canonicalizeForWindows(document.getUri().fsPath);
 

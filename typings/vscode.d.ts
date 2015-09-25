@@ -56,14 +56,14 @@ declare module 'vscode' {
 		export function executeCommand<T>(commandId: string, ...rest: any[]): Thenable<T>;
 	}
 
-	export interface EditorOptions {
+	export interface TextEditorOptions {
 		tabSize: number;
 		insertSpaces: boolean;
 	}
 
-	export class Document {
+	export class TextDocument {
 
-		constructor(uri: Uri, lines: string[], eol: string, languageId: string, versionId: number);
+		constructor(uri: Uri, lines: string[], eol: string, languageId: string, versionId: number, isDirty:boolean);
 
 		/**
 		 * Get the associated URI for this document. Most documents have the file:// scheme, indicating that they represent files on disk.
@@ -75,6 +75,8 @@ declare module 'vscode' {
 		 * Is this document representing an untitled file.
 		 */
 		isUntitled(): boolean;
+
+		isDirty(): boolean;
 
 		/**
 		 * The language identifier associated with this document.
@@ -166,14 +168,14 @@ declare module 'vscode' {
 
 	export class TextEditor {
 
-		constructor(document: Document, selections: Selection[], options: EditorOptions);
+		constructor(document: TextDocument, selections: Selection[], options: TextEditorOptions);
 
 		dispose();
 
 		/**
 		 * Get the document associated with this text editor. The document will be the same for the entire lifetime of this text editor.
 		 */
-		getDocument(): Document;
+		getTextDocument(): TextDocument;
 
 		/**
 		 * Get the primary selection on this text editor. In case the text editor has multiple selections, the first one will be returned.
@@ -198,12 +200,12 @@ declare module 'vscode' {
 		/**
 		 * Get text editor options.
 		 */
-		getOptions(): EditorOptions;
+		getOptions(): TextEditorOptions;
 
 		/**
 		 * Change text editor options.
 		 */
-		setOptions(options: EditorOptions): Thenable<TextEditor>;
+		setOptions(options: TextEditorOptions): Thenable<TextEditor>;
 
 		/**
 		 * Perform an edit on the document associated with this text editor.
@@ -483,17 +485,15 @@ declare module 'vscode' {
 	 */
 	export class Diagnostic {
 
-		public static createErrorDiagnostic(location: Location, message: string): Diagnostic;
-
-		public static createWarningDiagnostic(location: Location, message: string): Diagnostic;
-
-		constructor(severity: DiagnosticSeverity, location: Location, message: string);
+		constructor(severity: DiagnosticSeverity, location: Location, message: string, source?:string);
 
 		severity: DiagnosticSeverity;
 
 		location: Location;
 
 		message: string;
+
+		source: string;
 	}
 
 	// TODO@api, TODO@Joh,Ben
@@ -517,7 +517,7 @@ declare module 'vscode' {
 
 	export interface TextEditorOptionsChangeEvent {
 		textEditor: TextEditor;
-		options: EditorOptions;
+		options: TextEditorOptions;
 	}
 
 	export namespace window {
@@ -549,8 +549,10 @@ declare module 'vscode' {
 
 		export function getOutputChannel(name: string): OutputChannel;
 
-		// TODO@api
-		// Justification: Should this be part of the API? Is there a node module that can do the same?
+		/**
+		 * ✂ - don't use. Will be cut soone!
+		TODO@api move into a node_module
+		 */
 		export function runInTerminal(command: string, args: string[], options?: ExecutionOptions): Thenable<any>;
 
 	}
@@ -558,11 +560,11 @@ declare module 'vscode' {
 	/**
 	 * An event describing a change in the text of a model.
 	 */
-	export interface DocumentContentChangeEvent {
+	export interface TextDocumentContentChangeEvent {
 		/**
 		 * The range that got replaced.
 		 */
-		range: IRange;
+		range: Range;
 		/**
 		 * The length of the range that got replaced.
 		 */
@@ -571,23 +573,11 @@ declare module 'vscode' {
 		 * The new text for the range.
 		 */
 		text: string;
-		/**
-		 * The new version id the model has transitioned to.
-		 */
-		versionId: number;
-		/**
-		 * Flag that indicates that this event was generated while undoing.
-		 */
-		isUndoing: boolean;
-		/**
-		 * Flag that indicates that this event was generated while redoing.
-		 */
-		isRedoing: boolean;
 	}
 
-	export interface DocumentChangeEvent {
-		document: Document;
-		contentChanges: DocumentContentChangeEvent[];
+	export interface TextDocumentChangeEvent {
+		document: TextDocument;
+		contentChanges: TextDocumentContentChangeEvent[];
 	}
 
 	// TODO@api in the future there might be multiple opened folder in VSCode
@@ -619,17 +609,12 @@ declare module 'vscode' {
 		 */
 		export function saveAll(includeUntitled?: boolean): Thenable<boolean>;
 
-		export function getAllDocuments(): Document[];
-		export function getDocument(resource: Uri): Document;
-		export const onDidAddDocument: Event<Document>;
-		export const onDidRemoveDocument: Event<Document>;
-		export const onDidChangeDocument: Event<DocumentChangeEvent>;
-		export const onDidSaveDocument: Event<Document>;
-
-		/**
-		 * are there any dirty files
-		 */
-		export function anyDirty(): Thenable<boolean>;
+		export function getTextDocuments(): TextDocument[];
+		export function getTextDocument(resource: Uri): TextDocument;
+		export const onDidAddTextDocument: Event<TextDocument>;
+		export const onDidRemoveTextDocument: Event<TextDocument>;
+		export const onDidChangeTextDocument: Event<TextDocumentChangeEvent>;
+		export const onDidSaveTextDocument: Event<TextDocument>;
 	}
 
 	export namespace languages {
@@ -661,32 +646,13 @@ declare module 'vscode' {
 		export function addErrorLanguageStatus(language: LanguageSelector | Uri | Uri[], message: string | { octicon: string; message: string; }, command: string | CommandCallback): Disposable;
 	}
 
-	export namespace plugins {
-		export function getStateObject(pluginId: string, global?: boolean): Memento;
+	export namespace extensions {
 
-		export function getConfigurationObject(pluginId: string): ReadOnlyMemento;
-	}
+		export function getStateMemento(extensionId: string, global?: boolean): Memento;
 
-	/**
-	 * A range in the editor. This interface is suitable for serialization.
-	 */
-	interface IRange {
-		/**
-		 * Line number on which the range starts (starts at 1).
-		 */
-		startLineNumber:number;
-		/**
-		 * Column on which the range starts in line `startLineNumber` (starts at 1).
-		 */
-		startColumn:number;
-		/**
-		 * Line number on which the range ends.
-		 */
-		endLineNumber:number;
-		/**
-		 * Column on which the range ends in line `endLineNumber`.
-		 */
-		endColumn:number;
+		export function getConfigurationMemento(extensionId: string): ReadOnlyMemento;
+
+		export function getExtension(extensionId: string): any;
 	}
 
 	export interface IHTMLContentElement {
@@ -809,7 +775,7 @@ declare module 'vscode' {
 		// --- Begin IDeclarationSupport
 		export interface IDeclarationSupport {
 			tokens?: string[];
-			findDeclaration(document: Document, position: Position, token: CancellationToken): Thenable<IReference>;
+			findDeclaration(document: TextDocument, position: Position, token: CancellationToken): Thenable<IReference>;
 		}
 		var DeclarationSupport: {
 			register(modeId: string, declarationSupport: IDeclarationSupport): void;
@@ -818,8 +784,8 @@ declare module 'vscode' {
 
 		// --- Begin ICodeLensSupport
 		export interface ICodeLensSupport {
-			findCodeLensSymbols(document: Document, token: CancellationToken): Thenable<ICodeLensSymbol[]>;
-			findCodeLensReferences(document: Document, requests: ICodeLensSymbolRequest[], token: CancellationToken): Thenable<ICodeLensReferences>;
+			findCodeLensSymbols(document: TextDocument, token: CancellationToken): Thenable<ICodeLensSymbol[]>;
+			findCodeLensReferences(document: TextDocument, requests: ICodeLensSymbolRequest[], token: CancellationToken): Thenable<ICodeLensReferences>;
 		}
 		export interface ICodeLensSymbolRequest {
 			position: Position;
@@ -843,7 +809,7 @@ declare module 'vscode' {
 			range:Range;
 		}
 		export interface IOccurrencesSupport {
-			findOccurrences(resource: Document, position: Position, token: CancellationToken): Thenable<IOccurrence[]>;
+			findOccurrences(resource: TextDocument, position: Position, token: CancellationToken): Thenable<IOccurrence[]>;
 		}
 		var OccurrencesSupport: {
 			register(modeId: string, occurrencesSupport:IOccurrencesSupport): void;
@@ -859,7 +825,7 @@ declare module 'vscode' {
 			children?: IOutlineEntry[];
 		}
 		export interface IOutlineSupport {
-			getOutline(document: Document, token: CancellationToken): Thenable<IOutlineEntry[]>;
+			getOutline(document: TextDocument, token: CancellationToken): Thenable<IOutlineEntry[]>;
 			outlineGroupLabel?: { [name: string]: string; };
 		}
 		var OutlineSupport: {
@@ -880,8 +846,8 @@ declare module 'vscode' {
 		}
 
 		 export interface IQuickFixSupport {
-			getQuickFixes(resource: Document, marker: Range, token: CancellationToken): Thenable<IQuickFix[]>;
-			runQuickFixAction(resource: Document, range: Range, id: any, token: CancellationToken): Thenable<IQuickFixResult>;
+			getQuickFixes(resource: TextDocument, marker: Range, token: CancellationToken): Thenable<IQuickFix[]>;
+			runQuickFixAction(resource: TextDocument, range: Range, id: any, token: CancellationToken): Thenable<IQuickFixResult>;
 		}
 		var QuickFixSupport: {
 			register(modeId: string, quickFixSupport:IQuickFixSupport): void
@@ -896,7 +862,7 @@ declare module 'vscode' {
 			 * @returns a list of reference of the symbol at the position in the
 			 * 	given resource.
 			 */
-			findReferences(document: Document, position: Position, includeDeclaration: boolean, token: CancellationToken): Thenable<IReference[]>;
+			findReferences(document: TextDocument, position: Position, includeDeclaration: boolean, token: CancellationToken): Thenable<IReference[]>;
 		}
 		var ReferenceSupport: {
 			register(modeId: string, quickFixSupport:IReferenceSupport): void;
@@ -936,7 +902,7 @@ declare module 'vscode' {
 			/**
 			 * @returns the parameter hints for the specified position in the file.
 			 */
-			getParameterHints(document: Document, position: Position, token: CancellationToken): Thenable<IParameterHints>;
+			getParameterHints(document: TextDocument, position: Position, token: CancellationToken): Thenable<IParameterHints>;
 		}
 		var ParameterHintsSupport: {
 			register(modeId: string, parameterHintsSupport:IParameterHintsSupport): void;
@@ -951,7 +917,7 @@ declare module 'vscode' {
 			className?: string;
 		}
 		export interface IExtraInfoSupport {
-			computeInfo(document: Document, position: Position, token: CancellationToken): Thenable<IComputeExtraInfoResult>;
+			computeInfo(document: TextDocument, position: Position, token: CancellationToken): Thenable<IComputeExtraInfoResult>;
 		}
 		var ExtraInfoSupport: {
 			register(modeId: string, extraInfoSupport:IExtraInfoSupport): void;
@@ -966,7 +932,7 @@ declare module 'vscode' {
 		}
 		export interface IRenameSupport {
 			filter?: string[];
-			rename(document: Document, position: Position, newName: string, token: CancellationToken): Thenable<IRenameResult>;
+			rename(document: TextDocument, position: Position, newName: string, token: CancellationToken): Thenable<IRenameResult>;
 		}
 		var RenameSupport: {
 			register(modeId: string, renameSupport:IRenameSupport): void;
@@ -989,7 +955,7 @@ declare module 'vscode' {
 			/**
 			 * The range to replace. This can be empty to emulate a simple insert.
 			 */
-			range: IRange;
+			range: Range;
 			/**
 			 * The text to replace with. This can be null to emulate a simple delete.
 			 */
@@ -1003,10 +969,10 @@ declare module 'vscode' {
 		 * (3) format on keystroke
 		 */
 		export interface IFormattingSupport {
-			formatDocument: (document: Document, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
-			formatRange?: (document: Document, range: Range, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
+			formatDocument: (document: TextDocument, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
+			formatRange?: (document: TextDocument, range: Range, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
 			autoFormatTriggerCharacters?: string[];
-			formatAfterKeystroke?: (document: Document, position: Position, ch: string, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
+			formatAfterKeystroke?: (document: TextDocument, position: Position, ch: string, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
 		}
 		var FormattingSupport: {
 			register(modeId: string, formattingSupport:IFormattingSupport): void;
@@ -1043,8 +1009,8 @@ declare module 'vscode' {
 
 			sortBy?: ISortingTypeAndSeparator[];
 
-			suggest: (document: Document, position: Position, token: CancellationToken) => Thenable<ISuggestions[]>;
-			getSuggestionDetails? : (document: Document, position: Position, suggestion:ISuggestion, token: CancellationToken) => Thenable<ISuggestion>;
+			suggest: (document: TextDocument, position: Position, token: CancellationToken) => Thenable<ISuggestions[]>;
+			getSuggestionDetails? : (document: TextDocument, position: Position, suggestion:ISuggestion, token: CancellationToken) => Thenable<ISuggestion>;
 		}
 		var SuggestSupport: {
 			register(modeId:string, suggestSupport:ISuggestSupport): void;
@@ -1182,10 +1148,6 @@ declare module 'vscode' {
 		function registerMonarchDefinition(modeId: string, language: Modes.ILanguage): void;
 		function loadInBackgroundWorker<T>(scriptSrc: string): Thenable<T>;
 
-	}
-
-	module Plugins {
-		function get(pluginId:string): any;
 	}
 
 	/**
