@@ -39,9 +39,9 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 
 			// get current word
 			var wordAtPosition = document.getWordRangeAtPosition(position);
-			var word = document.getTextInRange(wordAtPosition);
 			var currentWord = '';
 			if (wordAtPosition && wordAtPosition.start.column < position.column) {
+				var word = document.getTextInRange(wordAtPosition);
 				currentWord = word.substr(0, position.column - wordAtPosition.start.column);
 			}
 

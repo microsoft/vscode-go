@@ -52,14 +52,7 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 					// specific edits instead of replace whole buffer
 					var lastLine = document.getLineCount();
 					var lastLineLastCol = document.getLineMaxColumn(lastLine);
-					// API TODO: ISingleEditOperation is using IRange instead of Range
-					//var range = new vscode.Range(1, 1, lastLine, lastLineLastCol);
-					var range = {
-							startLineNumber: 1,
-							startColumn: 1,
-							endLineNumber: lastLine,
-							endColumn: lastLineLastCol
-					};
+					var range = new vscode.Range(1, 1, lastLine, lastLineLastCol);
 					return resolve([{
 						text: result,
 						range
