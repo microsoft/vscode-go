@@ -17,9 +17,9 @@ For bug reports and/or feedback, email `lukeh` or [open a bug ](https://monacoto
 
 ## Using
 
-First, you will need to install a dogfood build of Visual Studio Code, for example build that includes the commit 2945a564. The builds for the different platforms are available [here](https://ticino-builds.azurewebsites.net) and you have to search for the build with the desired commit.
+First, you will need to install a the dogfood build of Visual Studio Code for commit **a3e48a6b** from the internal VS Code [download page](https://ticino-builds.azurewebsites.net).  
 
-__Note__: Once you’ve installed this, you must not accept any automatic updates.  If you do, you will be reverted to publicly released builds.  Steps for how to opt out of automatic updates can be found [here](https://code.visualstudio.com/Docs/supporting/FAQ#_how-do-i-opt-out-of-vs-code-autoupdates).
+__Note__: Once you’ve installed this, you **must not accept any automatic updates**.  If you do, you will be reverted to publicly released builds.  Steps for how to opt out of automatic updates can be found [here](https://code.visualstudio.com/Docs/supporting/FAQ#_how-do-i-opt-out-of-vs-code-autoupdates).
 
 Next, clone this repo into your Code extensions folder and run `npm install`.
 
@@ -60,15 +60,15 @@ First make sure you do not have the extension installed in `~/.vscode/extensions
 ```bash
 rm -rf ~/.vscode/extensions/go-code
 cd ~
-https://monacotools.visualstudio.com/DefaultCollection/Monaco/_git/go-code
+git clone https://monacotools.visualstudio.com/DefaultCollection/Monaco/_git/go-code
 cd go-code
 npm install
 code . 
 ```
 
-To build, use the `Tasks: Run Build Task` command (cmd-shift-B).  This will start a build watcher so that .ts files are compiled on save.
+To build, use the `Tasks: Run Build Task` command (`cmd-shift-B`).  This will start a build watcher so that .ts files are compiled on save.
 
-You can now go to the Debug viewlet and select `Launch Extension` then hit play (F5).
+You can now go to the Debug viewlet and select `Launch Extension` then hit play (`F5`).
 
 In the `[Extension Development Host]` instance, open your GOPATH folder.  
 
