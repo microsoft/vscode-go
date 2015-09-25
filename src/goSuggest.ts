@@ -8,7 +8,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 
-function monacoTypeFromGoCodeClass(kind: string): string {
+function vscodeTypeFromGoCodeClass(kind: string): string {
 	switch (kind) {
 		case "const":
 		case "package":
@@ -33,31 +33,21 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 	public triggerCharacters = ['.'];
 	public excludeTokens = ['string', 'comment', 'numeric'];
 
-	private modelService: vscode.Services.IModelService;
-
-	constructor(modelService: vscode.Services.IModelService) {
-		this.modelService = modelService;
-	}
-
-	public suggest(resource: vscode.Uri, position: vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.ISuggestions[]> {
+	public suggest(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Modes.ISuggestions[]> {
 		return new Promise((resolve, reject) => {
-			var filename = resource.fsPath;
-			var model = this.modelService.getModel(resource);
+			var filename = document.getUri().fsPath;
 
 			// get current word
-			var wordAtPosition = model.getWordAtPosition(position);
+			var wordAtPosition = document.getWordRangeAtPosition(position);
 			var currentWord = '';
-			if (wordAtPosition && wordAtPosition.startColumn < position.column) {
-				currentWord = wordAtPosition.word.substr(0, position.column - wordAtPosition.startColumn);
+			if (wordAtPosition && wordAtPosition.start.column < position.column) {
+				var word = document.getTextInRange(wordAtPosition);
+				currentWord = word.substr(0, position.column - wordAtPosition.start.column);
 			}
 
 			// compute the file offset for position
-			var offset = model.getValueInRange({
-				startLineNumber: 0,
-				startColumn: 0,
-				endLineNumber: position.lineNumber,
-				endColumn: position.column
-			}).length;
+			var range = new vscode.Range(0, 0, position.line, position.column);
+			var offset = document.getTextInRange(range).length;
 
 			var gocode = path.join(process.env["GOPATH"], "bin", "gocode");
 
@@ -65,7 +55,7 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 			var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "" + offset], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
-						vscode.shell.showInformationMessage("The 'gocode' command is not available.  Use 'go get -u github.com/nsf/gocode' to install.");
+						vscode.window.showInformationMessage("The 'gocode' command is not available.  Use 'go get -u github.com/nsf/gocode' to install.");
 					}
 					if (err) return reject(err);
 					var results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
@@ -74,7 +64,7 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 							label: suggest.name,
 							typeLabel: (suggest.class == "func" ? suggest.type.substring(4) : suggest.type),
 							codeSnippet: suggest.name,
-							type: monacoTypeFromGoCodeClass(suggest.class)
+							type: vscodeTypeFromGoCodeClass(suggest.class)
 						};
 					})
 					resolve([{ currentWord, suggestions }]);
@@ -82,7 +72,7 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 					reject(e);
 				}
 			});
-			p.stdin.end(model.getValue());
+			p.stdin.end(document.getText());
 
 		});
 	}

@@ -10,26 +10,16 @@ import path = require('path');
 
 class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 
-	private modelService: vscode.Services.IModelService;
 
-	constructor(modelService: vscode.Services.IModelService) {
-		this.modelService = modelService;
-	}
-
-	public computeInfo(resource:vscode.Uri, position:vscode.IPosition, token: vscode.CancellationToken): Promise<vscode.Modes.IComputeExtraInfoResult> {
+	public computeInfo(document:vscode.TextDocument, position:vscode.Position, token: vscode.CancellationToken): Promise<vscode.Modes.IComputeExtraInfoResult> {
 
 		return new Promise((resolve, reject) => {
-			var filename = resource.fsPath;
-			var model = this.modelService.getModel(resource);
-			var wordAtPosition = model.getWordAtPosition(position);
+			var filename = document.getUri().fsPath;
+			var wordAtPosition = document.getWordRangeAtPosition(position);
 
 			// compute the file offset for position
-			var offset = model.getValueInRange({
-				startLineNumber: 0,
-				startColumn: 0,
-				endLineNumber: position.lineNumber,
-				endColumn: position.column
-			}).length;
+			var range = new vscode.Range(0, 0, position.line, position.column);
+			var offset = document.getTextInRange(range).length;
 
 			var godef = path.join(process.env["GOPATH"], "bin", "godef");
 
@@ -37,29 +27,29 @@ class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 			var p = cp.execFile(godef, ["-t", "-i", "-f", filename, "-o", offset.toString()], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
-						vscode.shell.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");
+						vscode.window.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");
 					}
 					if (err) return resolve(null);
 					var result = stdout.toString();
 					var lines = result.split('\n');
 					if(lines.length > 10) lines[9] = "...";
 					var text = lines.slice(1,10).join('\n');
+					var range = new vscode.Range(
+						position.line,
+						wordAtPosition ? wordAtPosition.start.column : position.column,
+						position.line,
+						wordAtPosition ? wordAtPosition.end.column : position.column);
 					return resolve({
 						htmlContent: [
 							{ formattedText: text }
 						],
-						range: {
-							startLineNumber: position.lineNumber,
-							startColumn: wordAtPosition ? wordAtPosition.startColumn : position.column,
-							endLineNumber: position.lineNumber,
-							endColumn: wordAtPosition ? wordAtPosition.endColumn : position.column
-						}
+						range
 					});
 				} catch(e) {
 					reject(e);
 				}
 			});
-			p.stdin.end(model.getValue());
+			p.stdin.end(document.getText());
 		});
 	}
 }
