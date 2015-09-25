@@ -19,7 +19,7 @@ if(process.env.GOROOT) {
 	go = pathparts.map(dir => path.join(dir, 'go' + (os.platform() == "win32" ? ".exe" : ""))).filter(candidate => fs.existsSync(candidate))[0];
 }
 if(!go) {
-	vscode.shell.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.  Set location manual in 'go.goroot' setting.");
+	vscode.window.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.  Set location manual in 'go.goroot' setting.");
 }
 
 export interface ICheckResult {
@@ -40,7 +40,7 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 		cp.execFile(go, args, {cwd: cwd}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
-					vscode.shell.showInformationMessage("The 'go' compiler is not available.  Install Go from http://golang.org/dl/.");
+					vscode.window.showInformationMessage("The 'go' compiler is not available.  Install Go from http://golang.org/dl/.");
 					return resolve([]);
 				}
 				var lines = stderr.toString().split('\n');
@@ -65,7 +65,7 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 		cp.execFile(golint, [filename], {cwd: cwd}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
-					vscode.shell.showInformationMessage("The 'golint' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install.");
+					vscode.window.showInformationMessage("The 'golint' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install.");
 					return resolve([]);
 				}
 				var lines = stdout.toString().split('\n');
@@ -89,7 +89,7 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 		cp.execFile(go, ["tool", "vet", filename], {cwd: cwd}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
-					vscode.shell.showInformationMessage("The 'go tool vet' compiler is not available.  Install Go from http://golang.org/dl/.");
+					vscode.window.showInformationMessage("The 'go tool vet' compiler is not available.  Install Go from http://golang.org/dl/.");
 					return resolve([]);
 				}
 				var lines = stdout.toString().split('\n');

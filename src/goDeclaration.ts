@@ -10,34 +10,23 @@ import path = require('path');
 
 class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 
-	private modelService: vscode.Services.IModelService;
-
-	constructor(modelService: vscode.Services.IModelService) {
-		this.modelService = modelService;
-	}
-
-	public findDeclaration(resource:vscode.Uri, position:vscode.IPosition, token: vscode.CancellationToken):Promise<vscode.Modes.IReference> {
+	public findDeclaration(document:vscode.Document, position:vscode.Position, token: vscode.CancellationToken):Thenable<vscode.Modes.IReference> {
 
 		return new Promise((resolve, reject) => {
-			var filename = resource.fsPath;
-			var model = this.modelService.getModel(resource);
-			var wordAtPosition = model.getWordAtPosition(position);
+
+			var wordAtPosition = document.getWordRangeAtPosition(position);
 
 			// compute the file offset for position
-			var offset = model.getValueInRange({
-				startLineNumber: 0,
-				startColumn: 0,
-				endLineNumber: position.lineNumber,
-				endColumn: position.column
-			}).length;
+			var range = new vscode.Range(0, 0, position.line, position.column);
+			var offset = document.getTextInRange(range).length;
 
 			var godef = path.join(process.env["GOPATH"], "bin", "godef");
 
 			// Spawn `godef` process
-			var p = cp.execFile(godef, ["-t", "-i", "-f", filename, "-o", offset.toString()], {}, (err, stdout, stderr) => {
+			var p = cp.execFile(godef, ["-t", "-i", "-f", document.getUri().fsPath, "-o", offset.toString()], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
-						vscode.shell.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");
+						vscode.window.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");
 					}
 					if (err) return resolve(null);
 					var result = stdout.toString();
@@ -48,20 +37,16 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 					if(!match) return resolve(null);
 					var [_, file, line, col] = match;
 					var definitionResource = vscode.Uri.file(file);
+					var range = new vscode.Range(+line, +col, +line, +col + 1);
 					return resolve({
 						resource: definitionResource,
-						range: {
-							startLineNumber: +line,
-							startColumn: +col,
-							endLineNumber: +line,
-							endColumn: +col + 1
-						}
+						range
 					});
 				} catch(e) {
 					reject(e);
 				}
 			});
-			p.stdin.end(model.getValue());
+			p.stdin.end(document.getText());
 		});
 	}
 }

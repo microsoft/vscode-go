@@ -19,9 +19,10 @@ declare module 'vscode' {
 		<T>(...args:any[]):T | Thenable<T>;
 	}
 
-	// TODO@api
-	// Naming: Inline types or have an explicit ICommands interface?
-	export const commands: {
+	/**
+	 * Namespace for commanding
+	 */
+	export namespace commands {
 
 		/**
 		 * Registers a command that can be invoked via a keyboard shortcut,
@@ -32,7 +33,18 @@ declare module 'vscode' {
 		 * @param thisArgs - (optional) The this context used when invoking {{callback}}
 		 * @return Disposable which unregisters this command on disposal
 		 */
-		registerCommand(commandId: string, callback: CommandCallback, thisArg?: any): Disposable;
+		export function registerCommand(commandId: string, callback: CommandCallback, thisArg?: any): Disposable;
+
+		/**
+		 * Register a text editor command that will make edits.
+		 * It can be invoked via a keyboard shortcut, a menu item, an action, or directly.
+		 *
+		 * @param commandId - The unique identifier of this command
+		 * @param callback - The command callback. The {{textEditor}} and {{edit}} passed in are available only for the duration of the callback.
+		 * @param thisArgs - (optional) The `this` context used when invoking {{callback}}
+		 * @return Disposable which unregisters this command on disposal
+		 */
+		export function registerTextEditorCommand(commandId: string, callback: (textEditor:TextEditor, edit:TextEditorEdit) => void, thisArg?: any): Disposable;
 
 		/**
 		 * Executes a command
@@ -41,167 +53,192 @@ declare module 'vscode' {
 		 * @param ...rest - Parameter passed to the command function
 		 * @return
 		 */
-		executeCommand<T>(commandId: string, ...rest: any[]): Thenable<T>;
-	};
-}
-
-declare module 'vscode' {
+		export function executeCommand<T>(commandId: string, ...rest: any[]): Thenable<T>;
+	}
 
 	export interface EditorOptions {
 		tabSize: number;
-		useSpaces: boolean;
+		insertSpaces: boolean;
 	}
 
 	export class Document {
-		constructor(resource: Uri);
+
+		constructor(uri: Uri, lines: string[], eol: string, languageId: string, versionId: number);
+
+		/**
+		 * Get the associated URI for this document. Most documents have the file:// scheme, indicating that they represent files on disk.
+		 * However, some documents may have other schemes indicating that they are not available on disk.
+		 */
 		getUri(): Uri;
-		getText():string;
+
+		/**
+		 * Is this document representing an untitled file.
+		 */
+		isUntitled(): boolean;
+
+		/**
+		 * The language identifier associated with this document.
+		 */
+		getLanguageId(): string;
+
+		/**
+		 * The version number of this document (it will strictly increase after each change).
+		 */
+		getVersionId(): number;
+
+		/**
+		 * Get the entire text in this document.
+		 */
+		getText(): string;
+
+		/**
+		 * Get the text in a specific range in this document.
+		 */
+		getTextInRange(range: Range): string;
+
+		/**
+		 * Get the text on a specific line in this document.
+		 */
+		getTextOnLine(line:number): string;
+
+		/**
+		 * Ensure a range sticks to the text.
+		 */
+		validateRange(range:Range): Range;
+
+		/**
+		 * Ensure a position sticks to the text.
+		 */
+		validatePosition(position:Position): Position;
+
+		/**
+		 * Get the number of lines in this document.
+		 */
+		getLineCount(): number;
+
+		/**
+		 * Get the maximum column for line {{line}}.
+		 */
+		getLineMaxColumn(line:number): number;
+
+		/**
+		 * Get the word under a certain position. May return null if position is at whitespace, on empty line, etc.
+		 */
+		getWordRangeAtPosition(position:Position): Range;
 	}
 
-	export class Editor {
+	export class Position {
+
+		line: number;
+
+		column: number;
+
+		constructor(line: number, column: number);
+
+		isBefore(other: Position): boolean;
+
+		isBeforeOrEqual(other: Position): boolean;
+	}
+
+	export class Range {
+
+		start: Position;
+
+		end: Position;
+
+		constructor(start: Position, end: Position);
+		constructor(startLine: number, startColumn: number, endLine:number, endColumn:number);
+
+		contains(positionOrRange: Position | Range): boolean;
+		isEmpty(): boolean;
+	}
+
+	export class Selection {
+
+		start: Position;
+
+		end: Position;
+
+		constructor(start: Position, end: Position);
+
+		isReversed(): boolean;
+	}
+
+	export class TextEditor {
+
+		constructor(document: Document, selections: Selection[], options: EditorOptions);
+
+		dispose();
+
+		/**
+		 * Get the document associated with this text editor. The document will be the same for the entire lifetime of this text editor.
+		 */
 		getDocument(): Document;
-		setDocument(doc: Document): void;
-		onDocumentChange: Event<Editor>;
-		getSelection(): any;
-		setSelection(selection: any): void;
-		getSelections(): any[];
-		setSelections(selections: any[]): void;
-		onSelectionChange: Event<Editor>;
-		updateOptions(options: EditorOptions): Thenable<any>;
-	}
-
-	// TODO@api, TODO@Joh,Ben
-	// output channels need to be known upfront (contributes in ticino.plugin.json)
-	export interface OutputChannel extends Disposable {
-		append(value: string): void;
-		appendLine(value: string): void;
-		clear(): void;
-		reveal(): void;
-	}
-
-	export interface ExecutionOptions {
-		cwd?: string;
-		env?: { [name: string]: any };
-	}
-
-	export namespace shell {
-
-		export function getEditors(): Editor[];
-
-		export function getActiveEditor(): Editor;
 
 		/**
-		 * The union of calling 'getEditors()' and 'onEditorOpen(lister)'
+		 * Get the primary selection on this text editor. In case the text editor has multiple selections, the first one will be returned.
 		 */
-		export function withEditors(callback:(editor:Editor)=>any, thisArg?:any, bucket?:Disposable[]):Disposable;
-
-		export const onEditorOpen: Event<Editor>;
-
-		export const onEditorClose: Event<Editor>;
-
-		export interface MessageFunction {
-			(message: string): Thenable<void>;
-			(message: string, ...commands: { title: string; command: string | CommandCallback; }[]): Thenable<void>;
-		}
-
-		export const showInformationMessage: MessageFunction;
-
-		export const showWarningMessage: MessageFunction;
-
-		export const showErrorMessage: MessageFunction;
-
-		export function setStatusBarMessage(message: string, hideAfter?: number): Disposable;
-
-		export interface QuickPickOptions {
-			/**
-			* an optional flag to include the description when filtering the picks
-			*/
-			matchOnDescription?: boolean;
-
-			/**
-			* an optional string to show as place holder in the input box to guide the user what she picks on
-			*/
-			placeHolder?: string;
-		}
-
-		export interface QuickPickItem {
-			label: string;
-			description: string;
-		}
-
-		// TODO@api naming: showQuickOpen, showQuickPanel, showSelectionPanel, showQuickie
-		export function showQuickPick(items: string[], options?: QuickPickOptions): Thenable<string>;
-		export function showQuickPick<T extends QuickPickItem>(items: T[], options?: QuickPickOptions): Thenable<T>;
-
-
-		export function getOutputChannel(name: string): OutputChannel;
-
-		// TODO@api
-		// Justification: Should this be part of the API? Is there a node module that can do the same?
-		export function runInTerminal(command: string, args: string[], options?: ExecutionOptions): Thenable<any>;
-	}
-}
-
-declare module 'vscode' {
-
-	// TODO@api in the future there might be multiple opened folder in VSCode
-	// so that we shouldn't make broken assumptions here
-	export namespace workspace {
-
-		// TODO@api - justify this being here
-		export function getPath(): string;
-
-		export function getRelativePath(pathOrUri: string|Uri): string;
-
-		// TODO@api - justify this being here
-		export function findFiles(include: string, exclude: string, maxResults?:number): Thenable<Uri[]>;
+		getSelection(): Selection;
 
 		/**
-		 * save all dirty files
+		 * Set the selection on this text editor.
 		 */
-		export function saveAll(includeUntitled?: boolean): Thenable<boolean>;
+		setSelection(value: Position | Range | Selection): Thenable<any>;
 
 		/**
-		 * are there any dirty files
+		 * Get the selections in this text editor.
 		 */
-		export function anyDirty(): Thenable<boolean>;
+		getSelections(): Selection[];
+
+		/**
+		 * Set the selections in this text editor.
+		 */
+		setSelections(value: Selection[]): Thenable<TextEditor>;
+
+		/**
+		 * Get text editor options.
+		 */
+		getOptions(): EditorOptions;
+
+		/**
+		 * Change text editor options.
+		 */
+		setOptions(options: EditorOptions): Thenable<TextEditor>;
+
+		/**
+		 * Perform an edit on the document associated with this text editor.
+		 * The passed in {{edit}} is available only for the duration of the callback.
+		 */
+		edit(callback:(edit:TextEditorEdit)=>void): Thenable<boolean>;
+
 	}
 
-	export namespace languages {
+	/**
+	 * A complex edit that will be applied on a TextEditor.
+	 * This holds a description of the edits and if the edits are valid (i.e. no overlapping regions, etc.) they can be applied on a Document associated with a TextEditor.
+	 */
+	export interface TextEditorEdit {
+		/**
+		 * Replace a certain text region with a new value.
+		 */
+		replace(location: Position | Range | Selection, value: string): void;
 
-		interface LanguageFilter {
-			language: string;
-			scheme?: string;
-			pattern?: string;
-		}
+		/**
+		 * Insert text at a location
+		 */
+		insert(location: Position, value: string): void;
 
-		type LanguageSelector = string|LanguageFilter|(string|LanguageFilter)[];
+		/**
+		 * Delete a certain text region.
+		 */
+		delete(location: Range | Selection): void;
 
-		export interface LanguageStatusFunction {
-			(language: LanguageSelector, message: string | { octicon: string; message: string;}, command: string | CommandCallback): Disposable
-		}
-
-		export const addInformationLanguageStatus:LanguageStatusFunction;
-		export const addWarningLanguageStatus: LanguageStatusFunction;
-		export const addErrorLanguageStatus: LanguageStatusFunction;
-	}
-}
-
-declare module 'vscode' {
-
-	interface Memento {
-		// createChild(key: string): Memento;
-		getValue<T>(key: string, defaultValue?: T): Thenable<T>;
-		setValue(key: string, value: any): Thenable<void>;
 	}
 
-	export namespace plugins {
-		export function getStateObject(pluginId: string, global?: boolean): Memento;
-	}
-}
-
-declare module 'vscode' {
-
+	/**
+	 * A universal resource identifier representing either a file on disk on
+	 * or another resource, e.g untitled.
+	 */
 	class Uri {
 
 		constructor();
@@ -238,13 +275,6 @@ declare module 'vscode' {
 		 */
 		fragment: string;
 
-		withScheme(value: string): Uri;
-		withAuthority(value: string): Uri;
-		withPath(value: string): Uri;
-		withQuery(value: string): Uri;
-		withFragment(value: string): Uri;
-		with(scheme: string, authority: string, path: string, query: string, fragment: string): Uri;
-
 		/**
 		 * Retuns a string representing the corresponding file system path of this URI.
 		 * Will handle UNC paths and normalize windows drive letters to lower-case. Also
@@ -267,10 +297,49 @@ declare module 'vscode' {
 		onCancellationRequested: Event<any>;
 	}
 
+	class CancellationTokenSource {
+
+		token: CancellationToken;
+
+		cancel(): void;
+
+		dispose(): void;
+	}
+
+	/**
+	 * Represents a type which can release resources, such
+	 * as event listening or a timer.
+	 */
 	class Disposable {
+
+		/**
+		 * Combine many disposables into one.
+		 *
+		 * @return Returns a new disposable which, upon dispose, will
+		 * dispose all provided disposables
+		 */
 		static of(...disposables: Disposable[]): Disposable;
-		static from(...disposableLikes: { dispose: () => void }[]): Disposable;
+
+		/**
+		 * Combine many disposable-likes into one. Use this method
+		 * when having objects with a dispose function which are not
+		 * instances of Disposable.
+		 *
+		 * @return Returns a new disposable which, upon dispose, will
+		 * dispose all provides disposable-likes.
+		 */
+		static from(...disposableLikes: { dispose: () => any }[]): Disposable;
+
+		/**
+		 * Creates a new Disposable calling the provided function
+		 * on dispose
+		 * @param callOnDispose Function that disposes something
+		 */
 		constructor(callOnDispose: Function);
+
+		/**
+		 * Dispose this object.
+		 */
 		dispose(): any;
 	}
 
@@ -290,17 +359,312 @@ declare module 'vscode' {
 	}
 
 	/**
-	 * A position in the editor. This interface is suitable for serialization.
+	 * A file system watcher notifies about changes to files and folders
+	 * on disk. To get an instanceof of a {{FileSystemWatcher}} use
+	 * {{workspace.createFileSystemWatcher}}.
 	 */
-	export interface IPosition {
+	export interface FileSystemWatcher extends Disposable {
+
 		/**
-		 * line number (starts at 1)
+		 * Happens on file/folder creation.
 		 */
-		lineNumber:number;
+		onDidCreate: Event<Uri>;
+
 		/**
-		 * column (the first character in a line is between column 1 and column 2)
+		 * Happens on file/folder change.
 		 */
-		column:number;
+		onDidChange: Event<Uri>;
+
+		/**
+		 * Happens on file/folder deletion.
+		 */
+		onDidDelete: Event<Uri>;
+	}
+
+	/**
+	 *
+	 */
+	export interface QuickPickOptions {
+		/**
+		* an optional flag to include the description when filtering the picks
+		*/
+		matchOnDescription?: boolean;
+
+		/**
+		* an optional string to show as place holder in the input box to guide the user what she picks on
+		*/
+		placeHolder?: string;
+	}
+
+	/**
+	 *
+	 */
+	export interface QuickPickItem {
+		label: string;
+		description: string;
+	}
+
+	/**
+	 *
+	 */
+	export interface InputBoxOptions {
+		/**
+		* More context around the input that is being asked for.
+		*/
+		description?: string;
+
+		/**
+		* an optional string to show as place holder in the input box to guide the user what to type
+		*/
+		placeHolder?: string;
+	}
+
+	/**
+	 *
+	 */
+	interface LanguageFilter {
+		language: string;
+		scheme?: string;
+		pattern?: string;
+	}
+
+	/**
+	 *
+	 */
+	type LanguageSelector = string|LanguageFilter|(string|LanguageFilter)[];
+
+
+	/**
+	 *
+	 */
+	interface ReadOnlyMemento {
+
+		/**
+		 * @param key The name of a property to read.
+		 * @param defaultValue The default value in case the denoted property doesn't exists.
+		 * @return
+		 */
+		getValue<T>(key: string, defaultValue?: T): Thenable<T>;
+
+		/**
+		 *
+		 */
+		getValues<T>(defaultValue?: T): Thenable<T>;
+	}
+
+	/**
+	 *
+	 */
+	interface Memento extends ReadOnlyMemento {
+		setValue(key: string, value: any): Thenable<void>;
+	}
+
+	/**
+	 * Represents the severity of diagnostics.
+	 */
+	export enum DiagnosticSeverity {
+		Warning = 1,
+		Error = 2
+	}
+
+	/**
+	 * Represents a location inside a resource, such as a line
+	 * inside a text file.
+	 */
+	export class Location {
+		constructor(uri: Uri, range: Selection | Range | Position);
+		uri: Uri;
+		range: Range;
+	}
+
+	/**
+	 * Represents a diagnostic, such as a compiler error or warning, along with the location
+	 * in which they occurred.
+	 */
+	export class Diagnostic {
+
+		public static createErrorDiagnostic(location: Location, message: string): Diagnostic;
+
+		public static createWarningDiagnostic(location: Location, message: string): Diagnostic;
+
+		constructor(severity: DiagnosticSeverity, location: Location, message: string);
+
+		severity: DiagnosticSeverity;
+
+		location: Location;
+
+		message: string;
+	}
+
+	// TODO@api, TODO@Joh,Ben
+	// output channels need to be known upfront (contributes in package.json)
+	export interface OutputChannel extends Disposable {
+		append(value: string): void;
+		appendLine(value: string): void;
+		clear(): void;
+		reveal(): void;
+	}
+
+	export interface ExecutionOptions {
+		cwd?: string;
+		env?: { [name: string]: any };
+	}
+
+	export interface TextEditorSelectionChangeEvent {
+		textEditor: TextEditor;
+		selections: Selection[];
+	}
+
+	export interface TextEditorOptionsChangeEvent {
+		textEditor: TextEditor;
+		options: EditorOptions;
+	}
+
+	export namespace window {
+
+		export function getActiveTextEditor(): TextEditor;
+
+		export const onDidChangeActiveTextEditor: Event<TextEditor>;
+
+		export const onDidChangeTextEditorSelection: Event<TextEditorSelectionChangeEvent>;
+
+		export const onDidChangeTextEditorOptions: Event<TextEditorOptionsChangeEvent>;
+
+		export function showInformationMessage(message: string, ...commands: { title: string; command: string | CommandCallback; }[]): Thenable<void>;
+
+		export function showWarningMessage(message: string, ...commands: { title: string; command: string | CommandCallback; }[]): Thenable<void>;
+
+		export function showErrorMessage(message: string, ...commands: { title: string; command: string | CommandCallback; }[]): Thenable<void>;
+
+		export function setStatusBarMessage(message: string, hideAfterSeconds?: number): Disposable;
+
+		export function showQuickPick(items: string[], options?: QuickPickOptions): Thenable<string>;
+
+		export function showQuickPick<T extends QuickPickItem>(items: T[], options?: QuickPickOptions): Thenable<T>;
+
+		/**
+		 * Opens an input box to ask the user for input.
+		 */
+		export function showInputBox(options?: InputBoxOptions): Thenable<string>;
+
+		export function getOutputChannel(name: string): OutputChannel;
+
+		// TODO@api
+		// Justification: Should this be part of the API? Is there a node module that can do the same?
+		export function runInTerminal(command: string, args: string[], options?: ExecutionOptions): Thenable<any>;
+
+	}
+
+	/**
+	 * An event describing a change in the text of a model.
+	 */
+	export interface DocumentContentChangeEvent {
+		/**
+		 * The range that got replaced.
+		 */
+		range: IRange;
+		/**
+		 * The length of the range that got replaced.
+		 */
+		rangeLength: number;
+		/**
+		 * The new text for the range.
+		 */
+		text: string;
+		/**
+		 * The new version id the model has transitioned to.
+		 */
+		versionId: number;
+		/**
+		 * Flag that indicates that this event was generated while undoing.
+		 */
+		isUndoing: boolean;
+		/**
+		 * Flag that indicates that this event was generated while redoing.
+		 */
+		isRedoing: boolean;
+	}
+
+	export interface DocumentChangeEvent {
+		document: Document;
+		contentChanges: DocumentContentChangeEvent[];
+	}
+
+	// TODO@api in the future there might be multiple opened folder in VSCode
+	// so that we shouldn't make broken assumptions here
+	export namespace workspace {
+
+		/**
+		 * Creates a file system watcher. A glob pattern that filters the
+		 * file events must be provided. Optionally, flags to ignore certain
+		 * kind of events can be provided.
+		 *
+		 * @param globPattern - A glob pattern that is applied to the names of created, changed, and deleted files.
+		 * @param ignoreCreateEvents - Ignore when files have been created.
+		 * @param ignoreChangeEvents - Ignore when files have been changed.
+		 * @param ignoreDeleteEvents - Ignore when files have been deleted.
+		 */
+		export function createFileSystemWatcher(globPattern: string, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): FileSystemWatcher;
+
+		// TODO@api - justify this being here
+		export function getPath(): string;
+
+		export function getRelativePath(pathOrUri: string|Uri): string;
+
+		// TODO@api - justify this being here
+		export function findFiles(include: string, exclude: string, maxResults?:number): Thenable<Uri[]>;
+
+		/**
+		 * save all dirty files
+		 */
+		export function saveAll(includeUntitled?: boolean): Thenable<boolean>;
+
+		export function getAllDocuments(): Document[];
+		export function getDocument(resource: Uri): Document;
+		export const onDidAddDocument: Event<Document>;
+		export const onDidRemoveDocument: Event<Document>;
+		export const onDidChangeDocument: Event<DocumentChangeEvent>;
+		export const onDidSaveDocument: Event<Document>;
+
+		/**
+		 * are there any dirty files
+		 */
+		export function anyDirty(): Thenable<boolean>;
+	}
+
+	export namespace languages {
+
+		/**
+		 * Add diagnostics, such as compiler errors or warnings. They wil represented as
+		 * squiggles in text editors and in general list of errors.
+		 * To remove the diagnostics again, dispose the `Disposable` which is returned
+		 * from this function call.
+		 *
+		 * @param diagnostics Array of diagnostics
+		 * @return A disposable the removes the diagnostics again.
+		 */
+		export function addDiagnostics(diagnostics: Diagnostic[]): Disposable;
+
+		/**
+		 *
+		 */
+		export function addInformationLanguageStatus(language: LanguageSelector|Uri|Uri[], message: string | { octicon: string; message: string;}, command: string | CommandCallback): Disposable;
+
+		/**
+		 *
+		 */
+		export function addWarningLanguageStatus(language: LanguageSelector | Uri | Uri[], message: string | { octicon: string; message: string; }, command: string | CommandCallback): Disposable;
+
+		/**
+		 *
+		 */
+		export function addErrorLanguageStatus(language: LanguageSelector | Uri | Uri[], message: string | { octicon: string; message: string; }, command: string | CommandCallback): Disposable;
+	}
+
+	export namespace plugins {
+		export function getStateObject(pluginId: string, global?: boolean): Memento;
+
+		export function getConfigurationObject(pluginId: string): ReadOnlyMemento;
 	}
 
 	/**
@@ -325,10 +689,6 @@ declare module 'vscode' {
 		endColumn:number;
 	}
 
-	var Range: {
-		containsPosition(range:IRange, position:IPosition): boolean;
-	};
-
 	export interface IHTMLContentElement {
 		formattedText?:string;
 		text?: string;
@@ -338,242 +698,6 @@ declare module 'vscode' {
 		tagName?: string;
 		children?: IHTMLContentElement[];
 		isText?: boolean;
-	}
-
-	module Services {
-		enum Severity {
-			Ignore = 0,
-			Info = 1,
-			Warning = 2,
-			Error = 3
-		}
-
-		module Severity {
-			export function fromValue(value: string): Severity;
-		}
-
-		export interface IModelService {
-			onModelAdd: Event<IModel>;
-			onModelRemove: Event<IModel>;
-			addModel(model: IModel): void;
-			removeModel(model: IModel): void;
-			getModels(): IModel[];
-			getModel(resource: Uri): IModel;
-		}
-
-		// --- Begin MarkerService
-		export interface IMarkerData {
-			code?: string;
-			severity: Severity;
-			message: string;
-			startLineNumber: number;
-			startColumn: number;
-			endLineNumber: number;
-			endColumn: number;
-		}
-
-		export interface IResourceMarker {
-			resource: Uri;
-			marker:IMarkerData;
-		}
-
-		export interface IMarker {
-			owner: string;
-			resource: Uri;
-			severity: Severity;
-			code?: string;
-			message: string;
-			startLineNumber: number;
-			startColumn: number;
-			endLineNumber: number;
-			endColumn: number;
-		}
-
-		export interface IMarkerService {
-
-			changeOne(owner: string, resource: Uri, markers: IMarkerData[]): void;
-
-			changeAll(owner: string, data: IResourceMarker[]): void;
-
-			remove(owner: string, resources: Uri[]): void
-		}
-
-		// --- End IMarkerService
-
-		// --- Begin IConfigurationService
-
-		export interface IConfigurationService {
-			loadConfiguration(section?: string): Thenable<any>;
-		}
-
-		// --- End IConfigurationService
-
-		// --- Begin IFileSystemEventService
-
-		export enum FileChangeTypes {
-			Changed = 0,
-			Created = 1,
-			Deleted = 2
-		}
-
-		export interface IFileSystemEvent {
-			resource: Uri;
-			changeType: FileChangeTypes;
-		}
-
-		export interface IFileSystemWatcher extends Disposable {
-			onFileChange: Event<IFileSystemEvent>;
-		}
-
-		export interface IFileSystemEventService {
-			createWatcher(pattern?: string): IFileSystemWatcher;
-		}
-
-		// --- End IFileSystemEventService
-
-		export var MarkerService: IMarkerService;
-
-		export var ModelService: IModelService;
-
-		export var ConfigurationService: IConfigurationService;
-
-		export var FileSystemEventService: IFileSystemEventService;
-	}
-
-	module Models {
-		/**
-		 * A single edit operation, that acts as a simple replace.
-		 * i.e. Replace text at `range` with `text` in model.
-		 */
-		export interface ISingleEditOperation {
-			/**
-			 * The range to replace. This can be empty to emulate a simple insert.
-			 */
-			range: IRange;
-			/**
-			 * The text to replace with. This can be null to emulate a simple delete.
-			 */
-			text: string;
-		}
-
-		/**
-		 * Word inside a model.
-		 */
-		export interface IWordAtPosition {
-			/**
-			 * The word.
-			 */
-			word: string;
-			/**
-			 * The column where the word starts.
-			 */
-			startColumn: number;
-			/**
-			 * The column where the word ends.
-			 */
-			endColumn: number;
-		}
-
-		/**
-		 * End of line character preference.
-		 */
-		export enum EndOfLinePreference {
-			/**
-			 * Use the end of line character identified in the text buffer.
-			 */
-			TextDefined = 0,
-			/**
-			 * Use line feed (\n) as the end of line character.
-			 */
-			LF = 1,
-			/**
-			 * Use carriage return and line feed (\r\n) as the end of line character.
-			 */
-			CRLF = 2
-		}
-
-		/**
-		 * An event describing a change in the text of a model.
-		 */
-		export interface IContentChangedEvent {
-			/**
-			 * The range that got replaced.
-			 */
-			range: IRange;
-			/**
-			 * The length of the range that got replaced.
-			 */
-			rangeLength: number;
-			/**
-			 * The new text for the range.
-			 */
-			text: string;
-			/**
-			 * The new version id the model has transitioned to.
-			 */
-			versionId: number;
-			/**
-			 * Flag that indicates that this event was generated while undoing.
-			 */
-			isUndoing: boolean;
-			/**
-			 * Flag that indicates that this event was generated while redoing.
-			 */
-			isRedoing: boolean;
-		}
-	}
-
-	export interface IModel {
-
-		getUri(): Uri;
-
-		/**
-		 * @review
-		 */
-		isUntitled(): boolean;
-
-		/**
-		 * Get the current version id of the model.
-		 * Anytime a change happens to the model (even undo/redo),
-		 * the version id is incremented.
-		 */
-		getVersionId(): number;
-
-		/**
-		 * Get the text stored in this model.
-		 * @param eol The end of line character preference. Defaults to `EndOfLinePreference.TextDefined`.
-		 * @param preserverBOM Preserve a BOM character if it was detected when the model was constructed.
-		 * @return The text.
-		 */
-		getValue(eol?:Models.EndOfLinePreference, preserveBOM?:boolean): string;
-
-		/**
-		 * Get the text in a certain range.
-		 * @param range The range describing what text to get.
-		 * @param eol The end of line character preference. This will only be used for multiline ranges. Defaults to `EndOfLinePreference.TextDefined`.
-		 * @return The text.
-		 */
-		getValueInRange(range: IRange, eol?: Models.EndOfLinePreference): string;
-
-		/**
-		 * Get the number of lines in the model.
-		 */
-		getLineCount(): number;
-
-		/**
-		 * Get the maximum legal column for line at `lineNumber`
-		 */
-		getLineMaxColumn(lineNumber:number): number;
-
-		/**
-		 * Get the word under or besides `position`.
-		 * @return The word under or besides `position`. Might be null.
-		 */
-		getWordAtPosition(position:IPosition): Models.IWordAtPosition;
-
-		getModeId(): string;
-
-		onContentChange: Event<Models.IContentChangedEvent[]>;
 	}
 
 	// --- Begin Monaco.Modes
@@ -612,13 +736,13 @@ declare module 'vscode' {
 
 		interface ILanguageAutoComplete {
 			triggers: string;				// characters that trigger auto completion rules
-			match: string /* || RegExp */;	// autocomplete if this matches
+			match: string|RegExp;			// autocomplete if this matches
 			complete: string;				// complete with this string
 		}
 
 		interface ILanguageAutoIndent {
-			match: string /* || RegExp */;		// auto indent if this matches on enter
-			matchAfter: string /* || RegExp */;	// and auto-outdent if this matches on the next line
+			match: string|RegExp; 			// auto indent if this matches on enter
+			matchAfter: string|RegExp;		// and auto-outdent if this matches on the next line
 		}
 
 		/**
@@ -662,166 +786,30 @@ declare module 'vscode' {
 		}
 
 		// --- Begin InplaceReplaceSupport
-		interface IInplaceReplaceSupportResult {
-			value: string;
-			range:IRange;
-		}
 		/**
 		 * Interface used to navigate with a value-set.
 		 */
 		interface IInplaceReplaceSupport {
-			navigateValueSet(resource:Uri, range:IRange, up:boolean, token: CancellationToken):Thenable<IInplaceReplaceSupportResult>;
+			sets: string[][];
 		}
-		interface IInplaceReplaceSupportCustomization {
-			textReplace?: (value: string, up: boolean) => string;
-			navigateValueSetFallback?: (resource: Uri, range: IRange, up: boolean, token: CancellationToken) => Thenable<IInplaceReplaceSupportResult>;
-		}
+		var InplaceReplaceSupport: {
+			register(modeId: string, inplaceReplaceSupport: Modes.IInplaceReplaceSupport): void;
+		};
 		// --- End InplaceReplaceSupport
 
 
 		// --- Begin TokenizationSupport
-		interface IStream {
-			/**
-			 * Returns the current character position of the stream on the line.
-			 */
-			pos():number;
-			/**
-			 * Returns true iff the stream is at the end of the line.
-			 */
-			eos():boolean;
-			/**
-			 * Returns the next character in the stream.
-			 */
-			peek():string;
-			/**
-			 * Returns the next character in the stream, and advances it by one character.
-			 */
-			next():string;
-			/**
-			 * Advances the stream by `n` characters.
-			 */
-			advance(n:number):string;
-			/**
-			 * Advances the stream until the end of the line.
-			 */
-			advanceToEOS():string;
-			/**
-			 * Brings the stream back `n` characters.
-			 */
-			goBack(n:number):void;
-			/**
-			 *  Advances the stream if the next characters validate a condition. A condition can be
-			 *
-			 *      - a regular expression (always starting with ^)
-			 * 			EXAMPLES: /^\d+/, /^function|var|interface|class/
-			 *
-			 *  	- a string
-			 * 			EXAMPLES: "1954", "albert"
-			 */
-			advanceIfCharCode(charCode:number): string;
-			advanceIfString(condition:string):string;
-			advanceIfStringCaseInsensitive(condition:string):string;
-			advanceIfRegExp(condition:RegExp):string;
-			/**
-			 * Advances the stream while the next characters validate a condition. Check #advanceIf for
-			 * details on the possible types for condition.
-			 */
-			advanceWhile(condition:string):string;
-			advanceWhile(condition:RegExp):string;
-			/**
-			 * Advances the stream until the some characters validate a condition. Check #advanceIf for
-			 * details on the possible types for condition. The `including` boolean value indicates
-			 * whether the stream will advance the characters that matched the condition as well, or not.
-			 */
-			advanceUntil(condition:string, including:boolean):string;
-			advanceUntil(condition:RegExp, including:boolean):string;
-			/**
-			 * The token rules define how consecutive characters should be put together as a token,
-			 * or separated into two different tokens. They are given through a separator characters
-			 * string and a whitespace characters string. A separator is always one token. Consecutive
-			 * whitespace is always one token. Everything in between these two token types, is also a token.
-			 *
-			 * 	EXAMPLE: stream.setTokenRules("+-", " ");
-			 * 	Setting these token rules defines the tokens for the string "123+456 -    7" as being
-			 * 		["123", "+", "456", " ", "-", "    ", "7"]
-			 */
-			setTokenRules(separators:string, whitespace:string):void;
-			/**
-			 * Returns the next token, given that the stream was configured with token rules.
-			 */
-			peekToken():string;
-			/**
-			 * Returns the next token, given that the stream was configured with token rules, and advances the
-			 * stream by the exact length of the found token.
-			 */
-			nextToken():string;
-			/**
-			 * Returns the next whitespace, if found. Returns an empty string otherwise.
-			 */
-			peekWhitespace():string;
-			/**
-			 * Returns the next whitespace, if found, and advances the stream by the exact length of the found
-			 * whitespace. Returns an empty string otherwise.
-			 */
-			skipWhitespace():string;
-		}
-
 		enum Bracket {
 			None = 0,
 			Open = 1,
 			Close = -1
-		}
-
-		interface ITokenizationResult {
-			type?:string;
-			bracket?:Bracket;
-			nextState?:IState;
-		}
-
-		interface IToken {
-			startIndex:number;
-			type:string;
-			bracket:Bracket;
-		}
-
-		interface IModeTransition {
-			startIndex: number;
-			mode: IMode;
-		}
-
-		interface ILineTokens {
-			tokens: IToken[];
-			actualStopOffset: number;
-			endState: IState;
-			modeTransitions: IModeTransition[];
-			retokenize?: Thenable<void>;
-		}
-
-		interface IState {
-			clone():IState;
-			equals(other:IState):boolean;
-			getMode():IMode;
-			tokenize(stream:IStream):ITokenizationResult;
-			getStateData(): IState;
-			setStateData(state:IState):void;
-		}
-
-		export interface ITokenizationSupport {
-
-			shouldGenerateEmbeddedModels: boolean;
-
-			getInitialState():IState;
-
-			// add offsetDelta to each of the returned indices
-			// stop tokenizing at absolute value stopAtOffset (i.e. stream.pos() + offsetDelta > stopAtOffset)
-			tokenize(line:string, state:IState, offsetDelta?:number, stopAtOffset?:number):ILineTokens;
 		}
 		// --- End TokenizationSupport
 
 		// --- Begin IDeclarationSupport
 		export interface IDeclarationSupport {
 			tokens?: string[];
-			findDeclaration(resource: Uri, position: IPosition, token: CancellationToken): Thenable<IReference>;
+			findDeclaration(document: Document, position: Position, token: CancellationToken): Thenable<IReference>;
 		}
 		var DeclarationSupport: {
 			register(modeId: string, declarationSupport: IDeclarationSupport): void;
@@ -830,32 +818,32 @@ declare module 'vscode' {
 
 		// --- Begin ICodeLensSupport
 		export interface ICodeLensSupport {
-			findCodeLensSymbols(resource:Uri, token:CancellationToken): Thenable<ICodeLensSymbol[]>;
-			findCodeLensReferences(resource:Uri, requests: ICodeLensSymbolRequest[], token:CancellationToken): Thenable<ICodeLensReferences>;
+			findCodeLensSymbols(document: Document, token: CancellationToken): Thenable<ICodeLensSymbol[]>;
+			findCodeLensReferences(document: Document, requests: ICodeLensSymbolRequest[], token: CancellationToken): Thenable<ICodeLensReferences>;
 		}
 		export interface ICodeLensSymbolRequest {
-			position:IPosition;
+			position: Position;
 			languageModeStateId?: number;
 		}
 		export interface ICodeLensSymbol {
-			range:IRange;
+			range: Range;
 		}
 		export interface ICodeLensReferences {
-		    references: IReference[][];
-		    languageModeStateId?: number;
+			references: IReference[][];
+			languageModeStateId?: number;
 		}
 		var CodeLensSupport: {
-			register(modeId: string, codeLensSupport:ICodeLensSupport): void;
+			register(modeId: string, codeLensSupport: ICodeLensSupport): void;
 		};
 		// --- End ICodeLensSupport
 
 		// --- Begin IOccurrencesSupport
 		export interface IOccurrence {
 			kind?:string;
-			range:IRange;
+			range:Range;
 		}
 		export interface IOccurrencesSupport {
-			findOccurrences(resource: Uri, position: IPosition, token: CancellationToken): Thenable<IOccurrence[]>;
+			findOccurrences(resource: Document, position: Position, token: CancellationToken): Thenable<IOccurrence[]>;
 		}
 		var OccurrencesSupport: {
 			register(modeId: string, occurrencesSupport:IOccurrencesSupport): void;
@@ -867,11 +855,11 @@ declare module 'vscode' {
 			label: string;
 			type: string;
 			icon?: string; // icon class or null to use the default images based on the type
-			range: IRange;
+			range: Range;
 			children?: IOutlineEntry[];
 		}
 		export interface IOutlineSupport {
-			getOutline(resource: Uri, token: CancellationToken): Thenable<IOutlineEntry[]>;
+			getOutline(document: Document, token: CancellationToken): Thenable<IOutlineEntry[]>;
 			outlineGroupLabel?: { [name: string]: string; };
 		}
 		var OutlineSupport: {
@@ -892,8 +880,8 @@ declare module 'vscode' {
 		}
 
 		 export interface IQuickFixSupport {
-			getQuickFixes(resource: Uri, marker: Services.IMarker | IRange, token: CancellationToken): Thenable<IQuickFix[]>;
-			runQuickFixAction(resource: Uri, range: IRange, id: any, token: CancellationToken): Thenable<IQuickFixResult>;
+			getQuickFixes(resource: Document, marker: Range, token: CancellationToken): Thenable<IQuickFix[]>;
+			runQuickFixAction(resource: Document, range: Range, id: any, token: CancellationToken): Thenable<IQuickFixResult>;
 		}
 		var QuickFixSupport: {
 			register(modeId: string, quickFixSupport:IQuickFixSupport): void
@@ -908,7 +896,7 @@ declare module 'vscode' {
 			 * @returns a list of reference of the symbol at the position in the
 			 * 	given resource.
 			 */
-			findReferences(resource: Uri, position: IPosition, includeDeclaration: boolean, token: CancellationToken): Thenable<IReference[]>;
+			findReferences(document: Document, position: Position, includeDeclaration: boolean, token: CancellationToken): Thenable<IReference[]>;
 		}
 		var ReferenceSupport: {
 			register(modeId: string, quickFixSupport:IReferenceSupport): void;
@@ -948,7 +936,7 @@ declare module 'vscode' {
 			/**
 			 * @returns the parameter hints for the specified position in the file.
 			 */
-			getParameterHints(resource: Uri, position: IPosition, token: CancellationToken): Thenable<IParameterHints>;
+			getParameterHints(document: Document, position: Position, token: CancellationToken): Thenable<IParameterHints>;
 		}
 		var ParameterHintsSupport: {
 			register(modeId: string, parameterHintsSupport:IParameterHintsSupport): void;
@@ -957,13 +945,13 @@ declare module 'vscode' {
 
 		// --- Begin IExtraInfoSupport
 		export interface IComputeExtraInfoResult {
-			range: IRange;
+			range: Range;
 			value?: string;
 			htmlContent?: IHTMLContentElement[];
 			className?: string;
 		}
 		export interface IExtraInfoSupport {
-			computeInfo(resource: Uri, position: IPosition, token: CancellationToken): Thenable<IComputeExtraInfoResult>;
+			computeInfo(document: Document, position: Position, token: CancellationToken): Thenable<IComputeExtraInfoResult>;
 		}
 		var ExtraInfoSupport: {
 			register(modeId: string, extraInfoSupport:IExtraInfoSupport): void;
@@ -978,7 +966,7 @@ declare module 'vscode' {
 		}
 		export interface IRenameSupport {
 			filter?: string[];
-			rename(resource: Uri, position: IPosition, newName: string, token: CancellationToken): Thenable<IRenameResult>;
+			rename(document: Document, position: Position, newName: string, token: CancellationToken): Thenable<IRenameResult>;
 		}
 		var RenameSupport: {
 			register(modeId: string, renameSupport:IRenameSupport): void;
@@ -994,6 +982,20 @@ declare module 'vscode' {
 			insertSpaces:boolean;
 		}
 		/**
+		 * A single edit operation, that acts as a simple replace.
+		 * i.e. Replace text at `range` with `text` in model.
+		 */
+		export interface ISingleEditOperation {
+			/**
+			 * The range to replace. This can be empty to emulate a simple insert.
+			 */
+			range: IRange;
+			/**
+			 * The text to replace with. This can be null to emulate a simple delete.
+			 */
+			text: string;
+		}
+		/**
 		 * Supports to format source code. There are three levels
 		 * on which formatting can be offered:
 		 * (1) format a document
@@ -1001,10 +1003,10 @@ declare module 'vscode' {
 		 * (3) format on keystroke
 		 */
 		export interface IFormattingSupport {
-			formatDocument: (resource: Uri, options: IFormattingOptions, token: CancellationToken) => Thenable<Models.ISingleEditOperation[]>;
-			formatRange?: (resource: Uri, range: IRange, options: IFormattingOptions, token: CancellationToken) => Thenable<Models.ISingleEditOperation[]>;
+			formatDocument: (document: Document, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
+			formatRange?: (document: Document, range: Range, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
 			autoFormatTriggerCharacters?: string[];
-			formatAfterKeystroke?: (resource: Uri, position: IPosition, ch: string, options: IFormattingOptions, token: CancellationToken) => Thenable<Models.ISingleEditOperation[]>;
+			formatAfterKeystroke?: (document: Document, position: Position, ch: string, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
 		}
 		var FormattingSupport: {
 			register(modeId: string, formattingSupport:IFormattingSupport): void;
@@ -1041,8 +1043,8 @@ declare module 'vscode' {
 
 			sortBy?: ISortingTypeAndSeparator[];
 
-			suggest: (resource: Uri, position: IPosition, token: CancellationToken) => Thenable<ISuggestions[]>;
-			getSuggestionDetails? : (resource:Uri, position:IPosition, suggestion:ISuggestion, token: CancellationToken) => Thenable<ISuggestion>;
+			suggest: (document: Document, position: Position, token: CancellationToken) => Thenable<ISuggestions[]>;
+			getSuggestionDetails? : (document: Document, position: Position, suggestion:ISuggestion, token: CancellationToken) => Thenable<ISuggestion>;
 		}
 		var SuggestSupport: {
 			register(modeId:string, suggestSupport:ISuggestSupport): void;
@@ -1056,12 +1058,12 @@ declare module 'vscode' {
 			name: string;
 			parameters: string;
 			type: string;
-			range: IRange;
+			range: Range;
 			resourceUri: Uri;
 		}
 
 		export interface INavigateTypesSupport {
-			getNavigateToItems:(search: string, resource: Uri, token: CancellationToken) => Thenable<ITypeBearing[]>;
+			getNavigateToItems:(search: string, token: CancellationToken) => Thenable<ITypeBearing[]>;
 		}
 		var NavigateTypesSupport: {
 			register(modeId:string, navigateTypeSupport:INavigateTypesSupport): void;
@@ -1162,29 +1164,15 @@ declare module 'vscode' {
 		};
 		// --- End IOnEnterSupport
 
-		export interface ILineContext {
-			getLineContent(): string;
-			// TODO@Alex
-			modeTransitions: IModeTransition[];
-
-			getTokenCount(): number;
-			getTokenStartIndex(tokenIndex:number): number;
-			getTokenType(tokenIndex:number): string;
-			getTokenBracket(tokenIndex:number): Bracket;
-			getTokenText(tokenIndex:number): string;
-			getTokenEndIndex(tokenIndex:number): number;
-			findIndexOfOffset(offset:number): number;
-		}
-
 		export interface IResourceEdit {
 			resource: Uri;
-			range?: IRange;
+			range?: Range;
 			newText: string;
 		}
 
 		export interface IReference {
 			resource: Uri;
-			range: IRange;
+			range: Range;
 		}
 
 		interface IMode {
@@ -1193,20 +1181,12 @@ declare module 'vscode' {
 
 		function registerMonarchDefinition(modeId: string, language: Modes.ILanguage): void;
 		function loadInBackgroundWorker<T>(scriptSrc: string): Thenable<T>;
-		var InplaceReplaceSupport: {
-			register(modeId: string, inplaceReplaceSupport: Modes.IInplaceReplaceSupport): void;
-			create(customization?: Modes.IInplaceReplaceSupportCustomization): Modes.IInplaceReplaceSupport;
-			valueSetReplace(valueSet: string[], value: string, up: boolean): string;
-			valueSetsReplace(valueSets: string[][], value: string, up: boolean): string;
-		};
+
 	}
 
 	module Plugins {
 		function get(pluginId:string): any;
 	}
-}
-
-declare module 'vscode' {
 
 	/**
 	 * DO NOT USE.
@@ -1247,15 +1227,15 @@ declare module 'vscode-testing' {
  * enables reusing existing code without migrating to a specific promise implementation. Still,
  * we recommand the use of native promises which are available in VS Code.
  */
-interface Thenable<T> {
+interface Thenable<R> {
     /**
     * Attaches callbacks for the resolution and/or rejection of the Promise.
     * @param onfulfilled The callback to execute when the Promise is resolved.
     * @param onrejected The callback to execute when the Promise is rejected.
     * @returns A Promise for the completion of which ever callback is executed.
     */
-    then<TResult>(onfulfilled?: (value: T) => TResult | Thenable<TResult>, onrejected?: (reason: any) => TResult | Thenable<TResult>): Thenable<TResult>;
-    then<TResult>(onfulfilled?: (value: T) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
+    then<TResult>(onfulfilled?: (value: R) => TResult | Thenable<TResult>, onrejected?: (reason: any) => TResult | Thenable<TResult>): Thenable<TResult>;
+    then<TResult>(onfulfilled?: (value: R) => TResult | Thenable<TResult>, onrejected?: (reason: any) => void): Thenable<TResult>;
 }
 
 // ---- ES6 promise ------------------------------------------------------
@@ -1344,166 +1324,3 @@ interface PromiseConstructor {
 }
 
 declare var Promise: PromiseConstructor;
-
-
-// --- for the future ------------
-
-declare module 'vscode2' {
-
-	export interface Event<T> {
-		(listener: (event: T) => any, thisArg?: any);
-	}
-
-	interface CommandCallback {
-		<T>(...args: any[]): T|Thenable<T>;
-	}
-
-	class Disposable {
-		constructor(disposeFunction: () => any);
-		dispose(): any;
-	}
-
-	class Uri {
-		static parse(value:string):Uri;
-		static file(fsPath: string): Uri;
-		scheme: string;
-		authority: string;
-		path: string;
-		fsPath: string;
-		query: string;
-		fragment: string;
-	}
-
-	class Point {
-		constructor(line: number, character: number);
-		line: number;
-		character: number;
-	}
-
-	class Range {
-		static from(point: Point): Range;
-		constructor(start: Point, end: Point);
-		start: Point;
-		end: Point;
-		isEmpty(): boolean;
-	}
-
-	class Document {
-
-		/**
-		 * @return The resource identifier for this document.
-		 */
-		getUri(): Uri;
-
-		/**
-		 * Shorthand for ```getUri().scheme === 'untitled'```
-		 * @return {true} when this is an untitled document
-		 */
-		isUntitled(): boolean;
-
-		/**
-		 * @param range - The range from which text is returned. Iff omitted all text is returned
-		 */
-		getText(range?: Range): string;
-
-		/**
-		 *
-		 */
-		replaceText(newText: string, range: Range, options: { eol: any }): void;
-	}
-
-	class Editor {
-
-		getDocument(): Document;
-
-		setDocument(doc: Document): void;
-
-		getSelection(): Range;
-
-		getSelections(): Range[];
-
-		setSelection(rangeOrPoint: Range|Point);
-
-		setSelections(rangeOrPoint: Range[]|Point[]);
-	}
-
-	export namespace workspace {
-
-		export const onDocumentClose: Event<Document>;
-
-		export const onDocumentOpen: Event<Document>;
-
-		export const onDocumentChange: Event<Document>;
-
-		export const trackDocuments: Event<Document>;
-
-		export const onFileChange: Event<Uri>;
-
-		export function getRelativePath(pathOrUri: string | Uri): string;
-	}
-
-	export namespace shell {
-
-		export function getActiveEditor(): Editor;
-
-		export const onEditorOpen: Event<Editor>;
-
-		export const onEditorClose: Event<Editor>;
-
-		export function showQuickPanel(item: string[]): Thenable<string>;
-
-		export function showInformationMessage(message:string, ...commands: {title:string; command:string | CommandCallback}[]): Thenable<any>;
-
-		export function showWarningMessage(message: string, ...commands: { title: string; command: string | CommandCallback }[]): Thenable<any>;
-
-		export function showErrorMessage(message:string, ...commands: {title:string; command:string | CommandCallback}[]): Thenable<any>;
-
-		export function setStatusBarMessage(message: string, ...commands: {title:string; command:string | CommandCallback}[]): Thenable<any>;
-	}
-
-	export namespace commands {
-
-		export function registerCommand(commandId: string, callback: CommandCallback): Disposable;
-
-		export function executeCommand<T>(commandId: string, ...args: any[]): Thenable<T>;
-	}
-
-	export namespace languages {
-
-		export interface Filter {
-
-			/**
-			 * Filters on the name of a language, e.g ```javascript```, ```markdown```.
-			 */
-			language: string;
-
-			/**
-			 * Filters on the scope of the current token, e.g comment
-			 */
-			scope?: string;
-
-			/**
-			 * Filters on the path.
-			 */
-			filePathPattern?: RegExp;
-
-			/**
-			 * Filters on the scheme of the resource, e.g. ```!untitled``` for everything except
-			 * untitled resources or ```file|untitled``` for only {file} and {untitled} resources
-			 */
-			schemePattern?: RegExp;
-		}
-
-		export interface IntelliSenseProvider {
-			provideIntelliSense(doc: Document, point: Point): Thenable<string[]> | string[];
-		}
-
-		export function registerIntelliSenseProvider(provider: IntelliSenseProvider, filter: Filter, ...more: Filter[]);
-
-		export interface HoverProvider {
-			provideHover(doc: Document, point: Point): Thenable<string> | string;
-		}
-
-		export function registerHoverProvider(provider: HoverProvider, filter:Filter, ...more: Filter[]):void;
-	}
-}

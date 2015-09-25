@@ -18,12 +18,12 @@ import {check, ICheckResult} from './goCheck';
 import vscode = require('vscode');
 
 export function activate() {
-	vscode.Modes.SuggestSupport.register('go', new SuggestSupport(vscode.Services.ModelService));
-	vscode.Modes.ExtraInfoSupport.register('go', new ExtraInfoSupport(vscode.Services.ModelService));
-	vscode.Modes.DeclarationSupport.register('go', new DeclarationSupport(vscode.Services.ModelService));
-	vscode.Modes.ReferenceSupport.register('go', new ReferencesSupport(vscode.Services.ModelService));
-	vscode.Modes.FormattingSupport.register('go', new FormattingSupport(vscode.Services.ModelService, vscode.Services.ConfigurationService));
-	vscode.Modes.RenameSupport.register('go', new RenameSupport(vscode.Services.ModelService));
+	vscode.Modes.SuggestSupport.register('go', new SuggestSupport());
+	vscode.Modes.ExtraInfoSupport.register('go', new ExtraInfoSupport());
+	vscode.Modes.DeclarationSupport.register('go', new DeclarationSupport());
+	vscode.Modes.ReferenceSupport.register('go', new ReferencesSupport());
+	vscode.Modes.FormattingSupport.register('go', new FormattingSupport());
+	vscode.Modes.RenameSupport.register('go', new RenameSupport());
 
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher();
@@ -31,11 +31,11 @@ export function activate() {
 
 function setupGoPathAndOfferToInstallTools() {
 	// TODO: There should be a better way to do this?
-	vscode.Services.ConfigurationService.loadConfiguration('go').then((config = {}) => {
+	vscode.plugins.getConfigurationObject('go').getValue<string>('gopath').then(gopath => {
 
 		// Make sure GOPATH is set
-		if(!process.env["GOPATH"] && config.gopath) {
-			process.env["GOPATH"] = config.gopath;
+		if(!process.env["GOPATH"] && gopath) {
+			process.env["GOPATH"] = gopath;
 		}
 
 		// Offer to install any missing tools
@@ -63,13 +63,13 @@ function setupGoPathAndOfferToInstallTools() {
 				});
 			}
 		});
-		
+
 		function promptForInstall(missing: string[], status: vscode.Disposable) {
-			vscode.shell.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
+			vscode.window.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
 				title: "Install",
 				command: () => {
 					missing.forEach(tool  => {
-						vscode.shell.runInTerminal("go", ["get", "-u", "-v", tool], { cwd: process.env['GOPATH'] });
+						vscode.window.runInTerminal("go", ["get", "-u", "-v", tool], { cwd: process.env['GOPATH'] });
 					});
 				}
 			});
@@ -78,53 +78,50 @@ function setupGoPathAndOfferToInstallTools() {
 	});
 }
 
+let _diagnostics:vscode.Disposable = null;
+
+function deactivate() {
+	if (_diagnostics) {
+		_diagnostics.dispose();
+	}
+}
+
 function startBuildOnSaveWatcher() {
 
-	function mapSeverityToMonacoSeverity(sev: string) {
+	function mapSeverityToVSCodeSeverity(sev: string) {
 		switch(sev) {
-			case "error": return vscode.Services.Severity.Error;
-			case "warning": return vscode.Services.Severity.Warning;
-			default: return vscode.Services.Severity.Error;
+			case "error": return vscode.DiagnosticSeverity.Error;
+			case "warning": return vscode.DiagnosticSeverity.Warning;
+			default: return vscode.DiagnosticSeverity.Error;
 		}
 	}
 
-	vscode.Services.ConfigurationService.loadConfiguration('go').then((config = {}) => {
-		var watcher = vscode.Services.FileSystemEventService.createWatcher();
-		watcher.onFileChange(fileSystemEvent => {
-			if(fileSystemEvent.resource.fsPath.indexOf('.go') !== -1) {
-				check(fileSystemEvent.resource.fsPath, config['buildOnSave'], config['lintOnSave'], config['vetOnSave']).then(errors => {
-					vscode.Services.MarkerService.changeAll('go', errors.map(error => {
-						var targetResource = vscode.Uri.file(error.file);
-						var model = vscode.Services.ModelService.getModel(targetResource);
-						var startColumn = 0;
-						var endColumn = 1;
-						if(model) {
-							var text = model.getValueInRange({
-								startLineNumber: error.line,
-								endLineNumber: error.line,
-								startColumn: 0,
-								endColumn: model.getLineMaxColumn(error.line)
-							});
-							var [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
-							startColumn = leading.length + 1;
-							endColumn = text.length - trailing.length + 1;
-						}
-						return {
-							resource: targetResource,
-							marker: {
-								severity: mapSeverityToMonacoSeverity(error.severity),
-								message: error.msg,
-								startLineNumber: error.line,
-								endLineNumber: error.line,
-								startColumn,
-								endColumn
-							}
-						};
-					}));
-				}).catch(err => {
-					vscode.shell.showInformationMessage("Error: " + err);
+	vscode.plugins.getConfigurationObject('go').getValues().then((config = {}) => {
+		vscode.workspace.onDidSaveDocument(document => {
+			check(document.getUri().fsPath, config['buildOnSave'], config['lintOnSave'], config['vetOnSave']).then(errors => {
+				if (_diagnostics) {
+					_diagnostics.dispose();
+				}
+				var diagnostics = errors.map(error => {
+					let targetResource = vscode.Uri.file(error.file);
+					let document = vscode.workspace.getDocument(targetResource);
+					let startColumn = 0;
+					let endColumn = 1;
+					if (document) {
+						let range = new vscode.Range(error.line, 0, error.line, document.getLineMaxColumn(error.line));
+						let text = document.getTextInRange(range);
+						let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
+						startColumn = leading.length + 1;
+						endColumn = text.length - trailing.length + 1;
+					}
+					let range = new vscode.Range(error.line, startColumn, error.line, endColumn);
+					let location = new vscode.Location(document.getUri(), range);
+					return new vscode.Diagnostic(mapSeverityToVSCodeSeverity(error.severity), location, error.msg);
 				});
-			}
+				_diagnostics = vscode.languages.addDiagnostics(diagnostics);
+			}).catch(err => {
+				vscode.window.showInformationMessage("Error: " + err);
+			});
 		});
 	});
 }
