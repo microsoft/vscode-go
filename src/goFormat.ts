@@ -47,16 +47,13 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 						return resolve(null);
 					}
 					if (err) return reject("Cannot format due to syntax errors.");
-					var result = stdout.toString();
+					var text = stdout.toString();
 					// TODO: Should use `-d` option to get a diff and then compute the
 					// specific edits instead of replace whole buffer
 					var lastLine = document.getLineCount();
 					var lastLineLastCol = document.getLineMaxColumn(lastLine);
 					var range = new vscode.Range(1, 1, lastLine, lastLineLastCol);
-					return resolve([{
-						text: result,
-						range
-					}]);
+					return resolve([{ text, range }]);
 				} catch(e) {
 					reject(e);
 				}

@@ -120,6 +120,19 @@ class Delve {
 		});
 	}
 	
+	callPromise<T>(command: string, args: any[]): Promise<T> {
+		return new Promise<T>((resolve, reject) => {
+			this.connection.then(conn => {
+				conn.call<T>('RPCServer.' + command, args, (err, res) => {
+					if(err) return reject(err);
+					resolve(res);
+				});
+			}, err => {
+				reject(err);
+			});
+		});
+	}
+	
 	close() {
 		this.debugProcess.kill();	
 	}
@@ -127,18 +140,13 @@ class Delve {
 
 class MockDebugSession extends DebugSession {
 
-	private _sourceFile: string;
-	private _currentLine: number;
-	private _variableHandles: Handles<string>;
-	
+	private _variableHandles: Handles<string>;	
 	private breakpoints: Map<string, DebugBreakpoint[]>;
 	private debugState: DebuggerState;
 	private delve: Delve;
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
-		this._sourceFile = null;
-		this._currentLine = 0;
 		this._variableHandles = new Handles<string>();
 		this.debugState = null;
 		this.delve = null;
@@ -169,34 +177,36 @@ class MockDebugSession extends DebugSession {
 
 	protected setBreakPointsRequest(response: OpenDebugProtocol.SetBreakpointsResponse, args: OpenDebugProtocol.SetBreakpointsArguments): void {
 		console.log("SetBreakPointsRequest")
-		var breakpoints: OpenDebugProtocol.Breakpoint[] = [];
-		if(!this.breakpoints[args.source.path])  { 
-			this.breakpoints[args.source.path] = []; 
+		if(!this.breakpoints.get(args.source.path))  { 
+			this.breakpoints.set(args.source.path, []); 
 		}
-		// TODO - Clear out all previous breakpoints in this file before recreating the ones requested
-		for(var i = 0; i < args.lines.length; i++) {
-			var line = args.lines[i];
-			var file = args.source.path;
-			this.delve.call<DebugBreakpoint>('CreateBreakpoint', [{file, line}], (err, breakpoint) => { 
-				if(breakpoint) {
-					breakpoints.push({
-						verified: true,
-						line: breakpoint.line
-					})
+		var file = args.source.path;
+		var existingBPs = this.breakpoints.get(file);
+		Promise.all(this.breakpoints.get(file).map(existingBP => {
+			console.log("Clearing: " + existingBP.id); 
+			return this.delve.callPromise<DebugBreakpoint>('ClearBreakpoint', [existingBP.id])
+		})).then(() => { 
+			console.log("All cleared")
+			return Promise.all(args.lines.map(line => {
+				console.log("Creating on: " + file + ":" + line); 
+				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{file, line}]).catch(err => null);
+			}))
+		}).then(newBreakpoints => {
+			console.log("All set:" + JSON.stringify(newBreakpoints));
+			var breakpoints = newBreakpoints.map((bp, i) => {
+				if(bp) {
+					return { verified: true, line: bp.line } 	
 				} else {
-					breakpoints.push({
-						verified: true,
-						line: args.lines[i]
-					})
+					return { verified: false, line: args.lines[i] }
 				}
-				this.breakpoints[args.source.path].push(breakpoint);
-				if(breakpoints.length == args.lines.length) {
-					response.body = { breakpoints };
-					this.sendResponse(response);
-					console.log("SetBreakPointsResponse")
-				}
-			});		
-		}
+			});
+			response.body = { breakpoints };
+			this.sendResponse(response);
+			console.log("SetBreakPointsResponse")
+			this.breakpoints.set(args.source.path, newBreakpoints.filter(x => !!x));
+		}).catch(err => {
+			console.error(err);
+		});
 	}
 
 	protected threadsRequest(response: OpenDebugProtocol.ThreadsResponse): void {
@@ -231,7 +241,7 @@ class MockDebugSession extends DebugSession {
 						basename(location.file),
 						this.convertDebuggerPathToClient(location.file)
 					),
-					this.convertDebuggerLineToClient(location.line),
+					location.line,
 					0
 				)
 			);
@@ -307,8 +317,6 @@ class MockDebugSession extends DebugSession {
 				this.sendEvent(new TerminatedEvent());	
 				console.log("TerminatedEvent");
 			} else {
-				this._sourceFile = state.breakPoint.file;
-				this._currentLine = state.breakPoint.line;
 				this.debugState = state;
 				this.sendEvent(new StoppedEvent("breakpoint", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('breakpoint')");
@@ -326,8 +334,6 @@ class MockDebugSession extends DebugSession {
 				this.sendEvent(new TerminatedEvent());
 				console.log("TerminatedEvent");
 			} else {
-				this._sourceFile = state.breakPoint.file;
-				this._currentLine = state.breakPoint.line;
 				this.debugState = state;
 				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('step')");
@@ -338,6 +344,7 @@ class MockDebugSession extends DebugSession {
 	}
 	
 	protected stepInRequest(response: OpenDebugProtocol.StepInResponse) : void {
+		//TODO: Step-in doesn't appear to do anything in Delve
 		console.log("StepInRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'step' }], (err, state) => {
 			console.log(state);
@@ -345,8 +352,6 @@ class MockDebugSession extends DebugSession {
 				this.sendEvent(new TerminatedEvent());
 				console.log("TerminatedEvent");
 			} else {
-				this._sourceFile = state.breakPoint.file;
-				this._currentLine = state.breakPoint.line;
 				this.debugState = state;
 				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('step')");
