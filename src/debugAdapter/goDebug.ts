@@ -138,7 +138,7 @@ class Delve {
 	}
 }
 
-class MockDebugSession extends DebugSession {
+class GoDebugSession extends DebugSession {
 
 	private _variableHandles: Handles<string>;	
 	private breakpoints: Map<string, DebugBreakpoint[]>;
@@ -168,10 +168,10 @@ class MockDebugSession extends DebugSession {
 		this.continueRequest(response);
 	}
 	
-	protected disconnectRequest(response: OpenDebugProtocol.DisconnectResponse): void {
+	protected disconnectRequest(response: OpenDebugProtocol.DisconnectResponse, args: OpenDebugProtocol.DisconnectArguments): void {
 		console.log("DisconnectRequest");
 		this.delve.close();
-		super.disconnectRequest(response);
+		super.disconnectRequest(response, args);
 		console.log("DisconnectResponse");		
 	}
 
@@ -379,4 +379,4 @@ class MockDebugSession extends DebugSession {
 	}
 }
 
-DebugSession.run(MockDebugSession);
+DebugSession.run(GoDebugSession);

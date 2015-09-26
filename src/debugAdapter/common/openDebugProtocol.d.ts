@@ -175,6 +175,10 @@ declare module OpenDebugProtocol {
 		TODO@AW currently this kills the debuggee too. A better semantics is to stop debugging but let the debugee continue to run.
 	*/
 	export interface DisconnectRequest extends Request {
+		arguments?: DisconnectArguments;
+	}
+	/** Arguments for "disconnect" request. */
+	export interface DisconnectArguments {
 	}
 	/** Response to "disconnect" request. This is just an acknowledgement, so no body field is required. */
 	export interface DisconnectResponse extends Response {

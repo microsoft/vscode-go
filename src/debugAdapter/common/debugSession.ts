@@ -158,7 +158,6 @@ export class DebugSession extends V8Protocol {
 				socket.on('end', () => {
 					console.error('>> client connection closed\n');
 				});
-				//new MockDebugSession(false, true).startDispatch(socket, socket);
 				new debugSession(false, true).startDispatch(socket, socket);
 			}).listen(port);
 		} else {
@@ -166,7 +165,6 @@ export class DebugSession extends V8Protocol {
 			// start a session
 			console.error("waiting for v8 protocol on stdin/stdout");
 			let session = new debugSession(false);
-			//let session = new MockDebugSession(false);
 			process.on('SIGTERM', () => {
 				session.shutdown();
 			});
@@ -178,18 +176,14 @@ export class DebugSession extends V8Protocol {
 		if (this._isServer) {
 			console.error('process.exit ignored in server mode');
 		} else {
-			process.exit(0);
+			// wait a bit before shutting down
+			setTimeout(() => {
+				process.exit(0);
+			}, 100);
 		}
 	}
 
-	protected sendErrorResponse(response: OpenDebugProtocol.Response, format: string, ...params: any[]): void {
-		response.success = false;
-		const args = [ `${response.command}: ${format}` ].concat(params);
-		response.message = formatPII.apply(null, args);
-		this.sendResponse(response);
-	}
-
-	protected sendFErrorResponse(response: OpenDebugProtocol.Response, code: number, format: string, args?: any): void {
+	protected sendErrorResponse(response: OpenDebugProtocol.Response, code: number, format: string, args?: any): void {
 
 		const message = formatPII(format, true, args);
 
@@ -224,7 +218,7 @@ export class DebugSession extends V8Protocol {
 				this.attachRequest(<OpenDebugProtocol.AttachResponse> response, <OpenDebugProtocol.AttachRequestArguments> request.arguments);
 
 			} else if (request.command === 'disconnect') {
-				this.disconnectRequest(<OpenDebugProtocol.DisconnectResponse> response);
+				this.disconnectRequest(<OpenDebugProtocol.DisconnectResponse> response, <OpenDebugProtocol.DisconnectArguments> request.arguments);
 
 			} else if (request.command === 'setBreakpoints') {
 				this.setBreakPointsRequest(<OpenDebugProtocol.SetBreakpointsResponse> response, <OpenDebugProtocol.SetBreakpointsArguments> request.arguments);
@@ -266,10 +260,10 @@ export class DebugSession extends V8Protocol {
 				this.evaluateRequest(<OpenDebugProtocol.EvaluateResponse> response, <OpenDebugProtocol.EvaluateArguments> request.arguments);
 
 			} else {
-				this.sendErrorResponse(response, "unhandled request");
+				this.sendErrorResponse(response, 1014, "unrecognized request");
 			}
 		} catch (e) {
-			this.sendErrorResponse(response, "exception: {0}", e);
+			this.sendErrorResponse(response, 1104, "exception while processing request (exception: {_exception})", { _exception: e.message });
 		}
 	}
 
@@ -277,7 +271,7 @@ export class DebugSession extends V8Protocol {
 		this.sendResponse(response);
 	}
 
-	protected disconnectRequest(response: OpenDebugProtocol.DisconnectResponse): void {
+	protected disconnectRequest(response: OpenDebugProtocol.DisconnectResponse, args: OpenDebugProtocol.DisconnectArguments): void {
 		this.sendResponse(response);
 		this.shutdown();
 	}
@@ -376,6 +370,9 @@ export class DebugSession extends V8Protocol {
 
 const _formatPIIRegexp = /{([^}]+)}/g;
 
+/*
+ * If argument starts with '_' it is OK to send its value to telemetry.
+ */
 function formatPII(format:string, excludePII: boolean, args: {[key: string]: string}): string {
 	return format.replace(_formatPIIRegexp, function(match, paramName) {
 		if (excludePII && paramName.length > 0 && paramName[0] !== '_') {

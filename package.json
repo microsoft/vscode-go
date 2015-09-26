@@ -49,7 +49,7 @@
 						"go"
 					]
 				},
-				"program": "./out/debugAdapter/openDebugMock.js",
+				"program": "./out/debugAdapter/goDebug.js",
 				"runtime": "node"
 			}
 		],
