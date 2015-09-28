@@ -28,8 +28,7 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 	}
 
 	public formatDocument(document: vscode.TextDocument, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken): Thenable<vscode.Modes.ISingleEditOperation[]> {
-		// TODO: We don't really need to save all the buffers, just the one for 'resource.
-		return vscode.workspace.saveAll(false).then(() => {
+		return document.save().then(() => {
 			return this.doFormatDocument(document, options, token);
 		});
 	}

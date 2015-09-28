@@ -17,13 +17,13 @@ import RenameSupport = require('./goRename');
 import {check, ICheckResult} from './goCheck';
 import vscode = require('vscode');
 
-export function activate() {
-	vscode.Modes.SuggestSupport.register('go', new SuggestSupport());
-	vscode.Modes.ExtraInfoSupport.register('go', new ExtraInfoSupport());
-	vscode.Modes.DeclarationSupport.register('go', new DeclarationSupport());
-	vscode.Modes.ReferenceSupport.register('go', new ReferencesSupport());
-	vscode.Modes.FormattingSupport.register('go', new FormattingSupport());
-	vscode.Modes.RenameSupport.register('go', new RenameSupport());
+export function activate(subscriptions: vscode.Disposable[]) {
+	subscriptions.push(vscode.Modes.SuggestSupport.register('go', new SuggestSupport()));
+	subscriptions.push(vscode.Modes.ExtraInfoSupport.register('go', new ExtraInfoSupport()));
+	subscriptions.push(vscode.Modes.DeclarationSupport.register('go', new DeclarationSupport()));
+	subscriptions.push(vscode.Modes.ReferenceSupport.register('go', new ReferencesSupport()));
+	subscriptions.push(vscode.Modes.FormattingSupport.register('go', new FormattingSupport()));
+	subscriptions.push(vscode.Modes.RenameSupport.register('go', new RenameSupport()));
 
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher();

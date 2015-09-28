@@ -78,6 +78,8 @@ declare module 'vscode' {
 
 		isDirty(): boolean;
 
+		save(): Thenable<boolean>;
+
 		/**
 		 * The language identifier associated with this document.
 		 */
@@ -209,9 +211,9 @@ declare module 'vscode' {
 
 		/**
 		 * Perform an edit on the document associated with this text editor.
-		 * The passed in {{edit}} is available only for the duration of the callback.
+		 * The passed in {{editBuilder}} is available only for the duration of the callback.
 		 */
-		edit(callback:(edit:TextEditorEdit)=>void): Thenable<boolean>;
+		edit(callback:(editBuilder:TextEditorEdit)=>void): Thenable<boolean>;
 
 	}
 
@@ -520,6 +522,12 @@ declare module 'vscode' {
 		options: TextEditorOptions;
 	}
 
+	export interface ITelemetryInfo {
+		sessionId: string;
+		machineId: string;
+		instanceId: string;
+	}
+
 	export namespace window {
 
 		export function getActiveTextEditor(): TextEditor;
@@ -554,6 +562,8 @@ declare module 'vscode' {
 		TODO@api move into a node_module
 		 */
 		export function runInTerminal(command: string, args: string[], options?: ExecutionOptions): Thenable<any>;
+
+		export function getTelemetryInfo(): Thenable<ITelemetryInfo>;
 
 	}
 
@@ -611,8 +621,8 @@ declare module 'vscode' {
 
 		export function getTextDocuments(): TextDocument[];
 		export function getTextDocument(resource: Uri): TextDocument;
-		export const onDidAddTextDocument: Event<TextDocument>;
-		export const onDidRemoveTextDocument: Event<TextDocument>;
+		export const onDidOpenTextDocument: Event<TextDocument>;
+		export const onDidCloseTextDocument: Event<TextDocument>;
 		export const onDidChangeTextDocument: Event<TextDocumentChangeEvent>;
 		export const onDidSaveTextDocument: Event<TextDocument>;
 	}
@@ -759,7 +769,7 @@ declare module 'vscode' {
 			sets: string[][];
 		}
 		var InplaceReplaceSupport: {
-			register(modeId: string, inplaceReplaceSupport: Modes.IInplaceReplaceSupport): void;
+			register(modeId: string, inplaceReplaceSupport: Modes.IInplaceReplaceSupport): Disposable;
 		};
 		// --- End InplaceReplaceSupport
 
@@ -778,7 +788,7 @@ declare module 'vscode' {
 			findDeclaration(document: TextDocument, position: Position, token: CancellationToken): Thenable<IReference>;
 		}
 		var DeclarationSupport: {
-			register(modeId: string, declarationSupport: IDeclarationSupport): void;
+			register(modeId: string, declarationSupport: IDeclarationSupport): Disposable;
 		};
 		// --- End IDeclarationSupport
 
@@ -799,7 +809,7 @@ declare module 'vscode' {
 			languageModeStateId?: number;
 		}
 		var CodeLensSupport: {
-			register(modeId: string, codeLensSupport: ICodeLensSupport): void;
+			register(modeId: string, codeLensSupport: ICodeLensSupport): Disposable;
 		};
 		// --- End ICodeLensSupport
 
@@ -812,7 +822,7 @@ declare module 'vscode' {
 			findOccurrences(resource: TextDocument, position: Position, token: CancellationToken): Thenable<IOccurrence[]>;
 		}
 		var OccurrencesSupport: {
-			register(modeId: string, occurrencesSupport:IOccurrencesSupport): void;
+			register(modeId: string, occurrencesSupport:IOccurrencesSupport): Disposable;
 		};
 		// --- End IOccurrencesSupport
 
@@ -829,7 +839,7 @@ declare module 'vscode' {
 			outlineGroupLabel?: { [name: string]: string; };
 		}
 		var OutlineSupport: {
-			register(modeId: string, outlineSupport:IOutlineSupport): void;
+			register(modeId: string, outlineSupport:IOutlineSupport): Disposable;
 		};
 		// --- End IOutlineSupport
 
@@ -850,7 +860,7 @@ declare module 'vscode' {
 			runQuickFixAction(resource: TextDocument, range: Range, id: any, token: CancellationToken): Thenable<IQuickFixResult>;
 		}
 		var QuickFixSupport: {
-			register(modeId: string, quickFixSupport:IQuickFixSupport): void
+			register(modeId: string, quickFixSupport:IQuickFixSupport): Disposable
 		};
 		// --- End IOutlineSupport
 
@@ -865,7 +875,7 @@ declare module 'vscode' {
 			findReferences(document: TextDocument, position: Position, includeDeclaration: boolean, token: CancellationToken): Thenable<IReference[]>;
 		}
 		var ReferenceSupport: {
-			register(modeId: string, quickFixSupport:IReferenceSupport): void;
+			register(modeId: string, quickFixSupport:IReferenceSupport): Disposable;
 		};
 		// --- End IReferenceSupport
 
@@ -905,7 +915,7 @@ declare module 'vscode' {
 			getParameterHints(document: TextDocument, position: Position, token: CancellationToken): Thenable<IParameterHints>;
 		}
 		var ParameterHintsSupport: {
-			register(modeId: string, parameterHintsSupport:IParameterHintsSupport): void;
+			register(modeId: string, parameterHintsSupport:IParameterHintsSupport): Disposable;
 		};
 		// --- End IParameterHintsSupport
 
@@ -920,7 +930,7 @@ declare module 'vscode' {
 			computeInfo(document: TextDocument, position: Position, token: CancellationToken): Thenable<IComputeExtraInfoResult>;
 		}
 		var ExtraInfoSupport: {
-			register(modeId: string, extraInfoSupport:IExtraInfoSupport): void;
+			register(modeId: string, extraInfoSupport:IExtraInfoSupport): Disposable;
 		};
 		// --- End IExtraInfoSupport
 
@@ -935,7 +945,7 @@ declare module 'vscode' {
 			rename(document: TextDocument, position: Position, newName: string, token: CancellationToken): Thenable<IRenameResult>;
 		}
 		var RenameSupport: {
-			register(modeId: string, renameSupport:IRenameSupport): void;
+			register(modeId: string, renameSupport:IRenameSupport): Disposable;
 		};
 		// --- End IRenameSupport
 
@@ -975,7 +985,7 @@ declare module 'vscode' {
 			formatAfterKeystroke?: (document: TextDocument, position: Position, ch: string, options: IFormattingOptions, token: CancellationToken) => Thenable<ISingleEditOperation[]>;
 		}
 		var FormattingSupport: {
-			register(modeId: string, formattingSupport:IFormattingSupport): void;
+			register(modeId: string, formattingSupport:IFormattingSupport): Disposable;
 		};
 		// --- End IRenameSupport
 
@@ -1013,7 +1023,7 @@ declare module 'vscode' {
 			getSuggestionDetails? : (document: TextDocument, position: Position, suggestion:ISuggestion, token: CancellationToken) => Thenable<ISuggestion>;
 		}
 		var SuggestSupport: {
-			register(modeId:string, suggestSupport:ISuggestSupport): void;
+			register(modeId:string, suggestSupport:ISuggestSupport): Disposable;
 		};
 		// --- End ISuggestSupport
 
@@ -1032,7 +1042,7 @@ declare module 'vscode' {
 			getNavigateToItems:(search: string, token: CancellationToken) => Thenable<ITypeBearing[]>;
 		}
 		var NavigateTypesSupport: {
-			register(modeId:string, navigateTypeSupport:INavigateTypesSupport): void;
+			register(modeId:string, navigateTypeSupport:INavigateTypesSupport): Disposable;
 		};
 
 		// --- End INavigateTypesSupport
@@ -1047,7 +1057,7 @@ declare module 'vscode' {
 			blockCommentEndToken?:string;
 		}
 		var CommentsSupport: {
-			register(modeId:string, commentsSupport:ICommentsSupport): void;
+			register(modeId:string, commentsSupport:ICommentsSupport): Disposable;
 		};
 		// --- End ICommentsSupport
 
@@ -1056,7 +1066,7 @@ declare module 'vscode' {
 			wordDefinition?: RegExp;
 		}
 		var TokenTypeClassificationSupport: {
-			register(modeId:string, tokenTypeClassificationSupport:ITokenTypeClassificationSupport): void;
+			register(modeId:string, tokenTypeClassificationSupport:ITokenTypeClassificationSupport): Disposable;
 		};
 		// --- End ITokenTypeClassificationSupport
 
@@ -1069,7 +1079,7 @@ declare module 'vscode' {
 			embeddedElectricCharacters?: string[];
 		}
 		var ElectricCharacterSupport: {
-			register(modeId:string, electricCharacterSupport:IElectricCharacterSupport): void;
+			register(modeId:string, electricCharacterSupport:IElectricCharacterSupport): Disposable;
 		};
 		// --- End IElectricCharacterSupport
 
@@ -1089,7 +1099,7 @@ declare module 'vscode' {
 			notIn?: string[];
 		}
 		var CharacterPairSupport: {
-			register(modeId:string, characterPairSupport:ICharacterPairSupport): void;
+			register(modeId:string, characterPairSupport:ICharacterPairSupport): Disposable;
 		};
 		// --- End ICharacterPairSupport
 
@@ -1126,7 +1136,7 @@ declare module 'vscode' {
 			regExpRules?: IOnEnterRegExpRules[];
 		}
 		var OnEnterSupport: {
-			register(modeId:string, opts:IOnEnterSupportOptions): void;
+			register(modeId:string, opts:IOnEnterSupportOptions): Disposable;
 		};
 		// --- End IOnEnterSupport
 
@@ -1145,21 +1155,17 @@ declare module 'vscode' {
 			getId(): string;
 		}
 
-		function registerMonarchDefinition(modeId: string, language: Modes.ILanguage): void;
-		function loadInBackgroundWorker<T>(scriptSrc: string): Thenable<T>;
+		export interface IWorker<T> {
+			disposable: Disposable;
+			load(): Thenable<T>;
+		}
+
+		function registerMonarchDefinition(modeId: string, language: Modes.ILanguage): Disposable;
+		function loadInBackgroundWorker<T>(scriptSrc: string): IWorker<T>;
 
 	}
 
-	/**
-	 * DO NOT USE.
-	 */
-	export namespace _internal {
 
-		/**
-		 * DO NOT USE.
-		 */
-		export function sendTelemetryEvent(event:string, data:any):void;
-	}
 }
 
 declare module 'vscode-testing' {
