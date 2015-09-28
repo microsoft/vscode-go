@@ -26,7 +26,7 @@
 		"vscode": "*"
 	},
 	"activationEvents": [
-		"textModel:go"
+		"onLanguage:go"
 	],
 	"main": "./out/goMain",
 	"contributes": {
