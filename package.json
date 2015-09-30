@@ -1,6 +1,7 @@
 {
 	"name": "go-code",
 	"version": "1.0.0",
+	"publisher": "lukehoban",
 	"description": "Go support for Visual Studio Code",
 	"author": {
 		"name": "Microsoft Corporation"
@@ -14,7 +15,7 @@
 		"prepublish": "tsc"
 	},
 	"extensionDependencies": [
-		"go"
+		"vscode.go"
 	],
 	"dependencies": {
 		"json-rpc2": "^1.0.2"

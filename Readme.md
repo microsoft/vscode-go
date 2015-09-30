@@ -17,7 +17,7 @@ For bug reports and/or feedback, email `lukeh` or [open a bug ](https://monacoto
 
 ## Using
 
-First, you will need to install a the dogfood build of Visual Studio Code for commit **006a41cb** from the internal VS Code [download page](https://ticino-builds.azurewebsites.net).  
+First, you will need to install a the dogfood build of Visual Studio Code for commit **3cc7bb63** from the internal VS Code [download page](https://ticino-builds.azurewebsites.net).  
 
 __Note__: Once you’ve installed this, you **must not accept any automatic updates**.  If you do, you will be reverted to publicly released builds.  Steps for how to opt out of automatic updates can be found [here](https://code.visualstudio.com/Docs/supporting/FAQ#_how-do-i-opt-out-of-vs-code-autoupdates).
 
