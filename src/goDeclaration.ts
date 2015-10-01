@@ -17,7 +17,7 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 			var wordAtPosition = document.getWordRangeAtPosition(position);
 
 			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.column);
+			var range = new vscode.Range(0, 0, position.line, position.character);
 			var offset = document.getTextInRange(range).length;
 
 			var godef = path.join(process.env["GOPATH"], "bin", "godef");

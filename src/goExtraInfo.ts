@@ -18,7 +18,7 @@ class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 			var wordAtPosition = document.getWordRangeAtPosition(position);
 
 			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.column);
+			var range = new vscode.Range(0, 0, position.line, position.character);
 			var offset = document.getTextInRange(range).length;
 
 			var godef = path.join(process.env["GOPATH"], "bin", "godef");
@@ -36,9 +36,9 @@ class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 					var text = lines.slice(1,10).join('\n');
 					var range = new vscode.Range(
 						position.line,
-						wordAtPosition ? wordAtPosition.start.column : position.column,
+						wordAtPosition ? wordAtPosition.start.character : position.character,
 						position.line,
-						wordAtPosition ? wordAtPosition.end.column : position.column);
+						wordAtPosition ? wordAtPosition.end.character : position.character);
 					return resolve({
 						htmlContent: [
 							{ formattedText: text }

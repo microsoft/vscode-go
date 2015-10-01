@@ -21,7 +21,7 @@ class RenameSupport implements vscode.Modes.IRenameSupport {
 			var filename = this.canonicalizeForWindows(document.getUri().fsPath);
 
 			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.column);
+			var range = new vscode.Range(0, 0, position.line, position.character);
 			var offset = document.getTextInRange(range).length;
 
 			var gorename = path.join(process.env["GOPATH"], "bin", "gorename");

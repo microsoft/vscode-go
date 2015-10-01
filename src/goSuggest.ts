@@ -40,13 +40,13 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 			// get current word
 			var wordAtPosition = document.getWordRangeAtPosition(position);
 			var currentWord = '';
-			if (wordAtPosition && wordAtPosition.start.column < position.column) {
+			if (wordAtPosition && wordAtPosition.start.character < position.character) {
 				var word = document.getTextInRange(wordAtPosition);
-				currentWord = word.substr(0, position.column - wordAtPosition.start.column);
+				currentWord = word.substr(0, position.character - wordAtPosition.start.character);
 			}
 
 			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.column);
+			var range = new vscode.Range(0, 0, position.line, position.character);
 			var offset = document.getTextInRange(range).length;
 
 			var gocode = path.join(process.env["GOPATH"], "bin", "gocode");

@@ -28,32 +28,32 @@ declare module 'vscode' {
 		 * Registers a command that can be invoked via a keyboard shortcut,
 		 * an menu item, an action, or directly.
 		 *
-		 * @param commandId - The unique identifier of this command
+		 * @param command - The unique identifier of this command
 		 * @param callback - The command callback
 		 * @param thisArgs - (optional) The this context used when invoking {{callback}}
 		 * @return Disposable which unregisters this command on disposal
 		 */
-		export function registerCommand(commandId: string, callback: CommandCallback, thisArg?: any): Disposable;
+		export function registerCommand(command: string, callback: CommandCallback, thisArg?: any): Disposable;
 
 		/**
 		 * Register a text editor command that will make edits.
 		 * It can be invoked via a keyboard shortcut, a menu item, an action, or directly.
 		 *
-		 * @param commandId - The unique identifier of this command
+		 * @param command - The unique identifier of this command
 		 * @param callback - The command callback. The {{textEditor}} and {{edit}} passed in are available only for the duration of the callback.
 		 * @param thisArgs - (optional) The `this` context used when invoking {{callback}}
 		 * @return Disposable which unregisters this command on disposal
 		 */
-		export function registerTextEditorCommand(commandId: string, callback: (textEditor:TextEditor, edit:TextEditorEdit) => void, thisArg?: any): Disposable;
+		export function registerTextEditorCommand(command: string, callback: (textEditor:TextEditor, edit:TextEditorEdit) => void, thisArg?: any): Disposable;
 
 		/**
 		 * Executes a command
 		 *
-		 * @param commandId - An identifier of a command
+		 * @param command - Identifier of the command to execute
 		 * @param ...rest - Parameter passed to the command function
 		 * @return
 		 */
-		export function executeCommand<T>(commandId: string, ...rest: any[]): Thenable<T>;
+		export function executeCommand<T>(command: string, ...rest: any[]): Thenable<T>;
 	}
 
 	export interface TextEditorOptions {
@@ -70,6 +70,12 @@ declare module 'vscode' {
 		 * However, some documents may have other schemes indicating that they are not available on disk.
 		 */
 		getUri(): Uri;
+
+		/**
+		 * Returns the file system path of the file associated with this document. Shorthand
+		 * notation for ```TextDocument.getUri().fsPath```
+		 */
+		getPath(): string;
 
 		/**
 		 * Is this document representing an untitled file.
@@ -135,9 +141,9 @@ declare module 'vscode' {
 
 		line: number;
 
-		column: number;
+		character: number;
 
-		constructor(line: number, column: number);
+		constructor(line: number, character: number);
 
 		isBefore(other: Position): boolean;
 
@@ -154,16 +160,26 @@ declare module 'vscode' {
 		constructor(startLine: number, startColumn: number, endLine:number, endColumn:number);
 
 		contains(positionOrRange: Position | Range): boolean;
+
+		/**
+		 * @return `true` iff `start` and `end` are equal
+		 */
 		isEmpty(): boolean;
+
+		/**
+		 * @return `true` iff start and end are on the same line
+		 */
+		isOneLine(): boolean;
 	}
 
-	export class Selection {
+	export class Selection extends Range {
 
-		start: Position;
+		anchor: Position;
 
-		end: Position;
+		active: Position;
 
-		constructor(start: Position, end: Position);
+		constructor(anchor: Position, active: Position);
+		constructor(anchorLine: number, anchorColumn: number, activeLine:number, activeColumn:number);
 
 		isReversed(): boolean;
 	}
@@ -413,9 +429,9 @@ declare module 'vscode' {
 	 */
 	export interface InputBoxOptions {
 		/**
-		* More context around the input that is being asked for.
+		* The text to display underneath the input box.
 		*/
-		description?: string;
+		prompt?: string;
 
 		/**
 		* an optional string to show as place holder in the input box to guide the user what to type
@@ -427,7 +443,7 @@ declare module 'vscode' {
 	 *
 	 */
 	interface LanguageFilter {
-		language: string;
+		language?: string;
 		scheme?: string;
 		pattern?: string;
 	}
@@ -562,9 +578,6 @@ declare module 'vscode' {
 		TODO@api move into a node_module
 		 */
 		export function runInTerminal(command: string, args: string[], options?: ExecutionOptions): Thenable<any>;
-
-		export function getTelemetryInfo(): Thenable<ITelemetryInfo>;
-
 	}
 
 	/**
@@ -630,8 +643,8 @@ declare module 'vscode' {
 	export namespace languages {
 
 		/**
-		 * Add diagnostics, such as compiler errors or warnings. They wil represented as
-		 * squiggles in text editors and in general list of errors.
+		 * Add diagnostics, such as compiler errors or warnings. They will be represented as
+		 * squiggles in text editors and in a list of diagnostics.
 		 * To remove the diagnostics again, dispose the `Disposable` which is returned
 		 * from this function call.
 		 *
@@ -663,6 +676,8 @@ declare module 'vscode' {
 		export function getConfigurationMemento(extensionId: string): ReadOnlyMemento;
 
 		export function getExtension(extensionId: string): any;
+
+		export function getTelemetryInfo(): Thenable<ITelemetryInfo>;
 	}
 
 	export interface IHTMLContentElement {

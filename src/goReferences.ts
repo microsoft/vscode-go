@@ -26,7 +26,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 			var wordAtPosition = document.getWordRangeAtPosition(position);
 
 			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.column);
+			var range = new vscode.Range(0, 0, position.line, position.character);
 			var offset = document.getTextInRange(range).length;
 
 			var gofindreferences = path.join(process.env["GOPATH"], "bin", "go-find-references");
@@ -47,7 +47,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 						var [_, file, lineStr, colStr] = match;
 						var referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 						var range = new vscode.Range(
-							+lineStr, +colStr, +lineStr, +colStr + wordAtPosition.end.column - wordAtPosition.start.column
+							+lineStr, +colStr, +lineStr, +colStr + wordAtPosition.end.character - wordAtPosition.start.character
 						);
 						results.push({
 							resource: referenceResource,
