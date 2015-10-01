@@ -14,6 +14,7 @@ import DeclarationSupport = require('./goDeclaration');
 import ReferencesSupport = require('./goReferences');
 import FormattingSupport = require('./goFormat');
 import RenameSupport = require('./goRename');
+import OutlineSupport = require('./goOutline');
 import {check, ICheckResult} from './goCheck';
 import vscode = require('vscode');
 
@@ -24,6 +25,7 @@ export function activate(subscriptions: vscode.Disposable[]) {
 	subscriptions.push(vscode.Modes.ReferenceSupport.register('go', new ReferencesSupport()));
 	subscriptions.push(vscode.Modes.FormattingSupport.register('go', new FormattingSupport()));
 	subscriptions.push(vscode.Modes.RenameSupport.register('go', new RenameSupport()));
+	subscriptions.push(vscode.Modes.OutlineSupport.register('go', new OutlineSupport()));
 
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher();
@@ -45,7 +47,8 @@ function setupGoPathAndOfferToInstallTools() {
 			goreturns: "sourcegraph.com/sqs/goreturns",
 			godef: "github.com/rogpeppe/godef",
 			golint: "github.com/golang/lint/golint",
-			"go-find-references": "github.com/lukehoban/go-find-references"
+			"go-find-references": "github.com/lukehoban/go-find-references",
+			"go-outline": "github.com/lukehoban/go-outline"
 		}
 		var keys = Object.keys(tools)
 		Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
