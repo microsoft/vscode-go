@@ -101,7 +101,8 @@ function startBuildOnSaveWatcher() {
 
 	vscode.extensions.getConfigurationMemento('go').getValues().then((config = {}) => {
 		vscode.workspace.onDidSaveTextDocument(document => {
-			check(document.getUri().fsPath, config['buildOnSave'], config['lintOnSave'], config['vetOnSave']).then(errors => {
+			var uri = document.getUri();
+			check(uri.fsPath, config['buildOnSave'], config['lintOnSave'], config['vetOnSave']).then(errors => {
 				if (_diagnostics) {
 					_diagnostics.dispose();
 				}
@@ -118,7 +119,7 @@ function startBuildOnSaveWatcher() {
 						endColumn = text.length - trailing.length + 1;
 					}
 					let range = new vscode.Range(error.line, startColumn, error.line, endColumn);
-					let location = new vscode.Location(document.getUri(), range);
+					let location = new vscode.Location(uri, range);
 					return new vscode.Diagnostic(mapSeverityToVSCodeSeverity(error.severity), location, error.msg);
 				});
 				_diagnostics = vscode.languages.addDiagnostics(diagnostics);
