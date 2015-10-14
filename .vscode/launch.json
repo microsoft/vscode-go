@@ -1,0 +1,26 @@
+{
+	"version": "0.1.0",
+	"configurations": [
+		{
+			"name": "Launch Extension",
+			"type": "extensionHost",
+			// path to VSCode executable
+			"runtimeExecutable": "${execPath}",
+			// force VSCode to create a new window and pass this project as an additonal plugin location
+			// add workspace path to %GOPATH% so that there is some meaningful contents
+			"args": [ "--new-window", "--extensionDevelopmentPath=${workspaceRoot}" ],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outDir": "out"
+		},
+		{
+			"name": "debug-debugger",
+			"type": "node",
+			"program": "./out/debugAdapter/goDebug.js",
+			"stopOnEntry": false,
+			"args": [ "--server=4711" ],
+			"sourceMaps": true,
+			"outDir": "out/debugAdapter"
+		}
+	]
+}
