@@ -8,6 +8,7 @@ This Code extension adds rich language support for the Go language, including:
 - Quick Info (using `godef`)
 - Goto Definition (using `godef`)
 - Find References (using `go-find-references`)
+- File outline (using `go-outline`)
 - Rename (using `gorename`)
 - Build-on-save (using `go build` and `go test`)
 - Format (using `goreturns` or `goimports` or `gofmt`)
@@ -17,9 +18,7 @@ For bug reports and/or feedback, email `lukeh` or [open a bug ](https://monacoto
 
 ## Using
 
-First, you will need to install a the dogfood build of Visual Studio Code for commit **b7bf41eb** from the internal VS Code [download page](https://ticino-builds.azurewebsites.net).  
-
-__Note__: Once you’ve installed this, you **must not accept any automatic updates**.  If you do, you will be reverted to publicly released builds.  Steps for how to opt out of automatic updates can be found [here](https://code.visualstudio.com/Docs/supporting/FAQ#_how-do-i-opt-out-of-vs-code-autoupdates).
+First, you will need to install Visual Studio Code 0.9.*.  
 
 Next, clone this repo into your Code extensions folder and run `npm install`.
 
