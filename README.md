@@ -97,3 +97,6 @@ And for debugging:
 
 ### Debugger
 ![IDE](http://i.giphy.com/3oEduO9Rx6awkds4es.gif)
+
+## License
+[MIT](LICENSE)
