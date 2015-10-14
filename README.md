@@ -1,6 +1,8 @@
 # Go for Visual Studio Code
 
-This Code extension adds rich language support for the Go language, including:
+> **NOTE:** All content within this repo is private and cannot be shared with others without the express written permission of the product team.
+
+This extension adds rich language support for the Go language to VS Code, including:
 
 - Colorization
 - Completion Lists (using `gocode`)
@@ -14,11 +16,15 @@ This Code extension adds rich language support for the Go language, including:
 - Format (using `goreturns` or `goimports` or `gofmt`)
 - [partially implemented] Debugging (using `delve`)
 
-For bug reports and/or feedback, email `lukeh` or [open a bug ](https://monacotools.visualstudio.com/DefaultCollection/Monaco/_workItems#_a=new&witd=Bug&%5BSystem.Title%5D=Go%3A&%5BSystem.AreaPath%5D=Monaco%5CGo) under the `Monaco\Go` area path.
+### IDE Features
+![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
+
+### Debugger
+![IDE](http://i.giphy.com/3oEduO9Rx6awkds4es.gif)
 
 ## Using
 
-First, you will need to install Visual Studio Code 0.9.*.  
+First, you will need to install Visual Studio Code `0.9.1`.  
 
 Next, clone this repo into your Code extensions folder and run `npm install`.
 
@@ -89,14 +95,6 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 And for debugging:
 
 - delve: `go get -u -v github.com/derekparker/delve/cmd/dlv`
-
-## Demos
-
-### IDE Features
-![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
-
-### Debugger
-![IDE](http://i.giphy.com/3oEduO9Rx6awkds4es.gif)
 
 ## License
 [MIT](LICENSE)
