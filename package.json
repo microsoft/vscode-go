@@ -1,6 +1,6 @@
 {
-	"name": "go-code",
-	"version": "1.0.0",
+	"name": "Go",
+	"version": "0.5.1",
 	"publisher": "lukehoban",
 	"description": "Go support for Visual Studio Code",
 	"author": {

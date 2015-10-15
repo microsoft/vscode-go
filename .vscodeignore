@@ -1,0 +1,5 @@
+src/**/*
+typings/**/*
+.vscode/**/*
+tsconfig.json
+.gitignore
