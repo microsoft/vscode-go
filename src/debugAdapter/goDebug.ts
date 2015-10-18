@@ -373,9 +373,18 @@ class GoDebugSession extends DebugSession {
 
 	protected evaluateRequest(response: OpenDebugProtocol.EvaluateResponse, args: OpenDebugProtocol.EvaluateArguments): void {
 		console.log("EvaluateRequest");
-		response.body = { result: "evaluate(" + args.expression + ")", variablesReference: 0 };
-		this.sendResponse(response);
-		console.log("EvaluateResponse");
+		var evalSymbolArgs = {
+			symbol: args.expression,
+			scope: {
+				goroutineID: this.debugState.currentGoroutine.id,
+				frame: args.frameId
+			}
+		};
+		this.delve.call<DebugVariable>('EvalSymbol', [evalSymbolArgs], (err, variable) => {
+			response.body = { result: variable.value, variablesReference: 0 };
+			this.sendResponse(response);
+			console.log("EvaluateResponse");
+		});
 	}
 }
 
