@@ -60,8 +60,15 @@ interface DebugFunction {
 
 interface DebugVariable {
 	name: string;
-	value: string;
+	addr: number;
 	type: string;
+	realType: string;
+	kind: number;
+	value: string;
+	len: number;
+	cap: number;
+	children: DebugVariable[];
+	unreadable: string;
 }
 
 interface DebugGoroutine {
@@ -110,6 +117,9 @@ class Delve {
 			});
 			this.debugProcess.on('close', function(code) {
 				console.error("Process exiting with code: " + code);
+			});
+			this.debugProcess.on('error', function(err) {
+				reject(err);
 			});
 		});
 	}
@@ -279,11 +289,19 @@ class GoDebugSession extends DebugSession {
 					console.log(locals);
 					this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, args) => {
 						console.log(args);
-						var variables = args.concat(locals).map((v, i) => ({ 
-							name: v.name,
-							value: v.value,
-							variablesReference: 0
-						}));
+						var vars = args.concat(locals);
+						for(var i = 2; i < parts.length; i++) {
+							vars = vars[+parts[i]].children;
+						}
+						var variables = vars.map((v, i) => {
+							return { 
+								name: v.name,
+								value: v.value || v.type,
+								variablesReference: v.children.length > 0 ? this._variableHandles.create(req + "_" + i) : 0
+							}
+						});
+						console.log(JSON.stringify(variables, null, ' '))
+						
 						response.body = { variables };
 						this.sendResponse(response);	
 						console.log("VariablesResponse");
