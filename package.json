@@ -4,15 +4,16 @@
 	"publisher": "lukehoban",
 	"description": "Go support for Visual Studio Code",
 	"author": {
-		"name": "Microsoft Corporation"
+		"name": "Microsoft Corporation - Development Labs"
 	},
 	"private": true,
 	"repository": {
 		"type": "git",
-		"url": "https://monacotools.visualstudio.com/DefaultCollection/Monaco/_git/go-code"
+		"url": "https://github.com/Microsoft/vscode-go.git"
 	},
 	"scripts": {
-		"prepublish": "tsc"
+		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+		"compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
 	},
 	"extensionDependencies": [
 		"vscode.go"
@@ -21,7 +22,7 @@
 		"json-rpc2": "^1.0.2"
 	},
 	"devDependencies": {
-		"typescript": "^1.6.2"
+		"vscode": "*"
 	},
 	"engines": {
 		"vscode": "*"
