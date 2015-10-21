@@ -39,6 +39,13 @@ function setupGoPathAndOfferToInstallTools() {
 		if(!process.env["GOPATH"] && gopath) {
 			process.env["GOPATH"] = gopath;
 		}
+		
+		if(!process.env["GOPATH"]) {
+			vscode.languages.addWarningLanguageStatus("go", "GOPATH not set", () => {
+				vscode.window.showInformationMessage("GOPATH is not set as an environment variable or via `go.gopath` setting in Code");
+			});
+			return;
+		}
 
 		// Offer to install any missing tools
 		var tools = {
@@ -68,11 +75,18 @@ function setupGoPathAndOfferToInstallTools() {
 		});
 
 		function promptForInstall(missing: string[], status: vscode.Disposable) {
+			
+			var channel = vscode.window.getOutputChannel('Go');
+			channel.reveal();
+			
 			vscode.window.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
 				title: "Install",
 				command: () => {
-					missing.forEach(tool  => {
-						vscode.window.runInTerminal("go", ["get", "-u", "-v", tool], { cwd: process.env['GOPATH'] });
+					missing.forEach(tool => {
+						var p = cp.exec("go get -u -v " + tool, { cwd: process.env['GOPATH'], env: process.env });
+						p.stderr.on('data', (data: string) => {
+								channel.append(data);
+						});
 					});
 				}
 			});

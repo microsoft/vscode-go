@@ -85,6 +85,9 @@
 					"description": "Specifies the GOPATH to use when no environment variable is set."
 				}
 			}
-		}
+		},
+		"outputChannels": [
+			"Go"
+		]
 	}
 }
