@@ -22,11 +22,6 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 		});
 	}
 
-	// TODO: work around bug that Code always calls formatRange
-	public formatRange(document: vscode.TextDocument, range: vscode.Range, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken): Thenable<vscode.Modes.ISingleEditOperation[]> {
-		return this.formatDocument(document, options, token)
-	}
-
 	public formatDocument(document: vscode.TextDocument, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken): Thenable<vscode.Modes.ISingleEditOperation[]> {
 		return document.save().then(() => {
 			return this.doFormatDocument(document, options, token);
