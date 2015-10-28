@@ -8,15 +8,15 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 
-class RenameSupport implements vscode.Modes.IRenameSupport {
+export class GoRenameProvider implements vscode.RenameProvider {
 
-	public rename(document:vscode.TextDocument, position:vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
+	public provideRenameEdits(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
 		return vscode.workspace.saveAll(false).then(() => {
 			return this.doRename(document, position, newName, token);
 		});
 	}
 
-	private doRename(document:vscode.TextDocument, position:vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.Modes.IRenameResult> {
+	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
 		return new Promise((resolve, reject) => {
 			var filename = this.canonicalizeForWindows(document.getUri().fsPath);
 
@@ -26,7 +26,7 @@ class RenameSupport implements vscode.Modes.IRenameSupport {
 
 			var gorename = path.join(process.env["GOPATH"], "bin", "gorename");
 
-			cp.execFile(gorename, ["-offset", filename+":#"+offset, "-to", newName], {}, (err, stdout, stderr) => {
+			cp.execFile(gorename, ["-offset", filename + ":#" + offset, "-to", newName], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
 						vscode.window.showInformationMessage("The 'gorename' command is not available.  Use 'go get golang.org/x/tools/cmd/gorename' to install.");
@@ -34,25 +34,20 @@ class RenameSupport implements vscode.Modes.IRenameSupport {
 					}
 					if (err) return reject("Cannot rename due to errors: " + err);
 					// TODO: 'gorename' makes the edits in the files out of proc.
-					//       Would be better if we coudl get the list of edits.
-					return resolve({
-						currentName: newName,
-						edits: []
-					});
-				} catch(e) {
+					// Would be better if we coudl get the list of edits.
+					return Promise.resolve<vscode.WorkspaceEdit>(null);
+				} catch (e) {
 					reject(e);
 				}
 			});
 		});
 	}
 
-	canonicalizeForWindows(filename:string):string {
+	canonicalizeForWindows(filename: string): string {
 		// capitalization of the GOPATH root must match GOPATH exactly
 		var gopath: string = process.env['GOPATH']
-		if(!gopath) return filename;
-		if(filename.toLowerCase().substring(0, gopath.length) != gopath.toLowerCase()) return filename;
+		if (!gopath) return filename;
+		if (filename.toLowerCase().substring(0, gopath.length) != gopath.toLowerCase()) return filename;
 		return gopath + filename.slice(gopath.length);
 	}
 }
-
-export = RenameSupport

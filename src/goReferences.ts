@@ -8,15 +8,15 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 
-class ReferenceSupport implements vscode.Modes.IReferenceSupport {
+export class GoReferenceProvider implements vscode.ReferenceProvider {
 
-	public findReferences(document: vscode.TextDocument, position:vscode.Position, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+	public provideReferences(document: vscode.TextDocument, position:vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return vscode.workspace.saveAll(false).then(() => {
-				return this.doFindReferences(document, position, includeDeclaration, token);
+				return this.doFindReferences(document, position, options, token);
 		});
 	}
 
-	private doFindReferences(document:vscode.TextDocument, position:vscode.Position, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+	private doFindReferences(document:vscode.TextDocument, position:vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return new Promise((resolve, reject) => {
 			var filename = this.canonicalizeForWindows(document.getUri().fsPath);
 			var cwd = path.dirname(filename)
@@ -39,7 +39,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 					}
 
 					var lines = stdout.toString().split('\n');
-					var results: vscode.Modes.IReference[] = [];
+					var results: vscode.Location[] = [];
 					for(var i = 0; i < lines.length; i+=2) {
 						var line = lines[i];
 						var match = /(.*):(\d+):(\d+)/.exec(lines[i]);
@@ -47,12 +47,10 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 						var [_, file, lineStr, colStr] = match;
 						var referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 						var range = new vscode.Range(
-							+lineStr, +colStr, +lineStr, +colStr + wordAtPosition.end.character - wordAtPosition.start.character
+							+lineStr-1, +colStr-1, +lineStr-1, +colStr + wordAtPosition.end.character - wordAtPosition.start.character-1
 						);
-						results.push({
-							resource: referenceResource,
-							range
-						});
+						results.push(
+							new vscode.Location(referenceResource, range));
 					}
 					resolve(results);
 				} catch(e) {
@@ -71,5 +69,3 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 	}
 
 }
-
-export = ReferenceSupport

@@ -8,9 +8,9 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 
-class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
+export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
-	public findDeclaration(document:vscode.TextDocument, position:vscode.Position, token: vscode.CancellationToken):Thenable<vscode.Modes.IReference> {
+	public provideDefinition(document:vscode.TextDocument, position:vscode.Position, token: vscode.CancellationToken):Thenable<vscode.Location> {
 
 		return new Promise((resolve, reject) => {
 
@@ -37,11 +37,10 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 					if(!match) return resolve(null);
 					var [_, file, line, col] = match;
 					var definitionResource = vscode.Uri.file(file);
-					var range = new vscode.Range(+line, +col, +line, +col + 1);
-					return resolve({
-						resource: definitionResource,
-						range
-					});
+					var range = new vscode.Range(+line-1, +col-1, +line-1, +col-1);
+					return resolve(
+						new vscode.Location(definitionResource, range)
+					);
 				} catch(e) {
 					reject(e);
 				}
@@ -50,5 +49,3 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 		});
 	}
 }
-
-export = DeclartionSupport;

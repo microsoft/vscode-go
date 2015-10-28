@@ -8,18 +8,18 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 
-function vscodeTypeFromGoCodeClass(kind: string): string {
+function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
 		case "const":
 		case "package":
 		case "type":
-			return 'keyword';
+			return vscode.CompletionItemKind.Keyword;
 		case "func":
-			return 'function';
+			return vscode.CompletionItemKind.Function;
 		case "var":
-			return 'field';
+			return vscode.CompletionItemKind.Field;
 	}
-	return kind;
+	return vscode.CompletionItemKind.Value; // TODO@EG additional mappings needed?
 }
 
 interface GoCodeSuggestion {
@@ -28,12 +28,12 @@ interface GoCodeSuggestion {
 	type: string;
 }
 
-class SuggestSupport implements vscode.Modes.ISuggestSupport {
+export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	public triggerCharacters = ['.'];
 	public excludeTokens = ['string', 'comment', 'numeric'];
 
-	public suggest(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Modes.ISuggestions[]> {
+	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.CompletionItem[]> {
 		return new Promise((resolve, reject) => {
 			var filename = document.getUri().fsPath;
 
@@ -60,22 +60,16 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 					if (err) return reject(err);
 					var results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 					var suggestions = results[1].map(suggest => {
-						return {
-							label: suggest.name,
-							typeLabel: (suggest.class == "func" ? suggest.type.substring(4) : suggest.type),
-							codeSnippet: suggest.name,
-							type: vscodeTypeFromGoCodeClass(suggest.class)
-						};
+						var item = new vscode.CompletionItem(suggest.name);
+						item.kind = vscodeKindFromGoCodeClass(suggest.class);
+						return item;
 					})
-					resolve([{ currentWord, suggestions }]);
+					resolve(suggestions);
 				} catch(e) {
 					reject(e);
 				}
 			});
 			p.stdin.end(document.getText());
-
 		});
 	}
 }
-
-export = SuggestSupport;
