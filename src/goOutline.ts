@@ -30,8 +30,7 @@ export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
 
 		return new Promise((resolve, reject) => {
-			var filename = document.getUri().fsPath;
-
+			var filename = document.uri.fsPath;
 			var text = document.getText();
 			var lines = text.split('\n');
 			var lineLengths = lines.map(line => line.length + 1);
@@ -47,19 +46,13 @@ export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 				throw new Error("Illegal offset: " + offset)
 			}
 
-			var convertToCodeSymbols = (decl: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[]): void => {
+			var convertToCodeSymbols = (decl: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName:string): void => {
 				decl.forEach((each) => {
-					symbols.push(
-						new vscode.SymbolInformation(
-							each.label,
-							this.goKindToCodeKind[each.type],
-							new vscode.Range(toLineCol(each.start), toLineCol(each.end - 1))
-						)
-					);
+					symbols.push(new vscode.SymbolInformation(each.label, this.goKindToCodeKind[each.type], new vscode.Range(toLineCol(each.start), toLineCol(each.end - 1)), undefined, containerName));
 					if (each.children) {
-						convertToCodeSymbols(each.children, symbols);
+						convertToCodeSymbols(each.children, symbols, each.label);
 					}
-				})
+				});
 			}
 
 			var gooutline = path.join(process.env["GOPATH"], "bin", "go-outline");
@@ -74,7 +67,7 @@ export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 					var result = stdout.toString();
 					var decls = <GoOutlineDeclaration[]>JSON.parse(result);
 					var symbols: vscode.SymbolInformation[] = [];
-					convertToCodeSymbols(decls, symbols);
+					convertToCodeSymbols(decls, symbols, "");
 					return resolve(symbols)
 				} catch (e) {
 					reject(e);

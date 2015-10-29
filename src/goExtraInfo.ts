@@ -13,12 +13,12 @@ export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 
 		return new Promise((resolve, reject) => {
-			let filename = document.getUri().fsPath;
+			let filename = document.uri.fsPath;
 			let wordAtPosition = document.getWordRangeAtPosition(position);
 
 			// compute the file offset for position
 			let range = new Range(0, 0, position.line, position.character);
-			let offset = document.getTextInRange(range).length;
+			let offset = document.getText(range).length;
 
 			let godef = path.join(process.env["GOPATH"], "bin", "godef");
 

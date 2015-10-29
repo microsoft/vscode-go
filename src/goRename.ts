@@ -18,11 +18,11 @@ export class GoRenameProvider implements vscode.RenameProvider {
 
 	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
 		return new Promise((resolve, reject) => {
-			var filename = this.canonicalizeForWindows(document.getUri().fsPath);
+			var filename = this.canonicalizeForWindows(document.uri.fsPath);
 
 			// compute the file offset for position
 			var range = new vscode.Range(0, 0, position.line, position.character);
-			var offset = document.getTextInRange(range).length;
+			var offset = document.getText(range).length;
 
 			var gorename = path.join(process.env["GOPATH"], "bin", "gorename");
 

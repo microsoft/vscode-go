@@ -16,11 +16,10 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 	public autoFormatTriggerCharacters: string[] = [';', '}', '\n'];
 
 	constructor() {
-		vscode.extensions.getConfigurationMemento('go').getValue<string>('formatTool').then(formatTool => {
-			if(formatTool) {
-				this.formatCommand = formatTool;
-			}
-		});
+		let formatTool = vscode.workspace.getConfiguration('go')['formatTool'];
+		if (formatTool) {
+			this.formatCommand = formatTool;
+		}
 	}
 
 	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
@@ -29,9 +28,9 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		});
 	}
 
-	private doFormatDocument(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken):Thenable<vscode.TextEdit[]> {
+	private doFormatDocument(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
 		return new Promise((resolve, reject) => {
-			var filename = document.getUri().fsPath;
+			var filename = document.uri.fsPath;
 
 			var goreturns = path.join(process.env["GOPATH"], "bin", this.formatCommand);
 
@@ -45,11 +44,11 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 					var text = stdout.toString();
 					// TODO: Should use `-d` option to get a diff and then compute the
 					// specific edits instead of replace whole buffer
-					var lastLine = document.getLineCount();
-					var lastLineLastCol = document.getLine(lastLine-1).getEnd().character;
-					var range = new vscode.Range(0, 0, lastLine-1, lastLineLastCol);
+					var lastLine = document.lineCount;
+					var lastLineLastCol = document.lineAt(lastLine - 1).range.end.character;
+					var range = new vscode.Range(0, 0, lastLine - 1, lastLineLastCol);
 					return resolve([new vscode.TextEdit(range, text)]);
-				} catch(e) {
+				} catch (e) {
 					reject(e);
 				}
 			});

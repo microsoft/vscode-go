@@ -18,12 +18,12 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
 			// compute the file offset for position
 			var range = new vscode.Range(0, 0, position.line, position.character);
-			var offset = document.getTextInRange(range).length;
+			var offset = document.getText(range).length;
 
 			var godef = path.join(process.env["GOPATH"], "bin", "godef");
 
 			// Spawn `godef` process
-			var p = cp.execFile(godef, ["-t", "-i", "-f", document.getUri().fsPath, "-o", offset.toString()], {}, (err, stdout, stderr) => {
+			var p = cp.execFile(godef, ["-t", "-i", "-f", document.uri.fsPath, "-o", offset.toString()], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
 						vscode.window.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");

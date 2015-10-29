@@ -35,19 +35,19 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.CompletionItem[]> {
 		return new Promise((resolve, reject) => {
-			var filename = document.getUri().fsPath;
+			var filename = document.uri.fsPath;
 
 			// get current word
 			var wordAtPosition = document.getWordRangeAtPosition(position);
 			var currentWord = '';
 			if (wordAtPosition && wordAtPosition.start.character < position.character) {
-				var word = document.getTextInRange(wordAtPosition);
+				var word = document.getText(wordAtPosition);
 				currentWord = word.substr(0, position.character - wordAtPosition.start.character);
 			}
 
 			// compute the file offset for position
 			var range = new vscode.Range(0, 0, position.line, position.character);
-			var offset = document.getTextInRange(range).length;
+			var offset = document.getText(range).length;
 
 			var gocode = path.join(process.env["GOPATH"], "bin", "gocode");
 
