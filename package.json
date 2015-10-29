@@ -43,16 +43,57 @@
 				]
 			}
 		],
-		"debugAdapter": [
+		"debuggers": [
 			{
 				"type": "go",
+				"label": "Go",
 				"enableBreakpointsFor": {
 					"languageIds": [
 						"go"
 					]
 				},
 				"program": "./out/debugAdapter/goDebug.js",
-				"runtime": "node"
+				"runtime": "node",
+				"initialConfigurations": [
+					{
+						"name": "Launch app.go",
+						"type": "go",
+						"request": "launch",
+						"program": "app.go",
+						"stopOnEntry": false,
+						"env": {},
+						"args": [],
+						"cwd": "."
+					}
+				],
+				"configurationAttributes": {
+					"program": {
+						"type": "string",
+						"description": "Workspace relative path to the program.",
+						"default": "app.go"
+					},
+					"stopOnEntry": {
+						"type": "boolean",
+						"description": "Automatically stop program after launch.",
+						"default": true
+					},
+					"args": {
+						"type": "array",
+						"description": "Command line arguments passed to the program.",
+						"items": { "type": "string" },
+						"default": []
+					},
+					"cwd": {
+						"type": "string",
+						"description": "Workspace relative or absolute path to the working directory of the program being debugged. Default is the current workspace.",
+						"default": "."
+					},
+					"env": {
+						"type": "object",
+						"description": "Environment variables passed to the program.",
+						"default": {}
+					}
+				}
 			}
 		],
 		"configuration": {
