@@ -3,3 +3,4 @@ typings/**/*
 .vscode/**/*
 tsconfig.json
 .gitignore
+node_modules/fs-extra

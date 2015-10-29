@@ -86,18 +86,17 @@ function setupGoPathAndOfferToInstallTools() {
 		var channel = vscode.window.createOutputChannel('Go');
 		channel.reveal();
 
-		// TODO@EG wait for new API which doesn
-		// vscode.window.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
-		// 	title: "Install",
-		// 	command: () => {
-		// 		missing.forEach(tool => {
-		// 			var p = cp.exec("go get -u -v " + tool, { cwd: process.env['GOPATH'], env: process.env });
-		// 			p.stderr.on('data', (data: string) => {
-		// 				channel.append(data);
-		// 			});
-		// 		});
-		// 	}
-		// });
+		vscode.window.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
+			title: "Install",
+			command: () => {
+				missing.forEach(tool => {
+					var p = cp.exec("go get -u -v " + tool, { cwd: process.env['GOPATH'], env: process.env });
+					p.stderr.on('data', (data: string) => {
+						channel.append(data);
+					});
+				});
+			}
+		});
 		status.dispose();
 	}
 }
@@ -124,7 +123,6 @@ function startBuildOnSaveWatcher() {
 
 			var diagnostics = errors.map(error => {
 				let targetResource = vscode.Uri.file(error.file);
-				let document = vscode.workspace.getTextDocument(targetResource);
 				let startColumn = 0;
 				let endColumn = 1;
 				if (document) {

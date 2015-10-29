@@ -33,6 +33,7 @@ export class GoHoverProvider implements HoverProvider {
 					let lines = result.split('\n');
 					if(lines.length > 10) lines[9] = "...";
 					let text = lines.slice(1,10).join('\n');
+					text = text.replace(/\n+$/,'');
 					let range = new Range(
 						position.line,
 						wordAtPosition ? wordAtPosition.start.character : position.character,
