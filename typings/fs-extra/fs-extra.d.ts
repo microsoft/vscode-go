@@ -5,7 +5,7 @@
 
 // Imported from: https://github.com/soywiz/typescript-node-definitions/fs-extra.d.ts
 
-///<reference path="../../node_modules/vscode/typings/node.d.ts"/>  // TODO @ EG should not have to modify a .d.ts file
+///<reference path="../node/node.d.ts"/>
 
 declare module "fs-extra" {
 	import stream = require("stream");
