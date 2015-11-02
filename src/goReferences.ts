@@ -20,14 +20,11 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 		return new Promise((resolve, reject) => {
 			var filename = this.canonicalizeForWindows(document.uri.fsPath);
 			var cwd = path.dirname(filename)
-			var workspaceRoot = vscode.workspace.getPath();
+			var workspaceRoot = vscode.workspace.rootPath;
 
 			// get current word
 			var wordAtPosition = document.getWordRangeAtPosition(position);
-
-			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.character);
-			var offset = document.getText(range).length;
+			var offset = document.offsetAt(position);
 
 			var gofindreferences = path.join(process.env["GOPATH"], "bin", "go-find-references");
 

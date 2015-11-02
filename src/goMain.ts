@@ -48,9 +48,9 @@ function setupGoPathAndOfferToInstallTools() {
 	}
 
 	if (!process.env["GOPATH"]) {
-		vscode.languages.addWarningLanguageStatus("go", "GOPATH not set", () => {
-			vscode.window.showInformationMessage("GOPATH is not set as an environment variable or via `go.gopath` setting in Code");
-		});
+		// vscode.languages.addWarningLanguageStatus("go", "GOPATH not set", () => {
+		// 	vscode.window.showInformationMessage("GOPATH is not set as an environment variable or via `go.gopath` setting in Code");
+		// });
 		return;
 	}
 
@@ -75,9 +75,9 @@ function setupGoPathAndOfferToInstallTools() {
 	}))).then(res => {
 		var missing = res.filter(x => x != null);
 		if (missing.length > 0) {
-			let status = vscode.languages.addWarningLanguageStatus("go", "Analysis Tools Missing", () => {
-				promptForInstall(missing, status);
-			});
+			// let status = vscode.languages.addWarningLanguageStatus("go", "Analysis Tools Missing", () => {
+			// 	promptForInstall(missing, status);
+			// });
 		}
 	});
 

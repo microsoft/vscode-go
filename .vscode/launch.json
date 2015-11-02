@@ -29,7 +29,7 @@
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			// the workspace path should be GOPATH
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}", "--extensionTestsPath=${workspaceRoot}/out/test", "C:\\Users\\egamma\\Projects\\tries\\go" ],
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}", "--extensionTestsPath=${workspaceRoot}/out/test", "env.GOPATH" ],
 			"stopOnEntry": false,
 			"sourceMaps": true,
 			"outDir": "out",

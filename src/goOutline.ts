@@ -31,24 +31,12 @@ export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 
 		return new Promise((resolve, reject) => {
 			var filename = document.uri.fsPath;
-			var text = document.getText();
-			var lines = text.split('\n');
-			var lineLengths = lines.map(line => line.length + 1);
 
-			var toLineCol = (offset: number) => {
-				for (var i = 0; i < lines.length; i++) {
-					if (offset < lineLengths[i]) {
-						return new vscode.Position(i, offset)
-					} else {
-						offset -= lineLengths[i]
-					}
-				}
-				throw new Error("Illegal offset: " + offset)
-			}
+			var positionAt = (offset: number) => document.positionAt(offset);
 
 			var convertToCodeSymbols = (decl: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName:string): void => {
 				decl.forEach((each) => {
-					symbols.push(new vscode.SymbolInformation(each.label, this.goKindToCodeKind[each.type], new vscode.Range(toLineCol(each.start), toLineCol(each.end - 1)), undefined, containerName));
+					symbols.push(new vscode.SymbolInformation(each.label, this.goKindToCodeKind[each.type], new vscode.Range(positionAt(each.start), positionAt(each.end - 1)), undefined, containerName));
 					if (each.children) {
 						convertToCodeSymbols(each.children, symbols, each.label);
 					}

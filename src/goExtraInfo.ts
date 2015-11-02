@@ -4,7 +4,7 @@
 
 'use strict';
 
-import {window, HoverProvider, Hover, TextDocument, Position, Range, IHTMLContentElement, CancellationToken} from 'vscode';
+import {window, HoverProvider, Hover, TextDocument, Position, Range, CancellationToken} from 'vscode';
 import cp = require('child_process');
 import path = require('path');
 
@@ -15,10 +15,7 @@ export class GoHoverProvider implements HoverProvider {
 		return new Promise((resolve, reject) => {
 			let filename = document.uri.fsPath;
 			let wordAtPosition = document.getWordRangeAtPosition(position);
-
-			// compute the file offset for position
-			let range = new Range(0, 0, position.line, position.character);
-			let offset = document.getText(range).length;
+			let offset = document.offsetAt(position);
 
 			let godef = path.join(process.env["GOPATH"], "bin", "godef");
 

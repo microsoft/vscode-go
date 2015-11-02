@@ -45,10 +45,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				currentWord = word.substr(0, position.character - wordAtPosition.start.character);
 			}
 
-			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.character);
-			var offset = document.getText(range).length;
-
+			var offset = document.offsetAt(position);
 			var gocode = path.join(process.env["GOPATH"], "bin", "gocode");
 
 			// Spawn `gocode` process

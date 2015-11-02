@@ -15,10 +15,7 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 		return new Promise((resolve, reject) => {
 
 			var wordAtPosition = document.getWordRangeAtPosition(position);
-
-			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.character);
-			var offset = document.getText(range).length;
+			var offset = document.offsetAt(position);
 
 			var godef = path.join(process.env["GOPATH"], "bin", "godef");
 

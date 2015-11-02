@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { GoHoverProvider } from '../src/goExtraInfo';
 
 // setup:
-//     Fixture path: $GOPATH/src/testrepo/test/testfixture/test.go
+//     Fixture path: $GOPATH/src/___testrepo/test/testfixture/test.go
 //     Fixture file: test.go
 // Contents:
 
@@ -40,7 +40,7 @@ suite("Go Extension Tests", () => {
 		let uri = vscode.Uri.file(fixture);
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			provider.provideHover(textDocument, position, null).then(value => {
-				assert.equal('main func()', value.content.text, 'hover text does not match');
+				assert.equal('main func()', value.contents, 'hover text does not match');
 				assert.deepEqual(new vscode.Range(1, 5, 1, 9), value.range);
 				done();
 			});
