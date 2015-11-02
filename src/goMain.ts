@@ -19,6 +19,7 @@ import {check, ICheckResult} from './goCheck';
 import vscode = require('vscode');
 
 let diagnosticCollection: vscode.DiagnosticCollection;
+let statusBarEntry: vscode.StatusBarItem;
 
 export function activate(subscriptions: vscode.Disposable[]): void {
 	var GO_MODE = 'go';
@@ -31,11 +32,41 @@ export function activate(subscriptions: vscode.Disposable[]): void {
 	subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSybmolProvider()));
 	subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 
+	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
+	subscriptions.push(diagnosticCollection);
+
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher();
 
-	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
-	subscriptions.push(diagnosticCollection);
+	function showHideStatus() {
+		if (!statusBarEntry) {
+			return;
+		}
+		if (!vscode.window.activeTextEditor) {
+			statusBarEntry.hide();
+			return;
+		}
+		let languageId = vscode.window.activeTextEditor.document.languageId;
+		if (languageId == "go") {
+			statusBarEntry.show();
+			return;
+		}
+		statusBarEntry.hide();
+	}
+	subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
+}
+
+
+function showGoStatus(message: string, command: string) {
+	statusBarEntry = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, Number.MIN_VALUE);
+	statusBarEntry.text = message;
+	statusBarEntry.command = command;
+	statusBarEntry.color = 'yellow';
+	statusBarEntry.show();
+}
+
+function disposeStatus() {
+	statusBarEntry.dispose();
 }
 
 function setupGoPathAndOfferToInstallTools() {
@@ -48,9 +79,11 @@ function setupGoPathAndOfferToInstallTools() {
 	}
 
 	if (!process.env["GOPATH"]) {
-		// vscode.languages.addWarningLanguageStatus("go", "GOPATH not set", () => {
-		// 	vscode.window.showInformationMessage("GOPATH is not set as an environment variable or via `go.gopath` setting in Code");
-		// });
+		showGoStatus("GOPATH not set", "go.gopathinfo");
+		vscode.commands.registerCommand("go.gopathinfo", () => {
+			vscode.window.showInformationMessage("GOPATH is not set as an environment variable or via `go.gopath` setting in Code");
+			disposeStatus();
+		});
 		return;
 	}
 
@@ -75,13 +108,15 @@ function setupGoPathAndOfferToInstallTools() {
 	}))).then(res => {
 		var missing = res.filter(x => x != null);
 		if (missing.length > 0) {
-			// let status = vscode.languages.addWarningLanguageStatus("go", "Analysis Tools Missing", () => {
-			// 	promptForInstall(missing, status);
-			// });
+			showGoStatus("Analysis Tools Missing", "go.promptforinstall");
+			vscode.commands.registerCommand("go.promptforinstall", () => {
+				promptForInstall(missing);
+				disposeStatus();
+			});
 		}
 	});
 
-	function promptForInstall(missing: string[], status: vscode.Disposable) {
+	function promptForInstall(missing: string[]) {
 
 		var channel = vscode.window.createOutputChannel('Go');
 		channel.reveal();
@@ -97,7 +132,6 @@ function setupGoPathAndOfferToInstallTools() {
 				});
 			}
 		});
-		status.dispose();
 	}
 }
 
