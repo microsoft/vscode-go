@@ -57,11 +57,12 @@ export function activate(subscriptions: vscode.Disposable[]): void {
 }
 
 
-function showGoStatus(message: string, command: string) {
+function showGoStatus(message: string, command: string, tooltip?: string) {
 	statusBarEntry = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, Number.MIN_VALUE);
 	statusBarEntry.text = message;
 	statusBarEntry.command = command;
 	statusBarEntry.color = 'yellow';
+	statusBarEntry.tooltip = tooltip;
 	statusBarEntry.show();
 }
 
@@ -79,9 +80,10 @@ function setupGoPathAndOfferToInstallTools() {
 	}
 
 	if (!process.env["GOPATH"]) {
-		showGoStatus("GOPATH not set", "go.gopathinfo");
+		var info =  "GOPATH is not set as an environment variable or via `go.gopath` setting in Code";
+		showGoStatus("GOPATH not set", "go.gopathinfo", info);
 		vscode.commands.registerCommand("go.gopathinfo", () => {
-			vscode.window.showInformationMessage("GOPATH is not set as an environment variable or via `go.gopath` setting in Code");
+			vscode.window.showInformationMessage(info);
 			disposeStatus();
 		});
 		return;
@@ -108,7 +110,7 @@ function setupGoPathAndOfferToInstallTools() {
 	}))).then(res => {
 		var missing = res.filter(x => x != null);
 		if (missing.length > 0) {
-			showGoStatus("Analysis Tools Missing", "go.promptforinstall");
+			showGoStatus("Analysis Tools Missing", "go.promptforinstall", "Not all Go tools are available on the GOPATH");
 			vscode.commands.registerCommand("go.promptforinstall", () => {
 				promptForInstall(missing);
 				disposeStatus();
