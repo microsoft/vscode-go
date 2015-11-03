@@ -21,19 +21,19 @@ import vscode = require('vscode');
 let diagnosticCollection: vscode.DiagnosticCollection;
 let statusBarEntry: vscode.StatusBarItem;
 
-export function activate(subscriptions: vscode.Disposable[]): void {
+export function activate(ctx: vscode.ExtensionContext): void {
 	var GO_MODE = 'go';
 
-	subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
-	subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider()));
-	subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
-	subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
-	subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
-	subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSybmolProvider()));
-	subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
+	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
+	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider()));
+	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
+	ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
+	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
+	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSybmolProvider()));
+	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
-	subscriptions.push(diagnosticCollection);
+	ctx.subscriptions.push(diagnosticCollection);
 
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher();
@@ -53,7 +53,7 @@ export function activate(subscriptions: vscode.Disposable[]): void {
 		}
 		statusBarEntry.hide();
 	}
-	subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
+	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
 }
 
 
