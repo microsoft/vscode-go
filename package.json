@@ -6,6 +6,16 @@
 	"author": {
 		"name": "Microsoft Corporation - Development Labs"
 	},
+	"icon": "images/goIcon.png",
+	"categories": [
+		"Languages",
+		"Snippets",
+		"Linters"
+	],
+	"galleryBanner": {
+		"color": "#E0EBF5",
+		"theme": "light"
+	},
 	"private": true,
 	"repository": {
 		"type": "git",

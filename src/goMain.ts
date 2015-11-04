@@ -66,10 +66,6 @@ function showGoStatus(message: string, command: string, tooltip?: string) {
 	statusBarEntry.show();
 }
 
-function disposeStatus() {
-	statusBarEntry.dispose();
-}
-
 function setupGoPathAndOfferToInstallTools() {
 	// TODO: There should be a better way to do this?
 	var gopath = vscode.workspace.getConfiguration('go')['gopath'];
@@ -84,7 +80,7 @@ function setupGoPathAndOfferToInstallTools() {
 		showGoStatus("GOPATH not set", "go.gopathinfo", info);
 		vscode.commands.registerCommand("go.gopathinfo", () => {
 			vscode.window.showInformationMessage(info);
-			disposeStatus();
+			statusBarEntry.dispose();
 		});
 		return;
 	}
@@ -113,7 +109,7 @@ function setupGoPathAndOfferToInstallTools() {
 			showGoStatus("Analysis Tools Missing", "go.promptforinstall", "Not all Go tools are available on the GOPATH");
 			vscode.commands.registerCommand("go.promptforinstall", () => {
 				promptForInstall(missing);
-				disposeStatus();
+				statusBarEntry.dispose();
 			});
 		}
 	});
