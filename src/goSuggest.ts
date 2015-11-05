@@ -19,7 +19,7 @@ function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 		case "var":
 			return vscode.CompletionItemKind.Field;
 	}
-	return vscode.CompletionItemKind.Value; // TODO@EG additional mappings needed?
+	return vscode.CompletionItemKind.Property; // TODO@EG additional mappings needed?
 }
 
 interface GoCodeSuggestion {
@@ -29,9 +29,6 @@ interface GoCodeSuggestion {
 }
 
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
-
-	public triggerCharacters = ['.'];
-	public excludeTokens = ['string', 'comment', 'numeric'];
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.CompletionItem[]> {
 		return new Promise((resolve, reject) => {
