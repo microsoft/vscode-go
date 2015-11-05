@@ -9,6 +9,7 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
+import {getBinPath} from './goPath'
 
 //TODO: Less hacky?
 var go : string;
@@ -61,7 +62,7 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 
 	var golint = !lintOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
 		var cwd = path.dirname(filename)
-		var golint = path.join(process.env["GOPATH"], "bin", "golint");
+		var golint = getBinPath("golint");
 		cp.execFile(golint, [filename], {cwd: cwd}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {

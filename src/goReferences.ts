@@ -7,6 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import {getBinPath} from './goPath'
 
 class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 
@@ -29,7 +30,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 			var range = new vscode.Range(0, 0, position.line, position.character);
 			var offset = document.getTextInRange(range).length;
 
-			var gofindreferences = path.join(process.env["GOPATH"], "bin", "go-find-references");
+			var gofindreferences = getBinPath("go-find-references");
 
 			cp.execFile(gofindreferences, ["-file", filename, "-offset", offset.toString(), "-root", workspaceRoot], {}, (err, stdout, stderr) => {
 				try {

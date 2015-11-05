@@ -7,6 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import {getBinPath} from './goPath'
 
 function vscodeTypeFromGoCodeClass(kind: string): string {
 	switch (kind) {
@@ -49,7 +50,7 @@ class SuggestSupport implements vscode.Modes.ISuggestSupport {
 			var range = new vscode.Range(0, 0, position.line, position.character);
 			var offset = document.getTextInRange(range).length;
 
-			var gocode = path.join(process.env["GOPATH"], "bin", "gocode");
+			var gocode = getBinPath("gocode");
 
 			// Spawn `gocode` process
 			var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "" + offset], {}, (err, stdout, stderr) => {

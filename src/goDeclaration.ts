@@ -7,6 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import {getBinPath} from './goPath'
 
 class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 
@@ -20,7 +21,7 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 			var range = new vscode.Range(0, 0, position.line, position.character);
 			var offset = document.getTextInRange(range).length;
 
-			var godef = path.join(process.env["GOPATH"], "bin", "godef");
+			var godef = getBinPath("godef");
 
 			// Spawn `godef` process
 			var p = cp.execFile(godef, ["-t", "-i", "-f", document.getUri().fsPath, "-o", offset.toString()], {}, (err, stdout, stderr) => {

@@ -7,6 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import {getBinPath} from './goPath'
 
 class FormattingSupport implements vscode.Modes.IFormattingSupport {
 
@@ -32,7 +33,7 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 		return new Promise((resolve, reject) => {
 			var filename = document.getUri().fsPath;
 
-			var goreturns = path.join(process.env["GOPATH"], "bin", this.formatCommand);
+			var goreturns = getBinPath(this.formatCommand);
 
 			cp.execFile(goreturns, [filename], {}, (err, stdout, stderr) => {
 				try {

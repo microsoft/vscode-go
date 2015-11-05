@@ -7,6 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import {getBinPath} from './goPath'
 
 interface GoOutlineDeclaration {
 	label: string;
@@ -47,7 +48,7 @@ class OutlineSupport implements vscode.Modes.IOutlineSupport {
 				throw new Error("Illegal offset: " + offset)
 			}
 
-			var gooutline = path.join(process.env["GOPATH"], "bin", "go-outline");
+			var gooutline = getBinPath("go-outline");
 
 			// Spawn `go-outline` process
 			var p = cp.execFile(gooutline, ["-f", filename], {}, (err, stdout, stderr) => {
