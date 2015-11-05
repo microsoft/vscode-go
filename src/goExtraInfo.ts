@@ -13,8 +13,7 @@ export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 
 		return new Promise((resolve, reject) => {
-			let filename = document.uri.fsPath;
-			let wordAtPosition = document.getWordRangeAtPosition(position);
+            let filename = document.fileName;
 			let offset = document.offsetAt(position);
 
 			let godef = path.join(process.env["GOPATH"], "bin", "godef");
@@ -31,12 +30,8 @@ export class GoHoverProvider implements HoverProvider {
 					if(lines.length > 10) lines[9] = "...";
 					let text = lines.slice(1,10).join('\n');
 					text = text.replace(/\n+$/,'');
-					let range = new Range(
-						position.line,
-						wordAtPosition ? wordAtPosition.start.character : position.character,
-						position.line,
-						wordAtPosition ? wordAtPosition.end.character : position.character);
-					let hover = new Hover(text, range);
+					
+                    let hover = new Hover({ language: 'go', value: text });
 					return resolve(hover);
 				} catch(e) {
 					reject(e);

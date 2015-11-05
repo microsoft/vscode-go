@@ -55,7 +55,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					var results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 					var suggestions = results[1].map(suggest => {
 						var item = new vscode.CompletionItem(suggest.name);
-						item.kind = vscodeKindFromGoCodeClass(suggest.class);
+                        item.kind = vscodeKindFromGoCodeClass(suggest.class);
+                        item.detail = suggest.type;
 						return item;
 					})
 					resolve(suggestions);

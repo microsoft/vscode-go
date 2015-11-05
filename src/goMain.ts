@@ -22,7 +22,8 @@ let diagnosticCollection: vscode.DiagnosticCollection;
 let statusBarEntry: vscode.StatusBarItem;
 
 export function activate(ctx: vscode.ExtensionContext): void {
-	var GO_MODE = 'go';
+
+    const GO_MODE: vscode.DocumentFilter = { language: 'go', scheme: 'file' }
 
 	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.'));
@@ -34,9 +35,46 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
+    
+    vscode.languages.setLanguageConfiguration(GO_MODE.language, {
+		indentationRules: {
+			// ^(.*\*/)?\s*\}.*$
+			decreaseIndentPattern: /^(.*\*\/)?\s*\}.*$/,
+			// ^.*\{[^}"']*$
+			increaseIndentPattern: /^.*\{[^}"']*$/
+		},
+		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
+		comments: {
+			lineComment: '//',
+			blockComment: ['/*', '*/']
+		},
+		brackets: [
+			['{', '}'],
+			['[', ']'],
+			['(', ')'],
+		],
+		
+		__electricCharacterSupport: {
+			brackets: [
+				{ tokenType:'delimiter.curly.ts', open: '{', close: '}', isElectric: true },
+				{ tokenType:'delimiter.square.ts', open: '[', close: ']', isElectric: true },
+				{ tokenType:'delimiter.paren.ts', open: '(', close: ')', isElectric: true }
+			]
+		},
 
+		__characterPairSupport: {
+			autoClosingPairs: [
+				{ open: '{', close: '}' },
+				{ open: '[', close: ']' },
+				{ open: '(', close: ')' },
+				{ open: '"', close: '"', notIn: ['string'] },
+				{ open: '\'', close: '\'', notIn: ['string', 'comment'] }
+			]
+		}
+    });
+    
 	setupGoPathAndOfferToInstallTools();
-	startBuildOnSaveWatcher();
+	ctx.subscriptions.push(startBuildOnSaveWatcher());
 
 	function showHideStatus() {
 		if (!statusBarEntry) {
@@ -46,8 +84,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			statusBarEntry.hide();
 			return;
 		}
-		let languageId = vscode.window.activeTextEditor.document.languageId;
-		if (languageId == "go") {
+		if (vscode.languages.match(GO_MODE, vscode.window.activeTextEditor.document)) {
 			statusBarEntry.show();
 			return;
 		}
@@ -75,7 +112,7 @@ function setupGoPathAndOfferToInstallTools() {
 		process.env["GOPATH"] = gopath;
 	}
 
-	if (!process.env["GOPATH"] || true) {
+	if (!process.env["GOPATH"]) {
 		var info =  "GOPATH is not set as an environment variable or via `go.gopath` setting in Code";
 		showGoStatus("GOPATH not set", "go.gopathinfo", info);
 		vscode.commands.registerCommand("go.gopathinfo", () => {
@@ -118,18 +155,24 @@ function setupGoPathAndOfferToInstallTools() {
 
 		var channel = vscode.window.createOutputChannel('Go');
 		channel.reveal();
-
-		vscode.window.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", {
-			title: "Install",
-			command: () => {
-				missing.forEach(tool => {
-					var p = cp.exec("go get -u -v " + tool, { cwd: process.env['GOPATH'], env: process.env });
-					p.stderr.on('data', (data: string) => {
-						channel.append(data);
-					});
-				});
-			}
-		});
+        
+        var item = {
+            title: "Install",
+            command() {
+                missing.forEach(tool => {
+                    var p = cp.exec("go get -u -v " + tool, { cwd: process.env['GOPATH'], env: process.env });
+                    p.stderr.on('data', (data: string) => {
+                        channel.append(data);
+                    });
+                });
+            }
+        };
+        
+        vscode.window.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", item).then(selection => {
+            if (selection) {
+                selection.command();
+            }
+        });
 	}
 }
 
@@ -148,7 +191,7 @@ function startBuildOnSaveWatcher() {
 
 	let goConfig = vscode.workspace.getConfiguration('go');
 
-	vscode.workspace.onDidSaveTextDocument(document => {
+	return vscode.workspace.onDidSaveTextDocument(document => {
 		var uri = document.uri;
 		check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
 			diagnosticCollection.clear();

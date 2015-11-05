@@ -39,8 +39,9 @@ suite("Go Extension Tests", () => {
 
 		let uri = vscode.Uri.file(fixture);
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			provider.provideHover(textDocument, position, null).then(value => {
-				assert.equal('main func()', value.contents, 'hover text does not match');
+            provider.provideHover(textDocument, position, null).then(value => {
+                assert.equal(value.contents.length, 1);
+				assert.equal('main func()', (<{ language: string; value: string }> value.contents[0]).value, 'hover text does not match');
 				assert.deepEqual(new vscode.Range(1, 5, 1, 9), value.range);
 				done();
 			});

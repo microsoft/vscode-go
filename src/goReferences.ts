@@ -18,7 +18,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 	private doFindReferences(document:vscode.TextDocument, position:vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return new Promise((resolve, reject) => {
-			var filename = this.canonicalizeForWindows(document.uri.fsPath);
+            var filename = this.canonicalizeForWindows(document.fileName);
 			var cwd = path.dirname(filename)
 			var workspaceRoot = vscode.workspace.rootPath;
 
@@ -44,7 +44,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 						var [_, file, lineStr, colStr] = match;
 						var referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 						var range = new vscode.Range(
-							+lineStr-1, +colStr-1, +lineStr-1, +colStr + wordAtPosition.end.character - wordAtPosition.start.character-1
+							+lineStr-1, +colStr-1, +lineStr-1, +colStr-1
 						);
 						results.push(
 							new vscode.Location(referenceResource, range));
