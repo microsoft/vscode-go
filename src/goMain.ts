@@ -35,7 +35,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
-    
+
     vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
 			// ^(.*\*/)?\s*\}.*$
@@ -53,7 +53,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			['[', ']'],
 			['(', ')'],
 		],
-		
+
 		__electricCharacterSupport: {
 			brackets: [
 				{ tokenType:'delimiter.curly.ts', open: '{', close: '}', isElectric: true },
@@ -72,7 +72,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			]
 		}
     });
-    
+
 	setupGoPathAndOfferToInstallTools();
 	ctx.subscriptions.push(startBuildOnSaveWatcher());
 
@@ -155,7 +155,7 @@ function setupGoPathAndOfferToInstallTools() {
 
 		var channel = vscode.window.createOutputChannel('Go');
 		channel.reveal();
-        
+
         var item = {
             title: "Install",
             command() {
@@ -167,7 +167,7 @@ function setupGoPathAndOfferToInstallTools() {
                 });
             }
         };
-        
+
         vscode.window.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", item).then(selection => {
             if (selection) {
                 selection.command();

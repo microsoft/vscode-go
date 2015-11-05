@@ -30,7 +30,7 @@ export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
 
 		return new Promise((resolve, reject) => {
-			var filename = document.uri.fsPath;
+			var filename = document.fileName;
 
 			var positionAt = (offset: number) => document.positionAt(offset);
 

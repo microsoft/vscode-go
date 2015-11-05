@@ -30,7 +30,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 	private doFormatDocument(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
 		return new Promise((resolve, reject) => {
-			var filename = document.uri.fsPath;
+			var filename = document.fileName;
 
 			var goreturns = path.join(process.env["GOPATH"], "bin", this.formatCommand);
 

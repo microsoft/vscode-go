@@ -32,7 +32,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.CompletionItem[]> {
 		return new Promise((resolve, reject) => {
-			var filename = document.uri.fsPath;
+			var filename = document.fileName;
 
 			// get current word
 			var wordAtPosition = document.getWordRangeAtPosition(position);

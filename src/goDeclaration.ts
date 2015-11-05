@@ -20,7 +20,7 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 			var godef = path.join(process.env["GOPATH"], "bin", "godef");
 
 			// Spawn `godef` process
-			var p = cp.execFile(godef, ["-t", "-i", "-f", document.uri.fsPath, "-o", offset.toString()], {}, (err, stdout, stderr) => {
+			var p = cp.execFile(godef, ["-t", "-i", "-f", document.fileName, "-o", offset.toString()], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
 						vscode.window.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");
