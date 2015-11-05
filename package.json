@@ -43,6 +43,15 @@
 				]
 			}
 		],
+		"grammars": [{
+			"language": "go",
+			"path": "./syntaxes/go",
+			"scopeName":"source.go"
+		}],
+		"snippets": [{
+			"language": "go",
+			"path": "./snippets/go.json"
+		}],
 		"debugAdapter": [
 			{
 				"type": "go",
