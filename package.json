@@ -76,7 +76,7 @@
 						"go"
 					]
 				},
-				"program": "./out/debugAdapter/goDebug.js",
+				"program": "./out/src/debugAdapter/goDebug.js",
 				"runtime": "node",
 				"initialConfigurations": [
 					{

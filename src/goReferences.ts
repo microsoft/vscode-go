@@ -23,7 +23,17 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			var workspaceRoot = vscode.workspace.rootPath;
 
 			// get current word
-			var wordAtPosition = document.getWordRangeAtPosition(position);
+			var wordRange = document.getWordRangeAtPosition(position);
+			var textAtPosition = document.getText(wordRange)
+			var wordLength = wordLength = textAtPosition.length;
+			
+			var possibleDot = document.getText(new vscode.Range(wordRange.start.line, wordRange.start.character-1, wordRange.start.line, wordRange.start.character))
+			if(possibleDot == ".") {
+				var previousWordRange = document.getWordRangeAtPosition(new vscode.Position(wordRange.start.line, wordRange.start.character-1));
+				var textAtPreviousPosition = document.getText(previousWordRange);
+				wordLength += textAtPreviousPosition.length + 1;
+			}
+			
 			var offset = document.offsetAt(position);
 
 			var gofindreferences = path.join(process.env["GOPATH"], "bin", "go-find-references");
@@ -44,7 +54,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 						var [_, file, lineStr, colStr] = match;
 						var referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 						var range = new vscode.Range(
-							+lineStr-1, +colStr-1, +lineStr-1, +colStr-1
+							+lineStr-1, +colStr-1, +lineStr-1, +colStr+wordLength-1
 						);
 						results.push(
 							new vscode.Location(referenceResource, range));
