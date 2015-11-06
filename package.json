@@ -80,10 +80,10 @@
 				"runtime": "node",
 				"initialConfigurations": [
 					{
-						"name": "Launch app.go",
+						"name": "Launch main.go",
 						"type": "go",
 						"request": "launch",
-						"program": "app.go",
+						"program": "main.go",
 						"stopOnEntry": false,
 						"env": {},
 						"args": [],
@@ -94,7 +94,7 @@
 					"program": {
 						"type": "string",
 						"description": "Workspace relative path to the program.",
-						"default": "app.go"
+						"default": "main.go"
 					},
 					"stopOnEntry": {
 						"type": "boolean",

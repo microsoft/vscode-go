@@ -17,11 +17,11 @@
 			"name": "debug-debugger",
 			"type": "node",
 			"request": "launch",
-			"program": "./out/debugAdapter/goDebug.js",
+			"program": "./out/src/debugAdapter/goDebug.js",
 			"stopOnEntry": false,
 			"args": [ "--server=4711" ],
 			"sourceMaps": true,
-			"outDir": "out/debugAdapter"
+			"outDir": "out/src/debugAdapter"
 		},
 		{
 			"name": "Launch Tests",
