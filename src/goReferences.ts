@@ -12,24 +12,24 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 	public provideReferences(document: vscode.TextDocument, position:vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return vscode.workspace.saveAll(false).then(() => {
-				return this.doFindReferences(document, position, options, token);
+			return this.doFindReferences(document, position, options, token);
 		});
 	}
 
 	private doFindReferences(document:vscode.TextDocument, position:vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return new Promise((resolve, reject) => {
-            var filename = this.canonicalizeForWindows(document.fileName);
+        	var filename = this.canonicalizeForWindows(document.fileName);
 			var cwd = path.dirname(filename)
 			var workspaceRoot = vscode.workspace.rootPath;
 
 			// get current word
 			var wordRange = document.getWordRangeAtPosition(position);
 			var textAtPosition = document.getText(wordRange)
-			var wordLength = wordLength = textAtPosition.length;
-			
-			var possibleDot = document.getText(new vscode.Range(wordRange.start.line, wordRange.start.character-1, wordRange.start.line, wordRange.start.character))
+			var wordLength  = textAtPosition.length;
+			var start = wordRange.start;
+			var possibleDot = document.getText(new vscode.Range(start.line, start.character-1, start.line, start.character))
 			if(possibleDot == ".") {
-				var previousWordRange = document.getWordRangeAtPosition(new vscode.Position(wordRange.start.line, wordRange.start.character-1));
+				var previousWordRange = document.getWordRangeAtPosition(new vscode.Position(start.line, start.character-1));
 				var textAtPreviousPosition = document.getText(previousWordRange);
 				wordLength += textAtPreviousPosition.length + 1;
 			}
@@ -56,8 +56,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 						var range = new vscode.Range(
 							+lineStr-1, +colStr-1, +lineStr-1, +colStr+wordLength-1
 						);
-						results.push(
-							new vscode.Location(referenceResource, range));
+						results.push(new vscode.Location(referenceResource, range));
 					}
 					resolve(results);
 				} catch(e) {
