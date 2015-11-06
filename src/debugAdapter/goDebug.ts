@@ -10,6 +10,9 @@ import {spawn, ChildProcess} from 'child_process';
 import {Client, RPCConnection} from 'json-rpc2';
 import * as path from 'path';
 
+// These types should stay in sync with:
+// https://github.com/derekparker/delve/blob/master/service/api/types.go
+
 interface DebuggerState {
 	exited: boolean;
 	exitStatus: number;
@@ -63,10 +66,9 @@ interface DebugVariable {
 
 interface DebugGoroutine {
 	id: number;
-	pc: number;
-	file: string;
-	line: number;
-	function: DebugFunction;
+	currentLoc: DebugLocation;
+	userCurrentLoc: DebugLocation;
+	goStatementLoc: DebugLocation;
 }
 
 interface DebuggerCommand {
@@ -215,7 +217,7 @@ class GoDebugSession extends DebugSession {
 			var threads = goroutines.map(goroutine =>
 				new Thread(
 					goroutine.id, 
-					goroutine.function ? goroutine.function.name : (goroutine.file + "@" + goroutine.line)
+					goroutine.currentLoc.function ? goroutine.currentLoc.function.name : (goroutine.currentLoc.file + "@" + goroutine.currentLoc.line)
 				)
 			);
 			response.body = { threads };
