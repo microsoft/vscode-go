@@ -32,11 +32,11 @@
 		"json-rpc2": "^1.0.2"
 	},
 	"devDependencies": {
-		"vscode": "next",
+		"vscode": "0.10.x",
 		"fs-extra": "^0.26.0"
 	},
 	"engines": {
-		"vscode": "*"
+		"vscode": "0.10.x"
 	},
 	"activationEvents": [
 		"onLanguage:go"
