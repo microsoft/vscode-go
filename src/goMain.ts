@@ -154,7 +154,7 @@ function setupGoPathAndOfferToInstallTools() {
 	function promptForInstall(missing: string[]) {
 
 		var channel = vscode.window.createOutputChannel('Go');
-		channel.reveal();
+		channel.show();
 
         var item = {
             title: "Install",
