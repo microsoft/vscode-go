@@ -153,12 +153,11 @@ function setupGoPathAndOfferToInstallTools() {
 
 	function promptForInstall(missing: string[]) {
 
-		var channel = vscode.window.createOutputChannel('Go');
-		channel.show();
-
         var item = {
             title: "Install",
             command() {
+				var channel = vscode.window.createOutputChannel('Go');
+				channel.show();
                 missing.forEach(tool => {
                     var p = cp.exec("go get -u -v " + tool, { cwd: process.env['GOPATH'], env: process.env });
                     p.stderr.on('data', (data: string) => {

@@ -27,10 +27,21 @@ export class GoHoverProvider implements HoverProvider {
 					if (err) return resolve(null);
 					let result = stdout.toString();
 					let lines = result.split('\n');
+					lines = lines.map(line => {
+						if(line.indexOf('\t') == 0) {
+							line = line.slice(1)
+						}
+						return line.replace(/\t/g,'  ')
+					});
+					lines = lines.filter(line => line.length != 0);
 					if(lines.length > 10) lines[9] = "...";
-					let text = lines.slice(1,10).join('\n');
-					text = text.replace(/\n+$/,'');
-					
+					let text;
+					if(lines.length > 1) {
+						text = lines.slice(1,10).join('\n');
+						text = text.replace(/\n+$/,'');
+					} else {
+						text = lines[0]
+					}
                     let hover = new Hover({ language: 'go', value: text });
 					return resolve(hover);
 				} catch(e) {
