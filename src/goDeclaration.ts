@@ -9,22 +9,19 @@ import cp = require('child_process');
 import path = require('path');
 import {getBinPath} from './goPath'
 
-class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
+export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
-	public findDeclaration(document:vscode.TextDocument, position:vscode.Position, token: vscode.CancellationToken):Thenable<vscode.Modes.IReference> {
+	public provideDefinition(document:vscode.TextDocument, position:vscode.Position, token: vscode.CancellationToken):Thenable<vscode.Location> {
 
 		return new Promise((resolve, reject) => {
 
 			var wordAtPosition = document.getWordRangeAtPosition(position);
-
-			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.character);
-			var offset = document.getTextInRange(range).length;
+			var offset = document.offsetAt(position);
 
 			var godef = getBinPath("godef");
 
 			// Spawn `godef` process
-			var p = cp.execFile(godef, ["-t", "-i", "-f", document.getUri().fsPath, "-o", offset.toString()], {}, (err, stdout, stderr) => {
+			var p = cp.execFile(godef, ["-t", "-i", "-f", document.fileName, "-o", offset.toString()], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
 						vscode.window.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");
@@ -38,11 +35,10 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 					if(!match) return resolve(null);
 					var [_, file, line, col] = match;
 					var definitionResource = vscode.Uri.file(file);
-					var range = new vscode.Range(+line, +col, +line, +col + 1);
-					return resolve({
-						resource: definitionResource,
-						range
-					});
+					var range = new vscode.Range(+line-1, +col-1, +line-1, +col-1);
+					return resolve(
+						new vscode.Location(definitionResource, range)
+					);
 				} catch(e) {
 					reject(e);
 				}
@@ -51,5 +47,3 @@ class DeclartionSupport implements vscode.Modes.IDeclarationSupport {
 		});
 	}
 }
-
-export = DeclartionSupport;

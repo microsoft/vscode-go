@@ -18,34 +18,30 @@ interface GoOutlineDeclaration {
 	children?: GoOutlineDeclaration[];
 }
 
-class OutlineSupport implements vscode.Modes.IOutlineSupport {
+export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 
-	private goKindToCodeKind: {[key: string]: string} = {
-		"package": "module",
-		"import": "property",
-		"variable": "variable",
-		"type": "interface",
-		"function": "method"
+	private goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
+		"package": vscode.SymbolKind.Package,
+		"import": vscode.SymbolKind.Namespace,
+		"variable": vscode.SymbolKind.Variable,
+		"type": vscode.SymbolKind.Interface,
+		"function": vscode.SymbolKind.Function
 	}
-	
-	public getOutline(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.Modes.IOutlineEntry[]> {
+
+	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
 
 		return new Promise((resolve, reject) => {
-			var filename = document.getUri().fsPath;
-			
-			var text = document.getText()
-			var lines = text.split('\n')
-			var lineLengths = lines.map(line => line.length + 1)
-			
-			var toLineCol = (offset: number) => {
-				for(var i = 0; i < lines.length; i++) {
-					if(offset < lineLengths[i]) {
-						return new vscode.Position(i+1, offset)
-					} else {
-						offset -= lineLengths[i]
+			var filename = document.fileName;
+
+			var positionAt = (offset: number) => document.positionAt(offset);
+
+			var convertToCodeSymbols = (decl: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName:string): void => {
+				decl.forEach((each) => {
+					symbols.push(new vscode.SymbolInformation(each.label, this.goKindToCodeKind[each.type], new vscode.Range(positionAt(each.start), positionAt(each.end - 1)), undefined, containerName));
+					if (each.children) {
+						convertToCodeSymbols(each.children, symbols, each.label);
 					}
-				}
-				throw new Error("Illegal offset: " + offset)
+				});
 			}
 
 			var gooutline = getBinPath("go-outline");
@@ -58,23 +54,14 @@ class OutlineSupport implements vscode.Modes.IOutlineSupport {
 					}
 					if (err) return resolve(null);
 					var result = stdout.toString();
-					var decls = <GoOutlineDeclaration[]>JSON.parse(result)
-					var convert = (decl: GoOutlineDeclaration): vscode.Modes.IOutlineEntry => {
-						return <vscode.Modes.IOutlineEntry>{
-							label: decl.label,
-							type: this.goKindToCodeKind[decl.type],
-							range: new vscode.Range(toLineCol(decl.start), toLineCol(decl.end-1)),
-							children: decl.children && decl.children.map(convert)
-						}
-					}
-					var ret = decls.map(convert)
-					return resolve(ret)				
-				} catch(e) {
+					var decls = <GoOutlineDeclaration[]>JSON.parse(result);
+					var symbols: vscode.SymbolInformation[] = [];
+					convertToCodeSymbols(decls, symbols, "");
+					return resolve(symbols)
+				} catch (e) {
 					reject(e);
 				}
 			});
 		});
 	}
 }
-
-export = OutlineSupport;

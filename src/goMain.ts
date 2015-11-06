@@ -8,75 +8,141 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 
-import SuggestSupport = require('./goSuggest');
-import ExtraInfoSupport = require('./goExtraInfo');
-import DeclarationSupport = require('./goDeclaration');
-import ReferencesSupport = require('./goReferences');
-import FormattingSupport = require('./goFormat');
-import RenameSupport = require('./goRename');
-import OutlineSupport = require('./goOutline');
+import { GoCompletionItemProvider } from './goSuggest';
+import { GoHoverProvider } from './goExtraInfo';
+import { GoDefinitionProvider } from './goDeclaration';
+import { GoReferenceProvider } from './goReferences';
+import { GoDocumentFormattingEditProvider } from './goFormat';
+import { GoRenameProvider } from './goRename';
+import { GoDocumentSybmolProvider } from './goOutline';
 import {check, ICheckResult} from './goCheck';
 import {setupGoPathAndOfferToInstallTools} from './goPath'
 import vscode = require('vscode');
 
-export function activate(subscriptions: vscode.Disposable[]) {
-	subscriptions.push(vscode.Modes.SuggestSupport.register('go', new SuggestSupport()));
-	subscriptions.push(vscode.Modes.ExtraInfoSupport.register('go', new ExtraInfoSupport()));
-	subscriptions.push(vscode.Modes.DeclarationSupport.register('go', new DeclarationSupport()));
-	subscriptions.push(vscode.Modes.ReferenceSupport.register('go', new ReferencesSupport()));
-	subscriptions.push(vscode.Modes.FormattingSupport.register('go', new FormattingSupport()));
-	subscriptions.push(vscode.Modes.RenameSupport.register('go', new RenameSupport()));
-	subscriptions.push(vscode.Modes.OutlineSupport.register('go', new OutlineSupport()));
+let diagnosticCollection: vscode.DiagnosticCollection;
+let statusBarEntry: vscode.StatusBarItem;
 
-	setupGoPathAndOfferToInstallTools();
-	startBuildOnSaveWatcher();
+export function activate(ctx: vscode.ExtensionContext): void {
+
+    const GO_MODE: vscode.DocumentFilter = { language: 'go', scheme: 'file' }
+
+	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
+	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.'));
+	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
+	ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
+	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
+	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSybmolProvider()));
+	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
+
+	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
+	ctx.subscriptions.push(diagnosticCollection);
+
+    vscode.languages.setLanguageConfiguration(GO_MODE.language, {
+		indentationRules: {
+			// ^(.*\*/)?\s*\}.*$
+			decreaseIndentPattern: /^(.*\*\/)?\s*\}.*$/,
+			// ^.*\{[^}"']*$
+			increaseIndentPattern: /^.*\{[^}"']*$/
+		},
+		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
+		comments: {
+			lineComment: '//',
+			blockComment: ['/*', '*/']
+		},
+		brackets: [
+			['{', '}'],
+			['[', ']'],
+			['(', ')'],
+		],
+
+		__electricCharacterSupport: {
+			brackets: [
+				{ tokenType:'delimiter.curly.ts', open: '{', close: '}', isElectric: true },
+				{ tokenType:'delimiter.square.ts', open: '[', close: ']', isElectric: true },
+				{ tokenType:'delimiter.paren.ts', open: '(', close: ')', isElectric: true }
+			]
+		},
+
+		__characterPairSupport: {
+			autoClosingPairs: [
+				{ open: '{', close: '}' },
+				{ open: '[', close: ']' },
+				{ open: '(', close: ')' },
+				{ open: '"', close: '"', notIn: ['string'] },
+				{ open: '\'', close: '\'', notIn: ['string', 'comment'] }
+			]
+		}
+    });
+
+	setupGoPathAndOfferToInstallTools(showGoStatus, function() { statusBarEntry.dispose(); });
+	ctx.subscriptions.push(startBuildOnSaveWatcher());
+
+	function showHideStatus() {
+		if (!statusBarEntry) {
+			return;
+		}
+		if (!vscode.window.activeTextEditor) {
+			statusBarEntry.hide();
+			return;
+		}
+		if (vscode.languages.match(GO_MODE, vscode.window.activeTextEditor.document)) {
+			statusBarEntry.show();
+			return;
+		}
+		statusBarEntry.hide();
+	}
+	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
 }
 
-let _diagnostics:vscode.Disposable = null;
+
+function showGoStatus(message: string, command: string, tooltip?: string) {
+	statusBarEntry = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, Number.MIN_VALUE);
+	statusBarEntry.text = message;
+	statusBarEntry.command = command;
+	statusBarEntry.color = 'yellow';
+	statusBarEntry.tooltip = tooltip;
+	statusBarEntry.show();
+}
 
 function deactivate() {
-	if (_diagnostics) {
-		_diagnostics.dispose();
-	}
 }
 
 function startBuildOnSaveWatcher() {
 
 	function mapSeverityToVSCodeSeverity(sev: string) {
-		switch(sev) {
+		switch (sev) {
 			case "error": return vscode.DiagnosticSeverity.Error;
 			case "warning": return vscode.DiagnosticSeverity.Warning;
 			default: return vscode.DiagnosticSeverity.Error;
 		}
 	}
 
-	vscode.extensions.getConfigurationMemento('go').getValues().then((config = {}) => {
-		vscode.workspace.onDidSaveTextDocument(document => {
-			var uri = document.getUri();
-			check(uri.fsPath, config['buildOnSave'], config['lintOnSave'], config['vetOnSave']).then(errors => {
-				if (_diagnostics) {
-					_diagnostics.dispose();
+	let goConfig = vscode.workspace.getConfiguration('go');
+
+	return vscode.workspace.onDidSaveTextDocument(document => {
+		var uri = document.uri;
+		check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
+			diagnosticCollection.clear();
+
+			var diagnostics = errors.map(error => {
+				let targetResource = vscode.Uri.file(error.file);
+				let startColumn = 0;
+				let endColumn = 1;
+				if (document) {
+					let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1)
+					let text = document.getText(range);
+					let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
+					startColumn = leading.length;
+					endColumn = text.length - trailing.length;
 				}
-				var diagnostics = errors.map(error => {
-					let targetResource = vscode.Uri.file(error.file);
-					let document = vscode.workspace.getTextDocument(targetResource);
-					let startColumn = 0;
-					let endColumn = 1;
-					if (document) {
-						let range = new vscode.Range(error.line, 0, error.line, document.getLineMaxColumn(error.line));
-						let text = document.getTextInRange(range);
-						let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
-						startColumn = leading.length + 1;
-						endColumn = text.length - trailing.length + 1;
-					}
-					let range = new vscode.Range(error.line, startColumn, error.line, endColumn);
-					let location = new vscode.Location(uri, range);
-					return new vscode.Diagnostic(mapSeverityToVSCodeSeverity(error.severity), location, error.msg);
-				});
-				_diagnostics = vscode.languages.addDiagnostics(diagnostics);
-			}).catch(err => {
-				vscode.window.showInformationMessage("Error: " + err);
+				let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
+				let location = new vscode.Location(uri, range);
+				return new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
 			});
+			diagnosticCollection.set(uri, diagnostics);
+		}).catch(err => {
+			vscode.window.showInformationMessage("Error: " + err);
 		});
 	});
+
 }

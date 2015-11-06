@@ -9,29 +9,29 @@ import cp = require('child_process');
 import path = require('path');
 import {getBinPath} from './goPath'
 
-class FormattingSupport implements vscode.Modes.IFormattingSupport {
+export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
 	private formatCommand = "goreturns";
 
+	// Not used?
 	public autoFormatTriggerCharacters: string[] = [';', '}', '\n'];
 
 	constructor() {
-		vscode.extensions.getConfigurationMemento('go').getValue<string>('formatTool').then(formatTool => {
-			if(formatTool) {
-				this.formatCommand = formatTool;
-			}
-		});
+		let formatTool = vscode.workspace.getConfiguration('go')['formatTool'];
+		if (formatTool) {
+			this.formatCommand = formatTool;
+		}
 	}
 
-	public formatDocument(document: vscode.TextDocument, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken): Thenable<vscode.Modes.ISingleEditOperation[]> {
+	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
 		return document.save().then(() => {
 			return this.doFormatDocument(document, options, token);
 		});
 	}
 
-	private doFormatDocument(document: vscode.TextDocument, options: vscode.Modes.IFormattingOptions, token: vscode.CancellationToken):Thenable<vscode.Modes.ISingleEditOperation[]> {
+	private doFormatDocument(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
 		return new Promise((resolve, reject) => {
-			var filename = document.getUri().fsPath;
+			var filename = document.fileName;
 
 			var goreturns = getBinPath(this.formatCommand);
 
@@ -45,11 +45,11 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 					var text = stdout.toString();
 					// TODO: Should use `-d` option to get a diff and then compute the
 					// specific edits instead of replace whole buffer
-					var lastLine = document.getLineCount();
-					var lastLineLastCol = document.getLineMaxColumn(lastLine);
-					var range = new vscode.Range(1, 1, lastLine, lastLineLastCol);
-					return resolve([{ text, range }]);
-				} catch(e) {
+					var lastLine = document.lineCount;
+					var lastLineLastCol = document.lineAt(lastLine - 1).range.end.character;
+					var range = new vscode.Range(0, 0, lastLine - 1, lastLineLastCol);
+					return resolve([new vscode.TextEdit(range, text)]);
+				} catch (e) {
 					reject(e);
 				}
 			});
@@ -57,5 +57,3 @@ class FormattingSupport implements vscode.Modes.IFormattingSupport {
 	}
 
 }
-
-export = FormattingSupport

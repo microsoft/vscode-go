@@ -4,48 +4,47 @@
 
 'use strict';
 
-import vscode = require('vscode');
+import {window, HoverProvider, Hover, TextDocument, Position, Range, CancellationToken} from 'vscode';
 import cp = require('child_process');
 import path = require('path');
 import {getBinPath} from './goPath'
 
-class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
+export class GoHoverProvider implements HoverProvider {
 
-
-	public computeInfo(document:vscode.TextDocument, position:vscode.Position, token: vscode.CancellationToken): Promise<vscode.Modes.IComputeExtraInfoResult> {
+	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 
 		return new Promise((resolve, reject) => {
-			var filename = document.getUri().fsPath;
-			var wordAtPosition = document.getWordRangeAtPosition(position);
-
-			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.character);
-			var offset = document.getTextInRange(range).length;
+            let filename = document.fileName;
+			let offset = document.offsetAt(position);
 
 			var godef = getBinPath("godef");
 
 			// Spawn `godef` process
-			var p = cp.execFile(godef, ["-t", "-i", "-f", filename, "-o", offset.toString()], {}, (err, stdout, stderr) => {
+			let p = cp.execFile(godef, ["-t", "-i", "-f", filename, "-o", offset.toString()], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
-						vscode.window.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");
+						window.showInformationMessage("The 'godef' command is not available.  Use 'go get -u github.com/rogpeppe/godef' to install.");
 					}
 					if (err) return resolve(null);
-					var result = stdout.toString();
-					var lines = result.split('\n');
-					if(lines.length > 10) lines[9] = "...";
-					var text = lines.slice(1,10).join('\n');
-					var range = new vscode.Range(
-						position.line,
-						wordAtPosition ? wordAtPosition.start.character : position.character,
-						position.line,
-						wordAtPosition ? wordAtPosition.end.character : position.character);
-					return resolve({
-						htmlContent: [
-							{ formattedText: text }
-						],
-						range
+					let result = stdout.toString();
+					let lines = result.split('\n');
+					lines = lines.map(line => {
+						if(line.indexOf('\t') == 0) {
+							line = line.slice(1)
+						}
+						return line.replace(/\t/g,'  ')
 					});
+					lines = lines.filter(line => line.length != 0);
+					if(lines.length > 10) lines[9] = "...";
+					let text;
+					if(lines.length > 1) {
+						text = lines.slice(1,10).join('\n');
+						text = text.replace(/\n+$/,'');
+					} else {
+						text = lines[0]
+					}
+                    let hover = new Hover({ language: 'go', value: text });
+					return resolve(hover);
 				} catch(e) {
 					reject(e);
 				}
@@ -54,5 +53,3 @@ class ExtraInfoSupport implements vscode.Modes.IExtraInfoSupport {
 		});
 	}
 }
-
-export = ExtraInfoSupport;

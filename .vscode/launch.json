@@ -4,6 +4,7 @@
 		{
 			"name": "Launch Extension",
 			"type": "extensionHost",
+			"request": "launch",
 			// path to VSCode executable
 			"runtimeExecutable": "${execPath}",
 			"args": [ "--extensionDevelopmentPath=${workspaceRoot}" ],
@@ -15,11 +16,24 @@
 		{
 			"name": "debug-debugger",
 			"type": "node",
-			"program": "./out/debugAdapter/goDebug.js",
+			"request": "launch",
+			"program": "./out/src/debugAdapter/goDebug.js",
 			"stopOnEntry": false,
 			"args": [ "--server=4711" ],
 			"sourceMaps": true,
-			"outDir": "out/debugAdapter"
+			"outDir": "out/src/debugAdapter"
+		},
+		{
+			"name": "Launch Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			// the workspace path should be GOPATH
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}", "--extensionTestsPath=${workspaceRoot}/out/test", "env.GOPATH" ],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outDir": "out",
+			"preLaunchTask": "npm"
 		}
 	]
 }

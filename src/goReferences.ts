@@ -9,26 +9,33 @@ import cp = require('child_process');
 import path = require('path');
 import {getBinPath} from './goPath'
 
-class ReferenceSupport implements vscode.Modes.IReferenceSupport {
+export class GoReferenceProvider implements vscode.ReferenceProvider {
 
-	public findReferences(document: vscode.TextDocument, position:vscode.Position, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+	public provideReferences(document: vscode.TextDocument, position:vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return vscode.workspace.saveAll(false).then(() => {
-				return this.doFindReferences(document, position, includeDeclaration, token);
+			return this.doFindReferences(document, position, options, token);
 		});
 	}
 
-	private doFindReferences(document:vscode.TextDocument, position:vscode.Position, includeDeclaration:boolean, token: vscode.CancellationToken): Thenable<vscode.Modes.IReference[]> {
+	private doFindReferences(document:vscode.TextDocument, position:vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return new Promise((resolve, reject) => {
-			var filename = this.canonicalizeForWindows(document.getUri().fsPath);
+        	var filename = this.canonicalizeForWindows(document.fileName);
 			var cwd = path.dirname(filename)
-			var workspaceRoot = vscode.workspace.getPath();
+			var workspaceRoot = vscode.workspace.rootPath;
 
 			// get current word
-			var wordAtPosition = document.getWordRangeAtPosition(position);
-
-			// compute the file offset for position
-			var range = new vscode.Range(0, 0, position.line, position.character);
-			var offset = document.getTextInRange(range).length;
+			var wordRange = document.getWordRangeAtPosition(position);
+			var textAtPosition = document.getText(wordRange)
+			var wordLength  = textAtPosition.length;
+			var start = wordRange.start;
+			var possibleDot = document.getText(new vscode.Range(start.line, start.character-1, start.line, start.character))
+			if(possibleDot == ".") {
+				var previousWordRange = document.getWordRangeAtPosition(new vscode.Position(start.line, start.character-1));
+				var textAtPreviousPosition = document.getText(previousWordRange);
+				wordLength += textAtPreviousPosition.length + 1;
+			}
+			
+			var offset = document.offsetAt(position);
 
 			var gofindreferences = getBinPath("go-find-references");
 
@@ -40,7 +47,7 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 					}
 
 					var lines = stdout.toString().split('\n');
-					var results: vscode.Modes.IReference[] = [];
+					var results: vscode.Location[] = [];
 					for(var i = 0; i < lines.length; i+=2) {
 						var line = lines[i];
 						var match = /(.*):(\d+):(\d+)/.exec(lines[i]);
@@ -48,12 +55,9 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 						var [_, file, lineStr, colStr] = match;
 						var referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 						var range = new vscode.Range(
-							+lineStr, +colStr, +lineStr, +colStr + wordAtPosition.end.character - wordAtPosition.start.character
+							+lineStr-1, +colStr-1, +lineStr-1, +colStr+wordLength-1
 						);
-						results.push({
-							resource: referenceResource,
-							range
-						});
+						results.push(new vscode.Location(referenceResource, range));
 					}
 					resolve(results);
 				} catch(e) {
@@ -72,5 +76,3 @@ class ReferenceSupport implements vscode.Modes.IReferenceSupport {
 	}
 
 }
-
-export = ReferenceSupport
