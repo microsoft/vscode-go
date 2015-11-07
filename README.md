@@ -24,16 +24,9 @@ This extension adds rich language support for the Go language to VS Code, includ
 
 ## Using
 
-First, you will need to install Visual Studio Code `0.9.1`.  
+First, you will need to install Visual Studio Code `0.10.x`.  Then launch Code with access to the extension gallery with `code --enableExtensionGallery`.
 
-Next, clone this repo into your Code extensions folder and run `npm install`.
-
-```bash
-cd ~/.vscode/extensions/
-git clone https://monacotools.visualstudio.com/DefaultCollection/Monaco/_git/go-code
-cd go-code
-npm install
-```
+In the command palette (`cmd-shift-p`) select `Install Extension` and choose `Go`.  
 
 In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open you GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.
 
@@ -65,13 +58,11 @@ First make sure you do not have the extension installed in `~/.vscode/extensions
 ```bash
 rm -rf ~/.vscode/extensions/go-code
 cd ~
-git clone https://monacotools.visualstudio.com/DefaultCollection/Monaco/_git/go-code
+git clone https://github.com/Microsoft/vscode-go
 cd go-code
 npm install
 code . 
 ```
-
-To build, use the `Tasks: Run Build Task` command (`cmd-shift-B`).  This will start a build watcher so that .ts files are compiled on save.
 
 You can now go to the Debug viewlet and select `Launch Extension` then hit play (`F5`).
 
