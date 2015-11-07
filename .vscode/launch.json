@@ -14,16 +14,6 @@
 			"preLaunchTask": "npm"
 		},
 		{
-			"name": "debug-debugger",
-			"type": "node",
-			"request": "launch",
-			"program": "./out/src/debugAdapter/goDebug.js",
-			"stopOnEntry": false,
-			"args": [ "--server=4711" ],
-			"sourceMaps": true,
-			"outDir": "out/src/debugAdapter"
-		},
-		{
 			"name": "Launch Tests",
 			"type": "extensionHost",
 			"request": "launch",

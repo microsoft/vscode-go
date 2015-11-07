@@ -1,0 +1,15 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "debug-debugger",
+			"type": "node",
+			"request": "launch",
+			"program": "../../out/src/debugAdapter/goDebug.js",
+			"stopOnEntry": false,
+			"args": [ "--server=4711" ],
+			"sourceMaps": true,
+			"outDir": "out/src/debugAdapter"
+		}
+	]
+}
