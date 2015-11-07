@@ -84,6 +84,15 @@ interface DebuggerCommand {
 	goroutineID?: number;
 }
 
+// This interface should always match the schema found in `package.json`.
+interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
+	program: string;
+	stopOnEntry?: boolean;
+	args?: string[];
+	cwd?: string;
+	env?: { [key: string]: string; }	
+}
+
 class Delve {
 	debugProcess: ChildProcess;
 	connection: Promise<RPCConnection>;
@@ -165,7 +174,7 @@ class GoDebugSession extends DebugSession {
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
 	}
 
-	protected initializeRequest(response: OpenDebugProtocol.InitializeResponse, args: OpenDebugProtocol.InitializeRequestArguments): void {
+	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
 		console.log("InitializeRequest");
 		this.sendResponse(response);
 		console.log("InitializeResponse")
@@ -173,21 +182,21 @@ class GoDebugSession extends DebugSession {
 		console.log("InitializeEvent");
 	}
 
-	protected launchRequest(response: OpenDebugProtocol.LaunchResponse, args: OpenDebugProtocol.LaunchRequestArguments): void {
+	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		// Launch the Delve debugger on the program
 		this.delve = new Delve(args.program);
 		// TODO: This isn't quite right - may not want to blindly continue on start.
 		this.continueRequest(response);
 	}
 	
-	protected disconnectRequest(response: OpenDebugProtocol.DisconnectResponse, args: OpenDebugProtocol.DisconnectArguments): void {
+	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		console.log("DisconnectRequest");
 		this.delve.close();
 		super.disconnectRequest(response, args);
 		console.log("DisconnectResponse");		
 	}
 
-	protected setBreakPointsRequest(response: OpenDebugProtocol.SetBreakpointsResponse, args: OpenDebugProtocol.SetBreakpointsArguments): void {
+	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
 		console.log("SetBreakPointsRequest")
 		if(!this.breakpoints.get(args.source.path))  { 
 			this.breakpoints.set(args.source.path, []); 
@@ -221,7 +230,7 @@ class GoDebugSession extends DebugSession {
 		});
 	}
 
-	protected threadsRequest(response: OpenDebugProtocol.ThreadsResponse): void {
+	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
 		console.log("ThreadsRequest")
 		this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
 			var threads = goroutines.map(goroutine =>
@@ -237,7 +246,7 @@ class GoDebugSession extends DebugSession {
 		});
 	}
 
-	protected stackTraceRequest(response: OpenDebugProtocol.StackTraceResponse, args: OpenDebugProtocol.StackTraceArguments): void {
+	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
 		console.log("StackTraceRequest")
 		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: args.threadId, depth: args.levels }], (err, locations) => {
 			if(err) {
@@ -263,7 +272,7 @@ class GoDebugSession extends DebugSession {
 		});
 	}
 
-	protected scopesRequest(response: OpenDebugProtocol.ScopesResponse, args: OpenDebugProtocol.ScopesArguments): void {
+	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
 		console.log("ScopesRequest")
 		var scopes = new Array<Scope>();
 		// Locals includes both locals and arguments
@@ -277,7 +286,7 @@ class GoDebugSession extends DebugSession {
 		console.log("ScopesResponse")
 	}
 
-	protected variablesRequest(response: OpenDebugProtocol.VariablesResponse, args: OpenDebugProtocol.VariablesArguments): void {
+	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
 		console.log("VariablesRequest");
 		var req = this._variableHandles.get(args.variablesReference);
 		var parts = req.split('_');
@@ -329,7 +338,7 @@ class GoDebugSession extends DebugSession {
 		}
 	}
 
-	protected continueRequest(response: OpenDebugProtocol.ContinueResponse): void {
+	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
 		console.log("ContinueRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
 			console.log(state);
@@ -346,7 +355,7 @@ class GoDebugSession extends DebugSession {
 		console.log("ContinueResponse");
 	}
 
-	protected nextRequest(response: OpenDebugProtocol.NextResponse): void {
+	protected nextRequest(response: DebugProtocol.NextResponse): void {
 		console.log("NextRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
 			console.log(state);
@@ -363,7 +372,7 @@ class GoDebugSession extends DebugSession {
 		console.log("NextResponse")
 	}
 	
-	protected stepInRequest(response: OpenDebugProtocol.StepInResponse) : void {
+	protected stepInRequest(response: DebugProtocol.StepInResponse) : void {
 		//TODO: Step-in doesn't appear to do anything in Delve
 		console.log("StepInRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'step' }], (err, state) => {
@@ -381,17 +390,17 @@ class GoDebugSession extends DebugSession {
 		console.log("StepInResponse")
 	}
 
-	protected stepOutRequest(response: OpenDebugProtocol.StepOutResponse) : void {
+	protected stepOutRequest(response: DebugProtocol.StepOutResponse) : void {
 		console.error('Not yet implemented: stepOutRequest');
 		this.sendResponse(response);
 	}
 	
-	protected pauseRequest(response: OpenDebugProtocol.PauseResponse) : void {
+	protected pauseRequest(response: DebugProtocol.PauseResponse) : void {
 		console.error('Not yet implemented: pauseRequest');
 		this.sendResponse(response);
 	}
 
-	protected evaluateRequest(response: OpenDebugProtocol.EvaluateResponse, args: OpenDebugProtocol.EvaluateArguments): void {
+	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
 		console.log("EvaluateRequest");
 		var evalSymbolArgs = {
 			symbol: args.expression,

@@ -6,7 +6,7 @@ import {V8Protocol, Response, Event} from './v8Protocol';
 import * as Net from 'net';
 
 
-export class Source implements OpenDebugProtocol.Source {
+export class Source implements DebugProtocol.Source {
 	name: string;
 	path: string;
 	sourceReference: number;
@@ -18,7 +18,7 @@ export class Source implements OpenDebugProtocol.Source {
 	}
 }
 
-export class Scope implements OpenDebugProtocol.Scope {
+export class Scope implements DebugProtocol.Scope {
 	name: string;
 	variablesReference: number;
 	expensive: boolean;
@@ -30,7 +30,7 @@ export class Scope implements OpenDebugProtocol.Scope {
 	}
 }
 
-export class StackFrame implements OpenDebugProtocol.StackFrame {
+export class StackFrame implements DebugProtocol.StackFrame {
 	id: number;
 	source: Source;
 	line: number;
@@ -46,7 +46,7 @@ export class StackFrame implements OpenDebugProtocol.StackFrame {
 	}
 }
 
-export class Thread implements OpenDebugProtocol.Thread {
+export class Thread implements DebugProtocol.Thread {
 	id: number;
 	name: string;
 
@@ -60,7 +60,7 @@ export class Thread implements OpenDebugProtocol.Thread {
 	}
 }
 
-export class Variable implements OpenDebugProtocol.Variable {
+export class Variable implements DebugProtocol.Variable {
 	name: string;
 	value: string;
 	variablesReference: number;
@@ -72,7 +72,7 @@ export class Variable implements OpenDebugProtocol.Variable {
 	}
 }
 
-export class Breakpoint implements OpenDebugProtocol.Breakpoint {
+export class Breakpoint implements DebugProtocol.Breakpoint {
 	verified: boolean;
 	line: number;
 
@@ -82,7 +82,7 @@ export class Breakpoint implements OpenDebugProtocol.Breakpoint {
 	}
 }
 
-export class StoppedEvent extends Event implements OpenDebugProtocol.StoppedEvent {
+export class StoppedEvent extends Event implements DebugProtocol.StoppedEvent {
 	body: {
 		reason: string;
 		threadId: number;
@@ -101,18 +101,37 @@ export class StoppedEvent extends Event implements OpenDebugProtocol.StoppedEven
 	}
 }
 
-export class InitializedEvent extends Event implements OpenDebugProtocol.InitializedEvent {
+export class InitializedEvent extends Event implements DebugProtocol.InitializedEvent {
 	public constructor() {
 		super('initialized');
 	}
 }
 
-export class TerminatedEvent extends Event implements OpenDebugProtocol.TerminatedEvent {
+export class TerminatedEvent extends Event implements DebugProtocol.TerminatedEvent {
 	public constructor() {
 		super('terminated');
 	}
 }
 
+export class OutputEvent extends Event implements DebugProtocol.OutputEvent {
+	body: {
+		category: string,
+		output: string
+	};
+
+	public constructor(output: string, category: string = 'console') {
+		super('output');
+		this.body = {
+			category: category,
+			output: output
+		};
+	}
+}
+
+export enum ErrorDestination {
+	User = 1,
+	Telemetry = 2
+};
 
 export class DebugSession extends V8Protocol {
 
@@ -158,7 +177,7 @@ export class DebugSession extends V8Protocol {
 				socket.on('end', () => {
 					console.error('>> client connection closed\n');
 				});
-				new debugSession(false, true).startDispatch(socket, socket);
+				new debugSession(false, true).start(socket, socket);
 			}).listen(port);
 		} else {
 
@@ -168,7 +187,7 @@ export class DebugSession extends V8Protocol {
 			process.on('SIGTERM', () => {
 				session.shutdown();
 			});
-			session.startDispatch(process.stdin, process.stdout);
+			session.start(process.stdin, process.stdout);
 		}
 	}
 
@@ -183,7 +202,7 @@ export class DebugSession extends V8Protocol {
 		}
 	}
 
-	protected sendErrorResponse(response: OpenDebugProtocol.Response, code: number, format: string, args?: any): void {
+	protected sendErrorResponse(response: DebugProtocol.Response, code: number, format: string, args?: any, dest: ErrorDestination = ErrorDestination.User): void {
 
 		const message = formatPII(format, true, args);
 
@@ -192,147 +211,157 @@ export class DebugSession extends V8Protocol {
 		if (!response.body) {
 			response.body = {};
 		}
-		response.body.error = <OpenDebugProtocol.Message> {
+		const msg = <DebugProtocol.Message> {
 			id: code,
-			format: format,
-			variables: args
+			format: format
 		};
+		if (args) {
+			msg.variables = args;
+		}
+		if (dest & ErrorDestination.User) {
+			msg.showUser = true;
+		}
+		if (dest & ErrorDestination.Telemetry) {
+			msg.sendTelemetry = true;
+		}
+		response.body.error = msg;
+
 		this.sendResponse(response);
 	}
 
-	protected dispatchRequest(request: OpenDebugProtocol.Request): void {
+	protected dispatchRequest(request: DebugProtocol.Request): void {
 
 		const response = new Response(request);
 
 		try {
 			if (request.command === 'initialize') {
-				var args = <OpenDebugProtocol.InitializeRequestArguments> request.arguments;
+				var args = <DebugProtocol.InitializeRequestArguments> request.arguments;
 				this._clientLinesStartAt1 = args.linesStartAt1;
 				this._clientPathFormat = args.pathFormat;
-				this.initializeRequest(<OpenDebugProtocol.InitializeResponse> response, args);
+				this.initializeRequest(<DebugProtocol.InitializeResponse> response, args);
 
 			} else if (request.command === 'launch') {
-				this.launchRequest(<OpenDebugProtocol.LaunchResponse> response, <OpenDebugProtocol.LaunchRequestArguments> request.arguments);
+				this.launchRequest(<DebugProtocol.LaunchResponse> response, request.arguments);
 
 			} else if (request.command === 'attach') {
-				this.attachRequest(<OpenDebugProtocol.AttachResponse> response, <OpenDebugProtocol.AttachRequestArguments> request.arguments);
+				this.attachRequest(<DebugProtocol.AttachResponse> response, request.arguments);
 
 			} else if (request.command === 'disconnect') {
-				this.disconnectRequest(<OpenDebugProtocol.DisconnectResponse> response, <OpenDebugProtocol.DisconnectArguments> request.arguments);
+				this.disconnectRequest(<DebugProtocol.DisconnectResponse> response, request.arguments);
 
 			} else if (request.command === 'setBreakpoints') {
-				this.setBreakPointsRequest(<OpenDebugProtocol.SetBreakpointsResponse> response, <OpenDebugProtocol.SetBreakpointsArguments> request.arguments);
+				this.setBreakPointsRequest(<DebugProtocol.SetBreakpointsResponse> response, request.arguments);
 
 			} else if (request.command === 'setExceptionBreakpoints') {
-				this.setExceptionBreakPointsRequest(<OpenDebugProtocol.SetExceptionBreakpointsResponse> response, <OpenDebugProtocol.SetExceptionBreakpointsArguments> request.arguments);
+				this.setExceptionBreakPointsRequest(<DebugProtocol.SetExceptionBreakpointsResponse> response, request.arguments);
 
 			} else if (request.command === 'continue') {
-				this.continueRequest(<OpenDebugProtocol.ContinueResponse> response);
+				this.continueRequest(<DebugProtocol.ContinueResponse> response, request.arguments);
 
 			} else if (request.command === 'next') {
-				this.nextRequest(<OpenDebugProtocol.NextResponse> response);
+				this.nextRequest(<DebugProtocol.NextResponse> response, request.arguments);
 
 			} else if (request.command === 'stepIn') {
-				this.stepInRequest(<OpenDebugProtocol.StepInResponse> response);
+				this.stepInRequest(<DebugProtocol.StepInResponse> response, request.arguments);
 
 			} else if (request.command === 'stepOut') {
-				this.stepOutRequest(<OpenDebugProtocol.StepOutResponse> response);
+				this.stepOutRequest(<DebugProtocol.StepOutResponse> response, request.arguments);
 
 			} else if (request.command === 'pause') {
-				this.pauseRequest(<OpenDebugProtocol.PauseResponse> response);
+				this.pauseRequest(<DebugProtocol.PauseResponse> response, request.arguments);
 
 			} else if (request.command === 'stackTrace') {
-				this.stackTraceRequest(<OpenDebugProtocol.StackTraceResponse> response, <OpenDebugProtocol.StackTraceArguments> request.arguments);
+				this.stackTraceRequest(<DebugProtocol.StackTraceResponse> response, request.arguments);
 
 			} else if (request.command === 'scopes') {
-				this.scopesRequest(<OpenDebugProtocol.ScopesResponse> response, <OpenDebugProtocol.ScopesArguments> request.arguments);
+				this.scopesRequest(<DebugProtocol.ScopesResponse> response, request.arguments);
 
 			} else if (request.command === 'variables') {
-				this.variablesRequest(<OpenDebugProtocol.VariablesResponse> response, <OpenDebugProtocol.VariablesArguments> request.arguments);
+				this.variablesRequest(<DebugProtocol.VariablesResponse> response, request.arguments);
 
 			} else if (request.command === 'source') {
-				this.sourceRequest(<OpenDebugProtocol.SourceResponse> response, <OpenDebugProtocol.SourceArguments> request.arguments);
+				this.sourceRequest(<DebugProtocol.SourceResponse> response, request.arguments);
 
 			} else if (request.command === 'threads') {
-				this.threadsRequest(<OpenDebugProtocol.ThreadsResponse> response);
+				this.threadsRequest(<DebugProtocol.ThreadsResponse> response);
 
 			} else if (request.command === 'evaluate') {
-				this.evaluateRequest(<OpenDebugProtocol.EvaluateResponse> response, <OpenDebugProtocol.EvaluateArguments> request.arguments);
+				this.evaluateRequest(<DebugProtocol.EvaluateResponse> response, request.arguments);
 
 			} else {
-				this.sendErrorResponse(response, 1014, "unrecognized request");
+				this.sendErrorResponse(response, 1014, "unrecognized request", null, ErrorDestination.Telemetry);
 			}
 		} catch (e) {
-			this.sendErrorResponse(response, 1104, "exception while processing request (exception: {_exception})", { _exception: e.message });
+			this.sendErrorResponse(response, 1104, "exception while processing request (exception: {_exception})", { _exception: e.message }, ErrorDestination.Telemetry);
 		}
 	}
 
-	protected initializeRequest(response: OpenDebugProtocol.InitializeResponse, args: OpenDebugProtocol.InitializeRequestArguments): void {
+	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
 		this.sendResponse(response);
 	}
 
-	protected disconnectRequest(response: OpenDebugProtocol.DisconnectResponse, args: OpenDebugProtocol.DisconnectArguments): void {
+	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		this.sendResponse(response);
 		this.shutdown();
 	}
 
-	protected launchRequest(response: OpenDebugProtocol.LaunchResponse, args: OpenDebugProtocol.LaunchRequestArguments): void {
+	protected launchRequest(response: DebugProtocol.LaunchResponse, args: DebugProtocol.LaunchRequestArguments): void {
 		this.sendResponse(response);
 	}
 
-	protected attachRequest(response: OpenDebugProtocol.AttachResponse, args: OpenDebugProtocol.AttachRequestArguments): void {
+	protected attachRequest(response: DebugProtocol.AttachResponse, args: DebugProtocol.AttachRequestArguments): void {
 		this.sendResponse(response);
 	}
 
-	protected setBreakPointsRequest(response: OpenDebugProtocol.SetBreakpointsResponse, args: OpenDebugProtocol.SetBreakpointsArguments): void {
+	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
 		this.sendResponse(response);
 	}
 
-	protected setExceptionBreakPointsRequest(response: OpenDebugProtocol.SetExceptionBreakpointsResponse, args: OpenDebugProtocol.SetExceptionBreakpointsArguments): void {
+	protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments): void {
 		this.sendResponse(response);
 	}
 
-	protected continueRequest(response: OpenDebugProtocol.ContinueResponse) : void {
+	protected continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments) : void {
 		this.sendResponse(response);
 	}
 
-	protected nextRequest(response: OpenDebugProtocol.NextResponse) : void {
+	protected nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) : void {
 		this.sendResponse(response);
 	}
 
-	protected stepInRequest(response: OpenDebugProtocol.StepInResponse) : void {
+	protected stepInRequest(response: DebugProtocol.StepInResponse, args: DebugProtocol.StepInArguments) : void {
 		this.sendResponse(response);
 	}
 
-	protected stepOutRequest(response: OpenDebugProtocol.StepOutResponse) : void {
+	protected stepOutRequest(response: DebugProtocol.StepOutResponse, args: DebugProtocol.StepOutArguments) : void {
 		this.sendResponse(response);
 	}
 
-	protected pauseRequest(response: OpenDebugProtocol.PauseResponse) : void {
+	protected pauseRequest(response: DebugProtocol.PauseResponse, args: DebugProtocol.PauseArguments) : void {
 		this.sendResponse(response);
 	}
 
-	protected sourceRequest(response: OpenDebugProtocol.SourceResponse, args: OpenDebugProtocol.SourceArguments) : void {
+	protected sourceRequest(response: DebugProtocol.SourceResponse, args: DebugProtocol.SourceArguments) : void {
 		this.sendResponse(response);
 	}
 
-	protected threadsRequest(response: OpenDebugProtocol.ThreadsResponse): void {
+	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
 		this.sendResponse(response);
 	}
 
-	protected stackTraceRequest(response: OpenDebugProtocol.StackTraceResponse, args: OpenDebugProtocol.StackTraceArguments): void {
+	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
 		this.sendResponse(response);
 	}
 
-	protected scopesRequest(response: OpenDebugProtocol.ScopesResponse, args: OpenDebugProtocol.ScopesArguments): void {
+	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
 		this.sendResponse(response);
 	}
 
-	protected variablesRequest(response: OpenDebugProtocol.VariablesResponse, args: OpenDebugProtocol.VariablesArguments): void {
+	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
 		this.sendResponse(response);
 	}
 
-	protected evaluateRequest(response: OpenDebugProtocol.EvaluateResponse, args: OpenDebugProtocol.EvaluateArguments): void {
+	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
 		this.sendResponse(response);
 	}
 
