@@ -1,8 +1,15 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ *--------------------------------------------------------*/
+
+'use strict';
+
+import vscode = require('vscode');
 import fs = require('fs');
 import path = require('path');
-import vscode = require('vscode');
 import os = require('os');
 import cp = require('child_process');
+import { showGoStatus, hideGoStatus } from './goStatus'
 
 var binPathCache : { [bin: string]: string;} = {}
 
@@ -37,7 +44,7 @@ function getGOPATHWorkspaces() {
 	return parts;
 }
 
-export function setupGoPathAndOfferToInstallTools(showGoStatus, hideGoStatus) {
+export function setupGoPathAndOfferToInstallTools() {
 	// TODO: There should be a better way to do this?
 	var gopath = vscode.workspace.getConfiguration('go')['gopath'];
 		

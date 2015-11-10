@@ -4,10 +4,10 @@
 
 'use strict';
 
+import vscode = require('vscode');
 import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
-
 import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
@@ -15,16 +15,14 @@ import { GoReferenceProvider } from './goReferences';
 import { GoDocumentFormattingEditProvider } from './goFormat';
 import { GoRenameProvider } from './goRename';
 import { GoDocumentSybmolProvider } from './goOutline';
-import {check, ICheckResult} from './goCheck';
-import {setupGoPathAndOfferToInstallTools} from './goPath'
-import vscode = require('vscode');
+import { check, ICheckResult } from './goCheck';
+import { setupGoPathAndOfferToInstallTools } from './goPath'
+import { GO_MODE } from './goMode'
+import { showHideStatus } from './goStatus'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
-let statusBarEntry: vscode.StatusBarItem;
 
 export function activate(ctx: vscode.ExtensionContext): void {
-
-    const GO_MODE: vscode.DocumentFilter = { language: 'go', scheme: 'file' }
 
 	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.'));
@@ -36,6 +34,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
+	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
+	setupGoPathAndOfferToInstallTools();
+	ctx.subscriptions.push(startBuildOnSaveWatcher());
 
     vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
@@ -74,34 +75,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
     });
 
-	setupGoPathAndOfferToInstallTools(showGoStatus, function() { statusBarEntry.dispose(); });
-	ctx.subscriptions.push(startBuildOnSaveWatcher());
-
-	function showHideStatus() {
-		if (!statusBarEntry) {
-			return;
-		}
-		if (!vscode.window.activeTextEditor) {
-			statusBarEntry.hide();
-			return;
-		}
-		if (vscode.languages.match(GO_MODE, vscode.window.activeTextEditor.document)) {
-			statusBarEntry.show();
-			return;
-		}
-		statusBarEntry.hide();
-	}
-	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
-}
-
-
-function showGoStatus(message: string, command: string, tooltip?: string) {
-	statusBarEntry = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, Number.MIN_VALUE);
-	statusBarEntry.text = message;
-	statusBarEntry.command = command;
-	statusBarEntry.color = 'yellow';
-	statusBarEntry.tooltip = tooltip;
-	statusBarEntry.show();
 }
 
 function deactivate() {
@@ -120,6 +93,9 @@ function startBuildOnSaveWatcher() {
 	let goConfig = vscode.workspace.getConfiguration('go');
 
 	return vscode.workspace.onDidSaveTextDocument(document => {
+		if(document.languageId != "go") {
+			return;
+		}
 		var uri = document.uri;
 		check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
 			diagnosticCollection.clear();
