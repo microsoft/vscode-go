@@ -37,6 +37,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
 	setupGoPathAndOfferToInstallTools();
 	ctx.subscriptions.push(startBuildOnSaveWatcher());
+	
+	ctx.subscriptions.push(vscode.commands.registerCommand("go.gopath", () => {
+		var gopath = process.env["GOPATH"];
+		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
+	}));
 
     vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {

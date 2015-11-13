@@ -67,6 +67,13 @@
 				"path": "./snippets/go.json"
 			}
 		],
+		"commands": [
+			{
+				"command": "go.gopath",
+				"title": "Go: Current GOPATH",
+				"description": "See the currently set GOPATH."
+			}
+		],
 		"debuggers": [
 			{
 				"type": "go",

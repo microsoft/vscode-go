@@ -49,7 +49,7 @@ export function setupGoPathAndOfferToInstallTools() {
 	var gopath = vscode.workspace.getConfiguration('go')['gopath'];
 		
 	// Make sure GOPATH is set
-	if(!process.env["GOPATH"] && gopath) {
+	if(gopath) {
 		process.env["GOPATH"] = gopath;
 	}
 	
