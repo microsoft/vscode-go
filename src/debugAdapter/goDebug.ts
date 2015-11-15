@@ -4,7 +4,7 @@
 
 import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, Thread, StackFrame, Scope, Source} from './common/debugSession';
 import {Handles} from './common/handles';
-import {readFileSync} from 'fs';
+import {readFileSync, existsSync} from 'fs';
 import {basename, dirname} from 'path';
 import {spawn, ChildProcess} from 'child_process';
 import {Client, RPCConnection} from 'json-rpc2';
@@ -102,6 +102,10 @@ class Delve {
 			var serverRunning = false;
 			// TODO: Make this more robust.
 			var dlv = path.join(process.env["GOPATH"], "bin", "dlv");
+			console.log("Using dlv at: ", dlv)
+			if(!existsSync(dlv)) {
+				return reject("Cannot find Delve debugger.  Run 'go get -u github.com/derekparker/delve/cmd/dlv' to install.")
+			}
 			this.debugProcess = spawn(dlv, ['debug',  '--headless=true', '--listen=127.0.0.1:2345', '--log', program], { cwd: dirname(program) });
 			
 			function connectClient() {
@@ -125,6 +129,7 @@ class Delve {
 				console.log(str);
 			});
 			this.debugProcess.on('close', function(code) {
+				//TODO: Report `dlv` crash to user. 
 				console.error("Process exiting with code: " + code);
 			});
 			this.debugProcess.on('error', function(err) {
@@ -221,11 +226,14 @@ class GoDebugSession extends DebugSession {
 					return { verified: false, line: args.lines[i] }
 				}
 			});
+			this.breakpoints.set(args.source.path, newBreakpoints.filter(x => !!x));
+			return breakpoints;
+		}).then(breakpoints => {
 			response.body = { breakpoints };
 			this.sendResponse(response);
 			console.log("SetBreakPointsResponse")
-			this.breakpoints.set(args.source.path, newBreakpoints.filter(x => !!x));
-		}).catch(err => {
+		}, err => {
+			this.sendErrorResponse(response, 2002, "Failed to set breakpoint: '{e}'", {e: err.toString()})
 			console.error(err);
 		});
 	}
@@ -233,6 +241,10 @@ class GoDebugSession extends DebugSession {
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
 		console.log("ThreadsRequest")
 		this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
+			if(err) {
+				console.error("Failed to get threads.")
+				return this.sendErrorResponse(response, 2003, "Unable to display threads: '{e}'", {e: err.toString()});
+			}
 			var threads = goroutines.map(goroutine =>
 				new Thread(
 					goroutine.id, 
@@ -251,7 +263,7 @@ class GoDebugSession extends DebugSession {
 		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: args.threadId, depth: args.levels }], (err, locations) => {
 			if(err) {
 				console.error("Failed to produce stack trace!")
-				return;
+				return this.sendErrorResponse(response, 2004, "Unable to produce stack trace: '{e}'", {e: err.toString()});
 			}
 			console.log(locations);
 			var stackFrames = locations.map((location, i) => 
@@ -294,9 +306,17 @@ class GoDebugSession extends DebugSession {
 		var frame = +parts[1];
 		switch(kind) {
 			case "local":
-				this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, locals) => {	
+				this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, locals) => {
+					if(err) {
+						console.error("Failed to list local variables.")
+						return this.sendErrorResponse(response, 2005, "Unable to list locals: '{e}'", {e: err.toString()});
+					}	
 					console.log(locals);
 					this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, args) => {
+						if(err) {
+							console.error("Failed to list function args.")
+							return this.sendErrorResponse(response, 2006, "Unable to list args: '{e}'", {e: err.toString()});
+						}
 						console.log(args);
 						var vars = args.concat(locals);
 						for(var i = 2; i < parts.length; i++) {
@@ -341,6 +361,10 @@ class GoDebugSession extends DebugSession {
 	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
 		console.log("ContinueRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
+			if(err) {
+				console.error("Failed to continue.")
+				return this.sendErrorResponse(response, 2001, "Unable to continue: '{e}'", {e: err.toString()});
+			}
 			console.log(state);
 			if(state.exited) {
 				this.sendEvent(new TerminatedEvent());	
@@ -350,14 +374,18 @@ class GoDebugSession extends DebugSession {
 				this.sendEvent(new StoppedEvent("breakpoint", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('breakpoint')");
 			}
+			this.sendResponse(response);
+			console.log("ContinueResponse");
 		});
-		this.sendResponse(response);
-		console.log("ContinueResponse");
 	}
 
 	protected nextRequest(response: DebugProtocol.NextResponse): void {
 		console.log("NextRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
+			if(err) {
+				console.error("Failed to next.")
+				return this.sendErrorResponse(response, 2009, "Unable to step to next: '{e}'", {e: err.toString()});
+			}
 			console.log(state);
 			if(state.exited) {
 				this.sendEvent(new TerminatedEvent());
@@ -367,15 +395,19 @@ class GoDebugSession extends DebugSession {
 				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('step')");
 			}
+			this.sendResponse(response);
+			console.log("NextResponse")
 		});
-		this.sendResponse(response);
-		console.log("NextResponse")
 	}
 	
 	protected stepInRequest(response: DebugProtocol.StepInResponse) : void {
 		//TODO: Step-in doesn't appear to do anything in Delve
 		console.log("StepInRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'step' }], (err, state) => {
+			if(err) {
+				console.error("Failed to step.")
+				return this.sendErrorResponse(response, 2009, "Unable to step in: '{e}'", {e: err.toString()});
+			}
 			console.log(state);
 			if(state.exited) {
 				this.sendEvent(new TerminatedEvent());
@@ -385,19 +417,19 @@ class GoDebugSession extends DebugSession {
 				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('step')");
 			}
+			this.sendResponse(response);
+			console.log("StepInResponse")
 		});
-		this.sendResponse(response);
-		console.log("StepInResponse")
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse) : void {
 		console.error('Not yet implemented: stepOutRequest');
-		this.sendResponse(response);
+		this.sendErrorResponse(response, 2000, "Step out is not yet supported");
 	}
 	
 	protected pauseRequest(response: DebugProtocol.PauseResponse) : void {
 		console.error('Not yet implemented: pauseRequest');
-		this.sendResponse(response);
+		this.sendErrorResponse(response, 2000, "Pause is not yet supported");
 	}
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
@@ -410,6 +442,10 @@ class GoDebugSession extends DebugSession {
 			}
 		};
 		this.delve.call<DebugVariable>('EvalSymbol', [evalSymbolArgs], (err, variable) => {
+			if(err) {
+				console.error("Failed to eval expression: ", JSON.stringify(evalSymbolArgs, null, ' '));
+				return this.sendErrorResponse(response, 2009, "Unable to eval expression: '{e}'", {e: err.toString()});
+			}
 			response.body = { result: variable.value, variablesReference: 0 };
 			this.sendResponse(response);
 			console.log("EvaluateResponse");
