@@ -1,6 +1,6 @@
 {
 	"name": "Go",
-	"version": "0.6.4",
+	"version": "0.6.5",
 	"publisher": "lukehoban",
 	"description": "Go support for Visual Studio Code",
 	"author": {
@@ -14,7 +14,7 @@
 		"Debuggers"
 	],
 	"galleryBanner": {
-		"color": "#E0EBF5",
+		"color": "#CFB69A",
 		"theme": "light"
 	},
 	"private": true,

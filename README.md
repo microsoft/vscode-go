@@ -77,7 +77,7 @@ You can now hit breakpoints and step through the extension.
 
 If you make edits in the extension `.ts` files, just reload (`cmd-r`) the `[Extension Development Host]` instance of Code to load in the new extension code.  The debugging instance will automatically reattach.
 
-To debug the debugger, see [the debugAdapter README](src/debugAdapter/README.md).
+To debug the debugger, see [the debugAdapter readme](src/debugAdapter/Readme.md).
 
 ## Tools
 
