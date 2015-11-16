@@ -41,9 +41,14 @@ Once this is installed, go to the Code debug viewlet and select the configuratio
 	"version": "0.1.0",
 	"configurations": [
 		{
-			"name": "Delve test",
+			"name": "Launch main.go",
 			"type": "go",
-			"program": "/Users/lukeh/dd/go/src/github.com/lukehoban/azuretest/test.go"
+			"request": "launch",
+			"program": "main.go",
+			"stopOnEntry": false,
+			"env": {},
+			"args": [],
+			"cwd": "."
 		}
 	]
 }
@@ -70,7 +75,9 @@ In the `[Extension Development Host]` instance, open your GOPATH folder.
 
 You can now hit breakpoints and step through the extension.
 
-If you make edits in the extension `.ts` files, just reload (`cmd-r`) the `[Extension Development Host]` instance of Code to load in the new extension code.  The debugging instance will automatically reattach. 
+If you make edits in the extension `.ts` files, just reload (`cmd-r`) the `[Extension Development Host]` instance of Code to load in the new extension code.  The debugging instance will automatically reattach.
+
+To debug the debugger, see [the debugAdapter README](src/debugAdapter/README.md).
 
 ## Tools
 
