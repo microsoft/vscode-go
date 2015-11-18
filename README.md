@@ -73,7 +73,7 @@ You can set up a development environment for debugging the extension during exte
 First make sure you do not have the extension installed in `~/.vscode/extensions`.  Then clone the repo somewhere else on your machine, run `npm install` and open a development instance of Code.
 
 ```bash
-rm -rf ~/.vscode/extensions/go-code
+rm -rf ~/.vscode/extensions/lukehoban.Go
 cd ~
 git clone https://github.com/Microsoft/vscode-go
 cd go-code
