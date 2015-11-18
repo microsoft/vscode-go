@@ -19,7 +19,7 @@ export function getBinPath(binname) {
 	var binpath: string;
 	for(var i = 0; i < workspaces.length; i++) {
 		binpath = path.join(workspaces[i], "bin", binname);
-		if(fs.existsSync(workspaces[i])) {
+		if(fs.existsSync(binpath)) {
 			return binpath;
 		}
 	}
