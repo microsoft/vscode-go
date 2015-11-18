@@ -363,7 +363,6 @@ class GoDebugSession extends DebugSession {
 		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
 			if(err) {
 				console.error("Failed to continue.")
-				return this.sendErrorResponse(response, 2001, "Unable to continue: '{e}'", {e: err.toString()});
 			}
 			console.log(state);
 			if(state.exited) {
@@ -374,9 +373,9 @@ class GoDebugSession extends DebugSession {
 				this.sendEvent(new StoppedEvent("breakpoint", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('breakpoint')");
 			}
-			this.sendResponse(response);
-			console.log("ContinueResponse");
 		});
+		this.sendResponse(response);
+		console.log("ContinueResponse");
 	}
 
 	protected nextRequest(response: DebugProtocol.NextResponse): void {
@@ -384,7 +383,6 @@ class GoDebugSession extends DebugSession {
 		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
 			if(err) {
 				console.error("Failed to next.")
-				return this.sendErrorResponse(response, 2009, "Unable to step to next: '{e}'", {e: err.toString()});
 			}
 			console.log(state);
 			if(state.exited) {
@@ -395,18 +393,16 @@ class GoDebugSession extends DebugSession {
 				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('step')");
 			}
-			this.sendResponse(response);
-			console.log("NextResponse")
 		});
+		this.sendResponse(response);
+		console.log("NextResponse")
 	}
 	
 	protected stepInRequest(response: DebugProtocol.StepInResponse) : void {
-		//TODO: Step-in doesn't appear to do anything in Delve
 		console.log("StepInRequest")
 		this.delve.call<DebuggerState>('Command', [{ name: 'step' }], (err, state) => {
 			if(err) {
 				console.error("Failed to step.")
-				return this.sendErrorResponse(response, 2009, "Unable to step in: '{e}'", {e: err.toString()});
 			}
 			console.log(state);
 			if(state.exited) {
@@ -417,9 +413,9 @@ class GoDebugSession extends DebugSession {
 				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('step')");
 			}
-			this.sendResponse(response);
-			console.log("StepInResponse")
 		});
+		this.sendResponse(response);
+		console.log("StepInResponse")
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse) : void {
