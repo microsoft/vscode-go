@@ -34,31 +34,11 @@ The following Visual Studio Code settings are available for the Go extension.  T
 
 ```javascript
 {
-	"go.buildOnSave": {
-		"type": "boolean",
-		"default": true,
-		"description": "Run 'go build'/'go test' on save."
-	},
-	"go.lintOnSave": {
-		"type": "boolean",
-		"default": true,
-		"description": "Run 'golint' on save."
-	},
-	"go.vetOnSave": {
-		"type": "boolean",
-		"default": true,
-		"description": "Run 'go tool vet' on save."
-	},
-	"go.formatTool": {
-		"type": "string",
-		"default": "goreturns",
-		"description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format."
-	},
-	"go.gopath": {
-		"type": "string",
-		"default": null,
-		"description": "Specifies the GOPATH to use when no environment variable is set."
-	}
+	"go.buildOnSave": true,
+	"go.lintOnSave": true,
+	"go.vetOnSave": true,
+	"go.formatTool": "goreturns",
+	"go.gopath": "/Users/lukeh/go"
 }
 ```
 
