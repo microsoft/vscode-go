@@ -1,7 +1,5 @@
 # Go for Visual Studio Code
 
-> **NOTE:** All content within this repo is private and cannot be shared with others without the express written permission of the product team.
-
 This extension adds rich language support for the Go language to VS Code, including:
 
 - Colorization
@@ -14,7 +12,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Rename (using `gorename`)
 - Build-on-save (using `go build` and `go test`)
 - Format (using `goreturns` or `goimports` or `gofmt`)
-- [partially implemented] Debugging (using `delve`)
+- [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
 ![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
@@ -24,11 +22,45 @@ This extension adds rich language support for the Go language to VS Code, includ
 
 ## Using
 
-First, you will need to install Visual Studio Code `0.10.x`.  Then launch Code with access to the extension gallery with `code --enableExtensionGallery`.
-
-In the command palette (`cmd-shift-p`) select `Install Extension` and choose `Go`.  
+First, you will need to install Visual Studio Code `0.10`. In the command palette (`cmd-shift-p`) select `Install Extension` and choose `Go`.  
 
 In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open you GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.
+
+_Note_: It is strongly encouraged to turn `Auto Save` on in Visual Studio Code (`File -> Auto Save`) when using this extension.  Many of the Go tools work only on saved files, and error reporting will be more interactive with `Auto Save` turned on.
+
+### Options
+
+The following Visual Studio Code settings are available for the Go extension.  These can be set in user preferences (`cmd+,`) or workspace settings (`.vscode/settings.json`).
+
+```javascript
+{
+	"go.buildOnSave": {
+		"type": "boolean",
+		"default": true,
+		"description": "Run 'go build'/'go test' on save."
+	},
+	"go.lintOnSave": {
+		"type": "boolean",
+		"default": true,
+		"description": "Run 'golint' on save."
+	},
+	"go.vetOnSave": {
+		"type": "boolean",
+		"default": true,
+		"description": "Run 'go tool vet' on save."
+	},
+	"go.formatTool": {
+		"type": "string",
+		"default": "goreturns",
+		"description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format."
+	},
+	"go.gopath": {
+		"type": "string",
+		"default": null,
+		"description": "Specifies the GOPATH to use when no environment variable is set."
+	}
+}
+```
 
 ### _Optional_: Debugging
 
@@ -69,7 +101,7 @@ npm install
 code . 
 ```
 
-You can now go to the Debug viewlet and select `Launch Extension` then hit play (`F5`).
+You can now go to the Debug viewlet and select `Launch Extension` then hit run (`F5`).
 
 In the `[Extension Development Host]` instance, open your GOPATH folder.  
 
@@ -83,12 +115,12 @@ To debug the debugger, see [the debugAdapter readme](src/debugAdapter/Readme.md)
 
 The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, the extension will offer to install them for you.
 
-- gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
 - gocode: `go get -u -v github.com/nsf/gocode`
-- goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
 - godef: `go get -u -v github.com/rogpeppe/godef`
 - golint: `go get -u -v github.com/golang/lint/golint`
 - go-find-references: `go get -u -v github.com/lukehoban/go-find-references`
+- goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
+- gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
 
 And for debugging:
 
