@@ -104,7 +104,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 
 And for debugging:
 
-- delve: `go get -u -v github.com/derekparker/delve/cmd/dlv`
+- delve: Follow the instructions at https://github.com/derekparker/delve/wiki/Building.
 
 ## License
 [MIT](LICENSE)
