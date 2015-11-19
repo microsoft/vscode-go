@@ -13,40 +13,40 @@ import {getBinPath} from './goPath'
 
 export class GoFormatter {
 
-	private formatCommand = "goreturns";
+    private formatCommand = "goreturns";
 
 
-	constructor() {
-		let formatTool = vscode.workspace.getConfiguration('go')['formatTool'];
-		if (formatTool) {
-			this.formatCommand = formatTool;
-		}
-	}
+    constructor() {
+        let formatTool = vscode.workspace.getConfiguration('go')['formatTool'];
+        if (formatTool) {
+            this.formatCommand = formatTool;
+        }
+    }
 
-	public provideDocumentFormattingEdits(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
-		return new Promise((resolve, reject) => {
-			var filename = document.fileName;
+    public provideDocumentFormattingEdits(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
+        return new Promise((resolve, reject) => {
+            var filename = document.fileName;
 
-			var formatCommandBinPath = getBinPath(this.formatCommand);
+            var formatCommandBinPath = getBinPath(this.formatCommand);
 
-			cp.execFile(formatCommandBinPath, [filename], {}, (err, stdout, stderr) => {
-				try {
-					if (err && (<any>err).code == "ENOENT") {
-						vscode.window.showInformationMessage("The 'goreturns' command is not available.  Use 'go get -u sourcegraph.com/sqs/goreturns' to install.");
-						return resolve(null);
-					}
-					if (err) return reject("Cannot format due to syntax errors.");
-					var text = stdout.toString();
-					// TODO: Should use `-d` option to get a diff and then compute the
-					// specific edits instead of replace whole buffer
-					var lastLine = document.lineCount;
-					var lastLineLastCol = document.lineAt(lastLine - 1).range.end.character;
-					var range = new vscode.Range(0, 0, lastLine - 1, lastLineLastCol);
-					return resolve([new vscode.TextEdit(range, text)]);
-				} catch (e) {
-					reject(e);
-				}
-			});
-		});
-	}
+            cp.execFile(formatCommandBinPath, [filename], {}, (err, stdout, stderr) => {
+                try {
+                    if (err && (<any>err).code == "ENOENT") {
+                        vscode.window.showInformationMessage("The '" + formatCommandBinPath + "' command is not available.  Please check your go.formatCommand user setting and ensure it is installed.");
+                        return resolve(null);
+                    }
+                    if (err) return reject("Cannot format due to syntax errors.");
+                    var text = stdout.toString();
+                    // TODO: Should use `-d` option to get a diff and then compute the
+                    // specific edits instead of replace whole buffer
+                    var lastLine = document.lineCount;
+                    var lastLineLastCol = document.lineAt(lastLine - 1).range.end.character;
+                    var range = new vscode.Range(0, 0, lastLine - 1, lastLineLastCol);
+                    return resolve([new vscode.TextEdit(range, text)]);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+    }
 }
