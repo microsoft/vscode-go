@@ -33,12 +33,12 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		return new Promise((resolve, reject) => {
 			var filename = document.fileName;
 
-			var goreturns = getBinPath(this.formatCommand);
+			var formatCommandBinPath = getBinPath(this.formatCommand);
 
-			cp.execFile(goreturns, [filename], {}, (err, stdout, stderr) => {
+			cp.execFile(formatCommandBinPath, [filename], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
-						vscode.window.showInformationMessage("The 'goreturns' command is not available.  Use 'go get -u sourcegraph.com/sqs/goreturns' to install.");
+						vscode.window.showInformationMessage("The '" + formatCommandBinPath + "' command is not available.  Please check your go.formatCommand user setting and ensure it is installed.");
 						return resolve(null);
 					}
 					if (err) return reject("Cannot format due to syntax errors.");
