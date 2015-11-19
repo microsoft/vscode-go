@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, Thread, StackFrame, Scope, Source} from './common/debugSession';
+import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source} from './common/debugSession';
 import {Handles} from './common/handles';
 import {readFileSync, existsSync} from 'fs';
 import {basename, dirname} from 'path';
@@ -96,6 +96,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 class Delve {
 	debugProcess: ChildProcess;
 	connection: Promise<RPCConnection>;
+	onstdout: (str: string) => void;
+	onstderr: (str: string) => void;
 	
 	constructor(program: string) {
 		this.connection = new Promise((resolve, reject) => {
@@ -119,14 +121,16 @@ class Delve {
 			this.debugProcess.stderr.on('data', chunk => {
 				var str = chunk.toString();
 				console.log(str);
+				if (this.onstderr) { this.onstderr(str); }
 				if(!serverRunning) {
 					serverRunning = true;
 					connectClient();
 				}
 			});
-			this.debugProcess.stdout.on('data', function(chunk) {
+			this.debugProcess.stdout.on('data', chunk => {
 				var str = chunk.toString();
 				console.log(str);
+				if (this.onstdout) { this.onstdout(str); }
 			});
 			this.debugProcess.on('close', function(code) {
 				//TODO: Report `dlv` crash to user. 
@@ -190,6 +194,13 @@ class GoDebugSession extends DebugSession {
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		// Launch the Delve debugger on the program
 		this.delve = new Delve(args.program);
+		this.delve.onstdout = (str: string) => {
+			this.sendEvent(new OutputEvent(str, 'stdout'));
+		};
+		this.delve.onstderr = (str: string) => {
+			this.sendEvent(new OutputEvent(str, 'stderr'));
+		};
+		
 		// TODO: This isn't quite right - may not want to blindly continue on start.
 		this.continueRequest(response);
 	}
