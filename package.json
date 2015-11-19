@@ -34,7 +34,8 @@
 	},
 	"devDependencies": {
 		"vscode": "0.10.x",
-		"fs-extra": "^0.26.0"
+		"fs-extra": "^0.26.0",
+		"typescript": "^1.6.2"
 	},
 	"engines": {
 		"vscode": "0.10.x"
