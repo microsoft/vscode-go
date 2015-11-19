@@ -76,7 +76,7 @@ First make sure you do not have the extension installed in `~/.vscode/extensions
 rm -rf ~/.vscode/extensions/lukehoban.Go
 cd ~
 git clone https://github.com/Microsoft/vscode-go
-cd go-code
+cd vscode-go
 npm install
 code . 
 ```
