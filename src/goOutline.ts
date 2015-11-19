@@ -37,7 +37,7 @@ export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 
 			var convertToCodeSymbols = (decl: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName:string): void => {
 				decl.forEach((each) => {
-					symbols.push(new vscode.SymbolInformation(each.label, this.goKindToCodeKind[each.type], new vscode.Range(positionAt(each.start), positionAt(each.end - 1)), undefined, containerName));
+					symbols.push(new vscode.SymbolInformation(each.label, this.goKindToCodeKind[each.type], new vscode.Range(positionAt(each.start - 1), positionAt(each.end - 1)), undefined, containerName));
 					if (each.children) {
 						convertToCodeSymbols(each.children, symbols, each.label);
 					}
