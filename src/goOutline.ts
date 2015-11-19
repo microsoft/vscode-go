@@ -9,6 +9,7 @@ import cp = require('child_process');
 import path = require('path');
 import {getBinPath} from './goPath'
 
+// Keep in sync with https://github.com/lukehoban/go-outline
 interface GoOutlineDeclaration {
 	label: string;
 	type: string;
@@ -16,7 +17,7 @@ interface GoOutlineDeclaration {
 	start: number;
 	end: number;
 	children?: GoOutlineDeclaration[];
-}
+}	
 
 export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 
@@ -35,11 +36,17 @@ export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 
 			var positionAt = (offset: number) => document.positionAt(offset);
 
-			var convertToCodeSymbols = (decl: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName:string): void => {
-				decl.forEach((each) => {
-					symbols.push(new vscode.SymbolInformation(each.label, this.goKindToCodeKind[each.type], new vscode.Range(positionAt(each.start), positionAt(each.end - 1)), undefined, containerName));
-					if (each.children) {
-						convertToCodeSymbols(each.children, symbols, each.label);
+			var convertToCodeSymbols = (decls: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName: string): void => {
+				decls.forEach(decl => {
+					let symbolInfo = new vscode.SymbolInformation(
+						decl.label,
+						this.goKindToCodeKind[decl.type],
+						new vscode.Range(positionAt(decl.start), positionAt(decl.end - 1)),
+						undefined,
+						containerName);
+					symbols.push(symbolInfo);
+					if (decl.children) {
+						convertToCodeSymbols(decl.children, symbols, decl.label);
 					}
 				});
 			}
