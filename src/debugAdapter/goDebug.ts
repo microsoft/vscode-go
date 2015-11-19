@@ -99,7 +99,7 @@ class Delve {
 	onstdout: (str: string) => void;
 	onstderr: (str: string) => void;
 	
-	constructor(program: string) {
+	constructor(program: string, args: string[], cwd: string, env: { [key: string]: string }) {
 		this.connection = new Promise((resolve, reject) => {
 			var serverRunning = false;
 			// TODO: Make this more robust.
@@ -108,7 +108,24 @@ class Delve {
 			if(!existsSync(dlv)) {
 				return reject("Cannot find Delve debugger.  Run 'go get -u github.com/derekparker/delve/cmd/dlv' to install.")
 			}
-			this.debugProcess = spawn(dlv, ['debug',  '--headless=true', '--listen=127.0.0.1:2345', '--log', program], { cwd: dirname(program) });
+			var dlvArgs = ['debug', '--headless=true', '--listen=127.0.0.1:2345', '--log'];
+			if (args) {
+				dlvArgs = dlvArgs.concat(['--', ...args]);
+			}
+			var dlvEnv: Object = null;
+			if (env) {
+				dlvEnv = {};
+				for (var k in process.env) {
+					dlvEnv[k] = process.env[k];
+				}
+				for (var k in env) {
+					dlvEnv[k] = env[k];
+				}
+			}
+			this.debugProcess = spawn(dlv, dlvArgs, {
+				cwd: dirname(program),
+				env: dlvEnv,
+			});
 			
 			function connectClient() {
 				var client = Client.$create(2345, '127.0.0.1');
@@ -193,7 +210,7 @@ class GoDebugSession extends DebugSession {
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		// Launch the Delve debugger on the program
-		this.delve = new Delve(args.program);
+		this.delve = new Delve(args.program, args.args, args.cwd, args.env);
 		this.delve.onstdout = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stdout'));
 		};
