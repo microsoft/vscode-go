@@ -4,7 +4,7 @@
 
 import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source} from './common/debugSession';
 import {Handles} from './common/handles';
-import {readFileSync, existsSync} from 'fs';
+import {readFileSync, existsSync, lstatSync} from 'fs';
 import {basename, dirname} from 'path';
 import {spawn, ChildProcess} from 'child_process';
 import {Client, RPCConnection} from 'json-rpc2';
@@ -135,8 +135,14 @@ class Delve {
 			if (init) {
 				dlvArgs = dlvArgs.concat(['--init=' + init]);
 			}
+			var dlvCwd = dirname(program);
+			try {
+				if (lstatSync(program).isDirectory()) {
+					dlvCwd = program;
+				}
+			} catch(e) {}
 			this.debugProcess = spawn(dlv, dlvArgs, {
-				cwd: program ? dirname(program) : cwd,
+				cwd: dlvCwd,
 				env: dlvEnv,
 			});
 

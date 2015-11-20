@@ -92,11 +92,10 @@
 						"name": "Launch main.go",
 						"type": "go",
 						"request": "launch",
-						"program": "main.go",
-						"stopOnEntry": false,
+						"mode": "debug",
+						"program": ".",
 						"env": {},
-						"args": [],
-						"cwd": "."
+						"args": []
 					}
 				],
 				"configurationAttributes": {
@@ -105,8 +104,8 @@
 						"properties": {
 							"program": {
 								"type": "string",
-								"description": "Workspace relative path to the program.",
-								"default": "main.go"
+								"description": "Workspace relative path to the program folder (or any file within that folder) when in 'debug' or 'test' mode, and to the pre-built binary file to debug in 'exec' mode.",
+								"default": "."
 							},
 							"mode": {
 								"type": "string",
