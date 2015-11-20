@@ -124,12 +124,7 @@ class Delve {
 					connectClient();
 				}
 			});
-			
-			/*this.debugProcess.stdout.on('data', function(chunk) {
-				var str = chunk.toString();
-				console.log(str);
-			});*/
-			
+									
 			this.debugProcess.on('close', function(code) {
 				//TODO: Report `dlv` crash to user. 
 				console.error("Process exiting with code: " + code);
@@ -194,10 +189,14 @@ class GoDebugSession extends DebugSession {
 		var sanitize = (s: string) => s.toString().replace(/\r\n$/mg, '\n');
 
 		process.stdout.on('data', (data: string) => {
-			this.sendEvent(new OutputEvent(data.toString(), 'stdout'));
+			var str = data.toString();
+			console.log(str);
+			this.sendEvent(new OutputEvent(str, 'stdout'));
 		});
 		process.stderr.on('data', (data: string) => {
-			this.sendEvent(new OutputEvent(data.toString(), 'stderr'));
+			var str = data.toString();
+			console.error(str);
+			this.sendEvent(new OutputEvent(str, 'stderr'));
 		});
 	}
 
