@@ -14,18 +14,33 @@ import { showGoStatus, hideGoStatus } from './goStatus'
 var binPathCache : { [bin: string]: string;} = {}
 
 export function getBinPath(binname) {
-	binname = correctBinname(binname)
 	if(binPathCache[binname]) return binPathCache[binname];
-	var workspaces = getGOPATHWorkspaces();
+	binname = correctBinname(binname);
 	var binpath: string;
+	
+	// First search each GOPATH workspace's bin folder
+	var workspaces = getPathParts(process.env["GOPATH"]);
 	for(var i = 0; i < workspaces.length; i++) {
 		binpath = path.join(workspaces[i], "bin", binname);
 		if(fs.existsSync(binpath)) {
+			binPathCache[binname] = binpath;
 			return binpath;
 		}
 	}
-	console.log("Couldn't find a binary in any GOPATH workspaces: ", binname, " ", workspaces)
-	return path.join(process.env["GOPATH"], "bin", binname);
+	
+	// Then search PATH parts
+	var pathparts = getPathParts(process.env["PATH"]);
+	for(var i = 0; i < pathparts.length; i++) {
+		binpath = path.join(pathparts[i], binname);
+		if(fs.existsSync(binpath)) {
+			binPathCache[binname] = binpath;
+			return binpath;
+		}
+	}
+	
+	// Else return the binary name directly (this will likely always fail downstream) 
+	binPathCache[binname] = binname;
+	return binname;
 }
 
 function correctBinname(binname) {
@@ -35,7 +50,7 @@ function correctBinname(binname) {
 		return binname
 }
 
-function getGOPATHWorkspaces() {
+function getPathParts(path: string) {
 	var seperator : string;
 	switch(os.platform()) {
 		case 'win32':
@@ -48,7 +63,7 @@ function getGOPATHWorkspaces() {
 			seperator = ':';
 	}
 	
-	var parts = process.env["GOPATH"].split(seperator);
+	var parts = path.split(seperator);
 	return parts;
 }
 
@@ -72,7 +87,7 @@ export function setupGoPathAndOfferToInstallTools() {
 	}
 
 	// Offer to install any missing tools
-	var tools = {
+	var tools: {[key:string]: string} = {
 		gorename: "golang.org/x/tools/cmd/gorename",
 		gocode: "github.com/nsf/gocode",
 		goreturns: "sourcegraph.com/sqs/goreturns",
