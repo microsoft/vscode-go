@@ -47,9 +47,9 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 				var lines = stderr.toString().split('\n');
 				var ret: ICheckResult[] = [];
 				for(var i = 1; i < lines.length; i++) {
-					var match = /(.*):(\d+): (.*)/.exec(lines[i]);
+					var match = /([^:]*):(\d+)(:\d+)?: (.*)/.exec(lines[i]);
 					if(!match) continue;
-					var [_, file, lineStr, msg] = match;
+					var [_, file, lineStr, charStr, msg] = match;
 					var line = +lineStr;
 					ret.push({ file: path.resolve(cwd, file), line, msg, severity: "error" });
 				}
