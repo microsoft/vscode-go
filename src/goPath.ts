@@ -14,6 +14,7 @@ import { showGoStatus, hideGoStatus } from './goStatus'
 var binPathCache : { [bin: string]: string;} = {}
 
 export function getBinPath(binname) {
+	binname = correctBinname(binname)
 	if(binPathCache[binname]) return binPathCache[binname];
 	var workspaces = getGOPATHWorkspaces();
 	var binpath: string;
@@ -25,6 +26,13 @@ export function getBinPath(binname) {
 	}
 	console.log("Couldn't find a binary in any GOPATH workspaces: ", binname, " ", workspaces)
 	return path.join(process.env["GOPATH"], "bin", binname);
+}
+
+function correctBinname(binname) {
+	if (process.platform === 'win32')
+		return binname + ".exe";
+	else
+		return binname
 }
 
 function getGOPATHWorkspaces() {
@@ -75,9 +83,7 @@ export function setupGoPathAndOfferToInstallTools() {
 	}
 	var keys = Object.keys(tools)
 	Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
-		let toolPath = path.join(process.env["GOPATH"], 'bin', tool);
-		if (process.platform === 'win32')
-			toolPath = toolPath + ".exe";
+		let toolPath = getBinPath(tool);
 		fs.exists(toolPath, exists => {
 			resolve(exists ? null : tools[tool])
 		});
