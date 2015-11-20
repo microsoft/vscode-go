@@ -101,18 +101,21 @@
 				],
 				"configurationAttributes": {
 					"launch": {
-						"required": [
-							"program"
-						],
+						"required": [],
 						"properties": {
 							"program": {
 								"type": "string",
 								"description": "Workspace relative path to the program.",
 								"default": "main.go"
 							},
+							"mode": {
+								"type": "string",
+								"description": "One of 'debug', 'test', 'exec'.",
+								"default": "debug"
+							},
 							"stopOnEntry": {
 								"type": "boolean",
-								"description": "Automatically stop program after launch.",
+								"description": "[NOT YET WORKING] Automatically stop program after launch.",
 								"default": true
 							},
 							"args": {
@@ -132,6 +135,16 @@
 								"type": "object",
 								"description": "Environment variables passed to the program.",
 								"default": {}
+							},
+							"buildFlags": {
+								"type": "string",
+								"description": "Build flags, to be passed to the Go compiler.",
+								"default": ""
+							},
+							"init": {
+								"type": "string",
+								"description": "Init file, executed by the terminal client.",
+								"default": ""
 							}
 						}
 					}
