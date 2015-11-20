@@ -56,15 +56,22 @@ Once this is installed, go to the Code debug viewlet and select the configuratio
 			"name": "Launch main.go",
 			"type": "go",
 			"request": "launch",
-			"program": "main.go",
-			"stopOnEntry": false,
+			"mode": "debug",
+			"program": ".",
 			"env": {},
-			"args": [],
-			"cwd": "."
+			"args": []
 		}
 	]
 }
 ```
+
+The `program` option can refer to a package folder to debug, or a file within that folder.
+
+The `mode` parameter can be set to:
+
+* `debug` to compile the contents of the program folder and launch under the debugger. [default]
+* `test` to debug tests in the program folder.
+* `exec` to run a pre-built binary instead of building the current code in the program folder.
 
 ## Building and Debugging the Extension
 
