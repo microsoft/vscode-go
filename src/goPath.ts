@@ -14,14 +14,13 @@ import { showGoStatus, hideGoStatus } from './goStatus'
 var binPathCache : { [bin: string]: string;} = {}
 
 export function getBinPath(binname) {
-	if(binPathCache[binname]) return binPathCache[binname];
 	binname = correctBinname(binname);
-	var binpath: string;
-	
+	if(binPathCache[binname]) return binPathCache[binname];
+
 	// First search each GOPATH workspace's bin folder
 	var workspaces = getPathParts(process.env["GOPATH"]);
 	for(var i = 0; i < workspaces.length; i++) {
-		binpath = path.join(workspaces[i], "bin", binname);
+		let binpath = path.join(workspaces[i], "bin", binname);
 		if(fs.existsSync(binpath)) {
 			binPathCache[binname] = binpath;
 			return binpath;
@@ -31,7 +30,16 @@ export function getBinPath(binname) {
 	// Then search PATH parts
 	var pathparts = getPathParts(process.env["PATH"]);
 	for(var i = 0; i < pathparts.length; i++) {
-		binpath = path.join(pathparts[i], binname);
+		let binpath = path.join(pathparts[i], binname);
+		if(fs.existsSync(binpath)) {
+			binPathCache[binname] = binpath;
+			return binpath;
+		}
+	}
+
+	// Finally check GOROOT just in case
+	{
+		let binpath = path.join(process.env["GOROOT"], "bin", binname);
 		if(fs.existsSync(binpath)) {
 			binPathCache[binname] = binpath;
 			return binpath;
