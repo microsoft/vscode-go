@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, Thread, StackFrame, Scope, Source} from './common/debugSession';
+import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, Thread, StackFrame, Scope, Source, OutputEvent} from './common/debugSession';
 import {Handles} from './common/handles';
 import {readFileSync, existsSync} from 'fs';
 import {basename, dirname} from 'path';
@@ -124,10 +124,7 @@ class Delve {
 					connectClient();
 				}
 			});
-			this.debugProcess.stdout.on('data', function(chunk) {
-				var str = chunk.toString();
-				console.log(str);
-			});
+									
 			this.debugProcess.on('close', function(code) {
 				//TODO: Report `dlv` crash to user. 
 				console.error("Process exiting with code: " + code);
@@ -186,10 +183,27 @@ class GoDebugSession extends DebugSession {
 		this.sendEvent(new InitializedEvent());
 		console.log("InitializeEvent");
 	}
+	
+	protected captureOutput(process: ChildProcess) {
+
+		var sanitize = (s: string) => s.toString().replace(/\r\n$/mg, '\n');
+
+		process.stdout.on('data', (data: string) => {
+			var str = data.toString();
+			console.log(str);
+			this.sendEvent(new OutputEvent(str, 'stdout'));
+		});
+		process.stderr.on('data', (data: string) => {
+			var str = data.toString();
+			console.error(str);
+			this.sendEvent(new OutputEvent(str, 'stderr'));
+		});
+	}
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		// Launch the Delve debugger on the program
 		this.delve = new Delve(args.program);
+		this.captureOutput(this.delve.debugProcess);
 		// TODO: This isn't quite right - may not want to blindly continue on start.
 		this.continueRequest(response);
 	}
