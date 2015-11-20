@@ -19,6 +19,7 @@ import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goPath'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
+import { GoFormatter } from './format';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -37,7 +38,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
 	setupGoPathAndOfferToInstallTools();
 	ctx.subscriptions.push(startBuildOnSaveWatcher());
-	
+
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.gopath", () => {
 		var gopath = process.env["GOPATH"];
 		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
@@ -63,9 +64,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		__electricCharacterSupport: {
 			brackets: [
-				{ tokenType:'delimiter.curly.ts', open: '{', close: '}', isElectric: true },
-				{ tokenType:'delimiter.square.ts', open: '[', close: ']', isElectric: true },
-				{ tokenType:'delimiter.paren.ts', open: '(', close: ')', isElectric: true }
+				{ tokenType: 'delimiter.curly.ts', open: '{', close: '}', isElectric: true },
+				{ tokenType: 'delimiter.square.ts', open: '[', close: ']', isElectric: true },
+				{ tokenType: 'delimiter.paren.ts', open: '(', close: ')', isElectric: true }
 			]
 		},
 
@@ -98,31 +99,35 @@ function startBuildOnSaveWatcher() {
 	let goConfig = vscode.workspace.getConfiguration('go');
 
 	return vscode.workspace.onDidSaveTextDocument(document => {
-		if(document.languageId != "go") {
+		if (document.languageId != "go") {
 			return;
 		}
-		var uri = document.uri;
-		check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
-			diagnosticCollection.clear();
 
-			var diagnostics = errors.map(error => {
-				let targetResource = vscode.Uri.file(error.file);
-				let startColumn = 0;
-				let endColumn = 1;
-				if (document) {
-					let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1)
-					let text = document.getText(range);
-					let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
-					startColumn = leading.length;
-					endColumn = text.length - trailing.length;
-				}
-				let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
-				let location = new vscode.Location(uri, range);
-				return new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
+		var formatter = new GoFormatter();
+		var formatterPromise = formatter.provideDocumentFormattingEdits(document).then(() => {
+			var uri = document.uri;
+			check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
+				diagnosticCollection.clear();
+
+				var diagnostics = errors.map(error => {
+					let targetResource = vscode.Uri.file(error.file);
+					let startColumn = 0;
+					let endColumn = 1;
+					if (document) {
+						let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1)
+						let text = document.getText(range);
+						let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
+						startColumn = leading.length;
+						endColumn = text.length - trailing.length;
+					}
+					let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
+					let location = new vscode.Location(uri, range);
+					return new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
+				});
+				diagnosticCollection.set(uri, diagnostics);
+			}).catch(err => {
+				vscode.window.showInformationMessage("Error: " + err);
 			});
-			diagnosticCollection.set(uri, diagnostics);
-		}).catch(err => {
-			vscode.window.showInformationMessage("Error: " + err);
 		});
 	});
 
