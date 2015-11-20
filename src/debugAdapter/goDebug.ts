@@ -236,7 +236,7 @@ class GoDebugSession extends DebugSession {
 		this.delve.onstderr = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stderr'));
 		};
-		
+
 		// TODO: This isn't quite right - may not want to blindly continue on start.
 		this.continueRequest(response);
 	}

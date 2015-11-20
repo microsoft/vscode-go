@@ -17,7 +17,7 @@ interface GoOutlineDeclaration {
 	start: number;
 	end: number;
 	children?: GoOutlineDeclaration[];
-}	
+}
 
 export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
 

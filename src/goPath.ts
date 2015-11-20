@@ -26,7 +26,7 @@ export function getBinPath(binname) {
 			return binpath;
 		}
 	}
-	
+
 	// Then search PATH parts
 	var pathparts = getPathParts(process.env["PATH"]);
 	for(var i = 0; i < pathparts.length; i++) {
@@ -45,7 +45,7 @@ export function getBinPath(binname) {
 			return binpath;
 		}
 	}
-	
+
 	// Else return the binary name directly (this will likely always fail downstream) 
 	binPathCache[binname] = binname;
 	return binname;
