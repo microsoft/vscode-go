@@ -105,11 +105,13 @@ function startBuildOnSaveWatcher() {
 		check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
 			diagnosticCollection.clear();
 
-			var diagnostics = errors.map(error => {
-				let targetResource = vscode.Uri.file(error.file);
+			let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();;
+
+			errors.forEach(error => {
+				let targetUri = vscode.Uri.file(error.file);
 				let startColumn = 0;
 				let endColumn = 1;
-				if (document) {
+				if (document && document.uri.toString() == targetUri.toString()) {
 					let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1)
 					let text = document.getText(range);
 					let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
@@ -117,10 +119,19 @@ function startBuildOnSaveWatcher() {
 					endColumn = text.length - trailing.length;
 				}
 				let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
-				let location = new vscode.Location(uri, range);
-				return new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
+				let diagnostic = new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
+				let diagnostics = diagnosticMap.get(targetUri);
+				if(!diagnostics) {
+					diagnostics = [];
+				}
+				diagnostics.push(diagnostic);
+				diagnosticMap.set(targetUri, diagnostics);
 			});
-			diagnosticCollection.set(uri, diagnostics);
+			let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
+			diagnosticMap.forEach((diags, uri) => {
+				entries.push([uri, diags]);
+			});
+			diagnosticCollection.set(entries);
 		}).catch(err => {
 			vscode.window.showInformationMessage("Error: " + err);
 		});
