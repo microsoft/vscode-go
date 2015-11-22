@@ -111,14 +111,6 @@ class Delve {
 			if (!existsSync(dlv)) {
 				return reject("Cannot find Delve debugger.  Run 'go get -u github.com/derekparker/delve/cmd/dlv' to install.")
 			}
-			var dlvArgs = [mode || "debug"];
-			if (mode == "exec") {
-				dlvArgs = dlvArgs.concat([program]);
-			}
-			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=127.0.0.1:2345', '--log']);
-			if (args) {
-				dlvArgs = dlvArgs.concat(['--', ...args]);
-			}
 			var dlvEnv: Object = null;
 			if (env) {
 				dlvEnv = {};
@@ -129,12 +121,21 @@ class Delve {
 					dlvEnv[k] = env[k];
 				}
 			}
+			var dlvArgs = [mode || "debug"];
+			if (mode == "exec") {
+				dlvArgs = dlvArgs.concat([program]);
+			}
+			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=127.0.0.1:2345', '--log']);
 			if (buildFlags) {
 				dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
 			}
 			if (init) {
 				dlvArgs = dlvArgs.concat(['--init=' + init]);
 			}
+			if (args) {
+				dlvArgs = dlvArgs.concat(['--', ...args]);
+			}
+
 			var dlvCwd = dirname(program);
 			try {
 				if (lstatSync(program).isDirectory()) {
