@@ -7,7 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import {getBinPath} from './goPath'
+import { getBinPath } from './goPath'
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -61,7 +61,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						return item;
 					})
 					resolve(suggestions);
-				} catch(e) {
+				} catch (e) {
 					reject(e);
 				}
 			});

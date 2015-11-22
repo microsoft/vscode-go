@@ -17,12 +17,12 @@ export function setupGoPathAndOfferToInstallTools() {
 	var gopath = vscode.workspace.getConfiguration('go')['gopath'];
 		
 	// Make sure GOPATH is set
-	if(gopath) {
+	if (gopath) {
 		process.env["GOPATH"] = gopath;
 	}
-	
+
 	if (!process.env["GOPATH"]) {
-		var info =  "GOPATH is not set as an environment variable or via `go.gopath` setting in Code";
+		var info = "GOPATH is not set as an environment variable or via `go.gopath` setting in Code";
 		showGoStatus("GOPATH not set", "go.gopathinfo", info);
 		vscode.commands.registerCommand("go.gopathinfo", () => {
 			vscode.window.showInformationMessage(info);
@@ -32,7 +32,7 @@ export function setupGoPathAndOfferToInstallTools() {
 	}
 
 	// Offer to install any missing tools
-	var tools: {[key:string]: string} = {
+	var tools: { [key: string]: string } = {
 		gorename: "golang.org/x/tools/cmd/gorename",
 		gocode: "github.com/nsf/gocode",
 		goreturns: "sourcegraph.com/sqs/goreturns",
@@ -49,7 +49,7 @@ export function setupGoPathAndOfferToInstallTools() {
 		});
 	}))).then(res => {
 		var missing = res.filter(x => x != null);
-		if(missing.length > 0) {
+		if (missing.length > 0) {
 			showGoStatus("Analysis Tools Missing", "go.promptforinstall", "Not all Go tools are available on the GOPATH");
 			vscode.commands.registerCommand("go.promptforinstall", () => {
 				promptForInstall(missing);
@@ -59,7 +59,7 @@ export function setupGoPathAndOfferToInstallTools() {
 	});
 
 	function promptForInstall(missing: string[]) {
-		
+
 		var item = {
             title: "Install",
             command() {

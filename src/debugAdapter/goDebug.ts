@@ -2,14 +2,13 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source} from './common/debugSession';
-import {Handles} from './common/handles';
-import {readFileSync, existsSync, lstatSync} from 'fs';
-import {basename, dirname} from 'path';
-import {spawn, ChildProcess} from 'child_process';
-import {Client, RPCConnection} from 'json-rpc2';
-import * as path from 'path';
-import {getBinPath} from '../goPath';
+import { DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source } from './common/debugSession';
+import { Handles } from './common/handles';
+import { readFileSync, existsSync, lstatSync } from 'fs';
+import { basename, dirname } from 'path';
+import { spawn, ChildProcess } from 'child_process';
+import { Client, RPCConnection } from 'json-rpc2';
+import { getBinPath } from '../goPath';
 
 // These types should stay in sync with:
 // https://github.com/derekparker/delve/blob/master/service/api/types.go

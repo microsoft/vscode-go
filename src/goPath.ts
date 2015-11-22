@@ -7,17 +7,17 @@
 import fs = require('fs');
 import path = require('path');
 
-var binPathCache : { [bin: string]: string;} = {}
+var binPathCache: { [bin: string]: string; } = {}
 
 export function getBinPath(binname: string) {
 	binname = correctBinname(binname);
-	if(binPathCache[binname]) return binPathCache[binname];
+	if (binPathCache[binname]) return binPathCache[binname];
 
 	// First search each GOPATH workspace's bin folder
 	var workspaces = process.env["GOPATH"].split(path.delimiter);
-	for(var i = 0; i < workspaces.length; i++) {
+	for (var i = 0; i < workspaces.length; i++) {
 		let binpath = path.join(workspaces[i], "bin", binname);
-		if(fs.existsSync(binpath)) {
+		if (fs.existsSync(binpath)) {
 			binPathCache[binname] = binpath;
 			return binpath;
 		}
@@ -25,9 +25,9 @@ export function getBinPath(binname: string) {
 
 	// Then search PATH parts
 	var pathparts = process.env["PATH"].split(path.delimiter);
-	for(var i = 0; i < pathparts.length; i++) {
+	for (var i = 0; i < pathparts.length; i++) {
 		let binpath = path.join(pathparts[i], binname);
-		if(fs.existsSync(binpath)) {
+		if (fs.existsSync(binpath)) {
 			binPathCache[binname] = binpath;
 			return binpath;
 		}
@@ -36,7 +36,7 @@ export function getBinPath(binname: string) {
 	// Finally check GOROOT just in case
 	{
 		let binpath = path.join(process.env["GOROOT"], "bin", binname);
-		if(fs.existsSync(binpath)) {
+		if (fs.existsSync(binpath)) {
 			binPathCache[binname] = binpath;
 			return binpath;
 		}

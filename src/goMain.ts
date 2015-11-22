@@ -37,7 +37,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
 	setupGoPathAndOfferToInstallTools();
 	ctx.subscriptions.push(startBuildOnSaveWatcher());
-	
+
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.gopath", () => {
 		var gopath = process.env["GOPATH"];
 		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
@@ -63,9 +63,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		__electricCharacterSupport: {
 			brackets: [
-				{ tokenType:'delimiter.curly.ts', open: '{', close: '}', isElectric: true },
-				{ tokenType:'delimiter.square.ts', open: '[', close: ']', isElectric: true },
-				{ tokenType:'delimiter.paren.ts', open: '(', close: ')', isElectric: true }
+				{ tokenType: 'delimiter.curly.ts', open: '{', close: '}', isElectric: true },
+				{ tokenType: 'delimiter.square.ts', open: '[', close: ']', isElectric: true },
+				{ tokenType: 'delimiter.paren.ts', open: '(', close: ')', isElectric: true }
 			]
 		},
 
@@ -98,7 +98,7 @@ function startBuildOnSaveWatcher() {
 	let goConfig = vscode.workspace.getConfiguration('go');
 
 	return vscode.workspace.onDidSaveTextDocument(document => {
-		if(document.languageId != "go") {
+		if (document.languageId != "go") {
 			return;
 		}
 		var uri = document.uri;
@@ -121,7 +121,7 @@ function startBuildOnSaveWatcher() {
 				let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
 				let diagnostic = new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
 				let diagnostics = diagnosticMap.get(targetUri);
-				if(!diagnostics) {
+				if (!diagnostics) {
 					diagnostics = [];
 				}
 				diagnostics.push(diagnostic);
