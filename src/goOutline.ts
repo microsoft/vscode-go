@@ -19,7 +19,7 @@ interface GoOutlineDeclaration {
 	children?: GoOutlineDeclaration[];
 }
 
-export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
+export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 	private goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
 		"package": vscode.SymbolKind.Package,
