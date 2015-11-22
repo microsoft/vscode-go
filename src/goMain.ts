@@ -43,7 +43,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		var gopath = process.env["GOPATH"];
 		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
 	}));
-
+	
     vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
 			// ^(.*\*/)?\s*\}.*$
@@ -95,49 +95,65 @@ function startBuildOnSaveWatcher() {
 			default: return vscode.DiagnosticSeverity.Error;
 		}
 	}
-
-	let goConfig = vscode.workspace.getConfiguration('go');
+	
+	let alreadyAppliedFormatting = new WeakMap<vscode.TextDocument, boolean>();
 
 	return vscode.workspace.onDidSaveTextDocument(document => {
 		if (document.languageId != "go") {
 			return;
 		}
-		var formatter = new GoFormatter();
-		var formatterPromise = formatter.provideDocumentFormattingEdits(document).then(() => {
-			var uri = document.uri;
-			check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
-				diagnosticCollection.clear();
-	
-				let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();;
-	
-				errors.forEach(error => {
-					let targetUri = vscode.Uri.file(error.file);
-					let startColumn = 0;
-					let endColumn = 1;
-					if (document && document.uri.toString() == targetUri.toString()) {
-						let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1)
-						let text = document.getText(range);
-						let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
-						startColumn = leading.length;
-						endColumn = text.length - trailing.length;
-					}
-					let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
-					let diagnostic = new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
-					let diagnostics = diagnosticMap.get(targetUri);
-					if(!diagnostics) {
-						diagnostics = [];
-					}
-					diagnostics.push(diagnostic);
-					diagnosticMap.set(targetUri, diagnostics);
+		var formatPromise: PromiseLike<boolean> = Promise.resolve(false);
+		var textEditor = vscode.window.activeTextEditor
+		if (textEditor.document == document && !alreadyAppliedFormatting.has(document)) {
+			var formatter = new GoFormatter();
+			formatPromise = formatter.provideDocumentFormattingEdits(textEditor.document).then(edits => {
+				return textEditor.edit(editBuilder => {
+					edits.forEach(edit => editBuilder.replace(edit.range, edit.newText));
 				});
-				let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
-				diagnosticMap.forEach((diags, uri) => {
-					entries.push([uri, diags]);
-				});
-				diagnosticCollection.set(entries);
-			}).catch(err => {
-				vscode.window.showInformationMessage("Error: " + err);
+			}).then(applied => {
+				alreadyAppliedFormatting.set(document, true);
+				return document.save();
 			});
-		});
+		}
+		if(alreadyAppliedFormatting.has(document)) {
+			alreadyAppliedFormatting.delete(document);
+			formatPromise.then(() => {
+				var uri = document.uri;
+				let goConfig = vscode.workspace.getConfiguration('go');
+				check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
+					diagnosticCollection.clear();
+		
+					let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();;
+		
+					errors.forEach(error => {
+						let targetUri = vscode.Uri.file(error.file);
+						let startColumn = 0;
+						let endColumn = 1;
+						if (document && document.uri.toString() == targetUri.toString()) {
+							let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1)
+							let text = document.getText(range);
+							let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
+							startColumn = leading.length;
+							endColumn = text.length - trailing.length;
+						}
+						let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
+						let diagnostic = new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
+						let diagnostics = diagnosticMap.get(targetUri);
+						if(!diagnostics) {
+							diagnostics = [];
+						}
+						diagnostics.push(diagnostic);
+						diagnosticMap.set(targetUri, diagnostics);
+					});
+					let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
+					diagnosticMap.forEach((diags, uri) => {
+						entries.push([uri, diags]);
+					});
+					diagnosticCollection.set(entries);
+				}).catch(err => {
+					vscode.window.showInformationMessage("Error: " + err);
+				});
+			});
+		}
 	});
 }
