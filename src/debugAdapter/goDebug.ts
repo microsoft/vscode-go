@@ -9,6 +9,7 @@ import {basename, dirname} from 'path';
 import {spawn, ChildProcess} from 'child_process';
 import {Client, RPCConnection} from 'json-rpc2';
 import * as path from 'path';
+import {getBinPath} from '../goPath';
 
 // These types should stay in sync with:
 // https://github.com/derekparker/delve/blob/master/service/api/types.go
@@ -105,8 +106,7 @@ class Delve {
 	constructor(mode: string, program: string, args: string[], cwd: string, env: { [key: string]: string }, buildFlags: string, init: string) {
 		this.connection = new Promise((resolve, reject) => {
 			var serverRunning = false;
-			// TODO: Make this more robust.
-			var dlv = path.join(process.env["GOPATH"], "bin", "dlv");
+			var dlv = getBinPath("dlv");
 			console.log("Using dlv at: ", dlv)
 			if (!existsSync(dlv)) {
 				return reject("Cannot find Delve debugger.  Run 'go get -u github.com/derekparker/delve/cmd/dlv' to install.")
@@ -140,7 +140,7 @@ class Delve {
 				if (lstatSync(program).isDirectory()) {
 					dlvCwd = program;
 				}
-			} catch(e) {}
+			} catch (e) { }
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
 				env: dlvEnv,

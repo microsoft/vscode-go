@@ -4,21 +4,17 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import fs = require('fs');
 import path = require('path');
-import os = require('os');
-import cp = require('child_process');
-import { showGoStatus, hideGoStatus } from './goStatus'
 
 var binPathCache : { [bin: string]: string;} = {}
 
-export function getBinPath(binname) {
+export function getBinPath(binname: string) {
 	binname = correctBinname(binname);
 	if(binPathCache[binname]) return binPathCache[binname];
 
 	// First search each GOPATH workspace's bin folder
-	var workspaces = getPathParts(process.env["GOPATH"]);
+	var workspaces = process.env["GOPATH"].split(path.delimiter);
 	for(var i = 0; i < workspaces.length; i++) {
 		let binpath = path.join(workspaces[i], "bin", binname);
 		if(fs.existsSync(binpath)) {
@@ -28,7 +24,7 @@ export function getBinPath(binname) {
 	}
 
 	// Then search PATH parts
-	var pathparts = getPathParts(process.env["PATH"]);
+	var pathparts = process.env["PATH"].split(path.delimiter);
 	for(var i = 0; i < pathparts.length; i++) {
 		let binpath = path.join(pathparts[i], binname);
 		if(fs.existsSync(binpath)) {
@@ -51,95 +47,9 @@ export function getBinPath(binname) {
 	return binname;
 }
 
-function correctBinname(binname) {
+function correctBinname(binname: string) {
 	if (process.platform === 'win32')
 		return binname + ".exe";
 	else
 		return binname
-}
-
-function getPathParts(path: string) {
-	var seperator : string;
-	switch(os.platform()) {
-		case 'win32':
-		case 'win64':
-			seperator = ';'; 
-			break;
-		case 'linux':
-		case 'darwin':
-		default:
-			seperator = ':';
-	}
-	
-	var parts = path.split(seperator);
-	return parts;
-}
-
-export function setupGoPathAndOfferToInstallTools() {
-	// TODO: There should be a better way to do this?
-	var gopath = vscode.workspace.getConfiguration('go')['gopath'];
-		
-	// Make sure GOPATH is set
-	if(gopath) {
-		process.env["GOPATH"] = gopath;
-	}
-	
-	if (!process.env["GOPATH"]) {
-		var info =  "GOPATH is not set as an environment variable or via `go.gopath` setting in Code";
-		showGoStatus("GOPATH not set", "go.gopathinfo", info);
-		vscode.commands.registerCommand("go.gopathinfo", () => {
-			vscode.window.showInformationMessage(info);
-			hideGoStatus()
-		});
-		return;
-	}
-
-	// Offer to install any missing tools
-	var tools: {[key:string]: string} = {
-		gorename: "golang.org/x/tools/cmd/gorename",
-		gocode: "github.com/nsf/gocode",
-		goreturns: "sourcegraph.com/sqs/goreturns",
-		godef: "github.com/rogpeppe/godef",
-		golint: "github.com/golang/lint/golint",
-		"go-find-references": "github.com/lukehoban/go-find-references",
-		"go-outline": "github.com/lukehoban/go-outline"
-	}
-	var keys = Object.keys(tools)
-	Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
-		let toolPath = getBinPath(tool);
-		fs.exists(toolPath, exists => {
-			resolve(exists ? null : tools[tool])
-		});
-	}))).then(res => {
-		var missing = res.filter(x => x != null);
-		if(missing.length > 0) {
-			showGoStatus("Analysis Tools Missing", "go.promptforinstall", "Not all Go tools are available on the GOPATH");
-			vscode.commands.registerCommand("go.promptforinstall", () => {
-				promptForInstall(missing);
-				hideGoStatus();
-			});
-		}
-	});
-
-	function promptForInstall(missing: string[]) {
-		
-		var item = {
-            title: "Install",
-            command() {
-				var channel = vscode.window.createOutputChannel('Go');
-				channel.show();
-                missing.forEach(tool => {
-                    var p = cp.exec("go get -u -v " + tool, { cwd: process.env['GOPATH'], env: process.env });
-                    p.stderr.on('data', (data: string) => {
-                        channel.append(data);
-                    });
-                });
-            }
-        };
-		vscode.window.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", item).then(selection => {
-            if (selection) {
-                selection.command();
-            }
-        });
-	}
 }

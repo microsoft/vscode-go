@@ -16,7 +16,7 @@ import { GoDocumentFormattingEditProvider } from './goFormat';
 import { GoRenameProvider } from './goRename';
 import { GoDocumentSybmolProvider } from './goOutline';
 import { check, ICheckResult } from './goCheck';
-import { setupGoPathAndOfferToInstallTools } from './goPath'
+import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
 
