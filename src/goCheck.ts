@@ -9,16 +9,10 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getBinPath } from './goPath'
+import { getBinPath, getGoBin } from './goPath'
 
 //TODO: Less hacky?
-var go: string;
-if (process.env.GOROOT) {
-	go = path.join(process.env["GOROOT"], "bin", "go");
-} else if (process.env.PATH) {
-	var pathparts = (<string>process.env.PATH).split((<any>path).delimiter);
-	go = pathparts.map(dir => path.join(dir, 'go' + (os.platform() == "win32" ? ".exe" : ""))).filter(candidate => fs.existsSync(candidate))[0];
-}
+var go = getGoBin();
 if (!go) {
 	vscode.window.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.  Set location manual in 'go.goroot' setting.");
 }

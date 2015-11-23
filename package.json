@@ -74,6 +74,11 @@
 				"command": "go.gopath",
 				"title": "Go: Current GOPATH",
 				"description": "See the currently set GOPATH."
+			},
+			{
+				"command": "go.gobuild",
+				"title": "Go: Build",
+				"description": "Run 'go build' in the current workspace."
 			}
 		],
 		"debuggers": [

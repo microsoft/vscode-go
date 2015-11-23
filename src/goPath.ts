@@ -6,8 +6,20 @@
 
 import fs = require('fs');
 import path = require('path');
+import os = require('os');
 
 var binPathCache: { [bin: string]: string; } = {}
+
+export function getGoBin() {
+	//TODO: Less hacky?
+	if (process.env.GOROOT) {
+		return path.join(process.env["GOROOT"], "bin", "go");
+	} else if (process.env.PATH) {
+		var pathparts = (<string>process.env.PATH).split((<any>path).delimiter);
+		return pathparts.map(dir => path.join(dir, 'go' + (os.platform() == "win32" ? ".exe" : ""))).filter(candidate => fs.existsSync(candidate))[0];
+	}
+	return undefined;
+}
 
 export function getBinPath(binname: string) {
 	binname = correctBinname(binname);
