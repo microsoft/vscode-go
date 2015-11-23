@@ -43,7 +43,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				currentWord = word.substr(0, position.character - wordAtPosition.start.character);
 			}
 
-			var offset = document.offsetAt(position);
+			var offset = document.offsetAt(position) + 1;
 			var gocode = getBinPath("gocode");
 
 			// Spawn `gocode` process
