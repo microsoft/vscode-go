@@ -43,11 +43,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				currentWord = word.substr(0, position.character - wordAtPosition.start.character);
 			}
 
-			var offset = document.offsetAt(position) + 1;
+			var offset = document.offsetAt(position);
 			var gocode = getBinPath("gocode");
 
 			// Spawn `gocode` process
-			var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "" + offset], {}, (err, stdout, stderr) => {
+			var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "c" + offset], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
 						vscode.window.showInformationMessage("The 'gocode' command is not available.  Use 'go get -u github.com/nsf/gocode' to install.");
