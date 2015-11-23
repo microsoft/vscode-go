@@ -10,7 +10,7 @@ import path = require('path');
 import { getBinPath } from './goPath'
 
 // Keep in sync with https://github.com/lukehoban/go-outline
-interface GoOutlineDeclaration {
+export interface GoOutlineDeclaration {
 	label: string;
 	type: string;
 	icon?: string; // icon class or null to use the default images based on the type

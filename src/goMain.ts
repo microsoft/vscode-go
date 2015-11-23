@@ -8,6 +8,7 @@ import vscode = require('vscode');
 import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
+import { GoCodeLensProvider } from './goCodeLens';
 import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
@@ -20,11 +21,13 @@ import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
 
+
 let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
+	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, new GoCodeLensProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.'));
 	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
@@ -42,7 +45,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		var gopath = process.env["GOPATH"];
 		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
 	}));
-
+	
     vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
 			// ^(.*\*/)?\s*\}.*$
