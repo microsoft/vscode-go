@@ -2,13 +2,13 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import {DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source} from './common/debugSession';
-import {Handles} from './common/handles';
-import {readFileSync, existsSync, lstatSync} from 'fs';
-import {basename, dirname} from 'path';
-import {spawn, ChildProcess} from 'child_process';
-import {Client, RPCConnection} from 'json-rpc2';
-import * as path from 'path';
+import { DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source } from './common/debugSession';
+import { Handles } from './common/handles';
+import { readFileSync, existsSync, lstatSync } from 'fs';
+import { basename, dirname } from 'path';
+import { spawn, ChildProcess } from 'child_process';
+import { Client, RPCConnection } from 'json-rpc2';
+import { getBinPath } from '../goPath';
 
 // These types should stay in sync with:
 // https://github.com/derekparker/delve/blob/master/service/api/types.go
@@ -105,19 +105,10 @@ class Delve {
 	constructor(mode: string, program: string, args: string[], cwd: string, env: { [key: string]: string }, buildFlags: string, init: string) {
 		this.connection = new Promise((resolve, reject) => {
 			var serverRunning = false;
-			// TODO: Make this more robust.
-			var dlv = path.join(process.env["GOPATH"], "bin", "dlv");
+			var dlv = getBinPath("dlv");
 			console.log("Using dlv at: ", dlv)
 			if (!existsSync(dlv)) {
 				return reject("Cannot find Delve debugger.  Run 'go get -u github.com/derekparker/delve/cmd/dlv' to install.")
-			}
-			var dlvArgs = [mode || "debug"];
-			if (mode == "exec") {
-				dlvArgs = dlvArgs.concat([program]);
-			}
-			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=127.0.0.1:2345', '--log']);
-			if (args) {
-				dlvArgs = dlvArgs.concat(['--', ...args]);
 			}
 			var dlvEnv: Object = null;
 			if (env) {
@@ -129,18 +120,27 @@ class Delve {
 					dlvEnv[k] = env[k];
 				}
 			}
+			var dlvArgs = [mode || "debug"];
+			if (mode == "exec") {
+				dlvArgs = dlvArgs.concat([program]);
+			}
+			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=127.0.0.1:2345', '--log']);
 			if (buildFlags) {
 				dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
 			}
 			if (init) {
 				dlvArgs = dlvArgs.concat(['--init=' + init]);
 			}
+			if (args) {
+				dlvArgs = dlvArgs.concat(['--', ...args]);
+			}
+
 			var dlvCwd = dirname(program);
 			try {
 				if (lstatSync(program).isDirectory()) {
 					dlvCwd = program;
 				}
-			} catch(e) {}
+			} catch (e) { }
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
 				env: dlvEnv,

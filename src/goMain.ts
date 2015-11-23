@@ -14,9 +14,9 @@ import { GoDefinitionProvider } from './goDeclaration';
 import { GoReferenceProvider } from './goReferences';
 import { GoDocumentFormattingEditProvider } from './goFormat';
 import { GoRenameProvider } from './goRename';
-import { GoDocumentSybmolProvider } from './goOutline';
+import { GoDocumentSymbolProvider } from './goOutline';
 import { check, ICheckResult } from './goCheck';
-import { setupGoPathAndOfferToInstallTools } from './goPath'
+import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
 
@@ -29,7 +29,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
-	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSybmolProvider()));
+	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
@@ -63,9 +63,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		__electricCharacterSupport: {
 			brackets: [
-				{ tokenType:'delimiter.curly.ts', open: '{', close: '}', isElectric: true },
-				{ tokenType:'delimiter.square.ts', open: '[', close: ']', isElectric: true },
-				{ tokenType:'delimiter.paren.ts', open: '(', close: ')', isElectric: true }
+				{ tokenType: 'delimiter.curly.ts', open: '{', close: '}', isElectric: true },
+				{ tokenType: 'delimiter.square.ts', open: '[', close: ']', isElectric: true },
+				{ tokenType: 'delimiter.paren.ts', open: '(', close: ')', isElectric: true }
 			]
 		},
 
@@ -202,7 +202,7 @@ function startBuildOnSaveWatcher() {
 	let goConfig = vscode.workspace.getConfiguration('go');
 
 	return vscode.workspace.onDidSaveTextDocument(document => {
-		if(document.languageId != "go") {
+		if (document.languageId != "go") {
 			return;
 		}
 		var uri = document.uri;

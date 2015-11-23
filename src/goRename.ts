@@ -7,7 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import {getBinPath} from './goPath'
+import { getBinPath } from './goPath'
 
 export class GoRenameProvider implements vscode.RenameProvider {
 

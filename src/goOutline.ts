@@ -7,7 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import {getBinPath} from './goPath'
+import { getBinPath } from './goPath'
 
 // Keep in sync with https://github.com/lukehoban/go-outline
 interface GoOutlineDeclaration {
@@ -19,7 +19,7 @@ interface GoOutlineDeclaration {
 	children?: GoOutlineDeclaration[];
 }
 
-export class GoDocumentSybmolProvider implements vscode.DocumentSymbolProvider {
+export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 	private goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
 		"package": vscode.SymbolKind.Package,

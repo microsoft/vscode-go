@@ -106,6 +106,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - godef: `go get -u -v github.com/rogpeppe/godef`
 - golint: `go get -u -v github.com/golang/lint/golint`
 - go-find-references: `go get -u -v github.com/lukehoban/go-find-references`
+- go-outline: `go get -u -v github.com/lukehoban/go-outline`
 - goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
 - gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
 
@@ -115,6 +116,7 @@ go get -u -v github.com/nsf/gocode
 go get -u -v github.com/rogpeppe/godef
 go get -u -v github.com/golang/lint/golint
 go get -u -v github.com/lukehoban/go-find-references
+go get -u -v github.com/lukehoban/go-outline
 go get -u -v sourcegraph.com/sqs/goreturns
 go get -u -v golang.org/x/tools/cmd/gorename
 ```
