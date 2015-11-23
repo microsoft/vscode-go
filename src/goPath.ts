@@ -34,7 +34,7 @@ export function getBinPath(binname: string) {
 	}
 
 	// Finally check GOROOT just in case
-	{
+	if (process.env["GOROOT"]) {
 		let binpath = path.join(process.env["GOROOT"], "bin", binname);
 		if (fs.existsSync(binpath)) {
 			binPathCache[binname] = binpath;

@@ -66,12 +66,11 @@ export function setupGoPathAndOfferToInstallTools() {
 				var channel = vscode.window.createOutputChannel('Go');
 				channel.show();
                 missing.forEach(tool => {
-					cp.exec("go get -u -v " + tool, { env: process.env },
-						function (error, stdout, stderr) {
+					cp.exec("go get -u -v " + tool, { env: process.env }, (err, stdout, stderr) => {
 							channel.append(stdout.toString())
 							channel.append(stderr.toString())
-							if (error !== null) {
-								channel.append('exec error: ' + error)
+							if (err) {
+								channel.append('exec error: ' + err)
 							}
 						})
                 });
