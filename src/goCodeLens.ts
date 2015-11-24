@@ -26,6 +26,9 @@ interface GoOracleResponse {
 
 interface GoOracleImplements {
 	from?: GoOracleEntry[];
+	fromptr?: GoOracleEntry[];
+	to?: GoOracleEntry[];
+	type: GoOracleEntry;
 }
 
 interface GoOracleEntry {
@@ -45,7 +48,7 @@ export class GoCodeLensProvider implements CodeLensProvider {
 
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
 		let convertDecl = (codeLens: CodeLens[], decl: GoOutlineDeclaration) => {
-			if (decl.type == "function") {
+			if (decl.type == "type") {
 				codeLens.push(new GoCodeLens(
 					document.fileName,
 					decl,
@@ -81,14 +84,32 @@ export class GoCodeLensProvider implements CodeLensProvider {
 	public resolveCodeLens(codeLens: CodeLens, token: CancellationToken): Thenable<CodeLens> {
 		if (codeLens instanceof GoCodeLens) {
 			return this._runOracle("implements", codeLens.fileName, codeLens.decl.start, codeLens.decl.end).then(res => {
-				if (!res || !res.implements || !res.implements.from) {
+				if (!res || !res.implements) {
 					return
 				}
-				let len = res.implements.from.length;
+
+				let title: string;
+				let types: GoOracleEntry[];
+				let impls = res.implements;
+				switch (impls.type.kind) {
+					case "interface":
+						types = impls.to;
+						title = types.length === 1 ? 'implemented by 1 type' : `implemented by ${types.length} types`;
+						break;
+					default:
+						types = impls.fromptr ? impls.fromptr : impls.from
+						title = types.length === 1 ? 'implements 1 type' : `implements ${types.length} types`;
+						break;
+				}
+
 				codeLens.command = {
-					title: len === 1 ? 'implements 1 type' : `implements ${len} types`,
+					title: title,
 					command: 'editor.action.showReferences',
-					arguments: [Uri.file(codeLens.fileName), codeLens.range.start, res.implements.from.map(entry => {
+					arguments: [Uri.file(codeLens.fileName), codeLens.range.start, types.map(entry => {
+						if (entry.pos == "-") {
+							//TODO(tecbot): find a way to determine the correct file path for builtin types
+							return new Location(Uri.file(entry.name), new Position(0, 0));
+						}
 						let pos = entry.pos.split(":");
 						return new Location(Uri.file(pos[0]), new Position(+pos[1], +pos[2]));
 					})]
