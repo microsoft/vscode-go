@@ -17,20 +17,15 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		return new Promise((resolve, reject) => {
 			
 			// Experimental support, works only on standard library for now
-			let pkgName = GoScanner.PreviousToken(document,position);
-
-			let funcOffset = document.offsetAt(position);
-			let funcPosition = document.positionAt(funcOffset - 1);
-			let funcWordPosition = document.getWordRangeAtPosition(funcPosition);
-			let functionName = document.getText(funcWordPosition);
 			
-			// Get the package name
-			let pkgPosition = new Position(funcWordPosition.start.line, funcWordPosition.start.character - 2);
-			let pkgWordPosition = document.getWordRangeAtPosition(pkgPosition);
-			let packageName = document.getText(pkgWordPosition);
+			// TODO: Handle Depth at the | mark =>  fmt.Printf("%s", myMessage(|))
+			let bracketPosition = this.lastBracket(document, position);
+			let tokens = this.previousTokens(document, bracketPosition);
+			let funcName = tokens.pop()
+			let pkgName = tokens.pop()
 			
-			// TODO: figure a cleaner way to do this
-			let fullName = packageName + "." + functionName
+			// TODO: handle instance methods => myInstance.DoSomething()
+			let fullName = pkgName + "." + funcName;
 			
 			let go = getBinPath("go");
 			// Spawn `go` process
@@ -51,7 +46,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 						for(var index = funcLineIndex + 2; index < lines.length; index++) {
 							if(lines[index].startsWith("    ") == true ) {
 								functionDocumentation += sep + lines[index].substring(4);
-								sep = "<br />"
+								sep = ""
 							} else {
 								break;
 							}
@@ -61,7 +56,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 					
 					
 					var result = new SignatureHelp();
-					var si = new SignatureInformation(lines[funcLineIndex], functionDocumentation);
+					var si = new SignatureInformation(lines[funcLineIndex].substring(5), functionDocumentation);
 					
 					result.signatures = [si];
 					result.activeSignature = 0;
@@ -73,5 +68,30 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			});
 			p.stdin.end(document.getText());
 		});
+	}
+	
+	public previousTokens(document: TextDocument, position: Position): Array<string> {
+		// Get this from goMain some how
+		let wordPattern  = /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g;
+		let currentLine = document.lineAt(position.line);
+		let searchString = currentLine.text.substring(0,position.character);
+	
+		// TODO: make this clear
+		var ret = [];
+		for(var results = wordPattern.exec(searchString); results != null; results = wordPattern.exec(searchString)) {
+			ret.push(results[0])
+		} 
+
+		return ret;
+	}
+	
+	public lastBracket(document: TextDocument, position: Position): Position {
+		var currentLine = document.lineAt(position.line).text.substring(0,position.character);
+		
+		// TODO: handle double '(('
+		for(var index=position.character; currentLine[index] != '('; index--) {
+			return new Position(position.line, index);
+		}
+		return null;
 	}
 }
