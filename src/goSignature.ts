@@ -8,14 +8,17 @@
 import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath'
-import { window, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken } from 'vscode';
+//import { GoHoverProvider } from './goExtraInfo'
+import { GoScanner } from './goScanner'
+import { languages, window, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken } from 'vscode';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
 		return new Promise((resolve, reject) => {
-			// Experimental support, works only on standard library for now
 			
-			// Get the function name
+			// Experimental support, works only on standard library for now
+			let pkgName = GoScanner.PreviousToken(document,position);
+
 			let funcOffset = document.offsetAt(position);
 			let funcPosition = document.positionAt(funcOffset - 1);
 			let funcWordPosition = document.getWordRangeAtPosition(funcPosition);
@@ -25,7 +28,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			let pkgPosition = new Position(funcWordPosition.start.line, funcWordPosition.start.character - 2);
 			let pkgWordPosition = document.getWordRangeAtPosition(pkgPosition);
 			let packageName = document.getText(pkgWordPosition);
-
+			
 			// TODO: figure a cleaner way to do this
 			let fullName = packageName + "." + functionName
 			
