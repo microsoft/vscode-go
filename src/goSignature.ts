@@ -18,7 +18,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			// TODO: Handle Depth at the | mark =>  fmt.Printf("%s", myMessage(|))
 			let parenthesesPosition = this.lastParentheses(document, position);
 			if(parenthesesPosition == null) {
-				return null;
+				return resolve(null);
 			}
 
 			let tokens = this.previousTokens(document, parenthesesPosition);
