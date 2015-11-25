@@ -25,10 +25,16 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 			// get current word
 			var wordRange = document.getWordRangeAtPosition(position);
+			if (!wordRange) {
+				return resolve([]);
+			}
 			var textAtPosition = document.getText(wordRange)
 			var wordLength = textAtPosition.length;
 			var start = wordRange.start;
-			var possibleDot = document.getText(new vscode.Range(start.line, start.character - 1, start.line, start.character))
+			var possibleDot = "";
+			if (start.character > 0) {
+				possibleDot = document.getText(new vscode.Range(start.line, start.character - 1, start.line, start.character));
+			}
 			if (possibleDot == ".") {
 				var previousWordRange = document.getWordRangeAtPosition(new vscode.Position(start.line, start.character - 1));
 				var textAtPreviousPosition = document.getText(previousWordRange);
