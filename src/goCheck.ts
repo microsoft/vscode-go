@@ -20,7 +20,7 @@ if (process.env.GOROOT) {
 	go = pathparts.map(dir => path.join(dir, 'go' + (os.platform() == "win32" ? ".exe" : ""))).filter(candidate => fs.existsSync(candidate))[0];
 }
 if (!go) {
-	vscode.window.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.  Set location manual in 'go.goroot' setting.");
+	vscode.window.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.");
 }
 
 export interface ICheckResult {
