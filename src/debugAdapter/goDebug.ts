@@ -108,7 +108,7 @@ class Delve {
 			var dlv = getBinPath("dlv");
 			console.log("Using dlv at: ", dlv)
 			if (!existsSync(dlv)) {
-				return reject("Cannot find Delve debugger.  Run 'go get -u github.com/derekparker/delve/cmd/dlv' to install.")
+				return reject("Cannot find Delve debugger. Ensure it is in your `GOPATH/bin` or `PATH`.")
 			}
 			var dlvEnv: Object = null;
 			if (env) {
@@ -237,8 +237,13 @@ class GoDebugSession extends DebugSession {
 			this.sendEvent(new OutputEvent(str, 'stderr'));
 		};
 
-		// TODO: This isn't quite right - may not want to blindly continue on start.
-		this.continueRequest(response);
+		this.delve.connection.then(() => {
+			// TODO: This isn't quite right - may not want to blindly continue on start.
+			this.continueRequest(response);	
+		}, err => {
+			this.sendErrorResponse(response, 3000, "Failed to continue: '{e}'", { e: err.toString() });
+			console.log("ContinueResponse");
+		})
 	}
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {

@@ -14,22 +14,26 @@ export function getBinPath(binname: string) {
 	if (binPathCache[binname]) return binPathCache[binname];
 
 	// First search each GOPATH workspace's bin folder
-	var workspaces = process.env["GOPATH"].split(path.delimiter);
-	for (var i = 0; i < workspaces.length; i++) {
-		let binpath = path.join(workspaces[i], "bin", binname);
-		if (fs.existsSync(binpath)) {
-			binPathCache[binname] = binpath;
-			return binpath;
+	if(process.env["GOPATH"]) {
+		var workspaces = process.env["GOPATH"].split(path.delimiter);
+		for (var i = 0; i < workspaces.length; i++) {
+			let binpath = path.join(workspaces[i], "bin", binname);
+			if (fs.existsSync(binpath)) {
+				binPathCache[binname] = binpath;
+				return binpath;
+			}
 		}
 	}
 
 	// Then search PATH parts
-	var pathparts = process.env["PATH"].split(path.delimiter);
-	for (var i = 0; i < pathparts.length; i++) {
-		let binpath = path.join(pathparts[i], binname);
-		if (fs.existsSync(binpath)) {
-			binPathCache[binname] = binpath;
-			return binpath;
+	if(process.env["PATH"]) {
+		var pathparts = process.env["PATH"].split(path.delimiter);
+		for (var i = 0; i < pathparts.length; i++) {
+			let binpath = path.join(pathparts[i], binname);
+			if (fs.existsSync(binpath)) {
+				binPathCache[binname] = binpath;
+				return binpath;
+			}
 		}
 	}
 
