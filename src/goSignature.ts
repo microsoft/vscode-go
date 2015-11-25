@@ -16,8 +16,12 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			// Experimental support, works only on standard library for now
 			
 			// TODO: Handle Depth at the | mark =>  fmt.Printf("%s", myMessage(|))
-			let bracketPosition = this.lastParentheses(document, position);
-			let tokens = this.previousTokens(document, bracketPosition);
+			let parenthesesPosition = this.lastParentheses(document, position);
+			if(parenthesesPosition == null) {
+				return null;
+			}
+
+			let tokens = this.previousTokens(document, parenthesesPosition);
 			let funcName = tokens.pop()
 			let pkgName = tokens.pop()
 			
@@ -82,12 +86,15 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	}
 	
 	public lastParentheses(document: TextDocument, position: Position): Position {
-		var currentLine = document.lineAt(position.line).text.substring(0,position.character);
-		
 		// TODO: handle double '(('
-		for(var index=position.character; currentLine[index] != '('; index--) {
-			return new Position(position.line, index);
-		}
-		return null;
+		var currentLine = document.lineAt(position.line).text.substring(0,position.character);
+		var lastIndex = currentLine.lastIndexOf("(");
+		
+		if(lastIndex < 0)
+			return null;
+		
+		return new Position(position.line, lastIndex);
 	}
+		
+
 }
