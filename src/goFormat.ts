@@ -38,7 +38,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			cp.execFile(formatCommandBinPath, [filename], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
-						vscode.window.showInformationMessage("The '" + formatCommandBinPath + "' command is not available.  Please check your go.formatCommand user setting and ensure it is installed.");
+						vscode.window.showInformationMessage("The '" + formatCommandBinPath + "' command is not available.  Please check your go.formatTool user setting and ensure it is installed.");
 						return resolve(null);
 					}
 					if (err) return reject("Cannot format due to syntax errors.");
