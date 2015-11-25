@@ -8,18 +8,15 @@
 import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath'
-//import { GoHoverProvider } from './goExtraInfo'
-import { GoScanner } from './goScanner'
 import { languages, window, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken } from 'vscode';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
 		return new Promise((resolve, reject) => {
-			
 			// Experimental support, works only on standard library for now
 			
 			// TODO: Handle Depth at the | mark =>  fmt.Printf("%s", myMessage(|))
-			let bracketPosition = this.lastBracket(document, position);
+			let bracketPosition = this.lastParentheses(document, position);
 			let tokens = this.previousTokens(document, bracketPosition);
 			let funcName = tokens.pop()
 			let pkgName = tokens.pop()
@@ -53,10 +50,9 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 						}
 					}  
 					
-					
-					
 					var result = new SignatureHelp();
-					var si = new SignatureInformation(lines[funcLineIndex].substring(5), functionDocumentation);
+					let signatureBegin = lines[funcLineIndex].indexOf("(") // func Printf(a ...interface{}) => (a ...interface{})
+					var si = new SignatureInformation(lines[funcLineIndex].substring(signatureBegin), functionDocumentation);
 					
 					result.signatures = [si];
 					result.activeSignature = 0;
@@ -85,7 +81,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		return ret;
 	}
 	
-	public lastBracket(document: TextDocument, position: Position): Position {
+	public lastParentheses(document: TextDocument, position: Position): Position {
 		var currentLine = document.lineAt(position.line).text.substring(0,position.character);
 		
 		// TODO: handle double '(('
