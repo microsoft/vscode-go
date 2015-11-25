@@ -102,7 +102,7 @@ To debug the debugger, see [the debugAdapter readme](src/debugAdapter/Readme.md)
 
 ## Tools
 
-The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, the extension will offer to install them for you.
+The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, you will see an "Analysis Tools Missing" warning in the bottom right corner of the editor.  Clicking it will offer to install the missing tools for you. 
 
 - gocode: `go get -u -v github.com/nsf/gocode`
 - godef: `go get -u -v github.com/rogpeppe/godef`
