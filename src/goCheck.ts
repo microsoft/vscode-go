@@ -46,7 +46,11 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 				}
 				var lines = stderr.toString().split('\n');
 				var ret: ICheckResult[] = [];
-				for (var i = 1; i < lines.length; i++) {
+				for (var i = 0; i < lines.length; i++) {
+					if(lines[i][0] == '\t' && ret.length > 0) {
+						ret[ret.length-1].msg += "\n" + lines[i];
+						continue;
+					}
 					var match = /([^:]*):(\d+)(:\d+)?: (.*)/.exec(lines[i]);
 					if (!match) continue;
 					var [_, file, lineStr, charStr, msg] = match;
