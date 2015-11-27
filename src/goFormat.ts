@@ -7,6 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import dmp = require('diff-match-patch');
 import { getBinPath } from './goPath'
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
@@ -43,12 +44,44 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 					}
 					if (err) return reject("Cannot format due to syntax errors.");
 					var text = stdout.toString();
-					// TODO: Should use `-d` option to get a diff and then compute the
-					// specific edits instead of replace whole buffer
-					var lastLine = document.lineCount;
-					var lastLineLastCol = document.lineAt(lastLine - 1).range.end.character;
-					var range = new vscode.Range(0, 0, lastLine - 1, lastLineLastCol);
-					return resolve([new vscode.TextEdit(range, text)]);
+					var d = new dmp.diff_match_patch();
+
+					var diffs = d.diff_main(document.getText(), text)
+					var line = 0
+					var character = 0
+					var edits = new Array<vscode.TextEdit>()
+					for (var i = 0; i < diffs.length; i++) {
+						var start = new vscode.Position(line, character)
+
+						// Compute the line/character after the diff is applied.
+						for (var curr = 0; curr < diffs[i][1].length; curr++) {
+							if (diffs[i][1][curr] != '\n') {
+								character++
+							} else {
+								character = 0
+								line++
+							}
+						}
+						switch (diffs[i][0]) {
+							case dmp.DIFF_DELETE:
+								edits.push(vscode.TextEdit.delete(new vscode.Range(start, new vscode.Position(line, character))))
+								break
+
+							case dmp.DIFF_INSERT:
+								// The edits are all relative to the original state of the document,
+								// so inserts should reset the current line/character position to
+								// the start.
+								line = start.line
+								character = start.character
+								edits.push(vscode.TextEdit.insert(start, diffs[i][1]))
+								break
+								
+							case dmp.DIFF_EQUAL:
+								break
+						}
+					}
+
+					return resolve(edits);
 				} catch (e) {
 					reject(e);
 				}

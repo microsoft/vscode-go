@@ -30,7 +30,8 @@
 		"vscode.go"
 	],
 	"dependencies": {
-		"json-rpc2": "^1.0.2"
+		"json-rpc2": "^1.0.2",
+		"diff-match-patch": "~1.0.0"
 	},
 	"devDependencies": {
 		"vscode": "0.10.x",
