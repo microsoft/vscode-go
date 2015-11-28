@@ -9,17 +9,9 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getBinPath } from './goPath'
+import { getBinPath, getGoRuntimePath } from './goPath'
 
-//TODO: Less hacky?
-var go: string;
-if (process.env.GOROOT) {
-	go = path.join(process.env["GOROOT"], "bin", "go");
-} else if (process.env.PATH) {
-	var pathparts = (<string>process.env.PATH).split((<any>path).delimiter);
-	go = pathparts.map(dir => path.join(dir, 'go' + (os.platform() == "win32" ? ".exe" : ""))).filter(candidate => fs.existsSync(candidate))[0];
-}
-if (!go) {
+if (!getGoRuntimePath()) {
 	vscode.window.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.");
 }
 
@@ -38,7 +30,7 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 		if (filename.match(/_test.go$/i)) {
 			args = ['test', '-copybinary', '-o', tmppath, '-c', '.']
 		}
-		cp.execFile(go, args, { cwd: cwd }, (err, stdout, stderr) => {
+		cp.execFile(getGoRuntimePath(), args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
 					vscode.window.showInformationMessage("The 'go' compiler is not available.  Install Go from http://golang.org/dl/.");
@@ -91,7 +83,7 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 
 	var govet = !vetOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
 		var cwd = path.dirname(filename)
-		cp.execFile(go, ["tool", "vet", filename], { cwd: cwd }, (err, stdout, stderr) => {
+		cp.execFile(getGoRuntimePath(), ["tool", "vet", filename], { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
 					vscode.window.showInformationMessage("The 'go tool vet' compiler is not available.  Install Go from http://golang.org/dl/.");
