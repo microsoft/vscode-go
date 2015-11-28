@@ -5,9 +5,8 @@
 'use strict';
 
 import vscode = require('vscode');
-import fs = require('fs');
-import path = require('path');
-import cp = require('child_process');
+import * as cp from 'child_process';
+import { dirname } from 'path';
 import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
@@ -19,6 +18,7 @@ import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
+import { getGoBin } from './goPath'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -42,6 +42,29 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.gopath", () => {
 		var gopath = process.env["GOPATH"];
 		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand("go.gobuild", () => {
+		var channel = vscode.window.createOutputChannel('Go');
+		channel.show(2);
+		var go = getGoBin();
+		channel.appendLine("\n\nRunning 'go build':\n")
+		var cwd: string;
+		if (vscode.window.activeTextEditor) {
+			cwd = dirname(vscode.window.activeTextEditor.document.fileName);
+		} else if (vscode.workspace.rootPath) {
+			cwd = vscode.workspace.rootPath;
+		}
+		var buildProc = cp.spawn(go, ["build"], { cwd });
+		buildProc.stdout.on('data', data => {
+			channel.append(data.toString())
+		});
+		buildProc.stderr.on('data', data => {
+			channel.append(data.toString())
+		});
+		buildProc.on('close', code => {
+			channel.append("\n'go build' completed with code " + code);
+		});
 	}));
 
     vscode.languages.setLanguageConfiguration(GO_MODE.language, {
