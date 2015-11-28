@@ -34,9 +34,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
-	ctx.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(showHideStatus));
+	
+	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	setupGoPathAndOfferToInstallTools();
-	ctx.subscriptions.push(startBuildOnSaveWatcher());
+	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.gopath", () => {
 		var gopath = process.env["GOPATH"];
@@ -80,13 +81,17 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
     });
 
+	if(vscode.window.activeTextEditor) {
+		let goConfig = vscode.workspace.getConfiguration('go');
+		runBuilds(vscode.window.activeTextEditor.document, goConfig);
+	}
 }
 
 function deactivate() {
 }
 
-function startBuildOnSaveWatcher() {
-
+function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConfiguration) {
+	
 	function mapSeverityToVSCodeSeverity(sev: string) {
 		switch (sev) {
 			case "error": return vscode.DiagnosticSeverity.Error;
@@ -95,49 +100,54 @@ function startBuildOnSaveWatcher() {
 		}
 	}
 	
-	function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConfiguration) {
-		var uri = document.uri;
-		check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
-			diagnosticCollection.clear();
-
-			let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();;
-
-			errors.forEach(error => {
-				let targetUri = vscode.Uri.file(error.file);
-				let startColumn = 0;
-				let endColumn = 1;
-				if (document && document.uri.toString() == targetUri.toString()) {
-					let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1)
-					let text = document.getText(range);
-					let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
-					startColumn = leading.length;
-					endColumn = text.length - trailing.length;
-				}
-				let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
-				let diagnostic = new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
-				let diagnostics = diagnosticMap.get(targetUri);
-				if (!diagnostics) {
-					diagnostics = [];
-				}
-				diagnostics.push(diagnostic);
-				diagnosticMap.set(targetUri, diagnostics);
-			});
-			let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
-			diagnosticMap.forEach((diags, uri) => {
-				entries.push([uri, diags]);
-			});
-			diagnosticCollection.set(entries);
-		}).catch(err => {
-			vscode.window.showInformationMessage("Error: " + err);
-		});
+	if (document.languageId != "go") {
+		return;
 	}
+	
+	var uri = document.uri;
+	check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
+		diagnosticCollection.clear();
 
+		let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();;
+
+		errors.forEach(error => {
+			let targetUri = vscode.Uri.file(error.file);
+			let startColumn = 0;
+			let endColumn = 1;
+			if (document && document.uri.toString() == targetUri.toString()) {
+				let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1)
+				let text = document.getText(range);
+				let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
+				startColumn = leading.length;
+				endColumn = text.length - trailing.length;
+			}
+			let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
+			let diagnostic = new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
+			let diagnostics = diagnosticMap.get(targetUri);
+			if (!diagnostics) {
+				diagnostics = [];
+			}
+			diagnostics.push(diagnostic);
+			diagnosticMap.set(targetUri, diagnostics);
+		});
+		let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
+		diagnosticMap.forEach((diags, uri) => {
+			entries.push([uri, diags]);
+		});
+		diagnosticCollection.set(entries);
+	}).catch(err => {
+		vscode.window.showInformationMessage("Error: " + err);
+	});
+}
+
+function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
+	
 	// TODO: This is really ugly.  I'm not sure we can do better until
 	// Code supports a pre-save event where we can do the formatting before
 	// the file is written to disk.	
 	let alreadyAppliedFormatting = new WeakSet<vscode.TextDocument>();
-
-	return vscode.workspace.onDidSaveTextDocument(document => {
+	
+	vscode.workspace.onDidSaveTextDocument(document => {
 		if (document.languageId != "go") {
 			return;
 		}
@@ -159,6 +169,6 @@ function startBuildOnSaveWatcher() {
 			alreadyAppliedFormatting.delete(document);
 			runBuilds(document, goConfig);
 		}
-	});
+	}, null, subscriptions);
 
 }
