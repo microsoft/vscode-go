@@ -10,6 +10,33 @@ import path = require('path');
 import dmp = require('diff-match-patch');
 import { getBinPath } from './goPath'
 
+var EDIT_DELETE = 0;
+var EDIT_INSERT = 1;
+var EDIT_REPLACE = 2;
+class Edit {
+	action: number;
+	start: vscode.Position;
+	end: vscode.Position;
+	text: string;
+
+	constructor(action: number, start: vscode.Position) {
+		this.action = action;
+		this.start = start;
+		this.text = "";
+	}
+
+	apply(): vscode.TextEdit {
+		switch (this.action) {
+			case EDIT_INSERT:
+				return vscode.TextEdit.insert(this.start, this.text);
+			case EDIT_DELETE:
+				return vscode.TextEdit.delete(new vscode.Range(this.start, this.end));
+			case EDIT_REPLACE:
+				return vscode.TextEdit.replace(new vscode.Range(this.start, this.end), this.text);
+		}
+	}
+}
+
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
 	private formatCommand = "goreturns";
@@ -50,6 +77,8 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 					var line = 0;
 					var character = 0;
 					var edits: vscode.TextEdit[] = [];
+					var edit: Edit = null;
+
 					for (var i = 0; i < diffs.length; i++) {
 						var start = new vscode.Position(line, character);
 
@@ -62,23 +91,42 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 								line++;
 							}
 						}
+
 						switch (diffs[i][0]) {
 							case dmp.DIFF_DELETE:
-								edits.push(vscode.TextEdit.delete(new vscode.Range(start, new vscode.Position(line, character))));
+								if (edit == null) {
+									edit = new Edit(EDIT_DELETE, start);
+								} else if (edit.action != EDIT_DELETE) {
+									return reject("cannot format due to an internal error.");
+								}
+								edit.end = new vscode.Position(line, character);
 								break;
 
 							case dmp.DIFF_INSERT:
-								// The edits are all relative to the original state of the document,
-								// so inserts should reset the current line/character position to
-								// the start.
-								line = start.line;
-								character = start.character;
-								edits.push(vscode.TextEdit.insert(start, diffs[i][1]));
+								if (edit == null) {
+									edit = new Edit(EDIT_INSERT, start);
+								} else if (edit.action == EDIT_DELETE) {
+									edit.action = EDIT_REPLACE;
+								}
+								// insert and replace edits are all relative to the original state
+								// of the document, so inserts should reset the current line/character
+								// position to the start.		
+								line = edit.start.line;
+								character = edit.start.character;
+								edit.text += diffs[i][1];
 								break;
 
 							case dmp.DIFF_EQUAL:
+								if (edit != null) {
+									edits.push(edit.apply());
+									edit = null;
+								}
 								break;
 						}
+					}
+
+					if (edit != null) {
+						edits.push(edit.apply());
 					}
 
 					return resolve(edits);
@@ -88,5 +136,4 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			});
 		});
 	}
-
 }
