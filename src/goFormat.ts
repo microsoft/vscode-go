@@ -15,9 +15,9 @@ var EDIT_INSERT = 1;
 var EDIT_REPLACE = 2;
 class Edit {
 	action: number;
-	start : vscode.Position;
-	end : vscode.Position;
-	text : string;
+	start: vscode.Position;
+	end: vscode.Position;
+	text: string;
 
 	constructor(action: number, start: vscode.Position) {
 		this.action = action;
@@ -25,8 +25,8 @@ class Edit {
 		this.text = "";
 	}
 
-	apply() : vscode.TextEdit {
-		switch(this.action) {
+	apply(): vscode.TextEdit {
+		switch (this.action) {
 			case EDIT_INSERT:
 				return vscode.TextEdit.insert(this.start, this.text);
 			case EDIT_DELETE:
@@ -56,7 +56,6 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			return this.doFormatDocument(document, options, token);
 		});
 	}
-	
 
 	private doFormatDocument(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
 		return new Promise((resolve, reject) => {
@@ -77,9 +76,9 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 					var diffs = d.diff_main(document.getText(), text);
 					var line = 0;
 					var character = 0;
-					var edits = new Array<vscode.TextEdit>();
-					var edit : Edit = null;
-					
+					var edits: vscode.TextEdit[] = [];
+					var edit: Edit = null;
+
 					for (var i = 0; i < diffs.length; i++) {
 						var start = new vscode.Position(line, character);
 
@@ -95,38 +94,38 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 						switch (diffs[i][0]) {
 							case dmp.DIFF_DELETE:
-								if(edit == null) {
+								if (edit == null) {
 									edit = new Edit(EDIT_DELETE, start);
-								} else if(edit.action != EDIT_DELETE) {
+								} else if (edit.action != EDIT_DELETE) {
 									return reject("cannot format due to an internal error.");
 								}
 								edit.end = new vscode.Position(line, character);
-								break
+								break;
 
 							case dmp.DIFF_INSERT:
-								if(edit == null) {
+								if (edit == null) {
 									edit = new Edit(EDIT_INSERT, start);
-								} else if(edit.action == EDIT_DELETE) {
-									edit.action = EDIT_REPLACE;						
+								} else if (edit.action == EDIT_DELETE) {
+									edit.action = EDIT_REPLACE;
 								}
 								// insert and replace edits are all relative to the original state
 								// of the document, so inserts should reset the current line/character
 								// position to the start.		
 								line = edit.start.line;
-								character = edit.start.character; 
+								character = edit.start.character;
 								edit.text += diffs[i][1];
-								break
-								
+								break;
+
 							case dmp.DIFF_EQUAL:
-								if(edit != null) {
+								if (edit != null) {
 									edits.push(edit.apply());
 									edit = null;
 								}
-								break
+								break;
 						}
 					}
 
-					if(edit != null) {
+					if (edit != null) {
 						edits.push(edit.apply());
 					}
 
