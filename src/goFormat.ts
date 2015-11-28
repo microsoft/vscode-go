@@ -111,8 +111,8 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 								// insert and replace edits are all relative to the original state
 								// of the document, so inserts should reset the current line/character
 								// position to the start.		
-								line = edit.start.line;
-								character = edit.start.character;
+								line = start.line;
+								character = start.character;
 								edit.text += diffs[i][1];
 								break;
 
