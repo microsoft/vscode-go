@@ -12,7 +12,7 @@ import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoReferenceProvider } from './goReferences';
-import { GoDocumentFormattingEditProvider } from './goFormat';
+import { GoDocumentFormattingEditProvider, Formatter } from './goFormat';
 import { GoRenameProvider } from './goRename';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { check, ICheckResult } from './goCheck';
@@ -94,13 +94,8 @@ function startBuildOnSaveWatcher() {
 			default: return vscode.DiagnosticSeverity.Error;
 		}
 	}
-
-	let goConfig = vscode.workspace.getConfiguration('go');
-
-	return vscode.workspace.onDidSaveTextDocument(document => {
-		if (document.languageId != "go") {
-			return;
-		}
+	
+	function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConfiguration) {
 		var uri = document.uri;
 		check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
 			diagnosticCollection.clear();
@@ -135,6 +130,35 @@ function startBuildOnSaveWatcher() {
 		}).catch(err => {
 			vscode.window.showInformationMessage("Error: " + err);
 		});
+	}
+
+	// TODO: This is really ugly.  I'm not sure we can do better until
+	// Code supports a pre-save event where we can do the formatting before
+	// the file is written to disk.	
+	let alreadyAppliedFormatting = new WeakSet<vscode.TextDocument>();
+
+	return vscode.workspace.onDidSaveTextDocument(document => {
+		if (document.languageId != "go") {
+			return;
+		}
+		let goConfig = vscode.workspace.getConfiguration('go');
+		var textEditor = vscode.window.activeTextEditor
+		if (goConfig["formatOnSave"] && textEditor.document == document && !alreadyAppliedFormatting.has(document)) {
+			var formatter = new Formatter();
+			formatter.formatDocument(document).then(edits => {
+				return textEditor.edit(editBuilder => {
+					edits.forEach(edit => editBuilder.replace(edit.range, edit.newText));
+				});
+			}).then(applied => {
+				alreadyAppliedFormatting.add(document);
+				// This will cause the onDidSaveTextDocument handler to be re-entered 
+				// and will go into the error-checking phase of the save operation.
+				return document.save();
+			});
+		} else {
+			alreadyAppliedFormatting.delete(document);
+			runBuilds(document, goConfig);
+		}
 	});
 
 }
