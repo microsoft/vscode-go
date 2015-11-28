@@ -97,7 +97,7 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 					vscode.window.showInformationMessage("The 'go tool vet' compiler is not available.  Install Go from http://golang.org/dl/.");
 					return resolve([]);
 				}
-				var lines = stdout.toString().split('\n');
+				var lines = stderr.toString().split('\n');
 				var ret: ICheckResult[] = [];
 				for (var i = 0; i < lines.length; i++) {
 					var match = /(.*):(\d+): (.*)/.exec(lines[i]);
