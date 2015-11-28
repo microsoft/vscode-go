@@ -179,6 +179,11 @@
 					"type": "string",
 					"default": null,
 					"description": "Specifies the GOPATH to use when no environment variable is set."
+				},
+				"go.formatOnSave": {
+					"type": "boolean",
+					"default": false,
+					"description": "[EXPERIMENTAL] Run formatting tool on save."
 				}
 			}
 		}

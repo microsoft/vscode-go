@@ -37,12 +37,8 @@ class Edit {
 	}
 }
 
-export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
-
+export class Formatter {
 	private formatCommand = "goreturns";
-
-	// Not used?
-	public autoFormatTriggerCharacters: string[] = [';', '}', '\n'];
 
 	constructor() {
 		let formatTool = vscode.workspace.getConfiguration('go')['formatTool'];
@@ -51,13 +47,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		}
 	}
 
-	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
-		return document.save().then(() => {
-			return this.doFormatDocument(document, options, token);
-		});
-	}
-
-	private doFormatDocument(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
+	public formatDocument(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
 		return new Promise((resolve, reject) => {
 			var filename = document.fileName;
 
@@ -136,4 +126,18 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			});
 		});
 	}
+}
+
+export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
+	private formatter: Formatter;
+	
+	constructor() {
+		this.formatter = new Formatter();	
+	}
+	
+	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
+		return document.save().then(() => {
+			return this.formatter.formatDocument(document);
+		});
+	}	
 }
