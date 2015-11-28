@@ -175,6 +175,11 @@
 					"default": "goreturns",
 					"description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format."
 				},
+				"go.activateCodeLens": {
+					"type": "boolean",
+					"default": false,
+					"description": "Activate CodeLens using oracle."
+				},				
 				"go.gopath": {
 					"type": "string",
 					"default": null,
