@@ -19,7 +19,7 @@ import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
-import { testAtCursor } from './goTest'
+import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -48,6 +48,16 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.cursor", () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testAtCursor(goConfig['testTimeout']);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.package", () => {
+		let goConfig = vscode.workspace.getConfiguration('go');
+		testCurrentPackage(goConfig['testTimeout']);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.file", () => {
+		let goConfig = vscode.workspace.getConfiguration('go');
+		testCurrentFile(goConfig['testTimeout']);
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
