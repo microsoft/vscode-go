@@ -44,13 +44,17 @@ export function testAtCursor(timeout: string) {
 		}
 		// Run the test and present the output in a channel.
 		var channel = vscode.window.createOutputChannel('Go');
-		channel.show();
+		channel.clear();
+		channel.show(2);
 		var args = ['test', '-v', '-timeout', timeout, '-run', util.format('^%s$', testFunction)];
-		cp.execFile(getGoRuntimePath(), args, { env: process.env, cwd: path.dirname(editor.document.fileName) }, (err, stdout, stderr) => {
-			channel.append(stdout.toString());
-			channel.append(stderr.toString());
-			if (err) {
-				channel.append(util.format("Error executing test '%s': %s", testFunction, err));
+		var proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: path.dirname(editor.document.fileName) });
+		proc.stdout.on('data', chunk => channel.append(chunk.toString()));
+		proc.stderr.on('data', chunk => channel.append(chunk.toString()));
+		proc.on('close', code => {
+			if (code) {
+				channel.append("Error: Tests failed.");
+			} else {
+				channel.append("Success: Tests passed.");
 			}
 		});
 	}, err => {
