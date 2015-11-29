@@ -19,6 +19,7 @@ import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
+import { testAtCursor } from './goTest'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -42,6 +43,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.gopath", () => {
 		var gopath = process.env["GOPATH"];
 		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.cursor", () => {
+		let goConfig = vscode.workspace.getConfiguration('go');
+		testAtCursor(goConfig['testTimeout']);
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {

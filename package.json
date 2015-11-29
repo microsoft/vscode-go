@@ -75,6 +75,11 @@
 				"command": "go.gopath",
 				"title": "Go: Current GOPATH",
 				"description": "See the currently set GOPATH."
+			},
+			{
+				"command": "go.test.cursor",
+				"title": "Go: Run test at cursor",
+				"description": "Runs a unit test at the cursor."
 			}
 		],
 		"debuggers": [
@@ -184,6 +189,11 @@
 					"type": "boolean",
 					"default": false,
 					"description": "[EXPERIMENTAL] Run formatting tool on save."
+				},
+				"go.testTimeout": {
+					"type": "string",
+					"default": "30s",
+					"description": "Specifies the timeout for go test in ParseDuration format."
 				}
 			}
 		}
