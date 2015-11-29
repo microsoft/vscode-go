@@ -44,7 +44,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
 	}));
 
-    vscode.languages.setLanguageConfiguration(GO_MODE.language, {
+	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
 			// ^(.*\*/)?\s*\}.*$
 			decreaseIndentPattern: /^(.*\*\/)?\s*\}.*$/,
@@ -79,7 +79,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				{ open: '\'', close: '\'', notIn: ['string', 'comment'] }
 			]
 		}
-    });
+	});
 
 	if(vscode.window.activeTextEditor) {
 		let goConfig = vscode.workspace.getConfiguration('go');

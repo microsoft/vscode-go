@@ -59,27 +59,26 @@ export function setupGoPathAndOfferToInstallTools() {
 	});
 
 	function promptForInstall(missing: string[]) {
-
 		var item = {
-            title: "Install",
-            command() {
+			title: "Install",
+			command() {
 				var channel = vscode.window.createOutputChannel('Go');
 				channel.show();
-                missing.forEach(tool => {
+					missing.forEach(tool => {
 					cp.exec("go get -u -v " + tool, { env: process.env }, (err, stdout, stderr) => {
-							channel.append(stdout.toString())
-							channel.append(stderr.toString())
-							if (err) {
-								channel.append('exec error: ' + err)
-							}
-						})
-                });
-            }
-        };
+						channel.append(stdout.toString());
+						channel.append(stderr.toString());
+						if (err) {
+							channel.append('exec error: ' + err);
+						}
+					});
+				});
+			}
+		};
 		vscode.window.showInformationMessage("Some Go analysis tools are missing from your GOPATH.  Would you like to install them?", item).then(selection => {
-            if (selection) {
-                selection.command();
-            }
-        });
+			if (selection) {
+				selection.command();
+			}
+		});
 	}
 }

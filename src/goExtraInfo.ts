@@ -14,7 +14,7 @@ export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 
 		return new Promise((resolve, reject) => {
-            let filename = document.fileName;
+			let filename = document.fileName;
 			let offset = document.offsetAt(position);
 
 			var godef = getBinPath("godef");
@@ -43,7 +43,7 @@ export class GoHoverProvider implements HoverProvider {
 					} else {
 						text = lines[0]
 					}
-                    let hover = new Hover({ language: 'go', value: text });
+					let hover = new Hover({ language: 'go', value: text });
 					return resolve(hover);
 				} catch (e) {
 					reject(e);
