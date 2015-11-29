@@ -97,7 +97,7 @@ function deactivate() {
 }
 
 function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConfiguration) {
-	
+
 	function mapSeverityToVSCodeSeverity(sev: string) {
 		switch (sev) {
 			case "error": return vscode.DiagnosticSeverity.Error;
@@ -105,11 +105,11 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 			default: return vscode.DiagnosticSeverity.Error;
 		}
 	}
-	
+
 	if (document.languageId != "go") {
 		return;
 	}
-	
+
 	var uri = document.uri;
 	check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
 		diagnosticCollection.clear();
@@ -138,43 +138,43 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 		});
 		let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
 		diagnosticMap.forEach((diags, uri) => {
-			entries.push([uri, diags]);
+			diagnosticCollection.set(uri, diags);
 		});
-		diagnosticCollection.set(entries);
 	}).catch(err => {
 		vscode.window.showInformationMessage("Error: " + err);
 	});
 }
 
 function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
-	
+
 	// TODO: This is really ugly.  I'm not sure we can do better until
 	// Code supports a pre-save event where we can do the formatting before
 	// the file is written to disk.	
-	let alreadyAppliedFormatting = new WeakSet<vscode.TextDocument>();
-	
+	let ignoreNextSave = new WeakSet<vscode.TextDocument>();
+
 	vscode.workspace.onDidSaveTextDocument(document => {
-		if (document.languageId != "go") {
+		if (document.languageId != "go" || ignoreNextSave.has(document)) {
 			return;
 		}
 		let goConfig = vscode.workspace.getConfiguration('go');
-		var textEditor = vscode.window.activeTextEditor
-		if (goConfig["formatOnSave"] && textEditor.document == document && !alreadyAppliedFormatting.has(document)) {
+		var textEditor = vscode.window.activeTextEditor;
+		var formatPromise: PromiseLike<void> = Promise.resolve();
+		if (goConfig["formatOnSave"] && textEditor.document == document) {
 			var formatter = new Formatter();
-			formatter.formatDocument(document).then(edits => {
+			formatPromise = formatter.formatDocument(document).then(edits => {
 				return textEditor.edit(editBuilder => {
 					edits.forEach(edit => editBuilder.replace(edit.range, edit.newText));
 				});
 			}).then(applied => {
-				alreadyAppliedFormatting.add(document);
-				// This will cause the onDidSaveTextDocument handler to be re-entered 
-				// and will go into the error-checking phase of the save operation.
+				ignoreNextSave.add(document);
 				return document.save();
+			}).then(() => {
+				ignoreNextSave.delete(document);
 			});
-		} else {
-			alreadyAppliedFormatting.delete(document);
+		} 
+		formatPromise.then(() => {
 			runBuilds(document, goConfig);
-		}
+		});
 	}, null, subscriptions);
 
 }
