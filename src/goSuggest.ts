@@ -35,12 +35,20 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		return new Promise((resolve, reject) => {
 			var filename = document.fileName;
 
+			if (document.lineAt(position.line).text.match(/^\s*\/\//)) {
+				return resolve([]);
+			}
+
 			// get current word
 			var wordAtPosition = document.getWordRangeAtPosition(position);
 			var currentWord = '';
 			if (wordAtPosition && wordAtPosition.start.character < position.character) {
 				var word = document.getText(wordAtPosition);
 				currentWord = word.substr(0, position.character - wordAtPosition.start.character);
+			}
+
+			if (currentWord.match(/^\d+$/)) {
+				return resolve([]);
 			}
 
 			var offset = document.offsetAt(position);
