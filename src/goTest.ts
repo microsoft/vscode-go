@@ -53,12 +53,12 @@ export function testAtCursor(timeout: string) {
 			vscode.window.setStatusBarMessage('No test function found at cursor.', 5000);
 			return;
 		}
-		goTest({
+		return goTest({
 			timeout: timeout,
 			dir: path.dirname(editor.document.fileName),
 			functions: [testFunction.name]
 		});
-	}, err => {
+	}).then(null, err => {
 		console.error(err);
 	})
 }
@@ -77,6 +77,8 @@ export function testCurrentPackage(timeout: string) {
 	goTest({
 		timeout: timeout,
 		dir: path.dirname(editor.document.fileName)
+	}).then(null, err => {
+		console.error(err);
 	});
 }
 
@@ -92,14 +94,14 @@ export function testCurrentFile(timeout: string) {
 		return;
 	}
 	getTestFunctions(editor.document.uri).then(testFunctions => {
-		goTest({
+		return goTest({
 			timeout: timeout,
 			dir: path.dirname(editor.document.fileName),
 			functions: testFunctions.map(func => { return func.name; })
 		});
-	}, err => {
+	}).then(null, err => {
 		console.error(err);
-	})
+	});
 }
 
 /**
@@ -107,24 +109,27 @@ export function testCurrentFile(timeout: string) {
  *
  * @param config the test execution configuration.
  */
-function goTest(config: TestConfig) {
-	var channel = vscode.window.createOutputChannel('Go');
-	channel.clear();
-	channel.show(2);
-	var args = ['test', '-v', '-timeout', config.timeout];
-	if (config.functions) {
-		args.push('-run');
-		args.push(util.format('^%s$', config.functions.join('|')));
-	}
-	var proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: config.dir });
-	proc.stdout.on('data', chunk => channel.append(chunk.toString()));
-	proc.stderr.on('data', chunk => channel.append(chunk.toString()));
-	proc.on('close', code => {
-		if (code) {
-			channel.append("Error: Tests failed.");
-		} else {
-			channel.append("Success: Tests passed.");
+function goTest(config: TestConfig): Thenable<boolean> {
+	return new Promise<boolean>((resolve, reject) => {
+		var channel = vscode.window.createOutputChannel('Go');
+		channel.clear();
+		channel.show(2);
+		var args = ['test', '-v', '-timeout', config.timeout];
+		if (config.functions) {
+			args.push('-run');
+			args.push(util.format('^%s$', config.functions.join('|')));
 		}
+		var proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: config.dir });
+		proc.stdout.on('data', chunk => channel.append(chunk.toString()));
+		proc.stderr.on('data', chunk => channel.append(chunk.toString()));
+		proc.on('close', code => {
+			if (code) {
+				channel.append("Error: Tests failed.");
+			} else {
+				channel.append("Success: Tests passed.");
+			}
+			resolve(code == 0);
+		});
 	});
 }
 
@@ -134,20 +139,16 @@ function goTest(config: TestConfig) {
  * @param the URI of a Go source file.
  * @return test function symbols for the source file.
  */
-function getTestFunctions(uri: vscode.Uri): Promise<vscode.SymbolInformation[]> {
-	return new Promise((resolve, reject) => {
-		vscode.commands.executeCommand<any[]>('vscode.executeDocumentSymbolProvider', uri).then(res => {
-			var testFunctions: vscode.SymbolInformation[] = [];
-			for (let obj of res) {
-				var sym = newSymbolInformation(obj);
-				if (sym.kind == vscode.SymbolKind.Function && /Test.*/.exec(sym.name)) {
-					testFunctions.push(sym);
-				}
+function getTestFunctions(uri: vscode.Uri): Thenable<vscode.SymbolInformation[]> {
+	return vscode.commands.executeCommand<any[]>('vscode.executeDocumentSymbolProvider', uri).then(res => {
+		var testFunctions: vscode.SymbolInformation[] = [];
+		for (let obj of res) {
+			var sym = newSymbolInformation(obj);
+			if (sym.kind == vscode.SymbolKind.Function && /Test.*/.exec(sym.name)) {
+				testFunctions.push(sym);
 			}
-			resolve(testFunctions);
-		}, err => {
-			reject(err);
-		});
+		}
+		return testFunctions;
 	});
 }
 
