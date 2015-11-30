@@ -42,7 +42,11 @@
 		"vscode": "0.10.x"
 	},
 	"activationEvents": [
-		"onLanguage:go"
+		"onLanguage:go",
+		"onCommand:go.gopath",
+		"onCommand:go.test.cursor",
+		"onCommand:go.test.package",
+		"onCommand:go.test.file"
 	],
 	"main": "./out/src/goMain",
 	"contributes": {
