@@ -184,7 +184,7 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Run 'go build'/'go test' on save."
-				},				
+				},
 				"go.lintOnSave": {
 					"type": "boolean",
 					"default": true,
