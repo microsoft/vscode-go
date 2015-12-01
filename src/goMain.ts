@@ -19,6 +19,7 @@ import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
+import { coverageCurrentFile } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
@@ -58,6 +59,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.file", () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testCurrentFile(goConfig['testTimeout']);
+	}));
+	
+	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.coverage", () => {
+		coverageCurrentFile();
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
@@ -119,9 +124,9 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	if (document.languageId != "go") {
 		return;
 	}
-
+	
 	var uri = document.uri;
-	check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
+	check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave'], goConfig['coverOnSave']).then(errors => {
 		diagnosticCollection.clear();
 
 		let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();;
