@@ -10,8 +10,7 @@ import path = require('path');
 import os = require('os');
 import fs = require('fs');
 import { getBinPath, getGoRuntimePath } from './goPath';
-import rl = require('readline');
-import { getCoverage, ICoverResult } from './goCover';
+import { getCoverage } from './goCover';
 
 if (!getGoRuntimePath()) {
 	vscode.window.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.");
