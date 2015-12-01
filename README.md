@@ -41,6 +41,7 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.vetOnSave": true,
 	"go.formatOnSave": false,
 	"go.formatTool": "goreturns",
+	"go.goroot": "/usr/local/go",
 	"go.gopath": "/Users/lukeh/go"
 }
 ```

@@ -148,8 +148,9 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 		});
 		let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
 		diagnosticMap.forEach((diags, uri) => {
-			diagnosticCollection.set(uri, diags);
+			entries.push([uri, diags]);
 		});
+		diagnosticCollection.set(entries);
 	}).catch(err => {
 		vscode.window.showInformationMessage("Error: " + err);
 	});
@@ -180,6 +181,9 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 				return document.save();
 			}).then(() => {
 				ignoreNextSave.delete(document);
+			}, () => {
+				// Catch any errors and ignore so that we still trigger 
+				// the file save.
 			});
 		} 
 		formatPromise.then(() => {

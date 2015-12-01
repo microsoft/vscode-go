@@ -8,8 +8,8 @@ import fs = require('fs');
 import path = require('path');
 import os = require('os');
 
-var binPathCache: { [bin: string]: string; } = {}
-var runtimePathCache: string = null
+var binPathCache: { [bin: string]: string; } = {};
+var runtimePathCache: string = null;
 
 export function getBinPath(binname: string) {
 	binname = correctBinname(binname);
@@ -57,7 +57,7 @@ function correctBinname(binname: string) {
 	if (process.platform === 'win32')
 		return binname + ".exe";
 	else
-		return binname
+		return binname;
 }
 
 /**
@@ -67,7 +67,7 @@ function correctBinname(binname: string) {
  */
 export function getGoRuntimePath(): string {
 	if (runtimePathCache) return runtimePathCache;
-	if (process.env.GOROOT) {
+	if (process.env["GOROOT"]) {
 		runtimePathCache = path.join(process.env["GOROOT"], "bin", "go");
 	} else if (process.env.PATH) {
 		var pathparts = (<string>process.env.PATH).split((<any>path).delimiter);

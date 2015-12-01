@@ -13,10 +13,12 @@ import { showGoStatus, hideGoStatus } from './goStatus'
 import { getBinPath } from './goPath'
 
 export function setupGoPathAndOfferToInstallTools() {
-	// TODO: There should be a better way to do this?
+	var goroot = vscode.workspace.getConfiguration('go')['goroot'];
+	if (goroot) {
+		process.env["GOROOT"] = goroot;
+	}
+
 	var gopath = vscode.workspace.getConfiguration('go')['gopath'];
-		
-	// Make sure GOPATH is set
 	if (gopath) {
 		process.env["GOPATH"] = gopath;
 	}
