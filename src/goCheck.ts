@@ -108,5 +108,5 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 	
 	var gocover = !coverOnSave ? Promise.resolve([]) : getCoverage(filename);
 
-	return Promise.all([gobuild, golint, govet,  getCoverage(filename)]).then(resultSets => [].concat.apply([], resultSets));
+	return Promise.all([gobuild, golint, govet, gocover]).then(resultSets => [].concat.apply([], resultSets));
 }
