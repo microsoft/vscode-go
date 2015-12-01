@@ -124,7 +124,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	if (document.languageId != "go") {
 		return;
 	}
-	
+
 	var uri = document.uri;
 	check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave'], goConfig['coverOnSave']).then(errors => {
 		diagnosticCollection.clear();
