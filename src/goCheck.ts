@@ -9,7 +9,8 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getBinPath, getGoRuntimePath } from './goPath'
+import { getBinPath, getGoRuntimePath } from './goPath';
+import { getCoverage } from './goCover';
 
 if (!getGoRuntimePath()) {
 	vscode.window.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.");
@@ -22,7 +23,7 @@ export interface ICheckResult {
 	severity: string;
 }
 
-export function check(filename: string, buildOnSave = true, lintOnSave = true, vetOnSave = true): Promise<ICheckResult[]> {
+export function check(filename: string, buildOnSave = true, lintOnSave = true, vetOnSave = true, coverOnSave = false): Promise<ICheckResult[]> {
 	var gobuild = !buildOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
 		var tmppath = path.normalize(path.join(os.tmpdir(), "go-code-check"))
 		var cwd = path.dirname(filename)
@@ -104,6 +105,8 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 			}
 		});
 	});
+	
+	var gocover = !coverOnSave ? Promise.resolve([]) : getCoverage(filename);
 
-	return Promise.all([gobuild, golint, govet]).then(resultSets => [].concat.apply([], resultSets));
+	return Promise.all([gobuild, golint, govet, gocover]).then(resultSets => [].concat.apply([], resultSets));
 }
