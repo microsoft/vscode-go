@@ -98,8 +98,8 @@
 			},
 			{
 				"command": "go.test.coverage",
-				"title": "Go: Test coverage in file",
-				"description": "Displays test coverage in the current file."
+				"title": "Go: Test coverage in current package",
+				"description": "Displays test coverage in the current package."
 			}
 		],
 		"debuggers": [

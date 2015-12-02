@@ -16,13 +16,63 @@ if (!getGoRuntimePath()) {
 	vscode.window.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.");
 }
 
-export function coverageCurrentFile() {
+export function coverageCurrentPackage() {
 	var editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage("No editor is active.");
 		return;
 	}
 	getCoverage(editor.document.uri.fsPath);
+}
+
+var coveredHighLight = vscode.window.createTextEditorDecorationType({
+	// Green
+	backgroundColor: 'rgba(64,128,64,0.5)',
+	isWholeLine: false
+}),
+uncoveredHighLight = vscode.window.createTextEditorDecorationType({
+	// Red
+	backgroundColor: 'rgba(128,64,64,0.5)',
+	isWholeLine: false
+}),
+coverageFiles = {};
+
+interface coverageFile {
+	filename: string;
+	uncoveredRange: vscode.Range[];	
+	coveredRange: vscode.Range[];
+}
+
+export function getCodeCoverage(editor: vscode.TextEditor) {
+	for(var filename in coverageFiles) {
+		if (editor.document.uri.fsPath.endsWith(filename)) {
+			highlightCoverage(editor, coverageFiles[filename], false);
+		}
+	}
+}
+
+function clearCoverage() {
+	applyCoverage(true);
+	coverageFiles = {};
+}
+
+function applyCoverage(remove: boolean = false) {
+	for(var filename in coverageFiles) {
+		var file = coverageFiles[filename];
+		// Highlight lines in current editor.
+		var editor = vscode.window.visibleTextEditors.find((value, index, obj) => {
+			return value.document.fileName.endsWith(filename);
+		});	
+		if (editor) {
+			highlightCoverage(editor, file, remove);
+		}	
+	}			
+}
+
+function highlightCoverage(editor: vscode.TextEditor, file: coverageFile, remove: boolean) {
+	editor.setDecorations(uncoveredHighLight, remove ? [] : file.uncoveredRange);
+	editor.setDecorations(coveredHighLight, remove ? [] : file.coveredRange);
+				
 }
 
 export function getCoverage(filename: string): Promise<any[]> {
@@ -32,27 +82,18 @@ export function getCoverage(filename: string): Promise<any[]> {
 		var args = ["test", "-coverprofile=" + tmppath];		
 		cp.execFile(getGoRuntimePath(), args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
+				// Clear existing coverage files
+				clearCoverage();
 				if (err && (<any>err).code == "ENOENT") {
 					vscode.window.showInformationMessage("Could not generate coverage report.  Install Go from http://golang.org/dl/.");
 					return resolve([]);
 				}
 				var ret = [];
 				
+				
 				var lines = rl.createInterface({
 					input: fs.createReadStream(tmppath),
 					output: undefined
-				});
-				
-				var coveredRange = [], 
-					uncoveredRange =[],
-					uncoveredHighLight = vscode.window.createTextEditorDecorationType({
-					// Red
-					backgroundColor: 'rgba(128,64,64,0.5)',
-					isWholeLine: false
-				}), coveredHighLight = vscode.window.createTextEditorDecorationType({
-					// Green
-					backgroundColor: 'rgba(64,128,64,0.5)',
-					isWholeLine: false
 				});
 
 				lines.on('line', function(data: string) {
@@ -60,35 +101,33 @@ export function getCoverage(filename: string): Promise<any[]> {
 					//    filename:StartLine.StartColumn,EndLine.EndColumn Hits IsCovered
 					var fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 					if (fileRange) {
-						// If line matches active file
-						if (filename.endsWith(fileRange[1])) {
-							var range = { 
-								range: new vscode.Range(
-									// Start Line converted to zero based
-									parseInt(fileRange[2]) - 1,
-									// Start Column converted to zero based
-									parseInt(fileRange[3]) - 1, 
-									// End Line converted to zero based
-									parseInt(fileRange[4]) - 1,
-									// End Column converted to zero based
-									parseInt(fileRange[5]) - 1
-								) 
-							};
-							// If is Covered
-							if (parseInt(fileRange[7]) === 1) {
-								coveredRange.push(range);	
-							} 
-							// Not Covered
-							else {
-								uncoveredRange.push(range);	
-							}
-						}							
+						var coverage = coverageFiles[fileRange[1]] || { coveredRange:[], uncoveredRange:[]};
+									
+						var range = { 
+							range: new vscode.Range(
+								// Start Line converted to zero based
+								parseInt(fileRange[2]) - 1,
+								// Start Column converted to zero based
+								parseInt(fileRange[3]) - 1, 
+								// End Line converted to zero based
+								parseInt(fileRange[4]) - 1,
+								// End Column converted to zero based
+								parseInt(fileRange[5]) - 1
+							) 
+						};
+						// If is Covered
+						if (parseInt(fileRange[7]) === 1) {
+							coverage.coveredRange.push(range);	
+						} 
+						// Not Covered
+						else {
+							coverage.uncoveredRange.push(range);	
+						}
+						coverageFiles[fileRange[1]] = coverage;											
 					}					
 				});
 				lines.on('close', function(data) {
-					// Highlight lines in current editor.
-					vscode.window.activeTextEditor.setDecorations(uncoveredHighLight, uncoveredRange);
-					vscode.window.activeTextEditor.setDecorations(coveredHighLight, coveredRange);
+					applyCoverage();	
 					resolve(ret);
 				});
 			} catch (e) {
