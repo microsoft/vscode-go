@@ -29,31 +29,31 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 		"const": vscode.SymbolKind.Constant,
 	}
 
-	
 	public provideWorkspaceSymbols(query: string, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-		var convertToCodeSymbols = (decls: GoSymbolDeclaration[], symbols: vscode.SymbolInformation[], containerName: string): void => {
-				decls.forEach(decl => {
-					// var document = vscode.workspace.openTextDocument(vscode.Uri.file(decl.path))
-					// var positionAt = (offset: number) => document.positionAt(offset);
-
-					let kind : vscode.SymbolKind;
-					if(decl.kind != ""){
-						kind = this.goKindToCodeKind[decl.kind]	
-					} 
-					let pos = new vscode.Position(decl.line, decl.character)
-					let symbolInfo = new vscode.SymbolInformation(
-						decl.package + "." + decl.name,
-						kind,
-						new vscode.Range(pos, pos),
-						vscode.Uri.file(decl.path),
-						containerName);
-					symbols.push(symbolInfo);
-				});
-			}
-		// var gosyms = getBinPath("go-symbols");
-		var gosyms = "/Users/matthew/src/gosyms/main"
+		var convertToCodeSymbols = (decls: GoSymbolDeclaration[], symbols: vscode.SymbolInformation[]): void => {
+			decls.forEach(decl => {
+				let kind: vscode.SymbolKind;
+				if (decl.kind != "") {
+					kind = this.goKindToCodeKind[decl.kind]
+				}
+				let pos = new vscode.Position(decl.line, decl.character)
+				let symbolInfo = new vscode.SymbolInformation(
+					decl.name,
+					kind,
+					new vscode.Range(pos, pos),
+					vscode.Uri.file(decl.path),
+					"");
+				symbols.push(symbolInfo);
+			});
+		}
+		let symArgs = vscode.workspace.getConfiguration('go')['symbols'];
+		let args = [vscode.workspace.rootPath, query];
+		if(symArgs != undefined) {
+			args.unshift(symArgs)
+		}
+		var gosyms = getBinPath("go-symbols");
 		return new Promise((resolve, reject) => {
-			var p = cp.execFile(gosyms, [vscode.workspace.rootPath, query], {}, (err, stdout, stderr) => {
+			var p = cp.execFile(gosyms, args, {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
 						vscode.window.showInformationMessage("The 'go-symbols' command is not available.  Use 'go get -u github.com/newhook/go-symbols' to install.");
@@ -62,8 +62,8 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 					var result = stdout.toString();
 					var decls = <GoSymbolDeclaration[]>JSON.parse(result);
 					var symbols: vscode.SymbolInformation[] = [];
-					convertToCodeSymbols(decls, symbols, "");
-					return resolve(symbols)
+					convertToCodeSymbols(decls, symbols);
+					return resolve(symbols);
 				} catch (e) {
 					reject(e);
 				}
