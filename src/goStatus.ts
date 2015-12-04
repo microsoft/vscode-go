@@ -24,8 +24,8 @@ export function showHideStatus() {
 	statusBarEntry.hide();
 }
 
-export function hideGoStatus() { 
-	statusBarEntry.dispose(); 
+export function hideGoStatus() {
+	statusBarEntry.dispose();
 }
 
 export function showGoStatus(message: string, command: string, tooltip?: string) {

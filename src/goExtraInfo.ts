@@ -4,17 +4,17 @@
 
 'use strict';
 
-import {window, HoverProvider, Hover, TextDocument, Position, Range, CancellationToken} from 'vscode';
+import { window, HoverProvider, Hover, TextDocument, Position, Range, CancellationToken } from 'vscode';
 import cp = require('child_process');
 import path = require('path');
-import {getBinPath} from './goPath'
+import { getBinPath } from './goPath'
 
 export class GoHoverProvider implements HoverProvider {
 
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 
 		return new Promise((resolve, reject) => {
-            let filename = document.fileName;
+			let filename = document.fileName;
 			let offset = document.offsetAt(position);
 
 			var godef = getBinPath("godef");
@@ -29,23 +29,23 @@ export class GoHoverProvider implements HoverProvider {
 					let result = stdout.toString();
 					let lines = result.split('\n');
 					lines = lines.map(line => {
-						if(line.indexOf('\t') == 0) {
+						if (line.indexOf('\t') == 0) {
 							line = line.slice(1)
 						}
-						return line.replace(/\t/g,'  ')
+						return line.replace(/\t/g, '  ')
 					});
 					lines = lines.filter(line => line.length != 0);
-					if(lines.length > 10) lines[9] = "...";
+					if (lines.length > 10) lines[9] = "...";
 					let text;
-					if(lines.length > 1) {
-						text = lines.slice(1,10).join('\n');
-						text = text.replace(/\n+$/,'');
+					if (lines.length > 1) {
+						text = lines.slice(1, 10).join('\n');
+						text = text.replace(/\n+$/, '');
 					} else {
 						text = lines[0]
 					}
-                    let hover = new Hover({ language: 'go', value: text });
+					let hover = new Hover({ language: 'go', value: text });
 					return resolve(hover);
-				} catch(e) {
+				} catch (e) {
 					reject(e);
 				}
 			});

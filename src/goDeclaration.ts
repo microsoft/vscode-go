@@ -7,11 +7,11 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import {getBinPath} from './goPath'
+import { getBinPath } from './goPath'
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
-	public provideDefinition(document:vscode.TextDocument, position:vscode.Position, token: vscode.CancellationToken):Thenable<vscode.Location> {
+	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
 
 		return new Promise((resolve, reject) => {
 
@@ -32,14 +32,14 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 					// TODO: Goto def on a package name import will return juts a plain
 					// path to a folder here - can we go to a folder?
 					var match = /(.*):(\d+):(\d+)/.exec(lines[0]);
-					if(!match) return resolve(null);
+					if (!match) return resolve(null);
 					var [_, file, line, col] = match;
 					var definitionResource = vscode.Uri.file(file);
-					var range = new vscode.Range(+line-1, +col-1, +line-1, +col-1);
+					var range = new vscode.Range(+line - 1, +col - 1, +line - 1, +col - 1);
 					return resolve(
 						new vscode.Location(definitionResource, range)
 					);
-				} catch(e) {
+				} catch (e) {
 					reject(e);
 				}
 			});

@@ -1,5 +1,7 @@
 # Go for Visual Studio Code
 
+[![Join the chat at https://gitter.im/Microsoft/vscode-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/vscode-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This extension adds rich language support for the Go language to VS Code, including:
 
 - Colorization
@@ -24,7 +26,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 
 First, you will need to install Visual Studio Code `0.10`. In the command palette (`cmd-shift-p`) select `Install Extension` and choose `Go`.  
 
-In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open you GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.
+In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open your GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.  You should see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the Go tooling needed for the extension to suppport it's full feature set.  See the [Tools](#Tools) section below for more details.
 
 _Note_: It is strongly encouraged to turn `Auto Save` on in Visual Studio Code (`File -> Auto Save`) when using this extension.  Many of the Go tools work only on saved files, and error reporting will be more interactive with `Auto Save` turned on.
 
@@ -37,7 +39,9 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.buildOnSave": true,
 	"go.lintOnSave": true,
 	"go.vetOnSave": true,
+	"go.formatOnSave": false,
 	"go.formatTool": "goreturns",
+	"go.goroot": "/usr/local/go",
 	"go.gopath": "/Users/lukeh/go"
 }
 ```
@@ -56,15 +60,22 @@ Once this is installed, go to the Code debug viewlet and select the configuratio
 			"name": "Launch main.go",
 			"type": "go",
 			"request": "launch",
-			"program": "main.go",
-			"stopOnEntry": false,
+			"mode": "debug",
+			"program": ".",
 			"env": {},
-			"args": [],
-			"cwd": "."
+			"args": []
 		}
 	]
 }
 ```
+
+The `program` option can refer to a package folder to debug, or a file within that folder.
+
+The `mode` parameter can be set to:
+
+* `debug` to compile the contents of the program folder and launch under the debugger. [default]
+* `test` to debug tests in the program folder.
+* `exec` to run a pre-built binary instead of building the current code in the program folder.
 
 ## Building and Debugging the Extension
 
@@ -76,7 +87,7 @@ First make sure you do not have the extension installed in `~/.vscode/extensions
 rm -rf ~/.vscode/extensions/lukehoban.Go
 cd ~
 git clone https://github.com/Microsoft/vscode-go
-cd go-code
+cd vscode-go
 npm install
 code . 
 ```
@@ -93,14 +104,26 @@ To debug the debugger, see [the debugAdapter readme](src/debugAdapter/Readme.md)
 
 ## Tools
 
-The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, the extension will offer to install them for you.
+The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, you will see an "Analysis Tools Missing" warning in the bottom right corner of the editor.  Clicking it will offer to install the missing tools for you. 
 
 - gocode: `go get -u -v github.com/nsf/gocode`
 - godef: `go get -u -v github.com/rogpeppe/godef`
 - golint: `go get -u -v github.com/golang/lint/golint`
 - go-find-references: `go get -u -v github.com/lukehoban/go-find-references`
+- go-outline: `go get -u -v github.com/lukehoban/go-outline`
 - goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
 - gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
+
+To install them just paste and run:
+```bash
+go get -u -v github.com/nsf/gocode
+go get -u -v github.com/rogpeppe/godef
+go get -u -v github.com/golang/lint/golint
+go get -u -v github.com/lukehoban/go-find-references
+go get -u -v github.com/lukehoban/go-outline
+go get -u -v sourcegraph.com/sqs/goreturns
+go get -u -v golang.org/x/tools/cmd/gorename
+```
 
 And for debugging:
 

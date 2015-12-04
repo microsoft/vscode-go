@@ -7,7 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import {getBinPath} from './goPath'
+import { getBinPath } from './goPath'
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -31,41 +31,65 @@ interface GoCodeSuggestion {
 
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
-	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.CompletionItem[]> {
-		return new Promise((resolve, reject) => {
-			var filename = document.fileName;
+	private gocodeConfigurationComplete = false;
 
-			// get current word
-			var wordAtPosition = document.getWordRangeAtPosition(position);
-			var currentWord = '';
-			if (wordAtPosition && wordAtPosition.start.character < position.character) {
-				var word = document.getText(wordAtPosition);
-				currentWord = word.substr(0, position.character - wordAtPosition.start.character);
-			}
-
-			var offset = document.offsetAt(position);
-			var gocode = getBinPath("gocode");
-
-			// Spawn `gocode` process
-			var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "" + offset], {}, (err, stdout, stderr) => {
-				try {
-					if (err && (<any>err).code == "ENOENT") {
-						vscode.window.showInformationMessage("The 'gocode' command is not available.  Use 'go get -u github.com/nsf/gocode' to install.");
-					}
-					if (err) return reject(err);
-					var results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
-					var suggestions = results[1].map(suggest => {
-						var item = new vscode.CompletionItem(suggest.name);
-                        item.kind = vscodeKindFromGoCodeClass(suggest.class);
-                        item.detail = suggest.type;
-						return item;
-					})
-					resolve(suggestions);
-				} catch(e) {
-					reject(e);
+	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
+		return this.ensureGoCodeConfigured().then(() => {
+			return new Promise((resolve, reject) => {
+				var filename = document.fileName;
+	
+				if (document.lineAt(position.line).text.match(/^\s*\/\//)) {
+					return resolve([]);
 				}
+	
+				// get current word
+				var wordAtPosition = document.getWordRangeAtPosition(position);
+				var currentWord = '';
+				if (wordAtPosition && wordAtPosition.start.character < position.character) {
+					var word = document.getText(wordAtPosition);
+					currentWord = word.substr(0, position.character - wordAtPosition.start.character);
+				}
+	
+				if (currentWord.match(/^\d+$/)) {
+					return resolve([]);
+				}
+	
+				var offset = document.offsetAt(position);
+				var gocode = getBinPath("gocode");
+	
+				// Spawn `gocode` process
+				var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "c" + offset], {}, (err, stdout, stderr) => {
+					try {
+						if (err && (<any>err).code == "ENOENT") {
+							vscode.window.showInformationMessage("The 'gocode' command is not available.  Use 'go get -u github.com/nsf/gocode' to install.");
+						}
+						if (err) return reject(err);
+						var results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
+						var suggestions = results[1].map(suggest => {
+							var item = new vscode.CompletionItem(suggest.name);
+							item.kind = vscodeKindFromGoCodeClass(suggest.class);
+							item.detail = suggest.type;
+							return item;
+						})
+						resolve(suggestions);
+					} catch (e) {
+						reject(e);
+					}
+				});
+				p.stdin.end(document.getText());
 			});
-			p.stdin.end(document.getText());
+		});
+	}
+	
+	private ensureGoCodeConfigured(): Thenable<void> {
+		return new Promise<void>((resolve, reject) => {
+			if (this.gocodeConfigurationComplete) {
+				return resolve();
+			}
+			var gocode = getBinPath("gocode");
+			cp.execFile(gocode, ["set", "propose-builtins", "true"], {}, (err, stdout, stderr) => {
+				resolve();
+			});
 		});
 	}
 }

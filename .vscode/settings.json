@@ -8,5 +8,6 @@
 		"**/node_modules": true,
 		"**/bower_components": true,
 		"out/": true
-	}
+	},
+	"editor.insertSpaces": false
 }

@@ -1,8 +1,8 @@
 {
 	"name": "Go",
-	"version": "0.6.7",
+	"version": "0.6.17",
 	"publisher": "lukehoban",
-	"description": "Go support for Visual Studio Code",
+	"description": "Rich Go language support for Visual Studio Code",
 	"author": {
 		"name": "Microsoft Corporation - Development Labs"
 	},
@@ -30,17 +30,23 @@
 		"vscode.go"
 	],
 	"dependencies": {
-		"json-rpc2": "^1.0.2"
+		"json-rpc2": "^1.0.2",
+		"diff-match-patch": "~1.0.0"
 	},
 	"devDependencies": {
 		"vscode": "0.10.x",
-		"fs-extra": "^0.26.0"
+		"fs-extra": "^0.26.0",
+		"typescript": "^1.6.2"
 	},
 	"engines": {
 		"vscode": "0.10.x"
 	},
 	"activationEvents": [
-		"onLanguage:go"
+		"onLanguage:go",
+		"onCommand:go.gopath",
+		"onCommand:go.test.cursor",
+		"onCommand:go.test.package",
+		"onCommand:go.test.file"
 	],
 	"main": "./out/src/goMain",
 	"contributes": {
@@ -73,6 +79,21 @@
 				"command": "go.gopath",
 				"title": "Go: Current GOPATH",
 				"description": "See the currently set GOPATH."
+			},
+			{
+				"command": "go.test.cursor",
+				"title": "Go: Run test at cursor",
+				"description": "Runs a unit test at the cursor."
+			},
+			{
+				"command": "go.test.package",
+				"title": "Go: Run tests in current package",
+				"description": "Runs all unit tests in the package of the current file."
+			},
+			{
+				"command": "go.test.file",
+				"title": "Go: Run tests in file",
+				"description": "Runs all unit tests in the current file."
 			}
 		],
 		"debuggers": [
@@ -91,27 +112,29 @@
 						"name": "Launch main.go",
 						"type": "go",
 						"request": "launch",
-						"program": "main.go",
-						"stopOnEntry": false,
+						"mode": "debug",
+						"program": ".",
 						"env": {},
-						"args": [],
-						"cwd": "."
+						"args": []
 					}
 				],
 				"configurationAttributes": {
 					"launch": {
-						"required": [
-							"program"
-						],
+						"required": [],
 						"properties": {
 							"program": {
 								"type": "string",
-								"description": "Workspace relative path to the program.",
-								"default": "main.go"
+								"description": "Workspace relative path to the program folder (or any file within that folder) when in 'debug' or 'test' mode, and to the pre-built binary file to debug in 'exec' mode.",
+								"default": "."
+							},
+							"mode": {
+								"type": "string",
+								"description": "One of 'debug', 'test', 'exec'.",
+								"default": "debug"
 							},
 							"stopOnEntry": {
 								"type": "boolean",
-								"description": "Automatically stop program after launch.",
+								"description": "[NOT YET WORKING] Automatically stop program after launch.",
 								"default": true
 							},
 							"args": {
@@ -131,6 +154,16 @@
 								"type": "object",
 								"description": "Environment variables passed to the program.",
 								"default": {}
+							},
+							"buildFlags": {
+								"type": "string",
+								"description": "Build flags, to be passed to the Go compiler.",
+								"default": ""
+							},
+							"init": {
+								"type": "string",
+								"description": "Init file, executed by the terminal client.",
+								"default": ""
 							}
 						}
 					}
@@ -165,6 +198,21 @@
 					"type": "string",
 					"default": null,
 					"description": "Specifies the GOPATH to use when no environment variable is set."
+				},
+				"go.goroot": {
+					"type": "string",
+					"default": null,
+					"description": "Specifies the GOROOT to use when no environment variable is set."
+				},
+				"go.formatOnSave": {
+					"type": "boolean",
+					"default": false,
+					"description": "[EXPERIMENTAL] Run formatting tool on save."
+				},
+				"go.testTimeout": {
+					"type": "string",
+					"default": "30s",
+					"description": "Specifies the timeout for go test in ParseDuration format."
 				}
 			}
 		}
