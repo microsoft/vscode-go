@@ -8,6 +8,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath'
+import { byteOffsetAt } from './util'
 
 export class GoRenameProvider implements vscode.RenameProvider {
 
@@ -20,7 +21,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
 		return new Promise((resolve, reject) => {
 			var filename = this.canonicalizeForWindows(document.fileName);
-			var offset = document.offsetAt(position);
+			var offset = byteOffsetAt(document, position);
 
 			var gorename = getBinPath("gorename");
 
