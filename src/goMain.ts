@@ -20,6 +20,7 @@ import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest'
+import { goInstall } from './goInstall'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -58,6 +59,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.file", () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testCurrentFile(goConfig['testTimeout']);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand("go.install", () => {
+		let goConfig = vscode.workspace.getConfiguration('go');
+		goInstall(goConfig['installPackages']);
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {

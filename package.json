@@ -94,6 +94,11 @@
 				"command": "go.test.file",
 				"title": "Go: Run tests in file",
 				"description": "Runs all unit tests in the current file."
+			},
+			{
+				"command": "go.install",
+				"title": "Go: Install packages",
+				"description": "Installs all configured packages for the workspace."
 			}
 		],
 		"debuggers": [
@@ -213,6 +218,14 @@
 					"type": "string",
 					"default": "30s",
 					"description": "Specifies the timeout for go test in ParseDuration format."
+				},
+				"go.installPackages": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": ["./.."],
+					"description": "Specifies the packages to install when using the install command."
 				}
 			}
 		}
