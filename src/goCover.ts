@@ -48,7 +48,7 @@ export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
 	}
 	for(var filename in coverageFiles) {
 		if (editor.document.uri.fsPath.endsWith(filename)) {
-			highlightCoverage(vscode.window.activeTextEditor, coverageFiles[filename], true);
+			highlightCoverage(editor, coverageFiles[filename], true);
 			delete coverageFiles[filename];
 		}
 	}
