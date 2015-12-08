@@ -16,15 +16,6 @@ if (!getGoRuntimePath()) {
 	vscode.window.showInformationMessage("No 'go' binary could be found on PATH or in GOROOT.");
 }
 
-export function coverageCurrentPackage() {
-	var editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage("No editor is active.");
-		return;
-	}
-	getCoverage(editor.document.uri.fsPath);
-}
-
 var coveredHighLight = vscode.window.createTextEditorDecorationType({
 	// Green
 	backgroundColor: 'rgba(64,128,64,0.5)',
@@ -43,6 +34,35 @@ interface coverageFile {
 	coveredRange: vscode.Range[];
 }
 
+function clearCoverage() {
+	applyCoverage(true);
+	coverageFiles = {};
+}
+
+export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
+	var editor = vscode.window.visibleTextEditors.find((value, index, obj) => {
+		return value.document == e.document;
+	});
+	if (!editor) {
+		return;
+	}
+	for(var filename in coverageFiles) {
+		if (editor.document.uri.fsPath.endsWith(filename)) {
+			highlightCoverage(vscode.window.activeTextEditor, coverageFiles[filename], true);
+			delete coverageFiles[filename];
+		}
+	}
+}
+
+export function coverageCurrentPackage() {
+	var editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage("No editor is active.");
+		return;
+	}
+	getCoverage(editor.document.uri.fsPath);
+}
+
 export function getCodeCoverage(editor: vscode.TextEditor) {
 	for(var filename in coverageFiles) {
 		if (editor.document.uri.fsPath.endsWith(filename)) {
@@ -51,18 +71,15 @@ export function getCodeCoverage(editor: vscode.TextEditor) {
 	}
 }
 
-function clearCoverage() {
-	applyCoverage(true);
-	coverageFiles = {};
-}
-
 function applyCoverage(remove: boolean = false) {
+	console.log(coverageFiles)
 	for(var filename in coverageFiles) {
 		var file = coverageFiles[filename];
 		// Highlight lines in current editor.
 		var editor = vscode.window.visibleTextEditors.find((value, index, obj) => {
 			return value.document.fileName.endsWith(filename);
 		});	
+		console.log(editor);
 		if (editor) {
 			highlightCoverage(editor, file, remove);
 		}	

@@ -19,7 +19,7 @@ import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
-import { coverageCurrentPackage, getCodeCoverage } from './goCover';
+import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
@@ -33,10 +33,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
-
+	
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
 	
+	vscode.workspace.onDidChangeTextDocument(removeCodeCoverage, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
 	
