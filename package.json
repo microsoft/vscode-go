@@ -179,15 +179,39 @@
 					"default": true,
 					"description": "Run 'go build'/'go test' on save."
 				},
+				"go.buildFlags": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"description": "Flags to pass to `go build` during build-on-save (e.g. ['-ldflags=\"-s\"'])"
+				},
 				"go.lintOnSave": {
 					"type": "boolean",
 					"default": true,
 					"description": "Run 'golint' on save."
 				},
+				"go.lintFlags": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"description": "Flags to pass to `golint` (e.g. ['-min_confidenc=.8'])"
+				},
 				"go.vetOnSave": {
 					"type": "boolean",
 					"default": true,
 					"description": "Run 'go tool vet' on save."
+				},
+				"go.vetFlags": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])"
 				},
 				"go.formatTool": {
 					"type": "string",

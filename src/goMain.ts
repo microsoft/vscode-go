@@ -122,7 +122,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	}
 
 	var uri = document.uri;
-	check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
+	check(uri.fsPath, goConfig).then(errors => {
 		diagnosticCollection.clear();
 
 		let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();;
