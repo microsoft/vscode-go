@@ -91,6 +91,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				{ open: '{', close: '}' },
 				{ open: '[', close: ']' },
 				{ open: '(', close: ')' },
+				{ open: '`', close: '`', notIn: ['string'] },
 				{ open: '"', close: '"', notIn: ['string'] },
 				{ open: '\'', close: '\'', notIn: ['string', 'comment'] }
 			]
