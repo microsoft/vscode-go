@@ -15,27 +15,15 @@ import { GoReferenceProvider } from './goReferences';
 import { GoDocumentFormattingEditProvider, Formatter } from './goFormat';
 import { GoRenameProvider } from './goRename';
 import { GoDocumentSymbolProvider } from './goOutline';
+import { GoCodeActionProvider } from './goCodeAction'
 import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest'
-import { parseFilePrelude } from './util'
+import { addImport } from './goImport'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
-
-class GoCodeActionProvider implements vscode.CodeActionProvider {
-	public provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken): vscode.Command[] {
-		if(context.diagnostics[0] && context.diagnostics[0].message.indexOf("undefined: ") == 0) {
-			let [_, name] = /^undefined: (.*)$/.exec(context.diagnostics[0].message)
-			return [{
-				title: "import \"" + name  +"\"",
-				command: "go.import.add",
-				arguments: [name]
-			}]
-		}
-	}
-}
 
 export function activate(ctx: vscode.ExtensionContext): void {
 
@@ -76,27 +64,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 	
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.import.add", (arg: string) => {
-		let p: Thenable<string> = Promise.resolve(arg);
-		// TODO: This appears to be a way to check whether we were invoked 
-		// by the command palette?
-		if(arg["context"]) {
-			p = vscode.window.showQuickPick(['fmt', 'bytes']);
-		}
-		p.then(imp => {
-			let imports = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
-			let multis = imports.filter(x => x.kind == "multi");
-			if (multis.length > 0) {
-				let closeParenLine = multis[multis.length - 1].end;
-				return vscode.window.activeTextEditor.edit(editBuilder => {
-					editBuilder.insert(new vscode.Position(closeParenLine, 0), '"' + imp + '"\n');
-				});
-			} else if (imports.length > 0) {
-				let lastSingleImport = imports[imports.length-1].end;
-				return vscode.window.activeTextEditor.edit(editBuilder => {
-					editBuilder.insert(new vscode.Position(lastSingleImport + 1, 0), 'import "' + imp + '"\n');
-				});
-			} 
-		});
+		return addImport(typeof arg == "string" ? arg : null);
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {

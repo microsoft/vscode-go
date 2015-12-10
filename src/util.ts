@@ -12,23 +12,31 @@ export function byteOffsetAt(document: TextDocument, position: Position): number
 	return byteOffset;
 }
 
-export function parseFilePrelude(text: string) {
+export interface Prelude {
+	imports: Array<{kind: string; start: number; end: number;}>;
+	pkg: {start: number; end: number;};
+}
+
+export function parseFilePrelude(text: string): Prelude {
 	let lines = text.split('\n');
-	let imports = []
+	let ret: Prelude = {imports: [], pkg: null };
 	for (var i = 0; i < lines.length; i++) {
 		let line = lines[i];
+		if (line.match(/^(\s)*package(\s)+/)) {
+			ret.pkg = {start: i, end: i};
+		}
 		if (line.match(/^(\s)*import(\s)+\(/)) {
-			imports.push({kind: "multi", start: i});
+			ret.imports.push({kind: "multi", start: i, end: -1});
 		}
 		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
-			imports.push({kind: "single", start: i, end: i});
+			ret.imports.push({kind: "single", start: i, end: i});
 		}
 		if (line.match(/^(\s)*\)/)) {
-			imports[imports.length - 1].end = i;
+			ret.imports[ret.imports.length - 1].end = i;
 		}
 		if (line.match(/^(\s)(func|const|type|var)/)) {
 			break;
 		}
 	}
-	return imports;
+	return ret;
 }
