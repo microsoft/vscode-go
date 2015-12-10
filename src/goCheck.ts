@@ -22,13 +22,14 @@ export interface ICheckResult {
 	severity: string;
 }
 
-export function check(filename: string, buildOnSave = true, lintOnSave = true, vetOnSave = true): Promise<ICheckResult[]> {
-	var gobuild = !buildOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
-		var tmppath = path.normalize(path.join(os.tmpdir(), "go-code-check"))
-		var cwd = path.dirname(filename)
-		var args = ["build", "-o", tmppath, "."];
+export function check(filename: string, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+	var gobuild = !goConfig['buildOnSave'] ? Promise.resolve([]) : new Promise((resolve, reject) => {
+		var buildFlags = goConfig['buildFlags'] || [];
+		var tmppath = path.normalize(path.join(os.tmpdir(), "go-code-check"));
+		var cwd = path.dirname(filename);
+		var args = ["build", "-o", tmppath, ...buildFlags, "."];
 		if (filename.match(/_test.go$/i)) {
-			args = ['test', '-copybinary', '-o', tmppath, '-c', '.']
+			args = ['test', '-copybinary', '-o', tmppath, '-c', '.'];
 		}
 		cp.execFile(getGoRuntimePath(), args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
@@ -56,10 +57,11 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 		});
 	});
 
-	var golint = !lintOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
-		var cwd = path.dirname(filename)
+	var golint = !goConfig['lintOnSave'] ? Promise.resolve([]) : new Promise((resolve, reject) => {
+		var cwd = path.dirname(filename);
 		var golint = getBinPath("golint");
-		cp.execFile(golint, [filename], { cwd: cwd }, (err, stdout, stderr) => {
+		var lintFlags = goConfig['lintFlags'] || [];
+		cp.execFile(golint, [...lintFlags, filename], { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
 					vscode.window.showInformationMessage("The 'golint' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install.");
@@ -81,9 +83,10 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 		});
 	});
 
-	var govet = !vetOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
-		var cwd = path.dirname(filename)
-		cp.execFile(getGoRuntimePath(), ["tool", "vet", filename], { cwd: cwd }, (err, stdout, stderr) => {
+	var govet = !goConfig['vetOnSave'] ? Promise.resolve([]) : new Promise((resolve, reject) => {
+		var cwd = path.dirname(filename);
+		var vetFlags = goConfig['vetFlags'] || [];
+		cp.execFile(getGoRuntimePath(), ["tool", "vet", ...vetFlags, filename], { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
 					vscode.window.showInformationMessage("The 'go tool vet' compiler is not available.  Install Go from http://golang.org/dl/.");

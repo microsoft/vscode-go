@@ -8,6 +8,7 @@ import { window, HoverProvider, Hover, TextDocument, Position, Range, Cancellati
 import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath'
+import { byteOffsetAt } from './util'
 
 export class GoHoverProvider implements HoverProvider {
 
@@ -15,7 +16,7 @@ export class GoHoverProvider implements HoverProvider {
 
 		return new Promise((resolve, reject) => {
 			let filename = document.fileName;
-			let offset = document.offsetAt(position);
+			let offset = byteOffsetAt(document, position);
 
 			var godef = getBinPath("godef");
 

@@ -8,6 +8,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath'
+import { byteOffsetAt } from './util'
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
@@ -16,7 +17,7 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 		return new Promise((resolve, reject) => {
 
 			var wordAtPosition = document.getWordRangeAtPosition(position);
-			var offset = document.offsetAt(position);
+			var offset = byteOffsetAt(document, position);
 
 			var godef = getBinPath("godef");
 
@@ -46,4 +47,5 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 			p.stdin.end(document.getText());
 		});
 	}
+
 }

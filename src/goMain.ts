@@ -16,11 +16,13 @@ import { GoDocumentFormattingEditProvider, Formatter } from './goFormat';
 import { GoRenameProvider } from './goRename';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
+import { GoCodeActionProvider } from './goCodeAction'
 import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
 import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest'
+import { addImport } from './goImport'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -34,6 +36,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
+	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
@@ -60,6 +63,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.file", () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testCurrentFile(goConfig['testTimeout']);
+	}));
+	
+	ctx.subscriptions.push(vscode.commands.registerCommand("go.import.add", (arg: string) => {
+		return addImport(typeof arg == "string" ? arg : null);
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
@@ -93,6 +100,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				{ open: '{', close: '}' },
 				{ open: '[', close: ']' },
 				{ open: '(', close: ')' },
+				{ open: '`', close: '`', notIn: ['string'] },
 				{ open: '"', close: '"', notIn: ['string'] },
 				{ open: '\'', close: '\'', notIn: ['string', 'comment'] }
 			]
@@ -123,7 +131,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	}
 
 	var uri = document.uri;
-	check(uri.fsPath, goConfig['buildOnSave'], goConfig['lintOnSave'], goConfig['vetOnSave']).then(errors => {
+	check(uri.fsPath, goConfig).then(errors => {
 		diagnosticCollection.clear();
 
 		let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();;

@@ -48,7 +48,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 		}
 		let symArgs = vscode.workspace.getConfiguration('go')['symbols'];
 		let args = [vscode.workspace.rootPath, query];
-		if(symArgs != undefined) {
+		if(symArgs != undefined && symArgs != "") {
 			args.unshift(symArgs)
 		}
 		var gosyms = getBinPath("go-symbols");
