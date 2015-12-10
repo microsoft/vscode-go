@@ -14,6 +14,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Rename (using `gorename`)
 - Build-on-save (using `go build` and `go test`)
 - Format (using `goreturns` or `goimports` or `gofmt`)
+- Add Imports (using `go list`)
 - [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
@@ -39,12 +40,25 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.buildOnSave": true,
 	"go.lintOnSave": true,
 	"go.vetOnSave": true,
+	"go.buildFlags": [],
+	"go.lintFlags": [],
+	"go.vetFlags": [],
 	"go.formatOnSave": false,
 	"go.formatTool": "goreturns",
 	"go.goroot": "/usr/local/go",
 	"go.gopath": "/Users/lukeh/go"
 }
 ```
+
+### Commands
+
+In addition to integrated editing features, the extension also provides several commands in the Command Palette for working with Go files:
+
+* `Go: Add Import` to add an import from the list of pacakges in your Go context
+* `Go: Current GOPATH` to see your currently configured GOPATH
+* `Go: Run test at cursor` to run a test at the current cursor position in the active document
+* `Go: Run tests in current package` to run all tests in the pacakge containing the active document 
+* `Go: Run tests in current file` to run all tests in the current active document
 
 ### _Optional_: Debugging
 
