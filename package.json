@@ -94,6 +94,11 @@
 				"command": "go.test.file",
 				"title": "Go: Run tests in file",
 				"description": "Runs all unit tests in the current file."
+			},
+			{
+				"command": "go.import.add",
+				"title": "Go: Add Import",
+				"description": "Add an import declaration"
 			}
 		],
 		"debuggers": [
@@ -185,7 +190,7 @@
 						"type": "string"
 					},
 					"default": [],
-					"description": "Flags to pass to `go build` during build-on-save (e.g. ['-ldflags=\"-s\"'])"
+					"description": "Flags to `go build` during build-on-save (e.g. ['-ldflags=\"-s\"'])"
 				},
 				"go.lintOnSave": {
 					"type": "boolean",
