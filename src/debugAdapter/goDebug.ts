@@ -10,6 +10,8 @@ import { spawn, ChildProcess } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { getBinPath } from '../goPath';
 
+require("console-stamp")(console);
+
 // These types should stay in sync with:
 // https://github.com/derekparker/delve/blob/master/service/api/types.go
 
@@ -210,6 +212,8 @@ class GoDebugSession extends DebugSession {
 	private breakpoints: Map<string, DebugBreakpoint[]>;
 	private debugState: DebuggerState;
 	private delve: Delve;
+	private initialBreakpointsSetPromise: Promise<void>;
+	private signalInitialBreakpointsSet: () => void;
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
@@ -217,6 +221,7 @@ class GoDebugSession extends DebugSession {
 		this.debugState = null;
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
+		this.initialBreakpointsSetPromise = new Promise<void>((resolve, reject) => this.signalInitialBreakpointsSet = resolve);
 	}
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -237,7 +242,9 @@ class GoDebugSession extends DebugSession {
 			this.sendEvent(new OutputEvent(str, 'stderr'));
 		};
 
-		this.delve.connection.then(() => {
+		this.delve.connection.then(() =>
+			this.initialBreakpointsSetPromise
+		).then(() => {
 			// TODO: This isn't quite right - may not want to blindly continue on start.
 			this.continueRequest(response);	
 		}, err => {
@@ -287,7 +294,9 @@ class GoDebugSession extends DebugSession {
 		}, err => {
 			this.sendErrorResponse(response, 2002, "Failed to set breakpoint: '{e}'", { e: err.toString() })
 			console.error(err);
-		});
+		}).then(() => {
+			this.signalInitialBreakpointsSet();
+		});;
 	}
 
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
