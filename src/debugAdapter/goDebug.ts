@@ -12,6 +12,38 @@ import { getBinPath } from '../goPath';
 
 require("console-stamp")(console);
 
+// This enum should stay in sync with https://golang.org/pkg/reflect/#Kind
+
+enum GoReflectKind {
+	Invalid = 0,
+	Bool,
+	Int,
+	Int8,
+	Int16,
+	Int32,
+	Int64,
+	Uint,
+	Uint8,
+	Uint16,
+	Uint32,
+	Uint64,
+	Uintptr,
+	Float32,
+	Float64,
+	Complex64,
+	Complex128,
+	Array,
+	Chan,
+	Func,
+	Interface,
+	Map,
+	Ptr,
+	Slice,
+	String,
+	Struct,
+	UnsafePointer
+}
+
 // These types should stay in sync with:
 // https://github.com/derekparker/delve/blob/master/service/api/types.go
 
@@ -65,7 +97,7 @@ interface DebugVariable {
 	addr: number;
 	type: string;
 	realType: string;
-	kind: number;
+	kind: GoReflectKind;
 	value: string;
 	len: number;
 	cap: number;
@@ -246,7 +278,7 @@ class GoDebugSession extends DebugSession {
 			this.initialBreakpointsSetPromise
 		).then(() => {
 			// TODO: This isn't quite right - may not want to blindly continue on start.
-			this.continueRequest(response);	
+			this.continueRequest(response);
 		}, err => {
 			this.sendErrorResponse(response, 3000, "Failed to continue: '{e}'", { e: err.toString() });
 			console.log("ContinueResponse");
@@ -384,10 +416,50 @@ class GoDebugSession extends DebugSession {
 							vars = vars[+parts[i]].children;
 						}
 						var variables = vars.map((v, i) => {
-							return {
-								name: v.name,
-								value: v.value || v.type,
-								variablesReference: v.children.length > 0 ? this._variableHandles.create(req + "_" + i) : 0
+							if (v.kind == GoReflectKind.Ptr || v.kind == GoReflectKind.UnsafePointer) {
+								if (v.children[0].addr == 0) {
+									return {
+										name: v.name || ("[" + i + "]"),
+										value: "nil <" + v.type + ">",
+										variablesReference: 0
+									}
+								} else if(v.children[0].type == "void") {
+									return {
+										name: v.name || ("[" + i + "]"),
+										value: "void",
+										variablesReference: 0
+									}
+								} else {
+									return {
+										name: v.name || ("[" + i + "]"),
+										value: "<" + v.type + ">",
+										variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(req + "_" + i + "_0") : 0
+									}
+								}
+							} else if(v.kind == GoReflectKind.Slice) {
+								return {
+									name: v.name || ("[" + i + "]"),
+									value: "<" + v.type.substring(7) + ">",
+									variablesReference: this._variableHandles.create(req + "_" + i)
+								}
+							} else if(v.kind == GoReflectKind.Array) {
+								return {
+									name: v.name || ("[" + i + "]"),
+									value: "<" + v.type + ">",
+									variablesReference: this._variableHandles.create(req + "_" + i)
+								}
+							} else if(v.kind == GoReflectKind.String) {
+								return {
+									name: v.name || ("[" + i + "]"),
+									value: v.unreadable ? ("<" + v.unreadable + ">") : ('"' + v.value + '"'), 
+									variablesReference: 0
+								}
+							} else {
+								return {
+									name: v.name || ("[" + i + "]"),
+									value: v.value || ("<" + v.type + ">"),
+									variablesReference: v.children.length > 0 ? this._variableHandles.create(req + "_" + i) : 0
+								}
 							}
 						});
 						console.log(JSON.stringify(variables, null, ' '))
