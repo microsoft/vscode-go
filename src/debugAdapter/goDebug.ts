@@ -291,6 +291,17 @@ class GoDebugSession extends DebugSession {
 		super.disconnectRequest(response, args);
 		console.log("DisconnectResponse");
 	}
+	
+	protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments): void {
+		console.log("ExceptionBreakPointsRequest");
+		// Wow - this is subtle - it appears that this event will always get 
+		// sent during intiail breakpoint initialization even if there are not
+		// user breakpoints - so we use this as the indicator to signal 
+		// that breakpoints have been set and we can continue
+		this.signalInitialBreakpointsSet();
+		this.sendResponse(response);
+		console.log("ExceptionBreakPointsResponse");
+	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
 		console.log("SetBreakPointsRequest")
@@ -326,9 +337,7 @@ class GoDebugSession extends DebugSession {
 		}, err => {
 			this.sendErrorResponse(response, 2002, "Failed to set breakpoint: '{e}'", { e: err.toString() })
 			console.error(err);
-		}).then(() => {
-			this.signalInitialBreakpointsSet();
-		});;
+		});
 	}
 
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
