@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.18",
+  "version": "0.6.20",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -30,6 +30,7 @@
     "vscode.go"
   ],
   "dependencies": {
+    "console-stamp": "^0.2.0",
     "diff-match-patch": "~1.0.0",
     "json-rpc2": "^1.0.2",
     "lodash": "^3.10.1"
