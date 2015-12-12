@@ -58,7 +58,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				var gocode = getBinPath("gocode");
 	
 				// Spawn `gocode` process
-				var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "c" + offset], {}, (err, stdout, stderr) => {
+				var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "c" + offset], {
+					env: {
+						// Unset GOOS and GOARCH for the `gocode` process to ensure that GOHOSTOS and GOHOSTARCH 
+						// are used as the target operating system and architecture. `gocode` is unable to provide 
+						// autocompletion when the Go environment is configured for cross compilation.
+						GOOS: "",
+						GOARCH: ""
+					}
+				}, (err, stdout, stderr) => {
 					try {
 						if (err && (<any>err).code == "ENOENT") {
 							vscode.window.showInformationMessage("The 'gocode' command is not available.  Use 'go get -u github.com/nsf/gocode' to install.");
