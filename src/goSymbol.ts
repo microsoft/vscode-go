@@ -53,7 +53,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 		}
 		var gosyms = getBinPath("go-symbols");
 		return new Promise((resolve, reject) => {
-			var p = cp.execFile(gosyms, args, {}, (err, stdout, stderr) => {
+			var p = cp.execFile(gosyms, args, {maxBuffer: 1024 * 1024}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code == "ENOENT") {
 						vscode.window.showInformationMessage("The 'go-symbols' command is not available.  Use 'go get -u github.com/newhook/go-symbols' to install.");
