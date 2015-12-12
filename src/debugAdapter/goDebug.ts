@@ -184,7 +184,11 @@ class Delve {
 				var client = Client.$create(2345, '127.0.0.1');
 				client.connectSocket((err, conn) => {
 					if (err) return reject(err);
-					resolve(conn);
+					// Add a slight delay to avoid issues on Linux with
+					// Delve failing calls made shortly after connection. 
+					setTimeout(() => 
+						resolve(conn),
+					200);
 				});
 			}
 
