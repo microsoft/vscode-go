@@ -281,8 +281,13 @@ class GoDebugSession extends DebugSession {
 		this.delve.connection.then(() =>
 			this.initialBreakpointsSetPromise
 		).then(() => {
-			// TODO: This isn't quite right - may not want to blindly continue on start.
-			this.continueRequest(response);
+			if(args.stopOnEntry) {
+				this.sendEvent(new StoppedEvent("breakpoint", 0));
+				console.log("StoppedEvent('breakpoint')");
+				this.sendResponse(response);
+			} else {
+				this.continueRequest(response);
+			}
 		}, err => {
 			this.sendErrorResponse(response, 3000, "Failed to continue: '{e}'", { e: err.toString() });
 			console.log("ContinueResponse");

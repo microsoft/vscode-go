@@ -141,8 +141,8 @@
               },
               "stopOnEntry": {
                 "type": "boolean",
-                "description": "[NOT YET WORKING] Automatically stop program after launch.",
-                "default": true
+                "description": "Automatically stop program after launch.",
+                "default": false
               },
               "args": {
                 "type": "array",
