@@ -1,0 +1,34 @@
+language: go
+
+go:
+  - tip
+
+sudo: false
+
+os:
+  - osx
+  - linux
+
+before_install:
+  - if [ $TRAVIS_OS_NAME == "linux" ]; then
+      export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
+      export CODE_DOWNLOAD_URL="https://github.com/bpasero/vscode/releases/download/0.10.4/VSCode-linux-x64.zip";
+      sh -e /etc/init.d/xvfb start;
+      sleep 3;
+    else
+      export CODE_DOWNLOAD_URL="https://github.com/bpasero/vscode/releases/download/0.10.4/VSCode-darwin.zip";
+    fi
+
+install:
+  - npm install
+  - npm run vscode:prepublish
+  - go get -u -v github.com/nsf/gocode
+  - go get -u -v github.com/rogpeppe/godef
+  - go get -u -v github.com/golang/lint/golint
+  - go get -u -v github.com/lukehoban/go-find-references
+  - go get -u -v github.com/lukehoban/go-outline
+  - go get -u -v sourcegraph.com/sqs/goreturns
+  - go get -u -v golang.org/x/tools/cmd/gorename
+
+script:
+  - npm test --silent

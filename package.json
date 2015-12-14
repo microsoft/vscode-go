@@ -24,7 +24,8 @@
   },
   "scripts": {
     "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
-    "compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
+    "compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
+    "test": "node ./node_modules/vscode/bin/test"
   },
   "extensionDependencies": [
     "vscode.go"
@@ -36,7 +37,7 @@
     "lodash": "^3.10.1"
   },
   "devDependencies": {
-    "vscode": "0.10.x",
+    "vscode": "next",
     "fs-extra": "^0.26.0",
     "typescript": "^1.6.2"
   },
