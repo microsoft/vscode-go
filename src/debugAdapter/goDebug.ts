@@ -431,60 +431,62 @@ class GoDebugSession extends DebugSession {
 			});
 		});
 	}
-
-	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
-		console.log("VariablesRequest");
-		var vari = this._variableHandles.get(args.variablesReference);
-		
-		var variables = vari.children.map((v, i) => {
-			if (v.kind == GoReflectKind.Ptr || v.kind == GoReflectKind.UnsafePointer) {
-				if (v.children[0].addr == 0) {
-					return {
-						name: v.name || ("[" + i + "]"),
-						value: "nil <" + v.type + ">",
-						variablesReference: 0
-					}
-				} else if(v.children[0].type == "void") {
-					return {
-						name: v.name || ("[" + i + "]"),
-						value: "void",
-						variablesReference: 0
-					}
-				} else {
-					return {
-						name: v.name || ("[" + i + "]"),
-						value: "<" + v.type + ">",
-						variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(v.children[0]) : 0
-					}
-				}
-			} else if(v.kind == GoReflectKind.Slice) {
+	
+	private convertDebugVariableToProtocolVariable(v: DebugVariable, i: number): DebugProtocol.Variable {
+		if (v.kind == GoReflectKind.Ptr || v.kind == GoReflectKind.UnsafePointer) {
+			if (v.children[0].addr == 0) {
 				return {
 					name: v.name || ("[" + i + "]"),
-					value: "<" + v.type.substring(7) + ">",
-					variablesReference: this._variableHandles.create(v)
+					value: "nil <" + v.type + ">",
+					variablesReference: 0
 				}
-			} else if(v.kind == GoReflectKind.Array) {
+			} else if(v.children[0].type == "void") {
 				return {
 					name: v.name || ("[" + i + "]"),
-					value: "<" + v.type + ">",
-					variablesReference: this._variableHandles.create(v)
-				}
-			} else if(v.kind == GoReflectKind.String) {
-				return {
-					name: v.name || ("[" + i + "]"),
-					value: v.unreadable ? ("<" + v.unreadable + ">") : ('"' + v.value + '"'), 
+					value: "void",
 					variablesReference: 0
 				}
 			} else {
 				return {
 					name: v.name || ("[" + i + "]"),
-					value: v.value || ("<" + v.type + ">"),
-					variablesReference: v.children.length > 0 ? this._variableHandles.create(v) : 0
+					value: "<" + v.type + ">",
+					variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(v.children[0]) : 0
 				}
 			}
-		});
-		console.log(JSON.stringify(variables, null, ' '))
+		} else if(v.kind == GoReflectKind.Slice) {
+			return {
+				name: v.name || ("[" + i + "]"),
+				value: "<" + v.type.substring(7) + ">",
+				variablesReference: this._variableHandles.create(v)
+			}
+		} else if(v.kind == GoReflectKind.Array) {
+			return {
+				name: v.name || ("[" + i + "]"),
+				value: "<" + v.type + ">",
+				variablesReference: this._variableHandles.create(v)
+			}
+		} else if(v.kind == GoReflectKind.String) {
+			return {
+				name: v.name || ("[" + i + "]"),
+				value: v.unreadable ? ("<" + v.unreadable + ">") : ('"' + v.value + '"'), 
+				variablesReference: 0
+			}
+		} else {
+			return {
+				name: v.name || ("[" + i + "]"),
+				value: v.value || ("<" + v.type + ">"),
+				variablesReference: v.children.length > 0 ? this._variableHandles.create(v) : 0
+			}
+		}
+	}
 
+	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
+		console.log("VariablesRequest");
+		var vari = this._variableHandles.get(args.variablesReference);
+		var variables = vari.children.map((v, i) => 
+			this.convertDebugVariableToProtocolVariable(v,i)
+		);
+		console.log(JSON.stringify(variables, null, ' '))
 		response.body = { variables };
 		this.sendResponse(response);
 		console.log("VariablesResponse");
@@ -574,7 +576,8 @@ class GoDebugSession extends DebugSession {
 				console.error("Failed to eval expression: ", JSON.stringify(evalSymbolArgs, null, ' '));
 				return this.sendErrorResponse(response, 2009, "Unable to eval expression: '{e}'", { e: err.toString() });
 			}
-			response.body = { result: variable.value, variablesReference: 0 };
+			let v = this.convertDebugVariableToProtocolVariable(variable, 0);
+			response.body = { result: v.value, variablesReference: v.variablesReference};
 			this.sendResponse(response);
 			console.log("EvaluateResponse");
 		});
