@@ -244,7 +244,7 @@ class Delve {
 
 class GoDebugSession extends DebugSession {
 
-	private _variableHandles: Handles<string>;
+	private _variableHandles: Handles<DebugVariable>;
 	private breakpoints: Map<string, DebugBreakpoint[]>;
 	private debugState: DebuggerState;
 	private delve: Delve;
@@ -253,7 +253,7 @@ class GoDebugSession extends DebugSession {
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
-		this._variableHandles = new Handles<string>();
+		this._variableHandles = new Handles<DebugVariable>();
 		this.debugState = null;
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
@@ -397,116 +397,97 @@ class GoDebugSession extends DebugSession {
 
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
 		console.log("ScopesRequest")
-		var scopes = new Array<Scope>();
-		// Locals includes both locals and arguments
-		scopes.push(new Scope("Local", this._variableHandles.create("local_" + args.frameId), false));
-		// TODO: Let user see package vars and thread local package vars.
-		//       The former in particular is a very large set of variables.
-		//scopes.push(new Scope("Thread", this._variableHandles.create("threadpackage_" + args.frameId), false));
-		//scopes.push(new Scope("Package", this._variableHandles.create("package_" + args.frameId), false));
-		response.body = { scopes };
-		this.sendResponse(response);
-		console.log("ScopesResponse")
+		this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, locals) => {
+			if (err) {
+				console.error("Failed to list local variables.")
+				return this.sendErrorResponse(response, 2005, "Unable to list locals: '{e}'", { e: err.toString() });
+			}
+			console.log(locals);
+			this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, args) => {
+				if (err) {
+					console.error("Failed to list function args.")
+					return this.sendErrorResponse(response, 2006, "Unable to list args: '{e}'", { e: err.toString() });
+				}
+				console.log(args);
+				var vars = args.concat(locals);
+
+				var scopes = new Array<Scope>();
+				let localVariables = {
+					name: "Local",
+					addr: 0,
+					type: "",
+					realType: "",
+					kind: 0,
+					value: "",
+					len: 0,
+					cap: 0,
+					children: vars,
+					unreadable: ""
+				} 
+				scopes.push(new Scope("Local", this._variableHandles.create(localVariables), false));
+				response.body = { scopes };
+				this.sendResponse(response);
+				console.log("ScopesResponse");
+			});
+		});
 	}
 
 	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
 		console.log("VariablesRequest");
-		var req = this._variableHandles.get(args.variablesReference);
-		var parts = req.split('_');
-		var kind = parts[0];
-		var frame = +parts[1];
-		switch (kind) {
-			case "local":
-				this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, locals) => {
-					if (err) {
-						console.error("Failed to list local variables.")
-						return this.sendErrorResponse(response, 2005, "Unable to list locals: '{e}'", { e: err.toString() });
+		var vari = this._variableHandles.get(args.variablesReference);
+		
+		var variables = vari.children.map((v, i) => {
+			if (v.kind == GoReflectKind.Ptr || v.kind == GoReflectKind.UnsafePointer) {
+				if (v.children[0].addr == 0) {
+					return {
+						name: v.name || ("[" + i + "]"),
+						value: "nil <" + v.type + ">",
+						variablesReference: 0
 					}
-					console.log(locals);
-					this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, args) => {
-						if (err) {
-							console.error("Failed to list function args.")
-							return this.sendErrorResponse(response, 2006, "Unable to list args: '{e}'", { e: err.toString() });
-						}
-						console.log(args);
-						var vars = args.concat(locals);
-						for (var i = 2; i < parts.length; i++) {
-							vars = vars[+parts[i]].children;
-						}
-						var variables = vars.map((v, i) => {
-							if (v.kind == GoReflectKind.Ptr || v.kind == GoReflectKind.UnsafePointer) {
-								if (v.children[0].addr == 0) {
-									return {
-										name: v.name || ("[" + i + "]"),
-										value: "nil <" + v.type + ">",
-										variablesReference: 0
-									}
-								} else if(v.children[0].type == "void") {
-									return {
-										name: v.name || ("[" + i + "]"),
-										value: "void",
-										variablesReference: 0
-									}
-								} else {
-									return {
-										name: v.name || ("[" + i + "]"),
-										value: "<" + v.type + ">",
-										variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(req + "_" + i + "_0") : 0
-									}
-								}
-							} else if(v.kind == GoReflectKind.Slice) {
-								return {
-									name: v.name || ("[" + i + "]"),
-									value: "<" + v.type.substring(7) + ">",
-									variablesReference: this._variableHandles.create(req + "_" + i)
-								}
-							} else if(v.kind == GoReflectKind.Array) {
-								return {
-									name: v.name || ("[" + i + "]"),
-									value: "<" + v.type + ">",
-									variablesReference: this._variableHandles.create(req + "_" + i)
-								}
-							} else if(v.kind == GoReflectKind.String) {
-								return {
-									name: v.name || ("[" + i + "]"),
-									value: v.unreadable ? ("<" + v.unreadable + ">") : ('"' + v.value + '"'), 
-									variablesReference: 0
-								}
-							} else {
-								return {
-									name: v.name || ("[" + i + "]"),
-									value: v.value || ("<" + v.type + ">"),
-									variablesReference: v.children.length > 0 ? this._variableHandles.create(req + "_" + i) : 0
-								}
-							}
-						});
-						console.log(JSON.stringify(variables, null, ' '))
+				} else if(v.children[0].type == "void") {
+					return {
+						name: v.name || ("[" + i + "]"),
+						value: "void",
+						variablesReference: 0
+					}
+				} else {
+					return {
+						name: v.name || ("[" + i + "]"),
+						value: "<" + v.type + ">",
+						variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(v.children[0]) : 0
+					}
+				}
+			} else if(v.kind == GoReflectKind.Slice) {
+				return {
+					name: v.name || ("[" + i + "]"),
+					value: "<" + v.type.substring(7) + ">",
+					variablesReference: this._variableHandles.create(v)
+				}
+			} else if(v.kind == GoReflectKind.Array) {
+				return {
+					name: v.name || ("[" + i + "]"),
+					value: "<" + v.type + ">",
+					variablesReference: this._variableHandles.create(v)
+				}
+			} else if(v.kind == GoReflectKind.String) {
+				return {
+					name: v.name || ("[" + i + "]"),
+					value: v.unreadable ? ("<" + v.unreadable + ">") : ('"' + v.value + '"'), 
+					variablesReference: 0
+				}
+			} else {
+				return {
+					name: v.name || ("[" + i + "]"),
+					value: v.value || ("<" + v.type + ">"),
+					variablesReference: v.children.length > 0 ? this._variableHandles.create(v) : 0
+				}
+			}
+		});
+		console.log(JSON.stringify(variables, null, ' '))
 
-						response.body = { variables };
-						this.sendResponse(response);
-						console.log("VariablesResponse");
-					});
-				});
-				break;
-			// case "package":
-			// 	this.delve.call<DebugVariable[]>('ListPackageVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: frame }], (err, vars) => {	
-			// 		console.log(vars);
-			// 		var variables = vars.map((v, i) => ({ 
-			// 			name: v.name,
-			// 			value: v.value,
-			// 			variablesReference: 0
-			// 		}));
-			// 		response.body = { variables };
-			// 		this.sendResponse(response);	
-			// 		console.log("VariablesResponse");			
-			// 	});
-			// 	break;
-			default:
-				console.error("Unknown variable request: " + kind);
-				response.body = { variables: [] };
-				this.sendResponse(response);
-				console.log("VariablesResponse");
-		}
+		response.body = { variables };
+		this.sendResponse(response);
+		console.log("VariablesResponse");
 	}
 
 	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
