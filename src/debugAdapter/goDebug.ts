@@ -2,7 +2,7 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  *--------------------------------------------------------*/
 
-import { DebugSession, InitializedEvent, TerminatedEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source } from './common/debugSession';
+import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source } from './common/debugSession';
 import { Handles } from './common/handles';
 import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname } from 'path';
@@ -246,6 +246,7 @@ class GoDebugSession extends DebugSession {
 
 	private _variableHandles: Handles<DebugVariable>;
 	private breakpoints: Map<string, DebugBreakpoint[]>;
+	private threads: Set<number>;
 	private debugState: DebuggerState;
 	private delve: Delve;
 	private initialBreakpointsSetPromise: Promise<void>;
@@ -254,6 +255,7 @@ class GoDebugSession extends DebugSession {
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
 		this._variableHandles = new Handles<DebugVariable>();
+		this.threads = new Set<number>();
 		this.debugState = null;
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
@@ -356,10 +358,11 @@ class GoDebugSession extends DebugSession {
 				console.error("Failed to get threads.")
 				return this.sendErrorResponse(response, 2003, "Unable to display threads: '{e}'", { e: err.toString() });
 			}
+			console.log(goroutines);
 			var threads = goroutines.map(goroutine =>
 				new Thread(
 					goroutine.id,
-					goroutine.currentLoc.function ? goroutine.currentLoc.function.name : (goroutine.currentLoc.file + "@" + goroutine.currentLoc.line)
+					goroutine.userCurrentLoc.function ? goroutine.userCurrentLoc.function.name : (goroutine.userCurrentLoc.file + "@" + goroutine.userCurrentLoc.line)
 				)
 			);
 			response.body = { threads };
@@ -491,6 +494,40 @@ class GoDebugSession extends DebugSession {
 		this.sendResponse(response);
 		console.log("VariablesResponse");
 	}
+	
+	private handleReenterDebug(reason: string): void {
+		if (this.debugState.exited) {
+			this.sendEvent(new TerminatedEvent());
+			console.log("TerminatedEvent");
+		} else {
+			// [TODO] Can we avoid doing this? https://github.com/Microsoft/vscode/issues/40#issuecomment-161999881
+			this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
+				if (err) {
+					console.error("Failed to get threads.")
+				}
+				// Assume we need to stop all the threads we saw before...
+				let needsToBeStopped = new Set<number>();
+				this.threads.forEach(id => needsToBeStopped.add(id));
+				for(var goroutine of goroutines) {
+					// ...but delete from list of threads to stop if we still see it
+					needsToBeStopped.delete(goroutine.id);
+					if(!this.threads.has(goroutine.id)) {
+						// Send started event if it's new
+						this.sendEvent(new ThreadEvent('started', goroutine.id));
+					}
+					this.threads.add(goroutine.id);
+				}
+				// Send existed event if it's no longer there
+				needsToBeStopped.forEach(id => {
+					this.sendEvent(new ThreadEvent('exited', id))
+					this.threads.delete(id);
+				});
+				
+				this.sendEvent(new StoppedEvent(reason, this.debugState.currentGoroutine.id));
+				console.log("StoppedEvent('" + reason + "')");
+			});
+		}
+	}
 
 	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
 		console.log("ContinueRequest")
@@ -499,14 +536,8 @@ class GoDebugSession extends DebugSession {
 				console.error("Failed to continue.")
 			}
 			console.log(state);
-			if (state.exited) {
-				this.sendEvent(new TerminatedEvent());
-				console.log("TerminatedEvent");
-			} else {
-				this.debugState = state;
-				this.sendEvent(new StoppedEvent("breakpoint", this.debugState.currentGoroutine.id));
-				console.log("StoppedEvent('breakpoint')");
-			}
+			this.debugState = state;
+			this.handleReenterDebug("breakpoint")
 		});
 		this.sendResponse(response);
 		console.log("ContinueResponse");
@@ -519,14 +550,8 @@ class GoDebugSession extends DebugSession {
 				console.error("Failed to next.")
 			}
 			console.log(state);
-			if (state.exited) {
-				this.sendEvent(new TerminatedEvent());
-				console.log("TerminatedEvent");
-			} else {
-				this.debugState = state;
-				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
-				console.log("StoppedEvent('step')");
-			}
+			this.debugState = state;
+			this.handleReenterDebug("step");
 		});
 		this.sendResponse(response);
 		console.log("NextResponse")
@@ -539,14 +564,8 @@ class GoDebugSession extends DebugSession {
 				console.error("Failed to step.")
 			}
 			console.log(state);
-			if (state.exited) {
-				this.sendEvent(new TerminatedEvent());
-				console.log("TerminatedEvent");
-			} else {
-				this.debugState = state;
-				this.sendEvent(new StoppedEvent("step", this.debugState.currentGoroutine.id));
-				console.log("StoppedEvent('step')");
-			}
+			this.debugState = state;
+			this.handleReenterDebug("step");
 		});
 		this.sendResponse(response);
 		console.log("StepInResponse")

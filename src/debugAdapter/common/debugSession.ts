@@ -113,6 +113,21 @@ export class TerminatedEvent extends Event implements DebugProtocol.TerminatedEv
 	}
 }
 
+export class ThreadEvent extends Event implements DebugProtocol.ThreadEvent {
+	body: {
+		reason: string,
+		threadId: number
+	};
+
+	public constructor(reason: string, threadId: number) {
+		super('thread');
+		this.body = {
+			reason: reason,
+			threadId: threadId
+		};
+	}
+}
+
 export class OutputEvent extends Event implements DebugProtocol.OutputEvent {
 	body: {
 		category: string,
