@@ -435,49 +435,42 @@ class GoDebugSession extends DebugSession {
 		});
 	}
 	
-	private convertDebugVariableToProtocolVariable(v: DebugVariable, i: number): DebugProtocol.Variable {
+	private convertDebugVariableToProtocolVariable(v: DebugVariable, i: number): {result: string; variablesReference: number; } {
 		if (v.kind == GoReflectKind.Ptr || v.kind == GoReflectKind.UnsafePointer) {
 			if (v.children[0].addr == 0) {
 				return {
-					name: v.name || ("[" + i + "]"),
-					value: "nil <" + v.type + ">",
+					result: "nil <" + v.type + ">",
 					variablesReference: 0
 				}
 			} else if(v.children[0].type == "void") {
 				return {
-					name: v.name || ("[" + i + "]"),
-					value: "void",
+					result: "void",
 					variablesReference: 0
 				}
 			} else {
 				return {
-					name: v.name || ("[" + i + "]"),
-					value: "<" + v.type + ">",
+					result: "<" + v.type + ">",
 					variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(v.children[0]) : 0
 				}
 			}
 		} else if(v.kind == GoReflectKind.Slice) {
 			return {
-				name: v.name || ("[" + i + "]"),
-				value: "<" + v.type.substring(7) + ">",
+				result: "<" + v.type.substring(7) + ">",
 				variablesReference: this._variableHandles.create(v)
 			}
 		} else if(v.kind == GoReflectKind.Array) {
 			return {
-				name: v.name || ("[" + i + "]"),
-				value: "<" + v.type + ">",
+				result: "<" + v.type + ">",
 				variablesReference: this._variableHandles.create(v)
 			}
 		} else if(v.kind == GoReflectKind.String) {
 			return {
-				name: v.name || ("[" + i + "]"),
-				value: v.unreadable ? ("<" + v.unreadable + ">") : ('"' + v.value + '"'), 
+				result: v.unreadable ? ("<" + v.unreadable + ">") : ('"' + v.value + '"'), 
 				variablesReference: 0
 			}
 		} else {
 			return {
-				name: v.name || ("[" + i + "]"),
-				value: v.value || ("<" + v.type + ">"),
+				result: v.value || ("<" + v.type + ">"),
 				variablesReference: v.children.length > 0 ? this._variableHandles.create(v) : 0
 			}
 		}
@@ -486,9 +479,26 @@ class GoDebugSession extends DebugSession {
 	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
 		console.log("VariablesRequest");
 		var vari = this._variableHandles.get(args.variablesReference);
-		var variables = vari.children.map((v, i) => 
-			this.convertDebugVariableToProtocolVariable(v,i)
-		);
+		let variables;
+		if(vari.kind == GoReflectKind.Array || vari.kind == GoReflectKind.Map) {
+			variables = vari.children.map((v, i) => {
+				let { result, variablesReference} = this.convertDebugVariableToProtocolVariable(v,i)
+				return {
+					name: "[" + i + "]",
+					value: result,
+					variablesReference
+				}
+			});	
+		} else {
+			variables = vari.children.map((v, i) => {
+				let { result, variablesReference} = this.convertDebugVariableToProtocolVariable(v,i)
+				return {
+					name: v.name,
+					value: result,
+					variablesReference
+				}
+			});	
+		}
 		console.log(JSON.stringify(variables, null, ' '))
 		response.body = { variables };
 		this.sendResponse(response);
@@ -595,8 +605,7 @@ class GoDebugSession extends DebugSession {
 				console.error("Failed to eval expression: ", JSON.stringify(evalSymbolArgs, null, ' '));
 				return this.sendErrorResponse(response, 2009, "Unable to eval expression: '{e}'", { e: err.toString() });
 			}
-			let v = this.convertDebugVariableToProtocolVariable(variable, 0);
-			response.body = { result: v.value, variablesReference: v.variablesReference};
+			response.body = this.convertDebugVariableToProtocolVariable(variable, 0);
 			this.sendResponse(response);
 			console.log("EvaluateResponse");
 		});
