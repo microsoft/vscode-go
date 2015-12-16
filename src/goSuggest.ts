@@ -6,7 +6,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import path = require('path');
+import { dirname, basename } from 'path';
 import { getBinPath } from './goPath'
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
@@ -35,7 +35,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
 		return this.ensureGoCodeConfigured().then(() => {
-			return new Promise((resolve, reject) => {
+			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 				var filename = document.fileName;
 	
 				if (document.lineAt(position.line).text.match(/^\s*\/\//)) {
@@ -73,7 +73,21 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						}
 						if (err) return reject(err);
 						var results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
-						if (!results[1]) return resolve([]);
+						if (!results[1]) {
+							// "Smart Snippet" for package clause
+							// TODO: Factor this out into a general mechanism
+							if(!document.getText().match(/package\s+(\w+)/)) {
+								let defaultPackageName = 
+									basename(document.fileName) == "main.go"
+									? "main"
+									: basename(dirname(document.fileName));
+								let packageItem = new vscode.CompletionItem("package " + defaultPackageName );
+								packageItem.kind = vscode.CompletionItemKind.Snippet;
+								packageItem.insertText = "package " + defaultPackageName + "\r\n\r\n";
+								return resolve([packageItem]);
+							}
+							return resolve([]);
+						}
 						var suggestions = results[1].map(suggest => {
 							var item = new vscode.CompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class);

@@ -45,7 +45,7 @@ export function addImport(arg: string) {
 			return vscode.window.activeTextEditor.edit(editBuilder => {
 				editBuilder.insert(new vscode.Position(lastSingleImport + 1, 0), 'import "' + imp + '"\n');
 			});
-		} else if(pkg.start >= 0) {
+		} else if(pkg && pkg.start >= 0) {
 			// There are no import declarations, but there is a package declaration
 			return vscode.window.activeTextEditor.edit(editBuilder => {
 				editBuilder.insert(new vscode.Position(pkg.start + 1, 0), '\nimport (\n\t"' + imp + '"\n)\n');
