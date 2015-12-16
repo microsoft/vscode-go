@@ -32,9 +32,11 @@ export function parseFilePrelude(text: string): Prelude {
 			ret.imports.push({kind: "single", start: i, end: i});
 		}
 		if (line.match(/^(\s)*\)/)) {
-			ret.imports[ret.imports.length - 1].end = i;
+			if(ret.imports[ret.imports.length - 1].end == -1) {
+				ret.imports[ret.imports.length - 1].end = i;
+			}
 		}
-		if (line.match(/^(\s)(func|const|type|var)/)) {
+		if (line.match(/^(\s)*(func|const|type|var)/)) {
 			break;
 		}
 	}
