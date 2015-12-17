@@ -31,6 +31,11 @@ function askUserForImport(): Thenable<string> {
 export function addImport(arg: string) {
 	let p = arg ? Promise.resolve(arg) : askUserForImport();
 	p.then(imp => {
+		// Import name wasn't provided
+		if (imp == undefined) {
+			return null;
+		}
+
 		let {imports, pkg} = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
 		let multis = imports.filter(x => x.kind == "multi");
 		if (multis.length > 0) {
