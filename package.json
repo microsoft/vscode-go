@@ -120,7 +120,7 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": ".",
+            "program": "${workspaceRoot}/.",
             "env": {},
             "args": []
           }
