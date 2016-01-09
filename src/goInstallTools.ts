@@ -20,7 +20,14 @@ export function setupGoPathAndOfferToInstallTools() {
 
 	var gopath = vscode.workspace.getConfiguration('go')['gopath'];
 	if (gopath) {
-		process.env["GOPATH"] = gopath;
+		var gopathbak = process.env["GOPATHBAK"];
+		if(gopathbak){
+			
+		}else{
+			process.env["GOPATHBAK"] = process.env["GOPATH"];
+			gopathbak = process.env["GOPATHBAK"];
+		}
+		process.env["GOPATH"] = (gopathbak.charAt(gopathbak.length - 1) == ':' ? gopathbak:gopathbak + ":")+gopath;
 	}
 
 	if (!process.env["GOPATH"]) {

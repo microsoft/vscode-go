@@ -48,7 +48,8 @@
     "onCommand:go.gopath",
     "onCommand:go.test.cursor",
     "onCommand:go.test.package",
-    "onCommand:go.test.file"
+    "onCommand:go.test.file",
+	"onCommand:go.gopath.refresh"
   ],
   "main": "./out/src/goMain",
   "contributes": {
@@ -101,7 +102,12 @@
         "command": "go.import.add",
         "title": "Go: Add Import",
         "description": "Add an import declaration"
-      }
+      },
+	  {
+		"command": "go.gopath.refresh",
+        "title": "Go: Refresh GOPATH",
+        "description": "Load currently GOPATH"
+	  }
     ],
     "debuggers": [
       {
