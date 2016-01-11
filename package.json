@@ -49,7 +49,8 @@
     "onCommand:go.test.cursor",
     "onCommand:go.test.package",
     "onCommand:go.test.file",
-	"onCommand:go.gopath.refresh"
+	"onCommand:go.gopath.refresh",
+	"onCommand:go.build"
   ],
   "main": "./out/src/goMain",
   "contributes": {
@@ -107,6 +108,11 @@
 		"command": "go.gopath.refresh",
         "title": "Go: Refresh GOPATH",
         "description": "Load currently GOPATH"
+	  },
+	  {
+		"command": "go.build",
+        "title": "Go: Build",
+        "description": "Build currently project"
 	  }
     ],
     "debuggers": [
@@ -250,7 +256,17 @@
           "type": "string",
           "default": "30s",
           "description": "Specifies the timeout for go test in ParseDuration format."
-        }
+        },
+		"go.outfile":{
+		  "type": "string",
+          "default": "a.out",
+          "description": "Specifies the name of the execute file"
+		},
+		"go.mainfolder":{
+		  "type": "string",
+          "default": ".",
+          "description": "Specifies the folder path of the main function"
+		}
       }
     }
   }

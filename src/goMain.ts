@@ -22,6 +22,7 @@ import { GO_MODE } from './goMode'
 import { showHideStatus } from './goStatus'
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest'
 import { addImport } from './goImport'
+import {buildProject} from './util'
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -43,12 +44,22 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
 		
+
+		
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.gopath.refresh",()=>{
 		setupGoPathAndOfferToInstallTools();
 		var gopath = process.env["GOPATH"];
 		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
 	}));
 
+	ctx.subscriptions.push(vscode.commands.registerCommand("go.build",()=>{
+		var outfile = vscode.workspace.getConfiguration('go')['outfile'];
+		var mainfolder = vscode.workspace.getConfiguration('go')['mainfolder'];
+		var rootPath = vscode.workspace.rootPath;
+		var result = buildProject(outfile,rootPath+"/"+mainfolder);
+		// vscode.window.showInformationMessage("Begin Build ...");
+	}));	
+	
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.gopath", () => {
 		var gopath = process.env["GOPATH"];
 		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
