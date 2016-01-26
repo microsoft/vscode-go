@@ -36,6 +36,7 @@ export function setupGoPathAndOfferToInstallTools() {
 	// Offer to install any missing tools
 	var tools: { [key: string]: string } = {
 		gorename: "golang.org/x/tools/cmd/gorename",
+		gopkgs: "github.com/tpng/gopkgs",
 		gocode: "github.com/nsf/gocode",
 		goreturns: "sourcegraph.com/sqs/goreturns",
 		godef: "github.com/rogpeppe/godef",
