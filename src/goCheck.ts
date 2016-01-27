@@ -44,9 +44,9 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 						ret[ret.length-1].msg += "\n" + lines[i];
 						continue;
 					}
-					var match = /([^:]*):(\d+)(:\d+)?: (.*)/.exec(lines[i]);
+					var match = /^([^:]*: )?([^:]*):(\d+)(:\d+)?: (.*)$/.exec(lines[i]);
 					if (!match) continue;
-					var [_, file, lineStr, charStr, msg] = match;
+					var [_, _, file, lineStr, charStr, msg] = match;
 					var line = +lineStr;
 					ret.push({ file: path.resolve(cwd, file), line, msg, severity: "error" });
 				}

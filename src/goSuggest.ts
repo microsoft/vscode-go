@@ -108,7 +108,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			}
 			var gocode = getBinPath("gocode");
 			cp.execFile(gocode, ["set", "propose-builtins", "true"], {}, (err, stdout, stderr) => {
-				resolve();
+				cp.execFile(gocode, ["set", "autobuild", "true"], {}, (err, stdout, stderr) => {
+					resolve();
+				});
 			});
 		});
 	}
