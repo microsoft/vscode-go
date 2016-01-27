@@ -6,14 +6,14 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getGoRuntimePath } from './goPath'
+import { getBinPath } from './goPath'
 import { parseFilePrelude } from './util'
 
 export function listPackages(): Thenable<string[]> {
 	return new Promise<string[]>((resolve, reject) => {
-		cp.execFile(getGoRuntimePath(), ["list", "all"], (err, stdout, stderr) => {
+		cp.execFile(getBinPath("gopkgs"), [], (err, stdout, stderr) => {
 			if (err && (<any>err).code == "ENOENT") {
-				vscode.window.showInformationMessage("The 'go' compiler is not available.  Install Go from http://golang.org/dl/.");
+				vscode.window.showInformationMessage("The 'gopkgs' command is not available.  Use 'go get github.com/tpng/gopkgs' to install.");
 				return reject();
 			}
 			var lines = stdout.toString().split('\n');
