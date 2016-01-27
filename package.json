@@ -37,7 +37,7 @@
     "lodash": "^3.10.1"
   },
   "devDependencies": {
-    "vscode": "next",
+    "vscode": "^0.10.7",
     "fs-extra": "^0.26.0",
     "typescript": "^1.6.2"
   },

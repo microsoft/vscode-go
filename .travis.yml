@@ -12,11 +12,8 @@ os:
 before_install:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
       export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
-      export CODE_DOWNLOAD_URL="https://github.com/bpasero/vscode/releases/download/0.10.4/VSCode-linux-x64.zip";
       sh -e /etc/init.d/xvfb start;
       sleep 3;
-    else
-      export CODE_DOWNLOAD_URL="https://github.com/bpasero/vscode/releases/download/0.10.4/VSCode-darwin.zip";
     fi
 
 install:
