@@ -75,7 +75,12 @@ suite("Go Extension Tests", () => {
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expected]) => 
 				provider.provideCompletionItems(textDocument, position, null).then(items => {
-					assert.deepEqual(expected, items.map(x => x.label));
+					let labels = items.map(x => x.label);
+					for(let entry of expected) {
+						if(labels.indexOf(entry) < 0) {
+							assert.fail("", entry, "missing expected item in competion list");
+						}
+					}
 				})
 			);
 			return Promise.all(promises);
