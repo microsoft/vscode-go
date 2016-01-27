@@ -62,7 +62,7 @@ In addition to integrated editing features, the extension also provides several 
 
 ### _Optional_: Debugging
 
-To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/wiki/Building) for full details.  This is not yet supported on Windows, and on OS X it requires creating a self-signed cert to sign the `dlv` binary.
+To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/wiki/Building) for full details.  On OS X it requires creating a self-signed cert to sign the `dlv` binary.
 
 Once this is installed, go to the Code debug viewlet and select the configuration gear, placing the following in your launch.json:
 
