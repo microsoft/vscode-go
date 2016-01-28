@@ -68,14 +68,14 @@ Once this is installed, go to the Code debug viewlet and select the configuratio
 
 ```json
 {
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Launch main.go",
+			"name": "Launch",
 			"type": "go",
 			"request": "launch",
 			"mode": "debug",
-			"program": ".",
+			"program": "${workspaceRoot}",
 			"env": {},
 			"args": []
 		}

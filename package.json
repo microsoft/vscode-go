@@ -117,11 +117,11 @@
         "runtime": "node",
         "initialConfigurations": [
           {
-            "name": "Launch main.go",
+            "name": "Launch",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceRoot}/.",
+            "program": "${workspaceRoot}",
             "env": {},
             "args": []
           }
