@@ -65,7 +65,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testCurrentFile(goConfig['testTimeout']);
 	}));
-	
+
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.import.add", (arg: string) => {
 		return addImport(typeof arg == "string" ? arg : null);
 	}));

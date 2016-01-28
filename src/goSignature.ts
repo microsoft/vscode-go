@@ -20,7 +20,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
 		return definitionLocation(document, callerPos).then(res => {
-			if(res.line == callerPos.line) {
+			if (res.line == callerPos.line) {
 				// This must be a function definition
 				return null;
 			}
@@ -31,7 +31,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			let funcName = text.substring(0, nameEnd);
 			var sig = text.substring(sigStart);
 			let si = new SignatureInformation(funcName + sig, res.doc);
-			si.parameters = this.parameters(sig).map(paramText => 
+			si.parameters = this.parameters(sig).map(paramText =>
 				new ParameterInformation(paramText)
 			);
 			result.signatures = [si];
@@ -56,7 +56,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		var currentLine = document.lineAt(position.line).text.substring(0, position.character);
 		var parenBalance = 0;
 		var commas = [];
-		for (var char = position.character; char >=0 ; char--) {
+		for (var char = position.character; char >= 0; char--) {
 			switch (currentLine[char]) {
 				case '(':
 					parenBalance--;
@@ -67,8 +67,8 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 						};
 					}
 					break;
-				case ')': 
-					parenBalance++; 
+				case ')':
+					parenBalance++;
 					break;
 				case ',':
 					if (parenBalance == 0) {
@@ -78,33 +78,33 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		}
 		return null;
 	}
-	
+
 	private parameters(signature: string): string[] {
 		// (foo, bar string, baz number) (string, string)
 		var ret: string[] = [];
 		var parenCount = 0;
 		var lastStart = 1;
-		for(var i = 1; i < signature.length; i++) {
-			switch(signature[i]) {
+		for (var i = 1; i < signature.length; i++) {
+			switch (signature[i]) {
 				case '(':
 					parenCount++;
 					break;
 				case ')':
 					parenCount--;
-					if(parenCount < 0) {
-						if(i > lastStart) {
+					if (parenCount < 0) {
+						if (i > lastStart) {
 							ret.push(signature.substring(lastStart, i));
 						}
-						return ret;	
+						return ret;
 					}
 					break;
 				case ',':
-					if(parenCount == 0) {
+					if (parenCount == 0) {
 						ret.push(signature.substring(lastStart, i));
-						lastStart = i+2;
+						lastStart = i + 2;
 					}
 					break;
-			}	
+			}
 		}
 		return null;
 	}

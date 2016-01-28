@@ -57,7 +57,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 		"type": vscode.SymbolKind.Interface,
 		"function": vscode.SymbolKind.Function
 	}
-	
+
 	private convertToCodeSymbols(document: vscode.TextDocument, decls: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName: string): void {
 		decls.forEach(decl => {
 			let symbolInfo = new vscode.SymbolInformation(
