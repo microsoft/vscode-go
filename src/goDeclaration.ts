@@ -15,6 +15,7 @@ export interface GoDefinitionInformtation {
 	line: number;
 	col: number;
 	lines: string[];
+	doc: string;
 }
 
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position): Promise<GoDefinitionInformtation> {
@@ -34,16 +35,40 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				if (err) return resolve(null);
 				var result = stdout.toString();
 				var lines = result.split('\n');
-				// TODO: Goto def on a package name import will return juts a plain
-				// path to a folder here - can we go to a folder?
 				var match = /(.*):(\d+):(\d+)/.exec(lines[0]);
-				if (!match) return resolve(null);
+				if (!match) {
+					// TODO: Gotodef on pkg name:
+					// /usr/local/go/src/html/template\n
+					return resolve(null);
+				}
 				var [_, file, line, col] = match;
-				return resolve({
-					file: file,
-					line: +line - 1,
-					col: + col - 1,
-					lines: lines
+				var signature = lines[1];
+				var godoc = getBinPath("godoc");
+				var pkgPath = path.dirname(file)
+				cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
+					if (err && (<any>err).code == "ENOENT") {
+						vscode.window.showInformationMessage("The 'godoc' command is not available.");
+					}
+					var godocLines = stdout.toString().split('\n');
+					var doc = "";
+					var sigName = signature.substring(0, signature.indexOf(' '));
+					var sigParams = signature.substring(signature.indexOf(' func') + 5);
+					var searchSignature = "func " + sigName + sigParams;
+					for(var i = 0; i < godocLines.length; i++) {
+						if(godocLines[i] == searchSignature) {
+							while(godocLines[++i].startsWith('    ')) {
+								doc += godocLines[i].substring(4) + '\n';
+							}
+							break;
+						}
+					}
+					return resolve({
+						file: file,
+						line: +line - 1,
+						col: + col - 1,
+						lines,
+						doc
+					});	
 				});
 			} catch (e) {
 				reject(e);

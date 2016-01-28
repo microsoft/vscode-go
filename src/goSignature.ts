@@ -30,7 +30,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			let sigStart = nameEnd + 5; // " func"
 			let funcName = text.substring(0, nameEnd);
 			var sig = text.substring(sigStart);
-			let si = new SignatureInformation(funcName + sig, "");
+			let si = new SignatureInformation(funcName + sig, res.doc);
 			si.parameters = this.parameters(sig).map(paramText => 
 				new ParameterInformation(paramText)
 			);
