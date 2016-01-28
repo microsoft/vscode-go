@@ -33,11 +33,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
-	ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(),"("));
+	ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), "(", ","));
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
-	
+
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
@@ -99,7 +99,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 	});
 
-	if(vscode.window.activeTextEditor) {
+	if (vscode.window.activeTextEditor) {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		runBuilds(vscode.window.activeTextEditor.document, goConfig);
 	}
@@ -187,7 +187,7 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 				// Catch any errors and ignore so that we still trigger 
 				// the file save.
 			});
-		} 
+		}
 		formatPromise.then(() => {
 			runBuilds(document, goConfig);
 		});

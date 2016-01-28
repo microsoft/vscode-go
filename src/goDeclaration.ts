@@ -36,13 +36,13 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				var lines = result.split('\n');
 				// TODO: Goto def on a package name import will return juts a plain
 				// path to a folder here - can we go to a folder?
-				var match = /(.*)(:(\d+):(\d+))?/.exec(lines[0]);
+				var match = /(.*):(\d+):(\d+)/.exec(lines[0]);
 				if (!match) return resolve(null);
 				var [_, file, line, col] = match;
 				return resolve({
-					file: file, 
+					file: file,
 					line: +line - 1,
-					col: + col - 1, 
+					col: + col - 1,
 					lines: lines
 				});
 			} catch (e) {

@@ -14,20 +14,29 @@ import { definitionLocation } from "./goDeclaration"
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
-		let parenthesesPosition = this.lastParentheses(document, position);
-		if (parenthesesPosition == null) {
+		let theCall = this.walkBackwardsToBeginningOfCall(document, position);
+		if (theCall == null) {
 			return null;
 		}
-		let callerPos = this.previousTokenPosition(document, parenthesesPosition);
+		let callerPos = this.previousTokenPosition(document, theCall.openParen);
 		return definitionLocation(document, callerPos).then(res => {
+			if(res.line == callerPos.line) {
+				// This must be a function definition
+				return null;
+			}
 			let result = new SignatureHelp();
 			let text = res.lines[1];
 			let nameEnd = text.indexOf(" ");
-			let sigStart = nameEnd + 5;
-			let si = new SignatureInformation(text.substring(0, nameEnd) + text.substring(sigStart),"");
+			let sigStart = nameEnd + 5; // " func"
+			let funcName = text.substring(0, nameEnd);
+			var sig = text.substring(sigStart);
+			let si = new SignatureInformation(funcName + sig, "");
+			si.parameters = this.parameters(sig).map(paramText => 
+				new ParameterInformation(paramText)
+			);
 			result.signatures = [si];
 			result.activeSignature = 0;
-			result.activeParameter = 0;
+			result.activeParameter = Math.min(theCall.commas.length, si.parameters.length - 1);
 			return result;
 		});
 	}
@@ -43,15 +52,61 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		return null;
 	}
 
-	private lastParentheses(document: TextDocument, position: Position): Position {
-		// TODO: handle double '(('
+	private walkBackwardsToBeginningOfCall(document: TextDocument, position: Position): { openParen: Position, commas: Position[] } {
 		var currentLine = document.lineAt(position.line).text.substring(0, position.character);
-		var lastIndex = currentLine.lastIndexOf("(");
-
-		if (lastIndex < 0)
-			return null;
-
-		return new Position(position.line, lastIndex);
+		var parenBalance = 0;
+		var commas = [];
+		for (var char = position.character; char >=0 ; char--) {
+			switch (currentLine[char]) {
+				case '(':
+					parenBalance--;
+					if (parenBalance < 0) {
+						return {
+							openParen: new Position(position.line, char),
+							commas: commas
+						};
+					}
+					break;
+				case ')': 
+					parenBalance++; 
+					break;
+				case ',':
+					if (parenBalance == 0) {
+						commas.push(new Position(position.line, char));
+					}
+			}
+		}
+		return null;
+	}
+	
+	private parameters(signature: string): string[] {
+		// (foo, bar string, baz number) (string, string)
+		var ret: string[] = [];
+		var parenCount = 0;
+		var lastStart = 1;
+		for(var i = 1; i < signature.length; i++) {
+			switch(signature[i]) {
+				case '(':
+					parenCount++;
+					break;
+				case ')':
+					parenCount--;
+					if(parenCount < 0) {
+						if(i > lastStart) {
+							ret.push(signature.substring(lastStart, i));
+						}
+						return ret;	
+					}
+					break;
+				case ',':
+					if(parenCount == 0) {
+						ret.push(signature.substring(lastStart, i));
+						lastStart = i+2;
+					}
+					break;
+			}	
+		}
+		return null;
 	}
 
 }
