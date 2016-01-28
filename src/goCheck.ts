@@ -1,5 +1,6 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
 'use strict';
@@ -22,13 +23,14 @@ export interface ICheckResult {
 	severity: string;
 }
 
-export function check(filename: string, buildOnSave = true, lintOnSave = true, vetOnSave = true): Promise<ICheckResult[]> {
-	var gobuild = !buildOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
-		var tmppath = path.normalize(path.join(os.tmpdir(), "go-code-check"))
-		var cwd = path.dirname(filename)
-		var args = ["build", "-o", tmppath, "."];
+export function check(filename: string, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+	var gobuild = !goConfig['buildOnSave'] ? Promise.resolve([]) : new Promise((resolve, reject) => {
+		var buildFlags = goConfig['buildFlags'] || [];
+		var tmppath = path.normalize(path.join(os.tmpdir(), "go-code-check"));
+		var cwd = path.dirname(filename);
+		var args = ["build", "-o", tmppath, ...buildFlags, "."];
 		if (filename.match(/_test.go$/i)) {
-			args = ['test', '-copybinary', '-o', tmppath, '-c', '.']
+			args = ['test', '-copybinary', '-o', tmppath, '-c', '.'];
 		}
 		cp.execFile(getGoRuntimePath(), args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
@@ -43,9 +45,9 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 						ret[ret.length-1].msg += "\n" + lines[i];
 						continue;
 					}
-					var match = /([^:]*):(\d+)(:\d+)?: (.*)/.exec(lines[i]);
+					var match = /^([^:]*: )?([^:]*):(\d+)(:\d+)?: (.*)$/.exec(lines[i]);
 					if (!match) continue;
-					var [_, file, lineStr, charStr, msg] = match;
+					var [_, _, file, lineStr, charStr, msg] = match;
 					var line = +lineStr;
 					ret.push({ file: path.resolve(cwd, file), line, msg, severity: "error" });
 				}
@@ -56,10 +58,11 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 		});
 	});
 
-	var golint = !lintOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
-		var cwd = path.dirname(filename)
+	var golint = !goConfig['lintOnSave'] ? Promise.resolve([]) : new Promise((resolve, reject) => {
+		var cwd = path.dirname(filename);
 		var golint = getBinPath("golint");
-		cp.execFile(golint, [filename], { cwd: cwd }, (err, stdout, stderr) => {
+		var lintFlags = goConfig['lintFlags'] || [];
+		cp.execFile(golint, [...lintFlags, filename], { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
 					vscode.window.showInformationMessage("The 'golint' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install.");
@@ -81,9 +84,10 @@ export function check(filename: string, buildOnSave = true, lintOnSave = true, v
 		});
 	});
 
-	var govet = !vetOnSave ? Promise.resolve([]) : new Promise((resolve, reject) => {
-		var cwd = path.dirname(filename)
-		cp.execFile(getGoRuntimePath(), ["tool", "vet", filename], { cwd: cwd }, (err, stdout, stderr) => {
+	var govet = !goConfig['vetOnSave'] ? Promise.resolve([]) : new Promise((resolve, reject) => {
+		var cwd = path.dirname(filename);
+		var vetFlags = goConfig['vetFlags'] || [];
+		cp.execFile(getGoRuntimePath(), ["tool", "vet", ...vetFlags, filename], { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code == "ENOENT") {
 					vscode.window.showInformationMessage("The 'go tool vet' compiler is not available.  Install Go from http://golang.org/dl/.");

@@ -14,6 +14,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Rename (using `gorename`)
 - Build-on-save (using `go build` and `go test`)
 - Format (using `goreturns` or `goimports` or `gofmt`)
+- Add Imports (using `gopkgs`)
 - [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
@@ -39,6 +40,9 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.buildOnSave": true,
 	"go.lintOnSave": true,
 	"go.vetOnSave": true,
+	"go.buildFlags": [],
+	"go.lintFlags": [],
+	"go.vetFlags": [],
 	"go.formatOnSave": false,
 	"go.formatTool": "goreturns",
 	"go.goroot": "/usr/local/go",
@@ -46,9 +50,19 @@ The following Visual Studio Code settings are available for the Go extension.  T
 }
 ```
 
+### Commands
+
+In addition to integrated editing features, the extension also provides several commands in the Command Palette for working with Go files:
+
+* `Go: Add Import` to add an import from the list of pacakges in your Go context
+* `Go: Current GOPATH` to see your currently configured GOPATH
+* `Go: Run test at cursor` to run a test at the current cursor position in the active document
+* `Go: Run tests in current package` to run all tests in the pacakge containing the active document 
+* `Go: Run tests in current file` to run all tests in the current active document
+
 ### _Optional_: Debugging
 
-To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/wiki/Building) for full details.  This is not yet supported on Windows, and on OS X it requires creating a self-signed cert to sign the `dlv` binary.
+To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/wiki/Building) for full details.  On OS X it requires creating a self-signed cert to sign the `dlv` binary.
 
 Once this is installed, go to the Code debug viewlet and select the configuration gear, placing the following in your launch.json:
 
@@ -113,6 +127,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - go-outline: `go get -u -v github.com/lukehoban/go-outline`
 - goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
 - gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
+- gopkgs: `go get -u -v github.com/tpng/gopkgs`
 
 To install them just paste and run:
 ```bash
@@ -123,6 +138,7 @@ go get -u -v github.com/lukehoban/go-find-references
 go get -u -v github.com/lukehoban/go-outline
 go get -u -v sourcegraph.com/sqs/goreturns
 go get -u -v golang.org/x/tools/cmd/gorename
+go get -u -v github.com/tpng/gopkgs
 ```
 
 And for debugging:

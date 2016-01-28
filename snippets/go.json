@@ -1,9 +1,5 @@
 {
 	".source.go": {
-		"package clause": {
-			"prefix": "pkg",
-			"body": "package ${1:name}"
-		},
 		"single import": {
 			"prefix": "im",
 			"body": "import \"${1:package}\""

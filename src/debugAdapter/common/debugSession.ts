@@ -1,5 +1,6 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
 import {V8Protocol, Response, Event} from './v8Protocol';
@@ -110,6 +111,21 @@ export class InitializedEvent extends Event implements DebugProtocol.Initialized
 export class TerminatedEvent extends Event implements DebugProtocol.TerminatedEvent {
 	public constructor() {
 		super('terminated');
+	}
+}
+
+export class ThreadEvent extends Event implements DebugProtocol.ThreadEvent {
+	body: {
+		reason: string,
+		threadId: number
+	};
+
+	public constructor(reason: string, threadId: number) {
+		super('thread');
+		this.body = {
+			reason: reason,
+			threadId: threadId
+		};
 	}
 }
 

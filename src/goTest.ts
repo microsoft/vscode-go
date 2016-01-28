@@ -1,3 +1,8 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 'use strict';
 
 import cp = require('child_process');
@@ -5,6 +10,7 @@ import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
 import { getGoRuntimePath } from './goPath'
+import { GoDocumentSymbolProvider } from './goOutline'
 
 /**
  * Input to goTest.
@@ -39,7 +45,7 @@ export function testAtCursor(timeout: string) {
 		vscode.window.showInformationMessage("No editor is active.");
 		return;
 	}
-	getTestFunctions(editor.document.uri).then(testFunctions => {
+	getTestFunctions(editor.document).then(testFunctions => {
 		var testFunction: vscode.SymbolInformation;
 		// Find any test function containing the cursor.
 		for (let func of testFunctions) {
@@ -93,7 +99,7 @@ export function testCurrentFile(timeout: string) {
 		vscode.window.showInformationMessage("No editor is active.");
 		return;
 	}
-	getTestFunctions(editor.document.uri).then(testFunctions => {
+	getTestFunctions(editor.document).then(testFunctions => {
 		return goTest({
 			timeout: timeout,
 			dir: path.dirname(editor.document.fileName),
@@ -139,38 +145,13 @@ function goTest(config: TestConfig): Thenable<boolean> {
  * @param the URI of a Go source file.
  * @return test function symbols for the source file.
  */
-function getTestFunctions(uri: vscode.Uri): Thenable<vscode.SymbolInformation[]> {
-	return vscode.commands.executeCommand<any[]>('vscode.executeDocumentSymbolProvider', uri).then(res => {
-		var testFunctions: vscode.SymbolInformation[] = [];
-		for (let obj of res) {
-			var sym = newSymbolInformation(obj);
-			if (sym.kind == vscode.SymbolKind.Function && /Test.*/.exec(sym.name)) {
-				testFunctions.push(sym);
-			}
-		}
-		return testFunctions;
-	});
-}
-
-/**
-* Converts the output of the vscode.executeDocumentSymbolProvider command to
-* a vscode.SymbolInformation.
-*
-* Warning: This implementation is far from complete.
-*
-* TODO: This shouldn't be necessary; see https://github.com/Microsoft/vscode/issues/769
-*
-* @param obj an object returned from executeDocumentSymbolProvider.
-* @return the converted SymbolInformation.
-*/
-function newSymbolInformation(obj: any): vscode.SymbolInformation {
-	var kind: vscode.SymbolKind
-	switch (obj.type) {
-		case 'function':
-			kind = vscode.SymbolKind.Function;
-	}
-	var startPosition = new vscode.Position(obj.range.startLineNumber, obj.range.startColumn);
-	var endPosition = new vscode.Position(obj.range.endLineNumber, obj.range.endColumn);
-	var range = new vscode.Range(startPosition, endPosition);
-	return new vscode.SymbolInformation(obj.label, kind, range, null, obj.containerName);
+function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
+	let documentSymbolProvider = new GoDocumentSymbolProvider();
+	return documentSymbolProvider
+		.provideDocumentSymbols(doc, null)
+		.then(symbols =>
+			symbols.filter(sym => 
+				sym.kind == vscode.SymbolKind.Function 
+				&& /Test.*/.exec(sym.name) != null)
+		);
 }

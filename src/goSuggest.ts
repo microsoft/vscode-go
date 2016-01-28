@@ -1,12 +1,13 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
 'use strict';
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import path = require('path');
+import { dirname, basename } from 'path';
 import { getBinPath } from './goPath'
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
@@ -35,9 +36,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
 		return this.ensureGoCodeConfigured().then(() => {
-			return new Promise((resolve, reject) => {
+			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 				var filename = document.fileName;
-	
+
 				if (document.lineAt(position.line).text.match(/^\s*\/\//)) {
 					return resolve([]);
 				}
@@ -49,22 +50,42 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					var word = document.getText(wordAtPosition);
 					currentWord = word.substr(0, position.character - wordAtPosition.start.character);
 				}
-	
+
 				if (currentWord.match(/^\d+$/)) {
 					return resolve([]);
 				}
-	
+
 				var offset = document.offsetAt(position);
 				var gocode = getBinPath("gocode");
-	
+				
+				// Unset GOOS and GOARCH for the `gocode` process to ensure that GOHOSTOS and GOHOSTARCH 
+				// are used as the target operating system and architecture. `gocode` is unable to provide 
+				// autocompletion when the Go environment is configured for cross compilation.
+				var env = Object.assign({}, process.env, { GOOS: "", GOARCH: "" });
+
 				// Spawn `gocode` process
-				var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "c" + offset], {}, (err, stdout, stderr) => {
+				var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "c" + offset], { env }, (err, stdout, stderr) => {
 					try {
 						if (err && (<any>err).code == "ENOENT") {
 							vscode.window.showInformationMessage("The 'gocode' command is not available.  Use 'go get -u github.com/nsf/gocode' to install.");
 						}
 						if (err) return reject(err);
 						var results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
+						if (!results[1]) {
+							// "Smart Snippet" for package clause
+							// TODO: Factor this out into a general mechanism
+							if (!document.getText().match(/package\s+(\w+)/)) {
+								let defaultPackageName =
+									basename(document.fileName) == "main.go"
+										? "main"
+										: basename(dirname(document.fileName));
+								let packageItem = new vscode.CompletionItem("package " + defaultPackageName);
+								packageItem.kind = vscode.CompletionItemKind.Snippet;
+								packageItem.insertText = "package " + defaultPackageName + "\r\n\r\n";
+								return resolve([packageItem]);
+							}
+							return resolve([]);
+						}
 						var suggestions = results[1].map(suggest => {
 							var item = new vscode.CompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class);
@@ -80,7 +101,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			});
 		});
 	}
-	
+
 	private ensureGoCodeConfigured(): Thenable<void> {
 		return new Promise<void>((resolve, reject) => {
 			if (this.gocodeConfigurationComplete) {
@@ -88,7 +109,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			}
 			var gocode = getBinPath("gocode");
 			cp.execFile(gocode, ["set", "propose-builtins", "true"], {}, (err, stdout, stderr) => {
-				resolve();
+				cp.execFile(gocode, ["set", "autobuild", "true"], {}, (err, stdout, stderr) => {
+					resolve();
+				});
 			});
 		});
 	}
