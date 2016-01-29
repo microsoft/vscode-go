@@ -43,7 +43,8 @@ export function setupGoPathAndOfferToInstallTools() {
 		godef: "github.com/rogpeppe/godef",
 		golint: "github.com/golang/lint/golint",
 		"go-find-references": "github.com/lukehoban/go-find-references",
-		"go-outline": "github.com/lukehoban/go-outline"
+		"go-outline": "github.com/lukehoban/go-outline",
+		"go-symbols": "github.com/newhook/go-symbols"
 	}
 	var keys = Object.keys(tools)
 	Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
