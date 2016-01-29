@@ -12,7 +12,7 @@ import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 
 var fixtureSrc =
-`package main
+	`package main
 
 import ( 
 	"fmt"
@@ -45,14 +45,14 @@ suite("Go Extension Tests", () => {
 		let provider = new GoHoverProvider();
 		let testCases: [vscode.Position, string][] = [
 			//[new vscode.Position(3,3), '/usr/local/go/src/fmt'],
-			[new vscode.Position(8,6), 'main func()'],
-			[new vscode.Position(6,2), 'import (fmt "fmt")'],
-			[new vscode.Position(6,6), 'Println func(a ...interface{}) (n int, err error)'],
-			[new vscode.Position(9,3), 'print func(txt string)']
+			[new vscode.Position(8, 6), 'main func()'],
+			[new vscode.Position(6, 2), 'import (fmt "fmt")'],
+			[new vscode.Position(6, 6), 'Println func(a ...interface{}) (n int, err error)'],
+			[new vscode.Position(9, 3), 'print func(txt string)']
 		];
 		let uri = vscode.Uri.file(fixture);
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			let promises = testCases.map(([position, expected]) => 
+			let promises = testCases.map(([position, expected]) =>
 				provider.provideHover(textDocument, position, null).then(res => {
 					assert.equal(res.contents.length, 1);
 					assert.equal(expected, (<{ language: string; value: string }>res.contents[0]).value);
@@ -61,24 +61,24 @@ suite("Go Extension Tests", () => {
 			return Promise.all(promises);
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
-		}).then(() => done(),done);
+		}).then(() => done(), done);
 	});
 
 	test("Test Completion", (done) => {
 		let provider = new GoCompletionItemProvider();
 		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(1,0), []],
-			[new vscode.Position(4,1), ['main', 'print', 'fmt']],
-			[new vscode.Position(6,4), ['fmt']],
-			[new vscode.Position(7,0), ['main', 'print', 'fmt', 'txt']]
+			[new vscode.Position(1, 0), []],
+			[new vscode.Position(4, 1), ['main', 'print', 'fmt']],
+			[new vscode.Position(6, 4), ['fmt']],
+			[new vscode.Position(7, 0), ['main', 'print', 'fmt', 'txt']]
 		];
 		let uri = vscode.Uri.file(fixture);
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			let promises = testCases.map(([position, expected]) => 
+			let promises = testCases.map(([position, expected]) =>
 				provider.provideCompletionItems(textDocument, position, null).then(items => {
 					let labels = items.map(x => x.label);
-					for(let entry of expected) {
-						if(labels.indexOf(entry) < 0) {
+					for (let entry of expected) {
+						if (labels.indexOf(entry) < 0) {
 							assert.fail("", entry, "missing expected item in competion list");
 						}
 					}
@@ -87,18 +87,18 @@ suite("Go Extension Tests", () => {
 			return Promise.all(promises);
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
-		}).then(() => done(),done);
+		}).then(() => done(), done);
 	});
-	
+
 	test("Test Signature Help", (done) => {
 		let provider = new GoSignatureHelpProvider();
 		let testCases: [vscode.Position, string][] = [
-			[new vscode.Position(6,13), "Println(a ...interface{}) (n int, err error)"],
-			[new vscode.Position(9,7), "print(txt string)"]
+			[new vscode.Position(6, 13), "Println(a ...interface{}) (n int, err error)"],
+			[new vscode.Position(9, 7), "print(txt string)"]
 		];
 		let uri = vscode.Uri.file(fixture);
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			let promises = testCases.map(([position, expected]) => 
+			let promises = testCases.map(([position, expected]) =>
 				provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
 					assert.equal(sigHelp.signatures.length, 1, "unexpected number of overloads");
 					assert.equal(sigHelp.signatures[0].label, expected)
@@ -107,6 +107,6 @@ suite("Go Extension Tests", () => {
 			return Promise.all(promises);
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
-		}).then(() => done(),done);
+		}).then(() => done(), done);
 	});
 });

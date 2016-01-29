@@ -17,26 +17,26 @@ export function byteOffsetAt(document: TextDocument, position: Position): number
 }
 
 export interface Prelude {
-	imports: Array<{kind: string; start: number; end: number;}>;
-	pkg: {start: number; end: number;};
+	imports: Array<{ kind: string; start: number; end: number; }>;
+	pkg: { start: number; end: number; };
 }
 
 export function parseFilePrelude(text: string): Prelude {
 	let lines = text.split('\n');
-	let ret: Prelude = {imports: [], pkg: null };
+	let ret: Prelude = { imports: [], pkg: null };
 	for (var i = 0; i < lines.length; i++) {
 		let line = lines[i];
 		if (line.match(/^(\s)*package(\s)+/)) {
-			ret.pkg = {start: i, end: i};
+			ret.pkg = { start: i, end: i };
 		}
 		if (line.match(/^(\s)*import(\s)+\(/)) {
-			ret.imports.push({kind: "multi", start: i, end: -1});
+			ret.imports.push({ kind: "multi", start: i, end: -1 });
 		}
 		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
-			ret.imports.push({kind: "single", start: i, end: i});
+			ret.imports.push({ kind: "single", start: i, end: i });
 		}
 		if (line.match(/^(\s)*\)/)) {
-			if(ret.imports[ret.imports.length - 1].end == -1) {
+			if (ret.imports[ret.imports.length - 1].end == -1) {
 				ret.imports[ret.imports.length - 1].end = i;
 			}
 		}
@@ -54,30 +54,30 @@ export function parseFilePrelude(text: string): Prelude {
 // Takes care of balancing parens so to not get confused by signatures like:
 //     (pattern string, handler func(ResponseWriter, *Request)) {
 export function parameters(signature: string): string[] {
-		var ret: string[] = [];
-		var parenCount = 0;
-		var lastStart = 1;
-		for (var i = 1; i < signature.length; i++) {
-			switch (signature[i]) {
-				case '(':
-					parenCount++;
-					break;
-				case ')':
-					parenCount--;
-					if (parenCount < 0) {
-						if (i > lastStart) {
-							ret.push(signature.substring(lastStart, i));
-						}
-						return ret;
-					}
-					break;
-				case ',':
-					if (parenCount == 0) {
+	var ret: string[] = [];
+	var parenCount = 0;
+	var lastStart = 1;
+	for (var i = 1; i < signature.length; i++) {
+		switch (signature[i]) {
+			case '(':
+				parenCount++;
+				break;
+			case ')':
+				parenCount--;
+				if (parenCount < 0) {
+					if (i > lastStart) {
 						ret.push(signature.substring(lastStart, i));
-						lastStart = i + 2;
 					}
-					break;
-			}
+					return ret;
+				}
+				break;
+			case ',':
+				if (parenCount == 0) {
+					ret.push(signature.substring(lastStart, i));
+					lastStart = i + 2;
+				}
+				break;
 		}
-		return null;
 	}
+	return null;
+}

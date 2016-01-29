@@ -187,9 +187,9 @@ class Delve {
 					if (err) return reject(err);
 					// Add a slight delay to avoid issues on Linux with
 					// Delve failing calls made shortly after connection. 
-					setTimeout(() => 
+					setTimeout(() =>
 						resolve(conn),
-					200);
+						200);
 				});
 			}
 
@@ -284,7 +284,7 @@ class GoDebugSession extends DebugSession {
 		this.delve.connection.then(() =>
 			this.initialBreakpointsSetPromise
 		).then(() => {
-			if(args.stopOnEntry) {
+			if (args.stopOnEntry) {
 				this.sendEvent(new StoppedEvent("breakpoint", 0));
 				console.log("StoppedEvent('breakpoint')");
 				this.sendResponse(response);
@@ -303,7 +303,7 @@ class GoDebugSession extends DebugSession {
 		super.disconnectRequest(response, args);
 		console.log("DisconnectResponse");
 	}
-	
+
 	protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments): void {
 		console.log("ExceptionBreakPointsRequest");
 		// Wow - this is subtle - it appears that this event will always get 
@@ -427,7 +427,7 @@ class GoDebugSession extends DebugSession {
 					cap: 0,
 					children: vars,
 					unreadable: ""
-				} 
+				}
 				scopes.push(new Scope("Local", this._variableHandles.create(localVariables), false));
 				response.body = { scopes };
 				this.sendResponse(response);
@@ -435,15 +435,15 @@ class GoDebugSession extends DebugSession {
 			});
 		});
 	}
-	
-	private convertDebugVariableToProtocolVariable(v: DebugVariable, i: number): {result: string; variablesReference: number; } {
+
+	private convertDebugVariableToProtocolVariable(v: DebugVariable, i: number): { result: string; variablesReference: number; } {
 		if (v.kind == GoReflectKind.Ptr || v.kind == GoReflectKind.UnsafePointer) {
 			if (v.children[0].addr == 0) {
 				return {
 					result: "nil <" + v.type + ">",
 					variablesReference: 0
 				}
-			} else if(v.children[0].type == "void") {
+			} else if (v.children[0].type == "void") {
 				return {
 					result: "void",
 					variablesReference: 0
@@ -454,19 +454,19 @@ class GoDebugSession extends DebugSession {
 					variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(v.children[0]) : 0
 				}
 			}
-		} else if(v.kind == GoReflectKind.Slice) {
+		} else if (v.kind == GoReflectKind.Slice) {
 			return {
 				result: "<" + v.type.substring(7) + ">",
 				variablesReference: this._variableHandles.create(v)
 			}
-		} else if(v.kind == GoReflectKind.Array) {
+		} else if (v.kind == GoReflectKind.Array) {
 			return {
 				result: "<" + v.type + ">",
 				variablesReference: this._variableHandles.create(v)
 			}
-		} else if(v.kind == GoReflectKind.String) {
+		} else if (v.kind == GoReflectKind.String) {
 			return {
-				result: v.unreadable ? ("<" + v.unreadable + ">") : ('"' + v.value + '"'), 
+				result: v.unreadable ? ("<" + v.unreadable + ">") : ('"' + v.value + '"'),
 				variablesReference: 0
 			}
 		} else {
@@ -481,31 +481,31 @@ class GoDebugSession extends DebugSession {
 		console.log("VariablesRequest");
 		var vari = this._variableHandles.get(args.variablesReference);
 		let variables;
-		if(vari.kind == GoReflectKind.Array || vari.kind == GoReflectKind.Map) {
+		if (vari.kind == GoReflectKind.Array || vari.kind == GoReflectKind.Map) {
 			variables = vari.children.map((v, i) => {
-				let { result, variablesReference} = this.convertDebugVariableToProtocolVariable(v,i)
+				let { result, variablesReference} = this.convertDebugVariableToProtocolVariable(v, i)
 				return {
 					name: "[" + i + "]",
 					value: result,
 					variablesReference
 				}
-			});	
+			});
 		} else {
 			variables = vari.children.map((v, i) => {
-				let { result, variablesReference} = this.convertDebugVariableToProtocolVariable(v,i)
+				let { result, variablesReference} = this.convertDebugVariableToProtocolVariable(v, i)
 				return {
 					name: v.name,
 					value: result,
 					variablesReference
 				}
-			});	
+			});
 		}
 		console.log(JSON.stringify(variables, null, ' '))
 		response.body = { variables };
 		this.sendResponse(response);
 		console.log("VariablesResponse");
 	}
-	
+
 	private handleReenterDebug(reason: string): void {
 		if (this.debugState.exited) {
 			this.sendEvent(new TerminatedEvent());
@@ -519,10 +519,10 @@ class GoDebugSession extends DebugSession {
 				// Assume we need to stop all the threads we saw before...
 				let needsToBeStopped = new Set<number>();
 				this.threads.forEach(id => needsToBeStopped.add(id));
-				for(var goroutine of goroutines) {
+				for (var goroutine of goroutines) {
 					// ...but delete from list of threads to stop if we still see it
 					needsToBeStopped.delete(goroutine.id);
-					if(!this.threads.has(goroutine.id)) {
+					if (!this.threads.has(goroutine.id)) {
 						// Send started event if it's new
 						this.sendEvent(new ThreadEvent('started', goroutine.id));
 					}
@@ -533,7 +533,7 @@ class GoDebugSession extends DebugSession {
 					this.sendEvent(new ThreadEvent('exited', id))
 					this.threads.delete(id);
 				});
-				
+
 				this.sendEvent(new StoppedEvent(reason, this.debugState.currentGoroutine.id));
 				console.log("StoppedEvent('" + reason + "')");
 			});

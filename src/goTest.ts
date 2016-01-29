@@ -150,8 +150,8 @@ function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInfor
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, null)
 		.then(symbols =>
-			symbols.filter(sym => 
-				sym.kind == vscode.SymbolKind.Function 
+			symbols.filter(sym =>
+				sym.kind == vscode.SymbolKind.Function
 				&& /Test.*/.exec(sym.name) != null)
 		);
 }

@@ -131,14 +131,14 @@ export class Formatter {
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 	private formatter: Formatter;
-	
+
 	constructor() {
-		this.formatter = new Formatter();	
+		this.formatter = new Formatter();
 	}
-	
+
 	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
 		return document.save().then(() => {
 			return this.formatter.formatDocument(document);
 		});
-	}	
+	}
 }

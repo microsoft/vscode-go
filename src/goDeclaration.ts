@@ -55,9 +55,9 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					var sigName = signature.substring(0, signature.indexOf(' '));
 					var sigParams = signature.substring(signature.indexOf(' func') + 5);
 					var searchSignature = "func " + sigName + sigParams;
-					for(var i = 0; i < godocLines.length; i++) {
-						if(godocLines[i] == searchSignature) {
-							while(godocLines[++i].startsWith('    ')) {
+					for (var i = 0; i < godocLines.length; i++) {
+						if (godocLines[i] == searchSignature) {
+							while (godocLines[++i].startsWith('    ')) {
 								doc += godocLines[i].substring(4) + '\n';
 							}
 							break;
@@ -69,7 +69,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 						col: + col - 1,
 						lines,
 						doc
-					});	
+					});
 				});
 			} catch (e) {
 				reject(e);
