@@ -9,6 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { dirname, basename } from 'path';
 import { getBinPath } from './goPath'
+import { parameters } from './util'
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -92,9 +93,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							item.detail = suggest.type;
 							let conf = vscode.workspace.getConfiguration('go');
 							if(conf.get("useCodeSnippetsOnFunctionSuggest") && suggest.class == "func") {
-								let bOpen = suggest.type.indexOf('('),
-									bClose = suggest.type.indexOf(')'); 
-								let params = suggest.type.substring(bOpen+1, bClose).split(/,\s*/);
+								let params = parameters(suggest.type.substring(4)) // "func"
 								let paramSnippets = [];
 								for(let i in params) {
 									let param = params[i].trim();

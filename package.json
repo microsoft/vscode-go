@@ -227,7 +227,7 @@
           "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format."
         },
 		"go.useCodeSnippetsOnFunctionSuggest": {
-			"type": "string",
+			"type": "boolean",
 			"default": false,
 			"description": "Complete functions with their parameter signature"
 		},
