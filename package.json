@@ -226,6 +226,11 @@
           "default": "goreturns",
           "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format."
         },
+		"go.useCodeSnippetsOnFunctionSuggest": {
+			"type": "boolean",
+			"default": false,
+			"description": "Complete functions with their parameter signature"
+		},
         "go.gopath": {
           "type": "string",
           "default": null,

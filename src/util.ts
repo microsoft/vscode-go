@@ -46,3 +46,38 @@ export function parseFilePrelude(text: string): Prelude {
 	}
 	return ret;
 }
+
+// Takes a Go function signature like:
+//     (foo, bar string, baz number) (string, string) 
+// and returns an array of parameter strings:
+//     ["foo", "bar string", "baz string"]
+// Takes care of balancing parens so to not get confused by signatures like:
+//     (pattern string, handler func(ResponseWriter, *Request)) {
+export function parameters(signature: string): string[] {
+		var ret: string[] = [];
+		var parenCount = 0;
+		var lastStart = 1;
+		for (var i = 1; i < signature.length; i++) {
+			switch (signature[i]) {
+				case '(':
+					parenCount++;
+					break;
+				case ')':
+					parenCount--;
+					if (parenCount < 0) {
+						if (i > lastStart) {
+							ret.push(signature.substring(lastStart, i));
+						}
+						return ret;
+					}
+					break;
+				case ',':
+					if (parenCount == 0) {
+						ret.push(signature.substring(lastStart, i));
+						lastStart = i + 2;
+					}
+					break;
+			}
+		}
+		return null;
+	}

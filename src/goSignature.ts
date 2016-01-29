@@ -10,6 +10,7 @@ import path = require('path');
 import { getBinPath } from './goPath'
 import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken } from 'vscode';
 import { definitionLocation } from "./goDeclaration"
+import { parameters } from "./util"
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
@@ -31,7 +32,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			let funcName = text.substring(0, nameEnd);
 			var sig = text.substring(sigStart);
 			let si = new SignatureInformation(funcName + sig, res.doc);
-			si.parameters = this.parameters(sig).map(paramText =>
+			si.parameters = parameters(sig).map(paramText =>
 				new ParameterInformation(paramText)
 			);
 			result.signatures = [si];
@@ -74,36 +75,6 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 					if (parenBalance == 0) {
 						commas.push(new Position(position.line, char));
 					}
-			}
-		}
-		return null;
-	}
-
-	private parameters(signature: string): string[] {
-		// (foo, bar string, baz number) (string, string)
-		var ret: string[] = [];
-		var parenCount = 0;
-		var lastStart = 1;
-		for (var i = 1; i < signature.length; i++) {
-			switch (signature[i]) {
-				case '(':
-					parenCount++;
-					break;
-				case ')':
-					parenCount--;
-					if (parenCount < 0) {
-						if (i > lastStart) {
-							ret.push(signature.substring(lastStart, i));
-						}
-						return ret;
-					}
-					break;
-				case ',':
-					if (parenCount == 0) {
-						ret.push(signature.substring(lastStart, i));
-						lastStart = i + 2;
-					}
-					break;
 			}
 		}
 		return null;
