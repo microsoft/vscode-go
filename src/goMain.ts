@@ -16,6 +16,7 @@ import { GoReferenceProvider } from './goReferences';
 import { GoDocumentFormattingEditProvider, Formatter } from './goFormat';
 import { GoRenameProvider } from './goRename';
 import { GoDocumentSymbolProvider } from './goOutline';
+import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction'
 import { check, ICheckResult } from './goCheck';
@@ -37,11 +38,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
+	ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), "(", ","));
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
-	
+
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
@@ -65,7 +67,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testCurrentFile(goConfig['testTimeout']);
 	}));
-	
+
 	ctx.subscriptions.push(vscode.commands.registerCommand("go.import.add", (arg: string) => {
 		return addImport(typeof arg == "string" ? arg : null);
 	}));
@@ -108,7 +110,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 	});
 
-	if(vscode.window.activeTextEditor) {
+	if (vscode.window.activeTextEditor) {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		runBuilds(vscode.window.activeTextEditor.document, goConfig);
 	}
@@ -196,7 +198,7 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 				// Catch any errors and ignore so that we still trigger 
 				// the file save.
 			});
-		} 
+		}
 		formatPromise.then(() => {
 			runBuilds(document, goConfig);
 		});
