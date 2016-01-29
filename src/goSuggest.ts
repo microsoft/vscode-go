@@ -90,6 +90,20 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							var item = new vscode.CompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class);
 							item.detail = suggest.type;
+							let conf = vscode.workspace.getConfiguration('go');
+							if(conf.get("useCodeSnippetsOnFunctionSuggest") && suggest.class == "func") {
+								let bOpen = suggest.type.indexOf('('),
+									bClose = suggest.type.indexOf(')'); 
+								let params = suggest.type.substring(bOpen+1, bClose).split(/,\s*/);
+								let paramSnippets = [];
+								for(let i in params) {
+									let param = params[i].trim();
+									if(param) {
+										paramSnippets.push("{{" + param + "}}");
+									}
+								}
+								item.insertText = suggest.name + '(' + paramSnippets.join(", ") + '){{}}';
+							}
 							return item;
 						})
 						resolve(suggestions);
