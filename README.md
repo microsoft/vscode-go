@@ -6,6 +6,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 
 - Colorization
 - Completion Lists (using `gocode`)
+- Signature Help (using `godoc`)
 - Snippets
 - Quick Info (using `godef`)
 - Goto Definition (using `godef`)
