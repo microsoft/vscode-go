@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
+import { GoSignatureHelpProvider } from '../src/goSignature';
 
 var fixtureSrc =
 `package main
@@ -31,7 +32,7 @@ suite("Go Extension Tests", () => {
 
 	suiteSetup(() => {
 		assert.ok(gopath !== null, "GOPATH is not defined");
-		assert.ok(!fs.existsSync(repoPath), 'fixture path already exists');
+		fs.removeSync(repoPath);
 		fs.mkdirsSync(fixturePath);
 		fs.writeFileSync(fixture, fixtureSrc);
 	});
@@ -81,6 +82,26 @@ suite("Go Extension Tests", () => {
 							assert.fail("", entry, "missing expected item in competion list");
 						}
 					}
+				})
+			);
+			return Promise.all(promises);
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(),done);
+	});
+	
+	test("Test Signature Help", (done) => {
+		let provider = new GoSignatureHelpProvider();
+		let testCases: [vscode.Position, string][] = [
+			[new vscode.Position(6,13), "Println(a ...interface{}) (n int, err error)"],
+			[new vscode.Position(9,7), "print(txt string)"]
+		];
+		let uri = vscode.Uri.file(fixture);
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			let promises = testCases.map(([position, expected]) => 
+				provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
+					assert.equal(sigHelp.signatures.length, 1, "unexpected number of overloads");
+					assert.equal(sigHelp.signatures[0].label, expected)
 				})
 			);
 			return Promise.all(promises);

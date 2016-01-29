@@ -16,7 +16,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
 		let theCall = this.walkBackwardsToBeginningOfCall(document, position);
 		if (theCall == null) {
-			return null;
+			return Promise.resolve(null);
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
 		return definitionLocation(document, callerPos).then(res => {
