@@ -10,31 +10,20 @@ import * as vscode from 'vscode';
 import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
-
-var fixtureSrc =
-	`package main
-
-import ( 
-	"fmt"
-)
-func print(txt string) {
-	fmt.Println(txt)
-}
-func main() {
-	print("Hello")
-}`;
+import { check } from '../src/goCheck'
 
 suite("Go Extension Tests", () => {
 	let gopath = process.env['GOPATH'];
 	let repoPath = path.join(gopath, 'src', '___testrepo');
 	let fixturePath = path.join(repoPath, 'test', 'testfixture');
-	let fixture = path.join(fixturePath, "test.go");
+	let fixtureSourcePath = path.join(__dirname, "..", "..", "test", "fixtures");
 
 	suiteSetup(() => {
 		assert.ok(gopath !== null, "GOPATH is not defined");
 		fs.removeSync(repoPath);
 		fs.mkdirsSync(fixturePath);
-		fs.writeFileSync(fixture, fixtureSrc);
+		fs.copySync(path.join(fixtureSourcePath, "test.go"), path.join(fixturePath, "test.go"))
+		fs.copySync(path.join(fixtureSourcePath, "errors.go"), path.join(fixturePath, "errors.go"))
 	});
 
 	suiteTeardown(() => {
@@ -50,7 +39,7 @@ suite("Go Extension Tests", () => {
 			[new vscode.Position(6, 6), 'Println func(a ...interface{}) (n int, err error)'],
 			[new vscode.Position(9, 3), 'print func(txt string)']
 		];
-		let uri = vscode.Uri.file(fixture);
+		let uri = vscode.Uri.file(path.join(fixturePath, "test.go"));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expected]) =>
 				provider.provideHover(textDocument, position, null).then(res => {
@@ -72,7 +61,7 @@ suite("Go Extension Tests", () => {
 			[new vscode.Position(6, 4), ['fmt']],
 			[new vscode.Position(7, 0), ['main', 'print', 'fmt', 'txt']]
 		];
-		let uri = vscode.Uri.file(fixture);
+		let uri = vscode.Uri.file(path.join(fixturePath, "test.go"));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expected]) =>
 				provider.provideCompletionItems(textDocument, position, null).then(items => {
@@ -96,7 +85,7 @@ suite("Go Extension Tests", () => {
 			[new vscode.Position(6, 13), "Println(a ...interface{}) (n int, err error)"],
 			[new vscode.Position(9, 7), "print(txt string)"]
 		];
-		let uri = vscode.Uri.file(fixture);
+		let uri = vscode.Uri.file(path.join(fixturePath, "test.go"));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expected]) =>
 				provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
@@ -109,4 +98,22 @@ suite("Go Extension Tests", () => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
 		}).then(() => done(), done);
 	});
+
+	test("Error checking", (done) => {
+		var config = vscode.workspace.getConfiguration('go');
+		var expected = [
+			{ line: 6, severity: "warning", msg: "exported function Print2 should have comment or be unexported" },
+			{ line: 7, severity: "warning", msg: "no formatting directive in Printf call" },
+			{ line: 10, severity: "error", msg: "undefined: prin" },
+		]
+		check(path.join(fixturePath, "errors.go"), config).then(diagnostics => {
+			let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
+			assert.equal(sortedDiagnostics.length, expected.length, `wrong number of diagnostics`);
+			for (let i in expected) {
+				assert.equal(sortedDiagnostics[i].line, expected[i].line)
+				assert.equal(sortedDiagnostics[i].severity, expected[i].severity)
+				assert.equal(sortedDiagnostics[i].msg, expected[i].msg)
+			}
+		}).then(() => done(), done);
+	})
 });

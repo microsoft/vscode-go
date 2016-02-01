@@ -69,10 +69,10 @@ function correctBinname(binname: string) {
 export function getGoRuntimePath(): string {
 	if (runtimePathCache) return runtimePathCache;
 	if (process.env["GOROOT"]) {
-		runtimePathCache = path.join(process.env["GOROOT"], "bin", "go");
-	} else if (process.env.PATH) {
+		runtimePathCache = path.join(process.env["GOROOT"], "bin", correctBinname("go"));
+	} else if (process.env["PATH"]) {
 		var pathparts = (<string>process.env.PATH).split((<any>path).delimiter);
-		runtimePathCache = pathparts.map(dir => path.join(dir, 'go' + (os.platform() == "win32" ? ".exe" : ""))).filter(candidate => fs.existsSync(candidate))[0];
+		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinname("go"))).filter(candidate => fs.existsSync(candidate))[0];
 	}
 	return runtimePathCache;
 }

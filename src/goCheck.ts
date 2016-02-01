@@ -19,7 +19,7 @@ export interface ICheckResult {
 	severity: string;
 }
 
-function runTool(cmd: string, args: string[], cwd: string, severity: string, notFoundError: string) {
+function runTool(cmd: string, args: string[], cwd: string, severity: string, useStdErr: boolean, notFoundError: string) {
 	return new Promise((resolve, reject) => {
 		cp.execFile(cmd, args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
@@ -27,16 +27,16 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, not
 					vscode.window.showInformationMessage(notFoundError);
 					return resolve([]);
 				}
-				var lines = stderr.toString().split('\n');
+				var lines = (useStdErr ? stderr : stdout).toString().split('\n');
 				var ret: ICheckResult[] = [];
 				for (var i = 0; i < lines.length; i++) {
 					if (lines[i][0] == '\t' && ret.length > 0) {
 						ret[ret.length - 1].msg += "\n" + lines[i];
 						continue;
 					}
-					var match = /^([^:]*: )?([^:]*):(\d+)(:\d+)?: (.*)$/.exec(lines[i]);
+					var match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+))?: (.*)$/.exec(lines[i]);
 					if (!match) continue;
-					var [_, _, file, lineStr, charStr, msg] = match;
+					var [_, _, file, _, lineStr, _, charStr, msg] = match;
 					var line = +lineStr;
 					ret.push({ file: path.resolve(cwd, file), line, msg, severity });
 				}
@@ -64,6 +64,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			args,
 			cwd,
 			'error',
+			true,
 			"No 'go' binary could be found in GOROOT: '" + process.env["GOROOT"] + "'"
 		));
 	}
@@ -75,6 +76,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			[...lintFlags, filename],
 			cwd,
 			'warning',
+			false,
 			"The 'golint' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install."
 		));
 	}
@@ -86,6 +88,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			["tool", "vet", ...vetFlags, filename],
 			cwd,
 			'warning',
+			true,
 			"No 'go' binary could be found in GOROOT: '" + process.env["GOROOT"] + "'"
 		));
 	}
