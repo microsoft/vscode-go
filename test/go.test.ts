@@ -108,12 +108,12 @@ suite("Go Extension Tests", () => {
 		]
 		check(path.join(fixturePath, "errors.go"), config).then(diagnostics => {
 			let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
-			assert.equal(sortedDiagnostics.length, expected.length, `wrong number of diagnostics`);
 			for (let i in expected) {
 				assert.equal(sortedDiagnostics[i].line, expected[i].line)
 				assert.equal(sortedDiagnostics[i].severity, expected[i].severity)
 				assert.equal(sortedDiagnostics[i].msg, expected[i].msg)
 			}
+			assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
 		}).then(() => done(), done);
 	})
 });
