@@ -1,8 +1,9 @@
 package main
 
-import ( 
+import (
 	"fmt"
 )
+
 func print(txt string) {
 	fmt.Println(txt)
 }

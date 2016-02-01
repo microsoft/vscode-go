@@ -34,10 +34,10 @@ suite("Go Extension Tests", () => {
 		let provider = new GoHoverProvider();
 		let testCases: [vscode.Position, string][] = [
 			//[new vscode.Position(3,3), '/usr/local/go/src/fmt'],
-			[new vscode.Position(8, 6), 'main func()'],
-			[new vscode.Position(6, 2), 'import (fmt "fmt")'],
-			[new vscode.Position(6, 6), 'Println func(a ...interface{}) (n int, err error)'],
-			[new vscode.Position(9, 3), 'print func(txt string)']
+			[new vscode.Position(9, 6), 'main func()'],
+			[new vscode.Position(7, 2), 'import (fmt "fmt")'],
+			[new vscode.Position(7, 6), 'Println func(a ...interface{}) (n int, err error)'],
+			[new vscode.Position(10, 3), 'print func(txt string)']
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, "test.go"));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
@@ -58,8 +58,8 @@ suite("Go Extension Tests", () => {
 		let testCases: [vscode.Position, string[]][] = [
 			[new vscode.Position(1, 0), []],
 			[new vscode.Position(4, 1), ['main', 'print', 'fmt']],
-			[new vscode.Position(6, 4), ['fmt']],
-			[new vscode.Position(7, 0), ['main', 'print', 'fmt', 'txt']]
+			[new vscode.Position(7, 4), ['fmt']],
+			[new vscode.Position(8, 0), ['main', 'print', 'fmt', 'txt']]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, "test.go"));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
@@ -82,8 +82,8 @@ suite("Go Extension Tests", () => {
 	test("Test Signature Help", (done) => {
 		let provider = new GoSignatureHelpProvider();
 		let testCases: [vscode.Position, string][] = [
-			[new vscode.Position(6, 13), "Println(a ...interface{}) (n int, err error)"],
-			[new vscode.Position(9, 7), "print(txt string)"]
+			[new vscode.Position(7, 13), "Println(a ...interface{}) (n int, err error)"],
+			[new vscode.Position(10, 7), "print(txt string)"]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, "test.go"));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
@@ -102,9 +102,9 @@ suite("Go Extension Tests", () => {
 	test("Error checking", (done) => {
 		var config = vscode.workspace.getConfiguration('go');
 		var expected = [
-			{ line: 6, severity: "warning", msg: "exported function Print2 should have comment or be unexported" },
-			{ line: 7, severity: "warning", msg: "no formatting directive in Printf call" },
-			{ line: 10, severity: "error", msg: "undefined: prin" },
+			{ line: 7, severity: "warning", msg: "exported function Print2 should have comment or be unexported" },
+			//{ line: 7, severity: "warning", msg: "no formatting directive in Printf call" },
+			{ line: 11, severity: "error", msg: "undefined: prin" },
 		]
 		check(path.join(fixturePath, "errors.go"), config).then(diagnostics => {
 			let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);

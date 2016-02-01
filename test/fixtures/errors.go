@@ -1,10 +1,11 @@
 package main
 
-import ( 
+import (
 	"fmt"
 )
+
 func Print2(txt string) {
-	fmt.Printf("", txt)
+	fmt.Println(txt)
 }
 func main2() {
 	prin("Hello")
