@@ -18,7 +18,8 @@ export function listPackages(): Thenable<string[]> {
 				return reject();
 			}
 			var lines = stdout.toString().split('\n');
-			return resolve(lines);
+			var sortedlines = lines.sort().slice(1); // Drop the empty entry from the final '\n'
+			return resolve(sortedlines);
 		});
 	});
 }
