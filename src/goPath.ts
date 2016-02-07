@@ -9,18 +9,18 @@ import fs = require('fs');
 import path = require('path');
 import os = require('os');
 
-var binPathCache: { [bin: string]: string; } = {};
-var runtimePathCache: string = null;
+let binPathCache: { [bin: string]: string; } = {};
+let runtimePathCache: string = null;
 
 export function getBinPath(binname: string) {
 	binname = correctBinname(binname);
 	if (binPathCache[binname]) return binPathCache[binname];
 
 	// First search each GOPATH workspace's bin folder
-	if (process.env["GOPATH"]) {
-		var workspaces = process.env["GOPATH"].split(path.delimiter);
-		for (var i = 0; i < workspaces.length; i++) {
-			let binpath = path.join(workspaces[i], "bin", binname);
+	if (process.env['GOPATH']) {
+		let workspaces = process.env['GOPATH'].split(path.delimiter);
+		for (let i = 0; i < workspaces.length; i++) {
+			let binpath = path.join(workspaces[i], 'bin', binname);
 			if (fs.existsSync(binpath)) {
 				binPathCache[binname] = binpath;
 				return binpath;
@@ -29,9 +29,9 @@ export function getBinPath(binname: string) {
 	}
 
 	// Then search PATH parts
-	if (process.env["PATH"]) {
-		var pathparts = process.env["PATH"].split(path.delimiter);
-		for (var i = 0; i < pathparts.length; i++) {
+	if (process.env['PATH']) {
+		let pathparts = process.env['PATH'].split(path.delimiter);
+		for (let i = 0; i < pathparts.length; i++) {
 			let binpath = path.join(pathparts[i], binname);
 			if (fs.existsSync(binpath)) {
 				binPathCache[binname] = binpath;
@@ -41,8 +41,8 @@ export function getBinPath(binname: string) {
 	}
 
 	// Finally check GOROOT just in case
-	if (process.env["GOROOT"]) {
-		let binpath = path.join(process.env["GOROOT"], "bin", binname);
+	if (process.env['GOROOT']) {
+		let binpath = path.join(process.env['GOROOT'], 'bin', binname);
 		if (fs.existsSync(binpath)) {
 			binPathCache[binname] = binpath;
 			return binpath;
@@ -56,7 +56,7 @@ export function getBinPath(binname: string) {
 
 function correctBinname(binname: string) {
 	if (process.platform === 'win32')
-		return binname + ".exe";
+		return binname + '.exe';
 	else
 		return binname;
 }
@@ -68,11 +68,11 @@ function correctBinname(binname: string) {
  */
 export function getGoRuntimePath(): string {
 	if (runtimePathCache) return runtimePathCache;
-	if (process.env["GOROOT"]) {
-		runtimePathCache = path.join(process.env["GOROOT"], "bin", correctBinname("go"));
-	} else if (process.env["PATH"]) {
-		var pathparts = (<string>process.env.PATH).split((<any>path).delimiter);
-		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinname("go"))).filter(candidate => fs.existsSync(candidate))[0];
+	if (process.env['GOROOT']) {
+		runtimePathCache = path.join(process.env['GOROOT'], 'bin', correctBinname('go'));
+	} else if (process.env['PATH']) {
+		let pathparts = (<string>process.env.PATH).split((<any>path).delimiter);
+		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinname('go'))).filter(candidate => fs.existsSync(candidate))[0];
 	}
 	return runtimePathCache;
 }

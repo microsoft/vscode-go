@@ -9,11 +9,11 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import dmp = require('diff-match-patch');
-import { getBinPath } from './goPath'
+import { getBinPath } from './goPath';
 
-var EDIT_DELETE = 0;
-var EDIT_INSERT = 1;
-var EDIT_REPLACE = 2;
+let EDIT_DELETE = 0;
+let EDIT_INSERT = 1;
+let EDIT_REPLACE = 2;
 class Edit {
 	action: number;
 	start: vscode.Position;
@@ -23,7 +23,7 @@ class Edit {
 	constructor(action: number, start: vscode.Position) {
 		this.action = action;
 		this.start = start;
-		this.text = "";
+		this.text = '';
 	}
 
 	apply(): vscode.TextEdit {
@@ -39,7 +39,7 @@ class Edit {
 }
 
 export class Formatter {
-	private formatCommand = "goreturns";
+	private formatCommand = 'goreturns';
 
 	constructor() {
 		let formatTool = vscode.workspace.getConfiguration('go')['formatTool'];
@@ -50,32 +50,32 @@ export class Formatter {
 
 	public formatDocument(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
 		return new Promise((resolve, reject) => {
-			var filename = document.fileName;
+			let filename = document.fileName;
 
-			var formatCommandBinPath = getBinPath(this.formatCommand);
+			let formatCommandBinPath = getBinPath(this.formatCommand);
 
 			cp.execFile(formatCommandBinPath, [filename], {}, (err, stdout, stderr) => {
 				try {
-					if (err && (<any>err).code == "ENOENT") {
-						vscode.window.showInformationMessage("The '" + formatCommandBinPath + "' command is not available.  Please check your go.formatTool user setting and ensure it is installed.");
+					if (err && (<any>err).code === 'ENOENT') {
+						vscode.window.showInformationMessage('The "' + formatCommandBinPath + '" command is not available.  Please check your go.formatTool user setting and ensure it is installed.');
 						return resolve(null);
 					}
-					if (err) return reject("Cannot format due to syntax errors.");
-					var text = stdout.toString();
-					var d = new dmp.diff_match_patch();
+					if (err) return reject('Cannot format due to syntax errors.');
+					let text = stdout.toString();
+					let d = new dmp.diff_match_patch();
 
-					var diffs = d.diff_main(document.getText(), text);
-					var line = 0;
-					var character = 0;
-					var edits: vscode.TextEdit[] = [];
-					var edit: Edit = null;
+					let diffs = d.diff_main(document.getText(), text);
+					let line = 0;
+					let character = 0;
+					let edits: vscode.TextEdit[] = [];
+					let edit: Edit = null;
 
-					for (var i = 0; i < diffs.length; i++) {
-						var start = new vscode.Position(line, character);
+					for (let i = 0; i < diffs.length; i++) {
+						let start = new vscode.Position(line, character);
 
 						// Compute the line/character after the diff is applied.
-						for (var curr = 0; curr < diffs[i][1].length; curr++) {
-							if (diffs[i][1][curr] != '\n') {
+						for (let curr = 0; curr < diffs[i][1].length; curr++) {
+							if (diffs[i][1][curr] !== '\n') {
 								character++;
 							} else {
 								character = 0;
@@ -87,8 +87,8 @@ export class Formatter {
 							case dmp.DIFF_DELETE:
 								if (edit == null) {
 									edit = new Edit(EDIT_DELETE, start);
-								} else if (edit.action != EDIT_DELETE) {
-									return reject("cannot format due to an internal error.");
+								} else if (edit.action !== EDIT_DELETE) {
+									return reject('cannot format due to an internal error.');
 								}
 								edit.end = new vscode.Position(line, character);
 								break;
@@ -96,7 +96,7 @@ export class Formatter {
 							case dmp.DIFF_INSERT:
 								if (edit == null) {
 									edit = new Edit(EDIT_INSERT, start);
-								} else if (edit.action == EDIT_DELETE) {
+								} else if (edit.action === EDIT_DELETE) {
 									edit.action = EDIT_REPLACE;
 								}
 								// insert and replace edits are all relative to the original state

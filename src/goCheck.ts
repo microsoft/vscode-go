@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getBinPath, getGoRuntimePath } from './goPath'
+import { getBinPath, getGoRuntimePath } from './goPath';
 
 export interface ICheckResult {
 	file: string;
@@ -23,21 +23,21 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 	return new Promise((resolve, reject) => {
 		cp.execFile(cmd, args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
-				if (err && (<any>err).code == "ENOENT") {
+				if (err && (<any>err).code === 'ENOENT') {
 					vscode.window.showInformationMessage(notFoundError);
 					return resolve([]);
 				}
-				var lines = (useStdErr ? stderr : stdout).toString().split('\n');
-				var ret: ICheckResult[] = [];
-				for (var i = 0; i < lines.length; i++) {
-					if (lines[i][0] == '\t' && ret.length > 0) {
-						ret[ret.length - 1].msg += "\n" + lines[i];
+				let lines = (useStdErr ? stderr : stdout).toString().split('\n');
+				let ret: ICheckResult[] = [];
+				for (let i = 0; i < lines.length; i++) {
+					if (lines[i][0] === '\t' && ret.length > 0) {
+						ret[ret.length - 1].msg += '\n' + lines[i];
 						continue;
 					}
-					var match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+))?: (.*)$/.exec(lines[i]);
+					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+))?: (.*)$/.exec(lines[i]);
 					if (!match) continue;
-					var [_, _, file, _, lineStr, _, charStr, msg] = match;
-					var line = +lineStr;
+					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
+					let line = +lineStr;
 					ret.push({ file: path.resolve(cwd, file), line, msg, severity });
 				}
 				resolve(ret);
@@ -49,13 +49,13 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 }
 
 export function check(filename: string, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
-	var runningToolsPromises = [];
-	var cwd = path.dirname(filename);
+	let runningToolsPromises = [];
+	let cwd = path.dirname(filename);
 
 	if (!!goConfig['buildOnSave']) {
-		var buildFlags = goConfig['buildFlags'] || [];
-		var tmppath = path.normalize(path.join(os.tmpdir(), "go-code-check"));
-		var args = ["build", "-o", tmppath, ...buildFlags, "."];
+		let buildFlags = goConfig['buildFlags'] || [];
+		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
+		let args = ['build', '-o', tmppath, ...buildFlags, '.'];
 		if (filename.match(/_test.go$/i)) {
 			args = ['test', '-copybinary', '-o', tmppath, '-c', '.'];
 		}
@@ -65,31 +65,31 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			cwd,
 			'error',
 			true,
-			"No 'go' binary could be found in GOROOT: '" + process.env["GOROOT"] + "'"
+			'No "go" binary could be found in GOROOT: ' + process.env['GOROOT'] + '"'
 		));
 	}
 	if (!!goConfig['lintOnSave']) {
-		var golint = getBinPath("golint");
-		var lintFlags = goConfig['lintFlags'] || [];
+		let golint = getBinPath('golint');
+		let lintFlags = goConfig['lintFlags'] || [];
 		runningToolsPromises.push(runTool(
 			golint,
 			[...lintFlags, filename],
 			cwd,
 			'warning',
 			false,
-			"The 'golint' command is not available.  Use 'go get -u github.com/golang/lint/golint' to install."
+			'The "golint" command is not available.  Use "go get -u github.com/golang/lint/golint" to install.'
 		));
 	}
 
 	if (!!goConfig['vetOnSave']) {
-		var vetFlags = goConfig['vetFlags'] || [];
+		let vetFlags = goConfig['vetFlags'] || [];
 		runningToolsPromises.push(runTool(
 			getGoRuntimePath(),
-			["tool", "vet", ...vetFlags, filename],
+			['tool', 'vet', ...vetFlags, filename],
 			cwd,
 			'warning',
 			true,
-			"No 'go' binary could be found in GOROOT: '" + process.env["GOROOT"] + "'"
+			'No "go" binary could be found in GOROOT: "' + process.env['GOROOT'] + '"'
 		));
 	}
 

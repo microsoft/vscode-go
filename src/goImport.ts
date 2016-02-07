@@ -7,18 +7,18 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath } from './goPath'
-import { parseFilePrelude } from './util'
+import { getBinPath } from './goPath';
+import { parseFilePrelude } from './util';
 
 export function listPackages(): Thenable<string[]> {
 	return new Promise<string[]>((resolve, reject) => {
-		cp.execFile(getBinPath("gopkgs"), [], (err, stdout, stderr) => {
-			if (err && (<any>err).code == "ENOENT") {
-				vscode.window.showInformationMessage("The 'gopkgs' command is not available.  Use 'go get github.com/tpng/gopkgs' to install.");
+		cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
+			if (err && (<any>err).code === 'ENOENT') {
+				vscode.window.showInformationMessage('The "gopkgs" command is not available.  Use "go get github.com/tpng/gopkgs" to install.');
 				return reject();
 			}
-			var lines = stdout.toString().split('\n');
-			var sortedlines = lines.sort().slice(1); // Drop the empty entry from the final '\n'
+			let lines = stdout.toString().split('\n');
+			let sortedlines = lines.sort().slice(1); // Drop the empty entry from the final '\n'
 			return resolve(sortedlines);
 		});
 	});
@@ -34,12 +34,12 @@ export function addImport(arg: string) {
 	let p = arg ? Promise.resolve(arg) : askUserForImport();
 	p.then(imp => {
 		// Import name wasn't provided
-		if (imp == undefined) {
+		if (imp === undefined) {
 			return null;
 		}
 
 		let {imports, pkg} = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
-		let multis = imports.filter(x => x.kind == "multi");
+		let multis = imports.filter(x => x.kind === 'multi');
 		if (multis.length > 0) {
 			// There is a multiple import declaration, add to the last one
 			let closeParenLine = multis[multis.length - 1].end;

@@ -7,10 +7,10 @@
 
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath } from './goPath'
+import { getBinPath } from './goPath';
 import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken } from 'vscode';
-import { definitionLocation } from "./goDeclaration"
-import { parameters } from "./util"
+import { definitionLocation } from './goDeclaration';
+import { parameters } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
@@ -21,16 +21,16 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
 		return definitionLocation(document, callerPos).then(res => {
-			if (res.line == callerPos.line) {
+			if (res.line === callerPos.line) {
 				// This must be a function definition
 				return null;
 			}
 			let result = new SignatureHelp();
 			let text = res.lines[1];
-			let nameEnd = text.indexOf(" ");
-			let sigStart = nameEnd + 5; // " func"
+			let nameEnd = text.indexOf(' ');
+			let sigStart = nameEnd + 5; // ' func'
 			let funcName = text.substring(0, nameEnd);
-			var sig = text.substring(sigStart);
+			let sig = text.substring(sigStart);
 			let si = new SignatureInformation(funcName + sig, res.doc);
 			si.parameters = parameters(sig).map(paramText =>
 				new ParameterInformation(paramText)
@@ -44,7 +44,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 	private previousTokenPosition(document: TextDocument, position: Position): Position {
 		while (position.character > 0) {
-			var word = document.getWordRangeAtPosition(position)
+			let word = document.getWordRangeAtPosition(position);
 			if (word) {
 				return word.start;
 			}
@@ -54,10 +54,10 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	}
 
 	private walkBackwardsToBeginningOfCall(document: TextDocument, position: Position): { openParen: Position, commas: Position[] } {
-		var currentLine = document.lineAt(position.line).text.substring(0, position.character);
-		var parenBalance = 0;
-		var commas = [];
-		for (var char = position.character; char >= 0; char--) {
+		let currentLine = document.lineAt(position.line).text.substring(0, position.character);
+		let parenBalance = 0;
+		let commas = [];
+		for (let char = position.character; char >= 0; char--) {
 			switch (currentLine[char]) {
 				case '(':
 					parenBalance--;
@@ -72,7 +72,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 					parenBalance++;
 					break;
 				case ',':
-					if (parenBalance == 0) {
+					if (parenBalance === 0) {
 						commas.push(new Position(position.line, char));
 					}
 			}

@@ -28,4 +28,5 @@ install:
   - go get -u -v golang.org/x/tools/cmd/gorename
 
 script:
+  - npm run lint
   - npm test --silent

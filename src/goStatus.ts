@@ -5,7 +5,7 @@
 
 'use strict';
 
-import { GO_MODE } from './goMode'
+import { GO_MODE } from './goMode';
 import vscode = require('vscode');
 
 let statusBarEntry: vscode.StatusBarItem;

@@ -8,8 +8,8 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath } from './goPath'
-import { byteOffsetAt } from './util'
+import { getBinPath } from './goPath';
+import { byteOffsetAt } from './util';
 
 export class GoRenameProvider implements vscode.RenameProvider {
 
@@ -21,18 +21,18 @@ export class GoRenameProvider implements vscode.RenameProvider {
 
 	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
 		return new Promise((resolve, reject) => {
-			var filename = this.canonicalizeForWindows(document.fileName);
-			var offset = byteOffsetAt(document, position);
+			let filename = this.canonicalizeForWindows(document.fileName);
+			let offset = byteOffsetAt(document, position);
 
-			var gorename = getBinPath("gorename");
+			let gorename = getBinPath('gorename');
 
-			cp.execFile(gorename, ["-offset", filename + ":#" + offset, "-to", newName], {}, (err, stdout, stderr) => {
+			cp.execFile(gorename, ['-offset', filename + ':#' + offset, '-to', newName], {}, (err, stdout, stderr) => {
 				try {
-					if (err && (<any>err).code == "ENOENT") {
-						vscode.window.showInformationMessage("The 'gorename' command is not available.  Use 'go get golang.org/x/tools/cmd/gorename' to install.");
+					if (err && (<any>err).code === 'ENOENT') {
+						vscode.window.showInformationMessage('The "gorename" command is not available.  Use "go get golang.org/x/tools/cmd/gorename" to install.');
 						return Promise.resolve<vscode.WorkspaceEdit>(null);
 					}
-					if (err) return reject("Cannot rename due to errors: " + err);
+					if (err) return reject('Cannot rename due to errors: ' + err);
 					// TODO: 'gorename' makes the edits in the files out of proc.
 					// Would be better if we could get the list of edits.
 					return Promise.resolve<vscode.WorkspaceEdit>(null);
@@ -45,9 +45,9 @@ export class GoRenameProvider implements vscode.RenameProvider {
 
 	canonicalizeForWindows(filename: string): string {
 		// capitalization of the GOPATH root must match GOPATH exactly
-		var gopath: string = process.env['GOPATH']
+		let gopath: string = process.env['GOPATH'];
 		if (!gopath) return filename;
-		if (filename.toLowerCase().substring(0, gopath.length) != gopath.toLowerCase()) return filename;
+		if (filename.toLowerCase().substring(0, gopath.length) !== gopath.toLowerCase()) return filename;
 		return gopath + filename.slice(gopath.length);
 	}
 }

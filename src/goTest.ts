@@ -9,8 +9,8 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
-import { getGoRuntimePath } from './goPath'
-import { GoDocumentSymbolProvider } from './goOutline'
+import { getGoRuntimePath } from './goPath';
+import { GoDocumentSymbolProvider } from './goOutline';
 
 /**
  * Input to goTest.
@@ -40,16 +40,16 @@ interface TestConfig {
 * so output doesn't produce navigable line references.
 */
 export function testAtCursor(timeout: string) {
-	var editor = vscode.window.activeTextEditor;
+	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
-		vscode.window.showInformationMessage("No editor is active.");
+		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
 	getTestFunctions(editor.document).then(testFunctions => {
-		var testFunction: vscode.SymbolInformation;
+		let testFunction: vscode.SymbolInformation;
 		// Find any test function containing the cursor.
 		for (let func of testFunctions) {
-			var selection = editor.selection;
+			let selection = editor.selection;
 			if (selection && func.location.range.contains(selection.start)) {
 				testFunction = func;
 				break;
@@ -66,7 +66,7 @@ export function testAtCursor(timeout: string) {
 		});
 	}).then(null, err => {
 		console.error(err);
-	})
+	});
 }
 
 /**
@@ -75,9 +75,9 @@ export function testAtCursor(timeout: string) {
  * @param timeout a ParseDuration formatted timeout string for the tests.
  */
 export function testCurrentPackage(timeout: string) {
-	var editor = vscode.window.activeTextEditor;
+	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
-		vscode.window.showInformationMessage("No editor is active.");
+		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
 	goTest({
@@ -94,9 +94,9 @@ export function testCurrentPackage(timeout: string) {
  * @param timeout a ParseDuration formatted timeout string for the tests.
  */
 export function testCurrentFile(timeout: string) {
-	var editor = vscode.window.activeTextEditor;
+	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
-		vscode.window.showInformationMessage("No editor is active.");
+		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
 	getTestFunctions(editor.document).then(testFunctions => {
@@ -117,24 +117,24 @@ export function testCurrentFile(timeout: string) {
  */
 function goTest(config: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		var channel = vscode.window.createOutputChannel('Go');
+		let channel = vscode.window.createOutputChannel('Go');
 		channel.clear();
 		channel.show(2);
-		var args = ['test', '-v', '-timeout', config.timeout];
+		let args = ['test', '-v', '-timeout', config.timeout];
 		if (config.functions) {
 			args.push('-run');
 			args.push(util.format('^%s$', config.functions.join('|')));
 		}
-		var proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: config.dir });
+		let proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: config.dir });
 		proc.stdout.on('data', chunk => channel.append(chunk.toString()));
 		proc.stderr.on('data', chunk => channel.append(chunk.toString()));
 		proc.on('close', code => {
 			if (code) {
-				channel.append("Error: Tests failed.");
+				channel.append('Error: Tests failed.');
 			} else {
-				channel.append("Success: Tests passed.");
+				channel.append('Success: Tests passed.');
 			}
-			resolve(code == 0);
+			resolve(code === 0);
 		});
 	});
 }
@@ -151,7 +151,7 @@ function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInfor
 		.provideDocumentSymbols(doc, null)
 		.then(symbols =>
 			symbols.filter(sym =>
-				sym.kind == vscode.SymbolKind.Function
+				sym.kind === vscode.SymbolKind.Function
 				&& /Test.*/.exec(sym.name) != null)
 		);
 }

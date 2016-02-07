@@ -8,18 +8,18 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { dirname, basename } from 'path';
-import { getBinPath } from './goPath'
-import { parameters } from './util'
+import { getBinPath } from './goPath';
+import { parameters } from './util';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
-		case "const":
-		case "package":
-		case "type":
+		case 'const':
+		case 'package':
+		case 'type':
 			return vscode.CompletionItemKind.Keyword;
-		case "func":
+		case 'func':
 			return vscode.CompletionItemKind.Function;
-		case "var":
+		case 'var':
 			return vscode.CompletionItemKind.Field;
 	}
 	return vscode.CompletionItemKind.Property; // TODO@EG additional mappings needed?
@@ -38,17 +38,17 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
 		return this.ensureGoCodeConfigured().then(() => {
 			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
-				var filename = document.fileName;
+				let filename = document.fileName;
 
 				if (document.lineAt(position.line).text.match(/^\s*\/\//)) {
 					return resolve([]);
 				}
-	
+
 				// get current word
-				var wordAtPosition = document.getWordRangeAtPosition(position);
-				var currentWord = '';
+				let wordAtPosition = document.getWordRangeAtPosition(position);
+				let currentWord = '';
 				if (wordAtPosition && wordAtPosition.start.character < position.character) {
-					var word = document.getText(wordAtPosition);
+					let word = document.getText(wordAtPosition);
 					currentWord = word.substr(0, position.character - wordAtPosition.start.character);
 				}
 
@@ -56,56 +56,56 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					return resolve([]);
 				}
 
-				var offset = document.offsetAt(position);
-				var gocode = getBinPath("gocode");
-				
+				let offset = document.offsetAt(position);
+				let gocode = getBinPath('gocode');
+
 				// Unset GOOS and GOARCH for the `gocode` process to ensure that GOHOSTOS and GOHOSTARCH 
 				// are used as the target operating system and architecture. `gocode` is unable to provide 
 				// autocompletion when the Go environment is configured for cross compilation.
-				var env = Object.assign({}, process.env, { GOOS: "", GOARCH: "" });
+				let env = Object.assign({}, process.env, { GOOS: '', GOARCH: '' });
 
 				// Spawn `gocode` process
-				var p = cp.execFile(gocode, ["-f=json", "autocomplete", filename, "c" + offset], { env }, (err, stdout, stderr) => {
+				let p = cp.execFile(gocode, ['-f=json', 'autocomplete', filename, 'c' + offset], { env }, (err, stdout, stderr) => {
 					try {
-						if (err && (<any>err).code == "ENOENT") {
-							vscode.window.showInformationMessage("The 'gocode' command is not available.  Use 'go get -u github.com/nsf/gocode' to install.");
+						if (err && (<any>err).code === 'ENOENT') {
+							vscode.window.showInformationMessage('The "gocode" command is not available.  Use "go get -u github.com/nsf/gocode" to install.');
 						}
 						if (err) return reject(err);
-						var results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
+						let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 						if (!results[1]) {
-							// "Smart Snippet" for package clause
+							// 'Smart Snippet' for package clause
 							// TODO: Factor this out into a general mechanism
 							if (!document.getText().match(/package\s+(\w+)/)) {
 								let defaultPackageName =
-									basename(document.fileName) == "main.go"
-										? "main"
+									basename(document.fileName) === 'main.go'
+										? 'main'
 										: basename(dirname(document.fileName));
-								let packageItem = new vscode.CompletionItem("package " + defaultPackageName);
+								let packageItem = new vscode.CompletionItem('package ' + defaultPackageName);
 								packageItem.kind = vscode.CompletionItemKind.Snippet;
-								packageItem.insertText = "package " + defaultPackageName + "\r\n\r\n";
+								packageItem.insertText = 'package ' + defaultPackageName + '\r\n\r\n';
 								return resolve([packageItem]);
 							}
 							return resolve([]);
 						}
-						var suggestions = results[1].map(suggest => {
-							var item = new vscode.CompletionItem(suggest.name);
+						let suggestions = results[1].map(suggest => {
+							let item = new vscode.CompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class);
 							item.detail = suggest.type;
 							let conf = vscode.workspace.getConfiguration('go');
-							if (conf.get("useCodeSnippetsOnFunctionSuggest") && suggest.class == "func") {
+							if (conf.get('useCodeSnippetsOnFunctionSuggest') && suggest.class === 'func') {
 								let params = parameters(suggest.type.substring(4));
 								let paramSnippets = [];
 								for (let i in params) {
 									let param = params[i].trim();
 									if (param) {
-										param = param.replace("{", "\\{").replace("}", "\\}");
-										paramSnippets.push("{{" + param + "}}");
+										param = param.replace('{', '\\{').replace('}', '\\}');
+										paramSnippets.push('{{' + param + '}}');
 									}
 								}
-								item.insertText = suggest.name + '(' + paramSnippets.join(", ") + '){{}}';
+								item.insertText = suggest.name + '(' + paramSnippets.join(', ') + '){{}}';
 							}
 							return item;
-						})
+						});
 						resolve(suggestions);
 					} catch (e) {
 						reject(e);
@@ -121,9 +121,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			if (this.gocodeConfigurationComplete) {
 				return resolve();
 			}
-			var gocode = getBinPath("gocode");
-			cp.execFile(gocode, ["set", "propose-builtins", "true"], {}, (err, stdout, stderr) => {
-				cp.execFile(gocode, ["set", "autobuild", "true"], {}, (err, stdout, stderr) => {
+			let gocode = getBinPath('gocode');
+			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], {}, (err, stdout, stderr) => {
+				cp.execFile(gocode, ['set', 'autobuild', 'true'], {}, (err, stdout, stderr) => {
 					resolve();
 				});
 			});

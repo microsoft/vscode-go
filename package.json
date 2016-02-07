@@ -25,7 +25,8 @@
   "scripts": {
     "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
     "compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
-    "test": "node ./node_modules/vscode/bin/test"
+    "test": "node ./node_modules/vscode/bin/test",
+    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts"
   },
   "extensionDependencies": [
     "vscode.go"
@@ -37,9 +38,10 @@
     "lodash": "^3.10.1"
   },
   "devDependencies": {
-    "vscode": "^0.10.7",
     "fs-extra": "^0.26.0",
-    "typescript": "^1.6.2"
+    "tslint": "^3.3.0",
+    "typescript": "^1.6.2",
+    "vscode": "^0.10.7"
   },
   "engines": {
     "vscode": "0.10.x"
@@ -226,11 +228,11 @@
           "default": "goreturns",
           "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format."
         },
-		"go.useCodeSnippetsOnFunctionSuggest": {
-			"type": "boolean",
-			"default": false,
-			"description": "Complete functions with their parameter signature"
-		},
+        "go.useCodeSnippetsOnFunctionSuggest": {
+          "type": "boolean",
+          "default": false,
+          "description": "Complete functions with their parameter signature"
+        },
         "go.gopath": {
           "type": "string",
           "default": null,

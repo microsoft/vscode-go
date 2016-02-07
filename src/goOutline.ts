@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath } from './goPath'
+import { getBinPath } from './goPath';
 
 // Keep in sync with https://github.com/lukehoban/go-outline
 interface GoOutlineRange {
@@ -29,17 +29,16 @@ interface GoOutlineDeclaration {
 
 export function documentSymbols(filename: string): Promise<GoOutlineDeclaration[]> {
 	return new Promise<GoOutlineDeclaration[]>((resolve, reject) => {
-		var gooutline = getBinPath("go-outline");
-	
+		let gooutline = getBinPath('go-outline');
 		// Spawn `go-outline` process
-		var p = cp.execFile(gooutline, ["-f", filename], {}, (err, stdout, stderr) => {
+		let p = cp.execFile(gooutline, ['-f', filename], {}, (err, stdout, stderr) => {
 			try {
-				if (err && (<any>err).code == "ENOENT") {
-					vscode.window.showInformationMessage("The 'go-outline' command is not available.  Use 'go get -u github.com/lukehoban/go-outline' to install.");
+				if (err && (<any>err).code === 'ENOENT') {
+					vscode.window.showInformationMessage('The "go-outline" command is not available.  Use "go get -u github.com/lukehoban/go-outline" to install.');
 				}
 				if (err) return resolve(null);
-				var result = stdout.toString();
-				var decls = <GoOutlineDeclaration[]>JSON.parse(result);
+				let result = stdout.toString();
+				let decls = <GoOutlineDeclaration[]>JSON.parse(result);
 				return resolve(decls);
 			} catch (e) {
 				reject(e);
@@ -51,12 +50,12 @@ export function documentSymbols(filename: string): Promise<GoOutlineDeclaration[
 export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 	private goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
-		"package": vscode.SymbolKind.Package,
-		"import": vscode.SymbolKind.Namespace,
-		"variable": vscode.SymbolKind.Variable,
-		"type": vscode.SymbolKind.Interface,
-		"function": vscode.SymbolKind.Function
-	}
+		'package': vscode.SymbolKind.Package,
+		'import': vscode.SymbolKind.Namespace,
+		'variable': vscode.SymbolKind.Variable,
+		'type': vscode.SymbolKind.Interface,
+		'function': vscode.SymbolKind.Function
+	};
 
 	private convertToCodeSymbols(document: vscode.TextDocument, decls: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName: string): void {
 		decls.forEach(decl => {
@@ -76,8 +75,8 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
 
 		return documentSymbols(document.fileName).then(decls => {
-			var symbols: vscode.SymbolInformation[] = [];
-			this.convertToCodeSymbols(document, decls, symbols, "");
+			let symbols: vscode.SymbolInformation[] = [];
+			this.convertToCodeSymbols(document, decls, symbols, '');
 			return symbols;
 		});
 	}

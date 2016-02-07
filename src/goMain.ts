@@ -18,13 +18,13 @@ import { GoRenameProvider } from './goRename';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
-import { GoCodeActionProvider } from './goCodeAction'
+import { GoCodeActionProvider } from './goCodeAction';
 import { check, ICheckResult } from './goCheck';
-import { setupGoPathAndOfferToInstallTools } from './goInstallTools'
-import { GO_MODE } from './goMode'
-import { showHideStatus } from './goStatus'
-import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest'
-import { addImport } from './goImport'
+import { setupGoPathAndOfferToInstallTools } from './goInstallTools';
+import { GO_MODE } from './goMode';
+import { showHideStatus } from './goStatus';
+import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest';
+import { addImport } from './goImport';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -38,7 +38,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
-	ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), "(", ","));
+	ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
@@ -48,38 +48,38 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
-	ctx.subscriptions.push(vscode.commands.registerCommand("go.gopath", () => {
-		var gopath = process.env["GOPATH"];
-		vscode.window.showInformationMessage("Current GOPATH:" + gopath);
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
+		let gopath = process.env['GOPATH'];
+		vscode.window.showInformationMessage('Current GOPATH:' + gopath);
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.cursor", () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testAtCursor(goConfig['testTimeout']);
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.package", () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testCurrentPackage(goConfig['testTimeout']);
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand("go.test.file", () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testCurrentFile(goConfig['testTimeout']);
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand("go.import.add", (arg: string) => {
-		return addImport(typeof arg == "string" ? arg : null);
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
+		return addImport(typeof arg === 'string' ? arg : null);
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
 			// ^(.*\*/)?\s*\}.*$
 			decreaseIndentPattern: /^(.*\*\/)?\s*\}.*$/,
-			// ^.*\{[^}"']*$
-			increaseIndentPattern: /^.*\{[^}"']*$/
+			// ^.*\{[^}'']*$
+			increaseIndentPattern: /^.*\{[^}'']*$/
 		},
-		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
+		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\'\,\.\<\>\/\?\s]+)/g,
 		comments: {
 			lineComment: '//',
 			blockComment: ['/*', '*/']
@@ -123,28 +123,28 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 
 	function mapSeverityToVSCodeSeverity(sev: string) {
 		switch (sev) {
-			case "error": return vscode.DiagnosticSeverity.Error;
-			case "warning": return vscode.DiagnosticSeverity.Warning;
+			case 'error': return vscode.DiagnosticSeverity.Error;
+			case 'warning': return vscode.DiagnosticSeverity.Warning;
 			default: return vscode.DiagnosticSeverity.Error;
 		}
 	}
 
-	if (document.languageId != "go") {
+	if (document.languageId !== 'go') {
 		return;
 	}
 
-	var uri = document.uri;
+	let uri = document.uri;
 	check(uri.fsPath, goConfig).then(errors => {
 		diagnosticCollection.clear();
 
-		let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();;
+		let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();
 
 		errors.forEach(error => {
 			let targetUri = vscode.Uri.file(error.file);
 			let startColumn = 0;
 			let endColumn = 1;
-			if (document && document.uri.toString() == targetUri.toString()) {
-				let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1)
+			if (document && document.uri.toString() === targetUri.toString()) {
+				let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1);
 				let text = document.getText(range);
 				let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
 				startColumn = leading.length;
@@ -165,7 +165,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 		});
 		diagnosticCollection.set(entries);
 	}).catch(err => {
-		vscode.window.showInformationMessage("Error: " + err);
+		vscode.window.showInformationMessage('Error: ' + err);
 	});
 }
 
@@ -177,14 +177,14 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 	let ignoreNextSave = new WeakSet<vscode.TextDocument>();
 
 	vscode.workspace.onDidSaveTextDocument(document => {
-		if (document.languageId != "go" || ignoreNextSave.has(document)) {
+		if (document.languageId !== 'go' || ignoreNextSave.has(document)) {
 			return;
 		}
 		let goConfig = vscode.workspace.getConfiguration('go');
-		var textEditor = vscode.window.activeTextEditor;
-		var formatPromise: PromiseLike<void> = Promise.resolve();
-		if (goConfig["formatOnSave"] && textEditor.document == document) {
-			var formatter = new Formatter();
+		let textEditor = vscode.window.activeTextEditor;
+		let formatPromise: PromiseLike<void> = Promise.resolve();
+		if (goConfig['formatOnSave'] && textEditor.document === document) {
+			let formatter = new Formatter();
 			formatPromise = formatter.formatDocument(document).then(edits => {
 				return textEditor.edit(editBuilder => {
 					edits.forEach(edit => editBuilder.replace(edit.range, edit.newText));

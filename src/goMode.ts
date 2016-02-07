@@ -7,4 +7,4 @@
 
 import vscode = require('vscode');
 
-export const GO_MODE: vscode.DocumentFilter = { language: 'go', scheme: 'file' }
+export const GO_MODE: vscode.DocumentFilter = { language: 'go', scheme: 'file' };
