@@ -234,12 +234,12 @@
           "description": "Complete functions with their parameter signature"
         },
         "go.gopath": {
-          "type": "string",
+          "type": ["string", "null"],
           "default": null,
           "description": "Specifies the GOPATH to use when no environment variable is set."
         },
         "go.goroot": {
-          "type": "string",
+          "type": ["string", "null"],
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set."
         },
