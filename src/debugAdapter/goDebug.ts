@@ -3,8 +3,8 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source } from './common/debugSession';
-import { Handles } from './common/handles';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
 import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname } from 'path';
 import { spawn, ChildProcess } from 'child_process';
@@ -456,7 +456,7 @@ class GoDebugSession extends DebugSession {
 			}
 		} else if (v.kind === GoReflectKind.Slice) {
 			return {
-				result: '<' + v.type.substring(7) + '>',
+				result: '<' + v.type + '>',
 				variablesReference: this._variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.Array) {

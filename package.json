@@ -35,7 +35,9 @@
     "console-stamp": "^0.2.0",
     "diff-match-patch": "~1.0.0",
     "json-rpc2": "^1.0.2",
-    "lodash": "^3.10.1"
+    "lodash": "^3.10.1",
+    "vscode-debugadapter": "^1.6.1",
+    "vscode-debugprotocol": "^1.6.1"
   },
   "devDependencies": {
     "fs-extra": "^0.26.0",
@@ -234,12 +236,18 @@
           "description": "Complete functions with their parameter signature"
         },
         "go.gopath": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "default": null,
           "description": "Specifies the GOPATH to use when no environment variable is set."
         },
         "go.goroot": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set."
         },
