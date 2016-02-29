@@ -25,7 +25,7 @@ export function setupGoPathAndOfferToInstallTools() {
 	}
 
 	if (!process.env['GOPATH']) {
-		let info = 'GOPATH is not set as an environment let iable or via `go.gopath` setting in Code';
+		let info = 'GOPATH is not set as an environment variable or via `go.gopath` setting in Code';
 		showGoStatus('GOPATH not set', 'go.gopathinfo', info);
 		vscode.commands.registerCommand('go.gopathinfo', () => {
 			vscode.window.showInformationMessage(info);
