@@ -68,13 +68,6 @@
         ]
       }
     ],
-    "grammars": [
-      {
-        "language": "go",
-        "path": "./syntaxes/go.json",
-        "scopeName": "source.go"
-      }
-    ],
     "snippets": [
       {
         "language": "go",
