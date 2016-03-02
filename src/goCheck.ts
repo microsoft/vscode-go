@@ -57,7 +57,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
 		let args = ['build', '-o', tmppath, ...buildFlags, '.'];
 		if (filename.match(/_test.go$/i)) {
-			args = ['test', '-copybinary', '-o', tmppath, '-c', '.'];
+			args = ['test', '-copybinary', '-o', tmppath, '-c', ...buildFlags, '.'];
 		}
 		runningToolsPromises.push(runTool(
 			getGoRuntimePath(),

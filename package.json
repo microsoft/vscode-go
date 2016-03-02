@@ -190,7 +190,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to `go build` during build-on-save (e.g. ['-ldflags=\"-s\"'])"
+          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. ['-ldflags=\"-s\"'])"
         },
         "go.lintOnSave": {
           "type": "boolean",

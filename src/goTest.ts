@@ -120,7 +120,9 @@ function goTest(config: TestConfig): Thenable<boolean> {
 		let channel = vscode.window.createOutputChannel('Go');
 		channel.clear();
 		channel.show(2);
-		let args = ['test', '-v', '-timeout', config.timeout];
+		let buildFlags: string[] = vscode.workspace.getConfiguration('go')['buildFlags'];
+		let args = ['test', '-v', '-timeout', config.timeout, ...buildFlags];
+
 		if (config.functions) {
 			args.push('-run');
 			args.push(util.format('^%s$', config.functions.join('|')));
