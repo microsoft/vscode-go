@@ -59,7 +59,7 @@ The following Visual Studio Code settings are available for the Go extension.  T
 
 In addition to integrated editing features, the extension also provides several commands in the Command Palette for working with Go files:
 
-* `Go: Add Import` to add an import from the list of pacakges in your Go context
+* `Go: Add Import` to add an import from the list of packages in your Go context
 * `Go: Current GOPATH` to see your currently configured GOPATH
 * `Go: Run test at cursor` to run a test at the current cursor position in the active document
 * `Go: Run tests in current package` to run all tests in the pacakge containing the active document 
