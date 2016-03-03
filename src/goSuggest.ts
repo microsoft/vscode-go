@@ -72,40 +72,41 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						}
 						if (err) return reject(err);
 						let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
-						if (!results[1]) {
-							// 'Smart Snippet' for package clause
-							// TODO: Factor this out into a general mechanism
-							if (!document.getText().match(/package\s+(\w+)/)) {
-								let defaultPackageName =
-									basename(document.fileName) === 'main.go'
-										? 'main'
-										: basename(dirname(document.fileName));
-								let packageItem = new vscode.CompletionItem('package ' + defaultPackageName);
-								packageItem.kind = vscode.CompletionItemKind.Snippet;
-								packageItem.insertText = 'package ' + defaultPackageName + '\r\n\r\n';
-								return resolve([packageItem]);
-							}
-							return resolve([]);
+						let suggestions = [];
+						// 'Smart Snippet' for package clause
+						// TODO: Factor this out into a general mechanism
+						if (!document.getText().match(/package\s+(\w+)/)) {
+							let defaultPackageName =
+								basename(document.fileName) === 'main.go'
+									? 'main'
+									: basename(dirname(document.fileName));
+							let packageItem = new vscode.CompletionItem('package ' + defaultPackageName);
+							packageItem.kind = vscode.CompletionItemKind.Snippet;
+							packageItem.insertText = 'package ' + defaultPackageName + '\r\n\r\n';
+							suggestions.push(packageItem);
+
 						}
-						let suggestions = results[1].map(suggest => {
-							let item = new vscode.CompletionItem(suggest.name);
-							item.kind = vscodeKindFromGoCodeClass(suggest.class);
-							item.detail = suggest.type;
-							let conf = vscode.workspace.getConfiguration('go');
-							if (conf.get('useCodeSnippetsOnFunctionSuggest') && suggest.class === 'func') {
-								let params = parameters(suggest.type.substring(4));
-								let paramSnippets = [];
-								for (let i in params) {
-									let param = params[i].trim();
-									if (param) {
-										param = param.replace('{', '\\{').replace('}', '\\}');
-										paramSnippets.push('{{' + param + '}}');
+						if (results[1]) {
+							for (let suggest of results[1]) {
+								let item = new vscode.CompletionItem(suggest.name);
+								item.kind = vscodeKindFromGoCodeClass(suggest.class);
+								item.detail = suggest.type;
+								let conf = vscode.workspace.getConfiguration('go');
+								if (conf.get('useCodeSnippetsOnFunctionSuggest') && suggest.class === 'func') {
+									let params = parameters(suggest.type.substring(4));
+									let paramSnippets = [];
+									for (let i in params) {
+										let param = params[i].trim();
+										if (param) {
+											param = param.replace('{', '\\{').replace('}', '\\}');
+											paramSnippets.push('{{' + param + '}}');
+										}
 									}
+									item.insertText = suggest.name + '(' + paramSnippets.join(', ') + '){{}}';
 								}
-								item.insertText = suggest.name + '(' + paramSnippets.join(', ') + '){{}}';
-							}
-							return item;
-						});
+								suggestions.push(item);
+							};
+						}
 						resolve(suggestions);
 					} catch (e) {
 						reject(e);
