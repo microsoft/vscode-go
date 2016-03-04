@@ -31,7 +31,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 
 First, you will need to install Visual Studio Code `0.10`. In the command palette (`cmd-shift-p`) select `Install Extension` and choose `Go`.  
 
-In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open your GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.  You should see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the Go tooling needed for the extension to suppport it's full feature set.  See the [Tools](#tools) section below for more details.
+In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open your GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.  You should see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the Go tooling needed for the extension to support its full feature set.  See the [Tools](#tools) section below for more details.
 
 _Note_: It is strongly encouraged to turn `Auto Save` on in Visual Studio Code (`File -> Auto Save`) when using this extension.  Many of the Go tools work only on saved files, and error reporting will be more interactive with `Auto Save` turned on.
 
@@ -62,7 +62,7 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Add Import` to add an import from the list of packages in your Go context
 * `Go: Current GOPATH` to see your currently configured GOPATH
 * `Go: Run test at cursor` to run a test at the current cursor position in the active document
-* `Go: Run tests in current package` to run all tests in the pacakge containing the active document 
+* `Go: Run tests in current package` to run all tests in the package containing the active document 
 * `Go: Run tests in current file` to run all tests in the current active document
 
 ### _Optional_: Debugging
