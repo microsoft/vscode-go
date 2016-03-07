@@ -23,6 +23,7 @@ import { check, ICheckResult } from './goCheck';
 import { setupGoPathAndOfferToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
+import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest';
 import { addImport } from './goImport';
 
@@ -43,8 +44,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
-
+	vscode.workspace.onDidChangeTextDocument(removeCodeCoverage, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
+	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
+
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
@@ -66,6 +69,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testCurrentFile(goConfig['testTimeout']);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.coverage', () => {
+		coverageCurrentPackage();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {

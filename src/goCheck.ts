@@ -11,6 +11,7 @@ import path = require('path');
 import os = require('os');
 import fs = require('fs');
 import { getBinPath, getGoRuntimePath } from './goPath';
+import { getCoverage } from './goCover';
 
 export interface ICheckResult {
 	file: string;
@@ -91,6 +92,10 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			true,
 			'No "go" binary could be found in GOROOT: "' + process.env['GOROOT'] + '"'
 		));
+	}
+
+	if (!!goConfig['coverOnSave']) {
+		runningToolsPromises.push(getCoverage(filename));
 	}
 
 	return Promise.all(runningToolsPromises).then(resultSets => [].concat.apply([], resultSets));

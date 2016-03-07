@@ -53,7 +53,8 @@
     "onCommand:go.gopath",
     "onCommand:go.test.cursor",
     "onCommand:go.test.package",
-    "onCommand:go.test.file"
+    "onCommand:go.test.file",
+ 	"onCommand:go.test.coverage"
   ],
   "main": "./out/src/goMain",
   "contributes": {
@@ -94,6 +95,11 @@
         "command": "go.test.file",
         "title": "Go: Run tests in file",
         "description": "Runs all unit tests in the current file."
+      },
+      {
+        "command": "go.test.coverage",
+        "title": "Go: Test coverage in current package",
+        "description": "Displays test coverage in the current package."
       },
       {
         "command": "go.import.add",
@@ -248,6 +254,11 @@
           "type": "boolean",
           "default": false,
           "description": "[EXPERIMENTAL] Run formatting tool on save."
+        },
+        "go.coverOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run 'go test -coverprofile' on save"	
         },
         "go.testTimeout": {
           "type": "string",
