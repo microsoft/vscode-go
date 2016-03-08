@@ -47,6 +47,7 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.buildFlags": [],
 	"go.lintFlags": [],
 	"go.vetFlags": [],
+	"go.coverOnSave": false,
 	"go.useCodeSnippetsOnFunctionSuggest": false,
 	"go.formatOnSave": false,
 	"go.formatTool": "goreturns",

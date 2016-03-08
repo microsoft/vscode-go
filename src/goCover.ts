@@ -68,7 +68,7 @@ export function getCodeCoverage(editor: vscode.TextEditor) {
 }
 
 function applyCoverage(remove: boolean = false) {
-	for (let filename in coverageFiles) {
+	Object.keys(coverageFiles).forEach(filename => {
 		let file = coverageFiles[filename];
 		// Highlight lines in current editor.
 		let editor = vscode.window.visibleTextEditors.find((value, index, obj) => {
@@ -77,7 +77,7 @@ function applyCoverage(remove: boolean = false) {
 		if (editor) {
 			highlightCoverage(editor, file, remove);
 		}
-	}
+	});
 }
 
 function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
