@@ -12,21 +12,17 @@ import fs = require('fs');
 import { getBinPath, getGoRuntimePath } from './goPath';
 import rl = require('readline');
 
-if (!getGoRuntimePath()) {
-	vscode.window.showInformationMessage('No "go" binary could be found on PATH or in GOROOT.');
-}
-
 let coveredHighLight = vscode.window.createTextEditorDecorationType({
 	// Green
 	backgroundColor: 'rgba(64,128,64,0.5)',
 	isWholeLine: false
-}),
-	uncoveredHighLight = vscode.window.createTextEditorDecorationType({
-		// Red
-		backgroundColor: 'rgba(128,64,64,0.5)',
-		isWholeLine: false
-	}),
-	coverageFiles = {};
+});
+let uncoveredHighLight = vscode.window.createTextEditorDecorationType({
+	// Red
+	backgroundColor: 'rgba(128,64,64,0.5)',
+	isWholeLine: false
+});
+let coverageFiles = {};
 
 interface CoverageFile {
 	filename: string;
@@ -72,14 +68,12 @@ export function getCodeCoverage(editor: vscode.TextEditor) {
 }
 
 function applyCoverage(remove: boolean = false) {
-	console.log(coverageFiles);
 	for (let filename in coverageFiles) {
 		let file = coverageFiles[filename];
 		// Highlight lines in current editor.
 		let editor = vscode.window.visibleTextEditors.find((value, index, obj) => {
 			return value.document.fileName.endsWith(filename);
 		});
-		console.log(editor);
 		if (editor) {
 			highlightCoverage(editor, file, remove);
 		}
@@ -89,7 +83,6 @@ function applyCoverage(remove: boolean = false) {
 function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
 	editor.setDecorations(uncoveredHighLight, remove ? [] : file.uncoveredRange);
 	editor.setDecorations(coveredHighLight, remove ? [] : file.coveredRange);
-
 }
 
 export function getCoverage(filename: string): Promise<any[]> {
@@ -105,8 +98,6 @@ export function getCoverage(filename: string): Promise<any[]> {
 					vscode.window.showInformationMessage('Could not generate coverage report.  Install Go from http://golang.org/dl/.');
 					return resolve([]);
 				}
-				let ret = [];
-
 
 				let lines = rl.createInterface({
 					input: fs.createReadStream(tmppath),
@@ -116,36 +107,34 @@ export function getCoverage(filename: string): Promise<any[]> {
 				lines.on('line', function(data: string) {
 					// go test coverageprofile generates output: 
 					//    filename:StartLine.StartColumn,EndLine.EndColumn Hits IsCovered
+					// The first line will be "mode: set" which will be ignored
 					let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
-					if (fileRange) {
-						let coverage = coverageFiles[fileRange[1]] || { coveredRange: [], uncoveredRange: [] };
+					if (!fileRange) return;
 
-						let range = {
-							range: new vscode.Range(
-								// Start Line converted to zero based
-								parseInt(fileRange[2]) - 1,
-								// Start Column converted to zero based
-								parseInt(fileRange[3]) - 1,
-								// End Line converted to zero based
-								parseInt(fileRange[4]) - 1,
-								// End Column converted to zero based
-								parseInt(fileRange[5]) - 1
-							)
-						};
-						// If is Covered
-						if (parseInt(fileRange[7]) === 1) {
-							coverage.coveredRange.push(range);
-						}
-						// Not Covered
-						else {
-							coverage.uncoveredRange.push(range);
-						}
-						coverageFiles[fileRange[1]] = coverage;
+					let coverage = coverageFiles[fileRange[1]] || { coveredRange: [], uncoveredRange: [] };
+					let range = new vscode.Range(
+						// Start Line converted to zero based
+						parseInt(fileRange[2]) - 1,
+						// Start Column converted to zero based
+						parseInt(fileRange[3]) - 1,
+						// End Line converted to zero based
+						parseInt(fileRange[4]) - 1,
+						// End Column converted to zero based
+						parseInt(fileRange[5]) - 1
+					);
+					// If is Covered
+					if (parseInt(fileRange[7]) === 1) {
+						coverage.coveredRange.push({range});
 					}
+					// Not Covered
+					else {
+						coverage.uncoveredRange.push({range});
+					}
+					coverageFiles[fileRange[1]] = coverage;
 				});
 				lines.on('close', function(data) {
 					applyCoverage();
-					resolve(ret);
+					resolve([]);
 				});
 			} catch (e) {
 				vscode.window.showInformationMessage(e.msg);
