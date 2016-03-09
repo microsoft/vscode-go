@@ -21,6 +21,8 @@ function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 			return vscode.CompletionItemKind.Function;
 		case 'var':
 			return vscode.CompletionItemKind.Field;
+		case 'import':
+			return vscode.CompletionItemKind.Module;
 	}
 	return vscode.CompletionItemKind.Property; // TODO@EG additional mappings needed?
 }
@@ -42,6 +44,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 				if (document.lineAt(position.line).text.match(/^\s*\/\//)) {
 					return resolve([]);
+				}
+
+				let inString = false;
+				if ((document.lineAt(position.line).text.substring(0, position.character).match(/\"/g) || []).length % 2 === 1) {
+					inString = true;
 				}
 
 				// get current word
@@ -88,6 +95,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						}
 						if (results[1]) {
 							for (let suggest of results[1]) {
+								if (inString && suggest.class !== 'import') continue;
 								let item = new vscode.CompletionItem(suggest.name);
 								item.kind = vscodeKindFromGoCodeClass(suggest.class);
 								item.detail = suggest.type;
