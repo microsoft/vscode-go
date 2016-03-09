@@ -195,7 +195,6 @@ class Delve {
 
 			this.debugProcess.stderr.on('data', chunk => {
 				let str = chunk.toString();
-				console.warn(str);
 				if (this.onstderr) { this.onstderr(str); }
 				if (!serverRunning) {
 					serverRunning = true;
@@ -204,7 +203,6 @@ class Delve {
 			});
 			this.debugProcess.stdout.on('data', chunk => {
 				let str = chunk.toString();
-				console.warn(str);
 				if (this.onstdout) { this.onstdout(str); }
 			});
 			this.debugProcess.on('close', function(code) {
