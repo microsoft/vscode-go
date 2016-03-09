@@ -71,7 +71,7 @@ export function getGoRuntimePath(): string {
 	if (process.env['GOROOT']) {
 		runtimePathCache = path.join(process.env['GOROOT'], 'bin', correctBinname('go'));
 	} else if (process.env['PATH']) {
-		let pathparts = (<string>process.env.PATH).split((<any>path).delimiter);
+		let pathparts = (<string>process.env.PATH).split(path.delimiter);
 		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinname('go'))).filter(candidate => fs.existsSync(candidate))[0];
 	}
 	return runtimePathCache;

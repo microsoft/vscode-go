@@ -141,7 +141,7 @@ class Delve {
 		this.connection = new Promise((resolve, reject) => {
 			let serverRunning = false;
 			let dlv = getBinPath('dlv');
-			console.log('Using dlv at: ', dlv);
+			console.warn('Using dlv at: ', dlv);
 			if (!existsSync(dlv)) {
 				return reject('Cannot find Delve debugger. Ensure it is in your `GOPATH/bin` or `PATH`.');
 			}
@@ -195,7 +195,7 @@ class Delve {
 
 			this.debugProcess.stderr.on('data', chunk => {
 				let str = chunk.toString();
-				console.log(str);
+				console.warn(str);
 				if (this.onstderr) { this.onstderr(str); }
 				if (!serverRunning) {
 					serverRunning = true;
@@ -204,7 +204,7 @@ class Delve {
 			});
 			this.debugProcess.stdout.on('data', chunk => {
 				let str = chunk.toString();
-				console.log(str);
+				console.warn(str);
 				if (this.onstdout) { this.onstdout(str); }
 			});
 			this.debugProcess.on('close', function(code) {
@@ -264,11 +264,11 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
-		console.log('InitializeRequest');
+		console.warn('InitializeRequest');
 		this.sendResponse(response);
-		console.log('InitializeResponse');
+		console.warn('InitializeResponse');
 		this.sendEvent(new InitializedEvent());
-		console.log('InitializeEvent');
+		console.warn('InitializeEvent');
 	}
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
@@ -286,53 +286,53 @@ class GoDebugSession extends DebugSession {
 		).then(() => {
 			if (args.stopOnEntry) {
 				this.sendEvent(new StoppedEvent('breakpoint', 0));
-				console.log('StoppedEvent("breakpoint")');
+				console.warn('StoppedEvent("breakpoint")');
 				this.sendResponse(response);
 			} else {
 				this.continueRequest(response);
 			}
 		}, err => {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: "{e}"', { e: err.toString() });
-			console.log('ContinueResponse');
+			console.warn('ContinueResponse');
 		});
 	}
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
-		console.log('DisconnectRequest');
+		console.warn('DisconnectRequest');
 		this.delve.close();
 		super.disconnectRequest(response, args);
-		console.log('DisconnectResponse');
+		console.warn('DisconnectResponse');
 	}
 
 	protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments): void {
-		console.log('ExceptionBreakPointsRequest');
+		console.warn('ExceptionBreakPointsRequest');
 		// Wow - this is subtle - it appears that this event will always get 
 		// sent during intiail breakpoint initialization even if there are not
 		// user breakpoints - so we use this as the indicator to signal 
 		// that breakpoints have been set and we can continue
 		this.signalInitialBreakpointsSet();
 		this.sendResponse(response);
-		console.log('ExceptionBreakPointsResponse');
+		console.warn('ExceptionBreakPointsResponse');
 	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
-		console.log('SetBreakPointsRequest');
+		console.warn('SetBreakPointsRequest');
 		if (!this.breakpoints.get(args.source.path)) {
 			this.breakpoints.set(args.source.path, []);
 		}
 		let file = args.source.path;
 		let existingBPs = this.breakpoints.get(file);
 		Promise.all(this.breakpoints.get(file).map(existingBP => {
-			console.log('Clearing: ' + existingBP.id);
+			console.warn('Clearing: ' + existingBP.id);
 			return this.delve.callPromise<DebugBreakpoint>('ClearBreakpoint', [existingBP.id]);
 		})).then(() => {
-			console.log('All cleared');
+			console.warn('All cleared');
 			return Promise.all(args.lines.map(line => {
-				console.log('Creating on: ' + file + ':' + line);
+				console.warn('Creating on: ' + file + ':' + line);
 				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file, line }]).catch(err => null);
 			}));
 		}).then(newBreakpoints => {
-			console.log('All set:' + JSON.stringify(newBreakpoints));
+			console.warn('All set:' + JSON.stringify(newBreakpoints));
 			let breakpoints = newBreakpoints.map((bp, i) => {
 				if (bp) {
 					return { verified: true, line: bp.line };
@@ -345,7 +345,7 @@ class GoDebugSession extends DebugSession {
 		}).then(breakpoints => {
 			response.body = { breakpoints };
 			this.sendResponse(response);
-			console.log('SetBreakPointsResponse');
+			console.warn('SetBreakPointsResponse');
 		}, err => {
 			this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
 			console.error(err);
@@ -353,13 +353,13 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
-		console.log('ThreadsRequest');
+		console.warn('ThreadsRequest');
 		this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
 			if (err) {
 				console.error('Failed to get threads.');
 				return this.sendErrorResponse(response, 2003, 'Unable to display threads: "{e}"', { e: err.toString() });
 			}
-			console.log(goroutines);
+			console.warn(goroutines);
 			let threads = goroutines.map(goroutine =>
 				new Thread(
 					goroutine.id,
@@ -368,19 +368,19 @@ class GoDebugSession extends DebugSession {
 			);
 			response.body = { threads };
 			this.sendResponse(response);
-			console.log('ThreadsResponse');
-			console.log(threads);
+			console.warn('ThreadsResponse');
+			console.warn(threads);
 		});
 	}
 
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
-		console.log('StackTraceRequest');
+		console.warn('StackTraceRequest');
 		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: args.threadId, depth: args.levels }], (err, locations) => {
 			if (err) {
 				console.error('Failed to produce stack trace!');
 				return this.sendErrorResponse(response, 2004, 'Unable to produce stack trace: "{e}"', { e: err.toString() });
 			}
-			console.log(locations);
+			console.warn(locations);
 			let stackFrames = locations.map((location, i) =>
 				new StackFrame(
 					i,
@@ -395,24 +395,24 @@ class GoDebugSession extends DebugSession {
 			);
 			response.body = { stackFrames };
 			this.sendResponse(response);
-			console.log('StackTraceResponse');
+			console.warn('StackTraceResponse');
 		});
 	}
 
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
-		console.log('ScopesRequest');
+		console.warn('ScopesRequest');
 		this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, locals) => {
 			if (err) {
 				console.error('Failed to list local variables.');
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
-			console.log(locals);
+			console.warn(locals);
 			this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, args) => {
 				if (err) {
 					console.error('Failed to list function args.');
 					return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', { e: err.toString() });
 				}
-				console.log(args);
+				console.warn(args);
 				let vars = args.concat(locals);
 
 				let scopes = new Array<Scope>();
@@ -431,7 +431,7 @@ class GoDebugSession extends DebugSession {
 				scopes.push(new Scope('Local', this._variableHandles.create(localVariables), false));
 				response.body = { scopes };
 				this.sendResponse(response);
-				console.log('ScopesResponse');
+				console.warn('ScopesResponse');
 			});
 		});
 	}
@@ -478,7 +478,7 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
-		console.log('VariablesRequest');
+		console.warn('VariablesRequest');
 		let vari = this._variableHandles.get(args.variablesReference);
 		let variables;
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice || vari.kind === GoReflectKind.Map) {
@@ -500,16 +500,16 @@ class GoDebugSession extends DebugSession {
 				};
 			});
 		}
-		console.log(JSON.stringify(variables, null, ' '));
+		console.warn(JSON.stringify(variables, null, ' '));
 		response.body = { variables };
 		this.sendResponse(response);
-		console.log('VariablesResponse');
+		console.warn('VariablesResponse');
 	}
 
 	private handleReenterDebug(reason: string): void {
 		if (this.debugState.exited) {
 			this.sendEvent(new TerminatedEvent());
-			console.log('TerminatedEvent');
+			console.warn('TerminatedEvent');
 		} else {
 			// [TODO] Can we avoid doing this? https://github.com/Microsoft/vscode/issues/40#issuecomment-161999881
 			this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
@@ -535,51 +535,51 @@ class GoDebugSession extends DebugSession {
 				});
 
 				this.sendEvent(new StoppedEvent(reason, this.debugState.currentGoroutine.id));
-				console.log('StoppedEvent("' + reason + '")');
+				console.warn('StoppedEvent("' + reason + '")');
 			});
 		}
 	}
 
 	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
-		console.log('ContinueRequest');
+		console.warn('ContinueRequest');
 		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
 			if (err) {
 				console.error('Failed to continue.');
 			}
-			console.log(state);
+			console.warn(state);
 			this.debugState = state;
 			this.handleReenterDebug('breakpoint');
 		});
 		this.sendResponse(response);
-		console.log('ContinueResponse');
+		console.warn('ContinueResponse');
 	}
 
 	protected nextRequest(response: DebugProtocol.NextResponse): void {
-		console.log('NextRequest');
+		console.warn('NextRequest');
 		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
 			if (err) {
 				console.error('Failed to next.');
 			}
-			console.log(state);
+			console.warn(state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
 		this.sendResponse(response);
-		console.log('NextResponse');
+		console.warn('NextResponse');
 	}
 
 	protected stepInRequest(response: DebugProtocol.StepInResponse): void {
-		console.log('StepInRequest');
+		console.warn('StepInRequest');
 		this.delve.call<DebuggerState>('Command', [{ name: 'step' }], (err, state) => {
 			if (err) {
 				console.error('Failed to step.');
 			}
-			console.log(state);
+			console.warn(state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
 		this.sendResponse(response);
-		console.log('StepInResponse');
+		console.warn('StepInResponse');
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse): void {
@@ -593,7 +593,7 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
-		console.log('EvaluateRequest');
+		console.warn('EvaluateRequest');
 		let evalSymbolArgs = {
 			symbol: args.expression,
 			scope: {
@@ -608,7 +608,7 @@ class GoDebugSession extends DebugSession {
 			}
 			response.body = this.convertDebugVariableToProtocolVariable(variable, 0);
 			this.sendResponse(response);
-			console.log('EvaluateResponse');
+			console.warn('EvaluateResponse');
 		});
 	}
 }
