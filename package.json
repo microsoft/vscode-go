@@ -124,6 +124,9 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
+			"remotePath": "",
+			"port": 2345,
+			"host": "127.0.0.1",
             "program": "${workspaceRoot}",
             "env": {},
             "args": []
@@ -140,7 +143,7 @@
               },
               "mode": {
                 "type": "string",
-                "description": "One of 'debug', 'test', 'exec'.",
+                "description": "One of 'debug', 'debug_remote', 'test', 'exec'.",
                 "default": "debug"
               },
               "stopOnEntry": {
@@ -175,6 +178,21 @@
                 "type": "string",
                 "description": "Init file, executed by the terminal client.",
                 "default": ""
+              },
+              "remotePath": {
+                "type": "string",
+                "description": "If remote debugging, the path to the source code on the remote machine, if different from the local machine.",
+                "default": ""
+              },
+              "port": {
+                "type": "number",
+                "description": "The port that the delve debugger will be listening on.",
+                "default": 2345
+              },
+              "host": {
+                "type": "string",
+                "description": "The host name of the machine the delve debugger will be listening on.",
+                "default": "127.0.0.1"
               }
             }
           }
