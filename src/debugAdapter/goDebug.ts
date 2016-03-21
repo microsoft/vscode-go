@@ -272,6 +272,8 @@ class GoDebugSession extends DebugSession {
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
 		log('InitializeRequest');
+		// This debug adapter implements the configurationDoneRequest.
+		response.body.supportsConfigurationDoneRequest = true;
 		this.sendResponse(response);
 		log('InitializeResponse');
 		this.sendEvent(new InitializedEvent());
@@ -311,15 +313,11 @@ class GoDebugSession extends DebugSession {
 		log('DisconnectResponse');
 	}
 
-	protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments): void {
-		log('ExceptionBreakPointsRequest');
-		// Wow - this is subtle - it appears that this event will always get 
-		// sent during intiail breakpoint initialization even if there are not
-		// user breakpoints - so we use this as the indicator to signal 
-		// that breakpoints have been set and we can continue
+	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
+		log('ConfigurationDoneRequest');
 		this.signalInitialBreakpointsSet();
 		this.sendResponse(response);
-		log('ExceptionBreakPointsResponse');
+		log('ConfigurationDoneRequest');
 	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
