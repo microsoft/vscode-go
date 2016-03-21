@@ -42,7 +42,7 @@
   "devDependencies": {
     "fs-extra": "^0.26.0",
     "tslint": "^3.3.0",
-    "typescript": "^1.6.2",
+    "typescript": "1.8.7",
     "vscode": "^0.10.7"
   },
   "engines": {
