@@ -144,69 +144,69 @@ function log(msg?: any, ...args) {
 }
 
 class Delve {
-    program: string;
-    remotePath: string;
+	program: string;
+	remotePath: string;
 	debugProcess: ChildProcess;
 	connection: Promise<RPCConnection>;
 	onstdout: (str: string) => void;
 	onstderr: (str: string) => void;
 
 	constructor(mode: string, remotePath: string, port: number, host:string, program: string, args: string[], cwd: string, env: { [key: string]: string }, buildFlags: string, init: string) {
-        this.program = program;
-        this.remotePath = remotePath;
-        this.connection = new Promise((resolve, reject) => {
-            let serverRunning = false;
-            if (mode === 'debug_remote') {
-                this.debugProcess = null;
-                serverRunning = true;  //assume server is running when in debug_remote mode
-                connectClient(port, host);
-            }
-            else 
-            {
-                let dlv = getBinPath('dlv');
-                log('Using dlv at: ', dlv);
-                if (!existsSync(dlv)) {
-                    return reject('Cannot find Delve debugger. Ensure it is in your `GOPATH/bin` or `PATH`.');
-                }
-                let dlvEnv: Object = null;
-                if (env) {
-                    dlvEnv = {};
-                    for (let k in process.env) {
-                        dlvEnv[k] = process.env[k];
-                    }
-                    for (let k in env) {
-                        dlvEnv[k] = env[k];
-                    }
-                }
-                let dlvArgs = [mode || 'debug'];
-                if (mode === 'exec') {
-                    dlvArgs = dlvArgs.concat([program]);
-                }
-                dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString(), '--log']);
-                if (buildFlags) {
-                    dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
-                }
-                if (init) {
-                    dlvArgs = dlvArgs.concat(['--init=' + init]);
-                }
-                if (args) {
-                    dlvArgs = dlvArgs.concat(['--', ...args]);
-                }
+		this.program = program;
+		this.remotePath = remotePath;
+		this.connection = new Promise((resolve, reject) => {
+			let serverRunning = false;
+			if (mode === 'remote') {
+				this.debugProcess = null;
+				serverRunning = true;  //assume server is running when in remote mode
+				connectClient(port, host);
+			}
+			else
+			{
+				let dlv = getBinPath('dlv');
+				log('Using dlv at: ', dlv);
+				if (!existsSync(dlv)) {
+					return reject('Cannot find Delve debugger. Ensure it is in your `GOPATH/bin` or `PATH`.');
+				}
+				let dlvEnv: Object = null;
+				if (env) {
+					dlvEnv = {};
+					for (let k in process.env) {
+						dlvEnv[k] = process.env[k];
+					}
+					for (let k in env) {
+						dlvEnv[k] = env[k];
+					}
+				}
+				let dlvArgs = [mode || 'debug'];
+				if (mode === 'exec') {
+					dlvArgs = dlvArgs.concat([program]);
+				}
+				dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString(), '--log']);
+				if (buildFlags) {
+					dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
+				}
+				if (init) {
+					dlvArgs = dlvArgs.concat(['--init=' + init]);
+				}
+				if (args) {
+					dlvArgs = dlvArgs.concat(['--', ...args]);
+				}
 
-                let dlvCwd = dirname(program);
-                try {
-                    if (lstatSync(program).isDirectory()) {
-                        dlvCwd = program;
-                    }
-                } catch (e) { }
-                this.debugProcess = spawn(dlv, dlvArgs, {
-                    cwd: dlvCwd,
-                    env: dlvEnv,
-                });
-            }
+				let dlvCwd = dirname(program);
+				try {
+					if (lstatSync(program).isDirectory()) {
+						dlvCwd = program;
+					}
+				} catch (e) { }
+				this.debugProcess = spawn(dlv, dlvArgs, {
+					cwd: dlvCwd,
+					env: dlvEnv,
+				});
+			}
 
-            function connectClient(port: number, host: string) {
-                 let client = Client.$create(port, host);
+			function connectClient(port: number, host: string) {
+				 let client = Client.$create(port, host);
 				client.connectSocket((err, conn) => {
 					if (err) return reject(err);
 					// Add a slight delay to avoid issues on Linux with
@@ -215,28 +215,28 @@ class Delve {
 						resolve(conn),
 						200);
 				});
-             }
+			 }
 
-             if (this.debugProcess != null) {
-                this.debugProcess.stderr.on('data', chunk => {
-                    let str = chunk.toString();
-                    if (this.onstderr) { this.onstderr(str); }
-                    if (!serverRunning) {
-                        serverRunning = true;
-                        connectClient(port, host);
-                    }
-                });
-                this.debugProcess.stdout.on('data', chunk => {
-                    let str = chunk.toString();
-                    if (this.onstdout) { this.onstdout(str); }
-                });
-                this.debugProcess.on('close', function(code) {
-                    // TODO: Report `dlv` crash to user. 
-                    console.error('Process exiting with code: ' + code);
-                });
-                this.debugProcess.on('error', function(err) {
-                    reject(err);
-                });
+			 if (this.debugProcess != null) {
+				this.debugProcess.stderr.on('data', chunk => {
+					let str = chunk.toString();
+					if (this.onstderr) { this.onstderr(str); }
+					if (!serverRunning) {
+						serverRunning = true;
+						connectClient(port, host);
+					}
+				});
+				this.debugProcess.stdout.on('data', chunk => {
+					let str = chunk.toString();
+					if (this.onstdout) { this.onstdout(str); }
+				});
+				this.debugProcess.on('close', function(code) {
+					// TODO: Report `dlv` crash to user.
+					console.error('Process exiting with code: ' + code);
+				});
+				this.debugProcess.on('error', function(err) {
+					reject(err);
+				});
 			}
 		});
 	}
@@ -263,21 +263,21 @@ class Delve {
 	}
 
 	close() {
-        if (this.debugProcess === null) {                                                    
-            this.call<DebuggerState>('Command', [{ name: 'halt' }], (err, state) => {
-                if (err) {
-                    console.error('Failed to halt.');
-                }
-                // else TODO:  Can't find a way to kill remote delve.
-                // {
-                //     this.call<number>('Detach', [true], (err, ret) => {
-                //         if (err) {
-                //             console.error('Failed to detach.');
-                //         }
-            	// 	});                                                                                           
-                // }
-    		});                                               
-        }
+		if (this.debugProcess === null) {
+			this.call<DebuggerState>('Command', [{ name: 'halt' }], (err, state) => {
+				if (err) {
+					console.error('Failed to halt.');
+				}
+				// else TODO:  Can't find a way to kill remote delve.
+				// {
+				//     this.call<number>('Detach', [true], (err, ret) => {
+				//         if (err) {
+				//             console.error('Failed to detach.');
+				//         }
+				// 	});
+				// }
+			});
+		}
 		else this.debugProcess.kill();
 	}
 }
@@ -356,18 +356,18 @@ class GoDebugSession extends DebugSession {
 		this.sendResponse(response);
 		log('ExceptionBreakPointsResponse');
 	}
-    
-    protected toDebuggerPath(path): string {
-        if (this.delve.remotePath.length === 0)
-            return this.convertClientPathToDebugger(path);
-        return path.replace(this.delve.program, this.delve.remotePath);
-    }
-    
-    protected toLocalPath(path): string {
-        if (this.delve.remotePath.length === 0)
-            return this.convertDebuggerPathToClient(path);
-        return path.replace(this.delve.remotePath, this.delve.program);
-    }
+
+	protected toDebuggerPath(path): string {
+		if (this.delve.remotePath.length === 0)
+			return this.convertClientPathToDebugger(path);
+		return path.replace(this.delve.program, this.delve.remotePath);
+	}
+
+	protected toLocalPath(path): string {
+		if (this.delve.remotePath.length === 0)
+			return this.convertDebuggerPathToClient(path);
+		return path.replace(this.delve.remotePath, this.delve.program);
+	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
 		log('SetBreakPointsRequest');
@@ -375,7 +375,7 @@ class GoDebugSession extends DebugSession {
 			this.breakpoints.set(args.source.path, []);
 		}
 		let file = args.source.path;
-        let remotePath = this.toDebuggerPath(file)
+		let remotePath = this.toDebuggerPath(file)
 		let existingBPs = this.breakpoints.get(file);
 		Promise.all(this.breakpoints.get(file).map(existingBP => {
 			log('Clearing: ' + existingBP.id);
@@ -444,7 +444,7 @@ class GoDebugSession extends DebugSession {
 					location.function ? location.function.name : '<unknown>',
 					new Source(
 						basename(location.file),
-                        this.toLocalPath(location.file)
+						this.toLocalPath(location.file)
 						//this.convertDebuggerPathToClient(location.file)
 					),
 					location.line,

@@ -124,9 +124,9 @@
             "type": "go",
             "request": "launch",
             "mode": "debug",
-			"remotePath": "",
-			"port": 2345,
-			"host": "127.0.0.1",
+            "remotePath": "",
+            "port": 2345,
+            "host": "127.0.0.1",
             "program": "${workspaceRoot}",
             "env": {},
             "args": []
@@ -143,7 +143,7 @@
               },
               "mode": {
                 "type": "string",
-                "description": "One of 'debug', 'debug_remote', 'test', 'exec'.",
+                "description": "One of 'debug', 'remote', 'test', 'exec'.",
                 "default": "debug"
               },
               "stopOnEntry": {
