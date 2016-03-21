@@ -139,6 +139,11 @@ function log(msg?: any, ...args) {
 		console.warn(msg, ...args);
 	}
 }
+function logError(msg?: any, ...args) {
+	if (DEBUG) {
+		console.error(msg, ...args);
+	}
+}
 
 class Delve {
 	debugProcess: ChildProcess;
@@ -216,7 +221,7 @@ class Delve {
 			});
 			this.debugProcess.on('close', function(code) {
 				// TODO: Report `dlv` crash to user. 
-				console.error('Process exiting with code: ' + code);
+				logError('Process exiting with code: ' + code);
 			});
 			this.debugProcess.on('error', function(err) {
 				reject(err);
@@ -334,7 +339,10 @@ class GoDebugSession extends DebugSession {
 			log('All cleared');
 			return Promise.all(args.lines.map(line => {
 				log('Creating on: ' + file + ':' + line);
-				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file, line }]).catch(err => null);
+				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file, line }]).catch(err => {
+					log('Error on CreateBreakpoint');
+					return null;
+				});
 			}));
 		}).then(newBreakpoints => {
 			log('All set:' + JSON.stringify(newBreakpoints));
@@ -353,7 +361,7 @@ class GoDebugSession extends DebugSession {
 			log('SetBreakPointsResponse');
 		}, err => {
 			this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
-			console.error(err);
+			logError(err);
 		});
 	}
 
@@ -361,7 +369,7 @@ class GoDebugSession extends DebugSession {
 		log('ThreadsRequest');
 		this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
 			if (err) {
-				console.error('Failed to get threads.');
+				logError('Failed to get threads.');
 				return this.sendErrorResponse(response, 2003, 'Unable to display threads: "{e}"', { e: err.toString() });
 			}
 			log(goroutines);
@@ -382,7 +390,7 @@ class GoDebugSession extends DebugSession {
 		log('StackTraceRequest');
 		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: args.threadId, depth: args.levels }], (err, locations) => {
 			if (err) {
-				console.error('Failed to produce stack trace!');
+				logError('Failed to produce stack trace!');
 				return this.sendErrorResponse(response, 2004, 'Unable to produce stack trace: "{e}"', { e: err.toString() });
 			}
 			log(locations);
@@ -408,13 +416,13 @@ class GoDebugSession extends DebugSession {
 		log('ScopesRequest');
 		this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, locals) => {
 			if (err) {
-				console.error('Failed to list local variables.');
+				logError('Failed to list local variables.');
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
 			log(locals);
 			this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, args) => {
 				if (err) {
-					console.error('Failed to list function args.');
+					logError('Failed to list function args.');
 					return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', { e: err.toString() });
 				}
 				log(args);
@@ -519,7 +527,7 @@ class GoDebugSession extends DebugSession {
 			// [TODO] Can we avoid doing this? https://github.com/Microsoft/vscode/issues/40#issuecomment-161999881
 			this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
 				if (err) {
-					console.error('Failed to get threads.');
+					logError('Failed to get threads.');
 				}
 				// Assume we need to stop all the threads we saw before...
 				let needsToBeStopped = new Set<number>();
@@ -549,7 +557,7 @@ class GoDebugSession extends DebugSession {
 		log('ContinueRequest');
 		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
 			if (err) {
-				console.error('Failed to continue.');
+				logError('Failed to continue.');
 			}
 			log(state);
 			this.debugState = state;
@@ -563,7 +571,7 @@ class GoDebugSession extends DebugSession {
 		log('NextRequest');
 		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
 			if (err) {
-				console.error('Failed to next.');
+				logError('Failed to next.');
 			}
 			log(state);
 			this.debugState = state;
@@ -577,7 +585,7 @@ class GoDebugSession extends DebugSession {
 		log('StepInRequest');
 		this.delve.call<DebuggerState>('Command', [{ name: 'step' }], (err, state) => {
 			if (err) {
-				console.error('Failed to step.');
+				logError('Failed to step.');
 			}
 			log(state);
 			this.debugState = state;
@@ -588,13 +596,21 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse): void {
-		console.error('Not yet implemented: stepOutRequest');
+		logError('Not yet implemented: stepOutRequest');
 		this.sendErrorResponse(response, 2000, 'Step out is not yet supported');
 	}
 
 	protected pauseRequest(response: DebugProtocol.PauseResponse): void {
-		console.error('Not yet implemented: pauseRequest');
-		this.sendErrorResponse(response, 2000, 'Pause is not yet supported');
+		log('PauseRequest');
+		this.delve.call<DebuggerState>('Command', [{ name: 'halt' }], (err, state) => {
+			if (err) {
+				logError('Failed to halt.');
+				return this.sendErrorResponse(response, 2010, 'Unable to halt execution: "{e}"', { e: err.toString() });
+			}
+			log(state);
+			this.sendResponse(response);
+			log('PauseResponse');
+		});
 	}
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
@@ -608,7 +624,7 @@ class GoDebugSession extends DebugSession {
 		};
 		this.delve.call<DebugVariable>('EvalSymbol', [evalSymbolArgs], (err, variable) => {
 			if (err) {
-				console.error('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '));
+				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '));
 				return this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', { e: err.toString() });
 			}
 			response.body = this.convertDebugVariableToProtocolVariable(variable, 0);
