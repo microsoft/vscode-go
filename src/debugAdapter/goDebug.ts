@@ -284,6 +284,8 @@ class GoDebugSession extends DebugSession {
 	private delve: Delve;
 	private initialBreakpointsSetPromise: Promise<void>;
 	private signalInitialBreakpointsSet: () => void;
+	private localPathSeparator: string;
+	private remotePathSeparator: string;
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
@@ -312,6 +314,8 @@ class GoDebugSession extends DebugSession {
 		let host = args.host || '127.0.0.1';
 
 		if (remotePath.length > 0) {
+			this.localPathSeparator = args.program.includes('/') ? '/' : '\\';
+			this.remotePathSeparator = remotePath.includes('/') ? '/' : '\\';
 			if ((remotePath.endsWith('\\')) || (remotePath.endsWith('/'))) {
 				remotePath = remotePath.substring(0, remotePath.length - 1);
 			}
@@ -358,13 +362,13 @@ class GoDebugSession extends DebugSession {
 	protected toDebuggerPath(path): string {
 		if (this.delve.remotePath.length === 0)
 			return this.convertClientPathToDebugger(path);
-		return path.replace(this.delve.program, this.delve.remotePath);
+		return path.replace(this.delve.program, this.delve.remotePath).split(this.localPathSeparator).join(this.remotePathSeparator);
 	}
 
 	protected toLocalPath(path): string {
 		if (this.delve.remotePath.length === 0)
 			return this.convertDebuggerPathToClient(path);
-		return path.replace(this.delve.remotePath, this.delve.program);
+		return path.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
 	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
