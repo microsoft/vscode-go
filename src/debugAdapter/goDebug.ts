@@ -142,6 +142,11 @@ function log(msg?: any, ...args) {
 		console.warn(msg, ...args);
 	}
 }
+function logError(msg?: any, ...args) {
+	if (DEBUG) {
+		console.error(msg, ...args);
+	}
+}
 
 class Delve {
 	program: string;
@@ -151,62 +156,60 @@ class Delve {
 	onstdout: (str: string) => void;
 	onstderr: (str: string) => void;
 
-	constructor(mode: string, remotePath: string, port: number, host:string, program: string, args: string[], cwd: string, env: { [key: string]: string }, buildFlags: string, init: string) {
+	constructor(mode: string, remotePath: string, port: number, host: string, program: string, args: string[], cwd: string, env: { [key: string]: string }, buildFlags: string, init: string) {
 		this.program = program;
 		this.remotePath = remotePath;
 		this.connection = new Promise((resolve, reject) => {
 			let serverRunning = false;
 			if (mode === 'remote') {
 				this.debugProcess = null;
-				serverRunning = true;  //assume server is running when in remote mode
+				serverRunning = true;  // assume server is running when in remote mode
 				connectClient(port, host);
+				return;
 			}
-			else
-			{
-				let dlv = getBinPath('dlv');
-				log('Using dlv at: ', dlv);
-				if (!existsSync(dlv)) {
-					return reject('Cannot find Delve debugger. Ensure it is in your `GOPATH/bin` or `PATH`.');
+			let dlv = getBinPath('dlv');
+			log('Using dlv at: ', dlv);
+			if (!existsSync(dlv)) {
+				return reject('Cannot find Delve debugger. Ensure it is in your `GOPATH/bin` or `PATH`.');
+			}
+			let dlvEnv: Object = null;
+			if (env) {
+				dlvEnv = {};
+				for (let k in process.env) {
+					dlvEnv[k] = process.env[k];
 				}
-				let dlvEnv: Object = null;
-				if (env) {
-					dlvEnv = {};
-					for (let k in process.env) {
-						dlvEnv[k] = process.env[k];
-					}
-					for (let k in env) {
-						dlvEnv[k] = env[k];
-					}
+				for (let k in env) {
+					dlvEnv[k] = env[k];
 				}
-				let dlvArgs = [mode || 'debug'];
-				if (mode === 'exec') {
-					dlvArgs = dlvArgs.concat([program]);
-				}
-				dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString(), '--log']);
-				if (buildFlags) {
-					dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
-				}
-				if (init) {
-					dlvArgs = dlvArgs.concat(['--init=' + init]);
-				}
-				if (args) {
-					dlvArgs = dlvArgs.concat(['--', ...args]);
-				}
+			}
+			let dlvArgs = [mode || 'debug'];
+			if (mode === 'exec') {
+				dlvArgs = dlvArgs.concat([program]);
+			}
+			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString(), '--log']);
+			if (buildFlags) {
+				dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
+			}
+			if (init) {
+				dlvArgs = dlvArgs.concat(['--init=' + init]);
+			}
+			if (args) {
+				dlvArgs = dlvArgs.concat(['--', ...args]);
+			}
 
-				let dlvCwd = dirname(program);
-				try {
-					if (lstatSync(program).isDirectory()) {
-						dlvCwd = program;
-					}
-				} catch (e) { }
-				this.debugProcess = spawn(dlv, dlvArgs, {
-					cwd: dlvCwd,
-					env: dlvEnv,
-				});
-			}
+			let dlvCwd = dirname(program);
+			try {
+				if (lstatSync(program).isDirectory()) {
+					dlvCwd = program;
+				}
+			} catch (e) { }
+			this.debugProcess = spawn(dlv, dlvArgs, {
+				cwd: dlvCwd,
+				env: dlvEnv,
+			});
 
 			function connectClient(port: number, host: string) {
-				 let client = Client.$create(port, host);
+				let client = Client.$create(port, host);
 				client.connectSocket((err, conn) => {
 					if (err) return reject(err);
 					// Add a slight delay to avoid issues on Linux with
@@ -215,29 +218,27 @@ class Delve {
 						resolve(conn),
 						200);
 				});
-			 }
-
-			 if (this.debugProcess != null) {
-				this.debugProcess.stderr.on('data', chunk => {
-					let str = chunk.toString();
-					if (this.onstderr) { this.onstderr(str); }
-					if (!serverRunning) {
-						serverRunning = true;
-						connectClient(port, host);
-					}
-				});
-				this.debugProcess.stdout.on('data', chunk => {
-					let str = chunk.toString();
-					if (this.onstdout) { this.onstdout(str); }
-				});
-				this.debugProcess.on('close', function(code) {
-					// TODO: Report `dlv` crash to user.
-					console.error('Process exiting with code: ' + code);
-				});
-				this.debugProcess.on('error', function(err) {
-					reject(err);
-				});
 			}
+
+			this.debugProcess.stderr.on('data', chunk => {
+				let str = chunk.toString();
+				if (this.onstderr) { this.onstderr(str); }
+				if (!serverRunning) {
+					serverRunning = true;
+					connectClient(port, host);
+				}
+			});
+			this.debugProcess.stdout.on('data', chunk => {
+				let str = chunk.toString();
+				if (this.onstdout) { this.onstdout(str); }
+			});
+			this.debugProcess.on('close', function(code) {
+				// TODO: Report `dlv` crash to user.
+				console.error('Process exiting with code: ' + code);
+			});
+			this.debugProcess.on('error', function(err) {
+				reject(err);
+			});
 		});
 	}
 
@@ -268,14 +269,6 @@ class Delve {
 				if (err) {
 					console.error('Failed to halt.');
 				}
-				// else TODO:  Can't find a way to kill remote delve.
-				// {
-				//     this.call<number>('Detach', [true], (err, ret) => {
-				//         if (err) {
-				//             console.error('Failed to detach.');
-				//         }
-				// 	});
-				// }
 			});
 		}
 		else this.debugProcess.kill();
@@ -304,6 +297,8 @@ class GoDebugSession extends DebugSession {
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
 		log('InitializeRequest');
+		// This debug adapter implements the configurationDoneRequest.
+		response.body.supportsConfigurationDoneRequest = true;
 		this.sendResponse(response);
 		log('InitializeResponse');
 		this.sendEvent(new InitializedEvent());
@@ -312,9 +307,16 @@ class GoDebugSession extends DebugSession {
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		// Launch the Delve debugger on the program
-		let remotePath = typeof args.remotePath === 'undefined' ? "":args.remotePath;
-		let port = typeof args.port === 'undefined' ? 2345:args.port;
-		let host = typeof args.host === 'undefined' ? "127.0.0.1":args.host;
+		let remotePath = args.remotePath || '';
+		let port = args.port || 2345;
+		let host = args.host || '127.0.0.1';
+
+		if (remotePath.length > 0) {
+			if ((remotePath.endsWith('\\')) || (remotePath.endsWith('/'))) {
+				remotePath = remotePath.substring(0, remotePath.length - 1);
+			}
+		}
+
 		this.delve = new Delve(args.mode, remotePath, port, host, args.program, args.args, args.cwd, args.env, args.buildFlags, args.init);
 		this.delve.onstdout = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stdout'));
@@ -346,15 +348,11 @@ class GoDebugSession extends DebugSession {
 		log('DisconnectResponse');
 	}
 
-	protected setExceptionBreakPointsRequest(response: DebugProtocol.SetExceptionBreakpointsResponse, args: DebugProtocol.SetExceptionBreakpointsArguments): void {
-		log('ExceptionBreakPointsRequest');
-		// Wow - this is subtle - it appears that this event will always get 
-		// sent during intiail breakpoint initialization even if there are not
-		// user breakpoints - so we use this as the indicator to signal 
-		// that breakpoints have been set and we can continue
+	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
+		log('ConfigurationDoneRequest');
 		this.signalInitialBreakpointsSet();
 		this.sendResponse(response);
-		log('ExceptionBreakPointsResponse');
+		log('ConfigurationDoneRequest');
 	}
 
 	protected toDebuggerPath(path): string {
@@ -375,7 +373,7 @@ class GoDebugSession extends DebugSession {
 			this.breakpoints.set(args.source.path, []);
 		}
 		let file = args.source.path;
-		let remotePath = this.toDebuggerPath(file)
+		let remoteFile = this.toDebuggerPath(file);
 		let existingBPs = this.breakpoints.get(file);
 		Promise.all(this.breakpoints.get(file).map(existingBP => {
 			log('Clearing: ' + existingBP.id);
@@ -383,10 +381,13 @@ class GoDebugSession extends DebugSession {
 		})).then(() => {
 			log('All cleared');
 			return Promise.all(args.lines.map(line => {
-				if (this.delve.remotePath.length == 0)
+				if (this.delve.remotePath.length === 0)
 					log('Creating on: ' + file + ':' + line);
-				else log('Creating on: ' + file + ' (' + remotePath + ') :' + line);
-				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remotePath, line }]).catch(err => null);
+				else log('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
+				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remoteFile, line }]).catch(err => {
+					log('Error on CreateBreakpoint');
+					return null;
+				});
 			}));
 		}).then(newBreakpoints => {
 			log('All set:' + JSON.stringify(newBreakpoints));
@@ -405,7 +406,7 @@ class GoDebugSession extends DebugSession {
 			log('SetBreakPointsResponse');
 		}, err => {
 			this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
-			console.error(err);
+			logError(err);
 		});
 	}
 
@@ -413,7 +414,7 @@ class GoDebugSession extends DebugSession {
 		log('ThreadsRequest');
 		this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
 			if (err) {
-				console.error('Failed to get threads.');
+				logError('Failed to get threads.');
 				return this.sendErrorResponse(response, 2003, 'Unable to display threads: "{e}"', { e: err.toString() });
 			}
 			log(goroutines);
@@ -434,7 +435,7 @@ class GoDebugSession extends DebugSession {
 		log('StackTraceRequest');
 		this.delve.call<DebugLocation[]>('StacktraceGoroutine', [{ id: args.threadId, depth: args.levels }], (err, locations) => {
 			if (err) {
-				console.error('Failed to produce stack trace!');
+				logError('Failed to produce stack trace!');
 				return this.sendErrorResponse(response, 2004, 'Unable to produce stack trace: "{e}"', { e: err.toString() });
 			}
 			log(locations);
@@ -445,7 +446,7 @@ class GoDebugSession extends DebugSession {
 					new Source(
 						basename(location.file),
 						this.toLocalPath(location.file)
-						//this.convertDebuggerPathToClient(location.file)
+						// this.convertDebuggerPathToClient(location.file)
 					),
 					location.line,
 					0
@@ -461,13 +462,13 @@ class GoDebugSession extends DebugSession {
 		log('ScopesRequest');
 		this.delve.call<DebugVariable[]>('ListLocalVars', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, locals) => {
 			if (err) {
-				console.error('Failed to list local variables.');
+				logError('Failed to list local variables.');
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
 			log(locals);
 			this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, args) => {
 				if (err) {
-					console.error('Failed to list function args.');
+					logError('Failed to list function args.');
 					return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', { e: err.toString() });
 				}
 				log(args);
@@ -572,7 +573,7 @@ class GoDebugSession extends DebugSession {
 			// [TODO] Can we avoid doing this? https://github.com/Microsoft/vscode/issues/40#issuecomment-161999881
 			this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
 				if (err) {
-					console.error('Failed to get threads.');
+					logError('Failed to get threads.');
 				}
 				// Assume we need to stop all the threads we saw before...
 				let needsToBeStopped = new Set<number>();
@@ -602,7 +603,7 @@ class GoDebugSession extends DebugSession {
 		log('ContinueRequest');
 		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
 			if (err) {
-				console.error('Failed to continue.');
+				logError('Failed to continue.');
 			}
 			log(state);
 			this.debugState = state;
@@ -616,7 +617,7 @@ class GoDebugSession extends DebugSession {
 		log('NextRequest');
 		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
 			if (err) {
-				console.error('Failed to next.');
+				logError('Failed to next.');
 			}
 			log(state);
 			this.debugState = state;
@@ -630,7 +631,7 @@ class GoDebugSession extends DebugSession {
 		log('StepInRequest');
 		this.delve.call<DebuggerState>('Command', [{ name: 'step' }], (err, state) => {
 			if (err) {
-				console.error('Failed to step.');
+				logError('Failed to step.');
 			}
 			log(state);
 			this.debugState = state;
@@ -641,13 +642,21 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse): void {
-		console.error('Not yet implemented: stepOutRequest');
+		logError('Not yet implemented: stepOutRequest');
 		this.sendErrorResponse(response, 2000, 'Step out is not yet supported');
 	}
 
 	protected pauseRequest(response: DebugProtocol.PauseResponse): void {
-		console.error('Not yet implemented: pauseRequest');
-		this.sendErrorResponse(response, 2000, 'Pause is not yet supported');
+		log('PauseRequest');
+		this.delve.call<DebuggerState>('Command', [{ name: 'halt' }], (err, state) => {
+			if (err) {
+				logError('Failed to halt.');
+				return this.sendErrorResponse(response, 2010, 'Unable to halt execution: "{e}"', { e: err.toString() });
+			}
+			log(state);
+			this.sendResponse(response);
+			log('PauseResponse');
+		});
 	}
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
@@ -661,7 +670,7 @@ class GoDebugSession extends DebugSession {
 		};
 		this.delve.call<DebugVariable>('EvalSymbol', [evalSymbolArgs], (err, variable) => {
 			if (err) {
-				console.error('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '));
+				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '));
 				return this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', { e: err.toString() });
 			}
 			response.body = this.convertDebugVariableToProtocolVariable(variable, 0);
