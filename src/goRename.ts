@@ -50,7 +50,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 		let workspaces = gopath.split(path.delimiter);
 		for (let i = 0; i < workspaces.length; i++) {
 			let workspace = workspaces[i];
-			if (filename.toLowerCase().substring(0, workspace.length) == workspace.toLowerCase()) {
+			if (filename.toLowerCase().substring(0, workspace.length) === workspace.toLowerCase()) {
 				return workspace + filename.slice(workspace.length);
 			}
 		}

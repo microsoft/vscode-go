@@ -47,13 +47,13 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				let godoc = getBinPath('godoc');
 				let pkgPath = path.dirname(file);
 				let definitionInformation: GoDefinitionInformtation = {
-						file: file,
-						line: +line - 1,
-						col: + col - 1,
-						lines,
-						doc: undefined
-					}
-				if(!includeDocs) {
+					file: file,
+					line: +line - 1,
+					col: + col - 1,
+					lines,
+					doc: undefined
+				};
+				if (!includeDocs) {
 					return resolve(definitionInformation);
 				}
 				cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
