@@ -10,7 +10,7 @@ import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
-		return definitionLocation(document, position).then(definitionInfo => {
+		return definitionLocation(document, position, false).then(definitionInfo => {
 			if (definitionInfo == null) return;
 			let lines = definitionInfo.lines;
 			lines = lines.map(line => {

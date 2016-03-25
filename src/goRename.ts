@@ -47,7 +47,13 @@ export class GoRenameProvider implements vscode.RenameProvider {
 		// capitalization of the GOPATH root must match GOPATH exactly
 		let gopath: string = process.env['GOPATH'];
 		if (!gopath) return filename;
-		if (filename.toLowerCase().substring(0, gopath.length) !== gopath.toLowerCase()) return filename;
-		return gopath + filename.slice(gopath.length);
+		let workspaces = gopath.split(path.delimiter);
+		for (let i = 0; i < workspaces.length; i++) {
+			let workspace = workspaces[i];
+			if (filename.toLowerCase().substring(0, workspace.length) === workspace.toLowerCase()) {
+				return workspace + filename.slice(workspace.length);
+			}
+		}
+		return filename;
 	}
 }

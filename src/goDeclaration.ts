@@ -19,8 +19,8 @@ export interface GoDefinitionInformtation {
 	doc: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position): Promise<GoDefinitionInformtation> {
-	return new Promise((resolve, reject) => {
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
+	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
 
 		let wordAtPosition = document.getWordRangeAtPosition(position);
 		let offset = byteOffsetAt(document, position);
@@ -46,6 +46,16 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				let signature = lines[1];
 				let godoc = getBinPath('godoc');
 				let pkgPath = path.dirname(file);
+				let definitionInformation: GoDefinitionInformtation = {
+					file: file,
+					line: +line - 1,
+					col: + col - 1,
+					lines,
+					doc: undefined
+				};
+				if (!includeDocs) {
+					return resolve(definitionInformation);
+				}
 				cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {
 						vscode.window.showInformationMessage('The "godoc" command is not available.');
@@ -63,13 +73,8 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 							break;
 						}
 					}
-					return resolve({
-						file: file,
-						line: +line - 1,
-						col: + col - 1,
-						lines,
-						doc
-					});
+					definitionInformation.doc = doc;
+					return resolve(definitionInformation);
 				});
 			} catch (e) {
 				reject(e);
@@ -82,7 +87,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		return definitionLocation(document, position).then(definitionInfo => {
+		return definitionLocation(document, position, false).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let definitionResource = vscode.Uri.file(definitionInfo.file);
 			let pos = new vscode.Position(definitionInfo.line, definitionInfo.col);
