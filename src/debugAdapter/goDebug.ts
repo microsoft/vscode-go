@@ -391,7 +391,7 @@ class GoDebugSession extends DebugSession {
 			return Promise.all(args.lines.map(line => {
 				if (this.delve.remotePath.length === 0) {
 					log('Creating on: ' + file + ':' + line);
-				} else { 
+				} else {
 					log('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
 				}
 				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remoteFile, line }]).catch(err => {
