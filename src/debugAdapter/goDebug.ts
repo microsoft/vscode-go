@@ -234,7 +234,7 @@ class Delve {
 			});
 			this.debugProcess.on('close', function(code) {
 				// TODO: Report `dlv` crash to user.
-				console.error('Process exiting with code: ' + code);
+				logError('Process exiting with code: ' + code);
 			});
 			this.debugProcess.on('error', function(err) {
 				reject(err);
@@ -264,14 +264,16 @@ class Delve {
 	}
 
 	close() {
-		if (this.debugProcess === null) {
+		if (!this.debugProcess) {
 			this.call<DebuggerState>('Command', [{ name: 'halt' }], (err, state) => {
-				if (err) {
-					console.error('Failed to halt.');
-				}
+				if (err) return logError('Failed to halt.');
+				this.call<DebuggerState>('Restart', [], (err, state) => {
+					if (err) return logError('Failed to restart.');
+				});
 			});
+		} else {
+			this.debugProcess.kill();
 		}
-		else this.debugProcess.kill();
 	}
 }
 
@@ -359,15 +361,17 @@ class GoDebugSession extends DebugSession {
 		log('ConfigurationDoneRequest');
 	}
 
-	protected toDebuggerPath(path): string {
-		if (this.delve.remotePath.length === 0)
+	protected toDebuggerPath(path: string): string {
+		if (this.delve.remotePath.length === 0) {
 			return this.convertClientPathToDebugger(path);
+		}
 		return path.replace(this.delve.program, this.delve.remotePath).split(this.localPathSeparator).join(this.remotePathSeparator);
 	}
 
-	protected toLocalPath(path): string {
-		if (this.delve.remotePath.length === 0)
+	protected toLocalPath(path: string): string {
+		if (this.delve.remotePath.length === 0) {
 			return this.convertDebuggerPathToClient(path);
+		}
 		return path.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
 	}
 
@@ -385,9 +389,11 @@ class GoDebugSession extends DebugSession {
 		})).then(() => {
 			log('All cleared');
 			return Promise.all(args.lines.map(line => {
-				if (this.delve.remotePath.length === 0)
+				if (this.delve.remotePath.length === 0) {
 					log('Creating on: ' + file + ':' + line);
-				else log('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
+				} else { 
+					log('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
+				}
 				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remoteFile, line }]).catch(err => {
 					log('Error on CreateBreakpoint');
 					return null;
@@ -450,7 +456,6 @@ class GoDebugSession extends DebugSession {
 					new Source(
 						basename(location.file),
 						this.toLocalPath(location.file)
-						// this.convertDebuggerPathToClient(location.file)
 					),
 					location.line,
 					0
