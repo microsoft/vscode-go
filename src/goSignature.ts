@@ -21,6 +21,10 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
 		return definitionLocation(document, callerPos).then(res => {
+			if (!res) {
+				// The definition was not found
+				return null;
+			}
 			if (res.line === callerPos.line) {
 				// This must be a function definition
 				return null;
