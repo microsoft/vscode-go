@@ -232,11 +232,11 @@ class Delve {
 				let str = chunk.toString();
 				if (this.onstdout) { this.onstdout(str); }
 			});
-			this.debugProcess.on('close', function(code) {
+			this.debugProcess.on('close', function (code) {
 				// TODO: Report `dlv` crash to user.
 				logError('Process exiting with code: ' + code);
 			});
-			this.debugProcess.on('error', function(err) {
+			this.debugProcess.on('error', function (err) {
 				reject(err);
 			});
 		});
@@ -250,7 +250,7 @@ class Delve {
 		});
 	}
 
-	callPromise<T>(command: string, args: any[]): Promise<T> {
+	callPromise<T>(command: string, args: any[]): Thenable<T> {
 		return new Promise<T>((resolve, reject) => {
 			this.connection.then(conn => {
 				conn.call<T>('RPCServer.' + command, args, (err, res) => {
@@ -394,7 +394,7 @@ class GoDebugSession extends DebugSession {
 				} else {
 					log('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
 				}
-				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remoteFile, line }]).catch(err => {
+				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remoteFile, line }]).then(null, err => {
 					log('Error on CreateBreakpoint');
 					return null;
 				});
@@ -602,7 +602,9 @@ class GoDebugSession extends DebugSession {
 					this.threads.delete(id);
 				});
 
-				this.sendEvent(new StoppedEvent(reason, this.debugState.currentGoroutine.id));
+				let stoppedEvent = new StoppedEvent(reason, this.debugState.currentGoroutine.id);
+				(<any>stoppedEvent.body).allThreadsStopped = true;
+				this.sendEvent(stoppedEvent);
 				log('StoppedEvent("' + reason + '")');
 			});
 		}
