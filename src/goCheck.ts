@@ -31,8 +31,8 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 					return resolve([]);
 				}
 				let lines = (useStdErr ? stderr : stdout).toString().split('\n');
-				outputChannel.appendLine(["Finished running tool:", cmd, ...args].join(' '));
-				
+				outputChannel.appendLine(['Finished running tool:', cmd, ...args].join(' '));
+
 				let ret: ICheckResult[] = [];
 				for (let i = 0; i < lines.length; i++) {
 					if (lines[i][0] === '\t' && ret.length > 0) {
@@ -47,7 +47,7 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 					ret.push({ file, line, msg, severity });
 					outputChannel.appendLine(`${file}:${line}: ${msg}`);
 				}
-				outputChannel.appendLine("");
+				outputChannel.appendLine('');
 				resolve(ret);
 			} catch (e) {
 				reject(e);
