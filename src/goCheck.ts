@@ -20,6 +20,8 @@ export interface ICheckResult {
 	severity: string;
 }
 
+let outputChannel = vscode.window.createOutputChannel('Go');
+
 function runTool(cmd: string, args: string[], cwd: string, severity: string, useStdErr: boolean, notFoundError: string) {
 	return new Promise((resolve, reject) => {
 		cp.execFile(cmd, args, { cwd: cwd }, (err, stdout, stderr) => {
@@ -29,6 +31,8 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 					return resolve([]);
 				}
 				let lines = (useStdErr ? stderr : stdout).toString().split('\n');
+				outputChannel.appendLine(["Finished running tool:", cmd, ...args].join(' '));
+				
 				let ret: ICheckResult[] = [];
 				for (let i = 0; i < lines.length; i++) {
 					if (lines[i][0] === '\t' && ret.length > 0) {
@@ -39,8 +43,11 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 					if (!match) continue;
 					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
 					let line = +lineStr;
-					ret.push({ file: path.resolve(cwd, file), line, msg, severity });
+					file = path.resolve(cwd, file);
+					ret.push({ file, line, msg, severity });
+					outputChannel.appendLine(`${file}:${line}: ${msg}`);
 				}
+				outputChannel.appendLine("");
 				resolve(ret);
 			} catch (e) {
 				reject(e);
@@ -50,6 +57,7 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 }
 
 export function check(filename: string, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(filename);
 
