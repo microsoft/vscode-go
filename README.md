@@ -96,6 +96,7 @@ The `mode` parameter can be set to:
 * `debug` to compile the contents of the program folder and launch under the debugger. [default]
 * `test` to debug tests in the program folder.
 * `exec` to run a pre-built binary instead of building the current code in the program folder.
+* `remote` to attach to a remote headless Delve server.  You must manually run Delve on the remote machine, and provide the additional `remotePath`, `host` and `port` debug configuration options pointing at the remote machine.
 
 ## Building and Debugging the Extension
 
