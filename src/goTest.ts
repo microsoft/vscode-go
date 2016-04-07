@@ -154,6 +154,17 @@ function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInfor
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& /Test.*/.exec(sym.name) != null)
+				&&  hasTestFunctionPrefix(sym.name))
 		);
+}
+
+/**
+ * Returns whether a given function name has a test prefix.
+ * Test functions have "Test" or "Example" as a prefix.
+ *
+ * @param the function name.
+ * @return whether the name has a test function prefix.
+ */
+function hasTestFunctionPrefix(name: string): boolean {
+	return name.startsWith("Test") || name.startsWith("Example")
 }
