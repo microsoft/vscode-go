@@ -24,9 +24,9 @@
 			"prefix": "tys",
 			"body": "type ${1:name} struct {\n\t$0\n}"
 		},
-		"main function": {
-			"prefix": "main",
-			"body": "func main() {\n\t$0\n}"
+		"package main and main function": {
+			"prefix": "pkgm",
+			"body": "package main\n\nfunc main() {\n\t$0\n}"
 		},
 		"function declaration": {
 			"prefix": "func",
