@@ -12,7 +12,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Snippets
 - Quick Info (using `godef`)
 - Goto Definition (using `godef`)
-- Find References (using `go-find-references`)
+- Find References (using `oracle`)
 - File outline (using `go-outline`)
 - Workspace symbol search (using `go-symbols`)
 - Rename (using `gorename`)
@@ -130,24 +130,24 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - gocode: `go get -u -v github.com/nsf/gocode`
 - godef: `go get -u -v github.com/rogpeppe/godef`
 - golint: `go get -u -v github.com/golang/lint/golint`
-- go-find-references: `go get -u -v github.com/lukehoban/go-find-references`
 - go-outline: `go get -u -v github.com/lukehoban/go-outline`
 - goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
 - gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
 - gopkgs: `go get -u -v github.com/tpng/gopkgs`
 - go-symbols: `go get -u -v github.com/newhook/go-symbols`
+- oracle: `go get -u -v golang.org/x/tools/cmd/oracle`
 
 To install them just paste and run:
 ```bash
 go get -u -v github.com/nsf/gocode
 go get -u -v github.com/rogpeppe/godef
 go get -u -v github.com/golang/lint/golint
-go get -u -v github.com/lukehoban/go-find-references
 go get -u -v github.com/lukehoban/go-outline
 go get -u -v sourcegraph.com/sqs/goreturns
 go get -u -v golang.org/x/tools/cmd/gorename
 go get -u -v github.com/tpng/gopkgs
 go get -u -v github.com/newhook/go-symbols
+go get -u -v golang.org/x/tools/cmd/oracle
 ```
 
 And for debugging:

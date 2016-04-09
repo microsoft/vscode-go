@@ -10,6 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
+import { installTool } from './goInstallTools';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
 
@@ -23,47 +24,36 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 		return new Promise((resolve, reject) => {
 			let filename = this.canonicalizeForWindows(document.fileName);
 			let cwd = path.dirname(filename);
-			let workspaceRoot = vscode.workspace.rootPath;
 
 			// get current word
 			let wordRange = document.getWordRangeAtPosition(position);
 			if (!wordRange) {
 				return resolve([]);
 			}
-			let textAtPosition = document.getText(wordRange);
-			let wordLength = textAtPosition.length;
-			let start = wordRange.start;
-			let possibleDot = '';
-			if (start.character > 0) {
-				possibleDot = document.getText(new vscode.Range(start.line, start.character - 1, start.line, start.character));
-			}
-			if (possibleDot === '.') {
-				let previousWordRange = document.getWordRangeAtPosition(new vscode.Position(start.line, start.character - 1));
-				let textAtPreviousPosition = document.getText(previousWordRange);
-				wordLength += textAtPreviousPosition.length + 1;
-			}
 
 			let offset = byteOffsetAt(document, position);
 
-			let gofindreferences = getBinPath('go-find-references');
+			let goOracle = getBinPath('oracle');
 
-			cp.execFile(gofindreferences, ['-file', filename, '-offset', offset.toString(), '-root', workspaceRoot], {}, (err, stdout, stderr) => {
+			let process = cp.execFile(goOracle, [`-pos=${filename}:#${offset.toString()}`, 'referrers'], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "go-find-references" command is not available.  Use "go get -v github.com/lukehoban/go-find-references" to install.');
+						vscode.window.showInformationMessage('The "oracle" command is not available.  Use "go get -v golang.org/x/tools/cmd/oracle" to install.', 'Install').then(selected => {
+							installTool('oracle');
+						});
 						return resolve(null);
 					}
 
 					let lines = stdout.toString().split('\n');
 					let results: vscode.Location[] = [];
-					for (let i = 0; i < lines.length; i += 2) {
+					for (let i = 0; i < lines.length; i++) {
 						let line = lines[i];
-						let match = /(.*):(\d+):(\d+)/.exec(lines[i]);
+						let match = /^(.*):(\d+)\.(\d+)-(\d+)\.(\d+):/.exec(lines[i]);
 						if (!match) continue;
-						let [_, file, lineStr, colStr] = match;
+						let [_, file, lineStartStr, colStartStr, lineEndStr, colEndStr] = match;
 						let referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 						let range = new vscode.Range(
-							+lineStr - 1, +colStr - 1, +lineStr - 1, +colStr + wordLength - 1
+							+lineStartStr - 1, +colStartStr - 1, +lineEndStr - 1, +colEndStr
 						);
 						results.push(new vscode.Location(referenceResource, range));
 					}
@@ -72,6 +62,10 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 					reject(e);
 				}
 			});
+
+			token.onCancellationRequested(() =>
+				process.kill()
+			);
 		});
 	}
 

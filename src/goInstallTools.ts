@@ -13,6 +13,32 @@ import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
 import { getBinPath } from './goPath';
 
+let channel = vscode.window.createOutputChannel('Go');
+
+let tools: { [key: string]: string } = {
+	gorename: 'golang.org/x/tools/cmd/gorename',
+	gopkgs: 'github.com/tpng/gopkgs',
+	gocode: 'github.com/nsf/gocode',
+	goreturns: 'sourcegraph.com/sqs/goreturns',
+	godef: 'github.com/rogpeppe/godef',
+	golint: 'github.com/golang/lint/golint',
+	'go-outline': 'github.com/lukehoban/go-outline',
+	'go-symbols': 'github.com/newhook/go-symbols',
+	oracle: 'golang.org/x/tools/cmd/oracle'
+};
+
+export function installTool(tool: string) {
+	channel.clear();
+	channel.show();
+	cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
+		channel.append(stdout.toString());
+		channel.append(stderr.toString());
+		if (err) {
+			channel.append('exec error: ' + err);
+		}
+	});
+}
+
 export function setupGoPathAndOfferToInstallTools() {
 	let goroot = vscode.workspace.getConfiguration('go')['goroot'];
 	if (goroot) {
@@ -34,23 +60,11 @@ export function setupGoPathAndOfferToInstallTools() {
 		return;
 	}
 
-	// Offer to install any missing tools
-	let tools: { [key: string]: string } = {
-		gorename: 'golang.org/x/tools/cmd/gorename',
-		gopkgs: 'github.com/tpng/gopkgs',
-		gocode: 'github.com/nsf/gocode',
-		goreturns: 'sourcegraph.com/sqs/goreturns',
-		godef: 'github.com/rogpeppe/godef',
-		golint: 'github.com/golang/lint/golint',
-		'go-find-references': 'github.com/lukehoban/go-find-references',
-		'go-outline': 'github.com/lukehoban/go-outline',
-		'go-symbols': 'github.com/newhook/go-symbols'
-	};
 	let keys = Object.keys(tools);
 	Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
 		let toolPath = getBinPath(tool);
 		fs.exists(toolPath, exists => {
-			resolve(exists ? null : tools[tool]);
+			resolve(exists ? null : tool);
 		});
 	}))).then(res => {
 		let missing = res.filter(x => x != null);
@@ -67,17 +81,7 @@ export function setupGoPathAndOfferToInstallTools() {
 		let item = {
 			title: 'Install',
 			command() {
-				let channel = vscode.window.createOutputChannel('Go');
-				channel.show();
-				missing.forEach(tool => {
-					cp.exec('go get -u -v ' + tool, { env: process.env }, (err, stdout, stderr) => {
-						channel.append(stdout.toString());
-						channel.append(stderr.toString());
-						if (err) {
-							channel.append('exec error: ' + err);
-						}
-					});
-				});
+				missing.forEach(installTool);
 			}
 		};
 		vscode.window.showInformationMessage('Some Go analysis tools are missing from your GOPATH.  Would you like to install them?', item).then(selection => {
