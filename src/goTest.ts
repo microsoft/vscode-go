@@ -166,5 +166,5 @@ function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInfor
  * @return whether the name has a test function prefix.
  */
 function hasTestFunctionPrefix(name: string): boolean {
-	return name.startsWith("Test") || name.startsWith("Example")
+	return name.startsWith('Test') || name.startsWith('Example');
 }
