@@ -232,11 +232,11 @@ class Delve {
 				let str = chunk.toString();
 				if (this.onstdout) { this.onstdout(str); }
 			});
-			this.debugProcess.on('close', function (code) {
+			this.debugProcess.on('close', function(code) {
 				// TODO: Report `dlv` crash to user.
 				logError('Process exiting with code: ' + code);
 			});
-			this.debugProcess.on('error', function (err) {
+			this.debugProcess.on('error', function(err) {
 				reject(err);
 			});
 		});
@@ -505,7 +505,12 @@ class GoDebugSession extends DebugSession {
 	}
 
 	private convertDebugVariableToProtocolVariable(v: DebugVariable, i: number): { result: string; variablesReference: number; } {
-		if (v.kind === GoReflectKind.Ptr || v.kind === GoReflectKind.UnsafePointer) {
+		if (v.kind === GoReflectKind.UnsafePointer) {
+			return {
+				result: `unsafe.Pointer(0x${v.children[0].addr.toString(16)})`,
+				variablesReference: 0
+			};
+		} else if (v.kind === GoReflectKind.Ptr) {
 			if (v.children[0].addr === 0) {
 				return {
 					result: 'nil <' + v.type + '>',
@@ -533,8 +538,12 @@ class GoDebugSession extends DebugSession {
 				variablesReference: this._variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.String) {
+			let val = v.value;
+			if (v.value && v.value.length < v.len) {
+				val += `...+${v.len - v.value.length} more`;
+			}
 			return {
-				result: v.unreadable ? ('<' + v.unreadable + '>') : ('"' + v.value + '"'),
+				result: v.unreadable ? ('<' + v.unreadable + '>') : ('"' + val + '"'),
 				variablesReference: 0
 			};
 		} else {
