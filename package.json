@@ -282,6 +282,11 @@
           "type": "string",
           "default": "30s",
           "description": "Specifies the timeout for go test in ParseDuration format."
+        },
+        "go.gocodeAutoBuild": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable gocode's autobuild feature"
         }
       }
     }
