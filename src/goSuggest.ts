@@ -125,14 +125,18 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		});
 	}
 
+	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
 		return new Promise<void>((resolve, reject) => {
+			// TODO: Since the gocode daemon is shared amongst clients, shouldn't settings be
+			// adjusted per-invocation to avoid conflicts from other gocode-using programs?
 			if (this.gocodeConfigurationComplete) {
 				return resolve();
 			}
 			let gocode = getBinPath('gocode');
+			let autobuild = vscode.workspace.getConfiguration('go')['gocodeAutoBuild'];
 			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], {}, (err, stdout, stderr) => {
-				cp.execFile(gocode, ['set', 'autobuild', 'true'], {}, (err, stdout, stderr) => {
+				cp.execFile(gocode, ['set', 'autobuild', autobuild], {}, (err, stdout, stderr) => {
 					resolve();
 				});
 			});
