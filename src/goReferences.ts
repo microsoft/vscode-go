@@ -33,13 +33,13 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 			let offset = byteOffsetAt(document, position);
 
-			let goOracle = getBinPath('oracle');
+			let goGuru = getBinPath('guru');
 
-			let process = cp.execFile(goOracle, [`-pos=${filename}:#${offset.toString()}`, 'referrers'], {}, (err, stdout, stderr) => {
+			let process = cp.execFile(goGuru, ['referrers', `${filename}:#${offset.toString()}`], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "oracle" command is not available.  Use "go get -v golang.org/x/tools/cmd/oracle" to install.', 'Install').then(selected => {
-							installTool('oracle');
+						vscode.window.showInformationMessage('The "guru" command is not available.  Use "go get -v golang.org/x/tools/cmd/guru" to install.', 'Install').then(selected => {
+							installTool('guru');
 						});
 						return resolve(null);
 					}

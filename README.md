@@ -12,7 +12,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Snippets
 - Quick Info (using `godef`)
 - Goto Definition (using `godef`)
-- Find References (using `oracle`)
+- Find References (using `guru`)
 - File outline (using `go-outline`)
 - Workspace symbol search (using `go-symbols`)
 - Rename (using `gorename`)
@@ -135,7 +135,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
 - gopkgs: `go get -u -v github.com/tpng/gopkgs`
 - go-symbols: `go get -u -v github.com/newhook/go-symbols`
-- oracle: `go get -u -v golang.org/x/tools/cmd/oracle`
+- guru: `go get -u -v golang.org/x/tools/cmd/guru`
 
 To install them just paste and run:
 ```bash
@@ -147,7 +147,7 @@ go get -u -v sourcegraph.com/sqs/goreturns
 go get -u -v golang.org/x/tools/cmd/gorename
 go get -u -v github.com/tpng/gopkgs
 go get -u -v github.com/newhook/go-symbols
-go get -u -v golang.org/x/tools/cmd/oracle
+go get -u -v golang.org/x/tools/cmd/guru
 ```
 
 And for debugging:
