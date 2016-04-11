@@ -19,6 +19,7 @@ interface GoOutlineRange {
 interface GoOutlineDeclaration {
 	label: string;
 	type: string;
+	receiverType?: string;
 	icon?: string; // icon class or null to use the default images based on the type
 	start: number;
 	end: number;
@@ -59,8 +60,12 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 	private convertToCodeSymbols(document: vscode.TextDocument, decls: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName: string): void {
 		decls.forEach(decl => {
+			let label = decl.label;
+			if (decl.receiverType) {
+				label = '(' + decl.receiverType + ').' + label;
+			}
 			let symbolInfo = new vscode.SymbolInformation(
-				decl.label,
+				label,
 				this.goKindToCodeKind[decl.type],
 				new vscode.Range(document.positionAt(decl.start), document.positionAt(decl.end - 1)),
 				undefined,
