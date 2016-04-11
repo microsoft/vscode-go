@@ -24,7 +24,7 @@ let tools: { [key: string]: string } = {
 	golint: 'github.com/golang/lint/golint',
 	'go-outline': 'github.com/lukehoban/go-outline',
 	'go-symbols': 'github.com/newhook/go-symbols',
-	oracle: 'golang.org/x/tools/cmd/oracle'
+	guru: 'golang.org/x/tools/cmd/guru'
 };
 
 export function installTool(tool: string) {
