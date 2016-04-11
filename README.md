@@ -35,6 +35,8 @@ In a terminal window with the GOPATH environment variable set to the GOPATH you 
 
 _Note_: It is strongly encouraged to turn `Auto Save` on in Visual Studio Code (`File -> Auto Save`) when using this extension.  Many of the Go tools work only on saved files, and error reporting will be more interactive with `Auto Save` turned on.
 
+_Note 2_:  This extension uses `gocode` to provide completion lists as you type. To provide fresh results, including against not-yet-built dependencies, the extension uses `gocode`'s `autobuild=true` setting. If you experience any performance issues with autocomplete, you should try setting `"go.gocodeAutoBuild": false` in your VS Code settings.
+
 ### Options
 
 The following Visual Studio Code settings are available for the Go extension.  These can be set in user preferences (`cmd+,`) or workspace settings (`.vscode/settings.json`).
@@ -52,7 +54,8 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.formatOnSave": false,
 	"go.formatTool": "goreturns",
 	"go.goroot": "/usr/local/go",
-	"go.gopath": "/Users/lukeh/go"
+	"go.gopath": "/Users/lukeh/go",
+	"go.gocodeAutoBuild": false
 }
 ```
 
