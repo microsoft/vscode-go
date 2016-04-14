@@ -33,7 +33,7 @@ First, you will need to install Visual Studio Code `0.10`. In the command palett
 
 In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open your GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.  You should see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the Go tooling needed for the extension to support its full feature set.  See the [Tools](#tools) section below for more details.
 
-_Note_: It is strongly encouraged to turn `Auto Save` on in Visual Studio Code (`File -> Auto Save`) when using this extension.  Many of the Go tools work only on saved files, and error reporting will be more interactive with `Auto Save` turned on.
+_Note_: Users may want to consider turning `Auto Save` on in Visual Studio Code (`"files.autoSave": "afterDelay"`) when using this extension.  Many of the Go tools work only on saved files, and error reporting will be more interactive with `Auto Save` turned on. If you do turn `Auto Save` on, you may also want to turn format-on-save off (`"go.formatOnSave": "false"`), so that it is not triggered while typing. 
 
 _Note 2_:  This extension uses `gocode` to provide completion lists as you type. To provide fresh results, including against not-yet-built dependencies, the extension uses `gocode`'s `autobuild=true` setting. If you experience any performance issues with autocomplete, you should try setting `"go.gocodeAutoBuild": false` in your VS Code settings.
 
@@ -46,12 +46,13 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.buildOnSave": true,
 	"go.lintOnSave": true,
 	"go.vetOnSave": true,
+	"go.buildTags": "",
 	"go.buildFlags": [],
 	"go.lintFlags": [],
 	"go.vetFlags": [],
 	"go.coverOnSave": false,
 	"go.useCodeSnippetsOnFunctionSuggest": false,
-	"go.formatOnSave": false,
+	"go.formatOnSave": true,
 	"go.formatTool": "goreturns",
 	"go.goroot": "/usr/local/go",
 	"go.gopath": "/Users/lukeh/go",

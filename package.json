@@ -270,8 +270,8 @@
         },
         "go.formatOnSave": {
           "type": "boolean",
-          "default": false,
-          "description": "[EXPERIMENTAL] Run formatting tool on save."
+          "default": true,
+          "description": "Run formatting tool on save."
         },
         "go.coverOnSave": {
           "type": "boolean",
