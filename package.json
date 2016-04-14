@@ -287,6 +287,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable gocode's autobuild feature"
+        },
+        "go.buildTags": {
+          "type": "string",
+          "default": "",
+          "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
         }
       }
     }

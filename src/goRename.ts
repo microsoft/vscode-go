@@ -26,8 +26,9 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			let offset = byteOffsetAt(document, pos);
 
 			let gorename = getBinPath('gorename');
+			let buildTags = '"' + vscode.workspace.getConfiguration('go')['buildTags'] + '"';
 
-			cp.execFile(gorename, ['-offset', filename + ':#' + offset, '-to', newName], {}, (err, stdout, stderr) => {
+			cp.execFile(gorename, ['-offset', filename + ':#' + offset, '-to', newName, '-tags', buildTags], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						vscode.window.showInformationMessage('The "gorename" command is not available.  Use "go get golang.org/x/tools/cmd/gorename" to install.');
@@ -43,5 +44,5 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			});
 		});
 	}
-	
+
 }

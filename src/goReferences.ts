@@ -34,8 +34,9 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			let offset = byteOffsetAt(document, position);
 
 			let goGuru = getBinPath('guru');
+			let buildTags = '"' + vscode.workspace.getConfiguration('go')['buildTags'] + '"';
 
-			let process = cp.execFile(goGuru, ['referrers', `${filename}:#${offset.toString()}`], {}, (err, stdout, stderr) => {
+			let process = cp.execFile(goGuru, ['-tags', buildTags, 'referrers', `${filename}:#${offset.toString()}`], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						vscode.window.showInformationMessage('The "guru" command is not available.  Use "go get -v golang.org/x/tools/cmd/guru" to install.', 'Install').then(selected => {

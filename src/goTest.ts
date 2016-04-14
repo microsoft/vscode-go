@@ -121,7 +121,8 @@ function goTest(config: TestConfig): Thenable<boolean> {
 		channel.clear();
 		channel.show(2);
 		let buildFlags: string[] = vscode.workspace.getConfiguration('go')['buildFlags'];
-		let args = ['test', '-v', '-timeout', config.timeout, ...buildFlags];
+		let buildTags: string = vscode.workspace.getConfiguration('go')['buildTags'];
+		let args = ['test', '-v', '-timeout', config.timeout, '-tags', buildTags, ...buildFlags];
 
 		if (config.functions) {
 			args.push('-run');
@@ -154,7 +155,7 @@ function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInfor
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&&  hasTestFunctionPrefix(sym.name))
+				&& hasTestFunctionPrefix(sym.name))
 		);
 }
 
