@@ -7,9 +7,8 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import path = require('path');
 import { getBinPath } from './goPath';
-import { byteOffsetAt } from './util';
+import { byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
 
 export class GoRenameProvider implements vscode.RenameProvider {
 
@@ -21,7 +20,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 
 	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
 		return new Promise((resolve, reject) => {
-			let filename = this.canonicalizeForWindows(document.fileName);
+			let filename = canonicalizeGOPATHPrefix(document.fileName);
 			let range = document.getWordRangeAtPosition(position);
 			let pos = range ? range.start : position;
 			let offset = byteOffsetAt(document, pos);
@@ -44,18 +43,5 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			});
 		});
 	}
-
-	canonicalizeForWindows(filename: string): string {
-		// capitalization of the GOPATH root must match GOPATH exactly
-		let gopath: string = process.env['GOPATH'];
-		if (!gopath) return filename;
-		let workspaces = gopath.split(path.delimiter);
-		for (let i = 0; i < workspaces.length; i++) {
-			let workspace = workspaces[i];
-			if (filename.toLowerCase().substring(0, workspace.length) === workspace.toLowerCase()) {
-				return workspace + filename.slice(workspace.length);
-			}
-		}
-		return filename;
-	}
+	
 }

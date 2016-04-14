@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath';
-import { byteOffsetAt } from './util';
+import { byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
 import { installTool } from './goInstallTools';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
@@ -22,7 +22,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 	private doFindReferences(document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return new Promise((resolve, reject) => {
-			let filename = this.canonicalizeForWindows(document.fileName);
+			let filename = canonicalizeGOPATHPrefix(document.fileName);
 			let cwd = path.dirname(filename);
 
 			// get current word
@@ -67,14 +67,6 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 				process.kill()
 			);
 		});
-	}
-
-	private canonicalizeForWindows(filename: string): string {
-		// convert backslashes to forward slashes on Windows
-		// otherwise go-find-references returns no matches
-		if (/^[a-z]:\\/.test(filename))
-			return filename.replace(/\\/g, '/');
-		return filename;
 	}
 
 }

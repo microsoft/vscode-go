@@ -4,6 +4,7 @@
  *--------------------------------------------------------*/
 
 import { TextDocument, Position } from 'vscode';
+import path = require('path');
 
 export function byteOffsetAt(document: TextDocument, position: Position): number {
 	let offset = document.offsetAt(position);
@@ -81,3 +82,16 @@ export function parameters(signature: string): string[] {
 	}
 	return null;
 }
+
+export function canonicalizeGOPATHPrefix(filename: string): string {
+		let gopath: string = process.env['GOPATH'];
+		if (!gopath) return filename;
+		let workspaces = gopath.split(path.delimiter);
+		let filenameLowercase = filename.toLowerCase();
+		for (let workspace of workspaces) {
+			if (filenameLowercase.substring(0, workspace.length) === workspace.toLowerCase()) {
+				return workspace + filename.slice(workspace.length);
+			}
+		}
+		return filename;
+	}
