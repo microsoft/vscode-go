@@ -39,7 +39,7 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 						ret[ret.length - 1].msg += '\n' + lines[i];
 						continue;
 					}
-					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+))?: (.*)$/.exec(lines[i]);
+					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+))?:(?:\w+:)? (.*)$/.exec(lines[i]);
 					if (!match) continue;
 					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
 					let line = +lineStr;
@@ -79,15 +79,21 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		));
 	}
 	if (!!goConfig['lintOnSave']) {
-		let golint = getBinPath('golint');
+		let lintTool = getBinPath(goConfig['lintTool'] || 'golint');
 		let lintFlags = goConfig['lintFlags'] || [];
+		let args = [...lintFlags];
+
+		if (lintTool === 'golint') {
+			args.push(filename);
+		}
+
 		runningToolsPromises.push(runTool(
-			golint,
-			[...lintFlags, filename],
+			lintTool,
+			args,
 			cwd,
 			'warning',
-			false,
-			'The "golint" command is not available.  Use "go get -u github.com/golang/lint/golint" to install.'
+			lintTool === 'golint',
+			'The "' + lintTool + '" command is not available. Make sure it is installed.'
 		));
 	}
 

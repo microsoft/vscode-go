@@ -219,7 +219,16 @@
         "go.lintOnSave": {
           "type": "boolean",
           "default": true,
-          "description": "Run 'golint' on save."
+          "description": "Run Lint tool on save."
+        },
+        "go.lintTool": {
+          "type": "string",
+          "default": "golint",
+          "description": "Specifies Lint tool name.",
+          "enum": [
+            "golint",
+            "gometalinter"
+          ]
         },
         "go.lintFlags": {
           "type": "array",
@@ -227,7 +236,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to `golint` (e.g. ['-min_confidenc=.8'])"
+          "description": "Flags to pass to Lint tool (e.g. ['-min_confidenc=.8'])"
         },
         "go.vetOnSave": {
           "type": "boolean",
@@ -276,7 +285,7 @@
         "go.coverOnSave": {
           "type": "boolean",
           "default": false,
-          "description": "Run 'go test -coverprofile' on save"	
+          "description": "Run 'go test -coverprofile' on save"
         },
         "go.testTimeout": {
           "type": "string",
