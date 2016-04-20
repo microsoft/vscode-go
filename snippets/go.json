@@ -33,7 +33,7 @@
 			"body": "func $1($2) $3 {\n\t$0\n}"
 		},
 		"typed function declaration": {
-			"prefix": "ft",
+			"prefix": "funct",
 			"body": "func ($1) $2($3) $4 {\n\t$0\n}"
 		},
 		"variable declaration": {
