@@ -102,6 +102,37 @@ The `mode` parameter can be set to:
 * `exec` to run a pre-built binary instead of building the current code in the program folder.
 * `remote` to attach to a remote headless Delve server.  You must manually run Delve on the remote machine, and provide the additional `remotePath`, `host` and `port` debug configuration options pointing at the remote machine.
 
+#### Remote Debugging
+
+To remote debug using VS Code, you must first run a headless Delve server on the target machine.  For example:
+
+```bash
+$ dlv debug --headless --listen=:2345 --log
+```
+
+Then, create a remote debug configuration in VS Code `launch.json`.
+
+```json
+{
+	"name": "Remote",
+	"type": "go",
+	"request": "launch",
+	"mode": "remote",
+	"remotePath": "${workspaceRoot}",
+	"port": 2345,
+	"host": "127.0.0.1",
+	"program": "${workspaceRoot}",
+	"env": {},
+	"args": []
+}
+```
+
+When you launch the debugger with this new `Remote` target selected, VS Code will send debugging 
+commands to the `dlv` server you started previously instead of launching it's own `dlv` instance against your app. 
+
+The above example runs both the headless `dlv` server and the VS Code debugger locally on the same machine.  For an
+example of running these on different hosts, see the example of debugging a process running in a docker host at https://github.com/lukehoban/webapp-go/tree/debugging.
+
 ## Building and Debugging the Extension
 
 You can set up a development environment for debugging the extension during extension development.
