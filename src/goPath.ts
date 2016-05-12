@@ -9,8 +9,31 @@ import fs = require('fs');
 import path = require('path');
 import os = require('os');
 
+import vscode = require('vscode');
+
 let binPathCache: { [bin: string]: string; } = {};
 let runtimePathCache: string = null;
+
+function canBeGoPath(dirPath: string): boolean {
+	let srcDir = path.join(dirPath, 'src');
+	return fs.statSync(dirPath).isDirectory() &&
+		fs.existsSync(srcDir) &&
+		fs.statSync(srcDir).isDirectory();
+}
+
+// GOPATH environment variable is augmented with possible go paths under workspace root.
+export function augmentGoPath() {
+	if (process.env['GOPATH']) {
+		let rootPath = vscode.workspace.rootPath;
+		let possibleGoPaths = new Set(fs.readdirSync(rootPath)
+			.map((fileName: string) => path.join(rootPath, fileName))
+			.filter((filePath: string) => canBeGoPath(filePath)));
+		let existingGoPaths: string[] = process.env['GOPATH'].split(path.delimiter).filter((p: string) => {
+			return !possibleGoPaths.has(p);
+		});
+		process.env['GOPATH'] = Array.from(possibleGoPaths.keys()).concat(existingGoPaths).join(path.delimiter);
+	}
+}
 
 export function getBinPath(binname: string) {
 	binname = correctBinname(binname);
