@@ -144,13 +144,13 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	check(uri.fsPath, goConfig).then(errors => {
 		diagnosticCollection.clear();
 
-		let diagnosticMap: Map<vscode.Uri, vscode.Diagnostic[]> = new Map();
+		let diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
 
 		errors.forEach(error => {
-			let targetUri = vscode.Uri.file(error.file);
+			let canonicalFile = vscode.Uri.file(error.file).toString();
 			let startColumn = 0;
 			let endColumn = 1;
-			if (document && document.uri.toString() === targetUri.toString()) {
+			if (document && document.uri.toString() === canonicalFile) {
 				let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1);
 				let text = document.getText(range);
 				let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
@@ -159,18 +159,16 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 			}
 			let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
 			let diagnostic = new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
-			let diagnostics = diagnosticMap.get(targetUri);
+			let diagnostics = diagnosticMap.get(canonicalFile);
 			if (!diagnostics) {
 				diagnostics = [];
 			}
 			diagnostics.push(diagnostic);
-			diagnosticMap.set(targetUri, diagnostics);
+			diagnosticMap.set(canonicalFile, diagnostics);
 		});
-		let entries: [vscode.Uri, vscode.Diagnostic[]][] = [];
-		diagnosticMap.forEach((diags, uri) => {
-			entries.push([uri, diags]);
+		diagnosticMap.forEach((diags, file) => {
+			diagnosticCollection.set(vscode.Uri.parse(file), diags);
 		});
-		diagnosticCollection.set(entries);
 	}).catch(err => {
 		vscode.window.showInformationMessage('Error: ' + err);
 	});
