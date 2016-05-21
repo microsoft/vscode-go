@@ -187,7 +187,7 @@ go get -u -v golang.org/x/tools/cmd/guru
 
 And for debugging:
 
-- delve: Follow the instructions at https://github.com/derekparker/delve/wiki/Building.
+- delve: Follow the instructions at https://github.com/derekparker/delve/blob/master/Documentation/installation/README.md.
 
 ## License
 [MIT](LICENSE)
