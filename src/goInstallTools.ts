@@ -89,7 +89,17 @@ export function setupGoPathAndOfferToInstallTools() {
 
 	let gopath = vscode.workspace.getConfiguration('go')['gopath'];
 	if (gopath) {
-		process.env['GOPATH'] = gopath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+		gopath = gopath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+		gopath = gopath.replace(/(\${env\.([^}]*)})/g, function(match, p1, p2) {
+			if (process.env[p2]) {
+				return process.env[p2];
+			} else {
+				let warn = `\`go.gopath\` contains invalid variable: ${match}`;
+				vscode.window.showWarningMessage(warn);
+				return match;
+			}
+		});
+		process.env['GOPATH'] = gopath;
 	}
 
 	if (!process.env['GOPATH']) {
