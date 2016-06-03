@@ -20,7 +20,6 @@ let tools: { [key: string]: string } = {
 	gopkgs: 'github.com/tpng/gopkgs',
 	gocode: 'github.com/nsf/gocode',
 	goreturns: 'sourcegraph.com/sqs/goreturns',
-	godef: 'github.com/rogpeppe/godef',
 	golint: 'github.com/golang/lint/golint',
 	'go-outline': 'github.com/lukehoban/go-outline',
 	'go-symbols': 'github.com/newhook/go-symbols',
