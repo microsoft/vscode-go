@@ -124,6 +124,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	program: string;
 	stopOnEntry?: boolean;
 	args?: string[];
+	showLog?: boolean;
 	cwd?: string;
 	env?: { [key: string]: string; };
 	mode?: string;
@@ -156,7 +157,7 @@ class Delve {
 	onstdout: (str: string) => void;
 	onstderr: (str: string) => void;
 
-	constructor(mode: string, remotePath: string, port: number, host: string, program: string, args: string[], cwd: string, env: { [key: string]: string }, buildFlags: string, init: string) {
+	constructor(mode: string, remotePath: string, port: number, host: string, program: string, args: string[], showLog: boolean, cwd: string, env: { [key: string]: string }, buildFlags: string, init: string) {
 		this.program = program;
 		this.remotePath = remotePath;
 		this.connection = new Promise((resolve, reject) => {
@@ -186,7 +187,10 @@ class Delve {
 			if (mode === 'exec') {
 				dlvArgs = dlvArgs.concat([program]);
 			}
-			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString(), '--log']);
+			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
+			if (showLog) {
+				dlvArgs = dlvArgs.concat(['--log=' + showLog.toString()]);
+			}
 			if (buildFlags) {
 				dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
 			}
@@ -231,6 +235,10 @@ class Delve {
 			this.debugProcess.stdout.on('data', chunk => {
 				let str = chunk.toString();
 				if (this.onstdout) { this.onstdout(str); }
+				if (!serverRunning) {
+					serverRunning = true;
+					connectClient(port, host);
+				}
 			});
 			this.debugProcess.on('close', function(code) {
 				// TODO: Report `dlv` crash to user.
@@ -323,7 +331,7 @@ class GoDebugSession extends DebugSession {
 			}
 		}
 
-		this.delve = new Delve(args.mode, remotePath, port, host, args.program, args.args, args.cwd, args.env, args.buildFlags, args.init);
+		this.delve = new Delve(args.mode, remotePath, port, host, args.program, args.args, args.showLog, args.cwd, args.env, args.buildFlags, args.init);
 		this.delve.onstdout = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stdout'));
 		};
