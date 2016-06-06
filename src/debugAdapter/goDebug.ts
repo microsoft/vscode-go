@@ -339,7 +339,7 @@ class GoDebugSession extends DebugSession {
 				log('StoppedEvent("breakpoint")');
 				this.sendResponse(response);
 			} else {
-				this.continueRequest(response);
+				this.continueRequest(<DebugProtocol.ContinueResponse>response);
 			}
 		}, err => {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: "{e}"', { e: err.toString() });
