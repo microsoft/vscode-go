@@ -160,6 +160,11 @@
                 },
                 "default": []
               },
+              "showLog": {
+                "type": "boolean",
+                "description": "Show log output from the delve debugger.",
+                "default": false
+              },
               "cwd": {
                 "type": "string",
                 "description": "Workspace relative or absolute path to the working directory of the program being debugged. Default is the current workspace.",
