@@ -25,6 +25,7 @@
   "scripts": {
     "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
     "compile": "node ./node_modules/vscode/bin/compile -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "node ./node_modules/vscode/bin/test",
     "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts"
   },
@@ -36,14 +37,14 @@
     "diff-match-patch": "~1.0.0",
     "json-rpc2": "^1.0.2",
     "lodash": "^3.10.1",
-    "vscode-debugadapter": "^1.6.1",
-    "vscode-debugprotocol": "^1.6.1"
+    "vscode-debugadapter": "^1.9.0",
+    "vscode-debugprotocol": "^1.9.0"
   },
   "devDependencies": {
     "fs-extra": "^0.26.0",
     "tslint": "^3.3.0",
     "typescript": "1.8.7",
-    "vscode": "^0.10.7"
+    "vscode": "^0.11.13"
   },
   "engines": {
     "vscode": "0.10.x"
