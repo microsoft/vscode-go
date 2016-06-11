@@ -92,7 +92,7 @@ export function getCoverage(filename: string): Promise<any[]> {
 		let args = ['test', '-coverprofile=' + tmppath];
 
 		// make sure tmppath exists
-		fs.closeSync(fs.openSync(tmppath, "a"))
+		fs.closeSync(fs.openSync(tmppath, 'a'));
 
 		cp.execFile(getGoRuntimePath(), args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
