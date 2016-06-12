@@ -76,3 +76,13 @@ export function getGoRuntimePath(): string {
 	}
 	return runtimePathCache;
 }
+
+export function appendGoPath(cwd: string) {
+	let pathparts = process.env['GOPATH'].split(path.delimiter);
+	let gopath = new Array(cwd);
+	gopath = gopath.concat(pathparts);
+	
+	let str = gopath.join(path.delimiter);
+	console.log(str);
+	process.env['GOPATH'] = gopath.join(path.delimiter);
+}
