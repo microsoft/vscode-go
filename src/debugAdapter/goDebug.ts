@@ -207,10 +207,6 @@ class Delve {
 					dlvCwd = program;
 				}
 			} catch (e) { }
-			log('cwd:', cwd);
-			log('program:', program);
-			log('dlvArgs:', dlvArgs);
-			log('dlvCwd:', dlvCwd);
 			
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: cwd,

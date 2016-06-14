@@ -77,6 +77,10 @@ export function getGoRuntimePath(): string {
 	return runtimePathCache;
 }
 
+/**
+ * Append current workspace path to go path
+ * 
+ */
 export function appendGoPath(cwd: string) {
 	let pathparts = process.env['GOPATH'].split(path.delimiter);
 	let gopath = new Array(cwd);
