@@ -12,6 +12,7 @@ import os = require('os');
 import fs = require('fs');
 import { getBinPath, getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
+import { outputChannel } from './goStatus';
 
 export interface ICheckResult {
 	file: string;
@@ -19,8 +20,6 @@ export interface ICheckResult {
 	msg: string;
 	severity: string;
 }
-
-let outputChannel = vscode.window.createOutputChannel('Go');
 
 function runTool(cmd: string, args: string[], cwd: string, severity: string, useStdErr: boolean, notFoundError: string) {
 	return new Promise((resolve, reject) => {

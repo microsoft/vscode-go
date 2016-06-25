@@ -11,6 +11,7 @@ import vscode = require('vscode');
 import util = require('util');
 import { getGoRuntimePath } from './goPath';
 import { GoDocumentSymbolProvider } from './goOutline';
+import { outputChannel } from './goStatus';
 
 /**
  * Input to goTest.
@@ -117,9 +118,8 @@ export function testCurrentFile(timeout: string) {
  */
 function goTest(config: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		let channel = vscode.window.createOutputChannel('Go');
-		channel.clear();
-		channel.show(2);
+		outputChannel.clear();
+		outputChannel.show(2);
 		let buildFlags: string[] = vscode.workspace.getConfiguration('go')['buildFlags'];
 		let buildTags: string = vscode.workspace.getConfiguration('go')['buildTags'];
 		let args = ['test', '-v', '-timeout', config.timeout, '-tags', buildTags, ...buildFlags];
@@ -129,13 +129,13 @@ function goTest(config: TestConfig): Thenable<boolean> {
 			args.push(util.format('^%s$', config.functions.join('|')));
 		}
 		let proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: config.dir });
-		proc.stdout.on('data', chunk => channel.append(chunk.toString()));
-		proc.stderr.on('data', chunk => channel.append(chunk.toString()));
+		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
+		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.on('close', code => {
 			if (code) {
-				channel.append('Error: Tests failed.');
+				outputChannel.append('Error: Tests failed.');
 			} else {
-				channel.append('Success: Tests passed.');
+				outputChannel.append('Success: Tests passed.');
 			}
 			resolve(code === 0);
 		});

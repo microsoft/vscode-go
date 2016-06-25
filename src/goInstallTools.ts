@@ -12,8 +12,7 @@ import os = require('os');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
 import { getBinPath } from './goPath';
-
-let channel = vscode.window.createOutputChannel('Go');
+import { outputChannel } from './goStatus';
 
 let tools: { [key: string]: string } = {
 	gorename: 'golang.org/x/tools/cmd/gorename',
@@ -28,13 +27,13 @@ let tools: { [key: string]: string } = {
 };
 
 export function installTool(tool: string) {
-	channel.clear();
-	channel.show();
+	outputChannel.clear();
+	outputChannel.show();
 	cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
-		channel.append(stdout.toString());
-		channel.append(stderr.toString());
+		outputChannel.append(stdout.toString());
+		outputChannel.append(stderr.toString());
 		if (err) {
-			channel.append('exec error: ' + err);
+			outputChannel.append('exec error: ' + err);
 		}
 	});
 }

@@ -8,6 +8,8 @@
 import { GO_MODE } from './goMode';
 import vscode = require('vscode');
 
+export let outputChannel = vscode.window.createOutputChannel('Go');
+
 let statusBarEntry: vscode.StatusBarItem;
 
 export function showHideStatus() {
