@@ -41,13 +41,14 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		return this.ensureGoCodeConfigured().then(() => {
 			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 				let filename = document.fileName;
+				let lineText = document.lineAt(position.line).text;
 
-				if (document.lineAt(position.line).text.match(/^\s*\/\//)) {
+				if (lineText.match(/^\s*\/\//)) {
 					return resolve([]);
 				}
 
 				let inString = false;
-				if ((document.lineAt(position.line).text.substring(0, position.character).match(/\"/g) || []).length % 2 === 1) {
+				if ((lineText.substring(0, position.character).match(/\"/g) || []).length % 2 === 1) {
 					inString = true;
 				}
 
@@ -99,6 +100,16 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								let item = new vscode.CompletionItem(suggest.name);
 								item.kind = vscodeKindFromGoCodeClass(suggest.class);
 								item.detail = suggest.type;
+								if (inString && suggest.class === 'import') {
+									item.textEdit = new vscode.TextEdit(
+										new vscode.Range(
+											position.line,
+											lineText.substring(0, position.character).lastIndexOf('"') + 1,
+											position.line,
+											position.character),
+										suggest.name
+									);
+								}
 								let conf = vscode.workspace.getConfiguration('go');
 								if (conf.get('useCodeSnippetsOnFunctionSuggest') && suggest.class === 'func') {
 									let params = parameters(suggest.type.substring(4));
