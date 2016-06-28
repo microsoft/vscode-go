@@ -137,7 +137,7 @@ example of running these on different hosts, see the example of debugging a proc
 
 You can set up a development environment for debugging the extension during extension development.
 
-First make sure you do not have the extension installed in `~/.vscode/extensions`.  Then clone the repo somewhere else on your machine, run `npm install` and open a development instance of Code.
+First make sure you do not have the extension installed in `~/.vscode/extensions` and that you have TypeScript installed.  Then clone the repo somewhere else on your machine, run `npm install && tsc -p .` and open a development instance of Code.
 
 ```bash
 rm -rf ~/.vscode/extensions/lukehoban.Go
@@ -145,6 +145,7 @@ cd ~
 git clone https://github.com/Microsoft/vscode-go
 cd vscode-go
 npm install
+tsc -p .
 code . 
 ```
 
