@@ -26,6 +26,7 @@ import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest';
 import { addImport } from './goImport';
+import { augmentGoPath } from './goPath';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -51,6 +52,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
+	augmentGoPath();
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
 		let gopath = process.env['GOPATH'];
 		vscode.window.showInformationMessage('Current GOPATH:' + gopath);
