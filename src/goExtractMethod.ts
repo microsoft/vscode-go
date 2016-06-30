@@ -68,13 +68,6 @@ export function extractMethodUsingGoDoctor(methodName: string, selection: Select
 	let position = `${selection.start.line + 1},${selection.start.character + 1}:${selection.end.line + 1},${selection.end.character + 1}`;
 	
 	return new Promise((resolve, reject) => {
-
-		methodName = methodName.trim();
-		// TODO: Add other checks for methodName
-		if (methodName.indexOf(' ') > -1){
-			return resolve('Invalid name for method');		
-		}
-
 		var process = cp.execFile(godoctor, ['-pos', position, 'extract', methodName], {},(err, stdout, stderr) => {
 			if (err){
 				var errorMessageIndex = stderr.indexOf('Error:');				
@@ -93,7 +86,7 @@ export function extractMethodUsingGoDoctor(methodName: string, selection: Select
 			}
 					
 			applypatches(patches, editor).then(validEdit => {
-				return validEdit? resolve(null): resolve('Edits could not be applied to the document');				
+				return resolve (validEdit? null: 'Edits could not be applied to the document');				
 			});;
 				
 		});
