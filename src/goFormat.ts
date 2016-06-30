@@ -10,33 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import dmp = require('diff-match-patch');
 import { getBinPath } from './goPath';
-
-let EDIT_DELETE = 0;
-let EDIT_INSERT = 1;
-let EDIT_REPLACE = 2;
-class Edit {
-	action: number;
-	start: vscode.Position;
-	end: vscode.Position;
-	text: string;
-
-	constructor(action: number, start: vscode.Position) {
-		this.action = action;
-		this.start = start;
-		this.text = '';
-	}
-
-	apply(): vscode.TextEdit {
-		switch (this.action) {
-			case EDIT_INSERT:
-				return vscode.TextEdit.insert(this.start, this.text);
-			case EDIT_DELETE:
-				return vscode.TextEdit.delete(new vscode.Range(this.start, this.end));
-			case EDIT_REPLACE:
-				return vscode.TextEdit.replace(new vscode.Range(this.start, this.end), this.text);
-		}
-	}
-}
+import { EditTypes, Edit } from './util';
 
 export class Formatter {
 	private formatCommand = 'goreturns';
@@ -86,8 +60,8 @@ export class Formatter {
 						switch (diffs[i][0]) {
 							case dmp.DIFF_DELETE:
 								if (edit == null) {
-									edit = new Edit(EDIT_DELETE, start);
-								} else if (edit.action !== EDIT_DELETE) {
+									edit = new Edit(EditTypes.EDIT_DELETE, start);
+								} else if (edit.action !== EditTypes.EDIT_DELETE) {
 									return reject('cannot format due to an internal error.');
 								}
 								edit.end = new vscode.Position(line, character);
@@ -95,9 +69,9 @@ export class Formatter {
 
 							case dmp.DIFF_INSERT:
 								if (edit == null) {
-									edit = new Edit(EDIT_INSERT, start);
-								} else if (edit.action === EDIT_DELETE) {
-									edit.action = EDIT_REPLACE;
+									edit = new Edit(EditTypes.EDIT_INSERT, start);
+								} else if (edit.action === EditTypes.EDIT_DELETE) {
+									edit.action = EditTypes.EDIT_REPLACE;
 								}
 								// insert and replace edits are all relative to the original state
 								// of the document, so inserts should reset the current line/character

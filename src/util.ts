@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { TextDocument, Position } from 'vscode';
+import { TextDocument, Position, TextEdit, Range } from 'vscode';
 import path = require('path');
 
 export function byteOffsetAt(document: TextDocument, position: Position): number {
@@ -84,6 +84,8 @@ export function parameters(signature: string): string[] {
 }
 
 export function canonicalizeGOPATHPrefix(filename: string): string {
+
+
 		let gopath: string = process.env['GOPATH'];
 		if (!gopath) return filename;
 		let workspaces = gopath.split(path.delimiter);
@@ -95,3 +97,32 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 		}
 		return filename;
 	}
+
+
+export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE};
+
+export class Edit {
+	action: number;
+	start: Position;
+	end: Position;
+	text: string;
+
+	constructor(action: number, start: Position) {
+		this.action = action;
+		this.start = start;
+		this.text = '';
+	}
+
+	apply(): TextEdit {
+		switch (this.action) {
+			case EditTypes.EDIT_INSERT:
+				return TextEdit.insert(this.start, this.text);
+			case EditTypes.EDIT_DELETE:
+				return TextEdit.delete(new Range(this.start, this.end));
+			case EditTypes.EDIT_REPLACE:
+				return TextEdit.replace(new Range(this.start, this.end), this.text);
+		}
+	}
+}
+
+
