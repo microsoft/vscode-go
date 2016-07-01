@@ -11,7 +11,7 @@ import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { check } from '../src/goCheck';
-import { extractMethodUsingGoDoctor } from '../src/goExtractMethod'; 
+import { extractMethodUsingGoDoctor } from '../src/goExtractMethod';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -86,8 +86,8 @@ suite('Go Extension Tests', () => {
 			[new vscode.Position(7, 13), 'Println(a ...interface{}) (n int, err error)'],
 			[new vscode.Position(10, 7), 'print(txt string)']
 		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));		
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {						
+		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expected]) =>
 				provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
 					assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
@@ -120,42 +120,42 @@ suite('Go Extension Tests', () => {
 
 	test('Extract method fails due to invalid method name', (done) => {
 		let uri = vscode.Uri.file(path.join(fixtureSourcePath, 'test.go'));
-		let selection = new vscode.Selection(14, 0, 15, 14);	
+		let selection = new vscode.Selection(14, 0, 15, 14);
 
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
-				return extractMethodUsingGoDoctor('a dd', selection, editor).then((retValue) => {					
+				return extractMethodUsingGoDoctor('a dd', selection, editor).then((retValue) => {
 					assert.equal(retValue.indexOf('is not a valid Go identifier') > -1, true);
-				});		
+				});
 			});
-		}).then(() => done(), done);			
-	})
+		}).then(() => done(), done);
+	});
 
 	test('Extract method fails due to invalid selection', (done) => {
 		let uri = vscode.Uri.file(path.join(fixtureSourcePath, 'test.go'));
-		let selection = new vscode.Selection(2, 0, 5, 0);	
+		let selection = new vscode.Selection(2, 0, 5, 0);
 
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
-				return extractMethodUsingGoDoctor('add', selection, editor).then((retValue) => {					
+				return extractMethodUsingGoDoctor('add', selection, editor).then((retValue) => {
 					assert.equal(retValue.indexOf('invalid selection') > -1, true);
-				});				
+				});
 			});
-		}).then(() => done(), done);		
-	})
-	
+		}).then(() => done(), done);
+	});
+
 	test('Extract method successfully', (done) => {
 		let uri = vscode.Uri.file(path.join(fixtureSourcePath, 'test.go'));
 		let expectedOutput = fs.readFileSync(path.join(fixtureSourcePath, 'expectedAfterExtractMethod.go'), 'utf8');
-		let selection = new vscode.Selection(14, 0, 15, 14);		
-		
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {			
+		let selection = new vscode.Selection(14, 0, 15, 14);
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
-				return extractMethodUsingGoDoctor('add', selection, editor).then((done) => {					
+				return extractMethodUsingGoDoctor('add', selection, editor).then((done) => {
 					assert.equal(editor.document.getText(), expectedOutput);
-				});				
+				});
 			});
-		}).then(() => done(), done);		
-	})
-	
+		}).then(() => done(), done);
+	});
+
 });

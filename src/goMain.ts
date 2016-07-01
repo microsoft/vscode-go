@@ -81,7 +81,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.method.extract', () => {
-		extractMethod();		
+		extractMethod();
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
