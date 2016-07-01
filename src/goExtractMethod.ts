@@ -28,30 +28,11 @@ export function extractMethod() {
 		
 	let showInputBoxPromise = window.showInputBox({placeHolder: 'Please enter the name for the extracted method'});
 	showInputBoxPromise.then((methodName: string) => {		
-
-		// Ensure there is always an eol char at the end of the document	
-		// Else "No End of Line" char gets added by godoctor which will fail diff_match_patch.patch_fromtext()
-		let editPromise: Thenable<boolean>;
-		if(!editor.document.getText().endsWith("\n")){			
-			editPromise = editor.edit((editBuilder) => {
-				editBuilder.insert(new Position(editor.document.lineCount, 0), "\n");
-			});
-		} else {
-			editPromise = Promise.resolve(true);
-		}
-	
-		editPromise.then((validEdit) => {
-			if (!validEdit) {
-				window.showErrorMessage('Edits could not be applied to the document');
-				return;
+		extractMethodUsingGoDoctor(methodName, editor.selection, editor).then(errorMessage => {
+			if (errorMessage){
+				window.showErrorMessage(errorMessage);
 			}
-			extractMethodUsingGoDoctor(methodName, editor.selection, editor).then(errorMessage => {
-				if (errorMessage){
-					window.showErrorMessage(errorMessage);
-				}
-			});;
-		});
-				
+		});				
 	});		
 }
 
@@ -121,7 +102,18 @@ function applypatches(patches: dmp.Patch[], editor: TextEditor): Thenable<boolea
 			}	
 		})			
 	})
-	return editPromise;	
+
+	// While inserting the extracted method, the end of line char (\n) at the end of the document might get replaced.
+	// If this happens, the next time godoctor is called, it adds "No End of Line" char which will fail diff_match_patch.patch_fromtext()
+	// Therefore, add the end of line char at the end of the document if it does not exists.
+	return editPromise.then(done => {
+		if (done && !editor.document.getText().endsWith("\n")){
+			return editor.edit((editBuilder) => {
+				editBuilder.insert(new Position(editor.document.lineCount, 0), "\n");
+			});
+		}
+		return Promise.resolve(done);
+	});	
 }
 
 /**
