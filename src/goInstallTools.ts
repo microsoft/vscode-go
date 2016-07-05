@@ -93,7 +93,6 @@ export function setupGoPathAndOfferToInstallTools() {
 		});
 	}))).then(res => {
 		let missing = res.filter(x => x != null);
-		console.log(missing);
 		if (missing.length > 0) {
 			showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
 			vscode.commands.registerCommand('go.promptforinstall', () => {
