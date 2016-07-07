@@ -50,14 +50,14 @@ export function installTools(missing: string[]) {
 	}))).then(res => {
 		outputChannel.appendLine(''); // Blank line for spacing
 		let failures = res.filter(x => x != null);
-		if (failures.length == 0) {
+		if (failures.length === 0) {
 			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
 			return;
 		}
 
 		outputChannel.appendLine(failures.length + ' tools failed to install.\n');
 		failures.forEach((failure, index, failures) => {
-			let reason = failure.split(';;')
+			let reason = failure.split(';;');
 			outputChannel.appendLine(reason[0] + ':');
 			outputChannel.appendLine(reason[1]);
 		});
