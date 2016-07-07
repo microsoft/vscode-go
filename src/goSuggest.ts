@@ -38,7 +38,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private gocodeConfigurationComplete = false;
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
-		console.log("My dude");
 		return this.ensureGoCodeConfigured().then(() => {
 			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 				let filename = document.fileName;
@@ -140,7 +139,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
-		console.log("configured");
 		return new Promise<void>((resolve, reject) => {
 			// TODO: Since the gocode daemon is shared amongst clients, shouldn't settings be
 			// adjusted per-invocation to avoid conflicts from other gocode-using programs?
