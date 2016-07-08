@@ -38,3 +38,4 @@ script:
 
 env:
   - GO15VENDOREXPERIMENT=1
+  

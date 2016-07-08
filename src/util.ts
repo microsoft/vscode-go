@@ -84,8 +84,6 @@ export function parameters(signature: string): string[] {
 }
 
 export function canonicalizeGOPATHPrefix(filename: string): string {
-
-
 		let gopath: string = process.env['GOPATH'];
 		if (!gopath) return filename;
 		let workspaces = gopath.split(path.delimiter);
@@ -97,7 +95,6 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 		}
 		return filename;
 	}
-
 
 export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE};
 

@@ -174,7 +174,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
 - godoctor: `go get -u -v github.com/godoctor/godoctor`
 
-To install them just paste and run:
+To install them yourself, just paste and run:
 ```bash
 go get -u -v github.com/nsf/gocode
 go get -u -v github.com/rogpeppe/godef
@@ -187,6 +187,8 @@ go get -u -v github.com/newhook/go-symbols
 go get -u -v golang.org/x/tools/cmd/guru
 go get -u -v github.com/godoctor/godoctor
 ```
+
+*Note*: If the version of Go you are using is less than 1.6, then `set GO15VENDOREXPERIMENT=1` to support godoctor
 
 And for debugging:
 
