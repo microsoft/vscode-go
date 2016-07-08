@@ -78,6 +78,9 @@ export function setupGoPathAndOfferToInstallTools() {
 	});
 
 	function promptForInstall(missing: string[]) {
+		// set GO15VENDOREXPERIMENT=1 to support godoctor when using Go v1.5
+		cp.exec('set GO15VENDOREXPERIMENT=1', { env: process.env }, (err, stdout, stderr) => {});
+
 		let item = {
 			title: 'Install',
 			command() {
