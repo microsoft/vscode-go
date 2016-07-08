@@ -59,7 +59,7 @@ export function setupGoPathAndOfferToInstallTools() {
 		});
 		return;
 	}
-
+	
 	let keys = Object.keys(tools);
 	Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
 		let toolPath = getBinPath(tool);
@@ -77,9 +77,9 @@ export function setupGoPathAndOfferToInstallTools() {
 		}
 	});
 
-	function promptForInstall(missing: string[]) {
+	function promptForInstall(missing: string[]) {		
 		// set GO15VENDOREXPERIMENT=1 to support godoctor when using Go v1.5
-		cp.exec('set GO15VENDOREXPERIMENT=1', { env: process.env }, (err, stdout, stderr) => {});
+		process.env['GO15VENDOREXPERIMENT'] = 1;
 
 		let item = {
 			title: 'Install',
