@@ -130,7 +130,7 @@ export class Edit {
  * @param line The line number from where the edits are to be applied
  * @returns Array of Edits that can be applied to the document
  */
-export function GetEditsFromDiffs(diffs: dmp.Diff[], line: number): Edit[]{
+export function GetEditsFromDiffs(diffs: dmp.Diff[], line: number): Edit[] {
 	let character = 0;
 	let edits: Edit[] = [];
 	let edit: Edit = null;
