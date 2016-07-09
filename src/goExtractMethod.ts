@@ -7,7 +7,7 @@
 
 import { window, Position, Selection, Range, TextEditor } from 'vscode';
 import { getBinPath } from './goPath';
-import { EditTypes, Edit } from './util';
+import { EditTypes, Edit, GetEditsFromDiffs } from './util';
 import cp = require('child_process');
 import dmp = require('diff-match-patch');
 
@@ -84,10 +84,17 @@ export function extractMethodUsingGoDoctor(methodName: string, selection: Select
 function applypatches(patches: dmp.Patch[], editor: TextEditor): Thenable<boolean> {
 	let totalEdits: Edit[] = [];
 	patches.reverse().forEach((patch: dmp.Patch) => {
-		let edits = getEditsFromPatch(patch);
+		// Godoctor provides a diff for each line, but the text accompanying the diff does not end with '\n'
+		// GetEditsFromDiffs(..) expects the '\n' to exist in the text wherever there is a new line.
+		// So add one for each diff from getdoctor
+		for (let i = 0; i < patch.diffs.length; i++) {
+			patch.diffs[i][1] += '\n';
+		}
+		let edits = GetEditsFromDiffs(patch.diffs, patch.start1);
 		totalEdits = totalEdits.concat(edits);
 	});
-	let editPromise = editor.edit((editBuilder) => {
+
+	return editor.edit((editBuilder) => {
 		totalEdits.forEach((edit) => {
 			switch (edit.action) {
 				case EditTypes.EDIT_INSERT:
@@ -102,71 +109,7 @@ function applypatches(patches: dmp.Patch[], editor: TextEditor): Thenable<boolea
 			}
 		});
 	});
-
-	// While inserting the extracted method, the end of line char (\n) at the end of the document might get replaced.
-	// If this happens, the next time godoctor is called, it adds "No End of Line" char which will fail diff_match_patch.patch_fromtext()
-	// Therefore, add the end of line char at the end of the document if it does not exists.
-	return editPromise.then(done => {
-		if (done && !editor.document.getText().endsWith('\n')) {
-			return editor.edit((editBuilder) => {
-				editBuilder.insert(new Position(editor.document.lineCount, 0), '\n');
-			});
-		}
-		return Promise.resolve(done);
-	});
 }
 
-/**
- * Gets Edits from given patch
- *
- * @param patch The patch from which the diffs are translated to edits
- * @returns Array of Edits that can be applied to the document
- */
-function getEditsFromPatch(patch: dmp.Patch): Edit[] {
-	let line: number = patch.start1;
-	let edits: Edit[] = [];
-	let edit: Edit = null;
-
-	// Loop through each diff, coalesce consecutive inserts/deletes into single edit of type insert/delete
-	// If insert follows a delete, then create a edit of type replace
-	for (let i = 0; i < patch.diffs.length; i++) {
-		switch (patch.diffs[i][0]) {
-			case dmp.DIFF_DELETE:
-				if (edit == null) {
-					edit = new Edit(EditTypes.EDIT_DELETE, new Position(line, 0));
-				}
-				edit.end = new Position(line, patch.diffs[i][1].length);
-				line++;
-				break;
-			case dmp.DIFF_INSERT:
-				if (edit == null) {
-					edit = new Edit(EditTypes.EDIT_INSERT, new Position(line, 0));
-				} else if (edit.action === EditTypes.EDIT_DELETE) {
-					edit.action = EditTypes.EDIT_REPLACE;
-				} else {
-					edit.text += '\n';
-				}
-				if (edit.action === EditTypes.EDIT_INSERT) {
-					line++;
-				}
-				edit.text += patch.diffs[i][1];
-				break;
-
-			case dmp.DIFF_EQUAL:
-				if (edit != null) {
-					edits.push(edit);
-					edit = null;
-				}
-				line++;
-				break;
-		}
-	}
-
-	if (edit != null) {
-		edits.push(edit);
-	}
-
-	return edits;
-}
 
 

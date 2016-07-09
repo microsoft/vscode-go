@@ -5,6 +5,7 @@
 
 import { TextDocument, Position, TextEdit, Range } from 'vscode';
 import path = require('path');
+import dmp = require('diff-match-patch');
 
 export function byteOffsetAt(document: TextDocument, position: Position): number {
 	let offset = document.offsetAt(position);
@@ -49,7 +50,7 @@ export function parseFilePrelude(text: string): Prelude {
 }
 
 // Takes a Go function signature like:
-//     (foo, bar string, baz number) (string, string) 
+//     (foo, bar string, baz number) (string, string)
 // and returns an array of parameter strings:
 //     ["foo", "bar string", "baz string"]
 // Takes care of balancing parens so to not get confused by signatures like:
@@ -122,4 +123,67 @@ export class Edit {
 	}
 }
 
+/**
+ * Gets Edits from given diff array
+ *
+ * @param diffs The array of diffs which are translated to edits
+ * @param line The line number from where the edits are to be applied
+ * @returns Array of Edits that can be applied to the document
+ */
+export function GetEditsFromDiffs(diffs: dmp.Diff[], line: number): Edit[]{
+	let character = 0;
+	let edits: Edit[] = [];
+	let edit: Edit = null;
 
+	for (let i = 0; i < diffs.length; i++) {
+		let start = new Position(line, character);
+
+		// Compute the line/character after the diff is applied.
+		for (let curr = 0; curr < diffs[i][1].length; curr++) {
+			if (diffs[i][1][curr] !== '\n') {
+				character++;
+			} else {
+				character = 0;
+				line++;
+			}
+		}
+
+		switch (diffs[i][0]) {
+			case dmp.DIFF_DELETE:
+				if (edit == null) {
+					edit = new Edit(EditTypes.EDIT_DELETE, start);
+				} else if (edit.action !== EditTypes.EDIT_DELETE) {
+					return null;
+				}
+				edit.end = new Position(line, character);
+				break;
+
+			case dmp.DIFF_INSERT:
+				if (edit == null) {
+					edit = new Edit(EditTypes.EDIT_INSERT, start);
+				} else if (edit.action === EditTypes.EDIT_DELETE) {
+					edit.action = EditTypes.EDIT_REPLACE;
+				}
+				// insert and replace edits are all relative to the original state
+				// of the document, so inserts should reset the current line/character
+				// position to the start.
+				line = start.line;
+				character = start.character;
+				edit.text += diffs[i][1];
+				break;
+
+			case dmp.DIFF_EQUAL:
+				if (edit != null) {
+					edits.push(edit);
+					edit = null;
+				}
+				break;
+		}
+	}
+
+	if (edit != null) {
+		edits.push(edit);
+	}
+
+	return edits;
+}
