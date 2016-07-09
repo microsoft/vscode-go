@@ -23,7 +23,8 @@ let tools: { [key: string]: string } = {
 	golint: 'github.com/golang/lint/golint',
 	'go-outline': 'github.com/lukehoban/go-outline',
 	'go-symbols': 'github.com/newhook/go-symbols',
-	guru: 'golang.org/x/tools/cmd/guru'
+	guru: 'golang.org/x/tools/cmd/guru',
+	godoctor: 'github.com/godoctor/godoctor'
 };
 
 export function installTool(tool: string) {
@@ -77,6 +78,9 @@ export function setupGoPathAndOfferToInstallTools() {
 	});
 
 	function promptForInstall(missing: string[]) {
+		// set GO15VENDOREXPERIMENT=1 to support godoctor when using Go v1.5
+		process.env['GO15VENDOREXPERIMENT'] = 1;
+
 		let item = {
 			title: 'Install',
 			command() {
