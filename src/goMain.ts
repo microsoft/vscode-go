@@ -26,6 +26,7 @@ import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest';
 import { addImport } from './goImport';
+import { extractMethod } from './goExtractMethod';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -77,6 +78,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
 		return addImport(typeof arg === 'string' ? arg : null);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.method.extract', () => {
+		extractMethod();
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
