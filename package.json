@@ -113,6 +113,14 @@
         "description": "Extract Method from current selection"
       }
     ],
+    "menus": {      
+      "editor/context": [
+          {
+              "when": "resourceLangId == go",
+              "command": "go.method.extract"
+          }
+      ]
+    },
     "debuggers": [
       {
         "type": "go",
