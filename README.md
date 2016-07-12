@@ -10,8 +10,8 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Completion Lists (using `gocode`)
 - Signature Help (using `godoc`)
 - Snippets
-- Quick Info (using `godef`)
-- Goto Definition (using `godef`)
+- Quick Info (using `guru`)
+- Goto Definition (using `guru`)
 - Find References (using `guru`)
 - File outline (using `go-outline`)
 - Workspace symbol search (using `go-symbols`)
@@ -164,7 +164,6 @@ To debug the debugger, see [the debugAdapter readme](src/debugAdapter/Readme.md)
 The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, you will see an "Analysis Tools Missing" warning in the bottom right corner of the editor.  Clicking it will offer to install the missing tools for you. 
 
 - gocode: `go get -u -v github.com/nsf/gocode`
-- godef: `go get -u -v github.com/rogpeppe/godef`
 - golint: `go get -u -v github.com/golang/lint/golint`
 - go-outline: `go get -u -v github.com/lukehoban/go-outline`
 - goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
@@ -177,7 +176,6 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 To install them yourself, just paste and run:
 ```bash
 go get -u -v github.com/nsf/gocode
-go get -u -v github.com/rogpeppe/godef
 go get -u -v github.com/golang/lint/golint
 go get -u -v github.com/lukehoban/go-outline
 go get -u -v sourcegraph.com/sqs/goreturns

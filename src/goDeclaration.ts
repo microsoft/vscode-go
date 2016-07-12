@@ -11,46 +11,52 @@ import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
 
-export interface GoDefinitionInformtation {
+export interface GoDefinitionInformation {
 	file: string;
 	line: number;
 	col: number;
-	lines: string[];
 	doc: string;
+	objpos: string;
+	desc: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
-	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
+export interface GuruDefinitionResult {
+	objpos: string;
+	desc: string;
+}
 
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformation> {
+	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		let wordAtPosition = document.getWordRangeAtPosition(position);
 		let offset = byteOffsetAt(document, position);
 
-		let godef = getBinPath('godef');
+		let guru = getBinPath('guru');
 
-		// Spawn `godef` process
-		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {}, (err, stdout, stderr) => {
+		// Spawn `guru` process
+		let p = cp.execFile(guru, ['-json', 'definition', document.fileName + ':#' + offset.toString()], {}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					vscode.window.showInformationMessage('The "godef" command is not available.  Use "go get -u github.com/rogpeppe/godef" to install.');
+					vscode.window.showInformationMessage('The "guru" command is not available.  Use "go get -u golang.org/x/tools/cmd/guru" to install.');
 				}
 				if (err) return resolve(null);
 				let result = stdout.toString();
-				let lines = result.split('\n');
-				let match = /(.*):(\d+):(\d+)/.exec(lines[0]);
+				let def = <GuruDefinitionResult>JSON.parse(result);
+				let match = /(.*):(\d+):(\d+)/.exec(def.objpos);
 				if (!match) {
 					// TODO: Gotodef on pkg name:
 					// /usr/local/go/src/html/template\n
 					return resolve(null);
 				}
 				let [_, file, line, col] = match;
-				let signature = lines[1];
+				let signature = def.desc;
 				let godoc = getBinPath('godoc');
 				let pkgPath = path.dirname(file);
-				let definitionInformation: GoDefinitionInformtation = {
+				let definitionInformation: GoDefinitionInformation = {
 					file: file,
 					line: +line - 1,
 					col: + col - 1,
-					lines,
+					objpos: def.objpos,
+					desc: def.desc,
 					doc: undefined
 				};
 				if (!includeDocs) {

@@ -12,7 +12,7 @@ export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 		return definitionLocation(document, position, false).then(definitionInfo => {
 			if (definitionInfo == null) return null;
-			let lines = definitionInfo.lines;
+			let lines = [definitionInfo.desc];
 			lines = lines.map(line => {
 				if (line.indexOf('\t') === 0) {
 					line = line.slice(1);
