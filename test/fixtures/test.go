@@ -9,9 +9,4 @@ func print(txt string) {
 }
 func main() {
 	print("Hello")
-
-	a:= 1
-	b:=2
-	c:= a+b
-	fmt.Println(c)
 }
