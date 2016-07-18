@@ -20,7 +20,6 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Format (using `goreturns` or `goimports` or `gofmt`)
 - Add Imports (using `gopkgs`)
 - [_partially implemented_] Debugging (using `delve`)
-- Extract Method (using `godoctor`)
 
 ### IDE Features
 ![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
@@ -172,9 +171,8 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - gopkgs: `go get -u -v github.com/tpng/gopkgs`
 - go-symbols: `go get -u -v github.com/newhook/go-symbols`
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
-- godoctor: `go get -u -v github.com/godoctor/godoctor`
 
-To install them yourself, just paste and run:
+To install them just paste and run:
 ```bash
 go get -u -v github.com/nsf/gocode
 go get -u -v github.com/rogpeppe/godef
@@ -185,10 +183,7 @@ go get -u -v golang.org/x/tools/cmd/gorename
 go get -u -v github.com/tpng/gopkgs
 go get -u -v github.com/newhook/go-symbols
 go get -u -v golang.org/x/tools/cmd/guru
-go get -u -v github.com/godoctor/godoctor
 ```
-
-*Note*: If the version of Go you are using is less than 1.6, then `set GO15VENDOREXPERIMENT=1` to support godoctor
 
 And for debugging:
 
