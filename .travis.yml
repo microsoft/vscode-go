@@ -30,6 +30,8 @@ install:
   - go get -u -v github.com/tpng/gopkgs
   - go get -u -v github.com/newhook/go-symbols
   - go get -u -v golang.org/x/tools/cmd/guru
+  - go get -u -v github.com/alecthomas/gometalinter
+  - gometalinter --install --update
 
 script:
   - npm run lint
