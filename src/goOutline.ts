@@ -9,6 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath';
+import { promptForMissingTool } from './goInstallTools';
 
 // Keep in sync with https://github.com/lukehoban/go-outline
 interface GoOutlineRange {
@@ -35,7 +36,7 @@ export function documentSymbols(filename: string): Promise<GoOutlineDeclaration[
 		let p = cp.execFile(gooutline, ['-f', filename], {}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					vscode.window.showInformationMessage('The "go-outline" command is not available.  Use "go get -u github.com/lukehoban/go-outline" to install.');
+					promptForMissingTool('go-outline');
 				}
 				if (err) return resolve(null);
 				let result = stdout.toString();

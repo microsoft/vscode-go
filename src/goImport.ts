@@ -9,12 +9,13 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath } from './goPath';
 import { parseFilePrelude } from './util';
+import { promptForMissingTool } from './goInstallTools';
 
 export function listPackages(): Thenable<string[]> {
 	return new Promise<string[]>((resolve, reject) => {
 		cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
-				vscode.window.showInformationMessage('The "gopkgs" command is not available.  Use "go get github.com/tpng/gopkgs" to install.');
+				promptForMissingTool('gopkgs');
 				return reject();
 			}
 			let lines = stdout.toString().split('\n');

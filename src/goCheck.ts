@@ -13,6 +13,7 @@ import fs = require('fs');
 import { getBinPath, getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
+import { promptForMissingTool } from './goInstallTools';
 
 export interface ICheckResult {
 	file: string;
@@ -21,12 +22,16 @@ export interface ICheckResult {
 	severity: string;
 }
 
-function runTool(cmd: string, args: string[], cwd: string, severity: string, useStdErr: boolean, notFoundError: string) {
+function runTool(cmd: string, args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, notFoundError?: string) {
 	return new Promise((resolve, reject) => {
 		cp.execFile(cmd, args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					vscode.window.showInformationMessage(notFoundError);
+					if (toolName) {
+						promptForMissingTool(toolName);
+					} else {
+						vscode.window.showInformationMessage(notFoundError);
+					}
 					return resolve([]);
 				}
 				let lines = (useStdErr ? stderr : stdout).toString().split('\n');
@@ -74,6 +79,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			cwd,
 			'error',
 			true,
+			null,
 			'No "go" binary could be found in GOROOT: ' + process.env['GOROOT'] + '"'
 		));
 	}
@@ -86,7 +92,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			cwd,
 			'warning',
 			false,
-			'The "golint" command is not available.  Use "go get -u github.com/golang/lint/golint" to install.'
+			'golint'
 		));
 	}
 
@@ -98,6 +104,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			cwd,
 			'warning',
 			true,
+			null,
 			'No "go" binary could be found in GOROOT: "' + process.env['GOROOT'] + '"'
 		));
 	}

@@ -10,6 +10,7 @@ import cp = require('child_process');
 import { dirname, basename } from 'path';
 import { getBinPath } from './goPath';
 import { parameters } from './util';
+import { promptForMissingTool } from './goInstallTools';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -60,7 +61,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					currentWord = word.substr(0, position.character - wordAtPosition.start.character);
 				}
 
-
 				if (currentWord.match(/^\d+$/)) {
 					return resolve([]);
 				}
@@ -77,7 +77,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let p = cp.execFile(gocode, ['-f=json', 'autocomplete', filename, 'c' + offset], { env }, (err, stdout, stderr) => {
 					try {
 						if (err && (<any>err).code === 'ENOENT') {
-							vscode.window.showInformationMessage('The "gocode" command is not available.  Use "go get -u github.com/nsf/gocode" to install.');
+							promptForMissingTool('gocode');
 						}
 						if (err) return reject(err);
 						let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
