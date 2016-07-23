@@ -16,6 +16,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Workspace symbol search (using `go-symbols`)
 - Rename (using `gorename`)
 - Build-on-save (using `go build` and `go test`)
+- Lint-on-save (using `golint` or `gometalinter`)
 - Format (using `goreturns` or `goimports` or `gofmt`)
 - Add Imports (using `gopkgs`)
 - [_partially implemented_] Debugging (using `delve`)

@@ -43,7 +43,7 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 						ret[ret.length - 1].msg += '\n' + lines[i];
 						continue;
 					}
-					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+))?:(?:\w+:)? (.*)$/.exec(lines[i]);
+					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+)?)?:(?:\w+:)? (.*)$/.exec(lines[i]);
 					if (!match) continue;
 					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
 					let line = +lineStr;
@@ -98,7 +98,8 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			cwd,
 			'warning',
 			lintTool === 'golint',
-			'golint'
+			lintTool === 'golint' ? 'golint' : null,
+			lintTool === 'golint' ? undefined : 'No "gometalinter" could be found.  Install gometalinter to use this option.'
 		));
 	}
 
