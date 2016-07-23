@@ -36,18 +36,20 @@ export function installTools(missing: string[]) {
 
 	outputChannel.appendLine(''); // Blank line for spacing.
 
-	Promise.all(missing.map(tool => new Promise<string>((resolve, reject) => {
-		cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
-			if (err) {
-				outputChannel.appendLine('Installing ' + tool + ' FAILED');
-				let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
-				resolve(failureReason);
-			} else {
-				outputChannel.appendLine('Installing ' + tool + ' SUCCEEDED');
-				resolve();
-			}
-		});
-	}))).then(res => {
+	missing.reduce((res:Promise<string[]>, tool: string) => {
+		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+			cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
+				if (err) {
+					outputChannel.appendLine('Installing ' + tool + ' FAILED');
+					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
+					resolve([...sofar, failureReason]);
+				} else {
+					outputChannel.appendLine('Installing ' + tool + ' SUCCEEDED');
+					resolve([...sofar, null]);
+				}
+			});
+		}));
+	}, Promise.resolve([])).then(res => {
 		outputChannel.appendLine(''); // Blank line for spacing
 		let failures = res.filter(x => x != null);
 		if (failures.length === 0) {
