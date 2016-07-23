@@ -23,9 +23,6 @@ This extension adds rich language support for the Go language to VS Code, includ
 ### IDE Features
 ![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
 
-### Debugger
-![IDE](http://i.giphy.com/3oEduO9Rx6awkds4es.gif)
-
 ## Using
 
 First, you will need to install Visual Studio Code `0.10`. In the command palette (`cmd-shift-p`) select `Install Extension` and choose `Go`.  
