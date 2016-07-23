@@ -26,15 +26,41 @@ let tools: { [key: string]: string } = {
 	guru: 'golang.org/x/tools/cmd/guru'
 };
 
-export function installTool(tool: string) {
-	outputChannel.clear();
+export function installTools(missing: string[]) {
 	outputChannel.show();
-	cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
-		outputChannel.append(stdout.toString());
-		outputChannel.append(stderr.toString());
-		if (err) {
-			outputChannel.append('exec error: ' + err);
+	outputChannel.clear();
+	outputChannel.appendLine('Installing ' + missing.length + ' missing tools');
+	missing.forEach((missingTool, index, missing) => {
+		outputChannel.appendLine('  ' + missingTool);
+	});
+
+	outputChannel.appendLine(''); // Blank line for spacing.
+
+	Promise.all(missing.map(tool => new Promise<string>((resolve, reject) => {
+		cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
+			if (err) {
+				outputChannel.appendLine('Installing ' + tool + ' FAILED');
+				let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
+				resolve(failureReason);
+			} else {
+				outputChannel.appendLine('Installing ' + tool + ' SUCCEEDED');
+				resolve();
+			}
+		});
+	}))).then(res => {
+		outputChannel.appendLine(''); // Blank line for spacing
+		let failures = res.filter(x => x != null);
+		if (failures.length === 0) {
+			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
+			return;
 		}
+
+		outputChannel.appendLine(failures.length + ' tools failed to install.\n');
+		failures.forEach((failure, index, failures) => {
+			let reason = failure.split(';;');
+			outputChannel.appendLine(reason[0] + ':');
+			outputChannel.appendLine(reason[1]);
+		});
 	});
 }
 
@@ -80,7 +106,7 @@ export function setupGoPathAndOfferToInstallTools() {
 		let item = {
 			title: 'Install',
 			command() {
-				missing.forEach(installTool);
+				installTools(missing);
 			}
 		};
 		vscode.window.showInformationMessage('Some Go analysis tools are missing from your GOPATH.  Would you like to install them?', item).then(selection => {

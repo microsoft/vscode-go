@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
-import { installTool } from './goInstallTools';
+import { installTools } from './goInstallTools';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
 
@@ -40,7 +40,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						vscode.window.showInformationMessage('The "guru" command is not available.  Use "go get -v golang.org/x/tools/cmd/guru" to install.', 'Install').then(selected => {
-							installTool('guru');
+							installTools(['guru']);
 						});
 						return resolve(null);
 					}

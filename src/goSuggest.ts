@@ -60,6 +60,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					currentWord = word.substr(0, position.character - wordAtPosition.start.character);
 				}
 
+
 				if (currentWord.match(/^\d+$/)) {
 					return resolve([]);
 				}
