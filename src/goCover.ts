@@ -90,6 +90,10 @@ export function getCoverage(filename: string): Promise<any[]> {
 		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
 		let cwd = path.dirname(filename);
 		let args = ['test', '-coverprofile=' + tmppath];
+
+		// make sure tmppath exists
+		fs.closeSync(fs.openSync(tmppath, 'a'));
+
 		cp.execFile(getGoRuntimePath(), args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				// Clear existing coverage files
