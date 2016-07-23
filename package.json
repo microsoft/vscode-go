@@ -108,14 +108,6 @@
         "description": "Add an import declaration"
       }
     ],
-    "menus": {      
-      "editor/context": [
-          {
-              "when": "resourceLangId == go",
-              "command": "go.method.extract"
-          }
-      ]
-    },
     "debuggers": [
       {
         "type": "go",
