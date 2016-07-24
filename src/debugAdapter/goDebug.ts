@@ -219,23 +219,26 @@ class Delve {
 					let client = Client.$create(port, host);
 					client.connectSocket((err, conn) => {
 						if (err) return reject(err);
-						serverRunning = true;
 						return resolve(conn);
 					});
 				}, 200);
 			}
 
-			if (!serverRunning) {
-				connectClient(port, host);
-			}
-
 			this.debugProcess.stderr.on('data', chunk => {
 				let str = chunk.toString();
 				if (this.onstderr) { this.onstderr(str); }
+				if (!serverRunning) {
+ 					serverRunning = true;
+ 					connectClient(port, host);
+ 				}
 			});
 			this.debugProcess.stdout.on('data', chunk => {
 				let str = chunk.toString();
 				if (this.onstdout) { this.onstdout(str); }
+				if (!serverRunning) {
+ 					serverRunning = true;
+ 					connectClient(port, host);
+ 				}
 			});
 			this.debugProcess.on('close', function(code) {
 				// TODO: Report `dlv` crash to user.
