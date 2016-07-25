@@ -46,8 +46,8 @@ export class Formatter {
 						return reject('Cannot format due to internal errors');
 					}
 
-					for (let i = 0; i < diffs.length; i++) {
-						textEdits.push(edits[i].apply());
+					for (let i = 0; i < edits.length; i++) {						
+						textEdits.push(edits[i].apply());											
 					}
 
 					return resolve(textEdits);
