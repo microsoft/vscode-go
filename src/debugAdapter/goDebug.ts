@@ -228,17 +228,17 @@ class Delve {
 				let str = chunk.toString();
 				if (this.onstderr) { this.onstderr(str); }
 				if (!serverRunning) {
- 					serverRunning = true;
- 					connectClient(port, host);
- 				}
+					serverRunning = true;
+					connectClient(port, host);
+				}
 			});
 			this.debugProcess.stdout.on('data', chunk => {
 				let str = chunk.toString();
 				if (this.onstdout) { this.onstdout(str); }
 				if (!serverRunning) {
- 					serverRunning = true;
- 					connectClient(port, host);
- 				}
+					serverRunning = true;
+					connectClient(port, host);
+				}
 			});
 			this.debugProcess.on('close', function(code) {
 				// TODO: Report `dlv` crash to user.

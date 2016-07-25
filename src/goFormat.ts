@@ -43,9 +43,9 @@ export class Formatter {
 					let edits: Edit[] = GetEditsFromDiffs(diffs, 0);
 					let textEdits: vscode.TextEdit[] = [];
 
- 					if (!edits) {
- 						return reject('Cannot format due to internal errors');
- 					}
+					if (!edits) {
+						return reject('Cannot format due to internal errors');
+					}
 
 					for (let i = 0; i < edits.length; i++) {
 						textEdits.push(edits[i].apply());
