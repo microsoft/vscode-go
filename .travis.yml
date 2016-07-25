@@ -30,6 +30,8 @@ install:
   - go get -u -v github.com/tpng/gopkgs
   - go get -u -v github.com/newhook/go-symbols
   - go get -u -v golang.org/x/tools/cmd/guru
+  - go get -u -v github.com/alecthomas/gometalinter
+  - gometalinter --install --update
   - go get -u -v github.com/godoctor/godoctor
 
 script:
@@ -38,4 +40,3 @@ script:
 
 env:
   - GO15VENDOREXPERIMENT=1
-  

@@ -10,6 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
+import { promptForMissingTool } from './goInstallTools';
 
 export interface GoDefinitionInformtation {
 	file: string;
@@ -31,7 +32,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					vscode.window.showInformationMessage('The "godef" command is not available.  Use "go get -u github.com/rogpeppe/godef" to install.');
+					promptForMissingTool('godef');
 				}
 				if (err) return resolve(null);
 				let result = stdout.toString();

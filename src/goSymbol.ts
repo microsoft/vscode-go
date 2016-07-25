@@ -7,6 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath } from './goPath';
+import { promptForMissingTool } from './goInstallTools';
 
 // Keep in sync with github.com/newhook/go-symbols'
 interface GoSymbolDeclaration {
@@ -56,7 +57,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 			let p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "go-symbols" command is not available.  Use "go get -u github.com/newhook/go-symbols" to install.');
+						promptForMissingTool('go-symbols');
 					}
 					if (err) return resolve(null);
 					let result = stdout.toString();

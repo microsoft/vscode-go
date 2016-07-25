@@ -13,6 +13,7 @@ import fs = require('fs');
 import { getBinPath, getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
+import { promptForMissingTool } from './goInstallTools';
 
 export interface ICheckResult {
 	file: string;
@@ -21,12 +22,16 @@ export interface ICheckResult {
 	severity: string;
 }
 
-function runTool(cmd: string, args: string[], cwd: string, severity: string, useStdErr: boolean, notFoundError: string) {
+function runTool(cmd: string, args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, notFoundError?: string) {
 	return new Promise((resolve, reject) => {
 		cp.execFile(cmd, args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					vscode.window.showInformationMessage(notFoundError);
+					if (toolName) {
+						promptForMissingTool(toolName);
+					} else {
+						vscode.window.showInformationMessage(notFoundError);
+					}
 					return resolve([]);
 				}
 				let lines = (useStdErr ? stderr : stdout).toString().split('\n');
@@ -38,7 +43,7 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 						ret[ret.length - 1].msg += '\n' + lines[i];
 						continue;
 					}
-					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+))?: (.*)$/.exec(lines[i]);
+					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+)?)?:(?:\w+:)? (.*)$/.exec(lines[i]);
 					if (!match) continue;
 					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
 					let line = +lineStr;
@@ -74,19 +79,27 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			cwd,
 			'error',
 			true,
+			null,
 			'No "go" binary could be found in GOROOT: ' + process.env['GOROOT'] + '"'
 		));
 	}
 	if (!!goConfig['lintOnSave']) {
-		let golint = getBinPath('golint');
+		let lintTool = getBinPath(goConfig['lintTool'] || 'golint');
 		let lintFlags = goConfig['lintFlags'] || [];
+		let args = [...lintFlags];
+
+		if (lintTool === 'golint') {
+			args.push(filename);
+		}
+
 		runningToolsPromises.push(runTool(
-			golint,
-			[...lintFlags, filename],
+			lintTool,
+			args,
 			cwd,
 			'warning',
-			false,
-			'The "golint" command is not available.  Use "go get -u github.com/golang/lint/golint" to install.'
+			lintTool === 'golint',
+			lintTool === 'golint' ? 'golint' : null,
+			lintTool === 'golint' ? undefined : 'No "gometalinter" could be found.  Install gometalinter to use this option.'
 		));
 	}
 
@@ -98,6 +111,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			cwd,
 			'warning',
 			true,
+			null,
 			'No "go" binary could be found in GOROOT: "' + process.env['GOROOT'] + '"'
 		));
 	}

@@ -213,32 +213,32 @@ class Delve {
 			});
 
 			function connectClient(port: number, host: string) {
-				let client = Client.$create(port, host);
-				client.connectSocket((err, conn) => {
-					if (err) return reject(err);
-					// Add a slight delay to avoid issues on Linux with
-					// Delve failing calls made shortly after connection. 
-					setTimeout(() =>
-						resolve(conn),
-						200);
-				});
+				// Add a slight delay to avoid issues on Linux with
+				// Delve failing calls made shortly after connection. 
+				setTimeout(() => {
+					let client = Client.$create(port, host);
+					client.connectSocket((err, conn) => {
+						if (err) return reject(err);
+						return resolve(conn);
+					});
+				}, 200);
 			}
 
 			this.debugProcess.stderr.on('data', chunk => {
 				let str = chunk.toString();
 				if (this.onstderr) { this.onstderr(str); }
 				if (!serverRunning) {
-					serverRunning = true;
-					connectClient(port, host);
-				}
+ 					serverRunning = true;
+ 					connectClient(port, host);
+ 				}
 			});
 			this.debugProcess.stdout.on('data', chunk => {
 				let str = chunk.toString();
 				if (this.onstdout) { this.onstdout(str); }
 				if (!serverRunning) {
-					serverRunning = true;
-					connectClient(port, host);
-				}
+ 					serverRunning = true;
+ 					connectClient(port, host);
+ 				}
 			});
 			this.debugProcess.on('close', function(code) {
 				// TODO: Report `dlv` crash to user.

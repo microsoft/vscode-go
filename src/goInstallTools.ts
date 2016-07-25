@@ -15,27 +15,66 @@ import { getBinPath } from './goPath';
 import { outputChannel } from './goStatus';
 
 let tools: { [key: string]: string } = {
-	gorename: 'golang.org/x/tools/cmd/gorename',
-	gopkgs: 'github.com/tpng/gopkgs',
-	gocode: 'github.com/nsf/gocode',
-	goreturns: 'sourcegraph.com/sqs/goreturns',
-	godef: 'github.com/rogpeppe/godef',
-	golint: 'github.com/golang/lint/golint',
+	'gocode': 'github.com/nsf/gocode',
+	'goreturns': 'sourcegraph.com/sqs/goreturns',
+	'gopkgs': 'github.com/tpng/gopkgs',
+	'godef': 'github.com/rogpeppe/godef',
+	'golint': 'github.com/golang/lint/golint',
 	'go-outline': 'github.com/lukehoban/go-outline',
 	'go-symbols': 'github.com/newhook/go-symbols',
-	guru: 'golang.org/x/tools/cmd/guru',
-	godoctor: 'github.com/godoctor/godoctor'
+	'guru': 'golang.org/x/tools/cmd/guru',
+	'gorename': 'golang.org/x/tools/cmd/gorename',
+	'godoctor': 'github.com/godoctor/godoctor'
 };
 
-export function installTool(tool: string) {
-	outputChannel.clear();
-	outputChannel.show();
-	cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
-		outputChannel.append(stdout.toString());
-		outputChannel.append(stderr.toString());
-		if (err) {
-			outputChannel.append('exec error: ' + err);
+export function promptForMissingTool(tool: string) {
+	vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${tools[tool]}" to install.`, 'Install All', 'Install').then(selected => {
+		if (selected === 'Install') {
+			installTools([tool]);
+		} else if (selected === 'Install All') {
+			getMissingTools().then(installTools);
+			hideGoStatus();
 		}
+	});
+}
+
+export function installTools(missing: string[]) {
+	outputChannel.show();
+	outputChannel.clear();
+	outputChannel.appendLine('Installing ' + missing.length + ' missing tools');
+	missing.forEach((missingTool, index, missing) => {
+		outputChannel.appendLine('  ' + missingTool);
+	});
+
+	outputChannel.appendLine(''); // Blank line for spacing.
+
+	missing.reduce((res: Promise<string[]>, tool: string) => {
+		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+			cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
+				if (err) {
+					outputChannel.appendLine('Installing ' + tool + ' FAILED');
+					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
+					resolve([...sofar, failureReason]);
+				} else {
+					outputChannel.appendLine('Installing ' + tool + ' SUCCEEDED');
+					resolve([...sofar, null]);
+				}
+			});
+		}));
+	}, Promise.resolve([])).then(res => {
+		outputChannel.appendLine(''); // Blank line for spacing
+		let failures = res.filter(x => x != null);
+		if (failures.length === 0) {
+			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
+			return;
+		}
+
+		outputChannel.appendLine(failures.length + ' tools failed to install.\n');
+		failures.forEach((failure, index, failures) => {
+			let reason = failure.split(';;');
+			outputChannel.appendLine(reason[0] + ':');
+			outputChannel.appendLine(reason[1]);
+		});
 	});
 }
 
@@ -60,14 +99,7 @@ export function setupGoPathAndOfferToInstallTools() {
 		return;
 	}
 
-	let keys = Object.keys(tools);
-	Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
-		let toolPath = getBinPath(tool);
-		fs.exists(toolPath, exists => {
-			resolve(exists ? null : tool);
-		});
-	}))).then(res => {
-		let missing = res.filter(x => x != null);
+	getMissingTools().then(missing => {
 		if (missing.length > 0) {
 			showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
 			vscode.commands.registerCommand('go.promptforinstall', () => {
@@ -84,7 +116,7 @@ export function setupGoPathAndOfferToInstallTools() {
 		let item = {
 			title: 'Install',
 			command() {
-				missing.forEach(installTool);
+				installTools(missing);
 			}
 		};
 		vscode.window.showInformationMessage('Some Go analysis tools are missing from your GOPATH.  Would you like to install them?', item).then(selection => {
@@ -93,4 +125,17 @@ export function setupGoPathAndOfferToInstallTools() {
 			}
 		});
 	}
+}
+
+function getMissingTools(): Promise<string[]> {
+	let keys = Object.keys(tools);
+	return Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
+		let toolPath = getBinPath(tool);
+		fs.exists(toolPath, exists => {
+			resolve(exists ? null : tool);
+		});
+	}))).then(res => {
+		let missing = res.filter(x => x != null);
+		return missing;
+	});
 }

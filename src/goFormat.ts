@@ -10,6 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import dmp = require('diff-match-patch');
 import { getBinPath } from './goPath';
+import { promptForMissingTool } from './goInstallTools';
 import { EditTypes, Edit, GetEditsFromDiffs } from './util';
 
 export class Formatter {
@@ -31,7 +32,7 @@ export class Formatter {
 			cp.execFile(formatCommandBinPath, [filename], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "' + formatCommandBinPath + '" command is not available.  Please check your go.formatTool user setting and ensure it is installed.');
+						promptForMissingTool(formatCommandBinPath);
 						return resolve(null);
 					}
 					if (err) return reject('Cannot format due to syntax errors.');
@@ -42,12 +43,12 @@ export class Formatter {
 					let edits: Edit[] = GetEditsFromDiffs(diffs, 0);
 					let textEdits: vscode.TextEdit[] = [];
 
-					if (!edits) {
-						return reject('Cannot format due to internal errors');
-					}
+ 					if (!edits) {
+ 						return reject('Cannot format due to internal errors');
+ 					}
 
-					for (let i = 0; i < edits.length; i++) {						
-						textEdits.push(edits[i].apply());											
+					for (let i = 0; i < edits.length; i++) {
+						textEdits.push(edits[i].apply());
 					}
 
 					return resolve(textEdits);

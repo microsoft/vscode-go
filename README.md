@@ -6,7 +6,6 @@
 
 This extension adds rich language support for the Go language to VS Code, including:
 
-- Colorization
 - Completion Lists (using `gocode`)
 - Signature Help (using `godoc`)
 - Snippets
@@ -17,6 +16,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Workspace symbol search (using `go-symbols`)
 - Rename (using `gorename`)
 - Build-on-save (using `go build` and `go test`)
+- Lint-on-save (using `golint` or `gometalinter`)
 - Format (using `goreturns` or `goimports` or `gofmt`)
 - Add Imports (using `gopkgs`)
 - [_partially implemented_] Debugging (using `delve`)
@@ -24,9 +24,6 @@ This extension adds rich language support for the Go language to VS Code, includ
 
 ### IDE Features
 ![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
-
-### Debugger
-![IDE](http://i.giphy.com/3oEduO9Rx6awkds4es.gif)
 
 ## Using
 
@@ -174,7 +171,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
 - godoctor: `go get -u -v github.com/godoctor/godoctor`
 
-To install them yourself, just paste and run:
+To install them just paste and run:
 ```bash
 go get -u -v github.com/nsf/gocode
 go get -u -v github.com/rogpeppe/godef

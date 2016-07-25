@@ -9,6 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath } from './goPath';
 import { byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
+import { promptForMissingTool } from './goInstallTools';
 
 export class GoRenameProvider implements vscode.RenameProvider {
 
@@ -31,7 +32,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			cp.execFile(gorename, ['-offset', filename + ':#' + offset, '-to', newName, '-tags', buildTags], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "gorename" command is not available.  Use "go get golang.org/x/tools/cmd/gorename" to install.');
+						promptForMissingTool('gorename');
 						return Promise.resolve<vscode.WorkspaceEdit>(null);
 					}
 					if (err) return reject('Cannot rename due to errors: ' + stderr);
