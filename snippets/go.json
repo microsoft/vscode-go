@@ -155,6 +155,10 @@
 		"test function": {
 			"prefix": "tf",
 			"body": "func Test$1(t *testing.T) {\n\t$0\n}"
+		},
+		"channel select": {
+			"prefix": "sl",
+			"body": "select {\ncase ${1:condation}: \n\t${2:break}\ndefault:\n\t${0}\n}"
 		}
 	}
 }
