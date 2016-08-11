@@ -32,19 +32,29 @@ suite('Go Extension Tests', () => {
 
 	test('Test Hover Provider', (done) => {
 		let provider = new GoHoverProvider();
-		let testCases: [vscode.Position, string][] = [
+		let printlnDoc = `Println formats using the default formats for its operands and writes to
+standard output. Spaces are always added between operands and a newline
+is appended. It returns the number of bytes written and any write error
+encountered.
+`
+		let testCases: [vscode.Position, string, string][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
-			[new vscode.Position(9, 6), 'main func()'],
-			[new vscode.Position(7, 2), 'import (fmt "fmt")'],
-			[new vscode.Position(7, 6), 'Println func(a ...interface{}) (n int, err error)'],
-			[new vscode.Position(10, 3), 'print func(txt string)']
+			[new vscode.Position(9, 6), 'main func()', null],
+			[new vscode.Position(7, 2), 'import (fmt "fmt")', null],
+			[new vscode.Position(7, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
+			[new vscode.Position(10, 3), 'print func(txt string)', null]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			let promises = testCases.map(([position, expected]) =>
+			let promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
 				provider.provideHover(textDocument, position, null).then(res => {
-					assert.equal(res.contents.length, 1);
-					assert.equal(expected, (<{ language: string; value: string }>res.contents[0]).value);
+					if (expectedDocumentation == null) {
+						assert.equal(res.contents.length, 1);
+					} else {
+						assert.equal(res.contents.length, 2);
+						assert.equal(expectedDocumentation, (<{ language: string; value: string }>res.contents[0]).value);
+					}
+					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[res.contents.length-1]).value);
 				})
 			);
 			return Promise.all(promises);
