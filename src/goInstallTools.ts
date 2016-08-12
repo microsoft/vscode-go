@@ -26,6 +26,10 @@ let tools: { [key: string]: string } = {
 	'gorename': 'golang.org/x/tools/cmd/gorename'
 };
 
+export function installAllTools() {
+	installTools(Object.keys(tools));
+}
+
 export function promptForMissingTool(tool: string) {
 	vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${tools[tool]}" to install.`, 'Install All', 'Install').then(selected => {
 		if (selected === 'Install') {
