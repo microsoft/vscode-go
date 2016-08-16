@@ -44,7 +44,7 @@ export function promptForMissingTool(tool: string) {
 export function installTools(missing: string[]) {
 	outputChannel.show();
 	outputChannel.clear();
-	outputChannel.appendLine('Installing ' + missing.length + ' missing tools');
+	outputChannel.appendLine('Installing ' + missing.length + ' tools');
 	missing.forEach((missingTool, index, missing) => {
 		outputChannel.appendLine('  ' + missingTool);
 	});
