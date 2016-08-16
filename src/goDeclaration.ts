@@ -74,7 +74,10 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 							break;
 						}
 					}
-					definitionInformation.doc = doc;
+
+					if (doc != '') {
+						definitionInformation.doc = doc;
+					}
 					return resolve(definitionInformation);
 				});
 			} catch (e) {
