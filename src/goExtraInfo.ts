@@ -5,7 +5,7 @@
 
 'use strict';
 
-import { HoverProvider, Hover, TextDocument, Position, CancellationToken } from 'vscode';
+import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
@@ -28,9 +28,9 @@ export class GoHoverProvider implements HoverProvider {
 			} else {
 				text = lines[0];
 			}
-			let hoverTexts = [];
+			let hoverTexts: MarkedString[] = [];
 			if (definitionInfo.doc != null) {
-				hoverTexts.push({ language: null, value: definitionInfo.doc});
+				hoverTexts.push(definitionInfo.doc);
 			}
 			hoverTexts.push({ language: 'go', value: text});
 			let hover = new Hover(hoverTexts);
