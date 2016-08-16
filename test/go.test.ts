@@ -52,7 +52,7 @@ encountered.
 						assert.equal(res.contents.length, 1);
 					} else {
 						assert.equal(res.contents.length, 2);
-						assert.equal(expectedDocumentation, (<{ language: string; value: string }>res.contents[0]).value);
+						assert.equal(expectedDocumentation, <string>(res.contents[0]));
 					}
 					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[res.contents.length - 1]).value);
 				})
