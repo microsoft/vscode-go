@@ -36,7 +36,7 @@ suite('Go Extension Tests', () => {
 standard output. Spaces are always added between operands and a newline
 is appended. It returns the number of bytes written and any write error
 encountered.
-`
+`;
 		let testCases: [vscode.Position, string, string][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
 			[new vscode.Position(9, 6), 'main func()', null],
@@ -54,7 +54,7 @@ encountered.
 						assert.equal(res.contents.length, 2);
 						assert.equal(expectedDocumentation, (<{ language: string; value: string }>res.contents[0]).value);
 					}
-					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[res.contents.length-1]).value);
+					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[res.contents.length - 1]).value);
 				})
 			);
 			return Promise.all(promises);

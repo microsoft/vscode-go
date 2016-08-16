@@ -74,7 +74,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 							break;
 						}
 					}
-					if (doc != '') {
+					if (doc !== '') {
 						definitionInformation.doc = doc;
 					}
 					return resolve(definitionInformation);
