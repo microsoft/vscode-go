@@ -26,6 +26,7 @@ import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest';
 import { addImport } from './goImport';
+import { installAllTools } from './goInstallTools';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -77,6 +78,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
 		return addImport(typeof arg === 'string' ? arg : null);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', () => {
+		installAllTools();
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
@@ -178,7 +183,7 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 
 	// TODO: This is really ugly.  I'm not sure we can do better until
 	// Code supports a pre-save event where we can do the formatting before
-	// the file is written to disk.	
+	// the file is written to disk.
 	let ignoreNextSave = new WeakSet<vscode.TextDocument>();
 
 	vscode.workspace.onDidSaveTextDocument(document => {
@@ -200,7 +205,7 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 			}).then(() => {
 				ignoreNextSave.delete(document);
 			}, () => {
-				// Catch any errors and ignore so that we still trigger 
+				// Catch any errors and ignore so that we still trigger
 				// the file save.
 			});
 		}
