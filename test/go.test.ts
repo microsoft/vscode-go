@@ -48,7 +48,7 @@ encountered.
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
 				provider.provideHover(textDocument, position, null).then(res => {
-					if (expectedDocumentation == null) {
+					if (expectedDocumentation === null) {
 						assert.equal(res.contents.length, 1);
 					} else {
 						assert.equal(res.contents.length, 2);
