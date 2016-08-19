@@ -5,12 +5,12 @@
 
 'use strict';
 
-import { HoverProvider, Hover, TextDocument, Position, CancellationToken } from 'vscode';
+import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
-		return definitionLocation(document, position, false).then(definitionInfo => {
+		return definitionLocation(document, position, true).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let lines = definitionInfo.lines;
 			lines = lines.map(line => {
@@ -28,7 +28,12 @@ export class GoHoverProvider implements HoverProvider {
 			} else {
 				text = lines[0];
 			}
-			let hover = new Hover({ language: 'go', value: text });
+			let hoverTexts: MarkedString[] = [];
+			if (definitionInfo.doc != null) {
+				hoverTexts.push(definitionInfo.doc);
+			}
+			hoverTexts.push({ language: 'go', value: text});
+			let hover = new Hover(hoverTexts);
 			return hover;
 		});
 	}
