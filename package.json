@@ -33,18 +33,18 @@
     "vscode.go"
   ],
   "dependencies": {
-    "console-stamp": "^0.2.0",
+    "console-stamp": "^0.2.2",
     "diff-match-patch": "~1.0.0",
     "json-rpc2": "^1.0.2",
-    "lodash": "^3.10.1",
-    "vscode-debugadapter": "^1.9.0",
-    "vscode-debugprotocol": "^1.9.0"
+    "lodash": "^4.14.1",
+    "vscode-debugadapter": "^1.11.0",
+    "vscode-debugprotocol": "^1.11.0"
   },
   "devDependencies": {
-    "fs-extra": "^0.26.0",
-    "tslint": "^3.3.0",
-    "typescript": "1.8.7",
-    "vscode": "^0.11.13"
+    "fs-extra": "^0.30.0",
+    "tslint": "^3.14.0",
+    "typescript": "^1.8.10",
+    "vscode": "^0.11.14"
   },
   "engines": {
     "vscode": "0.10.x"
@@ -55,7 +55,7 @@
     "onCommand:go.test.cursor",
     "onCommand:go.test.package",
     "onCommand:go.test.file",
- 	"onCommand:go.test.coverage"
+ 	  "onCommand:go.test.coverage"
   ],
   "main": "./out/src/goMain",
   "contributes": {

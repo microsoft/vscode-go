@@ -22,6 +22,7 @@ let tools: { [key: string]: string } = {
 	'golint': 'github.com/golang/lint/golint',
 	'go-outline': 'github.com/lukehoban/go-outline',
 	'go-symbols': 'github.com/newhook/go-symbols',
+	'goimports': 'golang.org/x/tools/cmd/goimports',
 	'guru': 'golang.org/x/tools/cmd/guru',
 	'gorename': 'golang.org/x/tools/cmd/gorename'
 };
