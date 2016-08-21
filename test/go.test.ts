@@ -49,8 +49,8 @@ encountered.
 			let promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
 				provider.provideHover(textDocument, position, null).then(res => {
 					// TODO: Documentation appears to currently be broken on Go 1.7, so disabling these tests for now
-					//if (expectedDocumentation === null) {
-					//	assert.equal(res.contents.length, 1);
+					// if (expectedDocumentation === null) {
+					//  assert.equal(res.contents.length, 1);
 					// } else {
 					// 	assert.equal(res.contents.length, 2);
 					// 	assert.equal(expectedDocumentation, <string>(res.contents[0]));
