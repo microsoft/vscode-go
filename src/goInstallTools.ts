@@ -129,7 +129,7 @@ export function setupGoPathAndOfferToInstallTools() {
 
 function getMissingTools(): Promise<string[]> {
 	let keys = Object.keys(tools);
-	return Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
+	return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
 		let toolPath = getBinPath(tool);
 		fs.exists(toolPath, exists => {
 			resolve(exists ? null : tool);
