@@ -26,6 +26,10 @@ let tools: { [key: string]: string } = {
 	'gorename': 'golang.org/x/tools/cmd/gorename'
 };
 
+export function installAllTools() {
+	installTools(Object.keys(tools));
+}
+
 export function promptForMissingTool(tool: string) {
 	vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${tools[tool]}" to install.`, 'Install All', 'Install').then(selected => {
 		if (selected === 'Install') {
@@ -40,7 +44,7 @@ export function promptForMissingTool(tool: string) {
 export function installTools(missing: string[]) {
 	outputChannel.show();
 	outputChannel.clear();
-	outputChannel.appendLine('Installing ' + missing.length + ' missing tools');
+	outputChannel.appendLine('Installing ' + missing.length + ' tools');
 	missing.forEach((missingTool, index, missing) => {
 		outputChannel.appendLine('  ' + missingTool);
 	});
@@ -125,7 +129,7 @@ export function setupGoPathAndOfferToInstallTools() {
 
 function getMissingTools(): Promise<string[]> {
 	let keys = Object.keys(tools);
-	return Promise.all(keys.map(tool => new Promise<string>((resolve, reject) => {
+	return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
 		let toolPath = getBinPath(tool);
 		fs.exists(toolPath, exists => {
 			resolve(exists ? null : tool);

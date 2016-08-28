@@ -33,10 +33,17 @@ export class GoCodeActionProvider implements vscode.CodeActionProvider {
 		});
 
 		return Promise.all(promises).then(arrs => {
-			return _.sortBy(
-				_.uniq(_.flatten(arrs), x => x.title),
-				x => x.title
-			);
+			let results = {};
+			for (let segment of arrs) {
+				for (let item of segment) {
+					results[item.title] = item;
+				}
+			}
+			let ret = [];
+			for (let title of Object.keys(results).sort()) {
+				ret.push(results[title]);
+			}
+			return ret;
 		});
 	}
 }

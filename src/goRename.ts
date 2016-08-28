@@ -20,7 +20,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 	}
 
 	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
-		return new Promise((resolve, reject) => {
+		return new Promise<vscode.WorkspaceEdit>((resolve, reject) => {
 			let filename = canonicalizeGOPATHPrefix(document.fileName);
 			let range = document.getWordRangeAtPosition(position);
 			let pos = range ? range.start : position;
@@ -33,12 +33,12 @@ export class GoRenameProvider implements vscode.RenameProvider {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gorename');
-						return Promise.resolve<vscode.WorkspaceEdit>(null);
+						return resolve(null);
 					}
 					if (err) return reject('Cannot rename due to errors: ' + stderr);
 					// TODO: 'gorename' makes the edits in the files out of proc.
 					// Would be better if we could get the list of edits.
-					return Promise.resolve<vscode.WorkspaceEdit>(null);
+					return resolve(new vscode.WorkspaceEdit());
 				} catch (e) {
 					reject(e);
 				}
