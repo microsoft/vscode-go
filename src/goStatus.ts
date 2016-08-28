@@ -28,7 +28,7 @@ export function showHideStatus() {
 }
 
 export function hideGoStatus() {
-	if (statusBarEntry){
+	if (statusBarEntry) {
 		statusBarEntry.dispose();
 	}
 }

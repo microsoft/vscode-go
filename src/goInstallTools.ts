@@ -81,7 +81,7 @@ export function installTools(missing: string[]) {
 	});
 }
 
-export function updateGoPathGoRootFromConfig(){
+export function updateGoPathGoRootFromConfig() {
 	let goroot = vscode.workspace.getConfiguration('go')['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = goroot;
