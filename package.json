@@ -106,21 +106,8 @@
         "command": "go.import.add",
         "title": "Go: Add Import",
         "description": "Add an import declaration"
-      },
-      {
-        "command": "go.method.extract",
-        "title": "Go: Extract Method",
-        "description": "Extract Method from current selection"
       }
     ],
-    "menus": {
-      "editor/context": [
-          {
-              "when": "resourceLangId == go",
-              "command": "go.method.extract"
-          }
-      ]
-    },
     "debuggers": [
       {
         "type": "go",

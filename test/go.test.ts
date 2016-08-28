@@ -11,7 +11,6 @@ import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { check } from '../src/goCheck';
-import { extractMethodUsingGoDoctor } from '../src/goExtractMethod';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -146,46 +145,6 @@ suite('Go Extension Tests', () => {
 				assert.equal(sortedDiagnostics[i].msg, expected[i].msg);
 			}
 			assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
-		}).then(() => done(), done);
-	});
-
-	test('Extract method fails due to invalid method name', (done) => {
-		let uri = vscode.Uri.file(path.join(fixtureSourcePath, 'test.go'));
-		let selection = new vscode.Selection(14, 0, 15, 14);
-
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			return vscode.window.showTextDocument(textDocument).then(editor => {
-				return extractMethodUsingGoDoctor('a dd', selection, editor).then((retValue) => {
-					assert.equal(retValue.indexOf('is not a valid Go identifier') > -1, true);
-				});
-			});
-		}).then(() => done(), done);
-	});
-
-	test('Extract method fails due to invalid selection', (done) => {
-		let uri = vscode.Uri.file(path.join(fixtureSourcePath, 'test.go'));
-		let selection = new vscode.Selection(2, 0, 5, 0);
-
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			return vscode.window.showTextDocument(textDocument).then(editor => {
-				return extractMethodUsingGoDoctor('add', selection, editor).then((retValue) => {
-					assert.equal(retValue.indexOf('invalid selection') > -1, true);
-				});
-			});
-		}).then(() => done(), done);
-	});
-
-	test('Extract method successfully', (done) => {
-		let uri = vscode.Uri.file(path.join(fixtureSourcePath, 'test.go'));
-		let expectedOutput = fs.readFileSync(path.join(fixtureSourcePath, 'expectedAfterExtractMethod.go'), 'utf8');
-		let selection = new vscode.Selection(14, 0, 15, 14);
-
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			return vscode.window.showTextDocument(textDocument).then(editor => {
-				return extractMethodUsingGoDoctor('add', selection, editor).then((done) => {
-					assert.equal(editor.document.getText(), expectedOutput);
-				});
-			});
 		}).then(() => done(), done);
 	});
 

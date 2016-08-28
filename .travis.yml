@@ -32,11 +32,7 @@ install:
   - go get -u -v golang.org/x/tools/cmd/guru
   - go get -u -v github.com/alecthomas/gometalinter
   - gometalinter --install --update
-  - go get -u -v github.com/godoctor/godoctor
 
 script:
   - npm run lint
   - npm test --silent
-
-env:
-  - GO15VENDOREXPERIMENT=1
