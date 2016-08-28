@@ -81,7 +81,7 @@ export function installTools(missing: string[]) {
 	});
 }
 
-export function setupGoPathAndOfferToInstallTools() {
+export function updateGoPathGoRootFromConfig() {
 	let goroot = vscode.workspace.getConfiguration('go')['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = goroot;
@@ -90,7 +90,12 @@ export function setupGoPathAndOfferToInstallTools() {
 	let gopath = vscode.workspace.getConfiguration('go')['gopath'];
 	if (gopath) {
 		process.env['GOPATH'] = gopath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+		hideGoStatus();
 	}
+}
+
+export function setupGoPathAndOfferToInstallTools() {
+	updateGoPathGoRootFromConfig();
 
 	if (!process.env['GOPATH']) {
 		let info = 'GOPATH is not set as an environment variable or via `go.gopath` setting in Code';

@@ -20,7 +20,7 @@ import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction';
 import { check, ICheckResult } from './goCheck';
-import { setupGoPathAndOfferToInstallTools } from './goInstallTools';
+import { updateGoPathGoRootFromConfig, setupGoPathAndOfferToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
@@ -82,6 +82,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', () => {
 		installAllTools();
+	}));
+
+	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
+		updateGoPathGoRootFromConfig();
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
