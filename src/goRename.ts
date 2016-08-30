@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath } from './goPath';
-import { byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
+import { byteOffsetAt, canonicalizeGOPATHPrefix, EditTypes, ParseDiffOutput } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
 export class GoRenameProvider implements vscode.RenameProvider {
@@ -29,16 +29,30 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			let gorename = getBinPath('gorename');
 			let buildTags = '"' + vscode.workspace.getConfiguration('go')['buildTags'] + '"';
 
-			cp.execFile(gorename, ['-offset', filename + ':#' + offset, '-to', newName, '-tags', buildTags], {}, (err, stdout, stderr) => {
+			cp.execFile(gorename, ['-d', '-offset', filename + ':#' + offset, '-to', newName, '-tags', buildTags], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gorename');
 						return resolve(null);
 					}
 					if (err) return reject('Cannot rename due to errors: ' + stderr);
-					// TODO: 'gorename' makes the edits in the files out of proc.
-					// Would be better if we could get the list of edits.
-					return resolve(new vscode.WorkspaceEdit());
+
+					let allFilePatches = ParseDiffOutput(stdout);
+					let result = new vscode.WorkspaceEdit();
+
+					allFilePatches.forEach(filePatch => {
+						if (!filePatch.uri){
+							reject("Couldnt parse the file path from the gorename output");
+						}
+						if (!filePatch.edits){
+							reject("Couldnt parse the diffs from the gorename output")
+						}
+						filePatch.edits.forEach(edit => {
+							edit.applyToWorkspaceEdit(result, filePatch.uri);
+						});
+					});
+
+					return resolve(result);
 				} catch (e) {
 					reject(e);
 				}
