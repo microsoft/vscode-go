@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { TextDocument, Position, TextEdit, Range, Uri, WorkspaceEdit } from 'vscode';
+import { TextDocument, Position, TextEdit, Range, Uri, WorkspaceEdit, TextEditorEdit } from 'vscode';
 import path = require('path');
 import dmp = require('diff-match-patch');
 
@@ -98,8 +98,8 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 	}
 
 export interface FilePatch {
-	uri: Uri,
-	edits: Edit[]
+	uri: Uri;
+	edits: Edit[];
 }
 
 export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE};
@@ -127,8 +127,8 @@ export class Edit {
 		}
 	}
 
-	applyToWorkspaceEdit(result: WorkspaceEdit, fileUri:Uri): void {
-		switch(this.action) {
+	applyToWorkspaceEdit(result: WorkspaceEdit, fileUri: Uri): void {
+		switch (this.action) {
 			case EditTypes.EDIT_INSERT:
 				result.insert(fileUri, this.start, this.text);
 				break;
@@ -137,6 +137,20 @@ export class Edit {
 				break;
 			case EditTypes.EDIT_REPLACE:
 				result.replace(fileUri, new Range(this.start, this.end), this.text);
+				break;
+		}
+	}
+
+	applyUsingTextEditorEdit(editBuilder: TextEditorEdit): void {
+		switch (this.action) {
+			case EditTypes.EDIT_INSERT:
+				editBuilder.insert(this.start, this.text);
+				break;
+			case EditTypes.EDIT_DELETE:
+				editBuilder.delete(new Range(this.start, this.end));
+				break;
+			case EditTypes.EDIT_REPLACE:
+				editBuilder.replace(new Range(this.start, this.end), this.text);
 				break;
 		}
 	}
@@ -159,7 +173,7 @@ export function GetEditsFromDiffs(diffs: dmp.Diff[], line: number, isEachDiffSep
 		let start = new Position(line, character);
 
 		// Compute the line/character after the diff is applied.
-		if (isEachDiffSeparateLine){
+		if (isEachDiffSeparateLine) {
 			diffs[i][1] += '\n';
 			line++;
 		} else {
@@ -215,7 +229,7 @@ export function GetEditsFromDiffs(diffs: dmp.Diff[], line: number, isEachDiffSep
 
 /**
  * Applies patch_fromText on given patch text to get patches and then returns edits for each of the patches
- * 
+ *
  * @param patchText: Text starting with @@ following the Unified format for patches.
  * Read more http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
  */
@@ -224,22 +238,22 @@ function GetEditsFromPatchText(patchText: string): Edit[] {
 		let patches = d.patch_fromText(patchText);
 		let totalEdits: Edit[] = [];
 
-		for(var i = patches.length - 1; i >= 0; i--){
+		for (let i = patches.length - 1; i >= 0; i--) {
 			let edits = GetEditsFromDiffs(patches[i].diffs, patches[i].start1, true);
-			if (!edits){
+			if (!edits) {
 				return null;
 			}
 			totalEdits = totalEdits.concat(edits);
 		}
-		
+
 		return totalEdits;
 }
 
 
 /**
- * Parses diff output in the Unified format to return edits for each file 
+ * Parses diff output in the Unified format to return edits for each file
  * Read more http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
- * 
+ *
  * @param diffOutput Text starting with --- following the Unified format for patches.
  */
 export function ParseDiffOutput(diffOutput: string): FilePatch[] {
@@ -247,39 +261,39 @@ export function ParseDiffOutput(diffOutput: string): FilePatch[] {
 	diffOutput = diffOutput.split('\r\n').join('\n');
 
 	let allFilePatches: FilePatch[] = [];
-	let currentUri : Uri = null;
+	let currentUri: Uri = null;
 	let currentPatchText: string[] = [];
 	let diffOutputLines = diffOutput.split('\n');
 
 	// Refer to http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format to understand what we are trying to parse here
 	diffOutputLines.forEach(line => {
-		if(line.startsWith('---')){
-			if (currentPatchText.length > 0){
+		if (line.startsWith('---')) {
+			if (currentPatchText.length > 0) {
 				allFilePatches.push({
 					uri: currentUri,
 					edits: GetEditsFromPatchText(currentPatchText.join('\n'))
-				})
+				});
 				currentPatchText = [];
 				currentUri = null;
 			}
 			let regex = /(--- )(.*)(\t)([\d]{4}-\d\d-\d\d \d\d:\d\d:\d\d.[\d]{9} -[\d]{4})/g;
-			var matches = regex.exec(line);
-			if (matches && matches.length == 5){
+			let matches = regex.exec(line);
+			if (matches && matches.length === 5) {
 				currentUri = Uri.file(matches[2]);
-			} 
-		} else if (!line.startsWith('+++')){
-			if (!line.startsWith('@@') && line.length > 1){
+			}
+		} else if (!line.startsWith('+++')) {
+			if (!line.startsWith('@@') && line.length > 1) {
 				// patch_fromText expects encoded text
 				line = line.charAt(0) + encodeURI(line.substring(1));
 			}
 			currentPatchText.push(line);
 		}
 	});
-	if (currentPatchText.length > 0){
+	if (currentPatchText.length > 0) {
 		allFilePatches.push({
 			uri: currentUri,
 			edits: GetEditsFromPatchText(currentPatchText.join('\n'))
-		})
+		});
 	}
 
 	return allFilePatches;

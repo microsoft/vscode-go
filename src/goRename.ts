@@ -41,11 +41,11 @@ export class GoRenameProvider implements vscode.RenameProvider {
 					let result = new vscode.WorkspaceEdit();
 
 					allFilePatches.forEach(filePatch => {
-						if (!filePatch.uri){
-							reject("Couldnt parse the file path from the gorename output");
+						if (!filePatch.uri) {
+							reject('Couldnt parse the file path from the gorename output');
 						}
-						if (!filePatch.edits){
-							reject("Couldnt parse the diffs from the gorename output")
+						if (!filePatch.edits) {
+							reject('Couldnt parse the diffs from the gorename output');
 						}
 						filePatch.edits.forEach(edit => {
 							edit.applyToWorkspaceEdit(result, filePatch.uri);
