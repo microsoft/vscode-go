@@ -54,7 +54,7 @@ export class Formatter {
 			let filename = document.fileName;
 
 			let formatCommandBinPath = getBinPath(this.formatCommand);
-			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || []
+			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
 
 			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {}, (err, stdout, stderr) => {
 				try {
