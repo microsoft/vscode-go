@@ -50,7 +50,6 @@ export function getBinPath(binname: string) {
 	}
 
 	// Else return the binary name directly (this will likely always fail downstream) 
-	binPathCache[binname] = binname;
 	return binname;
 }
 
