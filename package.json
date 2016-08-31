@@ -267,6 +267,14 @@
           "default": "goreturns",
           "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format."
         },
+        "go.formatFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Flags to pass to format tool (e.g. ['-s'])"
+        },
         "go.useCodeSnippetsOnFunctionSuggest": {
           "type": "boolean",
           "default": false,
