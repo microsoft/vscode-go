@@ -59,7 +59,7 @@ export class Formatter {
 			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
-						promptForMissingTool(formatCommandBinPath);
+						promptForMissingTool(this.formatCommand);
 						return resolve(null);
 					}
 					if (err) return reject('Cannot format due to syntax errors.');
