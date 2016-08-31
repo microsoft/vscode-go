@@ -54,8 +54,9 @@ export class Formatter {
 			let filename = document.fileName;
 
 			let formatCommandBinPath = getBinPath(this.formatCommand);
+			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || []
 
-			cp.execFile(formatCommandBinPath, [filename], {}, (err, stdout, stderr) => {
+			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool(formatCommandBinPath);
@@ -102,7 +103,7 @@ export class Formatter {
 								}
 								// insert and replace edits are all relative to the original state
 								// of the document, so inserts should reset the current line/character
-								// position to the start.		
+								// position to the start.
 								line = start.line;
 								character = start.character;
 								edit.text += diffs[i][1];
