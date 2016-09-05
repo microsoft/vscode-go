@@ -53,6 +53,7 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.useCodeSnippetsOnFunctionSuggest": false,
 	"go.formatOnSave": true,
 	"go.formatTool": "goreturns",
+	"go.formatFlags": [],
 	"go.goroot": "/usr/local/go",
 	"go.gopath": "/Users/lukeh/go",
 	"go.gocodeAutoBuild": false
