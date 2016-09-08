@@ -14,7 +14,7 @@ import { getGoRuntimePath } from './goPath';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { outputChannel } from './goStatus';
 
-var runningProcess={};
+let runningProcess = {};
 /**
  * Input to goTest.
  */
@@ -87,13 +87,13 @@ export function runAtCursor(timeout: string) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
-	isMainPackage(editor.document).then(ismain=>{
+	isMainPackage(editor.document).then(ismain => {
 		if (ismain) {
 			goRunMain(editor.document.fileName);
 		} else {
 			testAtCursor(timeout);
 		}
-	}, err=>{
+	}, err => {
 		console.error(err);
 	});
 }
@@ -144,12 +144,12 @@ export function testCurrentFile(timeout: string) {
  *
  */
 export function killRunning() {
-	for (var name in runningProcess) {
+	for (let name in runningProcess) {
 		if (runningProcess.hasOwnProperty(name)) {
-			if(os.platform() === 'win32'){
-				cp.exec('taskkill /F /IM ' + name)
-			}else{
-				cp.exec('killall ' + name)
+			if (os.platform() === 'win32') {
+				cp.exec('taskkill /F /IM ' + name);
+			} else {
+				cp.exec('killall ' + name);
 			}
 		}
 	}
@@ -175,7 +175,7 @@ function goTest(config: TestConfig): Thenable<boolean> {
 		let proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: config.dir });
 		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
-		let key = path.basename(config.dir) + ".test";
+		let key = path.basename(config.dir) + '.test';
 		runningProcess[key] = proc;
 		proc.on('close', code => {
 			delete(runningProcess, key);
@@ -194,18 +194,18 @@ function goTest(config: TestConfig): Thenable<boolean> {
  *
  * @param config the test execution configuration.
  */
-function goRunMain(file:string): Promise<boolean> {
+function goRunMain(file: string): Promise<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		outputChannel.clear();
 		outputChannel.show(2);
 		let dir: string = vscode.workspace.getConfiguration('go')['runDir'];
-		if (dir&&dir.length) {
-			//using configure directory and replace ${file_dir}
+		if (dir && dir.length) {
+			// using configure directory and replace ${file_dir}
 			let file_dir = path.dirname(file);
-			dir = dir.replace("${file_dir}", file_dir);
+			dir = dir.replace('${file_dir}', file_dir);
 			dir = path.normalize(dir);
 		} else {
-			//default using file directory
+			// default using file directory
 			dir = path.dirname(file);
 		}
 		let args = ['run', file];
@@ -216,7 +216,7 @@ function goRunMain(file:string): Promise<boolean> {
 		let proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: dir });
 		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
-		let key = path.basename(file, ".go");
+		let key = path.basename(file, '.go');
 		runningProcess[key] = proc;
 		proc.on('close', code => {
 			delete(runningProcess, key);
@@ -258,17 +258,17 @@ function isMainPackage(doc: vscode.TextDocument): Thenable<boolean> {
 		let documentSymbolProvider = new GoDocumentSymbolProvider();
 		documentSymbolProvider
 			.provideDocumentSymbols(doc, null)
-			.then(symbols =>{
-				var matched = false;
+			.then(symbols => {
+				let matched = false;
 				symbols.forEach(sym => {
 					if (sym.kind === vscode.SymbolKind.Function
-						&& sym.name === "main"){
+						&& sym.name === 'main') {
 							matched = true;
 						}
 				});
 				resolve(matched);
-				return null;	
-			})
+				return;
+			});
 	});
 }
 

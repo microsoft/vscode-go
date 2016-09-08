@@ -61,11 +61,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		killRunning();
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.run.cursor', () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		runAtCursor(goConfig['testTimeout']);
 	}));
-	
+
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testAtCursor(goConfig['testTimeout']);
