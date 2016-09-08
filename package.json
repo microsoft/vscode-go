@@ -51,6 +51,7 @@
   "activationEvents": [
     "onLanguage:go",
     "onCommand:go.gopath",
+    "onCommand:go.run.cursor",
     "onCommand:go.test.cursor",
     "onCommand:go.test.package",
     "onCommand:go.test.file",
@@ -80,6 +81,16 @@
         "command": "go.gopath",
         "title": "Go: Current GOPATH",
         "description": "See the currently set GOPATH."
+      },
+      {
+        "command": "go.kill.running",
+        "title": "Go: Kill",
+        "description": "Kill running task"
+      },
+      {
+        "command": "go.run.cursor",
+        "title": "Go: Run (cursor)",
+        "description": "Runs main/a unit test at the cursor."
       },
       {
         "command": "go.test.cursor",
