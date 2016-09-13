@@ -18,6 +18,7 @@ import { testCurrentFile } from '../src/goTest';
 import { getGoVersion } from '../src/goInstallTools';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
+import { generateTestCurrentFile, generateTestCurrentPackage } from '../src/goGenerateTests';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -142,6 +143,44 @@ encountered.
 
 		}).then(() => done(), done);
 
+	});
+
+	test('Test Generate unit tests squeleton for file', (done) => {
+		getGoVersion().then(version => {
+			if (version.major === 1 && version.minor === 5) {
+				// gotests is not supported in Go 1.5, so skip the test
+				return Promise.resolve();
+			}
+
+			let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+			vscode.workspace.openTextDocument(uri).then(document => {
+				return vscode.window.showTextDocument(document).then(editor => {
+					return generateTestCurrentFile().then((result: boolean) => {
+						assert.equal(result, true);
+						return Promise.resolve();
+					});
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Test Generate unit tests squeleton for package', (done) => {
+		getGoVersion().then(version => {
+			if (version.major === 1 && version.minor === 5) {
+				// gotests is not supported in Go 1.5, so skip the test
+				return Promise.resolve();
+			}
+
+			let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+			vscode.workspace.openTextDocument(uri).then(document => {
+				return vscode.window.showTextDocument(document).then(editor => {
+					return generateTestCurrentPackage().then((result: boolean) => {
+						assert.equal(result, true);
+						return Promise.resolve();
+					});
+				});
+			});
+		}).then(() => done(), done);
 	});
 
 	test('Gometalinter error checking', (done) => {

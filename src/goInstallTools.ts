@@ -43,6 +43,7 @@ function getTools(): { [key: string]: string }  {
 	// golint is no longer supported in go1.5
 	if (goVersion && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
 		tools['golint'] = 'github.com/golang/lint/golint';
+		tools['gotests'] = 'github.com/cweill/gotests/...';
 	}
 	return tools;
 }
