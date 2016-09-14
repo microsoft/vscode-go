@@ -11,6 +11,8 @@ import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { check } from '../src/goCheck';
+import cp = require('child_process');
+import { parseDiffOutput } from '../src/diffUtils';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -160,4 +162,50 @@ encountered.
 			assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
 		}).then(() => done(), done);
 	});
+
+
+	test('Test util.parseDiffOutput', (done) => {
+		let file1path = path.join(fixtureSourcePath, 'diffTestData', 'file1.go');
+		let file2path = path.join(fixtureSourcePath, 'diffTestData', 'file2.go');
+		let file1uri = vscode.Uri.file(file1path);
+		let file2contents = fs.readFileSync(file2path, 'utf8');
+
+		return new Promise((resolve, reject) => {
+
+			cp.exec(`diff -u ${file1path} ${file2path}`, (err, stdout, stderr) => {
+				let filePatches = parseDiffOutput(stdout);
+
+				if (!filePatches && filePatches.length !== 1) {
+					assert.fail(null, null, 'Failed to get patches for the test file');
+					reject();
+				}
+
+				if (!filePatches[0].fileName) {
+					assert.fail(null, null, 'Failed to parse the file path from the diff output');
+					reject();
+				}
+
+				if (!filePatches[0].edits) {
+					assert.fail(null, null, 'Failed to parse edits from the diff output');
+					reject();
+				}
+
+				vscode.workspace.openTextDocument(file1uri).then((textDocument) => {
+					return vscode.window.showTextDocument(textDocument).then(editor => {
+						return editor.edit((editBuilder) => {
+							filePatches[0].edits.forEach(edit => {
+								edit.applyUsingTextEditorEdit(editBuilder);
+							});
+						}).then(() => {
+							assert.equal(editor.document.getText(), file2contents);
+						});
+					});
+				}).then(() => {
+					resolve();
+				});
+			});
+		}).then(() => done(), done);
+
+	});
+
 });
