@@ -20,8 +20,7 @@ export class Edit {
 		this.text = '';
 	}
 
-
-
+	// Creates TextEdit for current Edit
 	apply(): TextEdit {
 		switch (this.action) {
 			case EditTypes.EDIT_INSERT:
@@ -35,8 +34,7 @@ export class Edit {
 		}
 	}
 
-
-
+	// Applies Edit using given TextEditorEdit
 	applyUsingTextEditorEdit(editBuilder: TextEditorEdit): void {
 		switch (this.action) {
 			case EditTypes.EDIT_INSERT:
@@ -53,8 +51,7 @@ export class Edit {
 		}
 	}
 
-
-
+	// Applies Edits to given WorkspaceEdit
 	applyUsingWorkspaceEdit(workspaceEdit: WorkspaceEdit, fileUri: Uri): void {
 		switch (this.action) {
 			case EditTypes.EDIT_INSERT:
