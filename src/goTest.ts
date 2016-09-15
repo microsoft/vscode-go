@@ -31,6 +31,10 @@ interface TestConfig {
 	functions?: string[];
 }
 
+// lastTestConfig holds a reference to the last executed TestConfig which allows
+// the last test to be easily re-executed.
+let lastTestConfig: TestConfig;
+
 /**
 * Executes the unit test at the primary cursor using `go test`. Output
 * is sent to the 'Go' channel.
@@ -112,12 +116,28 @@ export function testCurrentFile(timeout: string) {
 }
 
 /**
+ * Runs the previously executed test.
+ */
+export function testPrevious() {
+	let editor = vscode.window.activeTextEditor;
+	if (!lastTestConfig) {
+		vscode.window.showInformationMessage('No test has been recently executed.');
+		return;
+	}
+	goTest(lastTestConfig).then(null, err => {
+		console.error(err);
+	});
+}
+
+/**
  * Runs go test and presents the output in the 'Go' channel.
  *
  * @param config the test execution configuration.
  */
 function goTest(config: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
+		// Remember this config as the last executed test.
+		lastTestConfig = config;
 		outputChannel.clear();
 		outputChannel.show(2);
 		let buildFlags: string[] = vscode.workspace.getConfiguration('go')['buildFlags'];

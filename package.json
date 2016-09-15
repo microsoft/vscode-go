@@ -54,6 +54,7 @@
     "onCommand:go.test.cursor",
     "onCommand:go.test.package",
     "onCommand:go.test.file",
+    "onCommand:go.test.previous",
     "onCommand:go.test.coverage"
   ],
   "main": "./out/src/goMain",
@@ -95,6 +96,11 @@
         "command": "go.test.file",
         "title": "Go: Test (file)",
         "description": "Runs all unit tests in the current file."
+      },
+      {
+        "command": "go.test.previous",
+        "title": "Go: Test Previous",
+        "description": "Re-runs the last executed test."
       },
       {
         "command": "go.test.coverage",
