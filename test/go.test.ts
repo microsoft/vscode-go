@@ -130,7 +130,6 @@ encountered.
 
 	test('Gometalinter error checking', (done) => {
 		let config = vscode.workspace.getConfiguration('go');
-		config['lintTool'] = 'gometalinter';
 		let expected = [
 			{ line: 7, severity: 'warning', msg: 'Print2 is unused (deadcode)' },
 			{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
@@ -144,7 +143,9 @@ encountered.
 			{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
 			{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
 		];
-		check(path.join(fixturePath, 'errors.go'), config).then(diagnostics => {
+		check(path.join(fixturePath, 'errors.go'), config, {
+			lintTool: 'gometalinter'
+		}).then(diagnostics => {
 			let sortedDiagnostics = diagnostics.sort((a, b) => {
 				if ( a.msg < b.msg )
 					return -1;
