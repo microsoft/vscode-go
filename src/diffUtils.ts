@@ -4,7 +4,18 @@
  *--------------------------------------------------------*/
 
 import { TextDocument, Position, Range, TextEdit, Uri, WorkspaceEdit, TextEditorEdit } from 'vscode';
+import { getBinPathFromEnvVar } from '../src/goPath';
+import jsDiff = require('diff');
+
 let parse = require('diff-parse');
+let diffToolAvailable: boolean = null;
+
+export function isDiffToolAvailable(): boolean {
+	if (diffToolAvailable == null) {
+		diffToolAvailable = getBinPathFromEnvVar('diff', 'PATH', false) != null;
+	}
+	return diffToolAvailable;
+}
 
 export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE};
 
@@ -76,11 +87,11 @@ export interface FileEdits {
 
 /**
  * Uses diff-parse module to parse given diff output and returns edits across multiple files
- *
+ * This will be deprecated in favor of parseDiffOutput() which uses the diff module after
+ * the issue https://github.com/kpdecker/jsdiff/issues/135 is fixed
  * @param diffOutput string
  */
-
-export function parseDiffOutput(diffOutput: string): FileEdits[] {
+export function parseDiffOutput_using_diff_parse(diffOutput: string): FileEdits[] {
 	let files = parse(diffOutput);
 	let fileEditsToReturn: FileEdits[] = [];
 
@@ -135,4 +146,54 @@ export function parseDiffOutput(diffOutput: string): FileEdits[] {
 	});
 
 	return fileEditsToReturn;
+}
+
+/**
+ * Uses diff module to parse given diff output and returns edits across multiple files
+ * Does not work for patches across multiple files. See https://github.com/kpdecker/jsdiff/issues/135
+ *
+ * @param diffOutput string
+ */
+export function parseDiffOutput(diffOutput: jsDiff.IUniDiff[]): FileEdits[] {
+	let fileEditsToReturn: FileEdits[] = [];
+	diffOutput.forEach((uniDiff: jsDiff.IUniDiff) => {
+		let edit: Edit = null;
+		let edits: Edit[] = [];
+		uniDiff.hunks.forEach((hunk: jsDiff.IHunk) => {
+			let startLine = hunk.oldStart;
+			hunk.lines.forEach((line) => {
+				switch (line.substr(0, 1)) {
+					case '-':
+						if (edit == null) {
+							edit = new Edit(EditTypes.EDIT_DELETE, new Position(startLine - 1, 0));
+						}
+						edit.end = new Position(startLine, 0);
+						startLine++;
+						break;
+					case '+':
+						if (edit == null) {
+							edit = new Edit(EditTypes.EDIT_INSERT, new Position(startLine - 1, 0));
+						} else if (edit.action === EditTypes.EDIT_DELETE) {
+							edit.action = EditTypes.EDIT_REPLACE;
+						}
+						edit.text += line.substr(1) + '\n';
+						break;
+					case ' ':
+						startLine++;
+						if (edit != null) {
+							edits.push(edit);
+						}
+						edit = null;
+						break;
+				}
+			});
+			if (edit != null) {
+				edits.push(edit);
+			}
+		});
+		fileEditsToReturn.push({fileName: uniDiff.oldFileName, edits: edits});
+	});
+
+	return fileEditsToReturn;
+
 }

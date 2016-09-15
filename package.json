@@ -34,6 +34,7 @@
   ],
   "dependencies": {
     "console-stamp": "^0.2.2",
+    "diff": "~3.0.0",
     "diff-parse": "^0.0.13",
     "json-rpc2": "^1.0.2",
     "vscode-debugadapter": "^1.11.0",

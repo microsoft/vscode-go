@@ -8,9 +8,10 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { parseDiffOutput } from '../src/diffUtils';
+import { isDiffToolAvailable, parseDiffOutput } from '../src/diffUtils';
 import { getBinPath } from './goPath';
 import { promptForMissingTool } from './goInstallTools';
+import jsDiff = require('diff');
 
 export class Formatter {
 	private formatCommand = 'goreturns';
@@ -28,7 +29,10 @@ export class Formatter {
 
 			let formatCommandBinPath = getBinPath(this.formatCommand);
 			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
-			formatFlags.push('-d');
+			let useDiffTool = isDiffToolAvailable();
+			if (useDiffTool) {
+				formatFlags.push('-d');
+			}
 
 			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {}, (err, stdout, stderr) => {
 				try {
@@ -39,8 +43,19 @@ export class Formatter {
 					if (err) return reject('Cannot format due to syntax errors.');
 
 					let textEdits: vscode.TextEdit[] = [];
-					let filePatches = parseDiffOutput(stdout);
+					let unifiedDiffs: jsDiff.IUniDiff[] = [];
 
+					if (!useDiffTool) {
+						let oldStr = document.getText();
+						if (process.platform === 'win32') {
+							oldStr = oldStr.split('\r\n').join('\n');
+						}
+						unifiedDiffs.push(jsDiff.structuredPatch(filename, filename, oldStr, stdout, '', ''));
+					} else {
+						unifiedDiffs = jsDiff.parsePatch(stdout);
+					}
+
+					let filePatches = parseDiffOutput(unifiedDiffs);
 					filePatches[0].edits.forEach((edit) => {
 						textEdits.push(edit.apply());
 					});
