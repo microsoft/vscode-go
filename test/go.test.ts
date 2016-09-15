@@ -201,7 +201,7 @@ encountered.
 							assert.equal(editor.document.getText(), file2contents);
 							vscode.commands.executeCommand('workbench.action.files.revert').then(() => {
 								resolve();
-							});;
+							});
 						});
 					});
 				});
