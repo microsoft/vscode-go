@@ -153,7 +153,6 @@ export function getEditsFromDiffStr_using_diff_parse(diffStr: string): FilePatch
 
 /**
  * Uses diff module to parse given array of IUniDiff objects and returns edits for files
- * Currently, there is a bug when working with multiple files. See https://github.com/kpdecker/jsdiff/issues/135
  *
  * @param diffOutput jsDiff.IUniDiff[]
  *
