@@ -216,7 +216,7 @@ encountered.
 		let file1uri = vscode.Uri.file(file1path);
 		let file1contents = fs.readFileSync(file1path, 'utf8');
 		let file2contents = fs.readFileSync(file2path, 'utf8');
-		
+
 		let fileEdits = getEdits(file1path, file1contents, file2contents);
 
 		if (!fileEdits) {

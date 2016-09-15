@@ -211,7 +211,7 @@ function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
  * 
  * @returns A single FilePatch object
  */
-export function getEdits(fileName: string, oldStr: string, newStr:string): FilePatch {
+export function getEdits(fileName: string, oldStr: string, newStr: string): FilePatch {
 	if (process.platform === 'win32') {
 		oldStr = oldStr.split('\r\n').join('\n');
 		newStr = newStr.split('\r\n').join('\n');
