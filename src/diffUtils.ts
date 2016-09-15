@@ -80,20 +80,23 @@ export class Edit {
 	}
 }
 
-export interface FileEdits {
+export interface FilePatch {
 	fileName: string;
 	edits: Edit[];
 }
 
 /**
- * Uses diff-parse module to parse given diff output and returns edits across multiple files
- * This will be deprecated in favor of parseDiffOutput() which uses the diff module after
+ * Uses diff-parse module to parse given diff string and returns edits across multiple files
+ * This will be deprecated in favor of getEditsFromDiffStr() which uses the diff module after
  * the issue https://github.com/kpdecker/jsdiff/issues/135 is fixed
- * @param diffOutput string
+ * 
+ * @param diffStr string
+ * 
+ * @returns Array of FilePatch objects, one for each file
  */
-export function parseDiffOutput_using_diff_parse(diffOutput: string): FileEdits[] {
-	let files = parse(diffOutput);
-	let fileEditsToReturn: FileEdits[] = [];
+export function getEditsFromDiffStr_using_diff_parse(diffStr: string): FilePatch[] {
+	let files = parse(diffStr);
+	let filePatches: FilePatch[] = [];
 
 	files.forEach(function(file) {
 
@@ -142,20 +145,22 @@ export function parseDiffOutput_using_diff_parse(diffOutput: string): FileEdits[
 			edits.push(edit);
 		}
 
-		fileEditsToReturn.push({fileName: file.from, edits: edits});
+		filePatches.push({fileName: file.from, edits: edits});
 	});
 
-	return fileEditsToReturn;
+	return filePatches;
 }
 
 /**
- * Uses diff module to parse given diff output and returns edits for files
- * Does not work for patches across multiple files. See https://github.com/kpdecker/jsdiff/issues/135
+ * Uses diff module to parse given array of IUniDiff objects and returns edits for files
+ * Currently, there is a bug when working with multiple files. See https://github.com/kpdecker/jsdiff/issues/135
  *
- * @param diffOutput string
+ * @param diffOutput jsDiff.IUniDiff[]
+ *
+ * @returns Array of FilePatch objects, one for each file
  */
-export function parseDiffOutput(diffOutput: jsDiff.IUniDiff[]): FileEdits[] {
-	let fileEditsToReturn: FileEdits[] = [];
+function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
+	let filePatches: FilePatch[] = [];
 	diffOutput.forEach((uniDiff: jsDiff.IUniDiff) => {
 		let edit: Edit = null;
 		let edits: Edit[] = [];
@@ -191,9 +196,42 @@ export function parseDiffOutput(diffOutput: jsDiff.IUniDiff[]): FileEdits[] {
 				edits.push(edit);
 			}
 		});
-		fileEditsToReturn.push({fileName: uniDiff.oldFileName, edits: edits});
+		filePatches.push({fileName: uniDiff.oldFileName, edits: edits});
 	});
 
-	return fileEditsToReturn;
+	return filePatches;
 
+}
+
+/**
+ * Returns a FilePatch object by generating diffs between given oldStr and newStr using the diff module
+ * 
+ * @param fileName string: Name of the file to which edits should be applied
+ * @param oldStr string
+ * @param newStr string
+ * 
+ * @returns A single FilePatch object
+ */
+export function getEdits(fileName: string, oldStr: string, newStr:string): FilePatch {
+	if (process.platform === 'win32') {
+		oldStr = oldStr.split('\r\n').join('\n');
+		newStr = newStr.split('\r\n').join('\n');
+	}
+	let unifiedDiffs: jsDiff.IUniDiff = jsDiff.structuredPatch(fileName, fileName, oldStr, newStr, '', '');
+	let filePatches: FilePatch[] = parseUniDiffs([unifiedDiffs]);
+	return filePatches[0];
+}
+
+/**
+ * Uses diff module to parse given diff string and returns edits for files
+ * Currently, there is a bug when working with multiple files. See https://github.com/kpdecker/jsdiff/issues/135
+ * 
+ * @param diffStr : Diff string in unified format. http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
+ * 
+ * @returns Array of FilePatch objects, one for each file
+ */
+export function getEditsFromDiffStr(diffstr: string): FilePatch[] {
+	let unifiedDiffs: jsDiff.IUniDiff[] = jsDiff.parsePatch(diffstr);
+	let filePatches: FilePatch[] = parseUniDiffs(unifiedDiffs);
+	return filePatches;
 }

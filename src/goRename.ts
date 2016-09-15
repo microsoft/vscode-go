@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath } from './goPath';
 import { byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
-import { parseDiffOutput_using_diff_parse, isDiffToolAvailable, FileEdits, Edit } from '../src/diffUtils';
+import { getEditsFromDiffStr_using_diff_parse, isDiffToolAvailable, FilePatch, Edit } from '../src/diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 
 export class GoRenameProvider implements vscode.RenameProvider {
@@ -29,9 +29,11 @@ export class GoRenameProvider implements vscode.RenameProvider {
 
 			let gorename = getBinPath('gorename');
 			let buildTags = '"' + vscode.workspace.getConfiguration('go')['buildTags'] + '"';
-			let useDiffTool = isDiffToolAvailable();
-			let gorenameArgs = useDiffTool ? ['-d'] : [];
-			gorenameArgs.push('-offset', filename + ':#' + offset, '-to', newName, '-tags', buildTags);
+			let gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName, '-tags', buildTags]; 
+			let canRenameToolUseDiff = isDiffToolAvailable();
+			if (canRenameToolUseDiff) {
+				gorenameArgs.push('-d');
+			}
 
 			cp.execFile(gorename, gorenameArgs, {}, (err, stdout, stderr) => {
 				try {
@@ -43,11 +45,11 @@ export class GoRenameProvider implements vscode.RenameProvider {
 
 					let result = new vscode.WorkspaceEdit();
 
-					if (useDiffTool) {
-						let filePatches = parseDiffOutput_using_diff_parse(stdout);
-						filePatches.forEach((fileEdits: FileEdits) => {
-							let fileUri = vscode.Uri.file(fileEdits.fileName);
-							fileEdits.edits.forEach((edit: Edit) => {
+					if (canRenameToolUseDiff) {
+						let filePatches = getEditsFromDiffStr_using_diff_parse(stdout);
+						filePatches.forEach((filePatch: FilePatch) => {
+							let fileUri = vscode.Uri.file(filePatch.fileName);
+							filePatch.edits.forEach((edit: Edit) => {
 								edit.applyUsingWorkspaceEdit(result, fileUri);
 							});
 						});
