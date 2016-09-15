@@ -199,16 +199,14 @@ encountered.
 							});
 						}).then(() => {
 							assert.equal(editor.document.getText(), file2contents);
+							return vscode.commands.executeCommand('workbench.action.files.revert');
 						});
 					});
 				}).then(() => {
 					resolve();
 				});
 			});
-		}).then(() => {
-			vscode.commands.executeCommand('workbench.action.files.revert');
-			done();
-		}, done);
+		}).then(() => done(), done);
 
 	});
 
@@ -245,12 +243,10 @@ encountered.
 				}).then(() => {
 					let updatedText = editor.document.getText().split('\r\n').join('\n');
 					assert.equal(updatedText, file2contents);
+					return vscode.commands.executeCommand('workbench.action.files.revert');
 				});
 			});
-		}).then(() => {
-			vscode.commands.executeCommand('workbench.action.files.revert');
-			done();
-		}, done);
+		}).then(() => done(), done);
 	});
 
 });
