@@ -129,8 +129,9 @@ encountered.
 	});
 
 	test('Gometalinter error checking', (done) => {
-		let config = vscode.workspace.getConfiguration('go');
-		config['lintTool'] = 'gometalinter';
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'lintTool': { value: 'gometalinter' }
+		});
 		let expected = [
 			{ line: 7, severity: 'warning', msg: 'Print2 is unused (deadcode)' },
 			{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
