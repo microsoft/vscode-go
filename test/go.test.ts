@@ -178,32 +178,32 @@ encountered.
 
 				if (!filePatches && filePatches.length !== 1) {
 					assert.fail(null, null, 'Failed to get patches for the test file');
-					reject();
+					return reject();
 				}
 
 				if (!filePatches[0].fileName) {
 					assert.fail(null, null, 'Failed to parse the file path from the diff output');
-					reject();
+					return reject();
 				}
 
 				if (!filePatches[0].edits) {
 					assert.fail(null, null, 'Failed to parse edits from the diff output');
-					reject();
+					return reject();
 				}
 
 				vscode.workspace.openTextDocument(file1uri).then((textDocument) => {
-					return vscode.window.showTextDocument(textDocument).then(editor => {
-						return editor.edit((editBuilder) => {
+					vscode.window.showTextDocument(textDocument).then(editor => {
+						editor.edit((editBuilder) => {
 							filePatches[0].edits.forEach(edit => {
 								edit.applyUsingTextEditorEdit(editBuilder);
 							});
 						}).then(() => {
 							assert.equal(editor.document.getText(), file2contents);
-							return vscode.commands.executeCommand('workbench.action.files.revert');
+							vscode.commands.executeCommand('workbench.action.files.revert').then(() => {
+								resolve();
+							});;
 						});
 					});
-				}).then(() => {
-					resolve();
 				});
 			});
 		}).then(() => done(), done);
@@ -222,16 +222,19 @@ encountered.
 		if (!fileEdits) {
 			assert.fail(null, null, 'Failed to get patches for the test file');
 			done();
+			return;
 		}
 
 		if (!fileEdits.fileName) {
 			assert.fail(null, null, 'Failed to parse the file path from the diff output');
 			done();
+			return;
 		}
 
 		if (!fileEdits.edits) {
 			assert.fail(null, null, 'Failed to parse edits from the diff output');
 			done();
+			return;
 		}
 
 		vscode.workspace.openTextDocument(file1uri).then((textDocument) => {
