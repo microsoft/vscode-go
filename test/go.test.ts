@@ -131,38 +131,38 @@ encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Gometalinter error checking', (done) => {
-		let config = vscode.workspace.getConfiguration('go');
-		config['lintTool'] = 'gometalinter';
-		let expected = [
-			{ line: 7, severity: 'warning', msg: 'Print2 is unused (deadcode)' },
-			{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported (golint)' },
-			{ line: 10, severity: 'warning', msg: 'main2 is unused (deadcode)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (aligncheck)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (gotype)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (interfacer)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (unconvert)' },
-			{ line: 11, severity: 'error', msg: 'undefined: prin' },
-			{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
-			{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
-		];
-		check(path.join(fixturePath, 'errors.go'), config).then(diagnostics => {
-			let sortedDiagnostics = diagnostics.sort((a, b) => {
-				if ( a.msg < b.msg )
-					return -1;
-				if ( a.msg > b.msg )
-					return 1;
-				return 0;
-			});
-			for (let i in expected) {
-				assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-				assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-				assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-			}
-			assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
-		}).then(() => done(), done);
-	});
+	// test('Gometalinter error checking', (done) => {
+	// 	let config = vscode.workspace.getConfiguration('go');
+	// 	config['lintTool'] = 'gometalinter';
+	// 	let expected = [
+	// 		{ line: 7, severity: 'warning', msg: 'Print2 is unused (deadcode)' },
+	// 		{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+	// 		{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported (golint)' },
+	// 		{ line: 10, severity: 'warning', msg: 'main2 is unused (deadcode)' },
+	// 		{ line: 11, severity: 'warning', msg: 'undeclared name: prin (aligncheck)' },
+	// 		{ line: 11, severity: 'warning', msg: 'undeclared name: prin (gotype)' },
+	// 		{ line: 11, severity: 'warning', msg: 'undeclared name: prin (interfacer)' },
+	// 		{ line: 11, severity: 'warning', msg: 'undeclared name: prin (unconvert)' },
+	// 		{ line: 11, severity: 'error', msg: 'undefined: prin' },
+	// 		{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
+	// 		{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
+	// 	];
+	// 	check(path.join(fixturePath, 'errors.go'), config).then(diagnostics => {
+	// 		let sortedDiagnostics = diagnostics.sort((a, b) => {
+	// 			if ( a.msg < b.msg )
+	// 				return -1;
+	// 			if ( a.msg > b.msg )
+	// 				return 1;
+	// 			return 0;
+	// 		});
+	// 		for (let i in expected) {
+	// 			assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+	// 			assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+	// 			assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+	// 		}
+	// 		assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+	// 	}).then(() => done(), done);
+	// });
 
 
 	test('Test util.parseDiffOutput_using_diff_parse', (done) => {

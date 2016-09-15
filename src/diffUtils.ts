@@ -149,7 +149,7 @@ export function parseDiffOutput_using_diff_parse(diffOutput: string): FileEdits[
 }
 
 /**
- * Uses diff module to parse given diff output and returns edits across multiple files
+ * Uses diff module to parse given diff output and returns edits for files
  * Does not work for patches across multiple files. See https://github.com/kpdecker/jsdiff/issues/135
  *
  * @param diffOutput string
