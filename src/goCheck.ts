@@ -60,7 +60,7 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 	});
 }
 
-export function check(filename: string, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+export function check(filename: string, goConfig: vscode.WorkspaceConfiguration, testConfig?: any): Promise<ICheckResult[]> {
 	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(filename);
@@ -85,6 +85,9 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	}
 	if (!!goConfig['lintOnSave']) {
 		let lintTool = getBinPath(goConfig['lintTool'] || 'golint');
+		if (testConfig && testConfig.lintTool) {
+			lintTool = testConfig.lintTool;
+		}
 		let lintFlags = goConfig['lintFlags'] || [];
 		let args = [...lintFlags];
 
