@@ -7,7 +7,6 @@ import { TextDocument, Position, Range, TextEdit, Uri, WorkspaceEdit, TextEditor
 import { getBinPathFromEnvVar } from '../src/goPath';
 import jsDiff = require('diff');
 
-let parse = require('diff-parse');
 let diffToolAvailable: boolean = null;
 
 export function isDiffToolAvailable(): boolean {
@@ -86,72 +85,6 @@ export interface FilePatch {
 }
 
 /**
- * Uses diff-parse module to parse given diff string and returns edits across multiple files
- * This will be deprecated in favor of getEditsFromDiffStr() which uses the diff module after
- * the issue https://github.com/kpdecker/jsdiff/issues/135 is fixed
- * 
- * @param diffStr string
- * 
- * @returns Array of FilePatch objects, one for each file
- */
-export function getEditsFromDiffStr_using_diff_parse(diffStr: string): FilePatch[] {
-	let files = parse(diffStr);
-	let filePatches: FilePatch[] = [];
-
-	files.forEach(function(file) {
-
-		// Position/Ranges in TextEdits should be relative to original document
-		// Deletes from diff-parse give line number from the original document to be deleted
-		// But Inserts from diff-parse give line number assuming previous edits are applied.
-		// The no-changes from diff-parse give both before and after line numbers.
-		// This before line number can be used for tracking the right line number for inserts.
-		let lineInOriginalFile: number = undefined;
-
-		let edit: Edit = null;
-		let edits: Edit[] = [];
-
-		file.lines.forEach(function(line) {
-			switch (line.type) {
-				case 'chunk':
-					break;
-				case 'del':
-					if (edit == null) {
-						edit = new Edit(EditTypes.EDIT_DELETE, new Position(line.ln - 1, 0));
-					}
-					edit.end = new Position(line.ln, 0);
-					break;
-
-				case 'add':
-					if (edit == null) {
-						let startLine = lineInOriginalFile === undefined ? line.ln - 1 : lineInOriginalFile;
-						edit = new Edit(EditTypes.EDIT_INSERT, new Position(startLine, 0));
-					} else if (edit.action === EditTypes.EDIT_DELETE) {
-						edit.action = EditTypes.EDIT_REPLACE;
-					}
-					edit.text += line.content + '\n';
-					break;
-
-				case 'normal':
-					if (edit != null) {
-						edits.push(edit);
-					}
-					edit = null;
-					lineInOriginalFile = line.ln1;
-					break;
-			}
-		});
-
-		if (edit != null) {
-			edits.push(edit);
-		}
-
-		filePatches.push({fileName: file.from, edits: edits});
-	});
-
-	return filePatches;
-}
-
-/**
  * Uses diff module to parse given array of IUniDiff objects and returns edits for files
  *
  * @param diffOutput jsDiff.IUniDiff[]
@@ -223,13 +156,16 @@ export function getEdits(fileName: string, oldStr: string, newStr: string): File
 
 /**
  * Uses diff module to parse given diff string and returns edits for files
- * Currently, there is a bug when working with multiple files. See https://github.com/kpdecker/jsdiff/issues/135
  * 
  * @param diffStr : Diff string in unified format. http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
  * 
  * @returns Array of FilePatch objects, one for each file
  */
-export function getEditsFromDiffStr(diffstr: string): FilePatch[] {
+export function getEditsFromUnifiedDiffStr(diffstr: string): FilePatch[] {
+	// Workaround for the bug https://github.com/kpdecker/jsdiff/issues/135 
+	if (diffstr.startsWith('---')) {
+		diffstr = diffstr.split('---').join('Index\n---');
+	}
 	let unifiedDiffs: jsDiff.IUniDiff[] = jsDiff.parsePatch(diffstr);
 	let filePatches: FilePatch[] = parseUniDiffs(unifiedDiffs);
 	return filePatches;

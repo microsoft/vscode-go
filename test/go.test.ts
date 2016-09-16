@@ -12,7 +12,7 @@ import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { check } from '../src/goCheck';
 import cp = require('child_process');
-import { getEditsFromDiffStr_using_diff_parse, getEdits } from '../src/diffUtils';
+import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
 
 suite('Go Extension Tests', () => {
@@ -165,7 +165,7 @@ encountered.
 	});
 
 
-	test('Test diffUtils.getEditsFromDiffStr_using_diff_parse', (done) => {
+	test('Test diffUtils.getEditsFromUnifiedDiffStr', (done) => {
 		let file1path = path.join(fixtureSourcePath, 'diffTestData', 'file1.go');
 		let file2path = path.join(fixtureSourcePath, 'diffTestData', 'file2.go');
 		let file1uri = vscode.Uri.file(file1path);
@@ -174,7 +174,7 @@ encountered.
 		return new Promise((resolve, reject) => {
 
 			cp.exec(`diff -u ${file1path} ${file2path}`, (err, stdout, stderr) => {
-				let filePatches = getEditsFromDiffStr_using_diff_parse(stdout);
+				let filePatches = getEditsFromUnifiedDiffStr(stdout);
 
 				if (!filePatches && filePatches.length !== 1) {
 					assert.fail(null, null, 'Failed to get patches for the test file');

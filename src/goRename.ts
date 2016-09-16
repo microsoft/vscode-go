@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath } from './goPath';
 import { byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
-import { getEditsFromDiffStr_using_diff_parse, isDiffToolAvailable, FilePatch, Edit } from '../src/diffUtils';
+import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from '../src/diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 
 export class GoRenameProvider implements vscode.RenameProvider {
@@ -46,7 +46,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 					let result = new vscode.WorkspaceEdit();
 
 					if (canRenameToolUseDiff) {
-						let filePatches = getEditsFromDiffStr_using_diff_parse(stdout);
+						let filePatches = getEditsFromUnifiedDiffStr(stdout);
 						filePatches.forEach((filePatch: FilePatch) => {
 							let fileUri = vscode.Uri.file(filePatch.fileName);
 							filePatch.edits.forEach((edit: Edit) => {
