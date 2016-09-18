@@ -9,10 +9,12 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
+import os = require('os');
 import { getGoRuntimePath } from './goPath';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { outputChannel } from './goStatus';
 
+let runningProcess = {};
 /**
  * Input to goTest.
  */
@@ -71,6 +73,32 @@ export function testAtCursor(timeout: string) {
 }
 
 /**
+* Executes the unit test or main at the primary cursor using `go run/test`. Output
+* is sent to the 'Go' channel.
+* 
+* @param timeout a ParseDuration formatted timeout string for the tests.
+*
+* TODO: go test returns filenames with no path information for failures,
+* so output doesn't produce navigable line references.
+*/
+export function runAtCursor(timeout: string) {
+	let editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage('No editor is active.');
+		return;
+	}
+	isMainPackage(editor.document).then(ismain => {
+		if (ismain) {
+			goRunMain(editor.document.fileName);
+		} else {
+			testAtCursor(timeout);
+		}
+	}, err => {
+		console.error(err);
+	});
+}
+
+/**
  * Runs all tests in the package of the source of the active editor.
  *
  * @param timeout a ParseDuration formatted timeout string for the tests.
@@ -112,6 +140,22 @@ export function testCurrentFile(timeout: string) {
 }
 
 /**
+ * Kill all running go task.
+ *
+ */
+export function killRunning() {
+	for (let name in runningProcess) {
+		if (runningProcess.hasOwnProperty(name)) {
+			if (os.platform() === 'win32') {
+				cp.exec('taskkill /F /IM ' + name);
+			} else {
+				cp.exec('killall ' + name);
+			}
+		}
+	}
+}
+
+/**
  * Runs go test and presents the output in the 'Go' channel.
  *
  * @param config the test execution configuration.
@@ -131,11 +175,55 @@ function goTest(config: TestConfig): Thenable<boolean> {
 		let proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: config.dir });
 		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
+		let key = path.basename(config.dir) + '.test';
+		runningProcess[key] = proc;
 		proc.on('close', code => {
+			delete(runningProcess, key);
 			if (code) {
 				outputChannel.append('Error: Tests failed.');
 			} else {
 				outputChannel.append('Success: Tests passed.');
+			}
+			resolve(code === 0);
+		});
+	});
+}
+
+/**
+ * Runs go main package and presents the output in the 'Go' channel.
+ *
+ * @param config the test execution configuration.
+ */
+function goRunMain(file: string): Promise<boolean> {
+	return new Promise<boolean>((resolve, reject) => {
+		outputChannel.clear();
+		outputChannel.show(2);
+		let dir: string = vscode.workspace.getConfiguration('go')['runDir'];
+		if (dir && dir.length) {
+			// using configure directory and replace ${file_dir}
+			let file_dir = path.dirname(file);
+			dir = dir.replace('${file_dir}', file_dir);
+			dir = path.normalize(dir);
+		} else {
+			// default using file directory
+			dir = path.dirname(file);
+		}
+		let args = ['run', file];
+		let runFlags: string[] = vscode.workspace.getConfiguration('go')['runArgs'];
+		if (runFlags) {
+			args = ['run', file, ...runFlags];
+		}
+		let proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: dir });
+		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
+		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
+		let key = path.basename(file, '.go');
+		runningProcess[key] = proc;
+		proc.on('close', code => {
+			delete(runningProcess, key);
+			if (code) {
+				outputChannel.append('Error: Run failed.');
+			} else {
+				outputChannel.append('Success: Run passed.');
 			}
 			resolve(code === 0);
 		});
@@ -157,6 +245,31 @@ function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInfor
 				sym.kind === vscode.SymbolKind.Function
 				&& hasTestFunctionPrefix(sym.name))
 		);
+}
+
+/**
+ * Check whether docment is main package or not.
+ *
+ * @param the URI of a Go source file.
+ * @return whether document is main package or not.
+ */
+function isMainPackage(doc: vscode.TextDocument): Thenable<boolean> {
+	return new Promise<boolean>((resolve, reject) => {
+		let documentSymbolProvider = new GoDocumentSymbolProvider();
+		documentSymbolProvider
+			.provideDocumentSymbols(doc, null)
+			.then(symbols => {
+				let matched = false;
+				symbols.forEach(sym => {
+					if (sym.kind === vscode.SymbolKind.Function
+						&& sym.name === 'main') {
+							matched = true;
+						}
+				});
+				resolve(matched);
+				return;
+			});
+	});
 }
 
 /**

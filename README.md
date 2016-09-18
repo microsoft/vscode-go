@@ -56,7 +56,9 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.formatFlags": [],
 	"go.goroot": "/usr/local/go",
 	"go.gopath": "/Users/lukeh/go",
-	"go.gocodeAutoBuild": false
+	"go.gocodeAutoBuild": false,
+	"go.runDir": "${file_dir}",
+	"go.runArgs": []
 }
 ```
 
@@ -95,9 +97,11 @@ In addition to integrated editing features, the extension also provides several 
 
 * `Go: Add Import` to add an import from the list of packages in your Go context
 * `Go: Current GOPATH` to see your currently configured GOPATH
+* `Go: Run main or test at curso` to run main or test in the current active document
 * `Go: Run test at cursor` to run a test at the current cursor position in the active document
 * `Go: Run tests in current package` to run all tests in the package containing the active document
 * `Go: Run tests in current file` to run all tests in the current active document
+* `Go: Kill running test or main` to kill running test or main
 
 ### _Optional_: Debugging
 
