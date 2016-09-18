@@ -9,10 +9,12 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
+import os = require('os');
 import { getGoRuntimePath } from './goPath';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { outputChannel } from './goStatus';
 
+let runningTestProcess = {};
 /**
  * Input to goTest.
  */
@@ -112,6 +114,22 @@ export function testCurrentFile(timeout: string) {
 }
 
 /**
+ * Kill all running go test.
+ *
+ */
+export function testKill() {
+	for (let name in runningTestProcess) {
+		if (runningTestProcess.hasOwnProperty(name)) {
+			if (os.platform() === 'win32') {
+				cp.exec('taskkill /F /IM ' + name);
+			} else {
+				cp.exec('killall ' + name);
+			}
+		}
+	}
+}
+
+/**
  * Runs go test and presents the output in the 'Go' channel.
  *
  * @param config the test execution configuration.
@@ -131,7 +149,10 @@ function goTest(config: TestConfig): Thenable<boolean> {
 		let proc = cp.spawn(getGoRuntimePath(), args, { env: process.env, cwd: config.dir });
 		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
+		let key = path.basename(config.dir) + '.test';
+		runningTestProcess[key] = proc;
 		proc.on('close', code => {
+			delete(runningTestProcess, key);
 			if (code) {
 				outputChannel.append('Error: Tests failed.');
 			} else {

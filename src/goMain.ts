@@ -24,7 +24,7 @@ import { updateGoPathGoRootFromConfig, setupGoPathAndOfferToInstallTools } from 
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest';
+import { testKill, testAtCursor, testCurrentPackage, testCurrentFile } from './goTest';
 import { addImport } from './goImport';
 import { installAllTools } from './goInstallTools';
 
@@ -55,6 +55,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
 		let gopath = process.env['GOPATH'];
 		vscode.window.showInformationMessage('Current GOPATH:' + gopath);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.kill', () => {
+		testKill();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', () => {

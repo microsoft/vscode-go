@@ -98,6 +98,7 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Run test at cursor` to run a test at the current cursor position in the active document
 * `Go: Run tests in current package` to run all tests in the package containing the active document
 * `Go: Run tests in current file` to run all tests in the current active document
+* `Go: Kill running test` to kill running test
 
 ### _Optional_: Debugging
 
