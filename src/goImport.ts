@@ -9,31 +9,91 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath } from './goPath';
 import { parseFilePrelude } from './util';
-import { promptForMissingTool } from './goInstallTools';
 import { documentSymbols } from './goOutline';
+import { promptForMissingTool, isVendorSupported } from './goInstallTools';
+import path = require('path');
 
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document.fileName) : Promise.resolve([]);
-	let pkgsPromise = new Promise<string[]>((resolve, reject) => {
+	let vendorSupportPromise = isVendorSupported();
+	let goPkgsPromise = new Promise<string[]>((resolve, reject) => {
 		cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
 				promptForMissingTool('gopkgs');
 				return reject();
 			}
 			let lines = stdout.toString().split('\n');
-			let sortedlines = lines.sort().slice(1); // Drop the empty entry from the final '\n'
-			return resolve(sortedlines);
+			if (lines[lines.length - 1] === '') {
+				// Drop the empty entry from the final '\n'
+				lines.pop();
+			}
+			return resolve(lines);
 		});
 	});
 
-	return Promise.all<string[]>([importsPromise, pkgsPromise]).then(values => {
-		let imports = values[0];
-		let pkgs = values[1];
-		if (imports.length === 0) {
-			return pkgs;
-		}
-		return pkgs.filter(element => {
-			return imports.indexOf(element) === -1;
+	return vendorSupportPromise.then((vendorSupport: boolean) => {
+		return Promise.all<string[]>([goPkgsPromise, importsPromise]).then(values => {
+			let pkgs = values[0];
+			let importedPkgs = values [1];
+
+			if (!vendorSupport) {
+				if (importedPkgs.length > 0) {
+					pkgs = pkgs.filter(element => {
+						return importedPkgs.indexOf(element) === -1;
+					});
+				}
+				return pkgs.sort();
+			}
+
+			let currentFileDirPath = path.dirname(vscode.window.activeTextEditor.document.fileName);
+			let workspaces: string[] = process.env['GOPATH'].split(path.delimiter);
+			let currentWorkspace = path.join(workspaces[0], 'src');
+
+			// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+			if (process.platform === 'win32') {
+				currentFileDirPath = currentFileDirPath.substr(0, 1).toUpperCase() + currentFileDirPath.substr(1);
+			}
+
+			// In case of multiple workspaces, find current workspace by checking if current file is
+			// under any of the workspaces in $GOPATH
+			for (let i = 1; i < workspaces.length; i++) {
+				let possibleCurrentWorkspace = path.join(workspaces[i], 'src');
+				if (currentFileDirPath.startsWith(possibleCurrentWorkspace)) {
+					// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)
+					// both parent & child workspace in the nested workspaces pair can make it inside the above if block
+					// Therefore, the below check will take longer (more specific to current file) of the two
+					if (possibleCurrentWorkspace.length > currentWorkspace.length) {
+						currentWorkspace = possibleCurrentWorkspace;
+					}
+				}
+			}
+
+			let pkgSet = new Set<string>();
+			pkgs.forEach(pkg => {
+				if (!pkg || importedPkgs.indexOf(pkg) > -1) {
+					return;
+				}
+
+				let magicVendorString = '/vendor/';
+				let vendorIndex = pkg.indexOf(magicVendorString);
+
+				// Check if current file and the vendor pkg belong to the same root project
+				// If yes, then vendor pkg can be replaced with its relative path to the "vendor" folder
+				if (vendorIndex > 0) {
+					let rootProjectForVendorPkg = path.join(currentWorkspace, pkg.substr(0, vendorIndex));
+					let relativePathForVendorPkg = pkg.substring(vendorIndex + magicVendorString.length);
+
+					if (relativePathForVendorPkg && currentFileDirPath.startsWith(rootProjectForVendorPkg)) {
+						pkgSet.add(relativePathForVendorPkg);
+						return;
+					}
+				}
+
+				// pkg is not a vendor project or is a vendor project not belonging to current project
+				pkgSet.add(pkg);
+			});
+
+			return Array.from(pkgSet).sort();
 		});
 	});
 }

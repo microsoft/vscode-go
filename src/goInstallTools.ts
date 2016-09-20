@@ -20,6 +20,7 @@ interface SemVersion {
 }
 
 let goVersion: SemVersion = null;
+let vendorSupport: boolean = null;
 
 function getTools(): { [key: string]: string }  {
 	let goConfig = vscode.workspace.getConfiguration('go');
@@ -142,6 +143,7 @@ export function updateGoPathGoRootFromConfig() {
 
 export function setupGoPathAndOfferToInstallTools() {
 	updateGoPathGoRootFromConfig();
+	isVendorSupported();
 
 	if (!process.env['GOPATH']) {
 		let info = 'GOPATH is not set as an environment variable or via `go.gopath` setting in Code';
@@ -193,6 +195,8 @@ function getMissingTools(): Promise<string[]> {
 	});
 }
 
+
+
 export function getGoVersion(): Promise<SemVersion> {
 	if (goVersion) {
 		return Promise.resolve(goVersion);
@@ -210,3 +214,24 @@ export function getGoVersion(): Promise<SemVersion> {
 		});
 	});
 }
+
+export function isVendorSupported(): Promise<boolean> {
+	if (vendorSupport != null) {
+		return Promise.resolve(vendorSupport);
+	}
+	return getGoVersion().then(version => {
+		switch (version.major) {
+			case 0:
+				vendorSupport = false;
+				break;
+			case 1:
+				vendorSupport = (version.minor > 5 || (version.minor  === 5 && process.env['GO15VENDOREXPERIMENT'] === '1')) ? true : false;
+				break;
+			default:
+				vendorSupport = true;
+				break;
+		}
+		return vendorSupport;
+	});
+}
+

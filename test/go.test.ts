@@ -19,6 +19,8 @@ import { getGoVersion } from '../src/goInstallTools';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage } from '../src/goGenerateTests';
+import { getBinPath } from '../src/goPath';
+import { isVendorSupported } from '../src/goInstallTools';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -83,17 +85,19 @@ encountered.
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			let promises = testCases.map(([position, expected]) =>
-				provider.provideCompletionItems(textDocument, position, null).then(items => {
-					let labels = items.map(x => x.label);
-					for (let entry of expected) {
-						if (labels.indexOf(entry) < 0) {
-							assert.fail('', entry, 'missing expected item in competion list');
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				let promises = testCases.map(([position, expected]) =>
+					provider.provideCompletionItems(textDocument, position, null).then(items => {
+						let labels = items.map(x => x.label);
+						for (let entry of expected) {
+							if (labels.indexOf(entry) < 0) {
+								assert.fail('', entry, 'missing expected item in competion list');
+							}
 						}
-					}
-				})
-			);
-			return Promise.all(promises);
+					})
+				);
+				return Promise.all(promises);
+			});
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
 		}).then(() => done(), done);
@@ -386,6 +390,71 @@ encountered.
 					assert.equal(pkgs.indexOf('fmt') > -1, false);
 				});
 				return Promise.all([includeImportedPkgs, excludeImportedPkgs]);
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Replace vendor packages with relative path', (done) => {
+		// This test needs a go project that has vendor folder and vendor packages
+		// Since the Go extension takes a dependency on the godef tool at github.com/rogpeppe/godef
+		// which has vendor packages, we are using it here to test the "replace vendor packages with relative path" feature.
+		// If the extension ever stops depending on godef tool or if godef ever stops having vendor packages, then this test
+		// will fail and will have to be replaced with any other go project with vendor packages
+
+		let vendorSupportPromise = isVendorSupported();
+		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
+		let vendorPkgsFullPath = [
+			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
+			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9',
+			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9/client'
+		];
+		let vendorPkgsRelativePath = [
+			'9fans.net/go/acme',
+			'9fans.net/go/plan9',
+			'9fans.net/go/plan9/client'
+		];
+
+		vendorSupportPromise.then((vendorSupport: boolean) => {
+			let gopkgsPromise = new Promise<string[]>((resolve, reject) => {
+				cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
+					let pkgs = stdout.split('\n').sort().slice(1);
+					if (vendorSupport) {
+						vendorPkgsFullPath.forEach(pkg => {
+							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
+						});
+						vendorPkgsRelativePath.forEach(pkg => {
+							assert.equal(pkgs.indexOf(pkg), -1, `Relative path to vendor package ${pkg} should not be returned by gopkgs command`);
+						});
+					}
+					return resolve(pkgs);
+				});
+			});
+
+			let listPkgPromise: Thenable<string[]> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(document => {
+				return vscode.window.showTextDocument(document).then(editor => {
+					return listPackages().then(pkgs => {
+						if (vendorSupport) {
+							vendorPkgsRelativePath.forEach(pkg => {
+								assert.equal(pkgs.indexOf(pkg) > -1, true, `Relative path for vendor package ${pkg} not found`);
+							});
+							vendorPkgsFullPath.forEach(pkg => {
+								assert.equal(pkgs.indexOf(pkg), -1, `Full path for vendor package ${pkg} should be shown by listPackages method`);
+							});
+						}
+						return Promise.resolve(pkgs);
+					});
+				});
+			});
+
+			return Promise.all<string[]>([gopkgsPromise, listPkgPromise]).then((values: string[][]) => {
+				if (!vendorSupport) {
+					let originalPkgs = values[0];
+					let updatedPkgs = values[1];
+					assert.equal(originalPkgs.length, updatedPkgs.length);
+					for (let index = 0; index < originalPkgs.length; index++) {
+						assert.equal(updatedPkgs[index], originalPkgs[index]);
+					}
+				}
 			});
 		}).then(() => done(), done);
 	});
