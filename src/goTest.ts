@@ -119,7 +119,7 @@ export function testCurrentFile(timeout: string) {
 function goTest(config: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		outputChannel.clear();
-		outputChannel.show(2);
+		outputChannel.show(2, true);
 		let buildFlags: string[] = vscode.workspace.getConfiguration('go')['buildFlags'];
 		let buildTags: string = vscode.workspace.getConfiguration('go')['buildTags'];
 		let args = ['test', '-v', '-timeout', config.timeout, '-tags', buildTags, ...buildFlags];
