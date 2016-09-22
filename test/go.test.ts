@@ -109,8 +109,8 @@ encountered.
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then((editor => {
 				return editor.edit(editbuilder => {
-					editbuilder.insert(new vscode.Position(12,0), 'by\n');
-					editbuilder.insert(new vscode.Position(13,0), 'math.\n');
+					editbuilder.insert(new vscode.Position(12, 0), 'by\n');
+					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
 				}).then(() => {
 					let promises = testCases.map(([position, expected]) =>
 						provider.provideCompletionItems(textDocument, position, null).then(items => {
@@ -121,8 +121,8 @@ encountered.
 						})
 					);
 					return Promise.all(promises);
-				})
-			})).then(()=>{
+				});
+			})).then(() => {
 				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 				return Promise.resolve();
 			});
