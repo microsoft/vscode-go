@@ -11,6 +11,7 @@ import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { check } from '../src/goCheck';
+import { testCurrentFile } from '../src/goTest';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -24,6 +25,7 @@ suite('Go Extension Tests', () => {
 		fs.mkdirsSync(fixturePath);
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'errors.go'), path.join(fixturePath, 'errors.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
 	});
 
 	suiteTeardown(() => {
@@ -161,4 +163,21 @@ encountered.
 			assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
 		}).then(() => done(), done);
 	});
+
+	test('Test Env Variables are passed to Tests', (done) => {
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue'} }
+		});
+
+		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				return testCurrentFile('30s', config).then((result: boolean) => {
+					assert.equal(result, true);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
 });
