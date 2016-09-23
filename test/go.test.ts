@@ -24,7 +24,7 @@ suite('Go Extension Tests', () => {
 		fs.removeSync(repoPath);
 		fs.mkdirsSync(fixturePath);
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'errors.go'), path.join(fixturePath, 'errors.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
 	});
 
@@ -119,7 +119,7 @@ encountered.
 			// { line: 7, severity: 'warning', msg: 'no formatting directive in Printf call' },
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
-		check(path.join(fixturePath, 'errors.go'), config).then(diagnostics => {
+		check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 			let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
 			for (let i in expected) {
 				assert.equal(sortedDiagnostics[i].line, expected[i].line);
@@ -147,7 +147,7 @@ encountered.
 			{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
 			{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
 		];
-		check(path.join(fixturePath, 'errors.go'), config).then(diagnostics => {
+		check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 			let sortedDiagnostics = diagnostics.sort((a, b) => {
 				if ( a.msg < b.msg )
 					return -1;
