@@ -59,6 +59,7 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit {
 		return null;
 	}
 
+	const goConfig = vscode.workspace.getConfiguration('go');
 	let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
 	let multis = imports.filter(x => x.kind === 'multi');
 	if (multis.length > 0) {
@@ -70,10 +71,28 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit {
 		}
 		// Add import at the start of the block so that goimports/goreturns can order them correctly
 		return vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), '\t"' + arg + '"\n');
-	} else if (imports.length > 0) {
-		// There are only single import declarations, add after the last one
+	} else if (imports.length > 0 && goConfig.get<boolean>('blockImportsOnly') === false) {
+		// There are only single import declarations, AND the user doesn't want them collapsed.
+		// Add after the last one.
 		let lastSingleImport = imports[imports.length - 1].end;
 		return vscode.TextEdit.insert(new vscode.Position(lastSingleImport + 1, 0), 'import "' + arg + '"\n');
+	} else if (imports.length > 0 && goConfig.get<boolean>('blockImportsOnly') === true) {
+		// There are only single import declarations, but the user wants them collapsed.
+		// NOTE: this most often happens when the go imports tool is run, adds a single import
+		// then later the user manually imports something via this command.
+		let firstImport = imports[0];
+		let lastImport = imports[imports.length - 1];
+
+		// Construct the import block.
+		let importBlock = 'import (\n';
+		imports.forEach(element => {
+			importBlock += '\t"' + element.package + '"\n';
+		});
+		importBlock += '\t"' + arg + '"\n'; // Add the user's new import
+		importBlock += ')\n';
+
+		return vscode.TextEdit.replace(new vscode.Range(firstImport.start, 0, lastImport.end, 10000), importBlock);
+
 	} else if (pkg && pkg.start >= 0) {
 		// There are no import declarations, but there is a package declaration
 		return vscode.TextEdit.insert(new vscode.Position(pkg.start + 1, 0), '\nimport (\n\t"' + arg + '"\n)\n');

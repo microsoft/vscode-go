@@ -900,6 +900,12 @@
           "default": [],
           "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature",
           "scope": "resource"
+        },
+        "go.blockImportsOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, all imports in a file will always be in the block import ( ... ) style.",
+          "scope": "resource"
         }
       }
     },
