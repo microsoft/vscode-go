@@ -103,7 +103,7 @@ export function parseFilePrelude(text: string): Prelude {
 		}
 		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
 			// Pull the package name
-			let match = line.match(/import "(.+)"/)
+			let match = line.match(/import "(.+)"/);
 			ret.imports.push({ kind: 'single', start: i, end: i, package: match[1] });
 		}
 		if (line.match(/^(\s)*\)/)) {
