@@ -324,7 +324,7 @@
         "go.testEnvVars": {
           "type": "object",
           "default": {},
-          "description": "Environment variables that will passed to the process that runs the tests"
+          "description": "Environment variables that will passed to the process that runs the Go tests"
         }
       }
     }
