@@ -11,6 +11,7 @@ import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
 
+
 const missingToolMsg = 'Missing tool: ';
 
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
