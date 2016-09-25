@@ -11,7 +11,8 @@ import vscode = require('vscode');
 import util = require('util');
 import { getGoRuntimePath } from './goPath';
 import { GoDocumentSymbolProvider } from './goOutline';
-import { outputChannel } from './goStatus';
+
+let outputChannel = vscode.window.createOutputChannel('Go Tests');
 
 /**
  * Input to goTest.
