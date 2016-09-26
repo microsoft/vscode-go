@@ -106,6 +106,8 @@ export function testCurrentFile(timeout: string, goConfig?: vscode.WorkspaceConf
 			dir: path.dirname(editor.document.fileName),
 			functions: testFunctions.map(func => { return func.name; })
 		}, goConfig);
+	}, err => {
+		console.error(err);
 	});
 }
 
