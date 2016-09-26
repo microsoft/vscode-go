@@ -104,7 +104,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								// add additionalTextEdits to do the same in the actual document in the editor
 								// We use additionalTextEdits instead of command so that 'useCodeSnippetsOnFunctionSuggest' feature continues to work
 								newsuggestions.forEach(item => {
-									item.additionalTextEdits = [getTextEditForAddImport(pkgPath)];
+									item.additionalTextEdits = getTextEditForAddImport(pkgPath);
 								});
 								resolve(newsuggestions);
 							});

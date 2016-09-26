@@ -85,7 +85,7 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
 }
 
 export interface Prelude {
-	imports: Array<{ kind: string; start: number; end: number; package: string;}>;
+	imports: Array<{ kind: string; start: number; end: number;}>;
 	pkg: { start: number; end: number; name: string };
 }
 
@@ -99,12 +99,10 @@ export function parseFilePrelude(text: string): Prelude {
 			ret.pkg = { start: i, end: i, name: pkgMatch[3] };
 		}
 		if (line.match(/^(\s)*import(\s)+\(/)) {
-			ret.imports.push({ kind: 'multi', start: i, end: -1, package: 'multi-na' });
+			ret.imports.push({ kind: 'multi', start: i, end: -1 });
 		}
 		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
-			// Pull the package name
-			let match = line.match(/import "(.+)"/);
-			ret.imports.push({ kind: 'single', start: i, end: i, package: match[1] });
+			ret.imports.push({ kind: 'single', start: i, end: i });
 		}
 		if (line.match(/^(\s)*\)/)) {
 			if (ret.imports[ret.imports.length - 1].end === -1) {

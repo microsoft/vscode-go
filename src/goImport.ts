@@ -54,7 +54,7 @@ function askUserForImport(): Thenable<string> {
 	});
 }
 
-export function getTextEditForAddImport(arg: string): vscode.TextEdit {
+export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	// Import name wasn't provided
 	if (arg === undefined) {
 		return null;
@@ -68,49 +68,73 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit {
 		const lastImportSection = multis[multis.length - 1];
 		if (lastImportSection.end === -1) {
 			// For some reason there was an empty import section like `import ()`
-			return vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), `import "${arg}"\n`);
+			return [vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), `import "${arg}"\n`)];
 		}
 		// Add import at the start of the block so that goimports/goreturns can order them correctly
-		return vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), '\t"' + arg + '"\n');
+		return [vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), '\t"' + arg + '"\n')];
 	} else if (imports.length > 0 && goConfig.get<boolean>('blockImportsOnly') === false) {
 		// There are only single import declarations, AND the user doesn't want them collapsed.
 		// Add after the last one.
 		let lastSingleImport = imports[imports.length - 1].end;
-		return vscode.TextEdit.insert(new vscode.Position(lastSingleImport + 1, 0), 'import "' + arg + '"\n');
+		return [vscode.TextEdit.insert(new vscode.Position(lastSingleImport + 1, 0), 'import "' + arg + '"\n')];
 	} else if (imports.length > 0 && goConfig.get<boolean>('blockImportsOnly') === true) {
-		// There are only single import declarations, but the user wants them collapsed.
+		// There are some number of single line imports, which can just be collapsed into a block import.
 		// NOTE: this most often happens when the go imports tool is run, adds a single import
 		// then later the user manually imports something via this command.
+
+		/* The import statement(s) probably look something like this right now:
+
+			import "apackage"
+			// A comment
+			import . "dotinclude"
+			import "apackage2" // A comment explaining the package
+
+			We want to convert this to:
+
+			import (
+				"apackage"
+				// A comment
+				. "dotinclude"
+				import "apackage2" // A comment explaining the package
+			)
+
+			The process to clean this up is to:
+			1. Add `import (\n` before the first single line import
+			2. Replace `import` with `\t` for every single line import
+			3. Insert the new import at the end of the imports
+			4. Add `)` to close the import block
+			5. The user then saves, and goimports will clean everything up
+			*/
 		let firstImport = imports[0];
 		let lastImport = imports[imports.length - 1];
+		const importLength = 'import'.length;
 
-		// Construct the import block.
-		let importBlock = 'import (\n';
+		const edits = [];
+		edits.push(vscode.TextEdit.insert(new vscode.Position(firstImport.start, 0), 'import (\n'));
+
 		imports.forEach(element => {
-			importBlock += '\t"' + element.package + '"\n';
+			edits.push(vscode.TextEdit.replace(new vscode.Range(element.start, 0, element.start, importLength), '\t'));
 		});
-		importBlock += '\t"' + arg + '"\n'; // Add the user's new import
-		importBlock += ')\n';
-
-		return vscode.TextEdit.replace(new vscode.Range(firstImport.start, 0, lastImport.end, 10000), importBlock);
+		edits.push(vscode.TextEdit.insert(new vscode.Position(lastImport.end + 1, 0), '\t"' + arg + '"\n)'));
+		return edits;
 
 	} else if (pkg && pkg.start >= 0) {
 		// There are no import declarations, but there is a package declaration
-		return vscode.TextEdit.insert(new vscode.Position(pkg.start + 1, 0), '\nimport (\n\t"' + arg + '"\n)\n');
+		return [vscode.TextEdit.insert(new vscode.Position(pkg.start + 1, 0), '\nimport (\n\t"' + arg + '"\n)\n')];
 	} else {
 		// There are no imports and no package declaration - give up
-		return null;
+		return [];
 	}
 }
 
 export function addImport(arg: string) {
 	let p = arg ? Promise.resolve(arg) : askUserForImport();
 	p.then(imp => {
-		let edit = getTextEditForAddImport(imp);
-		if (edit) {
-			vscode.window.activeTextEditor.edit(editBuilder => {
-				editBuilder.insert(edit.range.start, edit.newText);
-			});
+		let edits = getTextEditForAddImport(imp);
+		if (edits && edits.length > 0) {
+			const edit = new vscode.WorkspaceEdit();
+			edit.set(vscode.window.activeTextEditor.document.uri, edits);
+			vscode.workspace.applyEdit(edit);
 		}
 	});
 }
