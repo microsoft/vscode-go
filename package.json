@@ -83,17 +83,17 @@
       },
       {
         "command": "go.test.cursor",
-        "title": "Go: Test (cursor)",
+        "title": "Go: Test at Cursor",
         "description": "Runs a unit test at the cursor."
       },
       {
         "command": "go.test.package",
-        "title": "Go: Test (package)",
+        "title": "Go: Test Package",
         "description": "Runs all unit tests in the package of the current file."
       },
       {
         "command": "go.test.file",
-        "title": "Go: Test (file)",
+        "title": "Go: Test File",
         "description": "Runs all unit tests in the current file."
       },
       {
