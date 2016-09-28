@@ -22,9 +22,9 @@ interface TestConfig {
 	 */
 	dir: string;
 	/**
-	 * The timeout for tests (in ParseDuration format.)
+	 * Configuration for the Go extension
 	 */
-	timeout: string;
+	goConfig: vscode.WorkspaceConfiguration;
 	/**
 	 * Specific function names to test.
 	 */
@@ -35,12 +35,12 @@ interface TestConfig {
 * Executes the unit test at the primary cursor using `go test`. Output
 * is sent to the 'Go' channel.
 *
-* @param timeout a ParseDuration formatted timeout string for the tests.
+* @param goConfig Configuration for the Go extension.
 *
 * TODO: go test returns filenames with no path information for failures,
 * so output doesn't produce navigable line references.
 */
-export function testAtCursor(timeout: string) {
+export function testAtCursor(goConfig: vscode.WorkspaceConfiguration) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -61,7 +61,7 @@ export function testAtCursor(timeout: string) {
 			return;
 		}
 		return goTest({
-			timeout: timeout,
+			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			functions: [testFunction.name]
 		});
@@ -73,16 +73,16 @@ export function testAtCursor(timeout: string) {
 /**
  * Runs all tests in the package of the source of the active editor.
  *
- * @param timeout a ParseDuration formatted timeout string for the tests.
+ * @param goConfig Configuration for the Go extension.
  */
-export function testCurrentPackage(timeout: string) {
+export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
 	goTest({
-		timeout: timeout,
+		goConfig: goConfig,
 		dir: path.dirname(editor.document.fileName)
 	}).then(null, err => {
 		console.error(err);
@@ -92,9 +92,9 @@ export function testCurrentPackage(timeout: string) {
 /**
  * Runs all tests in the source of the active editor.
  *
- * @param timeout a ParseDuration formatted timeout string for the tests.
+ * @param goConfig Configuration for the Go extension.
  */
-export function testCurrentFile(timeout: string, goConfig?: vscode.WorkspaceConfiguration): Thenable<boolean> {
+export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -102,37 +102,36 @@ export function testCurrentFile(timeout: string, goConfig?: vscode.WorkspaceConf
 	}
 	return getTestFunctions(editor.document).then(testFunctions => {
 		return goTest({
-			timeout: timeout,
+			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			functions: testFunctions.map(func => { return func.name; })
-		}, goConfig);
-	}, err => {
+		});
+	}).then(null, err => {
 		console.error(err);
-	});
+		return Promise.resolve(false);
+	});;
 }
 
 /**
  * Runs go test and presents the output in the 'Go' channel.
  *
- * @param config the test execution configuration.
+ * @param goConfig Configuration for the Go extension.
  */
-function goTest(config: TestConfig, goConfig?: vscode.WorkspaceConfiguration): Thenable<boolean> {
+function goTest(testconfig: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		outputChannel.clear();
 		outputChannel.show(2);
-		if (!goConfig) {
-			goConfig = vscode.workspace.getConfiguration('go');
-		}
-		let buildFlags: string[] = goConfig['buildFlags'];
-		let buildTags: string = goConfig['buildTags'];
-		let args = ['test', '-v', '-timeout', config.timeout, '-tags', buildTags, ...buildFlags];
-		let testEnvVars = Object.assign({}, goConfig['testEnvVars'], process.env);
+		
+		let buildFlags: string[] = testconfig.goConfig['buildFlags'];
+		let buildTags: string = testconfig.goConfig['buildTags'];
+		let args = ['test', '-v', '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags, ...buildFlags];
+		let testEnvVars = Object.assign({}, process.env, testconfig.goConfig['testEnvVars']);
 
-		if (config.functions) {
+		if (testconfig.functions) {
 			args.push('-run');
-			args.push(util.format('^%s$', config.functions.join('|')));
+			args.push(util.format('^%s$', testconfig.functions.join('|')));
 		}
-		let proc = cp.spawn(getGoRuntimePath(), args, { env: testEnvVars, cwd: config.dir });
+		let proc = cp.spawn(getGoRuntimePath(), args, { env: testEnvVars, cwd: testconfig.dir });
 		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.on('close', code => {
