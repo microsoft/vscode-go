@@ -139,7 +139,7 @@ export function testPrevious() {
 function goTest(testconfig: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		// Remember this config as the last executed test.
-		lastTestConfig = config;
+		lastTestConfig = testconfig;
 		outputChannel.clear();
 		outputChannel.show(2);
 		
