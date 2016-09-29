@@ -326,6 +326,11 @@
           "type": "string",
           "default": "",
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
+        },
+        "go.testEnvVars": {
+          "type": "object",
+          "default": {},
+          "description": "Environment variables that will passed to the process that runs the Go tests"
         }
       }
     }
