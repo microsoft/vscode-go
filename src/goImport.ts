@@ -90,8 +90,10 @@ export function addImport(arg: string) {
 	let p = arg ? Promise.resolve(arg) : askUserForImport();
 	p.then(imp => {
 		let edit = getTextEditForAddImport(imp);
-		vscode.window.activeTextEditor.edit(editBuilder => {
-			editBuilder.insert(edit.range.start, edit.newText);
-		});
+		if (edit) {
+			vscode.window.activeTextEditor.edit(editBuilder => {
+				editBuilder.insert(edit.range.start, edit.newText);
+			});
+		}
 	});
 }
