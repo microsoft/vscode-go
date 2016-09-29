@@ -114,7 +114,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration): Thenab
 	}).then(null, err => {
 		console.error(err);
 		return Promise.resolve(false);
-	});;
+	});
 }
 
 /**
@@ -142,7 +142,7 @@ function goTest(testconfig: TestConfig): Thenable<boolean> {
 		lastTestConfig = testconfig;
 		outputChannel.clear();
 		outputChannel.show(2);
-		
+
 		let buildFlags: string[] = testconfig.goConfig['buildFlags'];
 		let buildTags: string = testconfig.goConfig['buildTags'];
 		let args = ['test', '-v', '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags, ...buildFlags];
