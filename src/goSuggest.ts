@@ -11,7 +11,7 @@ import { dirname, basename } from 'path';
 import { getBinPath } from './goPath';
 import { parameters, parseFilePrelude } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { listPackages } from './goImport';
+import { listPackages, getTextEditForAddImport } from './goImport';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -96,13 +96,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							// Now that we have the package imported in the inputText, run gocode again
 							return this.runGoCode(filename, inputText, offset, inString, position, lineText).then(newsuggestions => {
 								// Since the new suggestions are due to the package that we imported,
-								// add a command to do the same in the actual document in the editor
+								// add additionalTextEdits to do the same in the actual document in the editor
+								// We use additionalTextEdits instead of command so that 'useCodeSnippetsOnFunctionSuggest' feature continues to work
 								newsuggestions.forEach(item => {
-									item.command = {
-										title: 'Import Package',
-										command: 'go.import.add',
-										arguments: [pkgPath]
-									};
+									item.additionalTextEdits = [getTextEditForAddImport(pkgPath)];
 								});
 								resolve(newsuggestions);
 							});
