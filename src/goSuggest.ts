@@ -222,7 +222,8 @@ this.pkgsList = pkgs.map(pkg => {
 			return pkgInfo.name.startsWith(word);
 		}).map((pkgInfo: PackageInfo) => {
 			let item = new vscode.CompletionItem(pkgInfo.name, vscode.CompletionItemKind.Keyword);
-			item.detail = 'Add import';
+			item.detail = pkgInfo.path;
+			item.documentation = 'Imports the package';
 			item.insertText = pkgInfo.name;
 			item.command = {
 				title: 'Import Package',
@@ -236,25 +237,13 @@ this.pkgsList = pkgs.map(pkg => {
 
 	// Given a line ending with dot, return the word preceeding the dot if it is a package name that can be imported
 	private getPackagePathFromLine(line: string): string {
-		let pkgName = null;
-
-		// There could be multiple dots in the line
-		// we are interested in the word preceeding the last one
-		let splits = line.split('.');
-		line = splits[splits.length - 2];
-
-		// There could be multiple words in the line
-		// we are interested in the last one
-		let wordmatches = null;
-		let pattern = /(\w+)/g;
-		while (wordmatches = pattern.exec(line)) {
-			pkgName = wordmatches[1];
-		}
-
-		if (!pkgName) {
+		let pattern = /(\w+)\.$/g;
+		let wordmatches = pattern.exec(line);
+		if (!wordmatches) {
 			return;
 		}
 
+		let [_, pkgName] = wordmatches;
 		// Word is isolated. Now check pkgsList for a match
 		let matchingPackages = this.pkgsList.filter(pkgInfo => {
 			return pkgInfo.name === pkgName;
