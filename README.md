@@ -53,6 +53,7 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.useCodeSnippetsOnFunctionSuggest": false,
 	"go.formatOnSave": true,
 	"go.formatTool": "goreturns",
+	"go.formatFlags": [],
 	"go.goroot": "/usr/local/go",
 	"go.gopath": "/Users/lukeh/go",
 	"go.gocodeAutoBuild": false
@@ -69,7 +70,7 @@ Note that you need to install the package manually: `go get -u github.com/alecth
 and edit your configuration (set the `go.lintTool` value to "gometalinter").
 
 Go meta linter uses a collection of various linters and those linters also need to be installed manually.
-If one of the tool is available, it will be used by default (`golint` for instance is still run by default).
+If one of the tools is available, it will be used by default (`golint` for instance is still run by default).
 
 Some of the very useful linter tools:
 * [errcheck](https://github.com/kisielk/errcheck) checks for unchecked errors in your code.

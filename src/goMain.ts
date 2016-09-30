@@ -24,7 +24,7 @@ import { updateGoPathGoRootFromConfig, setupGoPathAndOfferToInstallTools } from 
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile } from './goTest';
+import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious } from './goTest';
 import { addImport } from './goImport';
 import { installAllTools } from './goInstallTools';
 
@@ -59,17 +59,21 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
-		testAtCursor(goConfig['testTimeout']);
+		testAtCursor(goConfig);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
-		testCurrentPackage(goConfig['testTimeout']);
+		testCurrentPackage(goConfig);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', () => {
 		let goConfig = vscode.workspace.getConfiguration('go');
-		testCurrentFile(goConfig['testTimeout']);
+		testCurrentFile(goConfig);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.previous', () => {
+		testPrevious();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.coverage', () => {

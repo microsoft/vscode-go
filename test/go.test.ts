@@ -11,9 +11,13 @@ import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { check } from '../src/goCheck';
+<<<<<<< HEAD
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
+=======
+import { testCurrentFile } from '../src/goTest';
+>>>>>>> origin/master
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -26,7 +30,8 @@ suite('Go Extension Tests', () => {
 		fs.removeSync(repoPath);
 		fs.mkdirsSync(fixturePath);
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'errors.go'), path.join(fixturePath, 'errors.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
 	});
 
 	suiteTeardown(() => {
@@ -120,7 +125,7 @@ encountered.
 			// { line: 7, severity: 'warning', msg: 'no formatting directive in Printf call' },
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
-		check(path.join(fixturePath, 'errors.go'), config).then(diagnostics => {
+		check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 			let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
 			for (let i in expected) {
 				assert.equal(sortedDiagnostics[i].line, expected[i].line);
@@ -132,8 +137,9 @@ encountered.
 	});
 
 	test('Gometalinter error checking', (done) => {
-		let config = vscode.workspace.getConfiguration('go');
-		config['lintTool'] = 'gometalinter';
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'lintTool': { value: 'gometalinter' }
+		});
 		let expected = [
 			{ line: 7, severity: 'warning', msg: 'Print2 is unused (deadcode)' },
 			{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
@@ -147,7 +153,7 @@ encountered.
 			{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
 			{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
 		];
-		check(path.join(fixturePath, 'errors.go'), config).then(diagnostics => {
+		check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 			let sortedDiagnostics = diagnostics.sort((a, b) => {
 				if ( a.msg < b.msg )
 					return -1;
@@ -245,6 +251,21 @@ encountered.
 				}).then(() => {
 					assert.equal(editor.document.getText(), file2contents);
 					return vscode.commands.executeCommand('workbench.action.files.revert');
+				});
+		}).then(() => done(), done);
+	});
+
+	test('Test Env Variables are passed to Tests', (done) => {
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue'} }
+		});
+
+		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				return testCurrentFile(config).then((result: boolean) => {
+					assert.equal(result, true);
+					return Promise.resolve();
 				});
 			});
 		}).then(() => done(), done);
