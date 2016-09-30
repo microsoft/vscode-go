@@ -11,13 +11,10 @@ import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { check } from '../src/goCheck';
-<<<<<<< HEAD
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
-=======
 import { testCurrentFile } from '../src/goTest';
->>>>>>> origin/master
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -155,9 +152,9 @@ encountered.
 		];
 		check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 			let sortedDiagnostics = diagnostics.sort((a, b) => {
-				if ( a.msg < b.msg )
+				if (a.msg < b.msg)
 					return -1;
-				if ( a.msg > b.msg )
+				if (a.msg > b.msg)
 					return 1;
 				return 0;
 			});
@@ -252,12 +249,13 @@ encountered.
 					assert.equal(editor.document.getText(), file2contents);
 					return vscode.commands.executeCommand('workbench.action.files.revert');
 				});
-		}).then(() => done(), done);
+			}).then(() => done(), done);
+		});
 	});
 
 	test('Test Env Variables are passed to Tests', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue'} }
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
 		});
 
 		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
