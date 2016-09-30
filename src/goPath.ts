@@ -12,41 +12,40 @@ import os = require('os');
 let binPathCache: { [bin: string]: string; } = {};
 let runtimePathCache: string = null;
 
-export function getBinPath(binname: string) {
-	binname = correctBinname(binname);
-	if (binPathCache[binname]) return binPathCache[binname];
-
-	// First search each GOPATH workspace's bin folder
-	if (process.env['GOPATH']) {
-		let workspaces = process.env['GOPATH'].split(path.delimiter);
-		for (let i = 0; i < workspaces.length; i++) {
-			let binpath = path.join(workspaces[i], 'bin', binname);
+export function getBinPathFromEnvVar(toolName: string, envVar: string, appendBinToPath: boolean): string {
+	toolName = correctBinname(toolName);
+	if (process.env[envVar]) {
+		let paths = process.env[envVar].split(path.delimiter);
+		for (let i = 0; i < paths.length; i++) {
+			let binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', toolName);
 			if (fs.existsSync(binpath)) {
-				binPathCache[binname] = binpath;
+				binPathCache[toolName] = binpath;
 				return binpath;
 			}
 		}
+	}
+	return null;
+}
+
+export function getBinPath(binname: string) {
+	if (binPathCache[correctBinname(binname)]) return binPathCache[correctBinname(binname)];
+
+	// First search each GOPATH workspace's bin folder
+	let pathFromGoPath = getBinPathFromEnvVar(binname, 'GOPATH', true);
+	if (pathFromGoPath) {
+		return pathFromGoPath;
 	}
 
 	// Then search PATH parts
-	if (process.env['PATH']) {
-		let pathparts = process.env['PATH'].split(path.delimiter);
-		for (let i = 0; i < pathparts.length; i++) {
-			let binpath = path.join(pathparts[i], binname);
-			if (fs.existsSync(binpath)) {
-				binPathCache[binname] = binpath;
-				return binpath;
-			}
-		}
+	let pathFromPath = getBinPathFromEnvVar(binname, 'PATH', false);
+	if (pathFromPath) {
+		return pathFromPath;
 	}
 
 	// Finally check GOROOT just in case
-	if (process.env['GOROOT']) {
-		let binpath = path.join(process.env['GOROOT'], 'bin', binname);
-		if (fs.existsSync(binpath)) {
-			binPathCache[binname] = binpath;
-			return binpath;
-		}
+	let pathFromGoRoot = getBinPathFromEnvVar(binname, 'GOROOT', true);
+	if (pathFromGoRoot) {
+		return pathFromGoRoot;
 	}
 
 	// Else return the binary name directly (this will likely always fail downstream) 

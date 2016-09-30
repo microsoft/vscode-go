@@ -11,6 +11,9 @@ import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { check } from '../src/goCheck';
+import cp = require('child_process');
+import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
+import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
 
 suite('Go Extension Tests', () => {
@@ -149,9 +152,9 @@ encountered.
 		];
 		check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 			let sortedDiagnostics = diagnostics.sort((a, b) => {
-				if ( a.msg < b.msg )
+				if (a.msg < b.msg)
 					return -1;
-				if ( a.msg > b.msg )
+				if (a.msg > b.msg)
 					return 1;
 				return 0;
 			});
@@ -164,9 +167,95 @@ encountered.
 		}).then(() => done(), done);
 	});
 
+	test('Test diffUtils.getEditsFromUnifiedDiffStr', (done) => {
+		let file1path = path.join(fixtureSourcePath, 'diffTestData', 'file1.go');
+		let file2path = path.join(fixtureSourcePath, 'diffTestData', 'file2.go');
+		let file1uri = vscode.Uri.file(file1path);
+		let file2contents = fs.readFileSync(file2path, 'utf8');
+
+		let diffPromise = new Promise((resolve, reject) => {
+
+			cp.exec(`diff -u ${file1path} ${file2path}`, (err, stdout, stderr) => {
+				let filePatches = getEditsFromUnifiedDiffStr(stdout);
+
+				if (!filePatches && filePatches.length !== 1) {
+					assert.fail(null, null, 'Failed to get patches for the test file');
+					return reject();
+				}
+
+				if (!filePatches[0].fileName) {
+					assert.fail(null, null, 'Failed to parse the file path from the diff output');
+					return reject();
+				}
+
+				if (!filePatches[0].edits) {
+					assert.fail(null, null, 'Failed to parse edits from the diff output');
+					return reject();
+				}
+				resolve(filePatches);
+			});
+		});
+
+		diffPromise.then((filePatches) => {
+			return vscode.workspace.openTextDocument(file1uri).then((textDocument) => {
+				return vscode.window.showTextDocument(textDocument).then(editor => {
+					return editor.edit((editBuilder) => {
+						filePatches[0].edits.forEach(edit => {
+							edit.applyUsingTextEditorEdit(editBuilder);
+						});
+					}).then(() => {
+						assert.equal(editor.document.getText(), file2contents);
+						return vscode.commands.executeCommand('workbench.action.files.revert');
+					});
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Test diffUtils.getEdits', (done) => {
+		let file1path = path.join(fixtureSourcePath, 'diffTestData', 'file1.go');
+		let file2path = path.join(fixtureSourcePath, 'diffTestData', 'file2.go');
+		let file1uri = vscode.Uri.file(file1path);
+		let file1contents = fs.readFileSync(file1path, 'utf8');
+		let file2contents = fs.readFileSync(file2path, 'utf8');
+
+		let fileEdits = getEdits(file1path, file1contents, file2contents);
+
+		if (!fileEdits) {
+			assert.fail(null, null, 'Failed to get patches for the test file');
+			done();
+			return;
+		}
+
+		if (!fileEdits.fileName) {
+			assert.fail(null, null, 'Failed to parse the file path from the diff output');
+			done();
+			return;
+		}
+
+		if (!fileEdits.edits) {
+			assert.fail(null, null, 'Failed to parse edits from the diff output');
+			done();
+			return;
+		}
+
+		vscode.workspace.openTextDocument(file1uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				return editor.edit((editBuilder) => {
+					fileEdits.edits.forEach(edit => {
+						edit.applyUsingTextEditorEdit(editBuilder);
+					});
+				}).then(() => {
+					assert.equal(editor.document.getText(), file2contents);
+					return vscode.commands.executeCommand('workbench.action.files.revert');
+				});
+			}).then(() => done(), done);
+		});
+	});
+
 	test('Test Env Variables are passed to Tests', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue'} }
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
 		});
 
 		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
