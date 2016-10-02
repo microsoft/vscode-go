@@ -14,25 +14,33 @@ import { showGoStatus, hideGoStatus } from './goStatus';
 import { getBinPath } from './goPath';
 import { outputChannel } from './goStatus';
 
-let tools: { [key: string]: string } = {
-	'gocode': 'github.com/nsf/gocode',
-	'goreturns': 'sourcegraph.com/sqs/goreturns',
-	'gopkgs': 'github.com/tpng/gopkgs',
-	'godef': 'github.com/rogpeppe/godef',
-	'golint': 'github.com/golang/lint/golint',
-	'go-outline': 'github.com/lukehoban/go-outline',
-	'go-symbols': 'github.com/newhook/go-symbols',
-	'guru': 'golang.org/x/tools/cmd/guru',
-	'gorename': 'golang.org/x/tools/cmd/gorename',
-	'goimports': 'golang.org/x/tools/cmd/goimports'
-};
+function getTools(): { [key: string]: string }  {
+	let goConfig = vscode.workspace.getConfiguration('go');
+	let tools: { [key: string]: string } = {
+		'gocode': 'github.com/nsf/gocode',
+		'gopkgs': 'github.com/tpng/gopkgs',
+		'godef': 'github.com/rogpeppe/godef',
+		'golint': 'github.com/golang/lint/golint',
+		'go-outline': 'github.com/lukehoban/go-outline',
+		'go-symbols': 'github.com/newhook/go-symbols',
+		'guru': 'golang.org/x/tools/cmd/guru',
+		'gorename': 'golang.org/x/tools/cmd/gorename'
+	};
+
+	if (goConfig['formatTool'] === 'goimports') {
+		tools['goimports'] = 'golang.org/x/tools/cmd/goimports';
+	} else if (goConfig['formatTool'] === 'goreturns') {
+		tools['goreturns'] = 'sourcegraph.com/sqs/goreturns';
+	}
+	return tools;
+}
 
 export function installAllTools() {
-	installTools(Object.keys(tools));
+	installTools(Object.keys(getTools()));
 }
 
 export function promptForMissingTool(tool: string) {
-	vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${tools[tool]}" to install.`, 'Install All', 'Install').then(selected => {
+	vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${getTools()[tool]}" to install.`, 'Install All', 'Install').then(selected => {
 		if (selected === 'Install') {
 			installTools([tool]);
 		} else if (selected === 'Install All') {
@@ -54,7 +62,7 @@ export function installTools(missing: string[]) {
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
+			cp.exec('go get -u -v ' + getTools()[tool], { env: process.env }, (err, stdout, stderr) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + tool + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
@@ -134,7 +142,7 @@ export function setupGoPathAndOfferToInstallTools() {
 }
 
 function getMissingTools(): Promise<string[]> {
-	let keys = Object.keys(tools);
+	let keys = Object.keys(getTools());
 	return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
 		let toolPath = getBinPath(tool);
 		fs.exists(toolPath, exists => {
