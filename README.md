@@ -3,7 +3,9 @@
 [![Join the chat at https://gitter.im/Microsoft/vscode-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/vscode-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/Microsoft/vscode-go.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-go)
 
 
-**Important Note: If you have recently upgraded to Go 1.7, you may need to run `gocode close` in your terminal to ensure Go completion lists continue to work correctly.  See https://github.com/Microsoft/vscode-go/issues/441.**
+**Important Notes**
+- This extension requires Go 1.6 or later.
+- If you have recently upgraded to Go 1.7, you may need to run `gocode close` in your terminal to ensure Go completion lists continue to work correctly.  See https://github.com/Microsoft/vscode-go/issues/441.
 
 This extension adds rich language support for the Go language to VS Code, including:
 
