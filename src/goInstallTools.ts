@@ -48,7 +48,7 @@ function getTools(): { [key: string]: string }  {
 }
 
 export function installAllTools() {
-	getGoVersion().then(() => installTools(Object.keys(getTools())));
+	getGoVersion().then(() => installTools());
 }
 
 export function promptForMissingTool(tool: string) {
@@ -71,7 +71,16 @@ export function promptForMissingTool(tool: string) {
 
 }
 
-function installTools(missing: string[]) {
+/**
+ * Installs given array of missing tools. If no input is given, the all tools are installed
+ * 
+ * @param string[] array of tool names to be installed
+ */
+function installTools(missing?: string[]) {
+	let tools = getTools();
+	if (!missing) {
+		missing = Object.keys(tools);
+	}
 	outputChannel.show();
 	outputChannel.clear();
 	outputChannel.appendLine('Installing ' + missing.length + ' tools');
@@ -83,7 +92,7 @@ function installTools(missing: string[]) {
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			cp.exec('go get -u -v ' + getTools()[tool], { env: process.env }, (err, stdout, stderr) => {
+			cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + tool + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
