@@ -14,43 +14,64 @@ import { showGoStatus, hideGoStatus } from './goStatus';
 import { getBinPath } from './goPath';
 import { outputChannel } from './goStatus';
 
+interface SemVersion {
+	major: number;
+	minor: number;
+}
+
+let goVersion: SemVersion = null;
+
 function getTools(): { [key: string]: string }  {
 	let goConfig = vscode.workspace.getConfiguration('go');
 	let tools: { [key: string]: string } = {
 		'gocode': 'github.com/nsf/gocode',
 		'gopkgs': 'github.com/tpng/gopkgs',
 		'godef': 'github.com/rogpeppe/godef',
-		'golint': 'github.com/golang/lint/golint',
 		'go-outline': 'github.com/lukehoban/go-outline',
 		'go-symbols': 'github.com/newhook/go-symbols',
 		'guru': 'golang.org/x/tools/cmd/guru',
 		'gorename': 'golang.org/x/tools/cmd/gorename'
 	};
 
+	// Install the formattool that was chosen by the user
 	if (goConfig['formatTool'] === 'goimports') {
 		tools['goimports'] = 'golang.org/x/tools/cmd/goimports';
 	} else if (goConfig['formatTool'] === 'goreturns') {
 		tools['goreturns'] = 'sourcegraph.com/sqs/goreturns';
 	}
+
+	// golint is no longer supported in go1.5
+	if (goVersion && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
+		tools['golint'] = 'github.com/golang/lint/golint';
+	}
 	return tools;
 }
 
 export function installAllTools() {
-	installTools(Object.keys(getTools()));
+	getGoVersion().then(() => installTools(Object.keys(getTools())));
 }
 
 export function promptForMissingTool(tool: string) {
-	vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${getTools()[tool]}" to install.`, 'Install All', 'Install').then(selected => {
-		if (selected === 'Install') {
-			installTools([tool]);
-		} else if (selected === 'Install All') {
-			getMissingTools().then(installTools);
-			hideGoStatus();
+
+	getGoVersion().then(() => {
+		if (tool === 'golint' && goVersion.major === 1 && goVersion.minor < 6) {
+			vscode.window.showInformationMessage('golint no longer supports go1.5, update your settings to use gometalinter as go.lintTool and install gometalinter');
+			return;
 		}
+
+		vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${getTools()[tool]}" to install.`, 'Install All', 'Install').then(selected => {
+			if (selected === 'Install') {
+				installTools([tool]);
+			} else if (selected === 'Install All') {
+				getMissingTools().then(installTools);
+				hideGoStatus();
+			}
+		});
 	});
+
 }
 
-export function installTools(missing: string[]) {
+function installTools(missing: string[]) {
 	outputChannel.show();
 	outputChannel.clear();
 	outputChannel.appendLine('Installing ' + missing.length + ' tools');
@@ -142,14 +163,34 @@ export function setupGoPathAndOfferToInstallTools() {
 }
 
 function getMissingTools(): Promise<string[]> {
-	let keys = Object.keys(getTools());
-	return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
-		let toolPath = getBinPath(tool);
-		fs.exists(toolPath, exists => {
-			resolve(exists ? null : tool);
+	return getGoVersion().then(() => {
+		let keys = Object.keys(getTools());
+		return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
+			let toolPath = getBinPath(tool);
+			fs.exists(toolPath, exists => {
+				resolve(exists ? null : tool);
+			});
+		}))).then(res => {
+			let missing = res.filter(x => x != null);
+			return missing;
 		});
-	}))).then(res => {
-		let missing = res.filter(x => x != null);
-		return missing;
+	});
+}
+
+export function getGoVersion(): Promise<SemVersion> {
+	if (goVersion) {
+		return Promise.resolve(goVersion);
+	}
+	return new Promise<SemVersion>((resolve, reject) => {
+		cp.exec('go version', (err, stdout, stderr) => {
+			let matches = /go version go(\d).(\d).*/.exec(stdout);
+			if (matches) {
+				goVersion = {
+					major: parseInt(matches[1]),
+					minor: parseInt(matches[2])
+				};
+			}
+			return resolve(goVersion);
+		});
 	});
 }
