@@ -11,7 +11,7 @@ import path = require('path');
 import os = require('os');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
-import { getBinPath } from './goPath';
+import { getBinPath, getGoRuntimePath } from './goPath';
 import { outputChannel } from './goStatus';
 
 interface SemVersion {
@@ -182,7 +182,7 @@ export function getGoVersion(): Promise<SemVersion> {
 		return Promise.resolve(goVersion);
 	}
 	return new Promise<SemVersion>((resolve, reject) => {
-		cp.exec('go version', (err, stdout, stderr) => {
+		cp.execFile(getGoRuntimePath(), ['version'], {}, (err, stdout, stderr) => {
 			let matches = /go version go(\d).(\d).*/.exec(stdout);
 			if (matches) {
 				goVersion = {
