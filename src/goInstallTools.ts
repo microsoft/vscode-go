@@ -55,9 +55,15 @@ export function installAllTools() {
 export function promptForMissingTool(tool: string) {
 
 	getGoVersion().then(() => {
-		if (tool === 'golint' && goVersion.major === 1 && goVersion.minor < 6) {
-			vscode.window.showInformationMessage('golint no longer supports go1.5, update your settings to use gometalinter as go.lintTool and install gometalinter');
-			return;
+		if (goVersion.major === 1 && goVersion.minor < 6) {
+			if (tool === 'golint') {
+				vscode.window.showInformationMessage('golint no longer supports go1.5, update your settings to use gometalinter as go.lintTool and install gometalinter');
+				return;
+			}
+			if (tool === 'gotests') {
+				vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.6 or higher.');
+				return;
+			}
 		}
 
 		vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${getTools()[tool]}" to install.`, 'Install All', 'Install').then(selected => {
@@ -74,7 +80,7 @@ export function promptForMissingTool(tool: string) {
 
 /**
  * Installs given array of missing tools. If no input is given, the all tools are installed
- * 
+ *
  * @param string[] array of tool names to be installed
  */
 function installTools(missing?: string[]) {
