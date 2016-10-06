@@ -19,6 +19,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Build-on-save (using `go build` and `go test`)
 - Lint-on-save (using `golint` or `gometalinter`)
 - Format (using `goreturns` or `goimports` or `gofmt`)
+- Generate unit tests squeleton (using `gotests`)
 - Add Imports (using `gopkgs`)
 - [_partially implemented_] Debugging (using `delve`)
 
@@ -98,6 +99,9 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Run test at cursor` to run a test at the current cursor position in the active document
 * `Go: Run tests in current package` to run all tests in the package containing the active document
 * `Go: Run tests in current file` to run all tests in the current active document
+* `Go: Generates unit tests (package)` Generates unit tests for the current package
+* `Go: Generates unit tests (file)` Generates unit tests for the current file
+* `Go: Generates unit tests (function)` Generates unit tests for the selected function in the current file
 
 ### _Optional_: Debugging
 
@@ -200,6 +204,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - gopkgs: `go get -u -v github.com/tpng/gopkgs`
 - go-symbols: `go get -u -v github.com/newhook/go-symbols`
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
+- gotests: `go get -u -v github.com/cweill/gotests/...`
 
 To install them just paste and run:
 ```bash
@@ -212,6 +217,7 @@ go get -u -v golang.org/x/tools/cmd/gorename
 go get -u -v github.com/tpng/gopkgs
 go get -u -v github.com/newhook/go-symbols
 go get -u -v golang.org/x/tools/cmd/guru
+go get -u -v github.com/cweill/gotests/...
 ```
 
 And for debugging:

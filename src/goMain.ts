@@ -25,6 +25,7 @@ import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious } from './goTest';
+import { generateTestCurrentPackage, generateTestCurrentFile, generateTestCurrentFunction } from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools } from './goInstallTools';
 
@@ -90,6 +91,18 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
 		updateGoPathGoRootFromConfig();
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.package', () => {
+		generateTestCurrentPackage();
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.file', () => {
+		generateTestCurrentFile();
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.function', () => {
+		generateTestCurrentFunction();
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {

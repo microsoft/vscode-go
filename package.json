@@ -108,6 +108,21 @@
         "description": "Displays test coverage in the current package."
       },
       {
+        "command": "go.test.generate.package",
+        "title": "Go: Generate unit tests for current package",
+        "description": "Generates unit tests for the current package"
+      },
+      {
+        "command": "go.test.generate.file",
+        "title": "Go: Generate unit tests for current file",
+        "description": "Generates unit tests for the current file"
+      },
+       {
+        "command": "go.test.generate.function",
+        "title": "Go: Generate unit tests for current function",
+        "description": "Generates unit tests for the selected function in the current file"
+      },
+      {
         "command": "go.import.add",
         "title": "Go: Add Import",
         "description": "Add an import declaration"
