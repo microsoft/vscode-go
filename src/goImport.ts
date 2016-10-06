@@ -10,9 +10,11 @@ import cp = require('child_process');
 import { getBinPath } from './goPath';
 import { parseFilePrelude } from './util';
 import { promptForMissingTool } from './goInstallTools';
+import { documentSymbols } from './goOutline';
 
-export function listPackages(): Thenable<string[]> {
-	return new Promise<string[]>((resolve, reject) => {
+export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
+	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document.fileName) : Promise.resolve([]);
+	let pkgsPromise = new Promise<string[]>((resolve, reject) => {
 		cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
 				promptForMissingTool('gopkgs');
@@ -23,10 +25,38 @@ export function listPackages(): Thenable<string[]> {
 			return resolve(sortedlines);
 		});
 	});
+
+	return Promise.all<string[]>([importsPromise, pkgsPromise]).then(values => {
+		let imports = values[0];
+		let pkgs = values[1];
+		if (imports.length === 0) {
+			return pkgs;
+		}
+		return pkgs.filter(element => {
+			return imports.indexOf(element) === -1;
+		});
+	});
+}
+
+/**
+ * Returns the imported packages in the given file
+ *
+ * @param fileName File system path of the file whose imports need to be returned
+ * @returns Array of imported package paths wrapped in a promise
+ */
+export function getImports(fileName: string): Promise<string[]> {
+	return documentSymbols(fileName).then(symbols => {
+		if (!symbols || !symbols[0] || !symbols[0].children) {
+			return [];
+		}
+		// imports will be of the form { type: 'import', label: '"math"'}
+		let imports = symbols[0].children.filter(x => x.type === 'import').map(x => x.label.substr(1, x.label.length - 2));
+		return imports;
+	});
 }
 
 function askUserForImport(): Thenable<string> {
-	return listPackages().then(packages => {
+	return listPackages(true).then(packages => {
 		return vscode.window.showQuickPick(packages);
 	});
 }

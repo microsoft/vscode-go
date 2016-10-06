@@ -16,6 +16,8 @@ import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
 import { getGoVersion } from '../src/goInstallTools';
+import { documentSymbols } from '../src/goOutline';
+import { listPackages } from '../src/goImport';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -278,4 +280,37 @@ encountered.
 		}).then(() => done(), done);
 	});
 
+	test('Test Outline', (done) => {
+		let filePath = path.join(fixturePath, 'test.go');
+		documentSymbols(filePath).then(outlines => {
+			let packageOutline = outlines[0];
+			let symbols = packageOutline.children;
+			let imports = symbols.filter(x => x.type === 'import');
+			let functions = symbols.filter(x => x.type === 'function');
+
+			assert.equal(packageOutline.type, 'package');
+			assert.equal(packageOutline.label, 'main');
+			assert.equal(imports[0].label, '"fmt"');
+			assert.equal(functions[0].label, 'print');
+			assert.equal(functions[1].label, 'main');
+			done();
+		}, done);
+	});
+
+	test('Test listPackages', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				let includeImportedPkgs = listPackages(false);
+				let excludeImportedPkgs = listPackages(true);
+				includeImportedPkgs.then(pkgs => {
+					assert.equal(pkgs.indexOf('fmt') > -1, true);
+				});
+				excludeImportedPkgs.then(pkgs => {
+					assert.equal(pkgs.indexOf('fmt') > -1, false);
+				});
+				return Promise.all([includeImportedPkgs, excludeImportedPkgs]);
+			});
+		}).then(() => done(), done);
+	});
 });
