@@ -15,6 +15,7 @@ import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
+import { getGoVersion } from '../src/goInstallTools';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -122,15 +123,23 @@ encountered.
 			// { line: 7, severity: 'warning', msg: 'no formatting directive in Printf call' },
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
-		check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
-			let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
-			for (let i in expected) {
-				assert.equal(sortedDiagnostics[i].line, expected[i].line);
-				assert.equal(sortedDiagnostics[i].severity, expected[i].severity);
-				assert.equal(sortedDiagnostics[i].msg, expected[i].msg);
+		getGoVersion().then(version => {
+			if (version.major === 1 && version.minor === 5) {
+				// golint is not supported in Go 1.5, so skip the test
+				return Promise.resolve();
 			}
-			assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
+				let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
+				for (let i in expected) {
+					assert.equal(sortedDiagnostics[i].line, expected[i].line);
+					assert.equal(sortedDiagnostics[i].severity, expected[i].severity);
+					assert.equal(sortedDiagnostics[i].msg, expected[i].msg);
+				}
+				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+			});
+
 		}).then(() => done(), done);
+
 	});
 
 	test('Gometalinter error checking', (done) => {
