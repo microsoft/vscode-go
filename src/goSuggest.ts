@@ -46,11 +46,16 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private pkgsList: PackageInfo[] = [];
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
+		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go'));
+	}
+
+	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return this.ensureGoCodeConfigured().then(() => {
 			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 				let filename = document.fileName;
 				let lineText = document.lineAt(position.line).text;
 				let lineTillCurrentPosition = lineText.substr(0, position.character);
+				let autocompleteUnimportedPackages = config['autocomplteUnimportedPackages'] === true;
 
 				if (lineText.match(/^\s*\/\//)) {
 					return resolve([]);
@@ -77,6 +82,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let inputText = document.getText();
 
 				return this.runGoCode(filename, inputText, offset, inString, position, lineText).then(suggestions => {
+					if (!autocompleteUnimportedPackages) {
+						return resolve(suggestions);
+					}
+
 					// Add importable packages matching currentword to suggestions
 					suggestions = suggestions.concat(this.getMatchingPackages(currentWord));
 
@@ -184,15 +193,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
-		let pkgPromise = listPackages().then((pkgs: string[]) => {
-this.pkgsList = pkgs.map(pkg => {
-				let index = pkg.lastIndexOf('/');
-				return {
-					name: index === -1 ? pkg : pkg.substr(index + 1),
-					path: pkg
-				};
+		let pkgPromise = listPackages(true).then((pkgs: string[]) => {
+				this.pkgsList = pkgs.map(pkg => {
+					let index = pkg.lastIndexOf('/');
+					return {
+						name: index === -1 ? pkg : pkg.substr(index + 1),
+						path: pkg
+					};
+				});
 			});
-		});
 		let configPromise = new Promise<void>((resolve, reject) => {
 			// TODO: Since the gocode daemon is shared amongst clients, shouldn't settings be
 			// adjusted per-invocation to avoid conflicts from other gocode-using programs?

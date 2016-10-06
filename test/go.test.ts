@@ -99,6 +99,9 @@ encountered.
 	});
 
 	test('Test Completion on unimported packages', (done) => {
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'autocomplteUnimportedPackages': { value: true }
+		});
 		let provider = new GoCompletionItemProvider();
 		let testCases: [vscode.Position, string[]][] = [
 			[new vscode.Position(12, 2), ['bytes']],
@@ -113,7 +116,7 @@ encountered.
 					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
 				}).then(() => {
 					let promises = testCases.map(([position, expected]) =>
-						provider.provideCompletionItems(textDocument, position, null).then(items => {
+						provider.provideCompletionItemsInternal(textDocument, position, null, config).then(items => {
 							let labels = items.map(x => x.label);
 							for (let entry of expected) {
 								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in competion list: ${entry} Actual: ${labels}`);
