@@ -61,36 +61,39 @@ function askUserForImport(): Thenable<string> {
 	});
 }
 
+export function getTextEditForAddImport(arg: string): vscode.TextEdit {
+	// Import name wasn't provided
+	if (arg === undefined) {
+		return null;
+	}
+
+	let {imports, pkg} = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
+	let multis = imports.filter(x => x.kind === 'multi');
+	if (multis.length > 0) {
+		// There is a multiple import declaration, add to the last one
+		let closeParenLine = multis[multis.length - 1].end;
+		return vscode.TextEdit.insert(new vscode.Position(closeParenLine, 0), '\t"' + arg + '"\n');
+	} else if (imports.length > 0) {
+		// There are only single import declarations, add after the last one
+		let lastSingleImport = imports[imports.length - 1].end;
+		return vscode.TextEdit.insert(new vscode.Position(lastSingleImport + 1, 0), 'import "' + arg + '"\n');
+	} else if (pkg && pkg.start >= 0) {
+		// There are no import declarations, but there is a package declaration
+		return vscode.TextEdit.insert(new vscode.Position(pkg.start + 1, 0), '\nimport (\n\t"' + arg + '"\n)\n');
+	} else {
+		// There are no imports and no package declaration - give up
+		return null;
+	}
+}
+
 export function addImport(arg: string) {
 	let p = arg ? Promise.resolve(arg) : askUserForImport();
 	p.then(imp => {
-		// Import name wasn't provided
-		if (imp === undefined) {
-			return null;
-		}
-
-		let {imports, pkg} = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
-		let multis = imports.filter(x => x.kind === 'multi');
-		if (multis.length > 0) {
-			// There is a multiple import declaration, add to the last one
-			let closeParenLine = multis[multis.length - 1].end;
-			return vscode.window.activeTextEditor.edit(editBuilder => {
-				editBuilder.insert(new vscode.Position(closeParenLine, 0), '\t"' + imp + '"\n');
+		let edit = getTextEditForAddImport(imp);
+		if (edit) {
+			vscode.window.activeTextEditor.edit(editBuilder => {
+				editBuilder.insert(edit.range.start, edit.newText);
 			});
-		} else if (imports.length > 0) {
-			// There are only single import declarations, add after the last one
-			let lastSingleImport = imports[imports.length - 1].end;
-			return vscode.window.activeTextEditor.edit(editBuilder => {
-				editBuilder.insert(new vscode.Position(lastSingleImport + 1, 0), 'import "' + imp + '"\n');
-			});
-		} else if (pkg && pkg.start >= 0) {
-			// There are no import declarations, but there is a package declaration
-			return vscode.window.activeTextEditor.edit(editBuilder => {
-				editBuilder.insert(new vscode.Position(pkg.start + 1, 0), '\nimport (\n\t"' + imp + '"\n)\n');
-			});
-		} else {
-			// There are no imports and no package declaration - give up
-			return null;
 		}
 	});
 }

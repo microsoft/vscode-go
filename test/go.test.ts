@@ -99,6 +99,43 @@ encountered.
 		}).then(() => done(), done);
 	});
 
+	test('Test Completion on unimported packages', (done) => {
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'autocomplteUnimportedPackages': { value: true }
+		});
+		let provider = new GoCompletionItemProvider();
+		let testCases: [vscode.Position, string[]][] = [
+			[new vscode.Position(12, 2), ['bytes']],
+			[new vscode.Position(13, 5), ['Abs', 'Acos', 'Asin']]
+		];
+		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then((editor => {
+				return editor.edit(editbuilder => {
+					editbuilder.insert(new vscode.Position(12, 0), 'by\n');
+					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
+				}).then(() => {
+					let promises = testCases.map(([position, expected]) =>
+						provider.provideCompletionItemsInternal(textDocument, position, null, config).then(items => {
+							let labels = items.map(x => x.label);
+							for (let entry of expected) {
+								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in competion list: ${entry} Actual: ${labels}`);
+							}
+						})
+					);
+					return Promise.all(promises);
+				});
+			})).then(() => {
+				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				return Promise.resolve();
+			});
+
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+	});
+
 	test('Test Signature Help', (done) => {
 		let provider = new GoSignatureHelpProvider();
 		let testCases: [vscode.Position, string][] = [

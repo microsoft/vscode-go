@@ -46,7 +46,7 @@
     "vscode": "^0.11.17"
   },
   "engines": {
-    "vscode": "0.10.x"
+    "vscode": "^1.5.0"
   },
   "activationEvents": [
     "onLanguage:go",
@@ -346,6 +346,11 @@
           "type": "object",
           "default": {},
           "description": "Environment variables that will passed to the process that runs the Go tests"
+        },
+        "go.autocomplteUnimportedPackages": {
+          "type": "boolean",
+          "default": false,
+          "description": "Autocomplete members from unimported packages."
         }
       }
     }
