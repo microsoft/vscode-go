@@ -5,6 +5,8 @@
 
 **Important Note: If you have recently upgraded to Go 1.7, you may need to run `gocode close` in your terminal to ensure Go completion lists continue to work correctly.  See https://github.com/Microsoft/vscode-go/issues/441.**
 
+Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Notes) to know what has changed over the last few versions of this extension
+
 This extension adds rich language support for the Go language to VS Code, including:
 
 - Completion Lists (using `gocode`)
