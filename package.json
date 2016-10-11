@@ -347,7 +347,7 @@
           "default": {},
           "description": "Environment variables that will passed to the process that runs the Go tests"
         },
-        "go.autocomplteUnimportedPackages": {
+        "go.autocompleteUnimportedPackages": {
           "type": "boolean",
           "default": false,
           "description": "Autocomplete members from unimported packages."

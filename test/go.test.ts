@@ -101,7 +101,7 @@ encountered.
 
 	test('Test Completion on unimported packages', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'autocomplteUnimportedPackages': { value: true }
+			'autocompleteUnimportedPackages': { value: true }
 		});
 		let provider = new GoCompletionItemProvider();
 		let testCases: [vscode.Position, string[]][] = [
