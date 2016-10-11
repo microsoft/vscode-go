@@ -18,7 +18,8 @@
     * Do not allow to import already imported packages via the `Go: Add Import` command. [PR #508](https://github.com/Microsoft/vscode-go/pull/508)
     * Suggest `gometalinter` to Go 1.5 users since `golint` dropped support for Go 1.5 [PR #509](https://github.com/Microsoft/vscode-go/pull/509)    
     * Fix broken installation for `goimports`. [PR #470](https://github.com/Microsoft/vscode-go/pull/470) and [PR #509](https://github.com/Microsoft/vscode-go/pull/509)        
-
+* [Arnaud Barisain-Monrose (@abarisain)](https://github.com/abarisain)
+    * Fix broken installation for `goreturns` in Windows. [PR #463](https://github.com/Microsoft/vscode-go/pull/463)
 
 ## 0.6.43 - August 2016
 * [Matt Aimonetti (@mattetti)](https://github.com/mattetti)
