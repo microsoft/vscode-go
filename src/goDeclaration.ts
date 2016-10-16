@@ -27,29 +27,29 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		let wordAtPosition = document.getWordRangeAtPosition(position);
 		let offset = byteOffsetAt(document, position);
 
-		let godef = getBinPath('godef');
+		let guru = getBinPath('guru');
 
-		// Spawn `godef` process
-		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {}, (err, stdout, stderr) => {
+		// Spawn `guru` process
+		let p = cp.execFile(guru, ['definition', document.fileName + ':#' + offset.toString()], {}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('godef');
+					promptForMissingTool('guru');
 				}
 				if (err) return resolve(null);
 				let result = stdout.toString();
 				let lines = result.split('\n');
-				let match = /(.*):(\d+):(\d+)/.exec(lines[0]);
+				let match = /(.*):(\d+):(\d+): defined here as (.*)$/.exec(lines[0]);
 				if (!match) {
 					// TODO: Gotodef on pkg name:
 					// /usr/local/go/src/html/template\n
 					return resolve(null);
 				}
-				let [_, file, line, col] = match;
+				let [_, file, line, col, sig] = match;
 				let definitionInformation: GoDefinitionInformtation = {
 					file: file,
 					line: +line - 1,
 					col: + col - 1,
-					lines,
+					lines: [sig],
 					doc: undefined
 				};
 				if (includeDocs) {
