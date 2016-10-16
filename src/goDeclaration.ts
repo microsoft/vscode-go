@@ -53,7 +53,9 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					doc: undefined
 				};
 				if (includeDocs) {
-					addDocToDefinition(definitionInformation);
+					let source = fs.readFileSync(definitionInformation.file, 'utf8');
+					let lines = source.split('\n');
+					addDocToDefinition(definitionInformation, lines);
 				}
 				return resolve(definitionInformation);
 			} catch (e) {
@@ -64,9 +66,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	});
 }
 
-function addDocToDefinition(defInfo: GoDefinitionInformtation) {
-	let source = fs.readFileSync(defInfo.file, 'utf8');
-	let lines = source.split('\n');
+function addDocToDefinition(defInfo: GoDefinitionInformtation, lines: string[]) {
 	let doc = '';
 	// gather comments above the definition
 	for (let i = defInfo.line - 1; i >= 0; i--) {
