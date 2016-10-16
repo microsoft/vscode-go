@@ -7,6 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
+import fs = require('fs');
 import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
@@ -44,9 +45,6 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					return resolve(null);
 				}
 				let [_, file, line, col] = match;
-				let signature = lines[1];
-				let godoc = getBinPath('godoc');
-				let pkgPath = path.dirname(file);
 				let definitionInformation: GoDefinitionInformtation = {
 					file: file,
 					line: +line - 1,
@@ -54,37 +52,43 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					lines,
 					doc: undefined
 				};
-				if (!includeDocs) {
-					return resolve(definitionInformation);
+				if (includeDocs) {
+					addDocToDefinition(definitionInformation);
 				}
-				cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
-					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "godoc" command is not available.');
-					}
-					let godocLines = stdout.toString().split('\n');
-					let doc = '';
-					let sigName = signature.substring(0, signature.indexOf(' '));
-					let sigParams = signature.substring(signature.indexOf(' func') + 5);
-					let searchSignature = 'func ' + sigName + sigParams;
-					for (let i = 0; i < godocLines.length; i++) {
-						if (godocLines[i] === searchSignature) {
-							while (godocLines[++i].startsWith('    ')) {
-								doc += godocLines[i].substring(4) + '\n';
-							}
-							break;
-						}
-					}
-					if (doc !== '') {
-						definitionInformation.doc = doc;
-					}
-					return resolve(definitionInformation);
-				});
+				return resolve(definitionInformation);
 			} catch (e) {
 				reject(e);
 			}
 		});
 		p.stdin.end(document.getText());
 	});
+}
+
+function addDocToDefinition(defInfo: GoDefinitionInformtation) {
+	let source = fs.readFileSync(defInfo.file, 'utf8');
+	let lines = source.split('\n');
+	let doc = '';
+	// gather comments above the definition
+	for (let i = defInfo.line - 1; i >= 0; i--) {
+		let line = lines[i];
+		if (line.substr(0, 2) != '//') {
+			break;
+		}
+		doc = line + '\n' + doc
+	}
+	// otherwise look for documentation on the same line
+	if (doc == '') {
+		let line = lines[defInfo.line];
+		let docPos = line.indexOf('//', 1);
+		if (docPos > 1) {
+			doc = line.substr(docPos);
+		}
+	}
+	// trim trailing \n
+	doc = doc.trim();
+	// trim leading '// ' or '//' per line
+	doc = doc.replace(/^\/\//gm, '');
+	defInfo.doc = doc
 }
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
