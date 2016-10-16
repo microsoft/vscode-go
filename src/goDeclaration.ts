@@ -73,16 +73,17 @@ function addLinesToDefinition(defInfo: GoDefinitionInformtation, lines: string[]
 	if (line.startsWith('func') || !line.match('\{\s*$')) {
 		line = line.replace(/\s*\{\s*$/, '');
 		defInfo.lines = [line];
-		return
-	}
-	// Handle definitions with multiple lines
-	defInfo.lines = [];
-	for (let i = defInfo.line; i < lines.length; i++) {
-		defInfo.lines.push(lines[i]);
-		if (lines[i].trim() == '}') {
-			break;
+	} else {
+		// Handle definitions with multiple lines
+		defInfo.lines = [];
+		for (let i = defInfo.line; i < lines.length; i++) {
+			defInfo.lines.push(lines[i]);
+			if (lines[i].trim() == '}') {
+				break;
+			}
 		}
 	}
+	defInfo.lines = unindent(defInfo.lines);
 }
 
 function addDocToDefinition(defInfo: GoDefinitionInformtation, lines: string[]) {
@@ -108,6 +109,24 @@ function addDocToDefinition(defInfo: GoDefinitionInformtation, lines: string[]) 
 	// trim leading '// ' or '//' per line
 	doc = doc.replace(/^\/\//gm, '');
 	defInfo.doc = doc
+}
+
+// Uniformly trims leadings tabs.
+function unindent(lines: string[]): string[] {
+	// find the minimum amount of leading tabs
+	let minWhitespace = 999;
+	for (let i = 0; i < lines.length; i++) {
+		let l = /^\t*/.exec(lines[i])[0].length;
+		if (l < minWhitespace) {
+			minWhitespace = l;
+		}
+	}
+	// trim the minimum amount from all lines
+	let out = [];
+	for (let i = 0; i < lines.length; i++) {
+		out.push(lines[i].substr(minWhitespace));
+	}
+	return out;
 }
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
