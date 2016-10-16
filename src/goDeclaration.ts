@@ -52,9 +52,10 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					lines: [sig],
 					doc: undefined
 				};
+				let source = fs.readFileSync(definitionInformation.file, 'utf8');
+				lines = source.split('\n');
+				addLinesToDefinition(definitionInformation, lines);
 				if (includeDocs) {
-					let source = fs.readFileSync(definitionInformation.file, 'utf8');
-					let lines = source.split('\n');
 					addDocToDefinition(definitionInformation, lines);
 				}
 				return resolve(definitionInformation);
@@ -64,6 +65,24 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		});
 		p.stdin.end(document.getText());
 	});
+}
+
+function addLinesToDefinition(defInfo: GoDefinitionInformtation, lines: string[]) {
+	let line = lines[defInfo.line];
+	// Keep only the signature of funcs and single line definitions.
+	if (line.startsWith('func') || !line.match('\{\s*$')) {
+		line = line.replace(/\s*\{\s*$/, '');
+		defInfo.lines = [line];
+		return
+	}
+	// Handle definitions with multiple lines
+	defInfo.lines = [];
+	for (let i = defInfo.line; i < lines.length; i++) {
+		defInfo.lines.push(lines[i]);
+		if (lines[i].trim() == '}') {
+			break;
+		}
+	}
 }
 
 function addDocToDefinition(defInfo: GoDefinitionInformtation, lines: string[]) {
