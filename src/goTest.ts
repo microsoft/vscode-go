@@ -147,12 +147,18 @@ function goTest(testconfig: TestConfig): Thenable<boolean> {
 		let buildTags: string = testconfig.goConfig['buildTags'];
 		let args = ['test', '-v', '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags, ...buildFlags];
 		let testEnvVars = Object.assign({}, process.env, testconfig.goConfig['testEnvVars']);
+		let goRuntimePath = getGoRuntimePath();
+
+		if (!goRuntimePath) {
+			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+			return Promise.resolve();
+		}
 
 		if (testconfig.functions) {
 			args.push('-run');
 			args.push(util.format('^%s$', testconfig.functions.join('|')));
 		}
-		let proc = cp.spawn(getGoRuntimePath(), args, { env: testEnvVars, cwd: testconfig.dir });
+		let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.on('close', code => {

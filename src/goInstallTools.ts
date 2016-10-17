@@ -194,11 +194,18 @@ function getMissingTools(): Promise<string[]> {
 }
 
 export function getGoVersion(): Promise<SemVersion> {
+	let goRuntimePath = getGoRuntimePath();
+
+	if (!goRuntimePath) {
+		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		return Promise.resolve(null);
+	}
+
 	if (goVersion) {
 		return Promise.resolve(goVersion);
 	}
 	return new Promise<SemVersion>((resolve, reject) => {
-		cp.execFile(getGoRuntimePath(), ['version'], {}, (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
 			let matches = /go version go(\d).(\d).*/.exec(stdout);
 			if (matches) {
 				goVersion = {
