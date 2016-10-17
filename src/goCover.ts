@@ -90,11 +90,17 @@ export function getCoverage(filename: string): Promise<any[]> {
 		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
 		let cwd = path.dirname(filename);
 		let args = ['test', '-coverprofile=' + tmppath];
+		let goRuntimePath = getGoRuntimePath();
+
+		if (!goRuntimePath) {
+			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+			return Promise.resolve([]);
+		}
 
 		// make sure tmppath exists
 		fs.closeSync(fs.openSync(tmppath, 'a'));
 
-		cp.execFile(getGoRuntimePath(), args, { cwd: cwd }, (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				// Clear existing coverage files
 				clearCoverage();
@@ -109,7 +115,7 @@ export function getCoverage(filename: string): Promise<any[]> {
 				});
 
 				lines.on('line', function(data: string) {
-					// go test coverageprofile generates output: 
+					// go test coverageprofile generates output:
 					//    filename:StartLine.StartColumn,EndLine.EndColumn Hits IsCovered
 					// The first line will be "mode: set" which will be ignored
 					let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);

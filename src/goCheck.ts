@@ -64,6 +64,12 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(filename);
+	let goRuntimePath = getGoRuntimePath();
+
+	if (!goRuntimePath) {
+		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		return Promise.resolve([]);
+	}
 
 	if (!!goConfig['buildOnSave']) {
 		let buildFlags = goConfig['buildFlags'] || [];
@@ -74,13 +80,13 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			args = ['test', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, '.'];
 		}
 		runningToolsPromises.push(runTool(
-			getGoRuntimePath(),
+			goRuntimePath,
 			args,
 			cwd,
 			'error',
 			true,
 			null,
-			'No "go" binary could be found in GOROOT: ' + process.env['GOROOT'] + '"'
+			`Cannot find ${goRuntimePath}`
 		));
 	}
 	if (!!goConfig['lintOnSave']) {
@@ -106,13 +112,13 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	if (!!goConfig['vetOnSave']) {
 		let vetFlags = goConfig['vetFlags'] || [];
 		runningToolsPromises.push(runTool(
-			getGoRuntimePath(),
+			goRuntimePath,
 			['tool', 'vet', ...vetFlags, filename],
 			cwd,
 			'warning',
 			true,
 			null,
-			'No "go" binary could be found in GOROOT: "' + process.env['GOROOT'] + '"'
+			`Cannot find ${goRuntimePath}`
 		));
 	}
 

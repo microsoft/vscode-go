@@ -10,7 +10,7 @@ import path = require('path');
 import os = require('os');
 
 let binPathCache: { [bin: string]: string; } = {};
-let runtimePathCache: string = null;
+let runtimePathCache: string = 'go';
 
 export function getBinPathFromEnvVar(toolName: string, envVar: string, appendBinToPath: boolean): string {
 	toolName = correctBinname(toolName);
@@ -65,7 +65,7 @@ function correctBinname(binname: string) {
  * @return the path to the Go binary. 
  */
 export function getGoRuntimePath(): string {
-	if (runtimePathCache) return runtimePathCache;
+	if (runtimePathCache !== 'go') return runtimePathCache;
 	if (process.env['GOROOT']) {
 		runtimePathCache = path.join(process.env['GOROOT'], 'bin', correctBinname('go'));
 	} else if (process.env['PATH']) {
