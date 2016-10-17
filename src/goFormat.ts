@@ -28,7 +28,7 @@ export class Formatter {
 
 			let formatCommandBinPath = getBinPath(this.formatCommand);
 			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
-			let canFormatToolUseDiff = isDiffToolAvailable();
+			let canFormatToolUseDiff = vscode.workspace.getConfiguration('go')['useDiffForFormatting'] && isDiffToolAvailable();
 			if (canFormatToolUseDiff) {
 				formatFlags.push('-d');
 			}
