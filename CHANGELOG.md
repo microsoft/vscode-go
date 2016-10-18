@@ -1,10 +1,10 @@
-## 0.6.45 - October 2016
+## 0.6.45 - 17th October 2016
 * [Ramya Rao(@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Better error message when Go is not found [PR #536](https://github.com/Microsoft/vscode-go/pull/536)
 	* Add setting to control use of -d flag by the formatting tool [PR #537](https://github.com/Microsoft/vscode-go/pull/537)
 	* Replace full path for vendor packages with relative path [PR #491](https://github.com/Microsoft/vscode-go/pull/491)
 
-## 0.6.44 - October 2016
+## 0.6.44 - 12th October 2016
 * [Ludwig Valda Vasquez (@bredov)](https://github.com/bredov)
     * New configuration `go.formatFlags` to pass flags to the formatting tool [PR #461](https://github.com/Microsoft/vscode-go/pull/461)
 * [Dan Mace (@@ironcladlou](https://github.com/ironcladlou)
