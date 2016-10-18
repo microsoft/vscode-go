@@ -296,6 +296,11 @@
           "default": [],
           "description": "Flags to pass to format tool (e.g. ['-s'])"
         },
+        "go.useDiffForFormatting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run the formatting tools with the -d flag"
+        },
         "go.useCodeSnippetsOnFunctionSuggest": {
           "type": "boolean",
           "default": false,
