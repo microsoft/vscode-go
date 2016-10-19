@@ -22,7 +22,7 @@ interface SemVersion {
 let goVersion: SemVersion = null;
 let vendorSupport: boolean = null;
 
-function getTools(): { [key: string]: string }  {
+function getTools(): { [key: string]: string } {
 	let goConfig = vscode.workspace.getConfiguration('go');
 	let tools: { [key: string]: string } = {
 		'gocode': 'github.com/nsf/gocode',

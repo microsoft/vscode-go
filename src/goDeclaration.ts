@@ -49,7 +49,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				let pkgPath = path.dirname(file);
 				let definitionInformation: GoDefinitionInformtation = {
 					file: file,
-					line: +line - 1,
+					line: + line - 1,
 					col: + col - 1,
 					lines,
 					doc: undefined
@@ -74,6 +74,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 							break;
 						}
 					}
+					doc = doc.replace('\n', ' ');
 					if (doc !== '') {
 						definitionInformation.doc = doc;
 					}
