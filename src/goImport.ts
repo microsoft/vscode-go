@@ -8,9 +8,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath } from './goPath';
-import { parseFilePrelude } from './util';
+import { parseFilePrelude, isVendorSupported } from './util';
 import { documentSymbols } from './goOutline';
-import { promptForMissingTool, isVendorSupported } from './goInstallTools';
+import { promptForMissingTool } from './goInstallTools';
 import path = require('path');
 
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {

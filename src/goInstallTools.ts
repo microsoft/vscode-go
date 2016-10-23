@@ -11,18 +11,11 @@ import path = require('path');
 import os = require('os');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
-import { getBinPath, getGoRuntimePath } from './goPath';
+import { getBinPath } from './goPath';
 import { outputChannel } from './goStatus';
+import { getGoVersion, SemVersion, isVendorSupported } from './util';
 
-interface SemVersion {
-	major: number;
-	minor: number;
-}
-
-let goVersion: SemVersion = null;
-let vendorSupport: boolean = null;
-
-function getTools(): { [key: string]: string }  {
+function getTools(goVersion: SemVersion): { [key: string]: string }  {
 	let goConfig = vscode.workspace.getConfiguration('go');
 	let tools: { [key: string]: string } = {
 		'gocode': 'github.com/nsf/gocode',
@@ -41,8 +34,8 @@ function getTools(): { [key: string]: string }  {
 		tools['goreturns'] = 'sourcegraph.com/sqs/goreturns';
 	}
 
-	// golint is no longer supported in go1.5
-	if (goVersion && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
+	// golint and gotests are not supported in go1.5
+	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
 		tools['golint'] = 'github.com/golang/lint/golint';
 		tools['gotests'] = 'github.com/cweill/gotests/...';
 	}
@@ -50,13 +43,13 @@ function getTools(): { [key: string]: string }  {
 }
 
 export function installAllTools() {
-	getGoVersion().then(() => installTools());
+	getGoVersion().then((goVersion) => installTools(goVersion));
 }
 
 export function promptForMissingTool(tool: string) {
 
-	getGoVersion().then(() => {
-		if (goVersion.major === 1 && goVersion.minor < 6) {
+	getGoVersion().then((goVersion) => {
+		if (goVersion && goVersion.major === 1 && goVersion.minor < 6) {
 			if (tool === 'golint') {
 				vscode.window.showInformationMessage('golint no longer supports go1.5, update your settings to use gometalinter as go.lintTool and install gometalinter');
 				return;
@@ -67,11 +60,11 @@ export function promptForMissingTool(tool: string) {
 			}
 		}
 
-		vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${getTools()[tool]}" to install.`, 'Install All', 'Install').then(selected => {
+		vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${getTools(goVersion)[tool]}" to install.`, 'Install All', 'Install').then(selected => {
 			if (selected === 'Install') {
-				installTools([tool]);
+				installTools(goVersion, [tool]);
 			} else if (selected === 'Install All') {
-				getMissingTools().then(installTools);
+				getMissingTools(goVersion).then((missing) => installTools(goVersion, missing));
 				hideGoStatus();
 			}
 		});
@@ -84,8 +77,8 @@ export function promptForMissingTool(tool: string) {
  *
  * @param string[] array of tool names to be installed
  */
-function installTools(missing?: string[]) {
-	let tools = getTools();
+function installTools(goVersion: SemVersion, missing?: string[]) {
+	let tools = getTools(goVersion);
 	if (!missing) {
 		missing = Object.keys(tools);
 	}
@@ -155,21 +148,24 @@ export function setupGoPathAndOfferToInstallTools() {
 		return;
 	}
 
-	getMissingTools().then(missing => {
-		if (missing.length > 0) {
-			showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
-			vscode.commands.registerCommand('go.promptforinstall', () => {
-				promptForInstall(missing);
-				hideGoStatus();
-			});
-		}
+	getGoVersion().then(goVersion => {
+		getMissingTools(goVersion).then(missing => {
+			if (missing.length > 0) {
+				showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
+				vscode.commands.registerCommand('go.promptforinstall', () => {
+					promptForInstall(goVersion, missing);
+					hideGoStatus();
+				});
+			}
+		});
 	});
 
-	function promptForInstall(missing: string[]) {
+
+	function promptForInstall(goVersion: SemVersion, missing: string[]) {
 		let item = {
 			title: 'Install',
 			command() {
-				installTools(missing);
+				installTools(goVersion, missing);
 			}
 		};
 		vscode.window.showInformationMessage('Some Go analysis tools are missing from your GOPATH.  Would you like to install them?', item).then(selection => {
@@ -180,65 +176,22 @@ export function setupGoPathAndOfferToInstallTools() {
 	}
 }
 
-function getMissingTools(): Promise<string[]> {
-	return getGoVersion().then(() => {
-		let keys = Object.keys(getTools());
-		return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
-			let toolPath = getBinPath(tool);
-			fs.exists(toolPath, exists => {
-				resolve(exists ? null : tool);
-			});
-		}))).then(res => {
-			let missing = res.filter(x => x != null);
-			return missing;
+function getMissingTools(goVersion: SemVersion): Promise<string[]> {
+	let keys = Object.keys(getTools(goVersion));
+	return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
+		let toolPath = getBinPath(tool);
+		fs.exists(toolPath, exists => {
+			resolve(exists ? null : tool);
 		});
+	}))).then(res => {
+		let missing = res.filter(x => x != null);
+		return missing;
 	});
 }
 
 
 
-export function getGoVersion(): Promise<SemVersion> {
-	let goRuntimePath = getGoRuntimePath();
 
-	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-		return Promise.resolve(null);
-	}
 
-	if (goVersion) {
-		return Promise.resolve(goVersion);
-	}
-	return new Promise<SemVersion>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
-			let matches = /go version go(\d).(\d).*/.exec(stdout);
-			if (matches) {
-				goVersion = {
-					major: parseInt(matches[1]),
-					minor: parseInt(matches[2])
-				};
-			}
-			return resolve(goVersion);
-		});
-	});
-}
 
-export function isVendorSupported(): Promise<boolean> {
-	if (vendorSupport != null) {
-		return Promise.resolve(vendorSupport);
-	}
-	return getGoVersion().then(version => {
-		switch (version.major) {
-			case 0:
-				vendorSupport = false;
-				break;
-			case 1:
-				vendorSupport = (version.minor > 5 || (version.minor  === 5 && process.env['GO15VENDOREXPERIMENT'] === '1')) ? true : false;
-				break;
-			default:
-				vendorSupport = true;
-				break;
-		}
-		return vendorSupport;
-	});
-}
 
