@@ -21,6 +21,7 @@ interface SemVersion {
 
 let goVersion: SemVersion = null;
 let vendorSupport: boolean = null;
+let updatesDeclinedTools: string[] = [];
 
 function getTools(): { [key: string]: string }  {
 	let goConfig = vscode.workspace.getConfiguration('go');
@@ -76,7 +77,20 @@ export function promptForMissingTool(tool: string) {
 			}
 		});
 	});
+}
 
+export function promptForUpdatingTool(tool: string) {
+	// If user has declined to update, then don't prompt
+	if (updatesDeclinedTools.indexOf(tool) > -1) {
+		return;
+	}
+	vscode.window.showInformationMessage(`The Go extension is better with the latest version of "${tool}". Use "go get -u -v ${getTools()[tool]}" to update`, 'Update').then(selected => {
+		if (selected === 'Update') {
+			installTools([tool]);
+		} else {
+			updatesDeclinedTools.push(tool);
+		}
+	});
 }
 
 /**
