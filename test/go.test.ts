@@ -189,7 +189,7 @@ encountered.
 
 	test('Test Generate unit tests squeleton for file', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor === 5) {
+			if (version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -211,7 +211,7 @@ encountered.
 
 	test('Test Generate unit tests squeleton for package', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor === 5) {
+			if (version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
