@@ -144,7 +144,7 @@ export function isVendorSupported(): Promise<boolean> {
 	}
 	return getGoVersion().then(version => {
 		if (!version) {
-			return true;
+			return process.env['GO15VENDOREXPERIMENT'] === '0' ? false : true;
 		}
 
 		switch (version.major) {
@@ -152,7 +152,7 @@ export function isVendorSupported(): Promise<boolean> {
 				vendorSupport = false;
 				break;
 			case 1:
-				vendorSupport = (version.minor > 5 || (version.minor  === 5 && process.env['GO15VENDOREXPERIMENT'] === '1')) ? true : false;
+				vendorSupport = (version.minor > 6 || ((version.minor === 5 || version.minor === 6) && process.env['GO15VENDOREXPERIMENT'] === '1')) ? true : false;
 				break;
 			default:
 				vendorSupport = true;
