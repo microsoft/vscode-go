@@ -97,5 +97,5 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 }
 
 export function random(low: number, high: number): number {
-    return Math.floor(Math.random() * (high - low) + low);
+	return Math.floor(Math.random() * (high - low) + low);
 }
