@@ -15,12 +15,11 @@ import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
-import { getGoVersion } from '../src/goInstallTools';
+import { getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage } from '../src/goGenerateTests';
 import { getBinPath } from '../src/goPath';
-import { isVendorSupported } from '../src/goInstallTools';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];

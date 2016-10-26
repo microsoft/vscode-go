@@ -3,8 +3,18 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { TextDocument, Position } from 'vscode';
+import { TextDocument, Position, window } from 'vscode';
 import path = require('path');
+import { getGoRuntimePath } from './goPath';
+import cp = require('child_process');
+
+export interface SemVersion {
+	major: number;
+	minor: number;
+}
+
+let goVersion: SemVersion = null;
+let vendorSupport: boolean = null;
 
 export function byteOffsetAt(document: TextDocument, position: Position): number {
 	let offset = document.offsetAt(position);
@@ -94,6 +104,62 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 		}
 	}
 	return filename;
+}
+
+/**
+ * Gets version of Go based on the output of the command `go version`. 
+ * Returns null if go is being used from source/tip in which case `go version` will not return release tag like go1.6.3
+ */
+export function getGoVersion(): Promise<SemVersion> {
+	let goRuntimePath = getGoRuntimePath();
+
+	if (!goRuntimePath) {
+		window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		return Promise.resolve(null);
+	}
+
+	if (goVersion) {
+		return Promise.resolve(goVersion);
+	}
+	return new Promise<SemVersion>((resolve, reject) => {
+		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
+			let matches = /go version go(\d).(\d).*/.exec(stdout);
+			if (matches) {
+				goVersion = {
+					major: parseInt(matches[1]),
+					minor: parseInt(matches[2])
+				};
+			}
+			return resolve(goVersion);
+		});
+	});
+}
+
+/**
+ * Returns boolean denoting if current version of Go supports vendoring
+ */
+export function isVendorSupported(): Promise<boolean> {
+	if (vendorSupport != null) {
+		return Promise.resolve(vendorSupport);
+	}
+	return getGoVersion().then(version => {
+		if (!version) {
+			return process.env['GO15VENDOREXPERIMENT'] === '0' ? false : true;
+		}
+
+		switch (version.major) {
+			case 0:
+				vendorSupport = false;
+				break;
+			case 1:
+				vendorSupport = (version.minor > 6 || ((version.minor === 5 || version.minor === 6) && process.env['GO15VENDOREXPERIMENT'] === '1')) ? true : false;
+				break;
+			default:
+				vendorSupport = true;
+				break;
+		}
+		return vendorSupport;
+	});
 }
 
 export function random(low: number, high: number): number {
