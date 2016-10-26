@@ -1,4 +1,4 @@
-## 0.6.46 - Coming Soon
+## 0.6.46 - 26th October 2016
 * [Ramya Rao(@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Fix issues due to missing version when Go is used from source without release tags [PR #549](https://github.com/Microsoft/vscode-go/pull/549) 
     * Use -imports-only option in go-outline tool [PR #550](https://github.com/Microsoft/vscode-go/pull/550)
