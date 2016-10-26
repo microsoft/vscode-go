@@ -11,7 +11,8 @@
     "Languages",
     "Snippets",
     "Linters",
-    "Debuggers"
+    "Debuggers",
+    "Formatters"
   ],
   "galleryBanner": {
     "color": "#CFB69A",
