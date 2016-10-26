@@ -238,7 +238,7 @@
         "go.buildOnSave": {
           "type": "boolean",
           "default": true,
-          "description": "Run 'go build'/'go test' on save."
+          "description": "Run 'go build'/'go test -c' on save."
         },
         "go.buildFlags": {
           "type": "array",
