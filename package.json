@@ -31,7 +31,6 @@
     "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts"
   },
   "extensionDependencies": [
-    "vscode.go"
   ],
   "dependencies": {
     "console-stamp": "^0.2.2",
