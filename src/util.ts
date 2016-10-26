@@ -59,7 +59,7 @@ export function parseFilePrelude(text: string): Prelude {
 }
 
 // Takes a Go function signature like:
-//     (foo, bar string, baz number) (string, string) 
+//     (foo, bar string, baz number) (string, string)
 // and returns an array of parameter strings:
 //     ["foo", "bar string", "baz string"]
 // Takes care of balancing parens so to not get confused by signatures like:
@@ -160,4 +160,8 @@ export function isVendorSupported(): Promise<boolean> {
 		}
 		return vendorSupport;
 	});
+}
+
+export function random(low: number, high: number): number {
+	return Math.floor(Math.random() * (high - low) + low);
 }

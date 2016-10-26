@@ -86,7 +86,7 @@ encountered.
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 				let promises = testCases.map(([position, expected]) =>
-					provider.provideCompletionItems(textDocument, position, null).then(items => {
+					provider.provideCompletionItems(editor.document, position, null).then(items => {
 						let labels = items.map(x => x.label);
 						for (let entry of expected) {
 							if (labels.indexOf(entry) < 0) {
@@ -96,6 +96,9 @@ encountered.
 					})
 				);
 				return Promise.all(promises);
+			}).then(() => {
+				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				return Promise.resolve();
 			});
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
@@ -114,13 +117,13 @@ encountered.
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			return vscode.window.showTextDocument(textDocument).then((editor => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
 				return editor.edit(editbuilder => {
 					editbuilder.insert(new vscode.Position(12, 0), 'by\n');
 					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
 				}).then(() => {
 					let promises = testCases.map(([position, expected]) =>
-						provider.provideCompletionItemsInternal(textDocument, position, null, config).then(items => {
+						provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
 							let labels = items.map(x => x.label);
 							for (let entry of expected) {
 								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in competion list: ${entry} Actual: ${labels}`);
@@ -129,7 +132,7 @@ encountered.
 					);
 					return Promise.all(promises);
 				});
-			})).then(() => {
+			}).then(() => {
 				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 				return Promise.resolve();
 			});
@@ -167,7 +170,7 @@ encountered.
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor === 5) {
+			if (version.major === 1 && version.minor < 6) {
 				// golint is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -180,80 +183,92 @@ encountered.
 				}
 				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
 			});
-
 		}).then(() => done(), done);
-
 	});
 
 	test('Test Generate unit tests squeleton for file', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor === 5) {
+			if (version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
 
 			let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
-			vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
 					return generateTestCurrentFile().then((result: boolean) => {
 						assert.equal(result, true);
 						return Promise.resolve();
 					});
 				});
+			}).then(() => {
+				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				return Promise.resolve();
 			});
 		}).then(() => done(), done);
 	});
 
 	test('Test Generate unit tests squeleton for package', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor === 5) {
+			if (version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
 
 			let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
-			vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
 					return generateTestCurrentPackage().then((result: boolean) => {
 						assert.equal(result, true);
 						return Promise.resolve();
 					});
 				});
+			}).then(() => {
+				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				return Promise.resolve();
 			});
 		}).then(() => done(), done);
 	});
 
 	test('Gometalinter error checking', (done) => {
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'lintTool': { value: 'gometalinter' }
-		});
-		let expected = [
-			{ line: 7, severity: 'warning', msg: 'Print2 is unused (deadcode)' },
-			{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported (golint)' },
-			{ line: 10, severity: 'warning', msg: 'main2 is unused (deadcode)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (aligncheck)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (gotype)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (interfacer)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (unconvert)' },
-			{ line: 11, severity: 'error', msg: 'undefined: prin' },
-			{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
-			{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
-		];
-		check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
-			let sortedDiagnostics = diagnostics.sort((a, b) => {
-				if (a.msg < b.msg)
-					return -1;
-				if (a.msg > b.msg)
-					return 1;
-				return 0;
-			});
-			for (let i in expected) {
-				assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-				assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-				assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+		getGoVersion().then(version => {
+			if (version.major === 1 && version.minor < 6) {
+				// golint in gometalinter is not supported in Go 1.5, so skip the test
+				return Promise.resolve();
 			}
-			assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+
+			let config = Object.create(vscode.workspace.getConfiguration('go'), {
+				'lintTool': { value: 'gometalinter' }
+			});
+			let expected = [
+				{ line: 7, severity: 'warning', msg: 'Print2 is unused (deadcode)' },
+				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported (golint)' },
+				{ line: 10, severity: 'warning', msg: 'main2 is unused (deadcode)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (aligncheck)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (gotype)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (interfacer)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (unconvert)' },
+				{ line: 11, severity: 'error', msg: 'undefined: prin' },
+				{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
+				{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
+			];
+			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
+				let sortedDiagnostics = diagnostics.sort((a, b) => {
+					if (a.msg < b.msg)
+						return -1;
+					if (a.msg > b.msg)
+						return 1;
+					return 0;
+				});
+				for (let i in expected) {
+					assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+					assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+				}
+				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+				return Promise.resolve();
+			});
 		}).then(() => done(), done);
 	});
 
@@ -361,7 +376,8 @@ encountered.
 
 	test('Test Outline', (done) => {
 		let filePath = path.join(fixturePath, 'test.go');
-		documentSymbols(filePath).then(outlines => {
+		let options = { fileName: filePath };
+		documentSymbols(options).then(outlines => {
 			let packageOutline = outlines[0];
 			let symbols = packageOutline.children;
 			let imports = symbols.filter(x => x.type === 'import');
@@ -372,6 +388,24 @@ encountered.
 			assert.equal(imports[0].label, '"fmt"');
 			assert.equal(functions[0].label, 'print');
 			assert.equal(functions[1].label, 'main');
+			done();
+		}, done);
+	});
+
+	test('Test Outline imports only', (done) => {
+		let filePath = path.join(fixturePath, 'test.go');
+		let options = { fileName: filePath, importsOnly: true };
+		documentSymbols(options).then(outlines => {
+			let packageOutline = outlines[0];
+			let symbols = packageOutline.children;
+			let imports = symbols.filter(x => x.type === 'import');
+			let functions = symbols.filter(x => x.type === 'function');
+
+			assert.equal(packageOutline.type, 'package');
+			assert.equal(packageOutline.label, 'main');
+			assert.equal(imports[0].label, '"fmt"');
+			assert.equal(functions.length, 0);
+			assert.equal(imports.length, 1);
 			done();
 		}, done);
 	});

@@ -15,7 +15,9 @@ import { getBinPath } from './goPath';
 import { outputChannel } from './goStatus';
 import { getGoVersion, SemVersion, isVendorSupported } from './util';
 
-function getTools(goVersion: SemVersion): { [key: string]: string }  {
+let updatesDeclinedTools: string[] = [];
+
+function getTools(goVersion: SemVersion): { [key: string]: string } {
 	let goConfig = vscode.workspace.getConfiguration('go');
 	let tools: { [key: string]: string } = {
 		'gocode': 'github.com/nsf/gocode',
@@ -69,7 +71,22 @@ export function promptForMissingTool(tool: string) {
 			}
 		});
 	});
+}
 
+export function promptForUpdatingTool(tool: string) {
+	// If user has declined to update, then don't prompt
+	if (updatesDeclinedTools.indexOf(tool) > -1) {
+		return;
+	}
+	getGoVersion().then((goVersion) => {
+		vscode.window.showInformationMessage(`The Go extension is better with the latest version of "${tool}". Use "go get -u -v ${getTools(goVersion)[tool]}" to update`, 'Update').then(selected => {
+			if (selected === 'Update') {
+				installTools(goVersion, [tool]);
+			} else {
+				updatesDeclinedTools.push(tool);
+			}
+		});
+	});
 }
 
 /**

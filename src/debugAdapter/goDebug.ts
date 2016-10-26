@@ -10,6 +10,7 @@ import { basename, dirname } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { getBinPath } from '../goPath';
+import {random} from './../util';
 
 require('console-stamp')(console);
 
@@ -214,7 +215,7 @@ class Delve {
 
 			function connectClient(port: number, host: string) {
 				// Add a slight delay to avoid issues on Linux with
-				// Delve failing calls made shortly after connection. 
+				// Delve failing calls made shortly after connection.
 				setTimeout(() => {
 					let client = Client.$create(port, host);
 					client.connectSocket((err, conn) => {
@@ -320,7 +321,7 @@ class GoDebugSession extends DebugSession {
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		// Launch the Delve debugger on the program
 		let remotePath = args.remotePath || '';
-		let port = args.port || 2345;
+		let port = args.port || random(2000, 50000);
 		let host = args.host || '127.0.0.1';
 
 		if (remotePath.length > 0) {

@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getBinPath } from './goPath';
-import { promptForMissingTool } from './goInstallTools';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with https://github.com/lukehoban/go-outline
 interface GoOutlineRange {
@@ -29,14 +29,30 @@ interface GoOutlineDeclaration {
 	comment?: GoOutlineRange;
 }
 
-export function documentSymbols(filename: string): Promise<GoOutlineDeclaration[]> {
+interface GoOutlineOptions {
+	fileName: string;
+	importsOnly?: boolean;
+}
+
+export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDeclaration[]> {
 	return new Promise<GoOutlineDeclaration[]>((resolve, reject) => {
 		let gooutline = getBinPath('go-outline');
+		let gooutlineFlags = ['-f', options.fileName];
+		if (options.importsOnly) {
+			gooutlineFlags.push('-imports-only');
+		}
 		// Spawn `go-outline` process
-		let p = cp.execFile(gooutline, ['-f', filename], {}, (err, stdout, stderr) => {
+		let p = cp.execFile(gooutline, gooutlineFlags, {}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('go-outline');
+				}
+				if (stderr && stderr.startsWith('flag provided but not defined: -imports-only')) {
+					promptForUpdatingTool('go-outline');
+					options.importsOnly = false;
+					return documentSymbols(options).then(results => {
+						return resolve(results);
+					});
 				}
 				if (err) return resolve(null);
 				let result = stdout.toString();
@@ -79,8 +95,8 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 	}
 
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-
-		return documentSymbols(document.fileName).then(decls => {
+		let options = { fileName: document.fileName };
+		return documentSymbols(options).then(decls => {
 			let symbols: vscode.SymbolInformation[] = [];
 			this.convertToCodeSymbols(document, decls, symbols, '');
 			return symbols;
