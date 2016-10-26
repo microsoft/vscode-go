@@ -355,7 +355,7 @@
         },
         "go.autocompleteUnimportedPackages": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Autocomplete members from unimported packages."
         }
       }
