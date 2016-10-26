@@ -168,7 +168,7 @@ encountered.
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor === 5) {
+			if (version.major === 1 && version.minor < 6) {
 				// golint is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -188,7 +188,7 @@ encountered.
 
 	test('Test Generate unit tests squeleton for file', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor === 5) {
+			if (version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -207,7 +207,7 @@ encountered.
 
 	test('Test Generate unit tests squeleton for package', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor === 5) {
+			if (version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -225,36 +225,44 @@ encountered.
 	});
 
 	test('Gometalinter error checking', (done) => {
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'lintTool': { value: 'gometalinter' }
-		});
-		let expected = [
-			{ line: 7, severity: 'warning', msg: 'Print2 is unused (deadcode)' },
-			{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported (golint)' },
-			{ line: 10, severity: 'warning', msg: 'main2 is unused (deadcode)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (aligncheck)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (gotype)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (interfacer)' },
-			{ line: 11, severity: 'warning', msg: 'undeclared name: prin (unconvert)' },
-			{ line: 11, severity: 'error', msg: 'undefined: prin' },
-			{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
-			{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
-		];
-		check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
-			let sortedDiagnostics = diagnostics.sort((a, b) => {
-				if (a.msg < b.msg)
-					return -1;
-				if (a.msg > b.msg)
-					return 1;
-				return 0;
-			});
-			for (let i in expected) {
-				assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-				assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-				assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+		getGoVersion().then(version => {
+			if (version.major === 1 && version.minor < 6) {
+				// golint in gometalinter is not supported in Go 1.5, so skip the test
+				return Promise.resolve();
 			}
-			assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+
+			let config = Object.create(vscode.workspace.getConfiguration('go'), {
+				'lintTool': { value: 'gometalinter' }
+			});
+			let expected = [
+				{ line: 7, severity: 'warning', msg: 'Print2 is unused (deadcode)' },
+				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported (golint)' },
+				{ line: 10, severity: 'warning', msg: 'main2 is unused (deadcode)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (aligncheck)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (gotype)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (interfacer)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (unconvert)' },
+				{ line: 11, severity: 'error', msg: 'undefined: prin' },
+				{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
+				{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
+			];
+			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
+				let sortedDiagnostics = diagnostics.sort((a, b) => {
+					if (a.msg < b.msg)
+						return -1;
+					if (a.msg > b.msg)
+						return 1;
+					return 0;
+				});
+				for (let i in expected) {
+					assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+					assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+				}
+				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+				return Promise.resolve();
+			});
 		}).then(() => done(), done);
 	});
 

@@ -32,7 +32,8 @@ install:
   - go get -u -v golang.org/x/tools/cmd/guru
   - go get -u -v github.com/alecthomas/gometalinter
   - go get -u -v github.com/cweill/gotests/...
-  - GO15VENDOREXPERIMENT=1 gometalinter --install
+  - GO15VENDOREXPERIMENT=1 
+  - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo skipping gometalinter; else gometalinter --install; fi 
 
 script:
   - npm run lint
