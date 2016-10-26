@@ -1,3 +1,10 @@
+## 0.6.46 - Coming Soon
+* [Ramya Rao(@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix issues due to missing version when Go is used from source without release tags [PR #549](https://github.com/Microsoft/vscode-go/pull/549) 
+    * Use -imports-only option in go-outline tool [PR #550](https://github.com/Microsoft/vscode-go/pull/550)
+* [Rob Lourens @roblourens](https://github.com/roblourens)
+    * Use random port number while debugging [PR #553](https://github.com/Microsoft/vscode-go/pull/553)
+
 ## 0.6.45 - 17th October 2016
 * [Ramya Rao(@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Better error message when Go is not found [PR #536](https://github.com/Microsoft/vscode-go/pull/536)
