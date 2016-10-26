@@ -104,8 +104,9 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
  * @param fileName File system path of the file whose imports need to be returned
  * @returns Array of imported package paths wrapped in a promise
  */
-export function getImports(fileName: string): Promise<string[]> {
-	return documentSymbols(fileName).then(symbols => {
+function getImports(fileName: string): Promise<string[]> {
+	let options = { fileName: fileName, importsOnly: true };
+	return documentSymbols(options).then(symbols => {
 		if (!symbols || !symbols[0] || !symbols[0].children) {
 			return [];
 		}
