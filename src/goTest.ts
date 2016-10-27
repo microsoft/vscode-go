@@ -141,7 +141,7 @@ function goTest(testconfig: TestConfig): Thenable<boolean> {
 		// Remember this config as the last executed test.
 		lastTestConfig = testconfig;
 		outputChannel.clear();
-		outputChannel.show(2);
+		outputChannel.show(2, true);
 
 		let buildFlags: string[] = testconfig.goConfig['buildFlags'];
 		let buildTags: string = testconfig.goConfig['buildTags'];
