@@ -5,6 +5,9 @@
 
 'use strict';
 
+/**
+ * This file is loaded by both the extension and debug adapter, so it cannot import 'vscode'
+ */
 import fs = require('fs');
 import path = require('path');
 import os = require('os');
@@ -48,7 +51,7 @@ export function getBinPath(binname: string) {
 		return pathFromGoRoot;
 	}
 
-	// Else return the binary name directly (this will likely always fail downstream) 
+	// Else return the binary name directly (this will likely always fail downstream)
 	return binname;
 }
 
@@ -61,8 +64,8 @@ function correctBinname(binname: string) {
 
 /**
  * Returns Go runtime binary path.
- * 
- * @return the path to the Go binary. 
+ *
+ * @return the path to the Go binary.
  */
 export function getGoRuntimePath(): string {
 	if (runtimePathCache !== 'go') return runtimePathCache;

@@ -107,7 +107,7 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 }
 
 /**
- * Gets version of Go based on the output of the command `go version`. 
+ * Gets version of Go based on the output of the command `go version`.
  * Returns null if go is being used from source/tip in which case `go version` will not return release tag like go1.6.3
  */
 export function getGoVersion(): Promise<SemVersion> {
@@ -160,8 +160,4 @@ export function isVendorSupported(): Promise<boolean> {
 		}
 		return vendorSupport;
 	});
-}
-
-export function random(low: number, high: number): number {
-	return Math.floor(Math.random() * (high - low) + low);
 }

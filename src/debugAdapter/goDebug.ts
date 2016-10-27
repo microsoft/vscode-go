@@ -10,7 +10,6 @@ import { basename, dirname } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { getBinPath } from '../goPath';
-import {random} from './../util';
 
 require('console-stamp')(console);
 
@@ -707,6 +706,10 @@ class GoDebugSession extends DebugSession {
 			log('EvaluateResponse');
 		});
 	}
+}
+
+function random(low: number, high: number): number {
+	return Math.floor(Math.random() * (high - low) + low);
 }
 
 DebugSession.run(GoDebugSession);
