@@ -30,6 +30,7 @@ import { addImport } from './goImport';
 import { installAllTools } from './goInstallTools';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
+let goFormatOnSaveDeprecated = true;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 
@@ -147,6 +148,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		runBuilds(vscode.window.activeTextEditor.document, goConfig);
 	}
+
+	let matches = /(\d)\.(\d).*/.exec(vscode.version);
+	if (matches) {
+		let major = parseInt(matches[1]);
+		let minor = parseInt(matches[2]);
+		goFormatOnSaveDeprecated = (major > 1) || (major === 1 && minor > 6);
+	}
 }
 
 function deactivate() {
@@ -214,7 +222,7 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		let textEditor = vscode.window.activeTextEditor;
 		let formatPromise: PromiseLike<void> = Promise.resolve();
-		if (goConfig['formatOnSave'] && textEditor.document === document) {
+		if (!goFormatOnSaveDeprecated && goConfig['formatOnSave'] && textEditor.document === document) {
 			let formatter = new Formatter();
 			formatPromise = formatter.formatDocument(document).then(edits => {
 				return textEditor.edit(editBuilder => {

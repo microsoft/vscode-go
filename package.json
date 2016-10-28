@@ -30,8 +30,7 @@
     "test": "node ./node_modules/vscode/bin/test",
     "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts"
   },
-  "extensionDependencies": [
-  ],
+  "extensionDependencies": [],
   "dependencies": {
     "console-stamp": "^0.2.2",
     "diff": "~3.0.0",
@@ -117,7 +116,7 @@
         "title": "Go: Generate unit tests for current file",
         "description": "Generates unit tests for the current file"
       },
-       {
+      {
         "command": "go.test.generate.function",
         "title": "Go: Generate unit tests for current function",
         "description": "Generates unit tests for the selected function in the current file"
@@ -325,7 +324,7 @@
         "go.formatOnSave": {
           "type": "boolean",
           "default": true,
-          "description": "Run formatting tool on save."
+          "description": "Deprecated from VS Code 1.7 onwards in favor of editor.formatOnSave. Runs formatting tool on save."
         },
         "go.coverOnSave": {
           "type": "boolean",
