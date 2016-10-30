@@ -14,32 +14,45 @@ import { getBinPath } from './goPath';
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
 
-export function generateTestCurrentPackage(): Thenable<boolean>  {
+/**
+ * If current active editor has a Go file, returns the editor.
+ */
+function checkActiveEditor(): vscode.TextEditor {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
-		vscode.window.showInformationMessage('gotests: No editor selected');
+		vscode.window.showInformationMessage('Cannot generate unit tests. No editor selected.');
+		return;
+	}
+	if (!editor.document.fileName.endsWith('.go')) {
+		vscode.window.showInformationMessage('Cannot generate unit tests. File in the editor is not a Go file.');
+		return;
+	}
+	return editor;
+}
+
+export function generateTestCurrentPackage(): Thenable<boolean> {
+	let editor = checkActiveEditor();
+	if (!editor) {
 		return;
 	}
 	let dir = path.dirname(editor.document.uri.fsPath);
 	let message = 'Unit tests generated for package: ' + path.basename(dir);
-	return generateTests({dir: dir, msg: message });
+	return generateTests({ dir: dir, msg: message });
 }
 
-export function generateTestCurrentFile(): Thenable<boolean>  {
-	let editor = vscode.window.activeTextEditor;
+export function generateTestCurrentFile(): Thenable<boolean> {
+	let editor = checkActiveEditor();
 	if (!editor) {
-		vscode.window.showInformationMessage('gotests: No editor selected');
 		return;
 	}
 	let file = editor.document.uri.fsPath;
 	let message = 'Unit tests generated for file: ' + path.basename(file);
-	return generateTests({dir: file, msg: message });
+	return generateTests({ dir: file, msg: message });
 }
 
 export function generateTestCurrentFunction(): Thenable<boolean> {
-	let editor = vscode.window.activeTextEditor;
+	let editor = checkActiveEditor();
 	if (!editor) {
-		vscode.window.showInformationMessage('gotests: No selected Editor');
 		return;
 	}
 	let file = editor.document.uri.fsPath;
@@ -57,7 +70,7 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 			return;
 		}
 		let message = 'Unit test generated for function: ' + currentFunction.name + ' in file: ' + path.basename(file);
-		return generateTests({dir: file, msg: message, func: currentFunction.name});
+		return generateTests({ dir: file, msg: message, func: currentFunction.name });
 	}).then(null, err => {
 		console.error(err);
 	});
