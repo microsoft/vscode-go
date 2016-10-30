@@ -61,9 +61,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					return resolve([]);
 				}
 
-				let inString = false;
-				if ((lineText.substring(0, position.character).match(/\"/g) || []).length % 2 === 1) {
-					inString = true;
+				// Count the number of double quotes in the line till current position. Ignore escaped double quotes
+				let doubleQuotesCnt = (lineTillCurrentPosition.match(/[^\\]\"/g) || []).length;
+				doubleQuotesCnt += lineTillCurrentPosition.startsWith('\"') ? 1 : 0;
+				let inString = (doubleQuotesCnt % 2 === 1);
+
+				if (!inString && lineTillCurrentPosition.endsWith('\"')) {
+					return resolve([]);
 				}
 
 				// get current word
@@ -82,7 +86,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let inputText = document.getText();
 
 				return this.runGoCode(filename, inputText, offset, inString, position, lineText).then(suggestions => {
-					if (!autocompleteUnimportedPackages) {
+					if (!autocompleteUnimportedPackages || inString) {
 						return resolve(suggestions);
 					}
 
