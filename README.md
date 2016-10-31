@@ -17,7 +17,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Find References (using `guru`)
 - File outline (using `go-outline`)
 - Workspace symbol search (using `go-symbols`)
-- Rename (using `gorename`)
+- Rename (using `gorename`. Note: For Undo after rename to work in Windows you need to have `diff` tool in your path)
 - Build-on-save (using `go build` and `go test`)
 - Lint-on-save (using `golint` or `gometalinter`)
 - Format (using `goreturns` or `goimports` or `gofmt`)
