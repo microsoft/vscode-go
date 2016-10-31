@@ -169,7 +169,7 @@
                 "default": "."
               },
               "mode": {
-                "type": "string",
+                "enum": ["debug", "remote", "test", "exec"],
                 "description": "One of 'debug', 'remote', 'test', 'exec'.",
                 "default": "debug"
               },
