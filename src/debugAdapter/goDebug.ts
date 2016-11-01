@@ -9,7 +9,7 @@ import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { getBinPath } from '../goPath';
+import { getBinPath, appendGoPath } from '../goPath';
 
 require('console-stamp')(console);
 
@@ -173,6 +173,10 @@ class Delve {
 			if (!existsSync(dlv)) {
 				return reject('Cannot find Delve debugger. Ensure it is in your `GOPATH/bin` or `PATH`.');
 			}
+			
+			// append cwd to gopath
+			appendGoPath(cwd);
+									
 			let dlvEnv: Object = null;
 			if (env) {
 				dlvEnv = {};
@@ -184,7 +188,7 @@ class Delve {
 				}
 			}
 			let dlvArgs = [mode || 'debug'];
-			if (mode === 'exec') {
+			if (mode === 'exec' || mode === 'debug') {
 				dlvArgs = dlvArgs.concat([program]);
 			}
 			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
@@ -200,15 +204,16 @@ class Delve {
 			if (args) {
 				dlvArgs = dlvArgs.concat(['--', ...args]);
 			}
-
-			let dlvCwd = dirname(program);
+						
+			let dlvCwd = dirname(program);			
 			try {
 				if (lstatSync(program).isDirectory()) {
 					dlvCwd = program;
 				}
 			} catch (e) { }
+			
 			this.debugProcess = spawn(dlv, dlvArgs, {
-				cwd: dlvCwd,
+				cwd: cwd,
 				env: dlvEnv,
 			});
 
