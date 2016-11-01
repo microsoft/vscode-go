@@ -14,6 +14,9 @@ import { getBinPath } from './goPath';
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
 
+const generatedWord = 'Generated ';
+const commandTitle = 'Open generated test for current file';
+
 /**
  * If current active editor has a Go file, returns the editor.
  */
@@ -28,6 +31,44 @@ function checkActiveEditor(): vscode.TextEditor {
 		return;
 	}
 	return editor;
+}
+
+/**
+ * Opens test file (if any) corresponding to the Go file in the current active editor
+ */
+export function openTestFile(): void {
+	let editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage('Cannot open test file. No editor selected.');
+		return;
+	}
+	let filePath = editor.document.fileName;
+	if (!filePath.endsWith('.go')) {
+		vscode.window.showInformationMessage('Cannot open test file. File in the editor is not a Go file.');
+		return;
+	}
+	let testFilePath = filePath.substr(0, filePath.lastIndexOf('.go')) + '_test.go';
+
+	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(testFilePath));
+}
+
+/**
+ * Opens the Go file with implementation for the test file in the current active editor
+ */
+export function openImplementationForTestFile(): void {
+	let editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage('Cannot open file. No editor selected.');
+		return;
+	}
+	let filePath = editor.document.fileName;
+	if (!filePath.endsWith('_test.go')) {
+		vscode.window.showInformationMessage('Cannot open file. File in the editor is not a Go test file.');
+		return;
+	}
+	let testFilePath = filePath.substr(0, filePath.lastIndexOf('_test.go')) + '.go';
+
+	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(testFilePath));
 }
 
 export function generateTestCurrentPackage(): Thenable<boolean> {
@@ -112,8 +153,31 @@ function generateTests(conf: Config): Thenable<boolean> {
 				if (err) {
 					return reject('Cannot generate test due to errors: ' + stderr);
 				}
-				let message = 'gotests: ' + conf.msg;
-				vscode.window.showInformationMessage(message);
+
+				let message = stdout;
+				let testsGenerated = false;
+
+				// Expected stdout is of the format "Generated TestMain\nGenerated Testhello\n"
+				if (stdout.startsWith(generatedWord)) {
+					let lines = stdout.split('\n').filter(element => {
+						return element.startsWith(generatedWord);
+					}).map((element) => {
+						return element.substr(generatedWord.length);
+					});
+					message = `Generated ${lines.join(', ')}`;
+					testsGenerated = true;
+				}
+
+				if (testsGenerated) {
+					vscode.window.showInformationMessage(message, commandTitle).then(selected => {
+						if (selected === commandTitle) {
+							openTestFile();
+						}
+					});
+				} else {
+					vscode.window.showInformationMessage(message);
+				}
+
 				return resolve(true);
 			} catch (e) {
 				vscode.window.showInformationMessage(e.msg);

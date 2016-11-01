@@ -25,7 +25,7 @@ import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious } from './goTest';
-import { generateTestCurrentPackage, generateTestCurrentFile, generateTestCurrentFunction } from './goGenerateTests';
+import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools } from './goInstallTools';
 
@@ -95,15 +95,23 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.package', () => {
-		generateTestCurrentPackage();
+		goGenerateTests.generateTestCurrentPackage();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.file', () => {
-		generateTestCurrentFile();
+		goGenerateTests.generateTestCurrentFile();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.function', () => {
-		generateTestCurrentFunction();
+		goGenerateTests.generateTestCurrentFunction();
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.open.test.file', () => {
+		goGenerateTests.openTestFile();
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.open.test.implementation', () => {
+		goGenerateTests.openImplementationForTestFile();
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
