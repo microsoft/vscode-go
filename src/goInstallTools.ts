@@ -11,7 +11,7 @@ import path = require('path');
 import os = require('os');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
-import { getBinPath } from './goPath';
+import { getBinPath, getGoRuntimePath } from './goPath';
 import { outputChannel } from './goStatus';
 import { getGoVersion, SemVersion, isVendorSupported } from './util';
 
@@ -96,6 +96,7 @@ export function promptForUpdatingTool(tool: string) {
  */
 function installTools(goVersion: SemVersion, missing?: string[]) {
 	let tools = getTools(goVersion);
+	let goRuntimePath = getGoRuntimePath();
 	if (!missing) {
 		missing = Object.keys(tools);
 	}
@@ -110,7 +111,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			cp.exec('go get -u -v ' + tools[tool], { env: process.env }, (err, stdout, stderr) => {
+			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env: process.env }, (err, stdout, stderr) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + tool + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
