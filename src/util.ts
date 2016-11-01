@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { TextDocument, Position, window } from 'vscode';
+import vscode = require('vscode');
 import path = require('path');
 import { getGoRuntimePath } from './goPath';
 import cp = require('child_process');
@@ -16,7 +16,7 @@ export interface SemVersion {
 let goVersion: SemVersion = null;
 let vendorSupport: boolean = null;
 
-export function byteOffsetAt(document: TextDocument, position: Position): number {
+export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
 	let offset = document.offsetAt(position);
 	let text = document.getText();
 	let byteOffset = 0;
@@ -114,7 +114,7 @@ export function getGoVersion(): Promise<SemVersion> {
 	let goRuntimePath = getGoRuntimePath();
 
 	if (!goRuntimePath) {
-		window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return Promise.resolve(null);
 	}
 
@@ -160,4 +160,22 @@ export function isVendorSupported(): Promise<boolean> {
 		}
 		return vendorSupport;
 	});
+}
+
+/**
+ * Returns boolean indicating if GOPATH is set or not
+ * If not set, then prompts user to do set GOPATH
+ */
+export function isGoPathSet(): boolean {
+	if (!process.env['GOPATH']) {
+		vscode.window.showInformationMessage('Set GOPATH environment variable and restart VS Code or set GOPATH in Workspace settings', 'Set GOPATH in Workspace Settings').then(selected => {
+			if (selected === 'Set GOPATH in Workspace Settings') {
+				let settingsFilePath = path.join(vscode.workspace.rootPath, '.vscode', 'settings.json');
+				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(settingsFilePath));
+			}
+		});
+		return false;
+	}
+
+	return true;
 }

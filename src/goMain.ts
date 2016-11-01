@@ -28,6 +28,7 @@ import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious } from 
 import { generateTestCurrentPackage, generateTestCurrentFile, generateTestCurrentFunction } from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools } from './goInstallTools';
+import { isGoPathSet } from './util';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 let goFormatOnSaveDeprecated = true;
@@ -116,7 +117,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
 
-	if (vscode.window.activeTextEditor) {
+	if (vscode.window.activeTextEditor && isGoPathSet()) {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		runBuilds(vscode.window.activeTextEditor.document, goConfig);
 	}
