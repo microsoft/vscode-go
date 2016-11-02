@@ -21,7 +21,7 @@ export function getBinPathFromEnvVar(toolName: string, envVar: string, appendBin
 		let paths = process.env[envVar].split(path.delimiter);
 		for (let i = 0; i < paths.length; i++) {
 			let binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', toolName);
-			if (fs.existsSync(binpath)) {
+			if (fileExists(binpath)) {
 				binPathCache[toolName] = binpath;
 				return binpath;
 			}
@@ -69,11 +69,20 @@ function correctBinname(binname: string) {
  */
 export function getGoRuntimePath(): string {
 	if (runtimePathCache !== 'go') return runtimePathCache;
+	let correctBinNameGo = correctBinname('go');
 	if (process.env['GOROOT']) {
-		runtimePathCache = path.join(process.env['GOROOT'], 'bin', correctBinname('go'));
+		runtimePathCache = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);
 	} else if (process.env['PATH']) {
 		let pathparts = (<string>process.env.PATH).split(path.delimiter);
-		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinname('go'))).filter(candidate => fs.existsSync(candidate))[0];
+		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinNameGo)).filter(candidate => fileExists(candidate))[0];
 	}
 	return runtimePathCache;
+}
+
+function fileExists(filePath: string): boolean {
+	try {
+		return fs.statSync(filePath).isFile();
+	} catch (e) {
+		return false;
+	}
 }
