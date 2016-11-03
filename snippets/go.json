@@ -155,6 +155,18 @@
 		"test function": {
 			"prefix": "tf",
 			"body": "func Test$1(t *testing.T) {\n\t$0\n}"
+		},
+		"init function": {
+			"prefix": "finit",
+			"body": "func init() {\n\t$1\n}"
+		},
+		"main function": {
+			"prefix": "fmain",
+			"body": "func main() {\n\t$1\n}"
+		},
+		"method declaration": {
+			"prefix": "meth",
+			"body": "func (${1:var} ${2:receiver}) ${3:method}($4) $5 {\n\t$0\n}"
 		}
 	}
 }
