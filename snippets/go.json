@@ -166,7 +166,7 @@
 		},
 		"method declaration": {
 			"prefix": "meth",
-			"body": "func (${1:var} ${2:receiver}) ${3:method}($4) $5 {\n\t$0\n}"
+			"body": "func (${1:receiver} ${2:type}) ${3:method}($4) $5 {\n\t$0\n}"
 		}
 	}
 }
