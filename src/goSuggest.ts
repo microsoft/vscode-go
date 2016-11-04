@@ -184,6 +184,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								}
 								item.insertText = suggest.name + '(' + paramSnippets.join(', ') + ') {{}}';
 							}
+							// Add same sortText to all suggestions from gocode so that they appear before the unimported packages
+							item.sortText = 'a';
 							suggestions.push(item);
 						};
 					}
@@ -240,6 +242,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				command: 'go.import.add',
 				arguments: [pkgInfo.path]
 			};
+			// Add same sortText to the unimported packages so that they appear after the suggestions from gocode
+			item.sortText = 'z';
 			return item;
 		});
 		return completionItems;
