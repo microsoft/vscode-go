@@ -6,8 +6,6 @@
 'use strict';
 
 import cp = require('child_process');
-import path = require('path');
-import { getBinPath } from './goPath';
 import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 import { parameters } from './util';
@@ -30,13 +28,10 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				return null;
 			}
 			let result = new SignatureHelp();
-			let text = res.docInfo.decl.split('\n')[1];
-			let nameEnd = text.indexOf(' ');
-			let sigStart = nameEnd + 5; // ' func'
-			let funcName = text.substring(0, nameEnd);
-			let sig = text.substring(sigStart);
-			let si = new SignatureInformation(funcName + sig, res.docInfo.doc);
-			si.parameters = parameters(sig).map(paramText =>
+			let text = res.docInfo.decl.substring(5);
+			let si = new SignatureInformation(text, res.docInfo.doc);
+			let braceStart = text.indexOf('(');
+			si.parameters = parameters(text.substring(braceStart)).map(paramText =>
 				new ParameterInformation(paramText)
 			);
 			result.signatures = [si];

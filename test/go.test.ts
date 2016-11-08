@@ -49,10 +49,10 @@ encountered.
 `;
 		let testCases: [vscode.Position, string, string][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
-			[new vscode.Position(9, 6), 'main func()', null],
-			[new vscode.Position(7, 2), 'import (fmt "fmt")', null],
-			[new vscode.Position(7, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
-			[new vscode.Position(10, 3), 'print func(txt string)', null]
+			[new vscode.Position(9, 6), 'func main()', null],
+			[new vscode.Position(7, 2), 'package fmt', null],
+			[new vscode.Position(7, 6), 'func Println(a ...interface{}) (n int, err error)', printlnDoc],
+			[new vscode.Position(10, 3), 'func print(txt string)', null]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
@@ -65,7 +65,7 @@ encountered.
 					// 	assert.equal(res.contents.length, 2);
 					// 	assert.equal(expectedDocumentation, <string>(res.contents[0]));
 					// }
-					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[res.contents.length - 1]).value);
+					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[0]).value);
 				})
 			);
 			return Promise.all(promises);

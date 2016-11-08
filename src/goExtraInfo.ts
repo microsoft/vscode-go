@@ -13,11 +13,9 @@ export class GoHoverProvider implements HoverProvider {
 		return definitionLocation(document, position, true).then(definitionInfo => {
 			console.log(definitionInfo);
 			if (definitionInfo == null) return null;
-			let lines = definitionInfo.docInfo.decl.split('\n');
-			lines = lines.filter(val => !val.startsWith('\t//')).map(line => {
-				return line.replace(/\t/g, '    ');
-			});
-			lines = lines.filter(line => line.length !== 0);
+			let lines = definitionInfo.docInfo.decl.split('\n')
+				.filter(line => !line.startsWith('\t//') && line !== '')
+				.map(line => line.replace(/\t/g, '    '));
 			let text;
 			if (lines.length > 1) {
 				text = lines.join('\n').replace(/\n+$/, '');
