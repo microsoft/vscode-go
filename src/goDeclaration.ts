@@ -71,7 +71,7 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
 interface GoDocInfomation {
 	name: string;
-	imp: string;
+	import: string;
 	decl: string;
 	doc: string;
 	pos: string;
