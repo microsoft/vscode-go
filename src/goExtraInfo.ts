@@ -11,28 +11,24 @@ import { definitionLocation } from './goDeclaration';
 export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 		return definitionLocation(document, position, true).then(definitionInfo => {
+			console.log(definitionInfo);
 			if (definitionInfo == null) return null;
-			let lines = definitionInfo.lines;
-			lines = lines.map(line => {
-				if (line.indexOf('\t') === 0) {
-					line = line.slice(1);
-				}
-				return line.replace(/\t/g, '  ');
+			let lines = definitionInfo.docInfo.decl.split('\n');
+			lines = lines.filter(val => !val.startsWith('\t//')).map(line => {
+				return line.replace(/\t/g, '    ');
 			});
 			lines = lines.filter(line => line.length !== 0);
-			if (lines.length > 10) lines[9] = '...';
 			let text;
 			if (lines.length > 1) {
-				text = lines.slice(1, 10).join('\n');
-				text = text.replace(/\n+$/, '');
+				text = lines.join('\n').replace(/\n+$/, '');
 			} else {
 				text = lines[0];
 			}
 			let hoverTexts: MarkedString[] = [];
-			if (definitionInfo.doc != null) {
-				hoverTexts.push(definitionInfo.doc);
+			hoverTexts.push({ language: 'go', value: text });
+			if (definitionInfo.docInfo.doc != null) {
+				hoverTexts.push(definitionInfo.docInfo.doc);
 			}
-			hoverTexts.push({ language: 'go', value: text});
 			let hover = new Hover(hoverTexts);
 			return hover;
 		});
