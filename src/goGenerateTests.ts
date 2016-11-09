@@ -15,7 +15,6 @@ import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
 
 const generatedWord = 'Generated ';
-const commandTitle = 'Open generated test for current file';
 
 /**
  * If current active editor has a Go file, returns the editor.
@@ -78,7 +77,7 @@ export function generateTestCurrentPackage(): Thenable<boolean> {
 	}
 	let dir = path.dirname(editor.document.uri.fsPath);
 	let message = 'Unit tests generated for package: ' + path.basename(dir);
-	return generateTests({ dir: dir, msg: message });
+	return generateTests({ dir: dir });
 }
 
 export function generateTestCurrentFile(): Thenable<boolean> {
@@ -88,7 +87,7 @@ export function generateTestCurrentFile(): Thenable<boolean> {
 	}
 	let file = editor.document.uri.fsPath;
 	let message = 'Unit tests generated for file: ' + path.basename(file);
-	return generateTests({ dir: file, msg: message });
+	return generateTests({ dir: file });
 }
 
 export function generateTestCurrentFunction(): Thenable<boolean> {
@@ -111,7 +110,7 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 			return;
 		}
 		let message = 'Unit test generated for function: ' + currentFunction.name + ' in file: ' + path.basename(file);
-		return generateTests({ dir: file, msg: message, func: currentFunction.name });
+		return generateTests({ dir: file, func: currentFunction.name });
 	}).then(null, err => {
 		console.error(err);
 	});
@@ -125,10 +124,6 @@ interface Config {
 	 * The working directory for `gotests`.
 	 */
 	dir: string;
-	/**
-	 * The Message that show up in case of success
-	 */
-	msg: string;
 	/**
 	 * Specific function names to generate tests squeleton.
 	 */
@@ -168,14 +163,9 @@ function generateTests(conf: Config): Thenable<boolean> {
 					testsGenerated = true;
 				}
 
+				vscode.window.showInformationMessage(message);
 				if (testsGenerated) {
-					vscode.window.showInformationMessage(message, commandTitle).then(selected => {
-						if (selected === commandTitle) {
-							openTestFile();
-						}
-					});
-				} else {
-					vscode.window.showInformationMessage(message);
+					openTestFile();
 				}
 
 				return resolve(true);
