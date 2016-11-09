@@ -84,15 +84,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 				let offset = document.offsetAt(position);
 				let inputText = document.getText();
+				let includeUnimportedPkgs = autocompleteUnimportedPackages && !inString;
 
-				return this.runGoCode(filename, inputText, offset, inString, position, lineText).then(suggestions => {
-					if (!autocompleteUnimportedPackages || inString) {
-						return resolve(suggestions);
-					}
-
-					// Add importable packages matching currentword to suggestions
-					suggestions = suggestions.concat(this.getMatchingPackages(currentWord));
-
+				return this.runGoCode(filename, inputText, offset, inString, position, lineText, currentWord, includeUnimportedPkgs).then(suggestions => {
 					// If no suggestions and cursor is at a dot, then check if preceeding word is a package name
 					// If yes, then import the package in the inputText and run gocode again to get suggestions
 					if (suggestions.length === 0 && lineTillCurrentPosition.endsWith('.')) {
@@ -107,7 +101,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							offset += textToAdd.length;
 
 							// Now that we have the package imported in the inputText, run gocode again
-							return this.runGoCode(filename, inputText, offset, inString, position, lineText).then(newsuggestions => {
+							return this.runGoCode(filename, inputText, offset, inString, position, lineText, currentWord, false).then(newsuggestions => {
 								// Since the new suggestions are due to the package that we imported,
 								// add additionalTextEdits to do the same in the actual document in the editor
 								// We use additionalTextEdits instead of command so that 'useCodeSnippetsOnFunctionSuggest' feature continues to work
@@ -124,7 +118,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		});
 	}
 
-	private runGoCode(filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string): Thenable<vscode.CompletionItem[]> {
+	private runGoCode(filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
 
@@ -142,6 +136,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					if (err) return reject(err);
 					let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 					let suggestions = [];
+					let suggestionSet = new Set<string>();
+
 					// 'Smart Snippet' for package clause
 					// TODO: Factor this out into a general mechanism
 					if (!inputText.match(/package\s+(\w+)/)) {
@@ -187,8 +183,14 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							// Add same sortText to all suggestions from gocode so that they appear before the unimported packages
 							item.sortText = 'a';
 							suggestions.push(item);
+							suggestionSet.add(item.label);
 						};
 					}
+
+					// Add importable packages matching currentword to suggestions
+					let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(currentWord, suggestionSet) : [];
+					suggestions = suggestions.concat(importablePkgs);
+
 					resolve(suggestions);
 				} catch (e) {
 					reject(e);
@@ -228,10 +230,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	// Return importable packages that match given word as Completion Items
-	private getMatchingPackages(word: string): vscode.CompletionItem[] {
+	private getMatchingPackages(word: string, suggestionSet: Set<string>): vscode.CompletionItem[] {
 		if (!word) return [];
 		let completionItems = this.pkgsList.filter((pkgInfo: PackageInfo) => {
-			return pkgInfo.name.startsWith(word);
+			return pkgInfo.name.startsWith(word) && !suggestionSet.has(pkgInfo.name);
 		}).map((pkgInfo: PackageInfo) => {
 			let item = new vscode.CompletionItem(pkgInfo.name, vscode.CompletionItemKind.Keyword);
 			item.detail = pkgInfo.path;
