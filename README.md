@@ -54,7 +54,7 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.vetFlags": [],
 	"go.coverOnSave": false,
 	"go.useCodeSnippetsOnFunctionSuggest": false,
-	"go.formatOnSave": true,
+	"go.formatOnSave": true, // In VS Code 1.7 and higher, this is deprecated in favour of editor.formatOnSave
 	"go.formatTool": "goreturns",
 	"go.formatFlags": [],
 	"go.goroot": "/usr/local/go",
