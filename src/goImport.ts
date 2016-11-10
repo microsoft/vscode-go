@@ -79,17 +79,18 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 
 				// Check if current file and the vendor pkg belong to the same root project
 				// If yes, then vendor pkg can be replaced with its relative path to the "vendor" folder
+				// If not, then the vendor pkg should not be allowed to be imported.
 				if (vendorIndex > 0) {
 					let rootProjectForVendorPkg = path.join(currentWorkspace, pkg.substr(0, vendorIndex));
 					let relativePathForVendorPkg = pkg.substring(vendorIndex + magicVendorString.length);
 
 					if (relativePathForVendorPkg && currentFileDirPath.startsWith(rootProjectForVendorPkg)) {
 						pkgSet.add(relativePathForVendorPkg);
-						return;
 					}
+					return;
 				}
 
-				// pkg is not a vendor project or is a vendor project not belonging to current project
+				// pkg is not a vendor project
 				pkgSet.add(pkg);
 			});
 
