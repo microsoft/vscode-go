@@ -11,7 +11,6 @@ import { definitionLocation } from './goDeclaration';
 export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 		return definitionLocation(document, position, true).then(definitionInfo => {
-			console.log(definitionInfo);
 			if (definitionInfo == null) return null;
 			let lines = definitionInfo.docInfo.decl.split('\n')
 				.filter(line => !line.startsWith('\t//') && line !== '')
