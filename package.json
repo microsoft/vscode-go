@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.48",
+  "version": "0.6.49",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -334,7 +334,7 @@
         "go.formatOnSave": {
           "type": "boolean",
           "default": true,
-          "description": "Deprecated from VS Code 1.7 onwards in favor of editor.formatOnSave. Runs formatting tool on save."
+          "description": "Runs formatting tool on save."
         },
         "go.coverOnSave": {
           "type": "boolean",

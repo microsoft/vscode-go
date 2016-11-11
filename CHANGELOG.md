@@ -1,3 +1,7 @@
+## 0.6.48 - 10th November, 2016
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
+    * Revert the deprecation of `go.formatOnSave` due to popular demand. 
+    
 ## 0.6.48 - 9th November, 2016
 * [Mark LaPerriere (@marklap)](https://github.com/marklap)
     * Snippets for method declaration, main and init functions [PR 602](https://github.com/Microsoft/vscode-go/pull/602)
