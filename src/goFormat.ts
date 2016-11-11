@@ -1,6 +1,7 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
+ * Licensed under the MIT License. See License.txt in the project root for
+ *license information.
  *--------------------------------------------------------*/
 
 'use strict';
@@ -8,64 +9,82 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { isDiffToolAvailable, getEdits, getEditsFromUnifiedDiffStr } from '../src/diffUtils';
-import { getBinPath } from './goPath';
-import { promptForMissingTool } from './goInstallTools';
+import {
+  isDiffToolAvailable,
+  getEdits,
+  getEditsFromUnifiedDiffStr
+} from '../src/diffUtils';
+import {getBinPath} from './goPath';
+import {promptForMissingTool} from './goInstallTools';
 
 export class Formatter {
-	private formatCommand = 'goreturns';
+  private formatCommand = 'goreturns';
 
-	constructor() {
-		let formatTool = vscode.workspace.getConfiguration('go')['formatTool'];
-		if (formatTool) {
-			this.formatCommand = formatTool;
-		}
-	}
+  constructor() {
+    let formatTool = vscode.workspace.getConfiguration('go')['formatTool'];
+    if (formatTool) {
+      this.formatCommand = formatTool;
+    }
+  }
 
-	public formatDocument(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
-		return new Promise((resolve, reject) => {
-			let filename = document.fileName;
+  public formatDocument(document: vscode.TextDocument):
+      Thenable<vscode.TextEdit[]> {
+    return new Promise((resolve, reject) => {
+      let filename = document.fileName;
 
-			let formatCommandBinPath = getBinPath(this.formatCommand);
-			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
-			let canFormatToolUseDiff = vscode.workspace.getConfiguration('go')['useDiffForFormatting'] && isDiffToolAvailable();
-			if (canFormatToolUseDiff) {
-				formatFlags.push('-d');
-			}
+      let formatCommandBinPath = getBinPath(this.formatCommand);
+      let formatFlags =
+          vscode.workspace.getConfiguration('go')['formatFlags'] || [];
+      let canFormatToolUseDiff =
+          vscode.workspace.getConfiguration('go')['useDiffForFormatting'] &&
+          isDiffToolAvailable();
+      if (canFormatToolUseDiff) {
+        formatFlags.push('-d');
+      }
+      if (formatTool == 'goimports') {
+        formatFlags.push('-srcdir');
+        formatFlags.push(path.dirname(document.fileName))
+      }
 
-			let childProcess = cp.execFile(formatCommandBinPath, [...formatFlags], {}, (err, stdout, stderr) => {
-				try {
-					if (err && (<any>err).code === 'ENOENT') {
-						promptForMissingTool(this.formatCommand);
-						return resolve(null);
-					}
-					if (err) return reject('Cannot format due to syntax errors.');
+      let childProcess = cp.execFile(
+          formatCommandBinPath, [...formatFlags], {},
+          (err, stdout, stderr) => {
+            try {
+              if (err && (<any>err).code === 'ENOENT') {
+                promptForMissingTool(this.formatCommand);
+                return resolve(null);
+              }
+              if (err) return reject('Cannot format due to syntax errors.');
 
-					let textEdits: vscode.TextEdit[] = [];
-					let filePatch = canFormatToolUseDiff ? getEditsFromUnifiedDiffStr(stdout)[0] : getEdits(filename, document.getText(), stdout);
+              let textEdits: vscode.TextEdit[] = [];
+              let filePatch =
+                  canFormatToolUseDiff ?
+                      getEditsFromUnifiedDiffStr(stdout)[0] :
+                      getEdits(filename, document.getText(), stdout);
 
-					filePatch.edits.forEach((edit) => {
-						textEdits.push(edit.apply());
-					});
+              filePatch.edits.forEach(
+                  (edit) => { textEdits.push(edit.apply()); });
 
-					return resolve(textEdits);
-				} catch (e) {
-					reject('Internal issues while getting diff from formatted content');
-				}
-			});
-			childProcess.stdin.end(document.getText());
-		});
-	}
+              return resolve(textEdits);
+            } catch (e) {
+              reject(
+                  'Internal issues while getting diff from formatted content');
+            }
+          });
+      childProcess.stdin.end(document.getText());
+    });
+  }
 }
 
-export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
-	private formatter: Formatter;
+export class GoDocumentFormattingEditProvider implements
+    vscode.DocumentFormattingEditProvider {
+  private formatter: Formatter;
 
-	constructor() {
-		this.formatter = new Formatter();
-	}
+  constructor() { this.formatter = new Formatter(); }
 
-	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
-		return this.formatter.formatDocument(document);
-	}
+  public provideDocumentFormattingEdits(
+      document: vscode.TextDocument, options: vscode.FormattingOptions,
+      token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
+    return this.formatter.formatDocument(document);
+  }
 }
