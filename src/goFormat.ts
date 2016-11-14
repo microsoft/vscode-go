@@ -33,7 +33,7 @@ export class Formatter {
 				formatFlags.push('-d');
 			}
 
-			let childProcess = cp.execFile(formatCommandBinPath, [...formatFlags], {}, (err, stdout, stderr) => {
+			let childProcess = cp.execFile(formatCommandBinPath, [...formatFlags], {cwd: vscode.workspace.rootPath}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool(this.formatCommand);
@@ -69,3 +69,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		return this.formatter.formatDocument(document);
 	}
 }
+
+// package main; import \"fmt\"; func main() {fmt.Print(\"Hello\")}
+// package main; import \"fmt\"; import \"math\"; func main() {fmt.Print(\"Hello\")}
+// package main; import \"fmt\"; import \"gopkg.in/Shopify/sarama.v1\"; func main() {fmt.Print(sarama.V0_10_0_0)}
