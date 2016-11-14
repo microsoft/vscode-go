@@ -22,7 +22,7 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 	let tools: { [key: string]: string } = {
 		'gocode': 'github.com/nsf/gocode',
 		'gopkgs': 'github.com/tpng/gopkgs',
-		'godef': 'github.com/rogpeppe/godef',
+		'gogetdoc': 'github.com/zmb3/gogetdoc',
 		'go-outline': 'github.com/lukehoban/go-outline',
 		'go-symbols': 'github.com/newhook/go-symbols',
 		'guru': 'golang.org/x/tools/cmd/guru',

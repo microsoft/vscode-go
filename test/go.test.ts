@@ -23,17 +23,21 @@ import { getBinPath } from '../src/goPath';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
-	let repoPath = path.join(gopath, 'src', '___testrepo');
-	let fixturePath = path.join(repoPath, 'test', 'testfixture');
+	let repoPath = path.join(gopath, 'src', 'test');
+	let fixturePath = path.join(repoPath, 'testfixture');
 	let fixtureSourcePath = path.join(__dirname, '..', '..', 'test', 'fixtures');
 
 	suiteSetup(() => {
 		assert.ok(gopath !== null, 'GOPATH is not defined');
 		fs.removeSync(repoPath);
-		fs.mkdirsSync(fixturePath);
+		fs.mkdirsSync(path.join(fixturePath, 'vendor', 'abc', 'internal'));
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'vendorTest', 'vd.go'), path.join(fixturePath, 'vendor', 'abc', 'vd.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'vendorTest', 'vd.go'), path.join(fixturePath, 'vendor', 'abc', 'internal', 'vd.go'));
+		cp.execSync('go install test/testfixture/vendor/abc');
+		cp.execSync('go install test/testfixture/vendor/abc/internal');
 	});
 
 	suiteTeardown(() => {
@@ -49,10 +53,10 @@ encountered.
 `;
 		let testCases: [vscode.Position, string, string][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
-			[new vscode.Position(9, 6), 'main func()', null],
-			[new vscode.Position(7, 2), 'import (fmt "fmt")', null],
-			[new vscode.Position(7, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
-			[new vscode.Position(10, 3), 'print func(txt string)', null]
+			[new vscode.Position(9, 6), 'func main()', null],
+			[new vscode.Position(7, 2), 'package fmt', null],
+			[new vscode.Position(7, 6), 'func Println(a ...interface{}) (n int, err error)', printlnDoc],
+			[new vscode.Position(10, 3), 'func print(txt string)', null]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
@@ -65,7 +69,7 @@ encountered.
 					// 	assert.equal(res.contents.length, 2);
 					// 	assert.equal(expectedDocumentation, <string>(res.contents[0]));
 					// }
-					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[res.contents.length - 1]).value);
+					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[0]).value);
 				})
 			);
 			return Promise.all(promises);
@@ -437,16 +441,14 @@ encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		let vendorSupportPromise = isVendorSupported();
-		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
+		let filePath = path.join(fixturePath, 'vendor', 'abc', 'vd.go');
 		let vendorPkgsFullPath = [
-			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
-			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9',
-			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9/client'
+			'test/testfixture/vendor/abc',
+			'test/testfixture/vendor/abc/internal'
 		];
 		let vendorPkgsRelativePath = [
-			'9fans.net/go/acme',
-			'9fans.net/go/plan9',
-			'9fans.net/go/plan9/client'
+			'abc',
+			'abc/internal'
 		];
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
