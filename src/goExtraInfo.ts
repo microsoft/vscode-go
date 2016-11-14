@@ -13,21 +13,11 @@ export class GoHoverProvider implements HoverProvider {
 		return definitionLocation(document, position, true).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let lines = definitionInfo.lines;
-			lines = lines.map(line => {
-				if (line.indexOf('\t') === 0) {
-					line = line.slice(1);
-				}
-				return line.replace(/\t/g, '  ');
-			});
 			lines = lines.filter(line => line.length !== 0);
 			if (lines.length > 10) lines[9] = '...';
 			let text;
-			if (lines.length > 1) {
-				text = lines.slice(1, 10).join('\n');
-				text = text.replace(/\n+$/, '');
-			} else {
-				text = lines[0];
-			}
+			text = lines.slice(0, 10).join('\n');
+			text = text.replace(/\n+$/, '');
 			let hoverTexts: MarkedString[] = [];
 			if (definitionInfo.doc != null) {
 				hoverTexts.push(definitionInfo.doc);

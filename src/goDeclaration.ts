@@ -7,6 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
+import fs = require('fs');
 import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
@@ -26,65 +27,106 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		let wordAtPosition = document.getWordRangeAtPosition(position);
 		let offset = byteOffsetAt(document, position);
 
-		let godef = getBinPath('godef');
+		let guru = getBinPath('guru');
 
-		// Spawn `godef` process
-		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {}, (err, stdout, stderr) => {
+		// Spawn `guru` process
+		let p = cp.execFile(guru, ['definition', document.fileName + ':#' + offset.toString()], {}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('godef');
+					promptForMissingTool('guru');
 				}
 				if (err) return resolve(null);
 				let result = stdout.toString();
 				let lines = result.split('\n');
-				let match = /(.*):(\d+):(\d+)/.exec(lines[0]);
+				let match = /(.*):(\d+):(\d+): defined here as (.*)$/.exec(lines[0]);
 				if (!match) {
 					// TODO: Gotodef on pkg name:
 					// /usr/local/go/src/html/template\n
 					return resolve(null);
 				}
-				let [_, file, line, col] = match;
-				let signature = lines[1];
-				let godoc = getBinPath('godoc');
-				let pkgPath = path.dirname(file);
+				let [_, file, line, col, sig] = match;
 				let definitionInformation: GoDefinitionInformtation = {
 					file: file,
 					line: +line - 1,
 					col: + col - 1,
-					lines,
+					lines: [sig],
 					doc: undefined
 				};
-				if (!includeDocs) {
-					return resolve(definitionInformation);
+				let source = fs.readFileSync(definitionInformation.file, 'utf8');
+				lines = source.split('\n');
+				addLinesToDefinition(definitionInformation, lines);
+				if (includeDocs) {
+					addDocToDefinition(definitionInformation, lines);
 				}
-				cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
-					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "godoc" command is not available.');
-					}
-					let godocLines = stdout.toString().split('\n');
-					let doc = '';
-					let sigName = signature.substring(0, signature.indexOf(' '));
-					let sigParams = signature.substring(signature.indexOf(' func') + 5);
-					let searchSignature = 'func ' + sigName + sigParams;
-					for (let i = 0; i < godocLines.length; i++) {
-						if (godocLines[i] === searchSignature) {
-							while (godocLines[++i].startsWith('    ')) {
-								doc += godocLines[i].substring(4) + '\n';
-							}
-							break;
-						}
-					}
-					if (doc !== '') {
-						definitionInformation.doc = doc;
-					}
-					return resolve(definitionInformation);
-				});
+				return resolve(definitionInformation);
 			} catch (e) {
 				reject(e);
 			}
 		});
 		p.stdin.end(document.getText());
 	});
+}
+
+function addLinesToDefinition(defInfo: GoDefinitionInformtation, lines: string[]) {
+	let line = lines[defInfo.line];
+	// Keep only the signature of funcs and single line definitions.
+	if (line.startsWith('func') || !line.match('\{\s*$')) {
+		line = line.replace(/\s*\{\s*$/, '');
+		defInfo.lines = [line];
+	} else {
+		// Handle definitions with multiple lines
+		defInfo.lines = [];
+		for (let i = defInfo.line; i < lines.length; i++) {
+			defInfo.lines.push(lines[i]);
+			if (lines[i].trim() == '}') {
+				break;
+			}
+		}
+	}
+	defInfo.lines = unindent(defInfo.lines);
+}
+
+function addDocToDefinition(defInfo: GoDefinitionInformtation, lines: string[]) {
+	let doc = '';
+	// gather comments above the definition
+	for (let i = defInfo.line - 1; i >= 0; i--) {
+		let line = lines[i];
+		if (line.substr(0, 2) != '//') {
+			break;
+		}
+		doc = line + '\n' + doc
+	}
+	// otherwise look for documentation on the same line
+	if (doc == '') {
+		let line = lines[defInfo.line];
+		let docPos = line.indexOf('//', 1);
+		if (docPos > 1) {
+			doc = line.substr(docPos);
+		}
+	}
+	// trim trailing \n
+	doc = doc.trim();
+	// trim leading '// ' or '//' per line
+	doc = doc.replace(/^\/\//gm, '');
+	defInfo.doc = doc
+}
+
+// Uniformly trims leadings tabs.
+function unindent(lines: string[]): string[] {
+	// find the minimum amount of leading tabs
+	let minWhitespace = 999;
+	for (let i = 0; i < lines.length; i++) {
+		let l = /^\t*/.exec(lines[i])[0].length;
+		if (l < minWhitespace) {
+			minWhitespace = l;
+		}
+	}
+	// trim the minimum amount from all lines
+	let out = [];
+	for (let i = 0; i < lines.length; i++) {
+		out.push(lines[i].substr(minWhitespace));
+	}
+	return out;
 }
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
