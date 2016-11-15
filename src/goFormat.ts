@@ -27,13 +27,17 @@ export class Formatter {
 			let filename = document.fileName;
 
 			let formatCommandBinPath = getBinPath(this.formatCommand);
-			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
+			let formatFlags: string[] = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
 			let canFormatToolUseDiff = vscode.workspace.getConfiguration('go')['useDiffForFormatting'] && isDiffToolAvailable();
 			if (canFormatToolUseDiff) {
 				formatFlags.push('-d');
 			}
+			// We ignore the -w flag that updates file on disk because that would break undo feature
+			if (formatFlags.indexOf('-w') > -1) {
+				formatFlags.splice(formatFlags.indexOf('-w'), 1);
+			}
 
-			let childProcess = cp.execFile(formatCommandBinPath, [...formatFlags], {cwd: vscode.workspace.rootPath}, (err, stdout, stderr) => {
+			let childProcess = cp.execFile(formatCommandBinPath, [...formatFlags], { cwd: vscode.workspace.rootPath }, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool(this.formatCommand);
