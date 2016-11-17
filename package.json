@@ -178,7 +178,12 @@
                 "default": "."
               },
               "mode": {
-                "enum": ["debug", "remote", "test", "exec"],
+                "enum": [
+                  "debug",
+                  "remote",
+                  "test",
+                  "exec"
+                ],
                 "description": "One of 'debug', 'remote', 'test', 'exec'.",
                 "default": "debug"
               },
@@ -295,7 +300,12 @@
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format."
+          "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format.",
+          "enum": [
+            "gofmt",
+            "goimports",
+            "goreturns"
+          ]
         },
         "go.formatFlags": {
           "type": "array",
@@ -365,6 +375,15 @@
           "type": "boolean",
           "default": true,
           "description": "Autocomplete members from unimported packages."
+        },
+        "go.docsTool": {
+          "type": "string",
+          "default": "godoc",
+          "description": "Pick 'godoc' or 'gogetdoc' to get documentation. In Go 1.5, godoc is used regardless of the choice here.",
+          "enum": [
+            "godoc",
+            "gogetdoc"
+          ]
         }
       }
     }

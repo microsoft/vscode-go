@@ -12,19 +12,15 @@ export class GoHoverProvider implements HoverProvider {
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 		return definitionLocation(document, position, true).then(definitionInfo => {
 			if (definitionInfo == null) return null;
-			let lines = definitionInfo.docInfo.decl.split('\n')
+			let lines = definitionInfo.declarationlines
 				.filter(line => !line.startsWith('\t//') && line !== '')
 				.map(line => line.replace(/\t/g, '    '));
 			let text;
-			if (lines.length > 1) {
-				text = lines.join('\n').replace(/\n+$/, '');
-			} else {
-				text = lines[0];
-			}
+			text = lines.join('\n').replace(/\n+$/, '');
 			let hoverTexts: MarkedString[] = [];
 			hoverTexts.push({ language: 'go', value: text });
-			if (definitionInfo.docInfo.doc != null) {
-				hoverTexts.push(definitionInfo.docInfo.doc);
+			if (definitionInfo.doc != null) {
+				hoverTexts.push(definitionInfo.doc);
 			}
 			let hover = new Hover(hoverTexts);
 			return hover;

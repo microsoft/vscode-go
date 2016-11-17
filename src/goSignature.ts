@@ -28,10 +28,25 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				return null;
 			}
 			let result = new SignatureHelp();
-			let text = res.docInfo.decl.substring(5);
-			let si = new SignatureInformation(text, res.docInfo.doc);
-			let braceStart = text.indexOf('(');
-			si.parameters = parameters(text.substring(braceStart)).map(paramText =>
+			let text, sig: string;
+			let si: SignatureInformation;
+			if (res.toolUsed === 'godef') {
+				// declaration is of the form "Add func(a int, b int) int"
+				text = res.declarationlines[0];
+				let nameEnd = text.indexOf(' ');
+				let sigStart = nameEnd + 5; // ' func'
+				let funcName = text.substring(0, nameEnd);
+				sig = text.substring(sigStart);
+				si = new SignatureInformation(funcName + sig, res.doc);
+			} else {
+				// declaration is of the form "func Add(a int, b int) int"
+				text = res.declarationlines[0].substring(5);
+				si = new SignatureInformation(text, res.doc);
+				let braceStart = text.indexOf('(');
+				sig = text.substring(braceStart);
+			}
+
+			si.parameters = parameters(sig).map(paramText =>
 				new ParameterInformation(paramText)
 			);
 			result.signatures = [si];

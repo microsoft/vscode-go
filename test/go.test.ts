@@ -53,28 +53,38 @@ encountered.
 `;
 		let testCases: [vscode.Position, string, string][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
-			[new vscode.Position(9, 6), 'func main()', null],
-			[new vscode.Position(7, 2), 'package fmt', null],
-			[new vscode.Position(7, 6), 'func Println(a ...interface{}) (n int, err error)', printlnDoc],
-			[new vscode.Position(10, 3), 'func print(txt string)', null]
+			[new vscode.Position(9, 6), 'main func()', null],
+			[new vscode.Position(7, 2), 'import (fmt "fmt")', null],
+			[new vscode.Position(7, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
+			[new vscode.Position(10, 3), 'print func(txt string)', null]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			let promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
-				provider.provideHover(textDocument, position, null).then(res => {
-					// TODO: Documentation appears to currently be broken on Go 1.7, so disabling these tests for now
-					// if (expectedDocumentation === null) {
-					//  assert.equal(res.contents.length, 1);
-					// } else {
-					// 	assert.equal(res.contents.length, 2);
-					// 	assert.equal(expectedDocumentation, <string>(res.contents[0]));
-					// }
-					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[0]).value);
-				})
-			);
-			return Promise.all(promises);
-		}, (err) => {
-			assert.ok(false, `error in OpenTextDocument ${err}`);
+
+		getGoVersion().then(version => {
+			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
+				testCases[0][1] = 'func main()';
+				testCases[1][1] = 'package fmt';
+				testCases[2][1] = 'func Println(a ...interface{}) (n int, err error)';
+				testCases[3][1] = 'func print(txt string)';
+			}
+			return vscode.workspace.openTextDocument(uri).then((textDocument) => {
+				let promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
+					provider.provideHover(textDocument, position, null).then(res => {
+						// TODO: Documentation appears to currently be broken on Go 1.7, so disabling these tests for now
+						// if (expectedDocumentation === null) {
+						//  assert.equal(res.contents.length, 1);
+						// } else {
+						// 	assert.equal(res.contents.length, 2);
+						// 	assert.equal(expectedDocumentation, <string>(res.contents[0]));
+						// }
+						assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[0]).value);
+					})
+				);
+				return Promise.all(promises);
+			}, (err) => {
+				assert.ok(false, `error in OpenTextDocument ${err}`);
+				return Promise.reject(err);
+			});
 		}).then(() => done(), done);
 	});
 

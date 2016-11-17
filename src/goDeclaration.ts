@@ -7,18 +7,103 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
+import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
 import { promptForMissingTool } from './goInstallTools';
+import { getGoVersion, SemVersion } from './util';
 
 export interface GoDefinitionInformtation {
 	file: string;
 	line: number;
 	column: number;
-	docInfo: GoDocInfomation;
+	doc: string;
+	declarationlines: string[];
+	toolUsed: string;
 }
 
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
+	let toolToUse = vscode.workspace.getConfiguration('go')['docsTool'];
+	return getGoVersion().then((ver: SemVersion) => {
+		if (!ver) {
+			return Promise.resolve(null);
+		}
+		if (toolToUse === 'godoc' || ver.major < 1 || (ver.major === 1 && ver.minor < 6)) {
+			return definitionLocation_godef(document, position, includeDocs);
+		}
+		return definitionLocation_gogetdoc(document, position);
+	});
+}
+
+function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
+	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
+
+		let wordAtPosition = document.getWordRangeAtPosition(position);
+		let offset = byteOffsetAt(document, position);
+
+		let godef = getBinPath('godef');
+
+		// Spawn `godef` process
+		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {}, (err, stdout, stderr) => {
+			try {
+				if (err && (<any>err).code === 'ENOENT') {
+					promptForMissingTool('godef');
+				}
+				if (err) return resolve(null);
+				let result = stdout.toString();
+				let lines = result.split('\n');
+				let match = /(.*):(\d+):(\d+)/.exec(lines[0]);
+				if (!match) {
+					// TODO: Gotodef on pkg name:
+					// /usr/local/go/src/html/template\n
+					return resolve(null);
+				}
+				let [_, file, line, col] = match;
+				let signature = lines[1];
+				let godoc = getBinPath('godoc');
+				let pkgPath = path.dirname(file);
+				let definitionInformation: GoDefinitionInformtation = {
+					file: file,
+					line: +line - 1,
+					column: + col - 1,
+					declarationlines: lines.splice(1),
+					toolUsed: 'godef',
+					doc: null
+				};
+				if (!includeDocs) {
+					return resolve(definitionInformation);
+				}
+				cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
+					if (err && (<any>err).code === 'ENOENT') {
+						vscode.window.showInformationMessage('The "godoc" command is not available.');
+					}
+					let godocLines = stdout.toString().split('\n');
+					let doc = '';
+					let sigName = signature.substring(0, signature.indexOf(' '));
+					let sigParams = signature.substring(signature.indexOf(' func') + 5);
+					let searchSignature = 'func ' + sigName + sigParams;
+					for (let i = 0; i < godocLines.length; i++) {
+						if (godocLines[i] === searchSignature) {
+							while (godocLines[++i].startsWith('    ')) {
+								doc += godocLines[i].substring(4) + '\n';
+							}
+							break;
+						}
+					}
+					if (doc !== '') {
+						definitionInformation.doc = doc;
+					}
+					return resolve(definitionInformation);
+				});
+			} catch (e) {
+				reject(e);
+			}
+		});
+		p.stdin.end(document.getText());
+	});
+}
+
+function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position): Promise<GoDefinitionInformtation> {
 	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
 		let wordAtPosition = document.getWordRangeAtPosition(position);
 		let offset = byteOffsetAt(document, position);
@@ -29,23 +114,25 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					promptForMissingTool('gogetdoc');
 				}
 				if (err) return resolve(null);
-				let goDocInfomation = <GoDocInfomation>JSON.parse(stdout.toString());
-				let match = /(.*):(\d+):(\d+)/.exec(goDocInfomation.pos);
+				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());
+				let match = /(.*):(\d+):(\d+)/.exec(goGetDocOutput.pos);
+				let definitionInfo = {
+					file: null,
+					line: 0,
+					column: 0,
+					toolUsed: 'gogetdoc',
+					declarationlines: goGetDocOutput.decl.split('\n'),
+					doc: goGetDocOutput.doc
+				};
 				if (!match) {
-					return resolve({
-						file: null,
-						line: 0,
-						column: 0,
-						docInfo: goDocInfomation
-					});
+					return resolve(definitionInfo);
 				}
 				let [_, file, line, col] = match;
-				return resolve({
-					file: file,
-					line: +line - 1,
-					column: +col - 1,
-					docInfo: goDocInfomation
-				});
+				definitionInfo.file = match[1];
+				definitionInfo.line = +match[2] - 1;
+				definitionInfo.column = +match[3] - 1;
+				return resolve(definitionInfo);
+
 			} catch (e) {
 				reject(e);
 			}
@@ -69,7 +156,7 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 	}
 }
 
-interface GoDocInfomation {
+interface GoGetDocOuput {
 	name: string;
 	import: string;
 	decl: string;
