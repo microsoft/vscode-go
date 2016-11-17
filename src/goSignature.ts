@@ -11,6 +11,11 @@ import { definitionLocation } from './goDeclaration';
 import { parameters } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
+	private toolForDocs = 'godoc';
+
+	constructor(toolForDocs: string) {
+		this.toolForDocs = toolForDocs;
+	}
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
 		let theCall = this.walkBackwardsToBeginningOfCall(document, position);
@@ -18,7 +23,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			return Promise.resolve(null);
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
-		return definitionLocation(document, callerPos).then(res => {
+		return definitionLocation(document, callerPos, this.toolForDocs).then(res => {
 			if (!res) {
 				// The definition was not found
 				return null;

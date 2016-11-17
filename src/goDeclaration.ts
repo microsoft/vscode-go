@@ -22,13 +22,12 @@ export interface GoDefinitionInformtation {
 	toolUsed: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
-	let toolToUse = vscode.workspace.getConfiguration('go')['docsTool'];
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, toolForDocs: string, includeDocs = true): Promise<GoDefinitionInformtation> {
 	return getGoVersion().then((ver: SemVersion) => {
 		if (!ver) {
 			return Promise.resolve(null);
 		}
-		if (toolToUse === 'godoc' || ver.major < 1 || (ver.major === 1 && ver.minor < 6)) {
+		if (toolForDocs === 'godoc' || ver.major < 1 || (ver.major === 1 && ver.minor < 6)) {
 			return definitionLocation_godef(document, position, includeDocs);
 		}
 		return definitionLocation_gogetdoc(document, position);
@@ -146,8 +145,14 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 }
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
+	private toolForDocs = 'godoc';
+
+	constructor(toolForDocs: string) {
+		this.toolForDocs = toolForDocs;
+	}
+
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		return definitionLocation(document, position, false).then(definitionInfo => {
+		return definitionLocation(document, position, this.toolForDocs, false).then(definitionInfo => {
 			if (definitionInfo == null || definitionInfo.file == null) return null;
 			let definitionResource = vscode.Uri.file(definitionInfo.file);
 			let pos = new vscode.Position(definitionInfo.line, definitionInfo.column);

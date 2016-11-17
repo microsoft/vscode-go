@@ -9,8 +9,14 @@ import { HoverProvider, Hover, MarkedString, TextDocument, Position, Cancellatio
 import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
+	private toolForDocs = 'godoc';
+
+	constructor(toolForDocs: string) {
+		this.toolForDocs = toolForDocs;
+	}
+
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
-		return definitionLocation(document, position, true).then(definitionInfo => {
+		return definitionLocation(document, position, this.toolForDocs, true).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let lines = definitionInfo.declarationlines
 				.filter(line => !line.startsWith('\t//') && line !== '')

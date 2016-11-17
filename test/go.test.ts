@@ -35,33 +35,99 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'vendorTest', 'vd.go'), path.join(fixturePath, 'vendor', 'abc', 'vd.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'vendorTest', 'vd.go'), path.join(fixturePath, 'vendor', 'abc', 'internal', 'vd.go'));
-		cp.execSync('go install test/testfixture/vendor/abc');
-		cp.execSync('go install test/testfixture/vendor/abc/internal');
 	});
 
 	suiteTeardown(() => {
 		fs.removeSync(repoPath);
 	});
 
-	test('Test Definition Provider', (done) => {
-		let provider = new GoDefinitionProvider();
+	function testDefinitionProvider(tool: string): Thenable<any> {
+		let provider = new GoDefinitionProvider(tool);
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 		let position = new vscode.Position(10, 3);
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return provider.provideDefinition(textDocument, position, null).then(definitionInfo => {
-				assert.equal(definitionInfo.uri.path, uri.path, `${definitionInfo.uri.path} is not the same as ${uri.path}`);
+				assert.equal(definitionInfo.uri.path.toLowerCase(), uri.path.toLowerCase(), `${definitionInfo.uri.path} is not the same as ${uri.path}`);
+				assert.equal(definitionInfo.range.start.line, 6);
+				assert.equal(definitionInfo.range.start.character, 5);
 			});
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
-		}).then(() => done(), done);
+			return Promise.reject(err);
+		});
+	}
 
+	function testSignatureHelpProvider(tool: string): Thenable<any> {
+		let provider = new GoSignatureHelpProvider(tool);
+		let testCases: [vscode.Position, string][] = [
+			[new vscode.Position(7, 13), 'Println(a ...interface{}) (n int, err error)'],
+			[new vscode.Position(10, 7), 'print(txt string)']
+		];
+		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			let promises = testCases.map(([position, expected]) =>
+				provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
+					assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
+					assert.equal(sigHelp.signatures[0].label, expected);
+				})
+			);
+			return Promise.all(promises);
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+			return Promise.reject(err);
+		});
+	}
+
+	function testHoverProvider(tool: string, testCases: [vscode.Position, string, string][]): Thenable<any> {
+		let provider = new GoHoverProvider(tool);
+		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			let promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
+				provider.provideHover(textDocument, position, null).then(res => {
+					// TODO: Documentation appears to currently be broken on Go 1.7, so disabling these tests for now
+					// if (expectedDocumentation === null) {
+					//  assert.equal(res.contents.length, 1);
+					// } else {
+					// 	assert.equal(res.contents.length, 2);
+					// 	assert.equal(expectedDocumentation, <string>(res.contents[0]));
+					// }
+					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[0]).value);
+				})
+			);
+			return Promise.all(promises);
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+			return Promise.reject(err);
+		});
+	}
+
+	test('Test Definition Provider using godoc', (done) => {
+		testDefinitionProvider('godoc').then(() => done(), done);
 	});
 
+	test('Test Definition Provider using gogetdoc', (done) => {
+		getGoVersion().then(version => {
+			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
+				return testDefinitionProvider('gogetdoc');
+			}
+			return Promise.resolve();
+		}).then(() => done(), done);
+	});
 
-	test('Test Hover Provider', (done) => {
-		let provider = new GoHoverProvider();
+	test('Test SignatureHelp Provider using godoc', (done) => {
+		testSignatureHelpProvider('godoc').then(() => done(), done);
+	});
+
+	test('Test SignatureHelp Provider using gogetdoc', (done) => {
+		getGoVersion().then(version => {
+			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
+				return testSignatureHelpProvider('gogetdoc');
+			}
+			return Promise.resolve();
+		}).then(() => done(), done);
+	});
+
+	test('Test Hover Provider using godoc', (done) => {
 		let printlnDoc = `Println formats using the default formats for its operands and writes to
 standard output. Spaces are always added between operands and a newline
 is appended. It returns the number of bytes written and any write error
@@ -74,33 +140,27 @@ encountered.
 			[new vscode.Position(7, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
 			[new vscode.Position(10, 3), 'print func(txt string)', null]
 		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		testHoverProvider('godoc', testCases).then(() => done(), done);
+	});
 
+	test('Test Hover Provider using gogetdoc', (done) => {
+		let printlnDoc = `Println formats using the default formats for its operands and writes to
+standard output. Spaces are always added between operands and a newline
+is appended. It returns the number of bytes written and any write error
+encountered.
+`;
+		let testCases: [vscode.Position, string, string][] = [
+			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
+			[new vscode.Position(9, 6), 'func main()', null],
+			[new vscode.Position(7, 2), 'package fmt', null],
+			[new vscode.Position(7, 6), 'func Println(a ...interface{}) (n int, err error)', printlnDoc],
+			[new vscode.Position(10, 3), 'func print(txt string)', null]
+		];
 		getGoVersion().then(version => {
 			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
-				testCases[0][1] = 'func main()';
-				testCases[1][1] = 'package fmt';
-				testCases[2][1] = 'func Println(a ...interface{}) (n int, err error)';
-				testCases[3][1] = 'func print(txt string)';
+				return testHoverProvider('gogetdoc', testCases);
 			}
-			return vscode.workspace.openTextDocument(uri).then((textDocument) => {
-				let promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
-					provider.provideHover(textDocument, position, null).then(res => {
-						// TODO: Documentation appears to currently be broken on Go 1.7, so disabling these tests for now
-						// if (expectedDocumentation === null) {
-						//  assert.equal(res.contents.length, 1);
-						// } else {
-						// 	assert.equal(res.contents.length, 2);
-						// 	assert.equal(expectedDocumentation, <string>(res.contents[0]));
-						// }
-						assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[0]).value);
-					})
-				);
-				return Promise.all(promises);
-			}, (err) => {
-				assert.ok(false, `error in OpenTextDocument ${err}`);
-				return Promise.reject(err);
-			});
+			return Promise.resolve();
 		}).then(() => done(), done);
 	});
 
@@ -167,26 +227,6 @@ encountered.
 				return Promise.resolve();
 			});
 
-		}, (err) => {
-			assert.ok(false, `error in OpenTextDocument ${err}`);
-		}).then(() => done(), done);
-	});
-
-	test('Test Signature Help', (done) => {
-		let provider = new GoSignatureHelpProvider();
-		let testCases: [vscode.Position, string][] = [
-			[new vscode.Position(7, 13), 'Println(a ...interface{}) (n int, err error)'],
-			[new vscode.Position(10, 7), 'print(txt string)']
-		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			let promises = testCases.map(([position, expected]) =>
-				provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
-					assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
-					assert.equal(sigHelp.signatures[0].label, expected);
-				})
-			);
-			return Promise.all(promises);
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
 		}).then(() => done(), done);
@@ -388,8 +428,8 @@ encountered.
 		});
 	});
 
-	// This test is failing in Travis for Mac OS X with Go 1.7. 
-	// Commenting this and created issue https://github.com/Microsoft/vscode-go/issues/609 to track the problem 
+	// This test is failing in Travis for Mac OS X with Go 1.7.
+	// Commenting this and created issue https://github.com/Microsoft/vscode-go/issues/609 to track the problem
 	// test('Test Env Variables are passed to Tests', (done) => {
 	// 	let config = Object.create(vscode.workspace.getConfiguration('go'), {
 	// 		'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
@@ -467,14 +507,16 @@ encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		let vendorSupportPromise = isVendorSupported();
-		let filePath = path.join(fixturePath, 'vendor', 'abc', 'vd.go');
+		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
 		let vendorPkgsFullPath = [
-			'test/testfixture/vendor/abc',
-			'test/testfixture/vendor/abc/internal'
+			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
+			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9',
+			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9/client'
 		];
 		let vendorPkgsRelativePath = [
-			'abc',
-			'abc/internal'
+			'9fans.net/go/acme',
+			'9fans.net/go/plan9',
+			'9fans.net/go/plan9/client'
 		];
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {

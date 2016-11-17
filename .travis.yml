@@ -22,7 +22,8 @@ install:
   - npm install
   - npm run vscode:prepublish
   - go get -u -v github.com/nsf/gocode
-  - if [[ "$(go version)" =~ "go version go1.5" ]]; then go get -u -v github.com/rogpeppe/godef; else go get -u -v github.com/zmb3/gogetdoc; fi
+  - go get -u -v github.com/rogpeppe/godef
+  - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo hello; else go get -u -v github.com/zmb3/gogetdoc; fi
   - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo cannot get golint; else go get -u -v github.com/golang/lint/golint; fi
   - go get -u -v github.com/lukehoban/go-outline
   - go get -u -v sourcegraph.com/sqs/goreturns
