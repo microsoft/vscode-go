@@ -10,6 +10,7 @@ import * as vscode from 'vscode';
 import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
+import { GoDefinitionProvider } from '../src/goDeclaration';
 import { check } from '../src/goCheck';
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
@@ -43,6 +44,21 @@ suite('Go Extension Tests', () => {
 	suiteTeardown(() => {
 		fs.removeSync(repoPath);
 	});
+
+	test('Test Definition Provider', (done) => {
+		let provider = new GoDefinitionProvider();
+		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let position = new vscode.Position(10, 3);
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return provider.provideDefinition(textDocument, position, null).then(definitionInfo => {
+				assert.equal(definitionInfo.uri.path, uri.path, `${definitionInfo.uri.path} is not the same as ${uri.path}`);
+			});
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+
+	});
+
 
 	test('Test Hover Provider', (done) => {
 		let provider = new GoHoverProvider();
