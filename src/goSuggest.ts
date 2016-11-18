@@ -178,7 +178,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 										paramSnippets.push('{{' + param + '}}');
 									}
 								}
-								item.insertText = suggest.name + '(' + paramSnippets.join(', ') + ') {{}}';
+								item.insertText = suggest.name + '(' + paramSnippets.join(', ') + '){{}}';
 							}
 							// Add same sortText to all suggestions from gocode so that they appear before the unimported packages
 							item.sortText = 'a';
