@@ -19,6 +19,7 @@ export interface GoDefinitionInformtation {
 	column: number;
 	doc: string;
 	declarationlines: string[];
+	name: string;
 	toolUsed: string;
 }
 
@@ -67,7 +68,8 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 					column: + col - 1,
 					declarationlines: lines.splice(1),
 					toolUsed: 'godef',
-					doc: null
+					doc: null,
+					name: null
 				};
 				if (!includeDocs) {
 					return resolve(definitionInformation);
@@ -121,7 +123,8 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 					column: 0,
 					toolUsed: 'gogetdoc',
 					declarationlines: goGetDocOutput.decl.split('\n'),
-					doc: goGetDocOutput.doc
+					doc: goGetDocOutput.doc,
+					name: goGetDocOutput.name
 				};
 				if (!match) {
 					return resolve(definitionInfo);

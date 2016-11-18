@@ -31,10 +31,10 @@ suite('Go Extension Tests', () => {
 	suiteSetup(() => {
 		assert.ok(gopath !== null, 'GOPATH is not defined');
 		fs.removeSync(repoPath);
-		fs.mkdirsSync(path.join(fixturePath, 'vendor', 'abc', 'internal'));
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'gogetdocTestData', 'test.go'), path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 	});
 
 	suiteTeardown(() => {
@@ -57,18 +57,19 @@ suite('Go Extension Tests', () => {
 		});
 	}
 
-	function testSignatureHelpProvider(tool: string): Thenable<any> {
+	function testSignatureHelpProvider(tool: string, testCases: [vscode.Position, string, string, string[]][]): Thenable<any> {
 		let provider = new GoSignatureHelpProvider(tool);
-		let testCases: [vscode.Position, string][] = [
-			[new vscode.Position(7, 13), 'Println(a ...interface{}) (n int, err error)'],
-			[new vscode.Position(10, 7), 'print(txt string)']
-		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			let promises = testCases.map(([position, expected]) =>
+			let promises = testCases.map(([position, expected, expectedDoc, expectedParams]) =>
 				provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
 					assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 					assert.equal(sigHelp.signatures[0].label, expected);
+					assert.equal(sigHelp.signatures[0].documentation, expectedDoc);
+					assert.equal(sigHelp.signatures[0].parameters.length, expectedParams.length);
+					for (let i = 0; i < expectedParams.length; i++) {
+						assert.equal(sigHelp.signatures[0].parameters[i].label, expectedParams[i]);
+					}
 				})
 			);
 			return Promise.all(promises);
@@ -80,7 +81,7 @@ suite('Go Extension Tests', () => {
 
 	function testHoverProvider(tool: string, testCases: [vscode.Position, string, string][]): Thenable<any> {
 		let provider = new GoHoverProvider(tool);
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
 				provider.provideHover(textDocument, position, null).then(res => {
@@ -115,13 +116,32 @@ suite('Go Extension Tests', () => {
 	});
 
 	test('Test SignatureHelp Provider using godoc', (done) => {
-		testSignatureHelpProvider('godoc').then(() => done(), done);
+		let printlnDoc = `Println formats using the default formats for its operands and writes to
+standard output. Spaces are always added between operands and a newline
+is appended. It returns the number of bytes written and any write error
+encountered.
+`;
+		let testCases: [vscode.Position, string, string, string[]][] = [
+			[new vscode.Position(19, 13), 'Println(a ...interface{}) (n int, err error)', printlnDoc, ['a ...interface{}']],
+			[new vscode.Position(23, 7), 'print(txt string)', null, ['txt string']],
+			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', null, ['s string', 'exclaim bool']]
+		];
+		testSignatureHelpProvider('godoc', testCases).then(() => done(), done);
 	});
 
 	test('Test SignatureHelp Provider using gogetdoc', (done) => {
+		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
+Spaces are always added between operands and a newline is appended.
+It returns the number of bytes written and any write error encountered.
+`;
+		let testCases: [vscode.Position, string, string, string[]][] = [
+			[new vscode.Position(19, 13), 'Println(a ...interface{}) (n int, err error)', printlnDoc, ['a ...interface{}']],
+			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldnt get this comment on hover :(\nNot anymore!! gogetdoc to the rescue\n', ['txt string']],
+			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this correctly\n', ['s string', 'exclaim bool']]
+		];
 		getGoVersion().then(version => {
 			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
-				return testSignatureHelpProvider('gogetdoc');
+				return testSignatureHelpProvider('gogetdoc', testCases);
 			}
 			return Promise.resolve();
 		}).then(() => done(), done);
@@ -135,26 +155,26 @@ encountered.
 `;
 		let testCases: [vscode.Position, string, string][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
-			[new vscode.Position(9, 6), 'main func()', null],
-			[new vscode.Position(7, 2), 'import (fmt "fmt")', null],
-			[new vscode.Position(7, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
-			[new vscode.Position(10, 3), 'print func(txt string)', null]
+			[new vscode.Position(22, 5), 'main func()', null],
+			[new vscode.Position(40, 23), 'import (math "math")', null],
+			[new vscode.Position(19, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
+			[new vscode.Position(23, 4), 'print func(txt string)', null]
 		];
 		testHoverProvider('godoc', testCases).then(() => done(), done);
 	});
 
 	test('Test Hover Provider using gogetdoc', (done) => {
-		let printlnDoc = `Println formats using the default formats for its operands and writes to
-standard output. Spaces are always added between operands and a newline
-is appended. It returns the number of bytes written and any write error
-encountered.
+		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
+Spaces are always added between operands and a newline is appended.
+It returns the number of bytes written and any write error encountered.
 `;
 		let testCases: [vscode.Position, string, string][] = [
-			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
-			[new vscode.Position(9, 6), 'func main()', null],
-			[new vscode.Position(7, 2), 'package fmt', null],
-			[new vscode.Position(7, 6), 'func Println(a ...interface{}) (n int, err error)', printlnDoc],
-			[new vscode.Position(10, 3), 'func print(txt string)', null]
+			[new vscode.Position(22, 5), 'func main()', ''],
+			[new vscode.Position(23, 4), 'func print(txt string)', 'This is an unexported function so couldnt get this comment on hover :(\nNot anymore!! gogetdoc to the rescue\n'],
+			[new vscode.Position(40, 23), 'package math', 'Package math provides basic constants and mathematical functions.\n'],
+			[new vscode.Position(19, 6), 'func Println(a ...interface{}) (n int, err error)', printlnDoc],
+			[new vscode.Position(27, 14), 'type ABC struct {\n    a int\n    b int\n    c int\n}', 'ABC is a struct, you coudnt use Goto Definition or Hover info on this before\nNow you can due to gogetdoc\n'],
+			[new vscode.Position(28, 6), 'func CIDRMask(ones, bits int) IPMask', 'CIDRMask returns an IPMask consisting of `ones\' 1 bits\nfollowed by 0s up to a total length of `bits\' bits.\nFor a mask of this form, CIDRMask is the inverse of IPMask.Size.\n']
 		];
 		getGoVersion().then(version => {
 			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
