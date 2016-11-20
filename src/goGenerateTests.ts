@@ -146,7 +146,8 @@ function generateTests(conf: Config): Thenable<boolean> {
 					return resolve(false);
 				}
 				if (err) {
-					return reject('Cannot generate test due to errors: ' + stderr);
+					console.log(err);
+					return reject('Cannot generate test due to errors');
 				}
 
 				let message = stdout;

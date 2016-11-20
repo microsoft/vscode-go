@@ -43,7 +43,10 @@ export class Formatter {
 						promptForMissingTool(this.formatCommand);
 						return resolve(null);
 					}
-					if (err) return reject('Cannot format due to syntax errors.');
+					if (err) {
+						console.log(err);
+						return reject('Cannot format due to syntax errors.');
+					};
 
 					let textEdits: vscode.TextEdit[] = [];
 					let filePatch = canFormatToolUseDiff ? getEditsFromUnifiedDiffStr(stdout)[0] : getEdits(filename, document.getText(), stdout);

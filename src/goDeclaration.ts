@@ -49,7 +49,10 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('godef');
 				}
-				if (err) return resolve(null);
+				if (err) {
+					console.log(err);
+					return resolve(null);
+				};
 				let result = stdout.toString();
 				let lines = result.split('\n');
 				let match = /(.*):(\d+):(\d+)/.exec(lines[0]);
@@ -114,7 +117,10 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('gogetdoc');
 				}
-				if (err) return resolve(null);
+				if (err) {
+					console.log(err);
+					return resolve(null);
+				};
 				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(goGetDocOutput.pos);
 				let definitionInfo = {

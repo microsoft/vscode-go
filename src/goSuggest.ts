@@ -133,7 +133,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gocode');
 					}
-					if (err) return reject(err);
+					if (err) {
+						console.log(err);
+						return reject(err);
+					};
 					let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 					let suggestions = [];
 					let suggestionSet = new Set<string>();
