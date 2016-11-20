@@ -10,10 +10,10 @@ Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Not
 This extension adds rich language support for the Go language to VS Code, including:
 
 - Completion Lists (using `gocode`)
-- Signature Help (using `godoc`)
+- Signature Help (using `gogetdoc` or `godef`+`godoc`)
 - Snippets
-- Quick Info (using `gogetdoc`)
-- Goto Definition (using `gogetdoc`)
+- Quick Info (using `gogetdoc` or `godef`+`godoc`)
+- Goto Definition (using `gogetdoc` or `godef`+`godoc`)
 - Find References (using `guru`)
 - File outline (using `go-outline`)
 - Workspace symbol search (using `go-symbols`)
@@ -198,6 +198,7 @@ To debug the debugger, see [the debugAdapter readme](src/debugAdapter/Readme.md)
 The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, you will see an "Analysis Tools Missing" warning in the bottom right corner of the editor.  Clicking it will offer to install the missing tools for you.
 
 - gocode: `go get -u -v github.com/nsf/gocode`
+- godef: `go get -u -v github.com/rogpeppe/godef`
 - gogetdoc: `go get -u -v github.com/zmb3/gogetdoc`
 - golint: `go get -u -v github.com/golang/lint/golint`
 - go-outline: `go get -u -v github.com/lukehoban/go-outline`
@@ -211,6 +212,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 To install them just paste and run:
 ```bash
 go get -u -v github.com/nsf/gocode
+go get -u -v github.com/rogpeppe/godef
 go get -u -v github.com/zmb3/gogetdoc
 go get -u -v github.com/golang/lint/golint
 go get -u -v github.com/lukehoban/go-outline
