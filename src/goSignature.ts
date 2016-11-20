@@ -6,13 +6,16 @@
 'use strict';
 
 import cp = require('child_process');
-import path = require('path');
-import { getBinPath } from './goPath';
 import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 import { parameters } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
+	private toolForDocs = 'godoc';
+
+	constructor(toolForDocs: string) {
+		this.toolForDocs = toolForDocs;
+	}
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
 		let theCall = this.walkBackwardsToBeginningOfCall(document, position);
@@ -20,7 +23,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			return Promise.resolve(null);
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
-		return definitionLocation(document, callerPos).then(res => {
+		return definitionLocation(document, callerPos, this.toolForDocs).then(res => {
 			if (!res) {
 				// The definition was not found
 				return null;
@@ -30,12 +33,27 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				return null;
 			}
 			let result = new SignatureHelp();
-			let text = res.lines[1];
-			let nameEnd = text.indexOf(' ');
-			let sigStart = nameEnd + 5; // ' func'
-			let funcName = text.substring(0, nameEnd);
-			let sig = text.substring(sigStart);
-			let si = new SignatureInformation(funcName + sig, res.doc);
+			let declarationText, sig: string;
+			let si: SignatureInformation;
+			if (res.toolUsed === 'godef') {
+				// declaration is of the form "Add func(a int, b int) int"
+				declarationText = res.declarationlines[0];
+				let nameEnd = declarationText.indexOf(' ');
+				let sigStart = nameEnd + 5; // ' func'
+				let funcName = declarationText.substring(0, nameEnd);
+				sig = declarationText.substring(sigStart);
+				si = new SignatureInformation(funcName + sig, res.doc);
+			} else {
+				// declaration is of the form "func Add(a int, b int) int"
+				declarationText = res.declarationlines[0].substring(5);
+				let funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it
+				if (funcNameStart > 0) {
+					declarationText = declarationText.substring(funcNameStart);
+				}
+				si = new SignatureInformation(declarationText, res.doc);
+				sig = declarationText.substring(res.name.length);
+			}
+
 			si.parameters = parameters(sig).map(paramText =>
 				new ParameterInformation(paramText)
 			);

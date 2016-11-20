@@ -9,30 +9,25 @@ import { HoverProvider, Hover, MarkedString, TextDocument, Position, Cancellatio
 import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
+	private toolForDocs = 'godoc';
+
+	constructor(toolForDocs: string) {
+		this.toolForDocs = toolForDocs;
+	}
+
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
-		return definitionLocation(document, position, true).then(definitionInfo => {
+		return definitionLocation(document, position, this.toolForDocs, true).then(definitionInfo => {
 			if (definitionInfo == null) return null;
-			let lines = definitionInfo.lines;
-			lines = lines.map(line => {
-				if (line.indexOf('\t') === 0) {
-					line = line.slice(1);
-				}
-				return line.replace(/\t/g, '  ');
-			});
-			lines = lines.filter(line => line.length !== 0);
-			if (lines.length > 10) lines[9] = '...';
+			let lines = definitionInfo.declarationlines
+				.filter(line => !line.startsWith('\t//') && line !== '')
+				.map(line => line.replace(/\t/g, '    '));
 			let text;
-			if (lines.length > 1) {
-				text = lines.slice(1, 10).join('\n');
-				text = text.replace(/\n+$/, '');
-			} else {
-				text = lines[0];
-			}
+			text = lines.join('\n').replace(/\n+$/, '');
 			let hoverTexts: MarkedString[] = [];
+			hoverTexts.push({ language: 'go', value: text });
 			if (definitionInfo.doc != null) {
 				hoverTexts.push(definitionInfo.doc);
 			}
-			hoverTexts.push({ language: 'go', value: text});
 			let hover = new Hover(hoverTexts);
 			return hover;
 		});

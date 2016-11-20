@@ -22,12 +22,18 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 	let tools: { [key: string]: string } = {
 		'gocode': 'github.com/nsf/gocode',
 		'gopkgs': 'github.com/tpng/gopkgs',
-		'godef': 'github.com/rogpeppe/godef',
 		'go-outline': 'github.com/lukehoban/go-outline',
 		'go-symbols': 'github.com/newhook/go-symbols',
 		'guru': 'golang.org/x/tools/cmd/guru',
 		'gorename': 'golang.org/x/tools/cmd/gorename'
 	};
+
+	// Install the doc/def tool that was chosen by the user
+	if (goConfig['docsTool'] === 'godoc') {
+		tools['godef'] = 'github.com/rogpeppe/godef';
+	} else if (goConfig['docsTool'] === 'gogetdoc') {
+		tools['gogetdoc'] = 'github.com/zmb3/gogetdoc';
+	}
 
 	// Install the formattool that was chosen by the user
 	if (goConfig['formatTool'] === 'goimports') {

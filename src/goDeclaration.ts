@@ -11,16 +11,31 @@ import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
 import { promptForMissingTool } from './goInstallTools';
+import { getGoVersion, SemVersion } from './util';
 
 export interface GoDefinitionInformtation {
 	file: string;
 	line: number;
-	col: number;
-	lines: string[];
+	column: number;
 	doc: string;
+	declarationlines: string[];
+	name: string;
+	toolUsed: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, toolForDocs: string, includeDocs = true): Promise<GoDefinitionInformtation> {
+	return getGoVersion().then((ver: SemVersion) => {
+		if (!ver) {
+			return Promise.resolve(null);
+		}
+		if (toolForDocs === 'godoc' || ver.major < 1 || (ver.major === 1 && ver.minor < 6)) {
+			return definitionLocation_godef(document, position, includeDocs);
+		}
+		return definitionLocation_gogetdoc(document, position);
+	});
+}
+
+function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
 	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
 
 		let wordAtPosition = document.getWordRangeAtPosition(position);
@@ -50,9 +65,11 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				let definitionInformation: GoDefinitionInformtation = {
 					file: file,
 					line: +line - 1,
-					col: + col - 1,
-					lines,
-					doc: undefined
+					column: + col - 1,
+					declarationlines: lines.splice(1),
+					toolUsed: 'godef',
+					doc: null,
+					name: null
 				};
 				if (!includeDocs) {
 					return resolve(definitionInformation);
@@ -87,15 +104,70 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	});
 }
 
+function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position): Promise<GoDefinitionInformtation> {
+	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
+		let wordAtPosition = document.getWordRangeAtPosition(position);
+		let offset = byteOffsetAt(document, position);
+		let gogetdoc = getBinPath('gogetdoc');
+		let p = cp.execFile(gogetdoc, ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()], {}, (err, stdout, stderr) => {
+			try {
+				if (err && (<any>err).code === 'ENOENT') {
+					promptForMissingTool('gogetdoc');
+				}
+				if (err) return resolve(null);
+				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());
+				let match = /(.*):(\d+):(\d+)/.exec(goGetDocOutput.pos);
+				let definitionInfo = {
+					file: null,
+					line: 0,
+					column: 0,
+					toolUsed: 'gogetdoc',
+					declarationlines: goGetDocOutput.decl.split('\n'),
+					doc: goGetDocOutput.doc,
+					name: goGetDocOutput.name
+				};
+				if (!match) {
+					return resolve(definitionInfo);
+				}
+				let [_, file, line, col] = match;
+				definitionInfo.file = match[1];
+				definitionInfo.line = +match[2] - 1;
+				definitionInfo.column = +match[3] - 1;
+				return resolve(definitionInfo);
+
+			} catch (e) {
+				reject(e);
+			}
+		});
+		let documentText = document.getText();
+		let documentArchive = document.fileName + '\n';
+		documentArchive = documentArchive + Buffer.byteLength(documentText) + '\n';
+		documentArchive = documentArchive + documentText;
+		p.stdin.end(documentArchive);
+	});
+}
+
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
+	private toolForDocs = 'godoc';
+
+	constructor(toolForDocs: string) {
+		this.toolForDocs = toolForDocs;
+	}
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		return definitionLocation(document, position, false).then(definitionInfo => {
-			if (definitionInfo == null) return null;
+		return definitionLocation(document, position, this.toolForDocs, false).then(definitionInfo => {
+			if (definitionInfo == null || definitionInfo.file == null) return null;
 			let definitionResource = vscode.Uri.file(definitionInfo.file);
-			let pos = new vscode.Position(definitionInfo.line, definitionInfo.col);
+			let pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
 			return new vscode.Location(definitionResource, pos);
 		});
 	}
+}
 
+interface GoGetDocOuput {
+	name: string;
+	import: string;
+	decl: string;
+	doc: string;
+	pos: string;
 }
