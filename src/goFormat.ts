@@ -32,6 +32,10 @@ export class Formatter {
 			if (canFormatToolUseDiff) {
 				formatFlags.push('-d');
 			}
+			// We ignore the -w flag that updates file on disk because that would break undo feature
+			if (formatFlags.indexOf('-w') > -1) {
+				formatFlags.splice(formatFlags.indexOf('-w'), 1);
+			}
 
 			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {}, (err, stdout, stderr) => {
 				try {
