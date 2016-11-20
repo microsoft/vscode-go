@@ -33,7 +33,7 @@ export class Formatter {
 				formatFlags.push('-d');
 			}
 
-			let childProcess = cp.execFile(formatCommandBinPath, [...formatFlags], {cwd: vscode.workspace.rootPath}, (err, stdout, stderr) => {
+			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool(this.formatCommand);
@@ -53,7 +53,6 @@ export class Formatter {
 					reject('Internal issues while getting diff from formatted content');
 				}
 			});
-			childProcess.stdin.end(document.getText());
 		});
 	}
 }
@@ -66,7 +65,9 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 	}
 
 	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
-		return this.formatter.formatDocument(document);
+		return document.save().then(() => {
+			return this.formatter.formatDocument(document);
+		});
 	}
 }
 
