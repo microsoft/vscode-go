@@ -115,9 +115,11 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 	outputChannel.appendLine(''); // Blank line for spacing.
 
+	let http_proxy = vscode.workspace.getConfiguration('http').get('proxy');
+	let https_proxy = http_proxy;  // default proxy for http & https
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env: process.env }, (err, stdout, stderr) => {
+			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env: Object.assign({}, process.env, { http_proxy, https_proxy }) }, (err, stdout, stderr) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + tool + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
