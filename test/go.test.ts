@@ -200,7 +200,7 @@ It returns the number of bytes written and any write error encountered.
 						let labels = items.map(x => x.label);
 						for (let entry of expected) {
 							if (labels.indexOf(entry) < 0) {
-								assert.fail('', entry, 'missing expected item in competion list');
+								assert.fail('', entry, 'missing expected item in competion list', '');
 							}
 						}
 					})
@@ -374,17 +374,17 @@ It returns the number of bytes written and any write error encountered.
 				let filePatches = getEditsFromUnifiedDiffStr(stdout);
 
 				if (!filePatches && filePatches.length !== 1) {
-					assert.fail(null, null, 'Failed to get patches for the test file');
+					assert.fail(null, null, 'Failed to get patches for the test file', '');
 					return reject();
 				}
 
 				if (!filePatches[0].fileName) {
-					assert.fail(null, null, 'Failed to parse the file path from the diff output');
+					assert.fail(null, null, 'Failed to parse the file path from the diff output', '');
 					return reject();
 				}
 
 				if (!filePatches[0].edits) {
-					assert.fail(null, null, 'Failed to parse edits from the diff output');
+					assert.fail(null, null, 'Failed to parse edits from the diff output', '');
 					return reject();
 				}
 				resolve(filePatches);
@@ -417,19 +417,19 @@ It returns the number of bytes written and any write error encountered.
 		let fileEdits = getEdits(file1path, file1contents, file2contents);
 
 		if (!fileEdits) {
-			assert.fail(null, null, 'Failed to get patches for the test file');
+			assert.fail(null, null, 'Failed to get patches for the test file', '');
 			done();
 			return;
 		}
 
 		if (!fileEdits.fileName) {
-			assert.fail(null, null, 'Failed to parse the file path from the diff output');
+			assert.fail(null, null, 'Failed to parse the file path from the diff output', '');
 			done();
 			return;
 		}
 
 		if (!fileEdits.edits) {
-			assert.fail(null, null, 'Failed to parse edits from the diff output');
+			assert.fail(null, null, 'Failed to parse edits from the diff output', '');
 			done();
 			return;
 		}
