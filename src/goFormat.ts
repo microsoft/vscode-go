@@ -29,7 +29,7 @@ export class Formatter {
 			let formatCommandBinPath = getBinPath(this.formatCommand);
 			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
 			let canFormatToolUseDiff = vscode.workspace.getConfiguration('go')['useDiffForFormatting'] && isDiffToolAvailable();
-			if (canFormatToolUseDiff) {
+			if (canFormatToolUseDiff && formatFlags.indexOf('-d') === -1) {
 				formatFlags.push('-d');
 			}
 			// We ignore the -w flag that updates file on disk because that would break undo feature
