@@ -156,6 +156,10 @@
 			"prefix": "tf",
 			"body": "func Test$1(t *testing.T) {\n\t$0\n}"
 		},
+		"benchmark function": {
+			"prefix": "bf",
+			"body": "func Benchmark$1(b *testing.B) {\n\tfor ${2:i} := 0; ${2:i} < b.N; ${2:i}++ {\n\t\t$0\n\t}\n}"
+		},
 		"init function": {
 			"prefix": "finit",
 			"body": "func init() {\n\t$1\n}"
