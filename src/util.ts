@@ -98,12 +98,17 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 	if (!gopath) return filename;
 	let workspaces = gopath.split(path.delimiter);
 	let filenameLowercase = filename.toLowerCase();
+
+	let currentWorkspace : string = null
 	for (let workspace of workspaces) {
-		if (filenameLowercase.substring(0, workspace.length) === workspace.toLowerCase()) {
-			return workspace + filename.slice(workspace.length);
+		if (filenameLowercase.substring(0, workspace.length) === workspace.toLowerCase() 
+			&& (!currentWorkspace || workspace.length > currentWorkspace.length)) {
+			currentWorkspace = workspace;
 		}
 	}
-	return filename;
+	
+	if(!currentWorkspace) return  filename;
+	return currentWorkspace + filename.slice(currentWorkspace.length);	
 }
 
 /**
