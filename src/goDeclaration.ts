@@ -25,10 +25,9 @@ export interface GoDefinitionInformtation {
 
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, toolForDocs: string, includeDocs = true): Promise<GoDefinitionInformtation> {
 	return getGoVersion().then((ver: SemVersion) => {
-		if (!ver) {
-			return Promise.resolve(null);
-		}
-		if (toolForDocs === 'godoc' || ver.major < 1 || (ver.major === 1 && ver.minor < 6)) {
+		// If no Go version can be parsed, it means it's a non-tagged one.
+		// Assume it's > Go 1.5
+		if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
 			return definitionLocation_godef(document, position, includeDocs);
 		}
 		return definitionLocation_gogetdoc(document, position);
