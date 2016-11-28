@@ -76,7 +76,6 @@ export function generateTestCurrentPackage(): Thenable<boolean> {
 		return;
 	}
 	let dir = path.dirname(editor.document.uri.fsPath);
-	let message = 'Unit tests generated for package: ' + path.basename(dir);
 	return generateTests({ dir: dir });
 }
 
@@ -86,7 +85,6 @@ export function generateTestCurrentFile(): Thenable<boolean> {
 		return;
 	}
 	let file = editor.document.uri.fsPath;
-	let message = 'Unit tests generated for file: ' + path.basename(file);
 	return generateTests({ dir: file });
 }
 
@@ -96,7 +94,7 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 		return;
 	}
 	let file = editor.document.uri.fsPath;
-	getFunctions(editor.document).then(functions => {
+	return getFunctions(editor.document).then(functions => {
 		let currentFunction: vscode.SymbolInformation;
 		for (let func of functions) {
 			let selection = editor.selection;
@@ -109,10 +107,11 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 			vscode.window.setStatusBarMessage('No function found at cursor.', 5000);
 			return;
 		}
-		let message = 'Unit test generated for function: ' + currentFunction.name + ' in file: ' + path.basename(file);
-		return generateTests({ dir: file, func: currentFunction.name });
-	}).then(null, err => {
-		console.error(err);
+		let funcName = currentFunction.name;
+		if (funcName.includes('.')) {
+			funcName = funcName.split('.')[1];
+		}
+		return generateTests({ dir: file, func: funcName });
 	});
 }
 
