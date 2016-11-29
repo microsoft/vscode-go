@@ -99,16 +99,21 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 	let workspaces = gopath.split(path.delimiter);
 	let filenameLowercase = filename.toLowerCase();
 
-	let currentWorkspace : string = null
+	// In case of multiple workspaces, find current workspace by checking if current file is
+	// under any of the workspaces in $GOPATH
+	let currentWorkspace: string = null;
 	for (let workspace of workspaces) {
-		if (filenameLowercase.substring(0, workspace.length) === workspace.toLowerCase() 
+		// In case of nested workspaces, (example: both /Users/me and /Users/me/a/b/c are in $GOPATH)
+		// both parent & child workspace in the nested workspaces pair can make it inside the above if block
+		// Therefore, the below check will take longer (more specific to current file) of the two
+		if (filenameLowercase.substring(0, workspace.length) === workspace.toLowerCase()
 			&& (!currentWorkspace || workspace.length > currentWorkspace.length)) {
 			currentWorkspace = workspace;
 		}
 	}
-	
-	if(!currentWorkspace) return  filename;
-	return currentWorkspace + filename.slice(currentWorkspace.length);	
+
+	if (!currentWorkspace) return filename;
+	return currentWorkspace + filename.slice(currentWorkspace.length);
 }
 
 /**
