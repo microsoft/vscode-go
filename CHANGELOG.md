@@ -1,3 +1,21 @@
+## 0.6.51 - 29th November, 2016
+* [Jimmy Kuu (@jimmykuu)](https://github.com/jimmykuu)
+    *  Remove blank space in the end of code snippet on function suggest. [PR 628](https://github.com/Microsoft/vscode-go/pull/628)
+* [Ahmed W. (@OneofOne)](https://github.com/OneOfOne)
+    *  Remove the multiple -d flags in formatting. [PR 644](https://github.com/Microsoft/vscode-go/pull/644)
+* [Paweł Kowalak (@viru)](https://github.com/viru)
+    *  Snippet for Benchmark Test function. [PR 648](https://github.com/Microsoft/vscode-go/pull/648)
+* [Alberto García Hierro (@fiam)](https://github.com/fiam)
+    *  Fix Go To Definition, Hover and Signature Help when using Go from tip. [PR 655](https://github.com/Microsoft/vscode-go/pull/655)
+* [Cedric Lamoriniere (@cedriclam)](https://github.com/cedriclam)
+    *  Fix Generate Test for Current function when the function is a method on a type. [PR 657](https://github.com/Microsoft/vscode-go/pull/657)
+* [Potter Dai (@PotterDai)](https://github.com/PotterDai)
+    *  Fix Find all References when using multiple GOPATH where one is the substring of the other. [PR 658](https://github.com/Microsoft/vscode-go/pull/658)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
+    *  Fix autocomplete of unimported versioned packages from gopkg.in [PR 659](https://github.com/Microsoft/vscode-go/pull/659)
+    *  Use relative path for vendor packages when the vendor folder is right under $GOPATH/src as well. [PR 660](https://github.com/Microsoft/vscode-go/pull/660)
+    *  Fix autocomplete when working with large data. [Bug 640](https://github.com/issues/640). [PR 661](https://github.com/Microsoft/vscode-go/pull/661)
+
 ## 0.6.50 - 21st November, 2016
 * [lixiaohui (@leaxoy)](https://github.com/leaxoy), [Arnaud Barisain-Monrose (@abarisain)](https://github.com/abarisain), [Zac Bergquist (@zmb3)](https://github.com/zmb3) and [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
     * Added option to use `gogetdoc` for Goto Definition , Hover and Signature Help features. [PR 622](https://github.com/Microsoft/vscode-go/pull/622) To use this, add a setting `"go.docstool": "gogetdoc"` to your settings and reload/restart VS Code. This fixes the below bugs
@@ -10,8 +28,6 @@
     * Revert changes done in the formatting area in 0.6.48 update. Fixes below bugs
          * [#613](https://github.com/Microsoft/vscode-go/issues/613) Format removes imports of vendored packages in use
          * [#630](https://github.com/Microsoft/vscode-go/issues/630) goreturns fails to consider global variables in package 
-* [Jimmy Kuu (@jimmykuu)](https://github.com/jimmykuu)
-    *  Remove blank space in the end of code snippet on function suggest. [PR 628](https://github.com/Microsoft/vscode-go/pull/628)
      
 ## 0.6.49 - 10th November, 2016
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
