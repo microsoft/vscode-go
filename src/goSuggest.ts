@@ -215,8 +215,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		let pkgPromise = listPackages(true).then((pkgs: string[]) => {
 				this.pkgsList = pkgs.map(pkg => {
 					let index = pkg.lastIndexOf('/');
+					let pkgName = index === -1 ? pkg : pkg.substr(index + 1);
+					// pkgs from gopkg.in will be of the form gopkg.in/user/somepkg.v3
+					if (pkg.match(/gopkg\.in\/.*\.v\d+/)) {
+						pkgName = pkgName.substr(0, pkgName.indexOf('.v'));
+					}
 					return {
-						name: index === -1 ? pkg : pkg.substr(index + 1),
+						name: pkgName,
 						path: pkg
 					};
 				});
