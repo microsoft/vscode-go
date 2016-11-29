@@ -42,7 +42,10 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 						promptForMissingTool('guru');
 						return resolve(null);
 					}
-
+					if (err) {
+						console.log(err);
+						return resolve(null);
+					}
 					let lines = stdout.toString().split('\n');
 					let results: vscode.Location[] = [];
 					for (let i = 0; i < lines.length; i++) {

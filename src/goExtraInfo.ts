@@ -30,6 +30,8 @@ export class GoHoverProvider implements HoverProvider {
 			}
 			let hover = new Hover(hoverTexts);
 			return hover;
+		}, () => {
+			return null;
 		});
 	}
 }

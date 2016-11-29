@@ -47,10 +47,10 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('godef');
+					return reject();
 				}
 				if (err) {
-					console.log(err);
-					return resolve(null);
+					return reject(err);
 				};
 				let result = stdout.toString();
 				let lines = result.split('\n');
@@ -115,10 +115,10 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('gogetdoc');
+					return reject();
 				}
 				if (err) {
-					console.log(err);
-					return resolve(null);
+					return reject(err);
 				};
 				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(goGetDocOutput.pos);
@@ -165,6 +165,11 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 			let definitionResource = vscode.Uri.file(definitionInfo.file);
 			let pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
 			return new vscode.Location(definitionResource, pos);
+		}, err => {
+			if (err) {
+				console.log(err);
+			}
+			return Promise.resolve(null);
 		});
 	}
 }
