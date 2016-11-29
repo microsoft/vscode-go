@@ -126,17 +126,25 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			// are used as the target operating system and architecture. `gocode` is unable to provide
 			// autocompletion when the Go environment is configured for cross compilation.
 			let env = Object.assign({}, process.env, { GOOS: '', GOARCH: '' });
+			let stdout = '';
+			let stderr = '';
 
 			// Spawn `gocode` process
-			let p = cp.execFile(gocode, ['-f=json', 'autocomplete', filename, 'c' + offset], { env }, (err, stdout, stderr) => {
+			let p = cp.spawn(gocode, ['-f=json', 'autocomplete', filename, 'c' + offset], { env });
+			p.stdout.on('data', data => stdout += data);
+			p.stderr.on('data', data => stderr += data);
+			p.on('error', err => {
+				if (err && (<any>err).code === 'ENOENT') {
+					promptForMissingTool('gocode');
+					return reject();
+				}
+				return reject(err);
+			});
+			p.on('close', code => {
 				try {
-					if (err && (<any>err).code === 'ENOENT') {
-						promptForMissingTool('gocode');
+					if (code !== 0) {
+						return reject(stderr);
 					}
-					if (err) {
-						console.log(err);
-						return reject(err);
-					};
 					let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 					let suggestions = [];
 					let suggestionSet = new Set<string>();
@@ -181,7 +189,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 										paramSnippets.push('{{' + param + '}}');
 									}
 								}
-								item.insertText = suggest.name + '(' + paramSnippets.join(', ') + ') {{}}';
+								item.insertText = suggest.name + '(' + paramSnippets.join(', ') + '){{}}';
 							}
 							// Add same sortText to all suggestions from gocode so that they appear before the unimported packages
 							item.sortText = 'a';
@@ -207,8 +215,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		let pkgPromise = listPackages(true).then((pkgs: string[]) => {
 				this.pkgsList = pkgs.map(pkg => {
 					let index = pkg.lastIndexOf('/');
+					let pkgName = index === -1 ? pkg : pkg.substr(index + 1);
+					// pkgs from gopkg.in will be of the form gopkg.in/user/somepkg.v3
+					if (pkg.match(/gopkg\.in\/.*\.v\d+/)) {
+						pkgName = pkgName.substr(0, pkgName.indexOf('.v'));
+					}
 					return {
-						name: index === -1 ? pkg : pkg.substr(index + 1),
+						name: pkgName,
 						path: pkg
 					};
 				});

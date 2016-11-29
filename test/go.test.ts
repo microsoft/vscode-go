@@ -19,7 +19,7 @@ import { testCurrentFile } from '../src/goTest';
 import { getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
-import { generateTestCurrentFile, generateTestCurrentPackage } from '../src/goGenerateTests';
+import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
 import { getBinPath } from '../src/goPath';
 
 suite('Go Extension Tests', () => {
@@ -27,6 +27,9 @@ suite('Go Extension Tests', () => {
 	let repoPath = path.join(gopath, 'src', 'test');
 	let fixturePath = path.join(repoPath, 'testfixture');
 	let fixtureSourcePath = path.join(__dirname, '..', '..', 'test', 'fixtures');
+	let generateTestsSourcePath = path.join(repoPath, 'generatetests');
+	let generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
+	let generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
 
 	suiteSetup(() => {
 		assert.ok(gopath !== null, 'GOPATH is not defined');
@@ -35,6 +38,9 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'gogetdocTestData', 'test.go'), path.join(fixturePath, 'gogetdocTestData', 'test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generateTestsSourcePath, 'generatetests.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generateFunctionTestSourcePath, 'generatetests.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generatePackageTestSourcePath, 'generatetests.go'));
 	});
 
 	suiteTeardown(() => {
@@ -221,22 +227,22 @@ It returns the number of bytes written and any write error encountered.
 		});
 		let provider = new GoCompletionItemProvider();
 		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(12, 2), ['bytes']],
-			[new vscode.Position(13, 5), ['Abs', 'Acos', 'Asin']]
+			[new vscode.Position(11, 3), ['bytes']],
+			[new vscode.Position(12, 5), ['Abs', 'Acos', 'Asin']]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 				return editor.edit(editbuilder => {
-					editbuilder.insert(new vscode.Position(12, 0), 'by\n');
+					editbuilder.insert(new vscode.Position(12, 1), 'by\n');
 					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
 				}).then(() => {
 					let promises = testCases.map(([position, expected]) =>
 						provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
 							let labels = items.map(x => x.label);
 							for (let entry of expected) {
-								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in competion list: ${entry} Actual: ${labels}`);
+								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
 							}
 						})
 					);
@@ -283,7 +289,7 @@ It returns the number of bytes written and any write error encountered.
 				return Promise.resolve();
 			}
 
-			let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+			let uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
 					return generateTestCurrentFile().then((result: boolean) => {
@@ -293,7 +299,40 @@ It returns the number of bytes written and any write error encountered.
 				});
 			}).then(() => {
 				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+					return Promise.resolve();
+				} else {
+					return Promise.reject('generatetests_test.go not found');
+				}
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Test Generate unit tests squeleton for a function', (done) => {
+		getGoVersion().then(version => {
+			if (version.major === 1 && version.minor < 6) {
+				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
+			}
+
+			let uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
+			return vscode.workspace.openTextDocument(uri).then(document => {
+				return vscode.window.showTextDocument(document).then((editor: vscode.TextEditor) => {
+					assert(vscode.window.activeTextEditor, 'No active editor');
+					let selection = new vscode.Selection(5, 0, 6, 0);
+					editor.selection = selection;
+					return generateTestCurrentFunction().then((result: boolean) => {
+						assert.equal(result, true);
+						return Promise.resolve();
+					});
+				});
+			}).then(() => {
+				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+					return Promise.resolve();
+				} else {
+					return Promise.reject('generatetests_test.go not found');
+				}
 			});
 		}).then(() => done(), done);
 	});
@@ -305,7 +344,7 @@ It returns the number of bytes written and any write error encountered.
 				return Promise.resolve();
 			}
 
-			let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+			let uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
 					return generateTestCurrentPackage().then((result: boolean) => {
@@ -315,7 +354,11 @@ It returns the number of bytes written and any write error encountered.
 				});
 			}).then(() => {
 				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-				return Promise.resolve();
+				if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+					return Promise.resolve();
+				} else {
+					return Promise.reject('generatetests_test.go not found');
+				}
 			});
 		}).then(() => done(), done);
 	});
