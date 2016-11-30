@@ -218,7 +218,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					let pkgName = index === -1 ? pkg : pkg.substr(index + 1);
 					// pkgs from gopkg.in will be of the form gopkg.in/user/somepkg.v3
 					if (pkg.match(/gopkg\.in\/.*\.v\d+/)) {
-						pkgName = pkgName.substr(0, pkgName.indexOf('.v'));
+						pkgName = pkgName.substr(0, pkgName.lastIndexOf('.v'));
 					}
 					return {
 						name: pkgName,
