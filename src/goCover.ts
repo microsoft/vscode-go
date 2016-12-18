@@ -60,6 +60,9 @@ export function coverageCurrentPackage() {
 }
 
 export function getCodeCoverage(editor: vscode.TextEditor) {
+	if (!editor) {
+		return;
+	}
 	for (let filename in coverageFiles) {
 		if (editor.document.uri.fsPath.endsWith(filename)) {
 			highlightCoverage(editor, coverageFiles[filename], false);
