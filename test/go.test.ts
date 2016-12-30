@@ -41,6 +41,10 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generateTestsSourcePath, 'generatetests.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generateFunctionTestSourcePath, 'generatetests.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generatePackageTestSourcePath, 'generatetests.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file1.go'), path.join(fixturePath, 'diffTest1Data', 'file1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file2.go'), path.join(fixturePath, 'diffTest1Data', 'file2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file1.go'), path.join(fixturePath, 'diffTest2Data', 'file1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file2.go'), path.join(fixturePath, 'diffTest2Data', 'file2.go'));
 	});
 
 	suiteTeardown(() => {
@@ -406,8 +410,8 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test diffUtils.getEditsFromUnifiedDiffStr', (done) => {
-		let file1path = path.join(fixtureSourcePath, 'diffTestData', 'file1.go');
-		let file2path = path.join(fixtureSourcePath, 'diffTestData', 'file2.go');
+		let file1path = path.join(fixturePath, 'diffTest1Data', 'file1.go');
+		let file2path = path.join(fixturePath, 'diffTest1Data', 'file2.go');
 		let file1uri = vscode.Uri.file(file1path);
 		let file2contents = fs.readFileSync(file2path, 'utf8');
 
@@ -443,7 +447,7 @@ It returns the number of bytes written and any write error encountered.
 						});
 					}).then(() => {
 						assert.equal(editor.document.getText(), file2contents);
-						return vscode.commands.executeCommand('workbench.action.files.revert');
+						return Promise.resolve();
 					});
 				});
 			});
@@ -451,8 +455,8 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test diffUtils.getEdits', (done) => {
-		let file1path = path.join(fixtureSourcePath, 'diffTestData', 'file1.go');
-		let file2path = path.join(fixtureSourcePath, 'diffTestData', 'file2.go');
+		let file1path = path.join(fixturePath, 'diffTest2Data', 'file1.go');
+		let file2path = path.join(fixturePath, 'diffTest2Data', 'file2.go');
 		let file1uri = vscode.Uri.file(file1path);
 		let file1contents = fs.readFileSync(file1path, 'utf8');
 		let file2contents = fs.readFileSync(file2path, 'utf8');
@@ -485,7 +489,7 @@ It returns the number of bytes written and any write error encountered.
 					});
 				}).then(() => {
 					assert.equal(editor.document.getText(), file2contents);
-					return vscode.commands.executeCommand('workbench.action.files.revert');
+					return Promise.resolve();
 				});
 			}).then(() => done(), done);
 		});
