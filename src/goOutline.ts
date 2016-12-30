@@ -81,10 +81,15 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 			if (decl.receiverType) {
 				label = '(' + decl.receiverType + ').' + label;
 			}
+
+			let codeBuf = new Buffer(document.getText());
+			let start = codeBuf.slice(0, decl.start - 1).toString().length;
+			let end = codeBuf.slice(0, decl.end - 1).toString().length;
+
 			let symbolInfo = new vscode.SymbolInformation(
 				label,
 				this.goKindToCodeKind[decl.type],
-				new vscode.Range(document.positionAt(decl.start), document.positionAt(decl.end - 1)),
+				new vscode.Range(document.positionAt(start), document.positionAt(end)),
 				undefined,
 				containerName);
 			symbols.push(symbolInfo);
