@@ -670,8 +670,17 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse): void {
-		logError('Not yet implemented: stepOutRequest');
-		this.sendErrorResponse(response, 2000, 'Step out is not yet supported');
+		log('StepOutRequest');
+		this.delve.call<DebuggerState>('Command', [{ name: 'stepOut' }], (err, state) => {
+			if (err) {
+				logError('Failed to stepout.');
+			}
+			log(state);
+			this.debugState = state;
+			this.handleReenterDebug('step');
+		});
+		this.sendResponse(response);
+		log('StepOutResponse');
 	}
 
 	protected pauseRequest(response: DebugProtocol.PauseResponse): void {
