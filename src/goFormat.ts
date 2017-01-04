@@ -11,6 +11,7 @@ import path = require('path');
 import { isDiffToolAvailable, getEdits, getEditsFromUnifiedDiffStr } from '../src/diffUtils';
 import { getBinPath } from './goPath';
 import { promptForMissingTool } from './goInstallTools';
+import { sendTelemetryEvent } from './util';
 
 export class Formatter {
 	private formatCommand = 'goreturns';
@@ -36,7 +37,7 @@ export class Formatter {
 			if (formatFlags.indexOf('-w') > -1) {
 				formatFlags.splice(formatFlags.indexOf('-w'), 1);
 			}
-
+			let t0 = Date.now();
 			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
@@ -55,6 +56,8 @@ export class Formatter {
 						textEdits.push(edit.apply());
 					});
 
+					let timeTaken = Date.now() - t0;
+					sendTelemetryEvent('format', { tool:  this.formatCommand}, {timeTaken});
 					return resolve(textEdits);
 				} catch (e) {
 					reject('Internal issues while getting diff from formatted content');

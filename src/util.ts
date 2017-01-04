@@ -7,6 +7,11 @@ import vscode = require('vscode');
 import path = require('path');
 import { getGoRuntimePath } from './goPath';
 import cp = require('child_process');
+import TelemetryReporter from 'vscode-extension-telemetry';
+
+const extensionId: string = 'lukehoban.Go';
+const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
+const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
 
 export interface SemVersion {
 	major: number;
@@ -15,6 +20,7 @@ export interface SemVersion {
 
 let goVersion: SemVersion = null;
 let vendorSupport: boolean = null;
+let telemtryReporter: TelemetryReporter;
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
 	let offset = document.offsetAt(position);
@@ -133,6 +139,7 @@ export function getGoVersion(): Promise<SemVersion> {
 	}
 	return new Promise<SemVersion>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
+			sendTelemetryEvent('getGoVersion', {version: stdout});
 			let matches = /go version go(\d).(\d).*/.exec(stdout);
 			if (matches) {
 				goVersion = {
@@ -188,4 +195,14 @@ export function isGoPathSet(): boolean {
 	}
 
 	return true;
+}
+
+export function sendTelemetryEvent(eventName: string, properties?: {
+			[key: string]: string;
+		}, measures?: {
+			[key: string]: number;
+		}): void {
+
+			telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
+			telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
 }

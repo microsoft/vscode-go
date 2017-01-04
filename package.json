@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.51",
+  "version": "0.6.52",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -36,7 +36,8 @@
     "diff": "~3.0.0",
     "json-rpc2": "^1.0.2",
     "vscode-debugadapter": "^1.11.0",
-    "vscode-debugprotocol": "^1.11.0"
+    "vscode-debugprotocol": "^1.11.0",
+    "vscode-extension-telemetry": "0.0.5"
   },
   "devDependencies": {
     "fs-extra": "^0.30.0",
