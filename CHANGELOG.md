@@ -1,3 +1,13 @@
+## 0.6.52 - 5th January, 2017
+* [Yuwei Ba (@ibigbug)](https://github.com/ibigbug)
+    * Use `http.proxy` setting while installing Go tools. [PR 639](https://github.com/Microsoft/vscode-go/pull/639)
+* [chronos (@bylevel)](https://github.com/bylevel)
+    * Bug [#465](https://github.com/Microsoft/vscode-go/issues/465) Fix file outline when non English comments in file. [PR 699](https://github.com/Microsoft/vscode-go/pull/699)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Implement Step Out in debgging [Commit 6d0f440](https://github.com/Microsoft/vscode-go/commit/6d0f4405330efb789c16a01434cf096f0f9fb29c)
+    * Improve performance by reducing number of calls to `godoc`, `godef`, `gogetdoc`. [PR 711](https://github.com/Microsoft/vscode-go/pull/711)
+    * Default value for `go.autocompleteUnimportedPackages` is now false to reduce noise in the suggestion list. Members of unimported packages will still show up in suggestion list after typing dot after package name.
+	
 ## 0.6.51 - 29th November, 2016
 * [Jimmy Kuu (@jimmykuu)](https://github.com/jimmykuu)
     *  Remove blank space in the end of code snippet on function suggest. [PR 628](https://github.com/Microsoft/vscode-go/pull/628)
