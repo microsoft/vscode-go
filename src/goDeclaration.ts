@@ -11,7 +11,7 @@ import path = require('path');
 import { getBinPath } from './goPath';
 import { byteOffsetAt } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { getGoVersion, SemVersion } from './util';
+import { getGoVersion, SemVersion, goKeywords, isPositionInString } from './util';
 
 export interface GoDefinitionInformtation {
 	file: string;
@@ -24,22 +24,26 @@ export interface GoDefinitionInformtation {
 }
 
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, toolForDocs: string, includeDocs = true): Promise<GoDefinitionInformtation> {
+	let wordRange = document.getWordRangeAtPosition(position);
+	let lineText = document.lineAt(position.line).text;
+	let word = wordRange ? document.getText(wordRange) : '';
+	if (!wordRange || lineText.startsWith('//') || isPositionInString(document, position) || word.match(/^\d+.?\d+$/) || goKeywords.indexOf(word) > 0) {
+		return Promise.resolve(null);
+	}
+
+	let offset = byteOffsetAt(document, position);
 	return getGoVersion().then((ver: SemVersion) => {
 		// If no Go version can be parsed, it means it's a non-tagged one.
 		// Assume it's > Go 1.5
 		if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
-			return definitionLocation_godef(document, position, includeDocs);
+			return definitionLocation_godef(document, position, offset, includeDocs);
 		}
-		return definitionLocation_gogetdoc(document, position);
+		return definitionLocation_gogetdoc(document, position, offset);
 	});
 }
 
-function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, includeDocs = true): Promise<GoDefinitionInformtation> {
+function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, offset: number, includeDocs = true): Promise<GoDefinitionInformtation> {
 	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
-
-		let wordAtPosition = document.getWordRangeAtPosition(position);
-		let offset = byteOffsetAt(document, position);
-
 		let godef = getBinPath('godef');
 
 		// Spawn `godef` process
@@ -106,10 +110,8 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 	});
 }
 
-function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position): Promise<GoDefinitionInformtation> {
+function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number): Promise<GoDefinitionInformtation> {
 	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
-		let wordAtPosition = document.getWordRangeAtPosition(position);
-		let offset = byteOffsetAt(document, position);
 		let gogetdoc = getBinPath('gogetdoc');
 		let p = cp.execFile(gogetdoc, ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()], {}, (err, stdout, stderr) => {
 			try {

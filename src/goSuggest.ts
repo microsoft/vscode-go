@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { dirname, basename } from 'path';
 import { getBinPath } from './goPath';
-import { parameters, parseFilePrelude } from './util';
+import { parameters, parseFilePrelude, isPositionInString } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { listPackages, getTextEditForAddImport } from './goImport';
 
@@ -61,11 +61,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					return resolve([]);
 				}
 
-				// Count the number of double quotes in the line till current position. Ignore escaped double quotes
-				let doubleQuotesCnt = (lineTillCurrentPosition.match(/[^\\]\"/g) || []).length;
-				doubleQuotesCnt += lineTillCurrentPosition.startsWith('\"') ? 1 : 0;
-				let inString = (doubleQuotesCnt % 2 === 1);
-
+				let inString = isPositionInString(document, position);
 				if (!inString && lineTillCurrentPosition.endsWith('\"')) {
 					return resolve([]);
 				}

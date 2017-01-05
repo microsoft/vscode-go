@@ -13,6 +13,34 @@ const extensionId: string = 'lukehoban.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
 const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
 
+export const goKeywords: string[] = [
+	'break',
+	'case',
+	'chan',
+	'const',
+	'continue',
+	'default',
+	'defer',
+	'else',
+	'fallthrough',
+	'for',
+	'func',
+	'go',
+	'goto',
+	'if',
+	'import',
+	'interface',
+	'map',
+	'package',
+	'range',
+	'return',
+	'select',
+	'struct',
+	'switch',
+	'type',
+	'var'
+];
+
 export interface SemVersion {
 	major: number;
 	minor: number;
@@ -205,4 +233,14 @@ export function sendTelemetryEvent(eventName: string, properties?: {
 
 			telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
 			telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
+}
+
+export function isPositionInString(document: vscode.TextDocument, position: vscode.Position): boolean {
+	let lineText = document.lineAt(position.line).text;
+	let lineTillCurrentPosition = lineText.substr(0, position.character);
+
+	// Count the number of double quotes in the line till current position. Ignore escaped double quotes
+	let doubleQuotesCnt = (lineTillCurrentPosition.match(/[^\\]\"/g) || []).length;
+	doubleQuotesCnt += lineTillCurrentPosition.startsWith('\"') ? 1 : 0;
+	return doubleQuotesCnt % 2 === 1;
 }
