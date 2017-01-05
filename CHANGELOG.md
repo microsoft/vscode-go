@@ -11,34 +11,37 @@
     *  Fix Generate Test for Current function when the function is a method on a type. [PR 657](https://github.com/Microsoft/vscode-go/pull/657)
 * [Potter Dai (@PotterDai)](https://github.com/PotterDai)
     *  Fix Find all References when using multiple GOPATH where one is the substring of the other. [PR 658](https://github.com/Microsoft/vscode-go/pull/658)
-* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     *  Fix autocomplete of unimported versioned packages from gopkg.in [PR 659](https://github.com/Microsoft/vscode-go/pull/659)
     *  Use relative path for vendor packages when the vendor folder is right under $GOPATH/src as well. [PR 660](https://github.com/Microsoft/vscode-go/pull/660)
     *  Fix autocomplete when working with large data. [Bug 640](https://github.com/issues/640). [PR 661](https://github.com/Microsoft/vscode-go/pull/661)
 
 ## 0.6.50 - 21st November, 2016
-* [lixiaohui (@leaxoy)](https://github.com/leaxoy), [Arnaud Barisain-Monrose (@abarisain)](https://github.com/abarisain), [Zac Bergquist (@zmb3)](https://github.com/zmb3) and [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
+* [lixiaohui (@leaxoy)](https://github.com/leaxoy), [Arnaud Barisain-Monrose (@abarisain)](https://github.com/abarisain), [Zac Bergquist (@zmb3)](https://github.com/zmb3) and [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Added option to use `gogetdoc` for Goto Definition , Hover and Signature Help features. [PR 622](https://github.com/Microsoft/vscode-go/pull/622) To use this, add a setting `"go.docstool": "gogetdoc"` to your settings and reload/restart VS Code. This fixes the below bugs
          * [#440](https://github.com/Microsoft/vscode-go/issues/440) Hover info does not show doc string for structs
          * [#442](https://github.com/Microsoft/vscode-go/issues/442) Goto Definition, Hover, Signature Help do not work for `net` package
-         * [#496](https://github.com/Microsoft/vscode-go/issues/496) Goto Definition, Hover, Signature Help do not work for Dot imported functions 
+         * [#496](https://github.com/Microsoft/vscode-go/issues/496) Goto Definition, Hover, Signature Help do not work for Dot imported functions
          * [#515](https://github.com/Microsoft/vscode-go/issues/515) Go to definition and type info doesn't work with mux.Vars or anything else from gorilla/mux
          * [#567](https://github.com/Microsoft/vscode-go/issues/567) Signature Help and Quick Info do not show function comments for unexported functions
-* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Revert changes done in the formatting area in 0.6.48 update. Fixes below bugs
          * [#613](https://github.com/Microsoft/vscode-go/issues/613) Format removes imports of vendored packages in use
-         * [#630](https://github.com/Microsoft/vscode-go/issues/630) goreturns fails to consider global variables in package 
-     
+         * [#630](https://github.com/Microsoft/vscode-go/issues/630) goreturns fails to consider global variables in package
+* [Jimmy Kuu (@jimmykuu)](https://github.com/jimmykuu)
+    *  Remove blank space in the end of code snippet on function suggest. [PR 628](https://github.com/Microsoft/vscode-go/pull/628)
+    *  [#630](https://github.com/Microsoft/vscode-go/issues/630) goreturns fails to consider global variables in package
+
 ## 0.6.49 - 10th November, 2016
-* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
-    * Revert the deprecation of `go.formatOnSave` due to popular demand. 
-    
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Revert the deprecation of `go.formatOnSave` due to popular demand.
+
 ## 0.6.48 - 9th November, 2016
 * [Mark LaPerriere (@marklap)](https://github.com/marklap)
     * Snippets for method declaration, main and init functions [PR 602](https://github.com/Microsoft/vscode-go/pull/602)
 * [Rob Lourens @roblourens](https://github.com/roblourens)
     * launch.json intellisense to include all "mode" values. Fixes [#574](https://github.com/Microsoft/vscode-go/issues/574)
-* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Support for `editor.formatOnSave` and deprecating `go.formatOnSave` [PR 578](https://github.com/Microsoft/vscode-go/pull/578)
     * Remove deprecated language configuration settings [PR 587](https://github.com/Microsoft/vscode-go/pull/587)
     * Feature Request [432](https://github.com/Microsoft/vscode-go/issues/432): Commands to switch to test file and back.  [PR 590](https://github.com/Microsoft/vscode-go/pull/590). You can add your own shortcuts for these commands.
@@ -46,7 +49,7 @@
          * `Go: Open Implementation for Test File`
     * Navigate to test file after generating unit tests using the `Go: Generate unit tests ...` commands. [PR 610](https://github.com/Microsoft/vscode-go/pull/610)
     * Prompt to set GOPATH if not set already [PR 591](https://github.com/Microsoft/vscode-go/pull/591)
-    * Improvements to auto complete 
+    * Improvements to auto complete
          * [#389](https://github.com/Microsoft/vscode-go/issues/389) Fix issue with autocomplete popping up at the end of a string [PR 586](https://github.com/Microsoft/vscode-go/pull/586)
          * [#598](https://github.com/Microsoft/vscode-go/issues/598) Importable packages in auto complete should appear after rest of the suggestions. [PR 603](https://github.com/Microsoft/vscode-go/pull/603)
          * [#598](https://github.com/Microsoft/vscode-go/issues/598) Importing vendored packages from other Go projects should not be allowed. [PR 605](https://github.com/Microsoft/vscode-go/pull/605)
@@ -55,16 +58,16 @@
          * [#592](https://github.com/Microsoft/vscode-go/issues/592) Use Go from GOROOT while installing tools [PR 594](https://github.com/Microsoft/vscode-go/pull/594)
          * [#585](https://github.com/Microsoft/vscode-go/issues/585) Use fs.stat instead of fs.exists to avoid mistaking "go" folder as "go" file [PR 595](https://github.com/Microsoft/vscode-go/pull/595)
          * [#563](https://github.com/Microsoft/vscode-go/issues/563) Dont run `gotests` on non Go files [PR 584](https://github.com/Microsoft/vscode-go/pull/584)
-         
+
 ## 0.6.47 - 26th October 2016
 * [Rob Lourens @roblourens](https://github.com/roblourens)
     * Fix the regression in debugging [PR #576](https://github.com/Microsoft/vscode-go/pull/576)
 * [Ramya Rao(@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Preserve focus in editor when running tests [PR #577](https://github.com/Microsoft/vscode-go/pull/577)
-	
+
 ## 0.6.46 - 26th October 2016
 * [Ramya Rao(@ramya-rao-a)](https://github.com/ramya-rao-a)
-    * Fix issues due to missing version when Go is used from source without release tags [PR #549](https://github.com/Microsoft/vscode-go/pull/549) 
+    * Fix issues due to missing version when Go is used from source without release tags [PR #549](https://github.com/Microsoft/vscode-go/pull/549)
     * Use -imports-only option in go-outline tool [PR #550](https://github.com/Microsoft/vscode-go/pull/550)
 * [Rob Lourens @roblourens](https://github.com/roblourens)
     * Use random port number while debugging [PR #553](https://github.com/Microsoft/vscode-go/pull/553)
