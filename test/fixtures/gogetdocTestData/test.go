@@ -26,7 +26,7 @@ func main() {
 
 // Hello is a method on the struct ABC. Will signature help understand this correctly
 func (abcd *ABC) Hello(s string, exclaim bool) string {
-	net.CIDRMask(1, 2)
+	net.CIDRMask(10, 20)
 	if exclaim {
 		s = s + "!"
 	}
