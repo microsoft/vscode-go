@@ -19,6 +19,17 @@ before_install:
     fi
 
 install:
+  - TRAVIS_NODE_VERSION="6";
+      # Clear out whatever version of NVM Travis has as it is old.
+  - rm -rf ~/.nvm;
+      # Grab NVM.
+  - git clone https://github.com/creationix/nvm.git ~/.nvm;
+      # Checkout the latest stable tag.
+      # Note that you can just hardcode a preferred version here.
+  - (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`);
+      # Install the desired version of Node
+  -  source ~/.nvm/nvm.sh;
+  -  nvm install $TRAVIS_NODE_VERSION;
   - npm install
   - npm run vscode:prepublish
   - go get -u -v github.com/nsf/gocode
