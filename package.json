@@ -377,8 +377,8 @@
         },
         "go.autocompleteUnimportedPackages": {
           "type": "boolean",
-          "default": true,
-          "description": "Autocomplete members from unimported packages."
+          "default": false,
+          "description": "Include unimported packages in auto-complete suggestions."
         },
         "go.docsTool": {
           "type": "string",
