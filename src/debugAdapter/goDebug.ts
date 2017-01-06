@@ -191,6 +191,9 @@ class Delve {
 			if (showLog) {
 				dlvArgs = dlvArgs.concat(['--log=' + showLog.toString()]);
 			}
+			if (cwd) {
+				dlvArgs = dlvArgs.concat(['--wd=' + cwd]);
+			}
 			if (buildFlags) {
 				dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
 			}
