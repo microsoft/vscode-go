@@ -21,7 +21,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Build-on-save (using `go build` and `go test`)
 - Lint-on-save (using `golint` or `gometalinter`)
 - Format (using `goreturns` or `goimports` or `gofmt`)
-- Generate unit tests squeleton (using `gotests`)
+- Generate unit tests skeleton (using `gotests`)
 - Add Imports (using `gopkgs`)
 - [_partially implemented_] Debugging (using `delve`)
 
