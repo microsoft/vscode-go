@@ -33,7 +33,13 @@ export function getBinPathFromEnvVar(toolName: string, envVar: string, appendBin
 export function getBinPath(binname: string) {
 	if (binPathCache[correctBinname(binname)]) return binPathCache[correctBinname(binname)];
 
-	// First search each GOPATH workspace's bin folder
+	// First search VSCODE_GOTOOLS' bin folder
+	let pathFromToolsGoPath = getBinPathFromEnvVar(binname, 'VSCODE_GOTOOLS', true);
+	if (pathFromToolsGoPath) {
+		return pathFromToolsGoPath;
+	}
+
+	// Then search each GOPATH workspace's bin folder
 	let pathFromGoPath = getBinPathFromEnvVar(binname, 'GOPATH', true);
 	if (pathFromGoPath) {
 		return pathFromGoPath;

@@ -209,7 +209,9 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
 - gotests: `go get -u -v github.com/cweill/gotests/...`
 
-To install them just paste and run:
+If you wish to have the extension use a separate GOPATH for its tools, set the VSCODE_GOTOOLS environment variable to the desired path.
+
+To install the tools manually in the current GOPATH, just paste and run:
 ```bash
 go get -u -v github.com/nsf/gocode
 go get -u -v github.com/rogpeppe/godef
