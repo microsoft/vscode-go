@@ -126,6 +126,14 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 			HTTPS_PROXY: httpProxy,
 		});
 	}
+
+	// If the VSCODE_GOTOOLS environment variable is set, use 
+ 	// its value as the GOPATH for the "go get" child precess.
+	let toolsGoPath = process.env['VSCODE_GOTOOLS'];
+	if (toolsGoPath) {
+		env['GOPATH'] = toolsGoPath;
+	}
+
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
 			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env }, (err, stdout, stderr) => {
