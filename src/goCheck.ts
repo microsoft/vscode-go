@@ -14,6 +14,7 @@ import { getBinPath, getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
+import { parseFilePrelude } from './util';
 
 export interface ICheckResult {
 	file: string;
@@ -72,22 +73,42 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	}
 
 	if (!!goConfig['buildOnSave']) {
-		let buildFlags = goConfig['buildFlags'] || [];
-		let buildTags = '"' + goConfig['buildTags'] + '"';
-		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
-		let args = ['build', '-o', tmppath, '-tags', buildTags, ...buildFlags, '.'];
-		if (filename.match(/_test.go$/i)) {
-			args = ['test', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, '.'];
-		}
-		runningToolsPromises.push(runTool(
-			goRuntimePath,
-			args,
-			cwd,
-			'error',
-			true,
-			null,
-			`Cannot find ${goRuntimePath}`
-		));
+		// we need to parse the file to check the package name
+		// if the package is a main pkg, we won't be doing a go build -i
+		let buildPromise = new Promise<{}>((resolve, reject) => {
+			let isMainPkg = false;
+			fs.readFile(filename, 'utf8', (err, data) => {
+				if (err) {
+					return;
+				}
+				let prelude = parseFilePrelude(data);
+				if (prelude.pkg) {
+					isMainPkg = prelude.pkg.name === 'main';
+				}
+
+				let buildFlags = goConfig['buildFlags'] || [];
+				let buildTags = '"' + goConfig['buildTags'] + '"';
+				let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
+				let args = ['build'];
+				if (!isMainPkg) {
+					args.push('- i');
+				};
+				args = args.concat(['-o', tmppath, '-tags', buildTags, ...buildFlags, '.']);
+				if (filename.match(/_test.go$/i)) {
+					args = ['test', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, '.'];
+				}
+				runTool(
+					goRuntimePath,
+					args,
+					cwd,
+					'error',
+					true,
+					null,
+					`Cannot find ${goRuntimePath}`
+				).then(result => resolve(result), err => reject(err));
+			});
+		});
+		runningToolsPromises.push(buildPromise);
 	}
 	if (!!goConfig['lintOnSave']) {
 		let lintTool = getBinPath(goConfig['lintTool'] || 'golint');
