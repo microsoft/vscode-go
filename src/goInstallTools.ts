@@ -108,7 +108,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 	}
 	outputChannel.show();
 	outputChannel.clear();
-	outputChannel.appendLine('Installing ' + missing.length + ' tools');
+	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'}`);
 	missing.forEach((missingTool, index, missing) => {
 		outputChannel.appendLine('  ' + missingTool);
 	});
