@@ -11,6 +11,7 @@ import os = require('os');
 import fs = require('fs');
 import { getBinPath, getGoRuntimePath } from './goPath';
 import rl = require('readline');
+import { outputChannel } from './goStatus';
 
 let coveredHighLight = vscode.window.createTextEditorDecorationType({
 	// Green
@@ -107,8 +108,10 @@ export function getCoverage(filename: string): Promise<any[]> {
 			try {
 				// Clear existing coverage files
 				clearCoverage();
-				if (err && (<any>err).code === 'ENOENT') {
-					vscode.window.showInformationMessage('Could not generate coverage report.  Install Go from http://golang.org/dl/.');
+				if (err && (<any>err).code !== 0) {
+					outputChannel.clear();
+					outputChannel.append(((<any>err).message));
+					outputChannel.show(true);
 					return resolve([]);
 				}
 
