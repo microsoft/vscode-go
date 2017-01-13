@@ -127,11 +127,10 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 		});
 	}
 
-	// If the VSCODE_GOTOOLS environment variable is set, use 
- 	// its value as the GOPATH for the "go get" child precess.
-	let toolsGoPath = process.env['VSCODE_GOTOOLS'];
-	if (toolsGoPath) {
-		env['GOPATH'] = toolsGoPath;
+	// If the 'go.toolsGopath' configuration is set, use its value as the GOPATH for the "go get" child precess.
+	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
+	if (toolsGopath) {
+		env['GOPATH'] = toolsGopath;
 	}
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {

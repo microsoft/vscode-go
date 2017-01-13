@@ -11,6 +11,7 @@
 import fs = require('fs');
 import path = require('path');
 import os = require('os');
+import vscode = require('vscode');
 
 let binPathCache: { [bin: string]: string; } = {};
 let runtimePathCache: string = 'go';
@@ -33,8 +34,8 @@ export function getBinPathFromEnvVar(toolName: string, envVar: string, appendBin
 export function getBinPath(binname: string) {
 	if (binPathCache[correctBinname(binname)]) return binPathCache[correctBinname(binname)];
 
-	// First search VSCODE_GOTOOLS' bin folder
-	let pathFromToolsGoPath = getBinPathFromEnvVar(binname, 'VSCODE_GOTOOLS', true);
+	// First search bin folder in 'go.toolsGopath'
+	let pathFromToolsGoPath = getBinPathFromConfig(binname, 'toolsGopath', true);
 	if (pathFromToolsGoPath) {
 		return pathFromToolsGoPath;
 	}
@@ -91,4 +92,15 @@ function fileExists(filePath: string): boolean {
 	} catch (e) {
 		return false;
 	}
+}
+
+function getBinPathFromConfig(toolName: string, configKey: string, appendBinToPath: boolean): string {
+	let pathFromConfig = vscode.workspace.getConfiguration('go')[configKey];
+	if(pathFromConfig) {
+		let binpath = path.join(pathFromConfig, appendBinToPath ? 'bin' : '', toolName);
+		if(fileExists(binpath)) {
+			return binpath;
+		}
+	}
+	return null;
 }

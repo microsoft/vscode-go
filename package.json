@@ -345,6 +345,14 @@
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set."
         },
+        "go.toolsGopath": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Specifies a separate GOPATH to use for the Go tools."
+        },
         "go.formatOnSave": {
           "type": "boolean",
           "default": true,
