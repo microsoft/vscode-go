@@ -103,6 +103,10 @@ export function promptForUpdatingTool(tool: string) {
 function installTools(goVersion: SemVersion, missing?: string[]) {
 	let tools = getTools(goVersion);
 	let goRuntimePath = getGoRuntimePath();
+	if (!goRuntimePath) {
+		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		return;
+	}
 	if (!missing) {
 		missing = Object.keys(tools);
 	}
@@ -117,7 +121,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 	// http.proxy setting takes precedence over environment variables
 	let httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
-	let env = process.env;
+	let env = Object.assign({}, process.env);
 	if (httpProxy) {
 		env = Object.assign({}, process.env, {
 			http_proxy: httpProxy,
