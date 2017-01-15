@@ -109,6 +109,8 @@ In addition to integrated editing features, the extension also provides several 
 
 To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation) for full details.  On OS X it requires creating a self-signed cert to sign the `dlv` binary.
 
+Either ensure that `dlv` is in your path or ensure that GOPATH is set outside of VS Code so that the debugger can find it.
+
 Once this is installed, go to the Code debug viewlet and select the configuration gear, placing the following in your launch.json:
 
 ```json
@@ -136,6 +138,8 @@ The `mode` parameter can be set to:
 * `test` to debug tests in the program folder. To run individual tests, pass `-test.run` and the Test name as args.
 * `exec` to run a pre-built binary specified in program, for example `"program":"${workspaceRoot}/mybin"`.
 * `remote` to attach to a remote headless Delve server.  You must manually run Delve on the remote machine, and provide the additional `remotePath`, `host` and `port` debug configuration options pointing at the remote machine.
+
+The debugger cannot read GOPATH from the user/workspace settings. Therefore, if you want to use a GOPATH that is different from the one set outside of VS Code, then set it in the `env` property in the launch.json file.
 
 #### Remote Debugging
 
