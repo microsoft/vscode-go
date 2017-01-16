@@ -103,12 +103,16 @@ export function promptForUpdatingTool(tool: string) {
 function installTools(goVersion: SemVersion, missing?: string[]) {
 	let tools = getTools(goVersion);
 	let goRuntimePath = getGoRuntimePath();
+	if (!goRuntimePath) {
+		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		return;
+	}
 	if (!missing) {
 		missing = Object.keys(tools);
 	}
 	outputChannel.show();
 	outputChannel.clear();
-	outputChannel.appendLine('Installing ' + missing.length + ' tools');
+	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'}`);
 	missing.forEach((missingTool, index, missing) => {
 		outputChannel.appendLine('  ' + missingTool);
 	});
@@ -117,7 +121,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 	// http.proxy setting takes precedence over environment variables
 	let httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
-	let env = process.env;
+	let env = Object.assign({}, process.env);
 	if (httpProxy) {
 		env = Object.assign({}, process.env, {
 			http_proxy: httpProxy,
@@ -126,6 +130,14 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 			HTTPS_PROXY: httpProxy,
 		});
 	}
+
+	// If the VSCODE_GOTOOLS environment variable is set, use 
+ 	// its value as the GOPATH for the "go get" child precess.
+	let toolsGoPath = process.env['VSCODE_GOTOOLS'];
+	if (toolsGoPath) {
+		env['GOPATH'] = toolsGoPath;
+	}
+
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
 			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env }, (err, stdout, stderr) => {

@@ -13,7 +13,7 @@ import path = require('path');
 import os = require('os');
 
 let binPathCache: { [bin: string]: string; } = {};
-let runtimePathCache: string = 'go';
+let runtimePathCache: string = '';
 
 export function getBinPathFromEnvVar(toolName: string, envVar: string, appendBinToPath: boolean): string {
 	toolName = correctBinname(toolName);
@@ -33,7 +33,13 @@ export function getBinPathFromEnvVar(toolName: string, envVar: string, appendBin
 export function getBinPath(binname: string) {
 	if (binPathCache[correctBinname(binname)]) return binPathCache[correctBinname(binname)];
 
-	// First search each GOPATH workspace's bin folder
+	// First search VSCODE_GOTOOLS' bin folder
+	let pathFromToolsGoPath = getBinPathFromEnvVar(binname, 'VSCODE_GOTOOLS', true);
+	if (pathFromToolsGoPath) {
+		return pathFromToolsGoPath;
+	}
+
+	// Then search each GOPATH workspace's bin folder
 	let pathFromGoPath = getBinPathFromEnvVar(binname, 'GOPATH', true);
 	if (pathFromGoPath) {
 		return pathFromGoPath;
@@ -68,7 +74,7 @@ function correctBinname(binname: string) {
  * @return the path to the Go binary.
  */
 export function getGoRuntimePath(): string {
-	if (runtimePathCache !== 'go') return runtimePathCache;
+	if (runtimePathCache) return runtimePathCache;
 	let correctBinNameGo = correctBinname('go');
 	if (process.env['GOROOT']) {
 		runtimePathCache = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);

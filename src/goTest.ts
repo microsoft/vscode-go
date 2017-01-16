@@ -51,6 +51,10 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
+	if (!editor.document.fileName.endsWith('_test.go')) {
+		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
+		return;
+	}
 	getTestFunctions(editor.document).then(testFunctions => {
 		let testFunction: vscode.SymbolInformation;
 		// Find any test function containing the cursor.
@@ -103,6 +107,10 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration): Thenab
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
+		return;
+	}
+	if (!editor.document.fileName.endsWith('_test.go')) {
+		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
 	return getTestFunctions(editor.document).then(testFunctions => {
