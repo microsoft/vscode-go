@@ -109,68 +109,11 @@ In addition to integrated editing features, the extension also provides several 
 
 To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation) for full details.  On OS X it requires creating a self-signed cert to sign the `dlv` binary.
 
-Either ensure that `dlv` is in your path or ensure that GOPATH is set outside of VS Code so that the debugger can find it.
-
-Once this is installed, go to the Code debug viewlet and select the configuration gear, placing the following in your launch.json:
-
-```json
-{
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"name": "Launch",
-			"type": "go",
-			"request": "launch",
-			"mode": "debug",
-			"program": "${workspaceRoot}",
-			"env": {},
-			"args": []
-		}
-	]
-}
-```
-
-The `program` option can refer to a package folder to debug, or a file within that folder.
-
-The `mode` parameter can be set to:
-
-* `debug` to compile the contents of the program folder and launch under the debugger. [default]
-* `test` to debug tests in the program folder. To run individual tests, pass `-test.run` and the Test name as args.
-* `exec` to run a pre-built binary specified in program, for example `"program":"${workspaceRoot}/mybin"`.
-* `remote` to attach to a remote headless Delve server.  You must manually run Delve on the remote machine, and provide the additional `remotePath`, `host` and `port` debug configuration options pointing at the remote machine.
-
-The debugger cannot read GOPATH from the user/workspace settings. Therefore, if you want to use a GOPATH that is different from the one set outside of VS Code, then set it in the `env` property in the launch.json file.
+For more read [Debugging Go Code Using VS Code](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code)
 
 #### Remote Debugging
 
-To remote debug using VS Code, you must first run a headless Delve server on the target machine.  For example:
-
-```bash
-$ dlv debug --headless --listen=:2345 --log
-```
-
-Then, create a remote debug configuration in VS Code `launch.json`.
-
-```json
-{
-	"name": "Remote",
-	"type": "go",
-	"request": "launch",
-	"mode": "remote",
-	"remotePath": "${workspaceRoot}",
-	"port": 2345,
-	"host": "127.0.0.1",
-	"program": "${workspaceRoot}",
-	"env": {},
-	"args": []
-}
-```
-
-When you launch the debugger with this new `Remote` target selected, VS Code will send debugging
-commands to the `dlv` server you started previously instead of launching it's own `dlv` instance against your app.
-
-The above example runs both the headless `dlv` server and the VS Code debugger locally on the same machine.  For an
-example of running these on different hosts, see the example of debugging a process running in a docker host at https://github.com/lukehoban/webapp-go/tree/debugging.
+To remote debug using VS Code, read [Remote Debugging](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code#remote-debugging) 
 
 ## Building and Debugging the Extension
 
