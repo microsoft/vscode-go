@@ -15,10 +15,10 @@ import os = require('os');
 let binPathCache: { [bin: string]: string; } = {};
 let runtimePathCache: string = '';
 
-export function getBinPathFromEnvVar(toolName: string, envVar: string, appendBinToPath: boolean): string {
+export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appendBinToPath: boolean): string {
 	toolName = correctBinname(toolName);
-	if (process.env[envVar]) {
-		let paths = process.env[envVar].split(path.delimiter);
+	if (envVarValue) {
+		let paths = envVarValue.split(path.delimiter);
 		for (let i = 0; i < paths.length; i++) {
 			let binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', toolName);
 			if (fileExists(binpath)) {
@@ -30,29 +30,29 @@ export function getBinPathFromEnvVar(toolName: string, envVar: string, appendBin
 	return null;
 }
 
-export function getBinPath(binname: string) {
+export function getBinPath(binname: string, goPath: string = null) {
 	if (binPathCache[correctBinname(binname)]) return binPathCache[correctBinname(binname)];
 
 	// First search VSCODE_GOTOOLS' bin folder
-	let pathFromToolsGoPath = getBinPathFromEnvVar(binname, 'VSCODE_GOTOOLS', true);
+	let pathFromToolsGoPath = getBinPathFromEnvVar(binname, process.env['VSCODE_GOTOOLS'], true);
 	if (pathFromToolsGoPath) {
 		return pathFromToolsGoPath;
 	}
 
 	// Then search each GOPATH workspace's bin folder
-	let pathFromGoPath = getBinPathFromEnvVar(binname, 'GOPATH', true);
+	let pathFromGoPath = getBinPathFromEnvVar(binname, goPath ? goPath : process.env['GOPATH'], true);
 	if (pathFromGoPath) {
 		return pathFromGoPath;
 	}
 
 	// Then search PATH parts
-	let pathFromPath = getBinPathFromEnvVar(binname, 'PATH', false);
+	let pathFromPath = getBinPathFromEnvVar(binname, process.env['PATH'], false);
 	if (pathFromPath) {
 		return pathFromPath;
 	}
 
 	// Finally check GOROOT just in case
-	let pathFromGoRoot = getBinPathFromEnvVar(binname, 'GOROOT', true);
+	let pathFromGoRoot = getBinPathFromEnvVar(binname, process.env['GOROOT'], true);
 	if (pathFromGoRoot) {
 		return pathFromGoRoot;
 	}
