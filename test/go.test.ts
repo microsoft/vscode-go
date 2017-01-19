@@ -288,12 +288,15 @@ It returns the number of bytes written and any write error encountered.
 			}
 			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
+				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
 				for (let i in expected) {
-					assert.equal(sortedDiagnostics[i].line, expected[i].line);
+					if (expected[i].line) {
+						assert(sortedDiagnostics[i]);
+						assert.equal(sortedDiagnostics[i].line, expected[i].line);
+					};
 					assert.equal(sortedDiagnostics[i].severity, expected[i].severity);
 					assert.equal(sortedDiagnostics[i].msg, expected[i].msg);
 				}
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
 			});
 		}).then(() => done(), done);
 	});
