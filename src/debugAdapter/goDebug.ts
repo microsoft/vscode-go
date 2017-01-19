@@ -169,6 +169,12 @@ class Delve {
 				return;
 			}
 			let dlv = getBinPath('dlv');
+
+			// If dlv not found, try using the GOPATH that was set in env in launch.json
+			if (!existsSync(dlv) && env['GOPATH']) {
+				dlv = getBinPath('dlv', env['GOPATH']);
+			}
+
 			log('Using dlv at: ', dlv);
 			if (!existsSync(dlv)) {
 				return reject(`Cannot find Delve debugger at ${dlv}. Ensure it is in your "GOPATH/bin" or "PATH".`);
