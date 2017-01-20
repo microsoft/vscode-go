@@ -47,6 +47,11 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		tools['golint'] = 'github.com/golang/lint/golint';
 		tools['gotests'] = 'github.com/cweill/gotests/...';
 	}
+
+	if (goConfig['lintTool'] === 'gometalinter') {
+		tools['gometalinter'] = 'github.com/alecthomas/gometalinter';
+	}
+
 	return tools;
 }
 
@@ -121,9 +126,9 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 	// http.proxy setting takes precedence over environment variables
 	let httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
-	let env = Object.assign({}, process.env);
+	let envForTools = Object.assign({}, process.env);
 	if (httpProxy) {
-		env = Object.assign({}, process.env, {
+		envForTools = Object.assign({}, process.env, {
 			http_proxy: httpProxy,
 			HTTP_PROXY: httpProxy,
 			https_proxy: httpProxy,
@@ -131,15 +136,18 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 		});
 	}
 
-	// If the VSCODE_GOTOOLS environment variable is set, use 
+	// If the VSCODE_GOTOOLS environment variable is set, use
  	// its value as the GOPATH for the "go get" child precess.
-	let toolsGoPath = process.env['VSCODE_GOTOOLS'];
-	if (toolsGoPath) {
-		env['GOPATH'] = toolsGoPath;
+	let envWithSeparateGoPathForTools = null;
+	if (process.env['VSCODE_GOTOOLS']) {
+		envWithSeparateGoPathForTools = Object.assign({}, envForTools, {GOPATH: process.env['VSCODE_GOTOOLS']});
 	}
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+			// gometalinter expects its linters to be in the user's GOPATH
+			// Therefore, cannot use an isolated GOPATH for installing gometalinter
+			let env = (envWithSeparateGoPathForTools && tool !== 'gometalinter') ? envWithSeparateGoPathForTools : envForTools;
 			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env }, (err, stdout, stderr) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + tool + ' FAILED');
@@ -147,7 +155,22 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 					resolve([...sofar, failureReason]);
 				} else {
 					outputChannel.appendLine('Installing ' + tool + ' SUCCEEDED');
-					resolve([...sofar, null]);
+					if (tool === 'gometalinter') {
+						// Gometalinter needs to install all the linters it uses.
+						outputChannel.appendLine('Installing all linters used by gometalinter....');
+						let gometalinterBinPath = getBinPath('gometalinter');
+						cp.execFile(gometalinterBinPath, ['--install'], (err, stdout, stderr) => {
+							if (!err) {
+								outputChannel.appendLine('Installing all linters used by gometalinter SUCCEEDED.');
+								resolve([...sofar, null]);
+							} else {
+								let failureReason = `Error while running gometalinter --install;; ${stderr}`;
+								resolve([...sofar, failureReason]);
+							}
+						});
+					} else {
+						resolve([...sofar, null]);
+					}
 				}
 			});
 		}));
