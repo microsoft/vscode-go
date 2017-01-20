@@ -91,7 +91,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 				let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
 				let args = ['build'];
 				if (!isMainPkg) {
-					args.push('- i');
+					args.push('-i');
 				};
 				args = args.concat(['-o', tmppath, '-tags', buildTags, ...buildFlags, '.']);
 				if (filename.match(/_test.go$/i)) {
