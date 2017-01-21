@@ -23,7 +23,18 @@ export interface ICheckResult {
 	severity: string;
 }
 
-function runTool(cmd: string, args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, notFoundError?: string) {
+/**
+ * Runs given Go tool and returns errors/warnings that can be fed to the Problems Matcher
+ * @param args Arguments to be passed while running given tool
+ * @param cwd cwd that will passed in the env object while running given tool
+ * @param serverity error or warning
+ * @param useStdErr If true, the stderr of the output of the given tool will be used, else stdout will be used
+ * @param toolName The name of the Go tool to run. If none is provided, the go runtime itself is used
+ * @param printUnexpectedOutput If true, then output that doesnt match expected format is printed to the output channel
+ */
+function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, printUnexpectedOutput?: boolean): Promise<ICheckResult[]> {
+	let goRuntimePath = getGoRuntimePath();
+	let cmd = toolName ? getBinPath(toolName) : goRuntimePath;
 	return new Promise((resolve, reject) => {
 		cp.execFile(cmd, args, { cwd: cwd }, (err, stdout, stderr) => {
 			try {
@@ -31,8 +42,13 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 					if (toolName) {
 						promptForMissingTool(toolName);
 					} else {
-						vscode.window.showInformationMessage(notFoundError);
+						vscode.window.showInformationMessage(`Cannot find ${goRuntimePath}`);
 					}
+					return resolve([]);
+				}
+				if (err && stderr && !useStdErr) {
+					outputChannel.appendLine(['Error while running tool:', cmd, ...args].join(' '));
+					outputChannel.appendLine(stderr);
 					return resolve([]);
 				}
 				let lines = (useStdErr ? stderr : stdout).toString().split('\n');
@@ -45,7 +61,10 @@ function runTool(cmd: string, args: string[], cwd: string, severity: string, use
 						continue;
 					}
 					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+)?)?:(?:\w+:)? (.*)$/.exec(lines[i]);
-					if (!match) continue;
+					if (!match) {
+						if (printUnexpectedOutput) outputChannel.appendLine(lines[i]);
+						continue;
+					}
 					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
 					let line = +lineStr;
 					file = path.resolve(cwd, file);
@@ -98,48 +117,39 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 					args = ['test', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, '.'];
 				}
 				runTool(
-					goRuntimePath,
 					args,
 					cwd,
 					'error',
 					true,
 					null,
-					`Cannot find ${goRuntimePath}`
+					true
 				).then(result => resolve(result), err => reject(err));
 			});
 		});
 		runningToolsPromises.push(buildPromise);
 	}
 	if (!!goConfig['lintOnSave']) {
-		let lintTool = getBinPath(goConfig['lintTool'] || 'golint');
+		let lintTool = goConfig['lintTool'] || 'golint';
 		let lintFlags = goConfig['lintFlags'] || [];
 		let args = [...lintFlags];
 
-		if (lintTool === 'golint') {
-			args.push(filename);
-		}
-
 		runningToolsPromises.push(runTool(
-			lintTool,
 			args,
 			cwd,
 			'warning',
-			lintTool === 'golint',
-			lintTool === 'golint' ? 'golint' : null,
-			lintTool === 'golint' ? undefined : 'No "gometalinter" could be found.  Install gometalinter to use this option.'
+			false,
+			lintTool
 		));
 	}
 
 	if (!!goConfig['vetOnSave']) {
 		let vetFlags = goConfig['vetFlags'] || [];
 		runningToolsPromises.push(runTool(
-			goRuntimePath,
 			['tool', 'vet', ...vetFlags, filename],
 			cwd,
 			'warning',
 			true,
-			null,
-			`Cannot find ${goRuntimePath}`
+			null
 		));
 	}
 
