@@ -7,8 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath } from './goPath';
-import { parseFilePrelude, isVendorSupported } from './util';
+import { parseFilePrelude, isVendorSupported, getBinPath } from './util';
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import path = require('path');

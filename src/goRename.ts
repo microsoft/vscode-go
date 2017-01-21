@@ -7,8 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath } from './goPath';
-import { byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
 import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from '../src/diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 

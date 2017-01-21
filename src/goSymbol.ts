@@ -6,7 +6,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath } from './goPath';
+import { getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
 // Keep in sync with github.com/newhook/go-symbols'

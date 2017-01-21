@@ -10,11 +10,11 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getBinPath, getGoRuntimePath } from './goPath';
+import { getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
-import { parseFilePrelude } from './util';
+import { getBinPath, parseFilePrelude } from './util';
 
 export interface ICheckResult {
 	file: string;

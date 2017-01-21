@@ -8,8 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath } from './goPath';
-import { byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
