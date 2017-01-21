@@ -30,17 +30,17 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 	return null;
 }
 
-export function getBinPath(binname: string, goPath: string = null) {
+export function getBinPathWithPreferredGopath(binname: string, preferredGopath: string = null) {
 	if (binPathCache[correctBinname(binname)]) return binPathCache[correctBinname(binname)];
 
-	// First search VSCODE_GOTOOLS' bin folder
-	let pathFromToolsGoPath = getBinPathFromEnvVar(binname, process.env['VSCODE_GOTOOLS'], true);
-	if (pathFromToolsGoPath) {
-		return pathFromToolsGoPath;
+	// Search in the preferred GOPATH workspace's bin folder
+	let pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferredGopath, true);
+	if (pathFrompreferredGoPath) {
+		return pathFrompreferredGoPath;
 	}
 
-	// Then search each GOPATH workspace's bin folder
-	let pathFromGoPath = getBinPathFromEnvVar(binname, goPath ? goPath : process.env['GOPATH'], true);
+	// Then search user's GOPATH workspace's bin folder
+	let pathFromGoPath = getBinPathFromEnvVar(binname, process.env['GOPATH'], true);
 	if (pathFromGoPath) {
 		return pathFromGoPath;
 	}

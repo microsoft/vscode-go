@@ -9,7 +9,8 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getBinPath, getGoRuntimePath } from './goPath';
+import { getGoRuntimePath } from './goPath';
+import { getBinPath } from './util';
 import rl = require('readline');
 import { outputChannel } from './goStatus';
 

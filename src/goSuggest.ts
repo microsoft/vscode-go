@@ -8,8 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { dirname, basename } from 'path';
-import { getBinPath } from './goPath';
-import { parameters, parseFilePrelude, isPositionInString } from './util';
+import { getBinPath, parameters, parseFilePrelude, isPositionInString } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { listPackages, getTextEditForAddImport } from './goImport';
 

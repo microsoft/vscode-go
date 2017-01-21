@@ -9,9 +9,8 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { isDiffToolAvailable, getEdits, getEditsFromUnifiedDiffStr } from '../src/diffUtils';
-import { getBinPath } from './goPath';
 import { promptForMissingTool } from './goInstallTools';
-import { sendTelemetryEvent } from './util';
+import { sendTelemetryEvent, getBinPath } from './util';
 
 export class Formatter {
 	private formatCommand = 'goreturns';

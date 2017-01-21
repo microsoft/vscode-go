@@ -11,9 +11,9 @@ import path = require('path');
 import os = require('os');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
-import { getBinPath, getGoRuntimePath } from './goPath';
+import { getGoRuntimePath } from './goPath';
 import { outputChannel } from './goStatus';
-import { getGoVersion, SemVersion, isVendorSupported } from './util';
+import { getBinPath, getGoVersion, SemVersion, isVendorSupported } from './util';
 
 let updatesDeclinedTools: string[] = [];
 
@@ -136,11 +136,12 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 		});
 	}
 
-	// If the VSCODE_GOTOOLS environment variable is set, use
- 	// its value as the GOPATH for the "go get" child precess.
+	// If the go.toolsGopath is set, use 
+ 	// its value as the GOPATH for the "go get" child process.
+	let goConfig = vscode.workspace.getConfiguration('go');
 	let envWithSeparateGoPathForTools = null;
-	if (process.env['VSCODE_GOTOOLS']) {
-		envWithSeparateGoPathForTools = Object.assign({}, envForTools, {GOPATH: process.env['VSCODE_GOTOOLS']});
+	if (goConfig['toolsGopath']) {
+		envWithSeparateGoPathForTools = Object.assign({}, envForTools, {GOPATH: goConfig['toolsGopath']});
 	}
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {

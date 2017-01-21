@@ -9,7 +9,7 @@ import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { getBinPath } from '../goPath';
+import { getBinPathWithPreferredGopath } from '../goPath';
 
 require('console-stamp')(console);
 
@@ -168,12 +168,7 @@ class Delve {
 				connectClient(port, host);
 				return;
 			}
-			let dlv = getBinPath('dlv');
-
-			// If dlv not found, try using the GOPATH that was set in env in launch.json
-			if (!existsSync(dlv) && env['GOPATH']) {
-				dlv = getBinPath('dlv', env['GOPATH']);
-			}
+			let dlv = getBinPathWithPreferredGopath('dlv', env['GOPATH']);
 
 			log('Using dlv at: ', dlv);
 			if (!existsSync(dlv)) {

@@ -10,7 +10,7 @@ import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
 
-import { getBinPath } from './goPath';
+import { getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
 

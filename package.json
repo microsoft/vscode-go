@@ -388,6 +388,11 @@
             "godoc",
             "gogetdoc"
           ]
+        },
+        "go.toolsGopath": {
+          "type": "string",
+          "default": "",
+          "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH."
         }
       }
     }

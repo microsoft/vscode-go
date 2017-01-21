@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath } from './goPath';
+import { getGoRuntimePath, getBinPathWithPreferredGopath} from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 
@@ -244,4 +244,9 @@ export function isPositionInString(document: vscode.TextDocument, position: vsco
 	let doubleQuotesCnt = (lineTillCurrentPosition.match(/[^\\]\"/g) || []).length;
 	doubleQuotesCnt += lineTillCurrentPosition.startsWith('\"') ? 1 : 0;
 	return doubleQuotesCnt % 2 === 1;
+}
+
+export function getBinPath(tool: string): string {
+	let goConfig = vscode.workspace.getConfiguration('go');
+	return getBinPathWithPreferredGopath(tool, goConfig['toolsGopath']);
 }
