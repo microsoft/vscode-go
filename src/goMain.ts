@@ -84,19 +84,19 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		vscode.window.showInformationMessage('Current GOPATH:' + gopath);
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go');
-		testAtCursor(goConfig);
+		testAtCursor(goConfig, args);
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go');
-		testCurrentPackage(goConfig);
+		testCurrentPackage(goConfig, args);
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go');
-		testCurrentFile(goConfig);
+		testCurrentFile(goConfig, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.previous', () => {

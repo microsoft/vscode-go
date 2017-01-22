@@ -393,6 +393,17 @@
           "default": "",
           "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH."
         },
+        "go.testFlags": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "default": null,
+          "description": "Flags to pass to `go test`. If null, then buildFlags will be used."
+        },
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,

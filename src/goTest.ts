@@ -27,6 +27,10 @@ interface TestConfig {
 	 */
 	goConfig: vscode.WorkspaceConfiguration;
 	/**
+	 * Test flags to override the testFlags and buildFlags from goConfig.
+	 */
+	flags: string[];
+	/**
 	 * Specific function names to test.
 	 */
 	functions?: string[];
@@ -45,7 +49,7 @@ let lastTestConfig: TestConfig;
 * TODO: go test returns filenames with no path information for failures,
 * so output doesn't produce navigable line references.
 */
-export function testAtCursor(goConfig: vscode.WorkspaceConfiguration) {
+export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -72,6 +76,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration) {
 		return goTest({
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
+			flags: getTestFlags(goConfig, args),
 			functions: [testFunction.name]
 		});
 	}).then(null, err => {
@@ -84,7 +89,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration) {
  *
  * @param goConfig Configuration for the Go extension.
  */
-export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration) {
+export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args: string[]) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -92,7 +97,8 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration) {
 	}
 	goTest({
 		goConfig: goConfig,
-		dir: path.dirname(editor.document.fileName)
+		dir: path.dirname(editor.document.fileName),
+		flags: getTestFlags(goConfig, args)
 	}).then(null, err => {
 		console.error(err);
 	});
@@ -103,7 +109,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration) {
  *
  * @param goConfig Configuration for the Go extension.
  */
-export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
+export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: string[]): Thenable<boolean> {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -117,6 +123,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration): Thenab
 		return goTest({
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
+			flags: getTestFlags(goConfig, args),
 			functions: testFunctions.map(func => { return func.name; })
 		});
 	}).then(null, err => {
@@ -151,9 +158,8 @@ function goTest(testconfig: TestConfig): Thenable<boolean> {
 		outputChannel.clear();
 		outputChannel.show(2, true);
 
-		let buildFlags: string[] = testconfig.goConfig['buildFlags'];
 		let buildTags: string = testconfig.goConfig['buildTags'];
-		let args = ['test', '-v', '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags, ...buildFlags];
+		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags];
 		let testEnvVars = Object.assign({}, process.env, testconfig.goConfig['testEnvVars']);
 		let goRuntimePath = getGoRuntimePath();
 
@@ -206,4 +212,9 @@ function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInfor
  */
 function hasTestFunctionPrefix(name: string): boolean {
 	return name.startsWith('Test') || name.startsWith('Example');
+}
+
+function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
+	let testFlags = goConfig['testFlags'] ? goConfig['testFlags'] : ['-v', ...goConfig['buildFlags']];
+	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
 }
