@@ -106,12 +106,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		goGenerateTests.generateTestCurrentFunction();
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.open.test.file', () => {
-		goGenerateTests.openTestFile();
-	}));
-
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.open.test.implementation', () => {
-		goGenerateTests.openImplementationForTestFile();
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.toggle.test.file', () => {
+		goGenerateTests.toggleTestFile();
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {

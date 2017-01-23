@@ -33,41 +33,26 @@ function checkActiveEditor(): vscode.TextEditor {
 }
 
 /**
- * Opens test file (if any) corresponding to the Go file in the current active editor
+ * Toggles between file in current active editor and the corresponding test file.
  */
-export function openTestFile(): void {
+export function toggleTestFile(): void {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
-		vscode.window.showInformationMessage('Cannot open test file. No editor selected.');
+		vscode.window.showInformationMessage('Cannot toggle test file. No editor selected.');
 		return;
 	}
-	let filePath = editor.document.fileName;
-	if (!filePath.endsWith('.go')) {
-		vscode.window.showInformationMessage('Cannot open test file. File in the editor is not a Go file.');
+	let currentFilePath = editor.document.fileName;
+	if (!currentFilePath.endsWith('.go')) {
+		vscode.window.showInformationMessage('Cannot toggle test file. File in the editor is not a Go file.');
 		return;
 	}
-	let testFilePath = filePath.substr(0, filePath.lastIndexOf('.go')) + '_test.go';
-
-	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(testFilePath));
-}
-
-/**
- * Opens the Go file with implementation for the test file in the current active editor
- */
-export function openImplementationForTestFile(): void {
-	let editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage('Cannot open file. No editor selected.');
-		return;
+	let targetFilePath = '';
+	if (currentFilePath.endsWith('_test.go')) {
+		targetFilePath = currentFilePath.substr(0, currentFilePath.lastIndexOf('_test.go')) + '.go';
+	} else {
+		targetFilePath = currentFilePath.substr(0, currentFilePath.lastIndexOf('.go')) + '_test.go';
 	}
-	let filePath = editor.document.fileName;
-	if (!filePath.endsWith('_test.go')) {
-		vscode.window.showInformationMessage('Cannot open file. File in the editor is not a Go test file.');
-		return;
-	}
-	let testFilePath = filePath.substr(0, filePath.lastIndexOf('_test.go')) + '.go';
-
-	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(testFilePath));
+	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath));
 }
 
 export function generateTestCurrentPackage(): Thenable<boolean> {
@@ -165,7 +150,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 
 				vscode.window.showInformationMessage(message);
 				if (testsGenerated) {
-					openTestFile();
+					toggleTestFile();
 				}
 
 				return resolve(true);

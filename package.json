@@ -136,14 +136,9 @@
         "description": "install/update the required go packages"
       },
       {
-        "command": "go.open.test.file",
-        "title": "Go: Open Test File",
-        "description": "Opens test file (if any) corresponding to the Go file in the current active editor"
-      },
-      {
-        "command": "go.open.test.implementation",
-        "title": "Go: Open Implementation For Test File",
-        "description": "Opens the Go file with implementation for the test file in the current active editor"
+        "command": "go.toggle.test.file",
+        "title": "Go: Toggle Test File",
+        "description": "Toggles between file in current active editor and the corresponding test file."
       }
     ],
     "debuggers": [
