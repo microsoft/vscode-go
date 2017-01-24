@@ -55,6 +55,8 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 				outputChannel.appendLine(['Finished running tool:', cmd, ...args].join(' '));
 
 				let ret: ICheckResult[] = [];
+				let unexpectedOutput = false;
+				let atleastSingleMatch = false;
 				for (let i = 0; i < lines.length; i++) {
 					if (lines[i][0] === '\t' && ret.length > 0) {
 						ret[ret.length - 1].msg += '\n' + lines[i];
@@ -62,14 +64,24 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 					}
 					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+)?)?:(?:\w+:)? (.*)$/.exec(lines[i]);
 					if (!match) {
-						if (printUnexpectedOutput) outputChannel.appendLine(lines[i]);
+						if (printUnexpectedOutput && useStdErr && stderr) unexpectedOutput = true;
 						continue;
 					}
+					atleastSingleMatch = true;
 					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
 					let line = +lineStr;
 					file = path.resolve(cwd, file);
 					ret.push({ file, line, msg, severity });
 					outputChannel.appendLine(`${file}:${line}: ${msg}`);
+				}
+				if (!atleastSingleMatch && unexpectedOutput && vscode.window.activeTextEditor) {
+					outputChannel.appendLine(stderr);
+					ret.push({
+						file: vscode.window.activeTextEditor.document.fileName,
+						line: 1,
+						msg: stderr,
+						severity: 'error'
+					});
 				}
 				outputChannel.appendLine('');
 				resolve(ret);
