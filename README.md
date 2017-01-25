@@ -119,11 +119,9 @@ To remote debug using VS Code, read [Remote Debugging](https://github.com/Micros
 
 You can set up a development environment for debugging the extension during extension development.
 
-First make sure you do not have the extension installed in `~/.vscode/extensions`.  Then clone the repo somewhere else on your machine, run `npm install` and open a development instance of Code.
+Clone the repo, run `npm install` and open a development instance of Code.
 
 ```bash
-rm -rf ~/.vscode/extensions/lukehoban.Go
-cd ~
 git clone https://github.com/Microsoft/vscode-go
 cd vscode-go
 npm install
@@ -132,7 +130,7 @@ code .
 
 You can now go to the Debug viewlet and select `Launch Extension` then hit run (`F5`).
 
-In the `[Extension Development Host]` instance, open your GOPATH folder.
+In the `[Extension Development Host]` instance, open any folder with Go code.
 
 You can now hit breakpoints and step through the extension.
 
