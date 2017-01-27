@@ -282,7 +282,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to Lint tool (e.g. ['-min_confidenc=.8'])"
+          "description": "Flags to pass to Lint tool (e.g. [\"-min_confidence=.8\"])"
         },
         "go.vetOnSave": {
           "type": "boolean",
