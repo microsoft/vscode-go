@@ -22,14 +22,17 @@ export interface GoDefinitionInformtation {
 	toolUsed: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, toolForDocs: string, includeDocs = true): Promise<GoDefinitionInformtation> {
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs = true): Promise<GoDefinitionInformtation> {
 	let wordRange = document.getWordRangeAtPosition(position);
 	let lineText = document.lineAt(position.line).text;
 	let word = wordRange ? document.getText(wordRange) : '';
 	if (!wordRange || lineText.startsWith('//') || isPositionInString(document, position) || word.match(/^\d+.?\d+$/) || goKeywords.indexOf(word) > 0) {
 		return Promise.resolve(null);
 	}
-
+	if (!goConfig) {
+		goConfig = vscode.workspace.getConfiguration('go');
+	}
+	let toolForDocs = goConfig['docsTool'] || 'godoc';
 	let offset = byteOffsetAt(document, position);
 	return getGoVersion().then((ver: SemVersion) => {
 		// If no Go version can be parsed, it means it's a non-tagged one.
@@ -154,14 +157,14 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 }
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
-	private toolForDocs = 'godoc';
+	private goConfig = null;
 
-	constructor(toolForDocs: string) {
-		this.toolForDocs = toolForDocs;
+	constructor(goConfig?: vscode.WorkspaceConfiguration) {
+		this.goConfig = goConfig;
 	}
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		return definitionLocation(document, position, this.toolForDocs, false).then(definitionInfo => {
+		return definitionLocation(document, position, this.goConfig, false).then(definitionInfo => {
 			if (definitionInfo == null || definitionInfo.file == null) return null;
 			let definitionResource = vscode.Uri.file(definitionInfo.file);
 			let pos = new vscode.Position(definitionInfo.line, definitionInfo.column);

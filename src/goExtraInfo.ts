@@ -5,18 +5,18 @@
 
 'use strict';
 
-import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken } from 'vscode';
+import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken, WorkspaceConfiguration, workspace } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
-	private toolForDocs = 'godoc';
+	private goConfig = null;
 
-	constructor(toolForDocs: string) {
-		this.toolForDocs = toolForDocs;
+	constructor(goConfig?: WorkspaceConfiguration) {
+		this.goConfig = goConfig;
 	}
 
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
-		return definitionLocation(document, position, this.toolForDocs, true).then(definitionInfo => {
+		return definitionLocation(document, position, this.goConfig, true).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let lines = definitionInfo.declarationlines
 				.filter(line => !line.startsWith('\t//') && line !== '')

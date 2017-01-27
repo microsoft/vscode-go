@@ -13,20 +13,11 @@ import { promptForMissingTool } from './goInstallTools';
 import { sendTelemetryEvent, getBinPath } from './util';
 
 export class Formatter {
-	private formatCommand = 'goreturns';
-
-	constructor() {
-		let formatTool = vscode.workspace.getConfiguration('go')['formatTool'];
-		if (formatTool) {
-			this.formatCommand = formatTool;
-		}
-	}
-
 	public formatDocument(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
 		return new Promise((resolve, reject) => {
 			let filename = document.fileName;
-
-			let formatCommandBinPath = getBinPath(this.formatCommand);
+			let formatTool = vscode.workspace.getConfiguration('go')['formatTool'] || 'goreturns';
+			let formatCommandBinPath = getBinPath(formatTool);
 			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
 			let canFormatToolUseDiff = vscode.workspace.getConfiguration('go')['useDiffForFormatting'] && isDiffToolAvailable();
 			if (canFormatToolUseDiff && formatFlags.indexOf('-d') === -1) {
@@ -40,7 +31,7 @@ export class Formatter {
 			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
-						promptForMissingTool(this.formatCommand);
+						promptForMissingTool(formatTool);
 						return resolve(null);
 					}
 					if (err) {
@@ -56,7 +47,7 @@ export class Formatter {
 					});
 
 					let timeTaken = Date.now() - t0;
-					sendTelemetryEvent('format', { tool:  this.formatCommand}, {timeTaken});
+					sendTelemetryEvent('format', { tool:  formatTool}, {timeTaken});
 					return resolve(textEdits);
 				} catch (e) {
 					reject('Internal issues while getting diff from formatted content');
