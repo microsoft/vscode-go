@@ -50,8 +50,8 @@ suite('Go Extension Tests', () => {
 		fs.removeSync(repoPath);
 	});
 
-	function testDefinitionProvider(tool: string): Thenable<any> {
-		let provider = new GoDefinitionProvider(tool);
+	function testDefinitionProvider(goConfig: vscode.WorkspaceConfiguration): Thenable<any> {
+		let provider = new GoDefinitionProvider(goConfig);
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 		let position = new vscode.Position(10, 3);
 		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
@@ -66,8 +66,8 @@ suite('Go Extension Tests', () => {
 		});
 	}
 
-	function testSignatureHelpProvider(tool: string, testCases: [vscode.Position, string, string, string[]][]): Thenable<any> {
-		let provider = new GoSignatureHelpProvider(tool);
+	function testSignatureHelpProvider(goConfig: vscode.WorkspaceConfiguration, testCases: [vscode.Position, string, string, string[]][]): Thenable<any> {
+		let provider = new GoSignatureHelpProvider(goConfig);
 		let uri = vscode.Uri.file(path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expected, expectedDoc, expectedParams]) =>
@@ -88,8 +88,8 @@ suite('Go Extension Tests', () => {
 		});
 	}
 
-	function testHoverProvider(tool: string, testCases: [vscode.Position, string, string][]): Thenable<any> {
-		let provider = new GoHoverProvider(tool);
+	function testHoverProvider(goConfig: vscode.WorkspaceConfiguration, testCases: [vscode.Position, string, string][]): Thenable<any> {
+		let provider = new GoHoverProvider(goConfig);
 		let uri = vscode.Uri.file(path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
@@ -116,13 +116,19 @@ suite('Go Extension Tests', () => {
 	}
 
 	test('Test Definition Provider using godoc', (done) => {
-		testDefinitionProvider('godoc').then(() => done(), done);
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'docsTool': { value: 'godoc' }
+		});
+		testDefinitionProvider(config).then(() => done(), done);
 	});
 
 	test('Test Definition Provider using gogetdoc', (done) => {
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'docsTool': { value: 'gogetdoc' }
+		});
 		getGoVersion().then(version => {
 			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
-				return testDefinitionProvider('gogetdoc');
+				return testDefinitionProvider(config);
 			}
 			return Promise.resolve();
 		}).then(() => done(), done);
@@ -139,7 +145,10 @@ encountered.
 			[new vscode.Position(23, 7), 'print(txt string)', null, ['txt string']],
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', null, ['s string', 'exclaim bool']]
 		];
-		testSignatureHelpProvider('godoc', testCases).then(() => done(), done);
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'docsTool': { value: 'godoc' }
+		});
+		testSignatureHelpProvider(config, testCases).then(() => done(), done);
 	});
 
 	test('Test SignatureHelp Provider using gogetdoc', (done) => {
@@ -152,9 +161,12 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldnt get this comment on hover :(\nNot anymore!! gogetdoc to the rescue\n', ['txt string']],
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this correctly\n', ['s string', 'exclaim bool']]
 		];
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'docsTool': { value: 'gogetdoc' }
+		});
 		getGoVersion().then(version => {
 			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
-				return testSignatureHelpProvider('gogetdoc', testCases);
+				return testSignatureHelpProvider(config, testCases);
 			}
 			return Promise.resolve();
 		}).then(() => done(), done);
@@ -177,7 +189,10 @@ encountered.
 			[new vscode.Position(19, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
 			[new vscode.Position(23, 4), 'print func(txt string)', null]
 		];
-		testHoverProvider('godoc', testCases).then(() => done(), done);
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'docsTool': { value: 'godoc' }
+		});
+		testHoverProvider(config, testCases).then(() => done(), done);
 	});
 
 	test('Test Hover Provider using gogetdoc', (done) => {
@@ -197,9 +212,12 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(27, 14), 'type ABC struct {\n    a int\n    b int\n    c int\n}', 'ABC is a struct, you coudnt use Goto Definition or Hover info on this before\nNow you can due to gogetdoc\n'],
 			[new vscode.Position(28, 6), 'func CIDRMask(ones, bits int) IPMask', 'CIDRMask returns an IPMask consisting of `ones\' 1 bits\nfollowed by 0s up to a total length of `bits\' bits.\nFor a mask of this form, CIDRMask is the inverse of IPMask.Size.\n']
 		];
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'docsTool': { value: 'gogetdoc' }
+		});
 		getGoVersion().then(version => {
 			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
-				return testHoverProvider('gogetdoc', testCases);
+				return testHoverProvider(config, testCases);
 			}
 			return Promise.resolve();
 		}).then(() => done(), done);

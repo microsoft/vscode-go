@@ -6,15 +6,15 @@
 'use strict';
 
 import cp = require('child_process');
-import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken } from 'vscode';
+import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken, WorkspaceConfiguration, workspace } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 import { parameters } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
-	private toolForDocs = 'godoc';
+	private goConfig = null;
 
-	constructor(toolForDocs: string) {
-		this.toolForDocs = toolForDocs;
+	constructor(goConfig?: WorkspaceConfiguration) {
+		this.goConfig = goConfig;
 	}
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
@@ -23,7 +23,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			return Promise.resolve(null);
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
-		return definitionLocation(document, callerPos, this.toolForDocs).then(res => {
+		return definitionLocation(document, callerPos, this.goConfig).then(res => {
 			if (!res) {
 				// The definition was not found
 				return null;

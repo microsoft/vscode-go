@@ -137,11 +137,11 @@ function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 
 /**
  * Returns a FilePatch object by generating diffs between given oldStr and newStr using the diff module
- * 
+ *
  * @param fileName string: Name of the file to which edits should be applied
  * @param oldStr string
  * @param newStr string
- * 
+ *
  * @returns A single FilePatch object
  */
 export function getEdits(fileName: string, oldStr: string, newStr: string): FilePatch {
@@ -156,13 +156,13 @@ export function getEdits(fileName: string, oldStr: string, newStr: string): File
 
 /**
  * Uses diff module to parse given diff string and returns edits for files
- * 
+ *
  * @param diffStr : Diff string in unified format. http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
- * 
+ *
  * @returns Array of FilePatch objects, one for each file
  */
 export function getEditsFromUnifiedDiffStr(diffstr: string): FilePatch[] {
-	// Workaround for the bug https://github.com/kpdecker/jsdiff/issues/135 
+	// Workaround for the bug https://github.com/kpdecker/jsdiff/issues/135
 	if (diffstr.startsWith('---')) {
 		diffstr = diffstr.split('---').join('Index\n---');
 	}

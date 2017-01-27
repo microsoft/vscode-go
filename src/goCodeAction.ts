@@ -13,7 +13,7 @@ export class GoCodeActionProvider implements vscode.CodeActionProvider {
 	public provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken): Thenable<vscode.Command[]> {
 
 		let promises = context.diagnostics.map(diag => {
-			// When a name is not found but could refer to a package, offer to add import 
+			// When a name is not found but could refer to a package, offer to add import
 			if (diag.message.indexOf('undefined: ') === 0) {
 				let [_, name] = /^undefined: (\S*)/.exec(diag.message);
 				return listPackages().then(packages => {

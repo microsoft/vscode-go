@@ -136,7 +136,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 		});
 	}
 
-	// If the go.toolsGopath is set, use 
+	// If the go.toolsGopath is set, use
  	// its value as the GOPATH for the "go get" child process.
 	let goConfig = vscode.workspace.getConfiguration('go');
 	let envWithSeparateGoPathForTools = null;
