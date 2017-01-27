@@ -37,7 +37,8 @@
     "json-rpc2": "^1.0.2",
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0",
-    "vscode-extension-telemetry": "0.0.5"
+    "vscode-extension-telemetry": "0.0.5",
+    "vscode-languageclient": "^2.5.0"
   },
   "devDependencies": {
     "@types/fs-extra": "0.0.35",
@@ -388,6 +389,11 @@
           "type": "string",
           "default": "",
           "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH."
+        },
+        "go.useLanguageServer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Experimental: Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features"
         }
       }
     }

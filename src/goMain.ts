@@ -27,22 +27,47 @@ import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './g
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious } from './goTest';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
-import { installAllTools } from './goInstallTools';
-import { isGoPathSet } from './util';
+import { installAllTools, checkLanguageServer } from './goInstallTools';
+import { isGoPathSet, getBinPath } from './util';
+import { LanguageClient } from 'vscode-languageclient';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
+let useLangServer: boolean;
 
 export function activate(ctx: vscode.ExtensionContext): void {
+	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
+	if (checkLanguageServer()) {
+		const c = new LanguageClient(
+			'langserver-go',
+			{
+				command: getBinPath('langserver-go'),
+				args: [
+					'-mode=stdio'
+				],
+			},
+			{
+				documentSelector: ['go'],
+				uriConverters: {
+					// Apply file:/// scheme to all file paths.
+					code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
+					protocol2Code: (uri: string) => vscode.Uri.parse(uri),
+				},
+			}
+		);
 
-	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
+		ctx.subscriptions.push(c.start());
+	} else {
+		ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
+		ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
+		ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
+		ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
+		ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
+		ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
+	}
+
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
-	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
-	ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
-	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
-	ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
-	ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
 
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
@@ -92,6 +117,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
 		updateGoPathGoRootFromConfig();
+		let updatedGoConfig = vscode.workspace.getConfiguration('go');
+		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
+		if (useLangServer !== updatedGoConfig['useLanguageServer'] && (!updatedGoConfig['useLanguageServer'] || checkLanguageServer())) {
+			vscode.window.showInformationMessage('Reload VS Code window for the change in usage of language server to take effect');
+		}
+		useLangServer = updatedGoConfig['useLanguageServer'];
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.package', () => {
@@ -213,3 +244,4 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 	}, null, subscriptions);
 
 }
+
