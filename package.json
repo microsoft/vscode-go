@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.52",
+  "version": "0.6.53",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -153,6 +153,9 @@
         },
         "program": "./out/src/debugAdapter/goDebug.js",
         "runtime": "node",
+        "languages": [
+          "go"
+        ],
         "initialConfigurations": [
           {
             "name": "Launch",
