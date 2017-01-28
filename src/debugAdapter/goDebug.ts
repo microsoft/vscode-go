@@ -139,18 +139,22 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	trace?: string|boolean;
 }
 
-function log(msg: any) {
-	if (typeof msg !== 'string') {
-		msg = JSON.stringify(msg);
-	}
+function log(...args: any[]) {
+	const msg = args.map(arg => {
+		return typeof arg === 'string' ?
+			arg :
+			JSON.stringify(arg);
+	}).join(' ');
 
 	logger.log(msg);
 }
 
-function logError(msg?: any, ...args) {
-	if (typeof msg !== 'string') {
-		msg = JSON.stringify(msg);
-	}
+function logError(...args: any[]) {
+	const msg = args.map(arg => {
+		return typeof arg === 'string' ?
+			arg :
+			JSON.stringify(arg);
+	}).join(' ');
 
 	logger.error(msg);
 }
@@ -457,7 +461,7 @@ class GoDebugSession extends DebugSession {
 				logError('Failed to get threads.');
 				return this.sendErrorResponse(response, 2003, 'Unable to display threads: "{e}"', { e: err.toString() });
 			}
-			log(goroutines);
+			log('goroutines', goroutines);
 			let threads = goroutines.map(goroutine =>
 				new Thread(
 					goroutine.id,
@@ -466,8 +470,7 @@ class GoDebugSession extends DebugSession {
 			);
 			response.body = { threads };
 			this.sendResponse(response);
-			log('ThreadsResponse');
-			log(threads);
+			log('ThreadsResponse', threads);
 		});
 	}
 
@@ -478,7 +481,7 @@ class GoDebugSession extends DebugSession {
 				logError('Failed to produce stack trace!');
 				return this.sendErrorResponse(response, 2004, 'Unable to produce stack trace: "{e}"', { e: err.toString() });
 			}
-			log(locations);
+			log('locations', locations);
 			let stackFrames = locations.map((location, i) =>
 				new StackFrame(
 					i,
@@ -504,13 +507,13 @@ class GoDebugSession extends DebugSession {
 				logError('Failed to list local variables.');
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
-			log(locals);
+			log('locals', locals);
 			this.delve.call<DebugVariable[]>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, args) => {
 				if (err) {
 					logError('Failed to list function args.');
 					return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', { e: err.toString() });
 				}
-				log(args);
+				log('functionArgs', args);
 				let vars = args.concat(locals);
 
 				let scopes = new Array<Scope>();
@@ -607,10 +610,9 @@ class GoDebugSession extends DebugSession {
 				};
 			});
 		}
-		log(JSON.stringify(variables, null, ' '));
 		response.body = { variables };
 		this.sendResponse(response);
-		log('VariablesResponse');
+		log('VariablesResponse', JSON.stringify(variables, null, ' '));
 	}
 
 	private handleReenterDebug(reason: string): void {
@@ -655,7 +657,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to continue.');
 			}
-			log(state);
+			log('state', state);
 			this.debugState = state;
 			this.handleReenterDebug('breakpoint');
 		});
@@ -669,7 +671,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to next.');
 			}
-			log(state);
+			log('state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
@@ -683,7 +685,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to step.');
 			}
-			log(state);
+			log('state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
@@ -697,7 +699,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to stepout.');
 			}
-			log(state);
+			log('state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
@@ -712,7 +714,7 @@ class GoDebugSession extends DebugSession {
 				logError('Failed to halt.');
 				return this.sendErrorResponse(response, 2010, 'Unable to halt execution: "{e}"', { e: err.toString() });
 			}
-			log(state);
+			log('state', state);
 			this.sendResponse(response);
 			log('PauseResponse');
 		});
