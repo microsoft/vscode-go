@@ -231,11 +231,11 @@ class Delve {
 					connectClient(port, host);
 				}
 			});
-			this.debugProcess.on('close', function(code) {
+			this.debugProcess.on('close', (code) => {
 				// TODO: Report `dlv` crash to user.
 				this.logError('Process exiting with code: ' + code);
 			});
-			this.debugProcess.on('error', function(err) {
+			this.debugProcess.on('error', (err) => {
 				reject(err);
 			});
 		});
