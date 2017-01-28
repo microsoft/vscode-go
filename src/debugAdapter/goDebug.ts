@@ -139,18 +139,20 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	trace?: string|boolean;
 }
 
-// Note: Only turn this on when debugging the debugAdapter.
-// See https://github.com/Microsoft/vscode-go/issues/206#issuecomment-194571950
-const DEBUG = false;
-function log(msg?: any, ...args) {
-	if (DEBUG) {
-		console.warn(msg, ...args);
+function log(msg: any) {
+	if (typeof msg !== 'string') {
+		msg = JSON.stringify(msg);
 	}
+
+	logger.log(msg);
 }
+
 function logError(msg?: any, ...args) {
-	if (DEBUG) {
-		console.error(msg, ...args);
+	if (typeof msg !== 'string') {
+		msg = JSON.stringify(msg);
 	}
+
+	logger.error(msg);
 }
 
 class Delve {
@@ -174,7 +176,7 @@ class Delve {
 			}
 			let dlv = getBinPathWithPreferredGopath('dlv', env['GOPATH']);
 
-			log('Using dlv at: ', dlv);
+			log('Using dlv at: ' + dlv);
 			if (!existsSync(dlv)) {
 				return reject(`Cannot find Delve debugger at ${dlv}. Ensure it is in your "GOPATH/bin" or "PATH".`);
 			}
