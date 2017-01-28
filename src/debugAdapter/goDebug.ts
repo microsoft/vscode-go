@@ -3,6 +3,8 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
+import * as path from 'path';
+import * as os from 'os';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
 import { readFileSync, existsSync, lstatSync } from 'fs';
@@ -10,6 +12,7 @@ import { basename, dirname } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { getBinPathWithPreferredGopath } from '../goPath';
+import * as logger from 'vscode-debug-logger';
 
 require('console-stamp')(console);
 
@@ -133,6 +136,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	host?: string;
 	buildFlags?: string;
 	init?: string;
+	trace?: string|boolean;
 }
 
 // Note: Only turn this on when debugging the debugAdapter.
@@ -309,6 +313,9 @@ class GoDebugSession extends DebugSession {
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
 		this.initialBreakpointsSetPromise = new Promise<void>((resolve, reject) => this.signalInitialBreakpointsSet = resolve);
+
+		const logPath = path.join(os.tmpdir(), 'vscode-go-debug.txt');
+		logger.init(e => this.sendEvent(e), logPath, isServer);
 	}
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -322,6 +329,15 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
+		const logLevel =
+			args.trace === 'verbose' ?
+				logger.LogLevel.Verbose :
+				args.trace === true ?
+					logger.LogLevel.Log :
+					logger.LogLevel.Error;
+
+		logger.setMinLogLevel(logLevel);
+
 		// Launch the Delve debugger on the program
 		let remotePath = args.remotePath || '';
 		let port = args.port || random(2000, 50000);
