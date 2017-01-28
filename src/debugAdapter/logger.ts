@@ -19,14 +19,14 @@ export class Logger {
 	}
 
 	error(msg: any): void {
-		if (typeof msg !== 'string') {
-			msg = JSON.stringify(msg);
-		}
-
 		this._log(msg, LogLevel.Error);
 	}
 
 	private _log(msg: string, level:  LogLevel): void {
+		if (typeof msg !== 'string') {
+			msg = JSON.stringify(msg);
+		}
+
 		const category = level === LogLevel.Error ? 'stderr' : 'console';
 		this.debugSession.sendEvent(new OutputEvent(msg, category));
 
