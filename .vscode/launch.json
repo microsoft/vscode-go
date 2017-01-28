@@ -10,8 +10,17 @@
 			"args": [ "--extensionDevelopmentPath=${workspaceRoot}" ],
 			"stopOnEntry": false,
 			"sourceMaps": true,
-			"outDir": "${workspaceRoot}/out",
+			"outFiles": ["${workspaceRoot}/out/**/*.js"],
 			"preLaunchTask": "npm"
+		},
+		{
+			"name": "Launch as server",
+			"type": "node2",
+			"request": "launch",
+			"program": "${workspaceRoot}/out/src/debugAdapter/goDebug.js",
+			"args": [ "--server=4712" ],
+			"sourceMaps": true,
+			"outFiles": ["${workspaceRoot}/out/**/*.js"]
 		},
 		{
 			"name": "Launch Tests",
@@ -22,7 +31,7 @@
 			"args": ["--extensionDevelopmentPath=${workspaceRoot}", "--extensionTestsPath=${workspaceRoot}/out/test", "env.GOPATH" ],
 			"stopOnEntry": false,
 			"sourceMaps": true,
-			"outDir": "${workspaceRoot}/out",
+			"outFiles": ["${workspaceRoot}/out/**/*.js"],
 			"preLaunchTask": "npm"
 		}
 	]
