@@ -139,6 +139,12 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	trace?: string|boolean;
 }
 
+process.on('uncaughtException', (err: any) => {
+	const errMessage = err && (err.stack || err.message);
+	logger.error(`Unhandled error in debug adapter: ${errMessage}`);
+	throw err;
+});
+
 function log(...args: any[]) {
 	const msg = args.map(arg => {
 		return typeof arg === 'string' ?
