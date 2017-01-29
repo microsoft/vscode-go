@@ -136,7 +136,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	host?: string;
 	buildFlags?: string;
 	init?: string;
-	trace?: string|boolean;
+	trace?: boolean;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -341,13 +341,7 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
-		const logLevel =
-			args.trace === 'verbose' ?
-				logger.LogLevel.Verbose :
-				args.trace === true ?
-					logger.LogLevel.Log :
-					logger.LogLevel.Error;
-
+		const logLevel = args.trace ? logger.LogLevel.Verbose : logger.LogLevel.Error;
 		logger.setMinLogLevel(logLevel);
 
 		// Launch the Delve debugger on the program
