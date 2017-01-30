@@ -244,9 +244,10 @@
                 "default": "127.0.0.1"
               },
               "trace": {
-                "type": "boolean",
+                "type": ["boolean", "string"],
+                "enum": ["verbose", true],
                 "default": true,
-                "description": "When 'true', the extension will log diagnostic info to the console and to a file."
+                "description": "When 'true', the extension will log diagnostic info to a file. When 'verbose', it will also show logs in the console."
               }
             }
           }
