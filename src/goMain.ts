@@ -30,12 +30,13 @@ import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath } from './util';
 import { LanguageClient } from 'vscode-languageclient';
+import { clearCacheForTools } from './goPath';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
-let useLangServer: boolean;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
+	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
 	if (checkLanguageServer()) {
 		const c = new LanguageClient(
 			'langserver-go',
@@ -118,6 +119,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
 		updateGoPathGoRootFromConfig();
 		let updatedGoConfig = vscode.workspace.getConfiguration('go');
+
 		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
 		if (useLangServer !== updatedGoConfig['useLanguageServer'] && (!updatedGoConfig['useLanguageServer'] || checkLanguageServer())) {
 			vscode.window.showInformationMessage('Reload VS Code window for the change in usage of language server to take effect', 'Reload').then(selected => {
@@ -127,6 +129,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			});
 		}
 		useLangServer = updatedGoConfig['useLanguageServer'];
+
+		// If there was a change in "toolsGopath" setting, then clear cache for go tools
+		if (toolsGopath !== updatedGoConfig['toolsGopath']) {
+			clearCacheForTools();
+			toolsGopath = updatedGoConfig['toolsGopath'];
+		}
+
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.package', () => {

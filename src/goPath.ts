@@ -92,3 +92,7 @@ function fileExists(filePath: string): boolean {
 		return false;
 	}
 }
+
+export function clearCacheForTools() {
+	binPathCache = {};
+}
