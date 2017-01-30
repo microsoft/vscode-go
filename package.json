@@ -35,7 +35,7 @@
     "console-stamp": "^0.2.2",
     "diff": "~3.0.0",
     "json-rpc2": "^1.0.2",
-    "vscode-debug-logger": "^0.0.3",
+    "vscode-debug-logger": "^0.0.4",
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0",
     "vscode-extension-telemetry": "0.0.5",
