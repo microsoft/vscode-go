@@ -47,7 +47,7 @@
     "@types/node": "^6.0.50",
     "fs-extra": "^1.0.0",
     "tslint": "^4.0.2",
-    "typescript": "^2.0.10",
+    "typescript": "^2.1.5",
     "vscode": "^1.0.3"
   },
   "engines": {
