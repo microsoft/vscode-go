@@ -136,7 +136,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	host?: string;
 	buildFlags?: string;
 	init?: string;
-	trace?: boolean|"verbose";
+	trace?: boolean|'verbose';
 }
 
 process.on('uncaughtException', (err: any) => {
