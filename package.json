@@ -35,6 +35,7 @@
     "console-stamp": "^0.2.2",
     "diff": "~3.0.0",
     "json-rpc2": "^1.0.2",
+    "vscode-debug-logger": "^0.0.4",
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0",
     "vscode-extension-telemetry": "0.0.5",
@@ -46,7 +47,7 @@
     "@types/node": "^6.0.50",
     "fs-extra": "^1.0.0",
     "tslint": "^4.0.2",
-    "typescript": "^2.0.10",
+    "typescript": "^2.1.5",
     "vscode": "^1.0.3"
   },
   "engines": {
@@ -242,6 +243,18 @@
                 "type": "string",
                 "description": "The host name of the machine the delve debugger will be listening on.",
                 "default": "127.0.0.1"
+              },
+              "trace": {
+                "type": [
+                  "boolean",
+                  "string"
+                ],
+                "enum": [
+                  "verbose",
+                  true
+                ],
+                "default": true,
+                "description": "When 'true', the extension will log diagnostic info to a file. When 'verbose', it will also show logs in the console."
               }
             }
           }
