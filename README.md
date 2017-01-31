@@ -68,20 +68,15 @@ The following Visual Studio Code settings are available for the Go extension.  T
 A linter is a tool giving coding style feedback and suggestions.
 By default this extension uses the official [golint](https://github.com/golang/lint) as a linter.
 
-You can change the default linter and use the more advanced [Go Meta Linter](https://github.com/alecthomas/gometalinter).
-Note that you need to install the package manually: `go get -u github.com/alecthomas/gometalinter`
-and edit your configuration (set the `go.lintTool` value to "gometalinter").
+You can change the default linter and use the more advanced [Go Meta Linter](https://github.com/alecthomas/gometalinter)
+by setting `go.lintTool` to "gometalinter" in your settings.
 
-Go meta linter uses a collection of various linters and those linters also need to be installed manually.
-If one of the tools is available, it will be used by default (`golint` for instance is still run by default).
+Go meta linter uses a collection of various linters which will be installed for you by the extension.
 
 Some of the very useful linter tools:
 * [errcheck](https://github.com/kisielk/errcheck) checks for unchecked errors in your code.
 * [varcheck](https://github.com/opennota/check) finds unused global variables and constants.
 * [deadcode](https://github.com/tsenart/deadcode) finds unused code.
-
-If you wish to install all the supported linter tools, gometalinter provides you with an installer:
-`gometalinter --install`
 
 If you want to run only specific linters (some linters are slow), you can modify your configuration to specify them:
 
@@ -101,9 +96,11 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Run test at cursor` to run a test at the current cursor position in the active document
 * `Go: Run tests in current package` to run all tests in the package containing the active document
 * `Go: Run tests in current file` to run all tests in the current active document
+* `Go: Test Previous` to run the previously run test command
 * `Go: Generates unit tests (package)` Generates unit tests for the current package
 * `Go: Generates unit tests (file)` Generates unit tests for the current file
 * `Go: Generates unit tests (function)` Generates unit tests for the selected function in the current file
+* `Go: Install Tools` Installs/updates all the Go tools that the extension depends on
 
 ### _Optional_: Debugging
 
@@ -154,7 +151,8 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
 - gotests: `go get -u -v github.com/cweill/gotests/...`
 
-If you wish to have the extension use a separate GOPATH for its tools, set the VSCODE_GOTOOLS environment variable to the desired path.
+If you wish to have the extension use a separate GOPATH for its tools, provide the desired location in the setting `go.toolsGopath`.
+`gometalinter` and `dlv` are two tools that are exceptions, and will need to be installed in your GOPATH.
 
 To install the tools manually in the current GOPATH, just paste and run:
 ```bash
