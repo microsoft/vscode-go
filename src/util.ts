@@ -164,17 +164,20 @@ export function getGoVersion(): Promise<SemVersion> {
 	}
 
 	if (goVersion) {
+		sendTelemetryEvent('getGoVersion', {version: `${goVersion.major}.${goVersion.minor}`});
 		return Promise.resolve(goVersion);
 	}
 	return new Promise<SemVersion>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
-			sendTelemetryEvent('getGoVersion', {version: stdout});
 			let matches = /go version go(\d).(\d).*/.exec(stdout);
 			if (matches) {
 				goVersion = {
 					major: parseInt(matches[1]),
 					minor: parseInt(matches[2])
 				};
+				sendTelemetryEvent('getGoVersion', {version: `${goVersion.major}.${goVersion.minor}`});
+			} else {
+				sendTelemetryEvent('getGoVersion', {version: stdout});
 			}
 			return resolve(goVersion);
 		});
