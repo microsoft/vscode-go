@@ -77,7 +77,7 @@ export function promptForMissingTool(tool: string) {
 			}
 		}
 
-		vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${getTools(goVersion)[tool]}" to install.`, 'Install All', 'Install').then(selected => {
+		vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${getTools(goVersion)[tool]}" to install.`, 'Install', 'Install All').then(selected => {
 			if (selected === 'Install') {
 				installTools(goVersion, [tool]);
 			} else if (selected === 'Install All') {
