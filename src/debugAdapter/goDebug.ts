@@ -369,6 +369,7 @@ class GoDebugSession extends DebugSession {
 		this.delve.connection.then(() => {
 			this.sendEvent(new InitializedEvent());
 			verbose('InitializeEvent');
+			this.sendResponse(response);
 		}, err => {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: "{e}"', { e: err.toString() });
 			verbose('ContinueResponse');
@@ -383,8 +384,6 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
-		verbose('ConfigurationDoneRequest');
-		this.sendResponse(response);
 		verbose('ConfigurationDoneRequest');
 
 		if (this.launchArgs.stopOnEntry) {
