@@ -260,6 +260,7 @@ function getMissingTools(goVersion: SemVersion): Promise<string[]> {
 // If langserver needs to be used, and is installed, this will return true
 // Returns false in all other cases
 export function checkLanguageServer(): boolean {
+	if (process.platform === 'win32') return false;
 	let latestGoConfig = vscode.workspace.getConfiguration('go');
 	if (!latestGoConfig['useLanguageServer']) return false;
 

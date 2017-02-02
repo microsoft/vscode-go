@@ -412,6 +412,11 @@
           },
           "default": null,
           "description": "Flags to pass to `go test`. If null, then buildFlags will be used."
+        },
+        "go.useLanguageServer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Experimental: Not available in Windows. Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features"
         }
       }
     }
