@@ -337,6 +337,11 @@
           "default": false,
           "description": "Complete functions with their parameter signature"
         },
+        "go.inferGopath": {
+          "type": "boolean",
+          "default": false,
+          "description": "use workspace root to find appropriate GOPATH"
+        },
         "go.gopath": {
           "type": [
             "string",

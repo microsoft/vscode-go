@@ -59,6 +59,7 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.formatFlags": [],
 	"go.goroot": "/usr/local/go",
 	"go.gopath": "/Users/lukeh/go",
+	"go.inferGopath": false,
 	"go.gocodeAutoBuild": false
 }
 ```
