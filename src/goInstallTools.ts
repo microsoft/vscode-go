@@ -212,12 +212,12 @@ export function updateGoPathGoRootFromConfig() {
 
 	let inferGoPath = vscode.workspace.getConfiguration('go')['inferGopath'];
 	if (inferGoPath) {
-		let dirs = vscode.workspace.rootPath.toLowerCase().split(path.sep)
+		let dirs = vscode.workspace.rootPath.toLowerCase().split(path.sep);
 		// find src directory closest to workspace root
-		let srcIdx = dirs.lastIndexOf("src")
+		let srcIdx = dirs.lastIndexOf('src');
 
 		if (srcIdx > 0) {
-			process.env['GOPATH'] = vscode.workspace.rootPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length)
+			process.env['GOPATH'] = vscode.workspace.rootPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
 		}
 	}
 }
