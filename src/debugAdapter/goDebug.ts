@@ -312,10 +312,10 @@ class GoDebugSession extends DebugSession {
 	private threads: Set<number>;
 	private debugState: DebuggerState;
 	private delve: Delve;
-	private initialBreakpointsSetPromise: Promise<void>;
-	private signalInitialBreakpointsSet: () => void;
 	private localPathSeparator: string;
 	private remotePathSeparator: string;
+
+	private launchArgs: LaunchRequestArguments;
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
@@ -324,7 +324,6 @@ class GoDebugSession extends DebugSession {
 		this.debugState = null;
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
-		this.initialBreakpointsSetPromise = new Promise<void>((resolve, reject) => this.signalInitialBreakpointsSet = resolve);
 
 		const logPath = path.join(os.tmpdir(), 'vscode-go-debug.txt');
 		logger.init(e => this.sendEvent(e), logPath, isServer);
@@ -336,11 +335,10 @@ class GoDebugSession extends DebugSession {
 		response.body.supportsConfigurationDoneRequest = true;
 		this.sendResponse(response);
 		verbose('InitializeResponse');
-		this.sendEvent(new InitializedEvent());
-		verbose('InitializeEvent');
 	}
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
+		this.launchArgs = args;
 		const logLevel = args.trace === 'verbose' ?
 			logger.LogLevel.Verbose :
 			args.trace ? logger.LogLevel.Log :
@@ -368,16 +366,9 @@ class GoDebugSession extends DebugSession {
 			this.sendEvent(new OutputEvent(str, 'stderr'));
 		};
 
-		this.delve.connection.then(() =>
-			this.initialBreakpointsSetPromise
-		).then(() => {
-			if (args.stopOnEntry) {
-				this.sendEvent(new StoppedEvent('breakpoint', 0));
-				verbose('StoppedEvent("breakpoint")');
-				this.sendResponse(response);
-			} else {
-				this.continueRequest(<DebugProtocol.ContinueResponse>response);
-			}
+		this.delve.connection.then(() => {
+			this.sendEvent(new InitializedEvent());
+			verbose('InitializeEvent');
 		}, err => {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: "{e}"', { e: err.toString() });
 			verbose('ContinueResponse');
@@ -393,9 +384,16 @@ class GoDebugSession extends DebugSession {
 
 	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
 		verbose('ConfigurationDoneRequest');
-		this.signalInitialBreakpointsSet();
 		this.sendResponse(response);
 		verbose('ConfigurationDoneRequest');
+
+		if (this.launchArgs.stopOnEntry) {
+			this.sendEvent(new StoppedEvent('breakpoint', 0));
+			verbose('StoppedEvent("breakpoint")');
+			this.sendResponse(response);
+		} else {
+			this.continueRequest(<DebugProtocol.ContinueResponse>response);
+		}
 	}
 
 	protected toDebuggerPath(path: string): string {
