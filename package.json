@@ -56,11 +56,7 @@
   "activationEvents": [
     "onLanguage:go",
     "onCommand:go.gopath",
-    "onCommand:go.test.cursor",
-    "onCommand:go.test.package",
-    "onCommand:go.test.file",
-    "onCommand:go.test.previous",
-    "onCommand:go.test.coverage"
+    "onCommand:go.tools.install"
   ],
   "main": "./out/src/goMain",
   "contributes": {
