@@ -9,7 +9,7 @@ import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
 import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname } from 'path';
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { getBinPathWithPreferredGopath } from '../goPath';
 import * as logger from 'vscode-debug-logger';
@@ -305,7 +305,7 @@ class Delve {
 				});
 			});
 		} else {
-			this.debugProcess.kill();
+			killTree(this.debugProcess.pid);
 		}
 	}
 }
@@ -755,6 +755,26 @@ class GoDebugSession extends DebugSession {
 
 function random(low: number, high: number): number {
 	return Math.floor(Math.random() * (high - low) + low);
+}
+
+function killTree(processId: number): void {
+    if (process.platform === 'win32') {
+        const TASK_KILL = 'C:\\Windows\\System32\\taskkill.exe';
+
+        // when killing a process in Windows its child processes are *not* killed but become root processes.
+        // Therefore we use TASKKILL.EXE
+        try {
+            execSync(`${TASK_KILL} /F /T /PID ${processId}`);
+        } catch (err) {
+        }
+    } else {
+        // on linux and OS X we kill all direct and indirect child processes as well
+        try {
+            const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
+            spawnSync(cmd, [ processId.toString() ]);
+        } catch (err) {
+        }
+    }
 }
 
 DebugSession.run(GoDebugSession);
