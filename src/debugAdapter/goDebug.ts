@@ -457,6 +457,13 @@ class GoDebugSession extends DebugSession {
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
 		verbose('ThreadsRequest');
 		this.delve.call<DebugGoroutine[]>('ListGoroutines', [], (err, goroutines) => {
+			if (this.debugState.exited) {
+				// If the program exits very quickly, the initial threadsRequest will complete after it has exited.
+				// A TerminatedEvent has already been sent. Ignore the err returned in this case.
+				response.body = { threads: [] };
+				this.sendResponse(response);
+			}
+
 			if (err) {
 				logError('Failed to get threads.');
 				return this.sendErrorResponse(response, 2003, 'Unable to display threads: "{e}"', { e: err.toString() });
