@@ -19,6 +19,7 @@
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * A new setting `go.testFlags` that can be used to run tests. If null, `go.buildFlags` will be used. [PR 482](https://github.com/Microsoft/vscode-go/pull/482)
     * Customize flags for each of the test command by using different keybindings. [PR 482](https://github.com/Microsoft/vscode-go/pull/482). In the below example, `ctrl+shift+t` is bound to run the tests in current file with `-short` flag. The commands here can be `go.test.package`, `go.test.file` or `go.test.cursor`.
+	
         ```json
         {
             "key": "ctrl+shift+t",
@@ -30,6 +31,7 @@
         }
         ```
     * New toggle command `Go: Toggle Test File` that lets you toggle between your Go file and the corresponding test file. Previous commands `Go: Open Test File` and `Go: Open Implementation For Test File` have been deprecated in favor of this new command. [PR 739](https://github.com/Microsoft/vscode-go/pull/739). You can add a keyboard binding to this as below:
+	
         ```json
         {
             "key": "ctrl+shift+t",
