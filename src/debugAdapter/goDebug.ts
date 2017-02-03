@@ -461,7 +461,7 @@ class GoDebugSession extends DebugSession {
 				// If the program exits very quickly, the initial threadsRequest will complete after it has exited.
 				// A TerminatedEvent has already been sent. Ignore the err returned in this case.
 				response.body = { threads: [] };
-				this.sendResponse(response);
+				return this.sendResponse(response);
 			}
 
 			if (err) {
