@@ -177,6 +177,9 @@ class Delve {
 		this.program = program;
 		this.remotePath = remotePath;
 		this.connection = new Promise((resolve, reject) => {
+			if (!program) {
+				return reject('The program attribute is missing in launch.json');
+			}
 			let serverRunning = false;
 			if (mode === 'remote') {
 				this.debugProcess = null;
@@ -186,10 +189,12 @@ class Delve {
 			}
 			let dlv = getBinPathWithPreferredGopath('dlv', env['GOPATH']);
 
-			verbose('Using dlv at: ' + dlv);
 			if (!existsSync(dlv)) {
-				return reject(`Cannot find Delve debugger at ${dlv}. Ensure it is in your "GOPATH/bin" or "PATH".`);
+				verbose(`Couldnt find dlv at ${process.env["GOPATH"]}${env['GOPATH'] ? ", " + env['GOPATH'] : ""} or ${process.env["PATH"]}`);
+				return reject(`Cannot find Delve debugger. Ensure it is in your "GOPATH/bin" or "PATH".`);
 			}
+			verbose('Using dlv at: ' + dlv);
+
 			let dlvEnv: Object = null;
 			if (env) {
 				dlvEnv = {};
