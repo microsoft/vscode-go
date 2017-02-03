@@ -190,7 +190,7 @@ class Delve {
 			let dlv = getBinPathWithPreferredGopath('dlv', env['GOPATH']);
 
 			if (!existsSync(dlv)) {
-				verbose(`Couldnt find dlv at ${process.env["GOPATH"]}${env['GOPATH'] ? ", " + env['GOPATH'] : ""} or ${process.env["PATH"]}`);
+				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
 				return reject(`Cannot find Delve debugger. Ensure it is in your "GOPATH/bin" or "PATH".`);
 			}
 			verbose('Using dlv at: ' + dlv);

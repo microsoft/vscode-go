@@ -174,8 +174,8 @@
             "properties": {
               "program": {
                 "type": "string",
-                "description": "Workspace relative path to the program folder (or any file within that folder) when in 'debug' or 'test' mode, and to the pre-built binary file to debug in 'exec' mode.",
-                "default": "."
+                "description": "Path to the program folder (or any file within that folder) when in 'debug' or 'test' mode, and to the pre-built binary file to debug in 'exec' mode.",
+                "default": "${workspaceRoot}"
               },
               "mode": {
                 "enum": [
