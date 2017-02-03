@@ -209,6 +209,17 @@ export function updateGoPathGoRootFromConfig() {
 	if (gopath) {
 		process.env['GOPATH'] = gopath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
 	}
+
+	let inferGoPath = vscode.workspace.getConfiguration('go')['inferGopath'];
+	if (inferGoPath) {
+		let dirs = vscode.workspace.rootPath.toLowerCase().split(path.sep);
+		// find src directory closest to workspace root
+		let srcIdx = dirs.lastIndexOf('src');
+
+		if (srcIdx > 0) {
+			process.env['GOPATH'] = vscode.workspace.rootPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
+		}
+	}
 }
 
 export function setupGoPathAndOfferToInstallTools() {
