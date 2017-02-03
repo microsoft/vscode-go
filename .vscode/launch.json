@@ -34,5 +34,11 @@
 			"outFiles": ["${workspaceRoot}/out/**/*.js"],
 			"preLaunchTask": "npm"
 		}
+	],
+	"compounds": [
+		{
+			"name": "Extension + Debug server",
+			"configurations": ["Launch Extension", "Launch as server"]
+		}
 	]
 }
