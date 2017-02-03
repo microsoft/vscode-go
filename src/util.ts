@@ -249,7 +249,16 @@ export function isPositionInString(document: vscode.TextDocument, position: vsco
 	return doubleQuotesCnt % 2 === 1;
 }
 
-export function getBinPath(tool: string): string {
+export function getToolsGopath(): string {
 	let goConfig = vscode.workspace.getConfiguration('go');
-	return getBinPathWithPreferredGopath(tool, goConfig['toolsGopath']);
+	let toolsGopath = goConfig['toolsGopath'];
+	if (toolsGopath) {
+		toolsGopath = toolsGopath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+	}
+	return toolsGopath;
 }
+
+export function getBinPath(tool: string): string {
+	return getBinPathWithPreferredGopath(tool, getToolsGopath());
+}
+
