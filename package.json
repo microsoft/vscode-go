@@ -340,7 +340,7 @@
         "go.inferGopath": {
           "type": "boolean",
           "default": false,
-          "description": "use workspace root to find appropriate GOPATH"
+          "description": "Infer GOPATH from the workspace root."
         },
         "go.gopath": {
           "type": [
@@ -348,7 +348,7 @@
             "null"
           ],
           "default": null,
-          "description": "Specifies the GOPATH to use when no environment variable is set."
+          "description": "Specifies the GOPATH to use when no environment variable is set. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true."
         },
         "go.goroot": {
           "type": [
