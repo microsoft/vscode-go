@@ -11,7 +11,7 @@ import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { getBinPathWithPreferredGopath } from '../goPath';
+import { getBinPathWithPreferredGopath, resolvePath } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 
 require('console-stamp')(console);
@@ -187,7 +187,7 @@ class Delve {
 				connectClient(port, host);
 				return;
 			}
-			let dlv = getBinPathWithPreferredGopath('dlv', env['GOPATH']);
+			let dlv = getBinPathWithPreferredGopath('dlv', resolvePath(env['GOPATH']));
 
 			if (!existsSync(dlv)) {
 				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);

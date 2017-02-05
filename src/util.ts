@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath, getBinPathWithPreferredGopath} from './goPath';
+import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath} from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 
@@ -253,7 +253,7 @@ export function getToolsGopath(): string {
 	let goConfig = vscode.workspace.getConfiguration('go');
 	let toolsGopath = goConfig['toolsGopath'];
 	if (toolsGopath) {
-		toolsGopath = toolsGopath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+		toolsGopath = resolvePath(toolsGopath, vscode.workspace.rootPath);
 	}
 	return toolsGopath;
 }

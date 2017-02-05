@@ -96,3 +96,13 @@ function fileExists(filePath: string): boolean {
 export function clearCacheForTools() {
 	binPathCache = {};
 }
+
+/**
+ * Exapnds ~ to homedir in non-Windows platform and replaces ${workspaceRoot} token with given workspaceroot
+ */
+export function resolvePath(inputPath: string, workspaceRoot?: string): string {
+	if (workspaceRoot) {
+		inputPath = inputPath.replace(/\${workspaceRoot}/g, workspaceRoot);
+	}
+	return (process.platform === 'win32' || !inputPath.startsWith('~')) ? inputPath : path.join(os.homedir(), inputPath.substr(1));
+}
