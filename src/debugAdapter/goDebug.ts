@@ -758,23 +758,23 @@ function random(low: number, high: number): number {
 }
 
 function killTree(processId: number): void {
-    if (process.platform === 'win32') {
-        const TASK_KILL = 'C:\\Windows\\System32\\taskkill.exe';
+	if (process.platform === 'win32') {
+		const TASK_KILL = 'C:\\Windows\\System32\\taskkill.exe';
 
-        // when killing a process in Windows its child processes are *not* killed but become root processes.
-        // Therefore we use TASKKILL.EXE
-        try {
-            execSync(`${TASK_KILL} /F /T /PID ${processId}`);
-        } catch (err) {
-        }
-    } else {
-        // on linux and OS X we kill all direct and indirect child processes as well
-        try {
-            const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
-            spawnSync(cmd, [ processId.toString() ]);
-        } catch (err) {
-        }
-    }
+		// when killing a process in Windows its child processes are *not* killed but become root processes.
+		// Therefore we use TASKKILL.EXE
+		try {
+			execSync(`${TASK_KILL} /F /T /PID ${processId}`);
+		} catch (err) {
+		}
+	} else {
+		// on linux and OS X we kill all direct and indirect child processes as well
+		try {
+			const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
+			spawnSync(cmd, [ processId.toString() ]);
+		} catch (err) {
+		}
+	}
 }
 
 DebugSession.run(GoDebugSession);
