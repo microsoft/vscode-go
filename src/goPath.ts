@@ -101,6 +101,7 @@ export function clearCacheForTools() {
  * Exapnds ~ to homedir in non-Windows platform and replaces ${workspaceRoot} token with given workspaceroot
  */
 export function resolvePath(inputPath: string, workspaceRoot?: string): string {
+	if (!inputPath || !inputPath.trim()) return inputPath;
 	if (workspaceRoot) {
 		inputPath = inputPath.replace(/\${workspaceRoot}/g, workspaceRoot);
 	}
