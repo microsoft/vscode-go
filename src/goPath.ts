@@ -105,5 +105,5 @@ export function resolvePath(inputPath: string, workspaceRoot?: string): string {
 	if (workspaceRoot) {
 		inputPath = inputPath.replace(/\${workspaceRoot}/g, workspaceRoot);
 	}
-	return !inputPath.startsWith('~') ? inputPath : path.join(os.homedir(), inputPath.substr(1));
+	return inputPath.startsWith('~') ? path.join(os.homedir(), inputPath.substr(1)) : inputPath;
 }
