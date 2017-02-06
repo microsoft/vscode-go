@@ -82,7 +82,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
 		let gopath = process.env['GOPATH'];
-		vscode.window.showInformationMessage('Current GOPATH:' + gopath);
+		let wasInfered = vscode.workspace.getConfiguration('go')['inferGopath'];
+
+		// not only if it was configured, but if it was successful.
+		if (wasInfered && vscode.workspace.rootPath.indexOf(gopath) === 0) {
+			vscode.window.showInformationMessage('Current GOPATH is inferred from workspace root: ' + gopath);
+		} else {
+			vscode.window.showInformationMessage('Current GOPATH: ' + gopath);
+		}
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {
