@@ -344,6 +344,11 @@ class GoDebugSession extends DebugSession {
 		verbose('InitializeResponse');
 	}
 
+	protected findPathSeperator(path) {
+		if (/^(\w:[\\/]|\\\\)/.test(path)) return '\\';
+		return path.includes('/') ? '/' : '\\';
+	}
+
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		this.launchArgs = args;
 		const logLevel = args.trace === 'verbose' ?
@@ -353,19 +358,29 @@ class GoDebugSession extends DebugSession {
 		logger.setMinLogLevel(logLevel);
 
 		// Launch the Delve debugger on the program
+		let localPath = args.program;
 		let remotePath = args.remotePath || '';
 		let port = args.port || random(2000, 50000);
 		let host = args.host || '127.0.0.1';
 
 		if (remotePath.length > 0) {
-			this.localPathSeparator = args.program.includes('/') ? '/' : '\\';
-			this.remotePathSeparator = remotePath.includes('/') ? '/' : '\\';
-			if ((remotePath.endsWith('\\')) || (remotePath.endsWith('/'))) {
+			this.localPathSeparator = this.findPathSeperator(localPath);
+			this.remotePathSeparator = this.findPathSeperator(remotePath);
+
+			let llist = localPath.split(/\/|\\(?! )/).reverse();
+			let rlist = remotePath.split(/\/|\\(?! )/).reverse();
+			let i = 0;
+			for (; i < llist.length; i++) if (llist[i] !== rlist[i]) break;
+
+			if (i) {
+				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator);
+				remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator);
+			} else if ((remotePath.endsWith('\\')) || (remotePath.endsWith('/'))) {
 				remotePath = remotePath.substring(0, remotePath.length - 1);
 			}
 		}
 
-		this.delve = new Delve(args.mode, remotePath, port, host, args.program, args.args, args.showLog, args.cwd, args.env, args.buildFlags, args.init);
+		this.delve = new Delve(args.mode, remotePath, port, host, localPath, args.args, args.showLog, args.cwd, args.env, args.buildFlags, args.init);
 		this.delve.onstdout = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stdout'));
 		};
