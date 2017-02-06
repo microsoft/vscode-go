@@ -11,7 +11,7 @@ import path = require('path');
 import os = require('os');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
-import { getGoRuntimePath } from './goPath';
+import { getGoRuntimePath, resolvePath } from './goPath';
 import { outputChannel } from './goStatus';
 import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported } from './util';
 
@@ -207,7 +207,7 @@ export function updateGoPathGoRootFromConfig() {
 
 	let gopath = vscode.workspace.getConfiguration('go')['gopath'];
 	if (gopath) {
-		process.env['GOPATH'] = gopath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+		process.env['GOPATH'] = resolvePath(gopath, vscode.workspace.rootPath);
 	}
 
 	let inferGoPath = vscode.workspace.getConfiguration('go')['inferGopath'];
