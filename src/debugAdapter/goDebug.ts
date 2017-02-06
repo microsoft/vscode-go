@@ -367,8 +367,8 @@ class GoDebugSession extends DebugSession {
 			this.localPathSeparator = this.findPathSeperator(localPath);
 			this.remotePathSeparator = this.findPathSeperator(remotePath);
 
-			let llist = localPath.split(/\/|\\(?! )/).reverse();
-			let rlist = remotePath.split(/\/|\\(?! )/).reverse();
+			let llist = localPath.split(/\/|\\/).reverse();
+			let rlist = remotePath.split(/\/|\\/).reverse();
 			let i = 0;
 			for (; i < llist.length; i++) if (llist[i] !== rlist[i]) break;
 
