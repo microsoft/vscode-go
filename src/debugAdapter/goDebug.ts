@@ -187,6 +187,8 @@ class Delve {
 				connectClient(port, host);
 				return;
 			}
+			if (!env) env = {};
+
 			let dlv = getBinPathWithPreferredGopath('dlv', env['GOPATH']);
 
 			if (!existsSync(dlv)) {
