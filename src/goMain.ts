@@ -156,6 +156,19 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		goGenerateTests.toggleTestFile();
 	}));
 
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.debug.startSession', config => {
+		if (!config.request) { // if 'request' is missing interpret this as a missing launch.json
+			config = Object.assign(config, {
+				'name': 'Launch',
+				'type': 'go',
+				'request': 'launch',
+				'mode': 'debug',
+				'program': '${workspaceRoot}'
+			});
+		}
+		vscode.commands.executeCommand('vscode.startDebug', config);
+	}));
+
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
 			// ^(.*\*/)?\s*\}.*$
