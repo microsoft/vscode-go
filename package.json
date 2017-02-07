@@ -276,6 +276,11 @@
           "default": [],
           "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. ['-ldflags=\"-s\"'])"
         },
+        "go.buildTags": {
+          "type": "string",
+          "default": "",
+          "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
+        },
         "go.lintOnSave": {
           "type": "boolean",
           "default": true,
@@ -311,6 +316,11 @@
           "default": [],
           "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])"
         },
+        "go.formatOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Runs formatting tool on save."
+        },
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
@@ -334,11 +344,6 @@
           "default": true,
           "description": "Run the formatting tools with the -d flag"
         },
-        "go.useCodeSnippetsOnFunctionSuggest": {
-          "type": "boolean",
-          "default": false,
-          "description": "Complete functions with their parameter signature"
-        },
         "go.inferGopath": {
           "type": "boolean",
           "default": false,
@@ -352,6 +357,11 @@
           "default": null,
           "description": "Specifies the GOPATH to use when no environment variable is set. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true."
         },
+         "go.toolsGopath": {
+          "type": "string",
+          "default": "",
+          "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH."
+        },
         "go.goroot": {
           "type": [
             "string",
@@ -359,11 +369,6 @@
           ],
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set."
-        },
-        "go.formatOnSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "Runs formatting tool on save."
         },
         "go.coverOnSave": {
           "type": "boolean",
@@ -375,20 +380,31 @@
           "default": "30s",
           "description": "Specifies the timeout for go test in ParseDuration format."
         },
+        "go.testEnvVars": {
+          "type": "object",
+          "default": {},
+          "description": "Environment variables that will passed to the process that runs the Go tests"
+        },
+        "go.testFlags": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "default": null,
+          "description": "Flags to pass to `go test`. If null, then buildFlags will be used."
+        },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": true,
           "description": "Enable gocode's autobuild feature"
         },
-        "go.buildTags": {
-          "type": "string",
-          "default": "",
-          "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
-        },
-        "go.testEnvVars": {
-          "type": "object",
-          "default": {},
-          "description": "Environment variables that will passed to the process that runs the Go tests"
+         "go.useCodeSnippetsOnFunctionSuggest": {
+          "type": "boolean",
+          "default": false,
+          "description": "Complete functions with their parameter signature"
         },
         "go.autocompleteUnimportedPackages": {
           "type": "boolean",
@@ -404,26 +420,15 @@
             "gogetdoc"
           ]
         },
-        "go.toolsGopath": {
-          "type": "string",
-          "default": "",
-          "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH."
-        },
-        "go.testFlags": {
-          "type": [
-            "array",
-            "null"
-          ],
-          "items": {
-            "type": "string"
-          },
-          "default": null,
-          "description": "Flags to pass to `go test`. If null, then buildFlags will be used."
-        },
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
           "description": "Experimental: Not available in Windows. Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features"
+        },
+        "go.gotoSymbolIncludeImports": {
+          "type": "boolean",
+          "default": false,
+          "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
         }
       }
     }
