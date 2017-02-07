@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath } from './util';
+import { getBinPath, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with https://github.com/lukehoban/go-outline
@@ -76,7 +76,11 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 	};
 
 	private convertToCodeSymbols(document: vscode.TextDocument, decls: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName: string): void {
+		let gotoSymbolConfig = vscode.workspace.getConfiguration('go')['gotoSymbol'];
+		let includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
+		sendTelemetryEvent('file-symbols', { includeImports });
 		decls.forEach(decl => {
+			if (!includeImports && decl.type === 'import') return;
 			let label = decl.label;
 			if (decl.receiverType) {
 				label = '(' + decl.receiverType + ').' + label;
