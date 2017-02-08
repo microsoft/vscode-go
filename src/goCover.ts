@@ -58,7 +58,7 @@ export function coverageCurrentPackage() {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
-	getCoverage(editor.document.uri.fsPath);
+	getCoverage(editor.document.uri.fsPath, true);
 }
 
 export function getCodeCoverage(editor: vscode.TextEditor) {
@@ -90,7 +90,7 @@ function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove
 	editor.setDecorations(coveredHighLight, remove ? [] : file.coveredRange);
 }
 
-export function getCoverage(filename: string): Promise<any[]> {
+export function getCoverage(filename: string, showErrOutput: boolean = false): Promise<any[]> {
 	return new Promise((resolve, reject) => {
 		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
 		let cwd = path.dirname(filename);
@@ -110,9 +110,11 @@ export function getCoverage(filename: string): Promise<any[]> {
 				// Clear existing coverage files
 				clearCoverage();
 				if (err && (<any>err).code !== 0) {
-					outputChannel.clear();
-					outputChannel.append(((<any>err).message));
-					outputChannel.show(true);
+					outputChannel.appendLine(['Finished running tool:', goRuntimePath, ...args].join(' '));
+					outputChannel.appendLine(((<any>err).message));
+					if (showErrOutput) {
+						outputChannel.show(true);
+					}
 					return resolve([]);
 				}
 
@@ -121,7 +123,7 @@ export function getCoverage(filename: string): Promise<any[]> {
 					output: undefined
 				});
 
-				lines.on('line', function(data: string) {
+				lines.on('line', function (data: string) {
 					// go test coverageprofile generates output:
 					//    filename:StartLine.StartColumn,EndLine.EndColumn Hits IsCovered
 					// The first line will be "mode: set" which will be ignored
@@ -141,15 +143,15 @@ export function getCoverage(filename: string): Promise<any[]> {
 					);
 					// If is Covered
 					if (parseInt(fileRange[7]) === 1) {
-						coverage.coveredRange.push({range});
+						coverage.coveredRange.push({ range });
 					}
 					// Not Covered
 					else {
-						coverage.uncoveredRange.push({range});
+						coverage.uncoveredRange.push({ range });
 					}
 					coverageFiles[fileRange[1]] = coverage;
 				});
-				lines.on('close', function(data) {
+				lines.on('close', function (data) {
 					applyCoverage();
 					resolve([]);
 				});
