@@ -8,7 +8,7 @@ import * as os from 'os';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
 import { readFileSync, existsSync, lstatSync } from 'fs';
-import { basename, dirname } from 'path';
+import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { getBinPathWithPreferredGopath, resolvePath } from '../goPath';
@@ -232,10 +232,21 @@ class Delve {
 
 			let dlvCwd = dirname(program);
 			try {
-				if (lstatSync(program).isDirectory()) {
+				let pstats = lstatSync(program);
+				if (pstats.isDirectory()) {
+					if (mode === 'exec') {
+						logError(`The program "${program}" must not be a directory in exec mode`);
+						return reject('The program attribute must be an executable in exec mode');
+					}
 					dlvCwd = program;
+				} else if (mode !== 'exec' && extname(program) !== '.go') {
+					logError(`The program "${program}" must be a valid go file in debug mode`);
+					return reject('The program attribute must be a directory or .go file in debug mode');
 				}
-			} catch (e) { }
+			} catch (e) {
+				logError(`The program "${program}" does not exist: ${e}`);
+				return reject('The program attribute must point to valid directory, .go file or executable.');
+			}
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
 				env: dlvEnv,
