@@ -236,16 +236,16 @@ class Delve {
 				if (pstats.isDirectory()) {
 					if (mode === 'exec') {
 						logError(`The program "${program}" must not be a directory in exec mode`);
-						return reject('The program attribute must be an executable in exec mode')
+						return reject('The program attribute must be an executable in exec mode');
 					}
 					dlvCwd = program;
-				} else if (mode != 'exec' && extname(program) != '.go') {
+				} else if (mode !== 'exec' && extname(program) !== '.go') {
 					logError(`The program "${program}" must be a valid go file in debug mode`);
-					return reject('The program attribute must be a directory or .go file in debug mode')
+					return reject('The program attribute must be a directory or .go file in debug mode');
 				}
 			} catch (e) {
 				logError(`The program "${program}" does not exist: ${e}`);
-				return reject('The program attribute must point to valid directory, .go file or executable.')
+				return reject('The program attribute must point to valid directory, .go file or executable.');
 			}
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
