@@ -155,6 +155,56 @@
           "go"
         ],
         "startSessionCommand": "go.debug.startSession",
+        "configurationSnippets": [
+          {
+            "label": "Go: Launch package",
+            "description": "Debug the package in the program attribute",
+            "body":{
+              "name": "${2:Launch Package}",
+              "type": "go",
+              "request": "launch",
+              "mode": "debug",
+              "program": "^\"\\${workspaceRoot}${1:}\""
+            }
+          },
+          {
+            "label": "Go: Launch file",
+            "description": "Debug the file in the program attribute",
+            "body":{
+              "name": "${2:Launch file}",
+              "type": "go",
+              "request": "launch",
+              "mode": "debug",
+              "program": "^\"\\${workspaceRoot}${1:/main.go}\""
+            }
+          },
+          {
+            "label": "Go: Launch test package",
+            "description": "Debug the test package in the program attribute",
+            "body":{
+              "name": "${2:Launch test package}",
+              "type": "go",
+              "request": "launch",
+              "mode": "test",
+              "program": "^\"\\${workspaceRoot}${1:}\""
+            }
+          },
+          {
+            "label": "Go: Launch test function",
+            "description": "Debug the test function in the args, ensure program attributes points to right package",
+            "body":{
+              "name": "${3:Launch test function}",
+              "type": "go",
+              "request": "launch",
+              "mode": "test",
+              "program": "^\"\\${workspaceRoot}${1:}\"",
+              "args": [
+                "-test.run",
+                "${2:MyTestFunction}"
+              ]
+            }
+          }
+        ],
         "initialConfigurations": [
           {
             "name": "Launch",
