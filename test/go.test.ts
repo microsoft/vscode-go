@@ -11,6 +11,7 @@ import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { GoDefinitionProvider } from '../src/goDeclaration';
+import { getWorkspaceSymbols } from '../src/goSymbol';
 import { check } from '../src/goCheck';
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
@@ -706,5 +707,37 @@ It returns the number of bytes written and any write error encountered.
 
 			return Promise.all<void>([gopkgsPromise, listPkgPromise]);
 		}).then(() => done(), done);
+	});
+
+	test('Workspace Symbols', (done) => {
+		// This test needs a go project that has vendor folder and vendor packages
+		// Since the Go extension takes a dependency on the godef tool at github.com/rogpeppe/godef
+		// which has vendor packages, we are using it here to test the "replace vendor packages with relative path" feature.
+		// If the extension ever stops depending on godef tool or if godef ever stops having vendor packages, then this test
+		// will fail and will have to be replaced with any other go project with vendor packages
+
+		let workspacePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef');
+		let configWithoutIgnoringFolders = Object.create(vscode.workspace.getConfiguration('go'), {
+			'gotoSymbol': {
+				value: {
+					'ignoreFolders': []
+				}
+			}
+		});
+		let configWithIgnoringFolders = Object.create(vscode.workspace.getConfiguration('go'), {
+			'gotoSymbol': {
+				value: {
+					'ignoreFolders': ['vendor']
+				}
+			}
+		});
+		let withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', configWithoutIgnoringFolders).then(results => {
+			assert.equal(results[0].name, 'WinInfo');
+			assert.equal(results[0].path, path.join(workspacePath, 'vendor/9fans.net/go/acme/acme.go'));
+		});
+		let withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', configWithIgnoringFolders).then(results => {
+			assert.equal(results.length, 0);
+		});
+		Promise.all([withIgnoringFolders, withoutIgnoringFolders]).then(() => done(), done);
 	});
 });

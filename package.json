@@ -429,6 +429,14 @@
           "type": "boolean",
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
+        },
+        "go.gotoSymbol.ignoreFolders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature"
         }
       }
     }
