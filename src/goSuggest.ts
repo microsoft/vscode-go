@@ -90,9 +90,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						if (pkgPath) {
 							// Now that we have the package path, import it right after the "package" statement
 							let {imports, pkg} = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
-							let posToAddImport = document.offsetAt(new vscode.Position(pkg.start + 1 , 0));
+							let posToAddImport = document.offsetAt(new vscode.Position(pkg.start + 1, 0));
 							let textToAdd = `import "${pkgPath}"\n`;
-							inputText = inputText.substr(0, posToAddImport) +  textToAdd + inputText.substr(posToAddImport);
+							inputText = inputText.substr(0, posToAddImport) + textToAdd + inputText.substr(posToAddImport);
 							offset += textToAdd.length;
 
 							// Now that we have the package imported in the inputText, run gocode again
@@ -151,10 +151,12 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							basename(filename) === 'main.go'
 								? 'main'
 								: basename(dirname(filename));
-						let packageItem = new vscode.CompletionItem('package ' + defaultPackageName);
-						packageItem.kind = vscode.CompletionItemKind.Snippet;
-						packageItem.insertText = 'package ' + defaultPackageName + '\r\n\r\n';
-						suggestions.push(packageItem);
+						if (defaultPackageName.match(/[a-zA-Z_]\w*/)) {
+							let packageItem = new vscode.CompletionItem('package ' + defaultPackageName);
+							packageItem.kind = vscode.CompletionItemKind.Snippet;
+							packageItem.insertText = 'package ' + defaultPackageName + '\r\n\r\n';
+							suggestions.push(packageItem);
+						}
 
 					}
 					if (results[1]) {
@@ -209,19 +211,19 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
 		let pkgPromise = listPackages(true).then((pkgs: string[]) => {
-				this.pkgsList = pkgs.map(pkg => {
-					let index = pkg.lastIndexOf('/');
-					let pkgName = index === -1 ? pkg : pkg.substr(index + 1);
-					// pkgs from gopkg.in will be of the form gopkg.in/user/somepkg.v3
-					if (pkg.match(/gopkg\.in\/.*\.v\d+/)) {
-						pkgName = pkgName.substr(0, pkgName.lastIndexOf('.v'));
-					}
-					return {
-						name: pkgName,
-						path: pkg
-					};
-				});
+			this.pkgsList = pkgs.map(pkg => {
+				let index = pkg.lastIndexOf('/');
+				let pkgName = index === -1 ? pkg : pkg.substr(index + 1);
+				// pkgs from gopkg.in will be of the form gopkg.in/user/somepkg.v3
+				if (pkg.match(/gopkg\.in\/.*\.v\d+/)) {
+					pkgName = pkgName.substr(0, pkgName.lastIndexOf('.v'));
+				}
+				return {
+					name: pkgName,
+					path: pkg
+				};
 			});
+		});
 		let configPromise = new Promise<void>((resolve, reject) => {
 			// TODO: Since the gocode daemon is shared amongst clients, shouldn't settings be
 			// adjusted per-invocation to avoid conflicts from other gocode-using programs?
@@ -238,7 +240,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		});
 		return Promise.all([pkgPromise, configPromise]).then(() => {
 			return Promise.resolve();
-		}); ;
+		});
 	}
 
 	// Return importable packages that match given word as Completion Items
