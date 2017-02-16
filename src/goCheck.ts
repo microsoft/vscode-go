@@ -142,7 +142,12 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	}
 	if (!!goConfig['lintOnSave']) {
 		let lintTool = goConfig['lintTool'] || 'golint';
-		let lintFlags = goConfig['lintFlags'] || [];
+		let lintFlags: string[] = goConfig['lintFlags'] || [];
+
+		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
+		let jsonFlagindex = lintFlags.indexOf('--json');
+		if (jsonFlagindex > -1) lintFlags.splice(jsonFlagindex, 1);
+
 		let args = [...lintFlags];
 
 		runningToolsPromises.push(runTool(
