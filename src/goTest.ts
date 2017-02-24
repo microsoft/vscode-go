@@ -215,6 +215,6 @@ function hasTestFunctionPrefix(name: string): boolean {
 }
 
 function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
-	let testFlags = goConfig['testFlags'] ? goConfig['testFlags'] : ['-v', ...goConfig['buildFlags']];
+	let testFlags = goConfig['testFlags'] ? goConfig['testFlags'] : [goConfig['buildFlags']];
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
 }
