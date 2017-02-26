@@ -53,7 +53,7 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 	}
 
 	if (goConfig['useLanguageServer']) {
-		tools['langserver-go'] = 'github.com/sourcegraph/go-langserver/langserver/cmd/langserver-go';
+		tools['go-langserver'] = 'github.com/sourcegraph/go-langserver';
 	}
 
 	return tools;
@@ -275,9 +275,9 @@ export function checkLanguageServer(): boolean {
 	let latestGoConfig = vscode.workspace.getConfiguration('go');
 	if (!latestGoConfig['useLanguageServer']) return false;
 
-	let langServerAvailable = getBinPath('langserver-go') !== 'langserver-go';
+	let langServerAvailable = getBinPath('go-langserver') !== 'go-langserver';
 	if (!langServerAvailable) {
-		promptForMissingTool('langserver-go');
+		promptForMissingTool('go-langserver');
 		vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
 	}
 	return langServerAvailable;

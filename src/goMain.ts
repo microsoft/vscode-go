@@ -39,9 +39,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
 	if (checkLanguageServer()) {
 		const c = new LanguageClient(
-			'langserver-go',
+			'go-langserver',
 			{
-				command: getBinPath('langserver-go'),
+				command: getBinPath('go-langserver'),
 				args: [
 					'-mode=stdio'
 				],
