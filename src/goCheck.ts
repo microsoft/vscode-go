@@ -202,15 +202,15 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 	if (!!goConfig['testOnSave']) {
 		statusBarItem.show();
-		statusBarItem.text = 'testing';
+		statusBarItem.text = 'Tests Running';
 		runTest().then(success => {
 			if (statusBarItem.text === '') {
 				return;
 			}
 			if (success) {
-				statusBarItem.text = 'OK :-)';
+				statusBarItem.text = 'Tests Passed';
 			} else {
-				statusBarItem.text = 'FAIL :-(';
+				statusBarItem.text = 'Tests Failed';
 			}
 		});
 	}
