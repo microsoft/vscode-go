@@ -19,12 +19,12 @@ import { GoDocumentSymbolProvider } from './goOutline';
 import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction';
-import { check, ICheckResult } from './goCheck';
+import { check, ICheckResult, removeTestStatus, showHideTestStatus } from './goCheck';
 import { updateGoPathGoRootFromConfig, setupGoPathAndOfferToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious } from './goTest';
+import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTestOutput } from './goTest';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
@@ -74,8 +74,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
 	vscode.workspace.onDidChangeTextDocument(removeCodeCoverage, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
+	vscode.window.onDidChangeActiveTextEditor(showHideTestStatus, null, ctx.subscriptions);
 
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
@@ -113,6 +115,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.coverage', () => {
 		coverageCurrentPackage();
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.showOutput', () => {
+		showTestOutput();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
