@@ -20,7 +20,7 @@ import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction';
 import { check, ICheckResult } from './goCheck';
-import { updateGoPathGoRootFromConfig, setupGoPathAndOfferToInstallTools } from './goInstallTools';
+import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
@@ -77,7 +77,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
 
-	setupGoPathAndOfferToInstallTools();
+	updateGoPathGoRootFromConfig().then(() => {
+		if (vscode.window.activeTextEditor && isGoPathSet()) {
+			let goConfig = vscode.workspace.getConfiguration('go');
+			runBuilds(vscode.window.activeTextEditor.document, goConfig);
+		}
+	});
+
+	offerToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
@@ -185,11 +192,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		},
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
-
-	if (vscode.window.activeTextEditor && isGoPathSet()) {
-		let goConfig = vscode.workspace.getConfiguration('go');
-		runBuilds(vscode.window.activeTextEditor.document, goConfig);
-	}
 }
 
 function deactivate() {
