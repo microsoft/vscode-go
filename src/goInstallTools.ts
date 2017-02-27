@@ -141,11 +141,11 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 	}
 
 	// If the go.toolsGopath is set, use
- 	// its value as the GOPATH for the "go get" child process.
+	// its value as the GOPATH for the "go get" child process.
 	let toolsGopath = getToolsGopath();
 	let envWithSeparateGoPathForTools = null;
 	if (toolsGopath) {
-		envWithSeparateGoPathForTools = Object.assign({}, envForTools, {GOPATH: toolsGopath});
+		envWithSeparateGoPathForTools = Object.assign({}, envForTools, { GOPATH: toolsGopath });
 	}
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
@@ -199,7 +199,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 	});
 }
 
-export function updateGoPathGoRootFromConfig() {
+export function updateGoPathGoRootFromConfig(): Promise<void> {
 	let goroot = vscode.workspace.getConfiguration('go')['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = goroot;
@@ -220,10 +220,28 @@ export function updateGoPathGoRootFromConfig() {
 			process.env['GOPATH'] = vscode.workspace.rootPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
 		}
 	}
+
+	if (process.env['GOPATH']) {
+		return Promise.resolve();
+	}
+
+	// From Go 1.8 onwards, when there is no GOPATH set, there is default GOPATH used which can be got from running `go env`
+	let goRuntimePath = getGoRuntimePath();
+	return new Promise<void>((resolve, reject) => {
+		cp.execFile(goRuntimePath, ['env'], (err, stdout, stderr) => {
+			if (err) {
+				return reject();
+			}
+			let gopathOutput = stdout.split('\n').find((value, index) => { return value.startsWith('GOPATH="') && value.trim().endsWith('"'); });
+			if (gopathOutput) {
+				process.env['GOPATH'] = gopathOutput.trim().substring('GOPATH="'.length, gopathOutput.length - 1);
+			}
+			return resolve();
+		});
+	});
 }
 
-export function setupGoPathAndOfferToInstallTools() {
-	updateGoPathGoRootFromConfig();
+export function offerToInstallTools() {
 	isVendorSupported();
 
 	getGoVersion().then(goVersion => {
