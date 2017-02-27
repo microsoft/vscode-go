@@ -175,7 +175,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				'type': 'go',
 				'request': 'launch',
 				'mode': 'debug',
-				'program': '${workspaceRoot}'
+				'program': '${file}'
 			});
 		}
 		vscode.commands.executeCommand('vscode.startDebug', config);
