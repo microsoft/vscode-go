@@ -21,34 +21,11 @@ let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.
 statusBarItem.command = 'go.test.showOutput';
 
 export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
-	if (e.document.isUntitled || e.document.languageId !== 'go') {
+	if (e.document.isUntitled) {
 		return;
 	}
 	statusBarItem.hide();
 	statusBarItem.text = '';
-}
-
-export function showHideTestStatus() {
-	if (!vscode.window.activeTextEditor) {
-		statusBarItem.hide();
-		return;
-	}
-
-	let goConfig = vscode.workspace.getConfiguration('go');
-	if (!goConfig['testOnSave']) {
-		statusBarItem.hide();
-		return;
-	}
-
-	let editor = vscode.window.activeTextEditor;
-	if (editor.document.languageId !== 'go') {
-		statusBarItem.hide();
-		return;
-	}
-
-	if (statusBarItem.text !== '') {
-		statusBarItem.show();
-	}
 }
 
 export interface ICheckResult {

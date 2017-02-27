@@ -19,7 +19,7 @@ import { GoDocumentSymbolProvider } from './goOutline';
 import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction';
-import { check, ICheckResult, removeTestStatus, showHideTestStatus } from './goCheck';
+import { check, ICheckResult, removeTestStatus } from './goCheck';
 import { updateGoPathGoRootFromConfig, setupGoPathAndOfferToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
@@ -77,7 +77,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
-	vscode.window.onDidChangeActiveTextEditor(showHideTestStatus, null, ctx.subscriptions);
 
 	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
