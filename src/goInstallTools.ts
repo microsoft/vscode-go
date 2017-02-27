@@ -232,9 +232,9 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 			if (err) {
 				return reject();
 			}
-			let gopathOutput = stdout.split('\n').find((value, index) => { return value.startsWith('GOPATH="') && value.endsWith('"'); });
+			let gopathOutput = stdout.split('\n').find((value, index) => { return value.startsWith('GOPATH="') && value.trim().endsWith('"'); });
 			if (gopathOutput) {
-				process.env['GOPATH'] = gopathOutput.substring('GOPATH="'.length, gopathOutput.length - 1);
+				process.env['GOPATH'] = gopathOutput.trim().substring('GOPATH="'.length, gopathOutput.length - 1);
 			}
 			return resolve();
 		});
