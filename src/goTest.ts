@@ -9,6 +9,7 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
+import os = require('os');
 import { getGoRuntimePath } from './goPath';
 import { GoDocumentSymbolProvider } from './goOutline';
 
@@ -34,6 +35,10 @@ interface TestConfig {
 	 * Specific function names to test.
 	 */
 	functions?: string[];
+	/**
+	 * Test was not requested explicitly. The output should not appear in the UI.
+	 */
+	background?: boolean;
 }
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -89,7 +94,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
  *
  * @param goConfig Configuration for the Go extension.
  */
-export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args: string[]) {
+export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args: any) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -147,16 +152,25 @@ export function testPrevious() {
 }
 
 /**
+ * Reveals the output channel in the UI.
+ */
+export function showTestOutput() {
+	outputChannel.show(true);
+}
+
+/**
  * Runs go test and presents the output in the 'Go' channel.
  *
  * @param goConfig Configuration for the Go extension.
  */
-function goTest(testconfig: TestConfig): Thenable<boolean> {
+export function goTest(testconfig: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		// Remember this config as the last executed test.
-		lastTestConfig = testconfig;
 		outputChannel.clear();
-		outputChannel.show(2, true);
+		if (!testconfig.background) {
+			// Remember this config as the last executed test.
+			lastTestConfig = testconfig;
+			outputChannel.show(true);
+		}
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
 		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags];
@@ -172,6 +186,10 @@ function goTest(testconfig: TestConfig): Thenable<boolean> {
 			args.push('-run');
 			args.push(util.format('^%s$', testconfig.functions.join('|')));
 		}
+
+		outputChannel.appendLine(['Running tool:', goRuntimePath, ...args].join(' '));
+		outputChannel.appendLine('');
+
 		let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));

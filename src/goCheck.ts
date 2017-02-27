@@ -14,7 +14,19 @@ import { getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
+import { goTest } from './goTest';
 import { getBinPath, parseFilePrelude } from './util';
+
+let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+statusBarItem.command = 'go.test.showOutput';
+
+export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
+	if (e.document.isUntitled) {
+		return;
+	}
+	statusBarItem.hide();
+	statusBarItem.text = '';
+}
 
 export interface ICheckResult {
 	file: string;
@@ -27,7 +39,7 @@ export interface ICheckResult {
  * Runs given Go tool and returns errors/warnings that can be fed to the Problems Matcher
  * @param args Arguments to be passed while running given tool
  * @param cwd cwd that will passed in the env object while running given tool
- * @param serverity error or warning
+ * @param severity error or warning
  * @param useStdErr If true, the stderr of the output of the given tool will be used, else stdout will be used
  * @param toolName The name of the Go tool to run. If none is provided, the go runtime itself is used
  * @param printUnexpectedOutput If true, then output that doesnt match expected format is printed to the output channel
@@ -103,6 +115,30 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		return Promise.resolve([]);
 	}
 
+	let testPromise: Thenable<boolean>;
+	let tmpCoverPath;
+	let runTest = () => {
+		if (testPromise) {
+			return testPromise;
+		}
+
+		let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
+
+		let args = buildFlags;
+		if (goConfig['coverOnSave']) {
+			tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
+			args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
+		}
+
+		testPromise = goTest({
+			goConfig: goConfig,
+			dir: cwd,
+			flags: args,
+			background: true
+		});
+		return testPromise;
+	};
+
 	if (!!goConfig['buildOnSave']) {
 		// we need to parse the file to check the package name
 		// if the package is a main pkg, we won't be doing a go build -i
@@ -140,6 +176,22 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		});
 		runningToolsPromises.push(buildPromise);
 	}
+
+	if (!!goConfig['testOnSave']) {
+		statusBarItem.show();
+		statusBarItem.text = 'Tests Running';
+		runTest().then(success => {
+			if (statusBarItem.text === '') {
+				return;
+			}
+			if (success) {
+				statusBarItem.text = 'Tests Passed';
+			} else {
+				statusBarItem.text = 'Tests Failed';
+			}
+		});
+	}
+
 	if (!!goConfig['lintOnSave']) {
 		let lintTool = goConfig['lintTool'] || 'golint';
 		let lintFlags: string[] = goConfig['lintFlags'] || [];
@@ -171,7 +223,14 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	}
 
 	if (!!goConfig['coverOnSave']) {
-		runningToolsPromises.push(getCoverage(filename));
+		let coverPromise = runTest().then(success => {
+			if (!success) {
+				return [];
+			}
+			// FIXME: it's not obvious that tmpCoverPath comes from runTest()
+			return getCoverage(tmpCoverPath);
+		});
+		runningToolsPromises.push(coverPromise);
 	}
 
 	return Promise.all(runningToolsPromises).then(resultSets => [].concat.apply([], resultSets));

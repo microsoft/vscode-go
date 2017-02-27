@@ -52,6 +52,7 @@ The following Visual Studio Code settings are available for the Go extension.  T
 	"go.lintTool": "golint",
 	"go.lintFlags": [],
 	"go.vetFlags": [],
+	"go.testOnSave": false,
 	"go.coverOnSave": false,
 	"go.useCodeSnippetsOnFunctionSuggest": false,
 	"go.formatOnSave": true, 

@@ -175,7 +175,7 @@
               "type": "go",
               "request": "launch",
               "mode": "debug",
-              "program": "^\"\\${workspaceRoot}/${1:main.go}\""
+              "program": "^\"${1:\\${file}}\""
             }
           },
           {
@@ -419,6 +419,11 @@
           ],
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set."
+        },
+        "go.testOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run 'go test' on save."
         },
         "go.coverOnSave": {
           "type": "boolean",

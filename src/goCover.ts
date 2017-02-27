@@ -10,6 +10,7 @@ import path = require('path');
 import os = require('os');
 import fs = require('fs');
 import { getGoRuntimePath } from './goPath';
+import { showTestOutput, goTest } from './goTest';
 import { getBinPath } from './util';
 import rl = require('readline');
 import { outputChannel } from './goStatus';
@@ -58,7 +59,26 @@ export function coverageCurrentPackage() {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
-	getCoverage(editor.document.uri.fsPath, true);
+
+	// FIXME: is there a better way to get goConfig?
+	let goConfig = vscode.workspace.getConfiguration('go');
+	let cwd = path.dirname(editor.document.uri.fsPath);
+
+	let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
+	let tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
+	let args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
+	return goTest({
+		goConfig: goConfig,
+		dir: cwd,
+		flags: args,
+		background: true
+	}).then(success => {
+		if (!success) {
+			showTestOutput();
+			return [];
+		}
+		return getCoverage(tmpCoverPath, true);
+	});
 }
 
 export function getCodeCoverage(editor: vscode.TextEditor) {
@@ -90,75 +110,52 @@ function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove
 	editor.setDecorations(coveredHighLight, remove ? [] : file.coveredRange);
 }
 
-export function getCoverage(filename: string, showErrOutput: boolean = false): Promise<any[]> {
+export function getCoverage(coverProfilePath: string, showErrOutput: boolean = false): Promise<any[]> {
 	return new Promise((resolve, reject) => {
-		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
-		let cwd = path.dirname(filename);
-		let args = ['test', '-coverprofile=' + tmppath];
-		let goRuntimePath = getGoRuntimePath();
+		try {
+			// Clear existing coverage files
+			clearCoverage();
 
-		if (!goRuntimePath) {
-			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-			return Promise.resolve([]);
-		}
+			let lines = rl.createInterface({
+				input: fs.createReadStream(coverProfilePath),
+				output: undefined
+			});
 
-		// make sure tmppath exists
-		fs.closeSync(fs.openSync(tmppath, 'a'));
+			lines.on('line', function (data: string) {
+				// go test coverageprofile generates output:
+				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits IsCovered
+				// The first line will be "mode: set" which will be ignored
+				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
+				if (!fileRange) return;
 
-		cp.execFile(goRuntimePath, args, { cwd: cwd }, (err, stdout, stderr) => {
-			try {
-				// Clear existing coverage files
-				clearCoverage();
-				if (err && (<any>err).code !== 0) {
-					outputChannel.appendLine(['Finished running tool:', goRuntimePath, ...args].join(' '));
-					outputChannel.appendLine(((<any>err).message));
-					if (showErrOutput) {
-						outputChannel.show(true);
-					}
-					return resolve([]);
+				let coverage = coverageFiles[fileRange[1]] || { coveredRange: [], uncoveredRange: [] };
+				let range = new vscode.Range(
+					// Start Line converted to zero based
+					parseInt(fileRange[2]) - 1,
+					// Start Column converted to zero based
+					parseInt(fileRange[3]) - 1,
+					// End Line converted to zero based
+					parseInt(fileRange[4]) - 1,
+					// End Column converted to zero based
+					parseInt(fileRange[5]) - 1
+				);
+				// If is Covered
+				if (parseInt(fileRange[7]) === 1) {
+					coverage.coveredRange.push({ range });
 				}
-
-				let lines = rl.createInterface({
-					input: fs.createReadStream(tmppath),
-					output: undefined
-				});
-
-				lines.on('line', function (data: string) {
-					// go test coverageprofile generates output:
-					//    filename:StartLine.StartColumn,EndLine.EndColumn Hits IsCovered
-					// The first line will be "mode: set" which will be ignored
-					let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
-					if (!fileRange) return;
-
-					let coverage = coverageFiles[fileRange[1]] || { coveredRange: [], uncoveredRange: [] };
-					let range = new vscode.Range(
-						// Start Line converted to zero based
-						parseInt(fileRange[2]) - 1,
-						// Start Column converted to zero based
-						parseInt(fileRange[3]) - 1,
-						// End Line converted to zero based
-						parseInt(fileRange[4]) - 1,
-						// End Column converted to zero based
-						parseInt(fileRange[5]) - 1
-					);
-					// If is Covered
-					if (parseInt(fileRange[7]) === 1) {
-						coverage.coveredRange.push({ range });
-					}
-					// Not Covered
-					else {
-						coverage.uncoveredRange.push({ range });
-					}
-					coverageFiles[fileRange[1]] = coverage;
-				});
-				lines.on('close', function (data) {
-					applyCoverage();
-					resolve([]);
-				});
-			} catch (e) {
-				vscode.window.showInformationMessage(e.msg);
-				reject(e);
-			}
-		});
+				// Not Covered
+				else {
+					coverage.uncoveredRange.push({ range });
+				}
+				coverageFiles[fileRange[1]] = coverage;
+			});
+			lines.on('close', function (data) {
+				applyCoverage();
+				resolve([]);
+			});
+		} catch (e) {
+			vscode.window.showInformationMessage(e.msg);
+			reject(e);
+		}
 	});
 }
