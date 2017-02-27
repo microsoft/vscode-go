@@ -229,6 +229,9 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	let goRuntimePath = getGoRuntimePath();
 	return new Promise<void>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['env'], (err, stdout, stderr) => {
+			if (err) {
+				return reject();
+			}
 			let gopathOutput = stdout.split('\n').find((value, index) => { return value.startsWith('GOPATH="') && value.endsWith('"'); });
 			if (gopathOutput) {
 				process.env['GOPATH'] = gopathOutput.substring('GOPATH="'.length, gopathOutput.length - 1);
