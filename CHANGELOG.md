@@ -1,3 +1,50 @@
+## 0.6.54 - 28th February, 2017
+
+### Tooling improvements
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) and [Sourcegraph](https://github.com/sourcegraph/go-langserver)
+    * A new setting `go.useLanguageServer` to use the Go language server from [Sourcegraph](https://github.com/sourcegraph/go-langserver) for features like Hover, Definition, Find All References, Signature Help, Go to Symbol in File and Workspace. [PR 750](https://github.com/Microsoft/vscode-go/pull/750)
+        * This is an experimental feature and is not available in Windows yet.
+        * If set to true, you will be prompted to install the Go language server. Once installed, you will have to reload VS Code window.
+        The language server will then be run by the Go extension in the background to provide services needed for the above mentioned features.
+
+### GOPATH improvements
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix for [Bug 623](https://github.com/Microsoft/vscode-go/issues/623). `${workspaceRoot}` and `~` are now supported in `go.gopath` and `go.toolsGopath` settings. [PR 768](https://github.com/Microsoft/vscode-go/pull/768)
+    * The default GOPATH used by Go 1.8 when none is set as environment variable is now supported by the extension as well. [PR 820](https://github.com/Microsoft/vscode-go/pull/820)
+* [Vincent Chinedu Okonkwo (@codmajik)](https://github.com/codmajik)
+    * Added new setting `go.inferGopath`. When `true` GOPATH will be inferred from the path of the folder opened in VS Code.
+    This will override the value from `go.gopath` setting as well as the GOPATH environment variable. [PR 762](https://github.com/Microsoft/vscode-go/pull/762)
+
+### Debugging improvements
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Debug current file without a launch configuration file. Simply press `F5` to start the debug session. 
+    A `launch.json` is still required to debug tests or for advanced debug configurations. [PR 769](https://github.com/Microsoft/vscode-go/pull/769)
+    * Launch configuration snippets are now available for common scenarios like debugging file/package or debugging a test package/function.
+    These snippets can be used through IntelliSense when editing the `launch.json` file. [PR 794](https://github.com/Microsoft/vscode-go/pull/794)
+    * Fix for [Bug 492](https://github.com/Microsoft/vscode-go/issues/492). Now when there are build errors, starting a debug session will display the error instead of hanging. [PR 774](https://github.com/Microsoft/vscode-go/pull/774)
+* [Rob Lourens (@roblourens)](https://github.com/roblourens)
+    * Fix for [Bug 438](https://github.com/Microsoft/vscode-go/issues/438). Now when you stop a debug session, all processes started by the session will be closed as well. [PR 765](https://github.com/Microsoft/vscode-go/pull/765)
+* [Suraj Barkale (@surajbarkale-dolby)](https://github.com/surajbarkale-dolby)
+    * Fix for [Bug 782](https://github.com/Microsoft/vscode-go/issues/782). Helpful error messages when the `program` attribute in `launch.json` file is invalid or not a full path. [PR 790](https://github.com/Microsoft/vscode-go/pull/790)
+* [F0zi (@f0zi)](https://github.com/f0zi)
+    * Fix for [Bug 689](https://github.com/Microsoft/vscode-go/issues/689). When debugging against a remote machine, paths anywhere under the GOPATH will be correctly mapped so you can set breakpoints in them. 
+    Previously only paths next to the program could be debugged. [PR 742](https://github.com/Microsoft/vscode-go/pull/742)
+
+### Testing improvements
+* [Oleg Bulatov (@dmage)](https://github.com/dmage)
+    * Added new setting `go.testOnSave`. When `true`, all tests in the current package will be run on saving a Go file. 
+    The status of the tests will be shown in the status bar at the bottom of the VS Code window. It is not advised to have this on when you have Auto Save enabled. [PR 810](https://github.com/Microsoft/vscode-go/pull/810)
+* [Jeff Willette (@deltaskelta)](https://github.com/deltaskelta)
+    * Test output is no longer verbose by default. Add `-v` to the `go.testFlags` to get verbose output. [PR 817](https://github.com/Microsoft/vscode-go/pull/817)
+    
+### Other Bug Fixes
+* [Richard Musiol (@neelance)](https://github.com/neelance)
+    * Fix offset for files with multibyte characters so that features like Hover and Go To Definition work as expected. [PR 780](https://github.com/Microsoft/vscode-go/pull/780)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix for [Bug 777](https://github.com/Microsoft/vscode-go/issues/777) Less disruptive experience during test failures when `go.coveronSave` is `true`.
+    * Fix for [Bug 680](https://github.com/Microsoft/vscode-go/issues/680) Reduce noise in Go to Symbol in File feature by removing the entries corresponding to import statements. [PR 775](https://github.com/Microsoft/vscode-go/pull/775)
+
+
 ## 0.6.53 - 30th January, 2017
 
 ### Installation improvements
