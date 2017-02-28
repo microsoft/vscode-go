@@ -37,27 +37,37 @@ let diagnosticCollection: vscode.DiagnosticCollection;
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
-	if (checkLanguageServer()) {
-		const c = new LanguageClient(
-			'go-langserver',
-			{
-				command: getBinPath('go-langserver'),
-				args: [
-					'-mode=stdio'
-				],
-			},
-			{
-				documentSelector: ['go'],
-				uriConverters: {
-					// Apply file:/// scheme to all file paths.
-					code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
-					protocol2Code: (uri: string) => vscode.Uri.parse(uri),
-				},
-			}
-		);
+	let langServerAvailable = checkLanguageServer();
 
-		ctx.subscriptions.push(c.start());
-	} else {
+	updateGoPathGoRootFromConfig().then(() => {
+		if (langServerAvailable) {
+			const c = new LanguageClient(
+				'go-langserver',
+				{
+					command: getBinPath('go-langserver'),
+					args: [
+						'-mode=stdio'
+					],
+				},
+				{
+					documentSelector: ['go'],
+					uriConverters: {
+						// Apply file:/// scheme to all file paths.
+						code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
+						protocol2Code: (uri: string) => vscode.Uri.parse(uri),
+					},
+				}
+			);
+
+			ctx.subscriptions.push(c.start());
+		}
+
+		if (vscode.window.activeTextEditor && isGoPathSet()) {
+			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go'));
+		}
+	});
+
+	if (!langServerAvailable) {
 		ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 		ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
 		ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
@@ -78,12 +88,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
 
-	updateGoPathGoRootFromConfig().then(() => {
-		if (vscode.window.activeTextEditor && isGoPathSet()) {
-			let goConfig = vscode.workspace.getConfiguration('go');
-			runBuilds(vscode.window.activeTextEditor.document, goConfig);
-		}
-	});
+
 
 	offerToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
