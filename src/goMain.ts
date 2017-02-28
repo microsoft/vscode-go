@@ -28,7 +28,7 @@ import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTe
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 
@@ -136,8 +136,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
-		updateGoPathGoRootFromConfig();
 		let updatedGoConfig = vscode.workspace.getConfiguration('go');
+		sendTelemetryEventForConfig(updatedGoConfig);
+		updateGoPathGoRootFromConfig();
 
 		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
 		if (process.platform !== 'win32'
@@ -197,6 +198,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		},
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
+
+	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go'));
 }
 
 function deactivate() {
@@ -287,3 +290,32 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 
 }
 
+function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
+	sendTelemetryEvent('goConfig', {
+		buildOnSave: goConfig['buildOnSave'] + '',
+		buildFlags: goConfig['buildFlags'],
+		buildTags: goConfig['buildTags'],
+		formatOnSave: goConfig['formatOnSave'] + '',
+		formatTool: goConfig['formatTool'],
+		formatFlags: goConfig['formatFlags'],
+		lintOnSave: goConfig['lintOnSave'] + '',
+		lintFlags: goConfig['lintFlags'],
+		lintTool: goConfig['lintTool'],
+		vetOnSave: goConfig['vetOnSave'] + '',
+		vetFlags: goConfig['vetFlags'],
+		testOnSave: goConfig['testOnSave'] + '',
+		testFlags: goConfig['testFlags'],
+		coverOnSave: goConfig['coverOnSave'] + '',
+		useDiffForFormatting: goConfig['useDiffForFormatting'] + '',
+		gopath: goConfig['gopath'] ? 'set' : '',
+		goroot: goConfig['goroot'] ? 'set' : '',
+		inferGopath: goConfig['inferGopath'] + '',
+		toolsGopath: goConfig['toolsGopath'] ? 'set' : '',
+		gocodeAutoBuild: goConfig['gocodeAutoBuild'] + '',
+		useCodeSnippetsOnFunctionSuggest: goConfig['useCodeSnippetsOnFunctionSuggest'] + '',
+		autocompleteUnimportedPackages: goConfig['autocompleteUnimportedPackages'] + '',
+		docsTool: goConfig['docsTool'],
+		useLanguageServer: goConfig['useLanguageServer'] + '',
+		includeImports: goConfig['gotoSymbol'] && goConfig['gotoSymbol']['includeImports'] + ''
+	});
+}
