@@ -11,7 +11,7 @@ let diffToolAvailable: boolean = null;
 
 export function isDiffToolAvailable(): boolean {
 	if (diffToolAvailable == null) {
-		diffToolAvailable = getBinPathFromEnvVar('diff', 'PATH', false) != null;
+		diffToolAvailable = getBinPathFromEnvVar('diff', process.env['PATH'], false) != null;
 	}
 	return diffToolAvailable;
 }
