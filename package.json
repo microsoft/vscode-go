@@ -484,6 +484,11 @@
           "type": "boolean",
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
+        },
+        "go.multiPackage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Invoke build/lint/test commands recursively from the workspace root."
         }
       }
     }
