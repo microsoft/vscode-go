@@ -1,3 +1,7 @@
+## 0.6.55 - 3rd Marcg, 2017
+* Re-publishing the extension from a non Windows machine as the fix for [Bug 438](https://github.com/Microsoft/vscode-go/issues/438) worked only on Windows machines.
+For details read the discussion in [PR 838](https://github.com/Microsoft/vscode-go/pull/838).
+
 ## 0.6.54 - 28th February, 2017
 
 ### Tooling improvements
