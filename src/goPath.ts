@@ -107,3 +107,10 @@ export function resolvePath(inputPath: string, workspaceRoot?: string): string {
 	}
 	return inputPath.startsWith('~') ? path.join(os.homedir(), inputPath.substr(1)) : inputPath;
 }
+
+export function stripBOM(s: string) : string{
+	if (s && s[0] === '\uFEFF') {
+		s = s.substr(1);
+	}
+	return s;
+}

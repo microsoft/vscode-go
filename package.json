@@ -303,6 +303,11 @@
                 ],
                 "default": true,
                 "description": "When 'true', the extension will log diagnostic info to a file. When 'verbose', it will also show logs in the console."
+              },
+              "envFile": {
+                "type": "string",
+                "description": "Absolute path to a file containing environment variable definitions.",
+                "default": "${workspaceRoot}/.env"
               }
             }
           }
