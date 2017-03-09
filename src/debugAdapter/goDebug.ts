@@ -202,7 +202,7 @@ class Delve {
 						const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
 						if (r !== null) {
 							let value = r[2] || '';
-							if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length-1) === '"') {
+							if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
 								value = value.replace(/\\n/gm, '\n');
 							}
 							env[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
@@ -214,7 +214,7 @@ class Delve {
 			}
 
 			let dlv = getBinPathWithPreferredGopath('dlv', resolvePath(env['GOPATH']));
-			
+
 			if (!existsSync(dlv)) {
 				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
 				return reject(`Cannot find Delve debugger. Ensure it is in your "GOPATH/bin" or "PATH".`);
@@ -251,7 +251,7 @@ class Delve {
 			if (launchArgs.args) {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
-			
+
 
 			let dlvCwd = dirname(program);
 			try {
