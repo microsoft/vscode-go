@@ -187,7 +187,7 @@ class Delve {
 			let serverRunning = false;
 			let env = launchArgs.env || {};
 			let mode = launchArgs.mode;
-			if (launchArgs.mode === 'remote') {
+			if (mode === 'remote') {
 				this.debugProcess = null;
 				serverRunning = true;  // assume server is running when in remote mode
 				connectClient(port, host);
