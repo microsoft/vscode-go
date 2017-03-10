@@ -154,6 +154,7 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - go-symbols: `go get -u -v github.com/newhook/go-symbols`
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
 - gotests: `go get -u -v github.com/cweill/gotests/...`
+- godoc: `go get -u -v golang.org/x/tools/cmd/godoc`
 
 If you wish to have the extension use a separate GOPATH for its tools, provide the desired location in the setting `go.toolsGopath`.
 `gometalinter` and `dlv` are two tools that are exceptions, and will need to be installed in your GOPATH.
@@ -171,6 +172,7 @@ go get -u -v github.com/tpng/gopkgs
 go get -u -v github.com/newhook/go-symbols
 go get -u -v golang.org/x/tools/cmd/guru
 go get -u -v github.com/cweill/gotests/...
+go get golang.org/x/tools/cmd/godoc
 ```
 
 And for debugging:
