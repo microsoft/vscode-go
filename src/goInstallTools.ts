@@ -52,7 +52,7 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		tools['gometalinter'] = 'github.com/alecthomas/gometalinter';
 	}
 
-	if (goConfig['useLanguageServer']) {
+	if (goConfig['useLanguageServer'] && process.platform !== 'win32') {
 		tools['go-langserver'] = 'github.com/sourcegraph/go-langserver';
 	}
 

@@ -37,9 +37,10 @@ let diagnosticCollection: vscode.DiagnosticCollection;
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
-	let langServerAvailable = checkLanguageServer();
 
 	updateGoPathGoRootFromConfig().then(() => {
+		offerToInstallTools();
+		let langServerAvailable = checkLanguageServer();
 		if (langServerAvailable) {
 			const c = new LanguageClient(
 				'go-langserver',
@@ -60,21 +61,19 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			);
 
 			ctx.subscriptions.push(c.start());
+		} else {
+			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
+			ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
+			ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
+			ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
+			ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
+			ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
 		}
 
 		if (vscode.window.activeTextEditor && isGoPathSet()) {
 			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go'));
 		}
 	});
-
-	if (!langServerAvailable) {
-		ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
-		ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
-		ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
-		ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
-		ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
-		ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
-	}
 
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
@@ -88,9 +87,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
 
-
-
-	offerToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
