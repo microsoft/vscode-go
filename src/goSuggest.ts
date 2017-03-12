@@ -54,7 +54,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let filename = document.fileName;
 				let lineText = document.lineAt(position.line).text;
 				let lineTillCurrentPosition = lineText.substr(0, position.character);
-				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true;
+				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
 				if (lineText.match(/^\s*\/\//)) {
 					return resolve([]);
