@@ -25,13 +25,13 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		'go-outline': 'github.com/lukehoban/go-outline',
 		'go-symbols': 'github.com/newhook/go-symbols',
 		'guru': 'golang.org/x/tools/cmd/guru',
-		'gorename': 'golang.org/x/tools/cmd/gorename',
-		'godoc': 'golang.org/x/tools/cmd/godoc'
+		'gorename': 'golang.org/x/tools/cmd/gorename'
 	};
 
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools['godef'] = 'github.com/rogpeppe/godef';
+		tools['godoc'] = 'golang.org/x/tools/cmd/godoc';
 	} else if (goConfig['docsTool'] === 'gogetdoc') {
 		tools['gogetdoc'] = 'github.com/zmb3/gogetdoc';
 	}
