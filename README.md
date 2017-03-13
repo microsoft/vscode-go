@@ -42,30 +42,51 @@ _Note 3_:  This extension uses `gocode` to provide completion lists as you type.
 
 ### Options
 
-The following Visual Studio Code settings are available for the Go extension.  These can be set in user preferences (`cmd+,`) or workspace settings (`.vscode/settings.json`).
+The following Visual Studio Code settings along with their *default* values that are available for the Go extension. If you want to change any of these, you can do so in user preferences (`cmd+,`) or workspace settings (`.vscode/settings.json`). You don't have to copy these if you don't intend to change them.
 
 ```javascript
 {
-	"go.buildOnSave": true,
-	"go.lintOnSave": true,
-	"go.vetOnSave": true,
-	"go.buildTags": "",
-	"go.buildFlags": [],
-	"go.lintTool": "golint",
-	"go.lintFlags": [],
-	"go.vetFlags": [],
-	"go.testOnSave": false,
-	"go.coverOnSave": false,
-	"go.useCodeSnippetsOnFunctionSuggest": false,
-	"go.formatOnSave": true, 
-	"go.formatTool": "goreturns",
-	"go.formatFlags": [],
-	"go.goroot": "/usr/local/go",
-	"go.gopath": "/Users/lukeh/go",
-	"go.inferGopath": false,
-	"go.gocodeAutoBuild": false
+	"go.buildOnSave": true, 			// Run 'go build'/'go test -c' on save.
+	"go.buildTags": "",					// The Go build tags to use for all commands that support a `-tags '...'` argument
+	"go.buildFlags": [],				// Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. ['-ldflags="-s"'])
+
+	"go.lintOnSave": true,				// Run Lint tool on save.
+	"go.lintTool": "golint",			// Specifies Lint tool name. Choices are `golint` and `gometalinter`
+	"go.lintFlags": [],					// Flags to pass to Lint tool (e.g. ["-min_confidence=.8"])
+
+	"go.vetOnSave": true,				// Run 'go tool vet' on save.
+	"go.vetFlags": [],					// Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])
+
+	"go.formatOnSave": true, 			// Runs formatting tool on save.
+	"go.formatTool": "goreturns",		// Pick 'gofmt', 'goimports' or 'goreturns' to run on format.
+	"go.formatFlags": [],				// Flags to pass to format tool (e.g. ['-s'])
+	
+	"go.testOnSave": false,				// Run 'go test' on save for current package. It is not advised to set this to `true` when you have Auto Save enabled.
+	"go.coverOnSave": false,			// Run 'go test -coverprofile' on save
+	"go.testTimeout": "30s",			// Specifies the timeout for go test in ParseDuration format.
+	"go.testEnvVars": {},				// Environment variables that will passed to the process that runs the Go tests
+	"go.testFlags": null,				// Flags to pass to `go test`. If null, then buildFlags will be used.
+	
+	"go.inferGopath": false,			// Infer GOPATH from the workspace root.
+	"go.goroot": null,					// Specifies the GOROOT to use when no environment variable is set.
+	"go.gopath": null,					// Specifies the GOPATH to use when no environment variable is set. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true.
+	"go.toolsGopath": "",				// Location to install the Go tools that the extension depends on if you don't want them in your GOPATH.
+
+	"go.gocodeAutoBuild": false,					// Enable gocode's autobuild feature
+	"go.useCodeSnippetsOnFunctionSuggest": false,	// Auto Complete functions with their parameter signature
+	"go.autocompleteUnimportedPackages": false,		// Include unimported packages in auto-complete suggestions.
+
+	"go.docsTool": "godoc",					// Pick 'godoc' or 'gogetdoc' to get documentation. In Go 1.5, godoc is used regardless of the choice here.
+	"go.useLanguageServer": false			// Experimental: Not available in Windows. Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features
 }
 ```
+
+### Go Language Server (Experimental)
+Set `go.useLanguageServer` to `true` to use the Go language server from [Sourcegraph](https://github.com/sourcegraph/go-langserver) for features like Hover, Definition, Find All References, Signature Help, Go to Symbol in File and Workspace. 
+* This is an experimental feature and is not available in Windows yet.
+* If set to true, you will be prompted to install the Go language server. Once installed, you will have to reload VS Code window. The language server will then be run by the Go extension in the background to provide services needed for the above mentioned features.
+* Everytime you change the value of the setting `go.useLanguageServer`, you need to reload the VS Code window for it to take effect.
+
 
 ### Linter
 
@@ -139,9 +160,12 @@ If you make edits in the extension `.ts` files, just reload (`cmd-r`) the `[Exte
 
 To debug the debugger, see [the debugAdapter readme](src/debugAdapter/Readme.md).
 
-## Tools
+## Tools this extension depends on
 
 The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, you will see an "Analysis Tools Missing" warning in the bottom right corner of the editor.  Clicking it will offer to install the missing tools for you.
+
+If you wish to have the extension use a separate GOPATH for its tools, provide the desired location in the setting `go.toolsGopath`.
+`gometalinter` and `dlv` are two tools that are exceptions, and will need to be installed in your GOPATH.
 
 - gocode: `go get -u -v github.com/nsf/gocode`
 - godef: `go get -u -v github.com/rogpeppe/godef`
@@ -154,9 +178,6 @@ The extension uses the following tools, installed in the current GOPATH.  If any
 - go-symbols: `go get -u -v github.com/newhook/go-symbols`
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
 - gotests: `go get -u -v github.com/cweill/gotests/...`
-
-If you wish to have the extension use a separate GOPATH for its tools, provide the desired location in the setting `go.toolsGopath`.
-`gometalinter` and `dlv` are two tools that are exceptions, and will need to be installed in your GOPATH.
 
 To install the tools manually in the current GOPATH, just paste and run:
 ```bash
