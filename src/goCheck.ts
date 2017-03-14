@@ -88,12 +88,14 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 				}
 				if (!atleastSingleMatch && unexpectedOutput && vscode.window.activeTextEditor) {
 					outputChannel.appendLine(stderr);
-					ret.push({
-						file: vscode.window.activeTextEditor.document.fileName,
-						line: 1,
-						msg: stderr,
-						severity: 'error'
-					});
+					if (err) {
+						ret.push({
+							file: vscode.window.activeTextEditor.document.fileName,
+							line: 1,
+							msg: stderr,
+							severity: 'error'
+						});
+					}
 				}
 				outputChannel.appendLine('');
 				resolve(ret);
