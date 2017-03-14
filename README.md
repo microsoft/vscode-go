@@ -178,6 +178,7 @@ If you wish to have the extension use a separate GOPATH for its tools, provide t
 - go-symbols: `go get -u -v github.com/newhook/go-symbols`
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
 - gotests: `go get -u -v github.com/cweill/gotests/...`
+- godoc: `go get -u -v golang.org/x/tools/cmd/godoc`
 
 To install the tools manually in the current GOPATH, just paste and run:
 ```bash
@@ -192,6 +193,7 @@ go get -u -v github.com/tpng/gopkgs
 go get -u -v github.com/newhook/go-symbols
 go get -u -v golang.org/x/tools/cmd/guru
 go get -u -v github.com/cweill/gotests/...
+go get -u -v golang.org/x/tools/cmd/godoc
 ```
 
 And for debugging:

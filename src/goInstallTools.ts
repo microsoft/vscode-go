@@ -31,6 +31,7 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools['godef'] = 'github.com/rogpeppe/godef';
+		tools['godoc'] = 'golang.org/x/tools/cmd/godoc';
 	} else if (goConfig['docsTool'] === 'gogetdoc') {
 		tools['gogetdoc'] = 'github.com/zmb3/gogetdoc';
 	}
