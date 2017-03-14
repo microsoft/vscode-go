@@ -11,8 +11,9 @@ import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { getBinPathWithPreferredGopath, resolvePath } from '../goPath';
+import { getBinPathWithPreferredGopath, resolvePath, stripBOM } from '../goPath';
 import * as logger from 'vscode-debug-logger';
+import * as FS from 'fs';
 
 require('console-stamp')(console);
 
@@ -137,6 +138,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	buildFlags?: string;
 	init?: string;
 	trace?: boolean|'verbose';
+	/** Optional path to .env file. */
+	envFile?: string;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -174,7 +177,7 @@ class Delve {
 	onstderr: (str: string) => void;
 	onclose: () => void;
 
-	constructor(mode: string, remotePath: string, port: number, host: string, program: string, args: string[], showLog: boolean, cwd: string, env: { [key: string]: string }, buildFlags: string, init: string) {
+	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = program;
 		this.remotePath = remotePath;
 		this.connection = new Promise((resolve, reject) => {
@@ -182,6 +185,8 @@ class Delve {
 				return reject('The program attribute is missing in launch.json');
 			}
 			let serverRunning = false;
+			let env = launchArgs.env || {};
+			let mode = launchArgs.mode;
 			if (mode === 'remote') {
 				this.debugProcess = null;
 				serverRunning = true;  // assume server is running when in remote mode
@@ -189,7 +194,24 @@ class Delve {
 				return;
 			}
 
-			if (!env) env = {};
+			// read env from disk and merge into envVars
+			if (launchArgs.envFile) {
+				try {
+					const buffer = stripBOM(FS.readFileSync(launchArgs.envFile, 'utf8'));
+					buffer.split('\n').forEach( line => {
+						const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
+						if (r !== null) {
+							let value = r[2] || '';
+							if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+								value = value.replace(/\\n/gm, '\n');
+							}
+							env[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
+						}
+					});
+				} catch (e) {
+					return reject('Cannot load environment variables from file');
+				}
+			}
 
 			let dlv = getBinPathWithPreferredGopath('dlv', resolvePath(env['GOPATH']));
 
@@ -200,7 +222,7 @@ class Delve {
 			verbose('Using dlv at: ' + dlv);
 
 			let dlvEnv: Object = null;
-			if (env) {
+			if (Object.keys(env).length > 0) {
 				dlvEnv = {};
 				for (let k in process.env) {
 					dlvEnv[k] = process.env[k];
@@ -214,21 +236,22 @@ class Delve {
 				dlvArgs = dlvArgs.concat([program]);
 			}
 			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
-			if (showLog) {
-				dlvArgs = dlvArgs.concat(['--log=' + showLog.toString()]);
+			if (launchArgs.showLog) {
+				dlvArgs = dlvArgs.concat(['--log=' + launchArgs.showLog.toString()]);
 			}
-			if (cwd) {
-				dlvArgs = dlvArgs.concat(['--wd=' + cwd]);
+			if (launchArgs.cwd) {
+				dlvArgs = dlvArgs.concat(['--wd=' + launchArgs.cwd]);
 			}
-			if (buildFlags) {
-				dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
+			if (launchArgs.buildFlags) {
+				dlvArgs = dlvArgs.concat(['--build-flags=' + launchArgs.buildFlags]);
 			}
-			if (init) {
-				dlvArgs = dlvArgs.concat(['--init=' + init]);
+			if (launchArgs.init) {
+				dlvArgs = dlvArgs.concat(['--init=' + launchArgs.init]);
 			}
-			if (args) {
-				dlvArgs = dlvArgs.concat(['--', ...args]);
+			if (launchArgs.args) {
+				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
+
 
 			let dlvCwd = dirname(program);
 			try {
@@ -394,7 +417,7 @@ class GoDebugSession extends DebugSession {
 			}
 		}
 
-		this.delve = new Delve(args.mode, remotePath, port, host, localPath, args.args, args.showLog, args.cwd, args.env, args.buildFlags, args.init);
+		this.delve = new Delve(remotePath, port, host, localPath, args);
 		this.delve.onstdout = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stdout'));
 		};
