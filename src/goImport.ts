@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { parseFilePrelude, isVendorSupported, getBinPath } from './util';
+import { parseFilePrelude, isVendorSupported, getBinPath, getCurrentGoWorkspaceFromGOPATH } from './util';
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import path = require('path');
@@ -45,28 +45,7 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 			}
 
 			let currentFileDirPath = path.dirname(vscode.window.activeTextEditor.document.fileName);
-			let workspaces: string[] = process.env['GOPATH'].split(path.delimiter);
-			let currentWorkspace = path.join(workspaces[0], 'src');
-
-			// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
-			if (process.platform === 'win32') {
-				currentFileDirPath = currentFileDirPath.substr(0, 1).toUpperCase() + currentFileDirPath.substr(1);
-			}
-
-			// In case of multiple workspaces, find current workspace by checking if current file is
-			// under any of the workspaces in $GOPATH
-			for (let i = 1; i < workspaces.length; i++) {
-				let possibleCurrentWorkspace = path.join(workspaces[i], 'src');
-				if (currentFileDirPath.startsWith(possibleCurrentWorkspace)) {
-					// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)
-					// both parent & child workspace in the nested workspaces pair can make it inside the above if block
-					// Therefore, the below check will take longer (more specific to current file) of the two
-					if (possibleCurrentWorkspace.length > currentWorkspace.length) {
-						currentWorkspace = possibleCurrentWorkspace;
-					}
-				}
-			}
-
+			let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(currentFileDirPath);
 			let pkgSet = new Set<string>();
 			pkgs.forEach(pkg => {
 				if (!pkg || importedPkgs.indexOf(pkg) > -1) {

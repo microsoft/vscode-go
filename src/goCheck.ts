@@ -15,7 +15,7 @@ import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
 import { goTest } from './goTest';
-import { getBinPath, parseFilePrelude } from './util';
+import { getBinPath, parseFilePrelude, getCurrentGoWorkspaceFromGOPATH } from './util';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -162,9 +162,13 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 				if (!isMainPkg) {
 					args.push('-i');
 				};
-				args = args.concat(['-o', tmppath, '-tags', buildTags, ...buildFlags, '.']);
+
+				let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(cwd);
+				let importPath = cwd.substr(currentGoWorkspace.length + 1);
+
+				args = args.concat(['-o', tmppath, '-tags', buildTags, ...buildFlags, importPath]);
 				if (filename.match(/_test.go$/i)) {
-					args = ['test', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, '.'];
+					args = ['test', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, importPath];
 				}
 				runTool(
 					args,
