@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { dirname, basename } from 'path';
-import { getBinPath, parameters, parseFilePrelude, isPositionInString } from './util';
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { listPackages, getTextEditForAddImport } from './goImport';
 
@@ -82,6 +82,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let includeUnimportedPkgs = autocompleteUnimportedPackages && !inString;
 
 				return this.runGoCode(filename, inputText, offset, inString, position, lineText, currentWord, includeUnimportedPkgs).then(suggestions => {
+					// gocode does not suggest keywords, so we have to do it
+					if (currentWord.length > 0) {
+						goKeywords.forEach(keyword => {
+							if (keyword.startsWith(currentWord)) {
+								suggestions.push(new vscode.CompletionItem(keyword, vscode.CompletionItemKind.Keyword));
+							}
+						});
+					}
+
 					// If no suggestions and cursor is at a dot, then check if preceeding word is a package name
 					// If yes, then import the package in the inputText and run gocode again to get suggestions
 					if (suggestions.length === 0 && lineTillCurrentPosition.endsWith('.')) {
@@ -89,7 +98,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						let pkgPath = this.getPackagePathFromLine(lineTillCurrentPosition);
 						if (pkgPath) {
 							// Now that we have the package path, import it right after the "package" statement
-							let {imports, pkg} = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
+							let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
 							let posToAddImport = document.offsetAt(new vscode.Position(pkg.start + 1, 0));
 							let textToAdd = `import "${pkgPath}"\n`;
 							inputText = inputText.substr(0, posToAddImport) + textToAdd + inputText.substr(posToAddImport);
