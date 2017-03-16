@@ -641,12 +641,8 @@ class GoDebugSession extends DebugSession {
 				variablesReference: this._variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.String) {
-			let val = v.value;
-			if (v.value && v.value.length < v.len) {
-				val += `...+${v.len - v.value.length} more`;
-			}
 			return {
-				result: v.unreadable ? ('<' + v.unreadable + '>') : ('"' + val + '"'),
+				result: v.unreadable ? ('<' + v.unreadable + '>') : ('"' + v.value + '"'),
 				variablesReference: 0
 			};
 		} else {
