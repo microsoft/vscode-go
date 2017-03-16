@@ -16,7 +16,7 @@ export function isDiffToolAvailable(): boolean {
 	return diffToolAvailable;
 }
 
-export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE};
+export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE };
 
 export class Edit {
 	action: number;
@@ -128,7 +128,16 @@ function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 				edits.push(edit);
 			}
 		});
-		filePatches.push({fileName: uniDiff.oldFileName, edits: edits});
+
+		let fileName = uniDiff.oldFileName;
+		if (process.platform === 'win32') {
+			// Cleanup the file Name to fix https://github.com/Microsoft/vscode-go/issues/665
+			fileName = fileName.replace(/\\\\/g, '\\');
+			if (fileName.startsWith('"') && fileName.endsWith('"')) {
+				fileName = fileName.substr(1, fileName.length - 2);
+			}
+		}
+		filePatches.push({ fileName, edits });
 	});
 
 	return filePatches;
