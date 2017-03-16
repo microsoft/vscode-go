@@ -109,7 +109,8 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 export function check(filename: string, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
 	outputChannel.clear();
 	let runningToolsPromises = [];
-	let cwd = path.dirname(filename);
+	let multiPackage = !!goConfig['multiPackage'];
+	let cwd = multiPackage ? vscode.workspace.rootPath : path.dirname(filename);
 	let goRuntimePath = getGoRuntimePath();
 
 	if (!goRuntimePath) {
@@ -130,6 +131,10 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		if (goConfig['coverOnSave']) {
 			tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
 			args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
+		}
+
+		if (multiPackage) {
+			args = args.concat('./...');
 		}
 
 		testPromise = goTest({
@@ -162,9 +167,19 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 				if (!isMainPkg) {
 					args.push('-i');
 				};
-				args = args.concat(['-o', tmppath, '-tags', buildTags, ...buildFlags, '.']);
+				args = args.concat(['-tags', buildTags, ...buildFlags]);
 				if (filename.match(/_test.go$/i)) {
-					args = ['test', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, '.'];
+					args = ['test', '-tags', buildTags, ...buildFlags];
+					if (multiPackage) {
+						args = args.concat('-run=^$');
+					} else {
+						args = args.concat('-copybinary', '-c');
+					}
+				}
+				if (multiPackage) {
+					args = args.concat('./...');
+				} else {
+					args = args.concat('-o', tmppath, '.');
 				}
 				runTool(
 					args,
@@ -203,6 +218,9 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		if (jsonFlagindex > -1) lintFlags.splice(jsonFlagindex, 1);
 
 		let args = [...lintFlags];
+		if (multiPackage) {
+			args = args.concat('./...');
+		}
 
 		runningToolsPromises.push(runTool(
 			args,
@@ -215,8 +233,13 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 	if (!!goConfig['vetOnSave']) {
 		let vetFlags = goConfig['vetFlags'] || [];
+		let args = ['tool', 'vet', ...vetFlags];
+		if (multiPackage) {
+			args = args.concat('./...');
+		}
+
 		runningToolsPromises.push(runTool(
-			['tool', 'vet', ...vetFlags, filename],
+			args,
 			cwd,
 			'warning',
 			true,
