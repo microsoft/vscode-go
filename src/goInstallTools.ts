@@ -57,6 +57,9 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		tools['go-langserver'] = 'github.com/sourcegraph/go-langserver';
 	}
 
+	if (process.platform !== 'darwin') {
+		tools['dlv'] = 'github.com/derekparker/delve/cmd/dlv';
+	}
 	return tools;
 }
 
@@ -152,8 +155,9 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
 			// gometalinter expects its linters to be in the user's GOPATH
-			// Therefore, cannot use an isolated GOPATH for installing gometalinter
-			let env = (envWithSeparateGoPathForTools && tool !== 'gometalinter') ? envWithSeparateGoPathForTools : envForTools;
+			// Debugger doesnt have access to settings, so cannot read `go.toolsGopath`
+			// Therefore, cannot use an isolated GOPATH for installing gometalinter or dlv
+			let env = (envWithSeparateGoPathForTools && tool !== 'gometalinter' && tool !== 'dlv') ? envWithSeparateGoPathForTools : envForTools;
 			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env }, (err, stdout, stderr) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + tool + ' FAILED');
