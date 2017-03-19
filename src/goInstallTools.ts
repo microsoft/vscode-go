@@ -222,20 +222,23 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		}
 	}
 
-	if (process.env['GOPATH']) {
+	if (process.env['GOPATH'] && process.env['GOROOT']) {
 		return Promise.resolve();
 	}
 
-	// From Go 1.8 onwards, when there is no GOPATH set, there is default GOPATH used which can be got from running `go env`
+	// If GOPATH and GOROOT are still not set, then use the ones from `go env`
 	let goRuntimePath = getGoRuntimePath();
 	return new Promise<void>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['env'], (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['env', 'GOROOT', 'GOPATH'], (err, stdout, stderr) => {
 			if (err) {
 				return reject();
 			}
-			let gopathOutput = stdout.split('\n').find((value, index) => { return value.startsWith('GOPATH="') && value.trim().endsWith('"'); });
-			if (gopathOutput) {
-				process.env['GOPATH'] = gopathOutput.trim().substring('GOPATH="'.length, gopathOutput.length - 1);
+			let envOutput = stdout.split('\n');
+			if (!process.env['GOROOT'] && envOutput[0].trim()) {
+				process.env['GOROOT'] = envOutput[0].trim();
+			}
+			if (!process.env['GOPATH'] && envOutput[1].trim()) {
+				process.env['GOPATH'] = envOutput[1].trim();
 			}
 			return resolve();
 		});
