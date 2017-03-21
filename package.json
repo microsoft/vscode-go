@@ -138,6 +138,16 @@
         "command": "go.toggle.test.file",
         "title": "Go: Toggle Test File",
         "description": "Toggles between file in current active editor and the corresponding test file."
+      },
+      {
+        "command": "go.add.tags",
+        "title": "Go: Add Tags",
+        "description": "Add tags configured in go.addTags to selected struct using gomodifytags"
+      },
+      {
+        "command": "go.remove.tags",
+        "title": "Go: Remove Tags",
+        "description": "Remove tags configured in go.addTags from selected struct using gomodifytags"
       }
     ],
     "debuggers": [
@@ -489,6 +499,22 @@
           "type": "boolean",
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
+        },
+        "go.addTags": {
+          "type": "object",
+          "default": {
+            "tags": "json",
+            "options": "json=why",
+            "promptForTags": false
+          }
+        },
+        "go.removeTags": {
+          "type": "object",
+          "default": {
+            "tags": "",
+            "options": "",
+            "promptForTags": false
+          }
         }
       }
     }
