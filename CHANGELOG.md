@@ -1,3 +1,16 @@
+## 0.6.56 - Coming Soon
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Use [gomodifytags](https://github.com/fatih/gomodifytags) to modify tags on selected struct fields.
+         * If there is no selection, then the whole struct under the cursor will be selected for the tag modification.
+         * `Go: Add Tags` adds tags configured in `go.addTags` setting to selected struct fields. By default, `json` tags are added. Examples:
+               * To add `xml` tags, set `go.addTags` to `{"tags": "xml"}` 
+               * To add `xml` with `cdata` option, set `go.addTags` to `{"tags": "xml", "options: "xml=cdata"}`  
+               * To add both `json` and `xml` tags, set `go.addTags` to `{"tags": "json,xml"}` 
+         * `Go: Remove Tags` removes tags configured in `go.removeTags` setting from selected struct fields. By default, all tags are removed. To remove only say `xml` tags, set `go.removeTags` to `{"tags": "xml"}` 
+         * To be prompted for tags instead of using the configured ones, set `go.addTags` and/or `go.removeTags` to `{"promptForTags": true}`
+
+
 ## 0.6.55 - 3rd March, 2017
 * Re-publishing the extension from a non Windows machine as the fix for [Bug 438](https://github.com/Microsoft/vscode-go/issues/438) worked only on Windows machines.
 For details read the discussion in [PR 838](https://github.com/Microsoft/vscode-go/pull/838).
@@ -193,7 +206,7 @@ For details read the discussion in [PR 838](https://github.com/Microsoft/vscode-
 ## 0.6.44 - 12th October 2016
 * [Ludwig Valda Vasquez (@bredov)](https://github.com/bredov)
     * New configuration `go.formatFlags` to pass flags to the formatting tool [PR #461](https://github.com/Microsoft/vscode-go/pull/461)
-* [Dan Mace (@@ironcladlou](https://github.com/ironcladlou)
+* [Dan Mace (@ironcladlou](https://github.com/ironcladlou)
     * New command to execute the last run test. The command is `Go: Test Previous` [PR #478](https://github.com/Microsoft/vscode-go/pull/478)
     * Send test output to a distinct output channel [PR #499](https://github.com/Microsoft/vscode-go/pull/499)
 * [Cedric Lamoriniere (@cedriclam)](https://github.com/cedriclam)

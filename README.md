@@ -23,6 +23,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Format (using `goreturns` or `goimports` or `gofmt`)
 - Generate unit tests skeleton (using `gotests`)
 - Add Imports (using `gopkgs`)
+- Add/Remove Tags on struct fields (using `gomodifytags`)
 - [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
@@ -78,6 +79,16 @@ The following Visual Studio Code settings along with their *default* values that
 
 	"go.docsTool": "godoc",					// Pick 'godoc' or 'gogetdoc' to get documentation. In Go 1.5, godoc is used regardless of the choice here.
 	"go.useLanguageServer": false			// Experimental: Not available in Windows. Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features
+	"go.addTags": {
+		"tags": "json",					// Comma separated tags that will get added by the Add Tags command
+		"options": "json=omitempty",	// Comma separated tag options that will get added by the Add Tags command. 
+		"promptForTags": false			// If true, then user will be prompted to provide tags and options to be added by the Add Tags command.
+	},
+	"go.removeTags": {
+		"tags": "",						// Comma separated tags that will get removed by the Remove Tags command. If empty, all tags are removed.
+		"options": "",					// Comma separated tag options that will get removed by the Remove Tags command. 
+		"promptForTags": false			// If true, then user will be prompted to provide tags and options to be removed by the Remove Tags command.
+	}
 }
 ```
 
@@ -126,6 +137,8 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Generates unit tests (file)` Generates unit tests for the current file
 * `Go: Generates unit tests (function)` Generates unit tests for the selected function in the current file
 * `Go: Install Tools` Installs/updates all the Go tools that the extension depends on
+* `Go: Add Tags` Adds configured tags to selected struct fields.
+* `Go: Remove Tags` Removes configured tags from selected struct fields.
 
 ### _Optional_: Debugging
 
@@ -179,6 +192,7 @@ If you wish to have the extension use a separate GOPATH for its tools, provide t
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
 - gotests: `go get -u -v github.com/cweill/gotests/...`
 - godoc: `go get -u -v golang.org/x/tools/cmd/godoc`
+- gomodifytags: `go get -u -v github.com/fatih/gomodifytags`
 
 To install the tools manually in the current GOPATH, just paste and run:
 ```bash
@@ -194,6 +208,7 @@ go get -u -v github.com/newhook/go-symbols
 go get -u -v golang.org/x/tools/cmd/guru
 go get -u -v github.com/cweill/gotests/...
 go get -u -v golang.org/x/tools/cmd/godoc
+go get -u -v github.com/fatih/gomodifytags
 ```
 
 And for debugging:
