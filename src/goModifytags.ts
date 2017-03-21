@@ -96,9 +96,9 @@ function getCommonArgs(): string[] {
 }
 
 function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): Thenable<string[]> {
-	let tags = commandArgs && commandArgs['tags'] ? commandArgs['tags'] : config['tags'];
-	let options =  commandArgs && commandArgs['options'] ? commandArgs['options'] : config['options'];
-	let promptForTags =  commandArgs && commandArgs['promptForTags'] ? commandArgs['promptForTags'] : config['promptForTags'];
+	let tags = commandArgs && commandArgs.hasOwnProperty('tags') ? commandArgs['tags'] : config['tags'];
+	let options =  commandArgs && commandArgs.hasOwnProperty('options') ? commandArgs['options'] : config['options'];
+	let promptForTags =  commandArgs && commandArgs.hasOwnProperty('promptForTags') ? commandArgs['promptForTags'] : config['promptForTags'];
 
 	if (!promptForTags) {
 		return Promise.resolve([tags, options]);

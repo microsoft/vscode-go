@@ -5,7 +5,7 @@
          * If there is no selection, then the whole struct under the cursor will be selected for the tag modification.
          * `Go: Add Tags` adds tags configured in `go.addTags` setting to selected struct fields. By default, `json` tags are added. Examples:
                * To add `xml` tags, set `go.addTags` to `{"tags": "xml"}` 
-               * To add `xml` with `cdata` option, set `go.addTags` to `{"tags": "xml", "options: "xml=cdata"}`  
+               * To add `xml` with `cdata` option, set `go.addTags` to `{"tags": "xml", "options": "xml=cdata"}`  
                * To add both `json` and `xml` tags, set `go.addTags` to `{"tags": "json,xml"}` 
          * `Go: Remove Tags` removes tags configured in `go.removeTags` setting from selected struct fields. By default, all tags are removed. To remove only say `xml` tags, set `go.removeTags` to `{"tags": "xml"}` 
          * To be prompted for tags instead of using the configured ones, set `go.addTags` and/or `go.removeTags` to `{"promptForTags": true}`
