@@ -80,7 +80,7 @@ function getCommonArgs(): string[] {
 		vscode.window.showInformationMessage('Current file is not a Go file.');
 		return;
 	}
-	let args = ['-file', editor.document.fileName, '-format', 'json'];
+	let args = ['-modified', '-format', 'json'];
 	if (editor.selection.start.line === editor.selection.end.line && editor.selection.start.character === editor.selection.end.character) {
 		// Add tags to the whole struct
 		let offset = byteOffsetAt(editor.document, editor.selection.start);
@@ -119,7 +119,10 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 
 function runGomodifytags(args: string[]) {
 	let gomodifytags = getBinPath('gomodifytags');
-	cp.execFile(gomodifytags, args, (err, stdout, stderr) => {
+	let editor = vscode.window.activeTextEditor;
+	let fileContents = editor.document.getText();
+	let input = editor.document.fileName + '\n' + fileContents.length + '\n' + fileContents;
+	let p = cp.execFile(gomodifytags, args, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gomodifytags');
 			return;
@@ -133,4 +136,5 @@ function runGomodifytags(args: string[]) {
 			editBuilder.replace(new vscode.Range(output.start - 1, 0, output.end, 0), output.lines.join('\n') + '\n');
 		});
 	});
+	p.stdin.end(input);
 }
