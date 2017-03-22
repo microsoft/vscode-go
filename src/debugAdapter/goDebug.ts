@@ -232,7 +232,6 @@ class Delve {
 					resolve();
 				});
 				this.debugProcess.on('close', (code) => {
-					// TODO: Report `dlv` crash to user.
 					logError('Process exiting with code: ' + code);
 					if (this.onclose) { this.onclose(code); }
 				});
