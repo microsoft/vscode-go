@@ -11,7 +11,7 @@ import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { getBinPathWithPreferredGopath, resolvePath, stripBOM } from '../goPath';
+import { getBinPathWithPreferredGopath, resolvePath, stripBOM, getGoRuntimePath } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 import * as FS from 'fs';
 
@@ -175,18 +175,75 @@ class Delve {
 	connection: Promise<RPCConnection>;
 	onstdout: (str: string) => void;
 	onstderr: (str: string) => void;
-	onclose: () => void;
+	onclose: (code: number) => void;
 
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = program;
 		this.remotePath = remotePath;
+		let mode = launchArgs.mode;
+		let env = launchArgs.env || {};
+		let dlvCwd = dirname(program);
+		let isProgramDirectory = false;
 		this.connection = new Promise((resolve, reject) => {
+			// Validations on the program
 			if (!program) {
 				return reject('The program attribute is missing in launch.json');
 			}
+			try {
+				let pstats = lstatSync(program);
+				if (pstats.isDirectory()) {
+					if (mode === 'exec') {
+						logError(`The program "${program}" must not be a directory in exec mode`);
+						return reject('The program attribute must be an executable in exec mode');
+					}
+					dlvCwd = program;
+					isProgramDirectory = true;
+				} else if (mode !== 'exec' && extname(program) !== '.go') {
+					logError(`The program "${program}" must be a valid go file in debug mode`);
+					return reject('The program attribute must be a directory or .go file in debug mode');
+				}
+			} catch (e) {
+				logError(`The program "${program}" does not exist: ${e}`);
+				return reject('The program attribute must point to valid directory, .go file or executable.');
+			}
+
+			// Consolidate env vars
+			let finalEnv: Object = null;
+			if (Object.keys(env).length > 0) {
+				finalEnv = {};
+				for (let k in process.env) {
+					finalEnv[k] = process.env[k];
+				}
+				for (let k in env) {
+					finalEnv[k] = env[k];
+				}
+			}
+
+			if (!!launchArgs.noDebug && mode === 'debug' && !isProgramDirectory) {
+				this.debugProcess = spawn(getGoRuntimePath(), ['run', program], {env: finalEnv});
+				this.debugProcess.stderr.on('data', chunk => {
+					let str = chunk.toString();
+					if (this.onstderr) { this.onstderr(str); }
+					resolve();
+				});
+				this.debugProcess.stdout.on('data', chunk => {
+					let str = chunk.toString();
+					if (this.onstdout) { this.onstdout(str); }
+					resolve();
+				});
+				this.debugProcess.on('close', (code) => {
+					logError('Process exiting with code: ' + code);
+					if (this.onclose) { this.onclose(code); }
+				});
+				this.debugProcess.on('error', function (err) {
+					reject(err);
+				});
+				return;
+			}
+
 			let serverRunning = false;
-			let env = launchArgs.env || {};
-			let mode = launchArgs.mode;
+
+
 			if (mode === 'remote') {
 				this.debugProcess = null;
 				serverRunning = true;  // assume server is running when in remote mode
@@ -221,16 +278,6 @@ class Delve {
 			}
 			verbose('Using dlv at: ' + dlv);
 
-			let dlvEnv: Object = null;
-			if (Object.keys(env).length > 0) {
-				dlvEnv = {};
-				for (let k in process.env) {
-					dlvEnv[k] = process.env[k];
-				}
-				for (let k in env) {
-					dlvEnv[k] = env[k];
-				}
-			}
 			let dlvArgs = [mode || 'debug'];
 			if (mode === 'exec') {
 				dlvArgs = dlvArgs.concat([program]);
@@ -253,26 +300,9 @@ class Delve {
 			}
 
 
-			let dlvCwd = dirname(program);
-			try {
-				let pstats = lstatSync(program);
-				if (pstats.isDirectory()) {
-					if (mode === 'exec') {
-						logError(`The program "${program}" must not be a directory in exec mode`);
-						return reject('The program attribute must be an executable in exec mode');
-					}
-					dlvCwd = program;
-				} else if (mode !== 'exec' && extname(program) !== '.go') {
-					logError(`The program "${program}" must be a valid go file in debug mode`);
-					return reject('The program attribute must be a directory or .go file in debug mode');
-				}
-			} catch (e) {
-				logError(`The program "${program}" does not exist: ${e}`);
-				return reject('The program attribute must point to valid directory, .go file or executable.');
-			}
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
-				env: dlvEnv,
+				env: finalEnv,
 			});
 
 			function connectClient(port: number, host: string) {
@@ -306,7 +336,7 @@ class Delve {
 			this.debugProcess.on('close', (code) => {
 				// TODO: Report `dlv` crash to user.
 				logError('Process exiting with code: ' + code);
-				if (code !== 0 && this.onclose) { this.onclose(); }
+				if (this.onclose) { this.onclose(code); }
 			});
 			this.debugProcess.on('error', function(err) {
 				reject(err);
@@ -424,8 +454,13 @@ class GoDebugSession extends DebugSession {
 		this.delve.onstderr = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stderr'));
 		};
-		this.delve.onclose = () => {
-			this.sendErrorResponse(response, 3000, 'Failed to continue: Check the debug console for details.');
+		this.delve.onclose = (code) => {
+			if (code !== 0) {
+				this.sendErrorResponse(response, 3000, 'Failed to continue: Check the debug console for details.');
+			} else {
+				this.sendEvent(new TerminatedEvent());
+				verbose('TerminatedEvent');
+			}
 			verbose('Delve is closed');
 		};
 
