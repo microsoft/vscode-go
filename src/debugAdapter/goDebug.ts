@@ -175,7 +175,7 @@ class Delve {
 	connection: Promise<RPCConnection>;
 	onstdout: (str: string) => void;
 	onstderr: (str: string) => void;
-	onclose: () => void;
+	onclose: (code: number) => void;
 
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = program;
@@ -234,7 +234,7 @@ class Delve {
 				this.debugProcess.on('close', (code) => {
 					// TODO: Report `dlv` crash to user.
 					logError('Process exiting with code: ' + code);
-					if (code !== 0 && this.onclose) { this.onclose(); }
+					if (this.onclose) { this.onclose(code); }
 				});
 				this.debugProcess.on('error', function (err) {
 					reject(err);
@@ -337,7 +337,7 @@ class Delve {
 			this.debugProcess.on('close', (code) => {
 				// TODO: Report `dlv` crash to user.
 				logError('Process exiting with code: ' + code);
-				if (code !== 0 && this.onclose) { this.onclose(); }
+				if (this.onclose) { this.onclose(code); }
 			});
 			this.debugProcess.on('error', function(err) {
 				reject(err);
@@ -455,8 +455,13 @@ class GoDebugSession extends DebugSession {
 		this.delve.onstderr = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stderr'));
 		};
-		this.delve.onclose = () => {
-			this.sendErrorResponse(response, 3000, 'Failed to continue: Check the debug console for details.');
+		this.delve.onclose = (code) => {
+			if (code !== 0) {
+				this.sendErrorResponse(response, 3000, 'Failed to continue: Check the debug console for details.');
+			} else {
+				this.sendEvent(new TerminatedEvent());
+				verbose('TerminatedEvent');
+			}
 			verbose('Delve is closed');
 		};
 
