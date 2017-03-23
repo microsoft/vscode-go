@@ -138,6 +138,16 @@
         "command": "go.toggle.test.file",
         "title": "Go: Toggle Test File",
         "description": "Toggles between file in current active editor and the corresponding test file."
+      },
+      {
+        "command": "go.add.tags",
+        "title": "Go: Add Tags",
+        "description": "Add tags configured in go.addTags setting to selected struct using gomodifytags"
+      },
+      {
+        "command": "go.remove.tags",
+        "title": "Go: Remove Tags",
+        "description": "Remove tags configured in go.removeTags setting from selected struct using gomodifytags"
       }
     ],
     "debuggers": [
@@ -159,7 +169,7 @@
           {
             "label": "Go: Launch package",
             "description": "Debug the package in the program attribute",
-            "body":{
+            "body": {
               "name": "${2:Launch Package}",
               "type": "go",
               "request": "launch",
@@ -170,7 +180,7 @@
           {
             "label": "Go: Launch file",
             "description": "Debug the file in the program attribute",
-            "body":{
+            "body": {
               "name": "${2:Launch file}",
               "type": "go",
               "request": "launch",
@@ -181,7 +191,7 @@
           {
             "label": "Go: Launch test package",
             "description": "Debug the test package in the program attribute",
-            "body":{
+            "body": {
               "name": "${2:Launch test package}",
               "type": "go",
               "request": "launch",
@@ -192,7 +202,7 @@
           {
             "label": "Go: Launch test function",
             "description": "Debug the test function in the args, ensure program attributes points to right package",
-            "body":{
+            "body": {
               "name": "${3:Launch test function}",
               "type": "go",
               "request": "launch",
@@ -412,7 +422,7 @@
           "default": null,
           "description": "Specifies the GOPATH to use when no environment variable is set. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true."
         },
-         "go.toolsGopath": {
+        "go.toolsGopath": {
           "type": "string",
           "default": "",
           "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH."
@@ -461,7 +471,7 @@
           "default": true,
           "description": "Enable gocode's autobuild feature"
         },
-         "go.useCodeSnippetsOnFunctionSuggest": {
+        "go.useCodeSnippetsOnFunctionSuggest": {
           "type": "boolean",
           "default": false,
           "description": "Complete functions with their parameter signature"
@@ -489,6 +499,24 @@
           "type": "boolean",
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
+        },
+        "go.addTags": {
+          "type": "object",
+          "default": {
+            "tags": "json",
+            "options": "json=omitempty",
+            "promptForTags": false
+          },
+          "description": "Tags and options configured here will be used by the Add Tags command to add tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, json tags are added."
+        },
+        "go.removeTags": {
+          "type": "object",
+          "default": {
+            "tags": "",
+            "options": "",
+            "promptForTags": false
+          },
+          "description": "Tags and options configured here will be used by the Remove Tags command to remove tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, all tags and options will be removed."
         }
       }
     }

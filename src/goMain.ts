@@ -31,6 +31,7 @@ import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, sendTelemetryEvent } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
+import { addTags, removeTags } from './goModifytags';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
@@ -99,6 +100,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		} else {
 			vscode.window.showInformationMessage('Current GOPATH: ' + gopath);
 		}
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.add.tags', (args) => {
+		addTags(args);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.remove.tags', (args) => {
+		removeTags(args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {
