@@ -80,7 +80,7 @@ function getCommonArgs(): string[] {
 		vscode.window.showInformationMessage('Current file is not a Go file.');
 		return;
 	}
-	let args = ['-modified', '-format', 'json'];
+	let args = ['-modified', '-file', editor.document.fileName, '-format', 'json'];
 	if (editor.selection.start.line === editor.selection.end.line && editor.selection.start.character === editor.selection.end.character) {
 		// Add tags to the whole struct
 		let offset = byteOffsetAt(editor.document, editor.selection.start);
