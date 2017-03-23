@@ -35,26 +35,20 @@ import { clearCacheForTools } from './goPath';
 let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
-	let langServerConfig = vscode.workspace.getConfiguration('go')['useLanguageServer'];
+	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
+	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
 
 	updateGoPathGoRootFromConfig().then(() => {
 		offerToInstallTools();
 		let langServerAvailable = checkLanguageServer();
 		if (langServerAvailable) {
-			let langServerArgs = ['-mode=stdio'];
-			if (typeof langServerConfig !== 'boolean' && langServerConfig.hasOwnProperty('trace') && langServerConfig['trace'] === true) {
-				langServerArgs.push('-trace');
-			}
-			if (typeof langServerConfig !== 'boolean' && langServerConfig.hasOwnProperty('logfile') && typeof langServerConfig['logfile'] === 'string') {
-				langServerArgs.push('-logfile');
-				langServerArgs.push(langServerConfig['logfile']);
-			}
+			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 			const c = new LanguageClient(
 				'go-langserver',
 				{
 					command: getBinPath('go-langserver'),
-					args: langServerArgs,
+					args: ['-mode=stdio', ...langServerFlags],
 				},
 				{
 					documentSelector: ['go'],
@@ -149,7 +143,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
 		if (process.platform !== 'win32'
-			&& didLangServerConfigChange(langServerConfig, updatedGoConfig['useLanguageServer'])
+			&& didLangServerConfigChange(useLangServer, langServerFlags, updatedGoConfig)
 			&& (!updatedGoConfig['useLanguageServer'] || checkLanguageServer())) {
 			vscode.window.showInformationMessage('Reload VS Code window for the change in usage of language server to take effect', 'Reload').then(selected => {
 				if (selected === 'Reload') {
@@ -157,7 +151,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				}
 			});
 		}
-		langServerConfig = updatedGoConfig['useLanguageServer'];
+		useLangServer = updatedGoConfig['useLanguageServer'];
 
 		// If there was a change in "toolsGopath" setting, then clear cache for go tools
 		if (toolsGopath !== updatedGoConfig['toolsGopath']) {
@@ -327,16 +321,16 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 	});
 }
 
-function didLangServerConfigChange(oldConfig: vscode.WorkspaceConfiguration, newconfig: vscode.WorkspaceConfiguration) {
-	let oldType = typeof oldConfig;
-	let newType = typeof newconfig;
-	if (oldType === 'boolean' && newType === 'boolean') {
-		return oldConfig !== newconfig;
-	}
-
-	if (oldType === 'boolean' || newType === 'boolean') {
+function didLangServerConfigChange(useLangServer: boolean, langServerFlags: string[], newconfig: vscode.WorkspaceConfiguration) {
+	let newLangServerFlags = newconfig['languageServerFlags'] || [];
+	if (useLangServer !== newconfig['useLanguageServer'] || langServerFlags.length !== newLangServerFlags.length) {
 		return true;
 	}
 
-	return (oldConfig['trace'] !== newconfig['trace'] || oldConfig['logfile'] !== newconfig['logfile']) ;
+	for (let i = 0; i < langServerFlags.length; i++) {
+		if (newLangServerFlags[i] !== langServerFlags[i]) {
+			return true;
+		}
+	}
+	return false;
 }
