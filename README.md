@@ -86,8 +86,8 @@ Set `go.useLanguageServer` to `true` to use the Go language server from [Sourceg
 * This is an experimental feature and is not available in Windows yet.
 * If set to true, you will be prompted to install the Go language server. Once installed, you will have to reload VS Code window. The language server will then be run by the Go extension in the background to provide services needed for the above mentioned features.
 * Everytime you change the value of the setting `go.useLanguageServer`, you need to reload the VS Code window for it to take effect.
-* To collect traces, set `"go.useLanguageServer": { "trace": true }`
-* To collect errors from language server in a logfile, set `"go.useLanguageServer": { "logfile": "path to a text file that exists" }`
+* To collect traces, set `"go.languageServerFlags": ["-trace"]`
+* To collect errors from language server in a logfile, set `"go.languageServerFlags": ["-trace", "-logfile", "path to a text file that exists" ]`
 
 
 ### Linter
