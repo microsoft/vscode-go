@@ -37,19 +37,19 @@ let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
+	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
 
 	updateGoPathGoRootFromConfig().then(() => {
 		offerToInstallTools();
 		let langServerAvailable = checkLanguageServer();
 		if (langServerAvailable) {
+			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 			const c = new LanguageClient(
 				'go-langserver',
 				{
 					command: getBinPath('go-langserver'),
-					args: [
-						'-mode=stdio'
-					],
+					args: ['-mode=stdio', ...langServerFlags],
 				},
 				{
 					documentSelector: ['go'],
@@ -152,7 +152,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
 		if (process.platform !== 'win32'
-			&& useLangServer !== updatedGoConfig['useLanguageServer']
+			&& didLangServerConfigChange(useLangServer, langServerFlags, updatedGoConfig)
 			&& (!updatedGoConfig['useLanguageServer'] || checkLanguageServer())) {
 			vscode.window.showInformationMessage('Reload VS Code window for the change in usage of language server to take effect', 'Reload').then(selected => {
 				if (selected === 'Reload') {
@@ -328,4 +328,18 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		useLanguageServer: goConfig['useLanguageServer'] + '',
 		includeImports: goConfig['gotoSymbol'] && goConfig['gotoSymbol']['includeImports'] + ''
 	});
+}
+
+function didLangServerConfigChange(useLangServer: boolean, langServerFlags: string[], newconfig: vscode.WorkspaceConfiguration) {
+	let newLangServerFlags = newconfig['languageServerFlags'] || [];
+	if (useLangServer !== newconfig['useLanguageServer'] || langServerFlags.length !== newLangServerFlags.length) {
+		return true;
+	}
+
+	for (let i = 0; i < langServerFlags.length; i++) {
+		if (newLangServerFlags[i] !== langServerFlags[i]) {
+			return true;
+		}
+	}
+	return false;
 }
