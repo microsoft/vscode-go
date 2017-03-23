@@ -338,5 +338,5 @@ function didLangServerConfigChange(oldConfig: vscode.WorkspaceConfiguration, new
 		return true;
 	}
 
-	return (oldConfig['trace'] !== newconfig['trace'] || oldConfig['logfile'] !== newconfig['logFile']) ;
+	return (oldConfig['trace'] !== newconfig['trace'] || oldConfig['logfile'] !== newconfig['logfile']) ;
 }
