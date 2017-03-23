@@ -465,8 +465,10 @@ class GoDebugSession extends DebugSession {
 		};
 
 		this.delve.connection.then(() => {
-			this.sendEvent(new InitializedEvent());
-			verbose('InitializeEvent');
+			if (!args.noDebug) {
+				this.sendEvent(new InitializedEvent());
+				verbose('InitializeEvent');
+			}
 			this.sendResponse(response);
 		}, err => {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: "{e}"', { e: err.toString() });
