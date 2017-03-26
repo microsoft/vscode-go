@@ -39,6 +39,10 @@ interface TestConfig {
 	 * Test was not requested explicitly. The output should not appear in the UI.
 	 */
 	background?: boolean;
+	/**
+	 * Path of the file that contains the tests being run. Doesn't apply when running all tests in package.
+	 */
+	filePath?: string;
 }
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -82,7 +86,8 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			flags: getTestFlags(goConfig, args),
-			functions: [testFunction.name]
+			functions: [testFunction.name],
+			filePath: editor.document.fileName
 		});
 	}).then(null, err => {
 		console.error(err);
@@ -129,7 +134,8 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			flags: getTestFlags(goConfig, args),
-			functions: testFunctions.map(func => { return func.name; })
+			functions: testFunctions.map(func => { return func.name; }),
+			filePath: editor.document.fileName
 		});
 	}).then(null, err => {
 		console.error(err);
@@ -191,7 +197,11 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		outputChannel.appendLine('');
 
 		let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
-		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
+		proc.stdout.on('data', chunk => {
+			let testOutput = expandFilePathInOutput(chunk.toString(), testconfig.dir, testconfig.functions ? path.basename(testconfig.filePath) : null);
+			outputChannel.append(testOutput);
+
+		});
 		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.on('close', code => {
 			if (code) {
@@ -235,4 +245,18 @@ function hasTestFunctionPrefix(name: string): boolean {
 function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
 	let testFlags = goConfig['testFlags'] ? goConfig['testFlags'] : goConfig['buildFlags'];
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
+}
+
+function expandFilePathInOutput(output: string, cwd: string, testFileName?: string): string {
+	let lines = output.split('\n');
+	let regex = new RegExp(testFileName ? `^\\t(${testFileName}):(\\d+):` : `^\\t(\\w+_test.go):(\\d+):`);
+
+	for (let i = 0; i < lines.length; i++) {
+		let matches = lines[i].match(regex);
+		if (matches) {
+			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
+		}
+	}
+
+	return lines.join('\n');
 }
