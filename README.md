@@ -88,6 +88,14 @@ The following Visual Studio Code settings along with their *default* values that
 		"tags": "",						// Comma separated tags that will get removed by the Remove Tags command. If empty, all tags are removed.
 		"options": "",					// Comma separated tag options that will get removed by the Remove Tags command. 
 		"promptForTags": false			// If true, then user will be prompted to provide tags and options to be removed by the Remove Tags command.
+	},
+	"go.editorContextMenuCommands": {	// Enable/Disable commands from the context menu in the editor.
+		"toggleTestFile": true,
+		"addTags": true,
+		"removeTags": true,
+		"testAtCursor": true,
+		"generateTestForFunction": true,
+		"addImport": true
 	}
 }
 ```
@@ -131,13 +139,13 @@ In addition to integrated editing features, the extension also provides several 
 
 * `Go: Add Import` to add an import from the list of packages in your Go context
 * `Go: Current GOPATH` to see your currently configured GOPATH
-* `Go: Run test at cursor` to run a test at the current cursor position in the active document
-* `Go: Run tests in current package` to run all tests in the package containing the active document
-* `Go: Run tests in current file` to run all tests in the current active document
+* `Go: Test at cursor` to run a test at the current cursor position in the active document
+* `Go: Test Package` to run all tests in the package containing the active document
+* `Go: Test File` to run all tests in the current active document
 * `Go: Test Previous` to run the previously run test command
-* `Go: Generates unit tests (package)` Generates unit tests for the current package
-* `Go: Generates unit tests (file)` Generates unit tests for the current file
-* `Go: Generates unit tests (function)` Generates unit tests for the selected function in the current file
+* `Go: Generates unit tests for package` Generates unit tests for the current package
+* `Go: Generates unit tests for file` Generates unit tests for the current file
+* `Go: Generates unit tests for function` Generates unit tests for the selected function in the current file
 * `Go: Install Tools` Installs/updates all the Go tools that the extension depends on
 * `Go: Add Tags` Adds configured tags to selected struct fields.
 * `Go: Remove Tags` Removes configured tags from selected struct fields.
