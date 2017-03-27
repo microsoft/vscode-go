@@ -1,35 +1,46 @@
 ## 0.6.56 - Coming Soon
 
+### Editing improvements
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Use [gomodifytags](https://github.com/fatih/gomodifytags) to modify tags on selected struct fields. [PR 880](https://github.com/Microsoft/vscode-go/pull/880)
          * If there is no selection, then the whole struct under the cursor will be selected for the tag modification.
          * `Go: Add Tags` command adds tags configured in `go.addTags` setting to selected struct fields. By default, `json` tags are added. Examples:
-               *  To add `xml` tags, set `go.addTags` to `{"tags": "xml"}` 
-               *  To add `xml` with `cdata` option, set `go.addTags` to `{"tags": "xml", "options": "xml=cdata"}`  
-               *  To add both `json` and `xml` tags, set `go.addTags` to `{"tags": "json,xml"}` 
-         * `Go: Remove Tags` command removes tags configured in `go.removeTags` setting from selected struct fields. By default, all tags are removed. To remove only say `xml` tags, set `go.removeTags` to `{"tags": "xml"}` 
+             * To add `xml` tags, set `go.addTags` to `{"tags": "xml"}` 
+             * To add `xml` with `cdata` option, set `go.addTags` to `{"tags": "xml", "options": "xml=cdata"}`  
+             * To add both `json` and `xml` tags, set `go.addTags` to `{"tags": "json,xml"}` 
+         * `Go: Remove Tags` command removes tags configured in `go.removeTags` setting from selected struct fields. 
+             * By default, all tags are removed. 
+             * To remove only say `xml` tags, set `go.removeTags` to `{"tags": "xml"}` 
          * To be prompted for tags instead of using the configured ones, set `go.addTags` and/or `go.removeTags` to `{"promptForTags": true}`
-    * New Setting `go.languageServerFlags` that will be passed while running the Go language server. [PR 882](https://github.com/Microsoft/vscode-go/pull/882)
-        * Set this to `["trace"]` to see the traces from the language server in the output pane under the channel "go-langserver"
-        * Set this to `["trace", "logfile", "path to a text file to log the trace]` to log the traces and errors from the language server to a file.
+    * Fix rename issue when `diff` tool from Git or Cygwin are in the `PATH` in Windows. [PR 866](https://github.com/Microsoft/vscode-go/pull/866)
+    * Keywords are now supported in completion suggestions. [PR 865](https://github.com/Microsoft/vscode-go/pull/865)
+    * Suggestion items to import packages disabled in single line import statements and the line with package definition where they do not make sense. [PR 860](https://github.com/Microsoft/vscode-go/pull/860)
+
+### Debugging improvements
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Support to build and run your Go file.  [PR 881](https://github.com/Microsoft/vscode-go/pull/881)
         * Press `Ctrl+F5` or run the command `Debug: Start Without Debugging` to run using the currently selected launch configuration.
         * If you don't have a `launch.json` file, then the current file will be run.
         * Supported only for launch configs with `type` as `debug` and `program` that points to a Go file and not package
-    * Use `GOPATH` and `GOROOT` as defined by the `go env` output as default.  [PR 876](https://github.com/Microsoft/vscode-go/pull/876)
-    * `Go: Install Tools` command now installs delve as well in Linux and Windows, but not in Mac OSX. [Commit 30ea096](https://github.com/Microsoft/vscode-go/commit/30ea0960d6f773cc2e8e18ba5113960d1f5faf08)
-    * Fix rename issue when `diff` tool from Git or Cygwin are in the `PATH` in Windows. [PR 866](https://github.com/Microsoft/vscode-go/pull/866)
-    * Fix compiling errors for vendor packages in case of symlinks. [PR 864](https://github.com/Microsoft/vscode-go/pull/864)
-    * Keywords are now supported in completion suggestions. [PR 865](https://github.com/Microsoft/vscode-go/pull/865)
-    * Suggestion items to import packages disabled in single line import statements and the line with package definition where they do not make sense. [PR 860](https://github.com/Microsoft/vscode-go/pull/860)
     * New `envFile` attribute in `launch.json` where you can provide a file with env variables to use while debugging. [PR 849](https://github.com/Microsoft/vscode-go/pull/849)
     * Use current file's directory instead of folder opened in VS Code to debug in the default configurations. [Commit 0915e50a](https://github.com/Microsoft/vscode-go/commit/0915e50a1ada5c74742d9c4ce7f265b5e273ca31)
 
+### Tooling improvements
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * New Setting `go.languageServerFlags` that will be passed while running the Go language server. [PR 882](https://github.com/Microsoft/vscode-go/pull/882)
+        * Set this to `["trace"]` to see the traces from the language server in the output pane under the channel "go-langserver"
+        * Set this to `["trace", "logfile", "path to a text file to log the trace]` to log the traces and errors from the language server to a file.
+    * `Go: Install Tools` command now installs delve as well in Linux and Windows, but not in Mac OSX. [Commit 30ea096](https://github.com/Microsoft/vscode-go/commit/30ea0960d6f773cc2e8e18ba5113960d1f5faf08)
 * [netroby @netroby](https://github.com/netroby)
     * `Go: Install Tools` command now installs `godoc`. [PR 854](https://github.com/Microsoft/vscode-go/pull/854)
 
-
-
+### Others
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Use `GOPATH` as defined by the `go env` output as default. Use `go` binary from default platform specific locations when GOROOT is not set as env variable. Fixes [Bug 873](https://github.com/Microsoft/vscode-go/issues/873)
+    * Fix compiling errors for vendor packages in case of symlinks. [PR 864](https://github.com/Microsoft/vscode-go/pull/864)
+    * Support links in the test output, which then navigates the user to the right line of the test file where tests are failing. [PR 885](https://github.com/Microsoft/vscode-go/pull/885)
+    * As a test run, few of the Go extension commands are now exposed in the editor context menu. Just right-click anywhere in your Go file to see the menu. If you feel this clutters your menu, you can disable these by updating the setting `go.editorContextMenuCommands` 
+    
 ## 0.6.55 - 3rd March, 2017
 * Re-publishing the extension from a non Windows machine as the fix for [Bug 438](https://github.com/Microsoft/vscode-go/issues/438) worked only on Windows machines.
 For details read the discussion in [PR 838](https://github.com/Microsoft/vscode-go/pull/838).
