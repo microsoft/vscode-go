@@ -274,7 +274,7 @@ class Delve {
 
 			if (!existsSync(dlv)) {
 				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
-				return reject(`Cannot find Delve debugger. Ensure it is in your "GOPATH/bin" or "PATH".`);
+				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
 			}
 			verbose('Using dlv at: ' + dlv);
 
