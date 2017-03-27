@@ -244,7 +244,7 @@ function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): strin
 function expandFilePathInOutput(output: string, cwd: string): string {
 	let lines = output.split('\n');
 	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\t(\w+_test.go):(\d+):/);
+		let matches = lines[i].match(/^\t(\S+_test.go):(\d+):/);
 		if (matches) {
 			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
 		}
