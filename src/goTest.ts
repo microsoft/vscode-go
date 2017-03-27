@@ -191,7 +191,11 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		outputChannel.appendLine('');
 
 		let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
-		proc.stdout.on('data', chunk => outputChannel.append(chunk.toString()));
+		proc.stdout.on('data', chunk => {
+			let testOutput = expandFilePathInOutput(chunk.toString(), testconfig.dir);
+			outputChannel.append(testOutput);
+
+		});
 		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
 		proc.on('close', code => {
 			if (code) {
@@ -235,4 +239,15 @@ function hasTestFunctionPrefix(name: string): boolean {
 function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
 	let testFlags = goConfig['testFlags'] ? goConfig['testFlags'] : goConfig['buildFlags'];
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
+}
+
+function expandFilePathInOutput(output: string, cwd: string): string {
+	let lines = output.split('\n');
+	for (let i = 0; i < lines.length; i++) {
+		let matches = lines[i].match(/^\t(\S+_test.go):(\d+):/);
+		if (matches) {
+			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
+		}
+	}
+	return lines.join('\n');
 }
