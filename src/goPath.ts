@@ -82,6 +82,12 @@ export function getGoRuntimePath(): string {
 		let pathparts = (<string>process.env.PATH).split(path.delimiter);
 		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinNameGo)).filter(candidate => fileExists(candidate))[0];
 	}
+	if (!runtimePathCache) {
+		let defaultPathForGo = process.platform === 'win32' ? 'C:\\Go\\bin\\go.exe' : '/usr/local/go/bin/go';
+		if (fileExists(defaultPathForGo)) {
+			runtimePathCache = defaultPathForGo;
+		}
+	}
 	return runtimePathCache;
 }
 

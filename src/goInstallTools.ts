@@ -227,23 +227,20 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		}
 	}
 
-	if (process.env['GOPATH'] && process.env['GOROOT']) {
+	if (process.env['GOPATH']) {
 		return Promise.resolve();
 	}
 
-	// If GOPATH and GOROOT are still not set, then use the ones from `go env`
+	// If GOPATH is still not set, then use the one from `go env`
 	let goRuntimePath = getGoRuntimePath();
 	return new Promise<void>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['env', 'GOROOT', 'GOPATH'], (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['env', 'GOPATH'], (err, stdout, stderr) => {
 			if (err) {
 				return reject();
 			}
 			let envOutput = stdout.split('\n');
-			if (!process.env['GOROOT'] && envOutput[0].trim()) {
-				process.env['GOROOT'] = envOutput[0].trim();
-			}
-			if (!process.env['GOPATH'] && envOutput[1].trim()) {
-				process.env['GOPATH'] = envOutput[1].trim();
+			if (!process.env['GOPATH'] && envOutput[0].trim()) {
+				process.env['GOPATH'] = envOutput[0].trim();
 			}
 			return resolve();
 		});
