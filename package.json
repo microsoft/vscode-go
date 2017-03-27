@@ -111,17 +111,17 @@
       },
       {
         "command": "go.test.generate.package",
-        "title": "Go: Generate unit tests for current package",
+        "title": "Go: Generate unit tests for package",
         "description": "Generates unit tests for the current package"
       },
       {
         "command": "go.test.generate.file",
-        "title": "Go: Generate unit tests for current file",
+        "title": "Go: Generate unit tests for file",
         "description": "Generates unit tests for the current file"
       },
       {
         "command": "go.test.generate.function",
-        "title": "Go: Generate unit tests for current function",
+        "title": "Go: Generate unit tests for function",
         "description": "Generates unit tests for the selected function in the current file"
       },
       {
@@ -141,12 +141,12 @@
       },
       {
         "command": "go.add.tags",
-        "title": "Go: Add Tags",
+        "title": "Go: Add Tags to struct fields",
         "description": "Add tags configured in go.addTags setting to selected struct using gomodifytags"
       },
       {
         "command": "go.remove.tags",
-        "title": "Go: Remove Tags",
+        "title": "Go: Remove Tags from struct fields",
         "description": "Remove tags configured in go.removeTags setting from selected struct using gomodifytags"
       }
     ],
@@ -522,8 +522,48 @@
             "promptForTags": false
           },
           "description": "Tags and options configured here will be used by the Remove Tags command to remove tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, all tags and options will be removed."
+        },
+        "go.editorContextMenuCommands": {
+          "type": "object",
+          "default": {
+            "toggleTestFile": true,
+            "addTags": true,
+            "removeTags": true,
+            "testAtCursor": true,
+            "generateTestForFunction": true,
+            "addImport": true
+          },
+          "description": "Enable/Disable entries from the context menu in the editor."
         }
       }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.toggleTestFile && resourceLangId == go",
+          "command": "go.toggle.test.file"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.addTags && resourceLangId == go",
+          "command": "go.add.tags"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.removeTags && resourceLangId == go",
+          "command": "go.remove.tags"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testAtCursor && resourceLangId == go",
+          "command": "go.test.cursor"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFunction && resourceLangId == go",
+          "command": "go.test.generate.function"
+        },
+         {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.addImport && resourceLangId == go",
+          "command": "go.import.add"
+        }
+      ]
     }
   }
 }
