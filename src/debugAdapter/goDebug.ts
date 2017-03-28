@@ -224,12 +224,10 @@ class Delve {
 				this.debugProcess.stderr.on('data', chunk => {
 					let str = chunk.toString();
 					if (this.onstderr) { this.onstderr(str); }
-					resolve();
 				});
 				this.debugProcess.stdout.on('data', chunk => {
 					let str = chunk.toString();
 					if (this.onstdout) { this.onstdout(str); }
-					resolve();
 				});
 				this.debugProcess.on('close', (code) => {
 					logError('Process exiting with code: ' + code);
@@ -238,6 +236,7 @@ class Delve {
 				this.debugProcess.on('error', function (err) {
 					reject(err);
 				});
+				resolve();
 				return;
 			}
 
