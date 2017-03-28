@@ -86,7 +86,7 @@
       },
       {
         "command": "go.test.cursor",
-        "title": "Go: Test at Cursor",
+        "title": "Go: Test Function at cursor",
         "description": "Runs a unit test at the cursor."
       },
       {
@@ -525,13 +525,75 @@
         },
         "go.editorContextMenuCommands": {
           "type": "object",
+          "properties": {
+            "toggleTestFile": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to toggle between a Go file and its test file to the editor context menu"
+            },
+            "addTags": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to add configured tags from struct fields to the editor context menu"
+            },
+            "removeTags": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to remove configured tags from struct fields to the editor context menu"
+            },
+            "testAtCursor": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to run the test under the cursor to the editor context menu"
+            },
+            "testFile": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to run all tests in the current file to the editor context menu"
+            },
+            "testPackage": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to run all tests in the current pacakage to the editor context menu"
+            },
+            "generateTestForFunction": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to generate unit tests for function under the cursor to the editor context menu"
+            },
+            "generateTestForFile": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to generate unit tests for current file to the editor context menu"
+            },
+            "generateTestForPackage": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to generate unit tests for currnt package to the editor context menu"
+            },
+            "addImport": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to import a package to the editor context menu"
+            },
+            "testCoverage": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to run test coverage to the editor context menu"
+            }
+          },
           "default": {
             "toggleTestFile": true,
             "addTags": true,
-            "removeTags": true,
+            "removeTags": false,
             "testAtCursor": true,
+            "testFile": false,
+            "testPackage": false,
             "generateTestForFunction": true,
-            "addImport": true
+            "generateTestForFile": false,
+            "generateTestForPackage": false,
+            "addImport": false,
+            "testCoverage": false
           },
           "description": "Enable/Disable entries from the context menu in the editor."
         }
@@ -556,12 +618,32 @@
           "command": "go.test.cursor"
         },
         {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testFile && resourceLangId == go",
+          "command": "go.test.file"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testPackage && resourceLangId == go",
+          "command": "go.test.package"
+        },
+        {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFunction && resourceLangId == go",
           "command": "go.test.generate.function"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFile && resourceLangId == go",
+          "command": "go.test.generate.file"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForPackage && resourceLangId == go",
+          "command": "go.test.generate.package"
         },
          {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.addImport && resourceLangId == go",
           "command": "go.import.add"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testCoverage && resourceLangId == go",
+          "command": "go.test.coverage"
         }
       ]
     }
