@@ -72,7 +72,7 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, goConf
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('go-symbols');
 					}
-					if (err && stderr && stderr.startsWith('flag provided but not defined: -ignoreFoldersString')) {
+					if (err && stderr && stderr.startsWith('flag provided but not defined: -ignore')) {
 						promptForUpdatingTool('go-symbols');
 						return getWorkspaceSymbols(workspacePath, query, goConfig, false).then(results => {
 							return resolve(results);
