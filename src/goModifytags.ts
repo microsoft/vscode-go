@@ -30,7 +30,7 @@ export function addTags(commandArgs: GoTagsConfig) {
 		return;
 	}
 
-	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go')['addTags'], commandArgs).then(([tags, options]) => {
+	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go')['addTags'], commandArgs).then(([tags, options, transformValue]) => {
 		if (!tags && !options) {
 			return;
 		}
@@ -41,6 +41,10 @@ export function addTags(commandArgs: GoTagsConfig) {
 		if (options) {
 			args.push('--add-options');
 			args.push(options);
+		}
+		if (transformValue) {
+			args.push('--transform');
+			args.push(transformValue);
 		}
 		runGomodifytags(args);
 	});
@@ -99,9 +103,10 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 	let tags = commandArgs && commandArgs.hasOwnProperty('tags') ? commandArgs['tags'] : config['tags'];
 	let options =  commandArgs && commandArgs.hasOwnProperty('options') ? commandArgs['options'] : config['options'];
 	let promptForTags =  commandArgs && commandArgs.hasOwnProperty('promptForTags') ? commandArgs['promptForTags'] : config['promptForTags'];
+	let transformValue = commandArgs && commandArgs.hasOwnProperty('transform') ? commandArgs['transform'] : config['transform'];
 
 	if (!promptForTags) {
-		return Promise.resolve([tags, options]);
+		return Promise.resolve([tags, options, transformValue]);
 	}
 
 	return vscode.window.showInputBox({
@@ -112,7 +117,7 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 			value: 'json=omitempty,xml=cdata',
 			prompt: 'Enter comma separated options'
 		}).then(inputOptions => {
-			return [inputTags, inputOptions];
+			return [inputTags, inputOptions, transformValue];
 		});
 	});
 }

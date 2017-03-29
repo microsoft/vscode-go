@@ -507,15 +507,59 @@
         },
         "go.addTags": {
           "type": "object",
+          "properties": {
+            "promptForTags": {
+              "type":"boolean",
+              "default": false,
+              "description": "If true, Go: Add Tags command will prompt the user to provide tags and options instead of using the configured values"
+            },
+            "tags": {
+              "type":"string",
+              "default": "json",
+              "description": "Comma separated tags to be used by Go: Add Tags command"
+            },
+            "options": {
+              "type": "string",
+              "default": "json=omitempty",
+              "description": "Comma separated tag=options pairs to be used by Go: Add Tags command"
+            },
+            "transform": {
+              "type": "string",
+              "enum": [
+                "snakecase",
+                "camelcase"
+              ],
+              "default": "snakecase",
+              "description": "Transformation rule used by Go: Add Tags command to add tags"
+            }
+          },
           "default": {
             "tags": "json",
             "options": "json=omitempty",
-            "promptForTags": false
+            "promptForTags": false,
+            "transform": "snakecase"
           },
           "description": "Tags and options configured here will be used by the Add Tags command to add tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, json tags are added."
         },
         "go.removeTags": {
           "type": "object",
+          "properties": {
+            "promptForTags": {
+              "type":"boolean",
+              "default": false,
+              "description": "If true, Go: Remove Tags command will prompt the user to provide tags and options instead of using the configured values"
+            },
+            "tags": {
+              "type":"string",
+              "default": "json",
+              "description": "Comma separated tags to be used by Go: Remove Tags command"
+            },
+            "options": {
+              "type": "string",
+              "default": "json=omitempty",
+              "description": "Comma separated tag=options pairs to be used by Go: Remove Tags command"
+            }
+          },
           "default": {
             "tags": "",
             "options": "",
