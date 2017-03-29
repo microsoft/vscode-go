@@ -89,13 +89,18 @@ The following Visual Studio Code settings along with their *default* values that
 		"options": "",					// Comma separated tag options that will get removed by the Remove Tags command. 
 		"promptForTags": false			// If true, then user will be prompted to provide tags and options to be removed by the Remove Tags command.
 	},
-	"go.editorContextMenuCommands": {	// Enable/Disable commands from the context menu in the editor.
+	"go.editorContextMenuCommands": {	// Experimental Feature: Enable/Disable commands from the context menu in the editor.
 		"toggleTestFile": true,
 		"addTags": true,
-		"removeTags": true,
 		"testAtCursor": true,
 		"generateTestForFunction": true,
-		"addImport": true
+		"addImport": false
+		"removeTags": false,
+		"testFile": false,
+		"testPackage": false,
+		"generateTestForFile": false,
+		"generateTestForPackage": false,
+		"testCoverage": false
 	}
 }
 ```

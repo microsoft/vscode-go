@@ -1,4 +1,4 @@
-## 0.6.56 - Coming Soon
+## 0.6.56 - 29th March, 2017
 
 ### Editing improvements
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
@@ -39,7 +39,7 @@
     * Use `GOPATH` as defined by the `go env` output as default. Use `go` binary from default platform specific locations when GOROOT is not set as env variable. Fixes [Bug 873](https://github.com/Microsoft/vscode-go/issues/873)
     * Fix compiling errors for vendor packages in case of symlinks. [PR 864](https://github.com/Microsoft/vscode-go/pull/864)
     * Support links in the test output, which then navigates the user to the right line of the test file where tests are failing. [PR 885](https://github.com/Microsoft/vscode-go/pull/885)
-    * As a test run, few of the Go extension commands are now exposed in the editor context menu. Just right-click anywhere in your Go file to see the menu. If you feel this clutters your menu, you can disable these by updating the setting `go.editorContextMenuCommands` 
+    * Experimental new setting `go.editorContextMenuCommands` to control which commands show up in the editor context menu.
     
 ## 0.6.55 - 3rd March, 2017
 * Re-publishing the extension from a non Windows machine as the fix for [Bug 438](https://github.com/Microsoft/vscode-go/issues/438) worked only on Windows machines.

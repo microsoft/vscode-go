@@ -595,7 +595,7 @@
             "addImport": false,
             "testCoverage": false
           },
-          "description": "Enable/Disable entries from the context menu in the editor."
+          "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor."
         },
         "go.gotoSymbol.ignoreFolders": {
           "type": "array",
