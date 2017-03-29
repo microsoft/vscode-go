@@ -326,7 +326,10 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		autocompleteUnimportedPackages: goConfig['autocompleteUnimportedPackages'] + '',
 		docsTool: goConfig['docsTool'],
 		useLanguageServer: goConfig['useLanguageServer'] + '',
-		includeImports: goConfig['gotoSymbol'] && goConfig['gotoSymbol']['includeImports'] + ''
+		includeImports: goConfig['gotoSymbol'] && goConfig['gotoSymbol']['includeImports'] + '',
+		addTags: JSON.stringify(goConfig['addTags']),
+		removeTags: JSON.stringify(goConfig['removeTags']),
+		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands'])
 	});
 }
 

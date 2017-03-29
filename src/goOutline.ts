@@ -78,7 +78,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 	private convertToCodeSymbols(document: vscode.TextDocument, decls: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName: string): void {
 		let gotoSymbolConfig = vscode.workspace.getConfiguration('go')['gotoSymbol'];
 		let includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
-		sendTelemetryEvent('file-symbols', { includeImports });
+		sendTelemetryEvent('file-symbols', { includeImports: includeImports + '' });
 		decls.forEach(decl => {
 			if (!includeImports && decl.type === 'import') return;
 			let label = decl.label;
