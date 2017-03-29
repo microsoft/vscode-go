@@ -416,12 +416,14 @@ It returns the number of bytes written and any write error encountered.
 				{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported (golint)' },
 				{ line: 10, severity: 'warning', msg: 'main2 is unused (deadcode)' },
 				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (aligncheck)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (gosimple)' },
 				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (gotype)' },
 				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (interfacer)' },
+				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (staticcheck)' },
 				{ line: 11, severity: 'warning', msg: 'undeclared name: prin (unconvert)' },
 				{ line: 11, severity: 'error', msg: 'undefined: prin' },
-				{ line: 11, severity: 'warning', msg: 'unused global variable undeclared name: prin (varcheck)' },
 				{ line: 11, severity: 'warning', msg: 'unused struct field undeclared name: prin (structcheck)' },
+				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
 			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {

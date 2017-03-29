@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
-import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from '../src/diffUtils';
+import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 
 export class GoRenameProvider implements vscode.RenameProvider {

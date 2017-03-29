@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.53",
+  "version": "0.6.56",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -86,7 +86,7 @@
       },
       {
         "command": "go.test.cursor",
-        "title": "Go: Test at Cursor",
+        "title": "Go: Test Function at cursor",
         "description": "Runs a unit test at the cursor."
       },
       {
@@ -111,17 +111,17 @@
       },
       {
         "command": "go.test.generate.package",
-        "title": "Go: Generate unit tests for current package",
+        "title": "Go: Generate unit tests for package",
         "description": "Generates unit tests for the current package"
       },
       {
         "command": "go.test.generate.file",
-        "title": "Go: Generate unit tests for current file",
+        "title": "Go: Generate unit tests for file",
         "description": "Generates unit tests for the current file"
       },
       {
         "command": "go.test.generate.function",
-        "title": "Go: Generate unit tests for current function",
+        "title": "Go: Generate unit tests for function",
         "description": "Generates unit tests for the selected function in the current file"
       },
       {
@@ -138,6 +138,16 @@
         "command": "go.toggle.test.file",
         "title": "Go: Toggle Test File",
         "description": "Toggles between file in current active editor and the corresponding test file."
+      },
+      {
+        "command": "go.add.tags",
+        "title": "Go: Add Tags to struct fields",
+        "description": "Add tags configured in go.addTags setting to selected struct using gomodifytags"
+      },
+      {
+        "command": "go.remove.tags",
+        "title": "Go: Remove Tags from struct fields",
+        "description": "Remove tags configured in go.removeTags setting from selected struct using gomodifytags"
       }
     ],
     "debuggers": [
@@ -155,6 +165,56 @@
           "go"
         ],
         "startSessionCommand": "go.debug.startSession",
+        "configurationSnippets": [
+          {
+            "label": "Go: Launch package",
+            "description": "Debug the package in the program attribute",
+            "body": {
+              "name": "${2:Launch Package}",
+              "type": "go",
+              "request": "launch",
+              "mode": "debug",
+              "program": "^\"\\${workspaceRoot}${1:}\""
+            }
+          },
+          {
+            "label": "Go: Launch file",
+            "description": "Debug the file in the program attribute",
+            "body": {
+              "name": "${2:Launch file}",
+              "type": "go",
+              "request": "launch",
+              "mode": "debug",
+              "program": "^\"${1:\\${file}}\""
+            }
+          },
+          {
+            "label": "Go: Launch test package",
+            "description": "Debug the test package in the program attribute",
+            "body": {
+              "name": "${2:Launch test package}",
+              "type": "go",
+              "request": "launch",
+              "mode": "test",
+              "program": "^\"\\${workspaceRoot}${1:}\""
+            }
+          },
+          {
+            "label": "Go: Launch test function",
+            "description": "Debug the test function in the args, ensure program attributes points to right package",
+            "body": {
+              "name": "${3:Launch test function}",
+              "type": "go",
+              "request": "launch",
+              "mode": "test",
+              "program": "^\"\\${workspaceRoot}${1:}\"",
+              "args": [
+                "-test.run",
+                "${2:MyTestFunction}"
+              ]
+            }
+          }
+        ],
         "initialConfigurations": [
           {
             "name": "Launch",
@@ -164,7 +224,7 @@
             "remotePath": "",
             "port": 2345,
             "host": "127.0.0.1",
-            "program": "${workspaceRoot}",
+            "program": "${fileDirname}",
             "env": {},
             "args": [],
             "showLog": true
@@ -253,6 +313,11 @@
                 ],
                 "default": true,
                 "description": "When 'true', the extension will log diagnostic info to a file. When 'verbose', it will also show logs in the console."
+              },
+              "envFile": {
+                "type": "string",
+                "description": "Absolute path to a file containing environment variable definitions.",
+                "default": "${workspaceRoot}/.env"
               }
             }
           }
@@ -357,7 +422,7 @@
           "default": null,
           "description": "Specifies the GOPATH to use when no environment variable is set. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true."
         },
-         "go.toolsGopath": {
+        "go.toolsGopath": {
           "type": "string",
           "default": "",
           "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH."
@@ -369,6 +434,11 @@
           ],
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set."
+        },
+        "go.testOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run 'go test' on save for current package. It is not advised to set this to `true` when you have Auto Save enabled."
         },
         "go.coverOnSave": {
           "type": "boolean",
@@ -401,7 +471,7 @@
           "default": true,
           "description": "Enable gocode's autobuild feature"
         },
-         "go.useCodeSnippetsOnFunctionSuggest": {
+        "go.useCodeSnippetsOnFunctionSuggest": {
           "type": "boolean",
           "default": false,
           "description": "Complete functions with their parameter signature"
@@ -425,10 +495,107 @@
           "default": false,
           "description": "Experimental: Not available in Windows. Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features"
         },
+        "go.languageServerFlags": {
+          "type": "array",
+          "default": [],
+          "description": "Flags like -trace and -logfile to be used while running the language server."
+        },
         "go.gotoSymbol.includeImports": {
           "type": "boolean",
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
+        },
+        "go.addTags": {
+          "type": "object",
+          "default": {
+            "tags": "json",
+            "options": "json=omitempty",
+            "promptForTags": false
+          },
+          "description": "Tags and options configured here will be used by the Add Tags command to add tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, json tags are added."
+        },
+        "go.removeTags": {
+          "type": "object",
+          "default": {
+            "tags": "",
+            "options": "",
+            "promptForTags": false
+          },
+          "description": "Tags and options configured here will be used by the Remove Tags command to remove tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, all tags and options will be removed."
+        },
+        "go.editorContextMenuCommands": {
+          "type": "object",
+          "properties": {
+            "toggleTestFile": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to toggle between a Go file and its test file to the editor context menu"
+            },
+            "addTags": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to add configured tags from struct fields to the editor context menu"
+            },
+            "removeTags": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to remove configured tags from struct fields to the editor context menu"
+            },
+            "testAtCursor": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to run the test under the cursor to the editor context menu"
+            },
+            "testFile": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to run all tests in the current file to the editor context menu"
+            },
+            "testPackage": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to run all tests in the current pacakage to the editor context menu"
+            },
+            "generateTestForFunction": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to generate unit tests for function under the cursor to the editor context menu"
+            },
+            "generateTestForFile": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to generate unit tests for current file to the editor context menu"
+            },
+            "generateTestForPackage": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to generate unit tests for currnt package to the editor context menu"
+            },
+            "addImport": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to import a package to the editor context menu"
+            },
+            "testCoverage": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to run test coverage to the editor context menu"
+            }
+          },
+          "default": {
+            "toggleTestFile": true,
+            "addTags": true,
+            "removeTags": false,
+            "testAtCursor": true,
+            "testFile": false,
+            "testPackage": false,
+            "generateTestForFunction": true,
+            "generateTestForFile": false,
+            "generateTestForPackage": false,
+            "addImport": false,
+            "testCoverage": false
+          },
+          "description": "Enable/Disable entries from the context menu in the editor."
         },
         "go.gotoSymbol.ignoreFolders": {
           "type": "array",
@@ -439,6 +606,54 @@
           "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature"
         }
       }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.toggleTestFile && resourceLangId == go",
+          "command": "go.toggle.test.file"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.addTags && resourceLangId == go",
+          "command": "go.add.tags"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.removeTags && resourceLangId == go",
+          "command": "go.remove.tags"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testAtCursor && resourceLangId == go",
+          "command": "go.test.cursor"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testFile && resourceLangId == go",
+          "command": "go.test.file"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testPackage && resourceLangId == go",
+          "command": "go.test.package"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFunction && resourceLangId == go",
+          "command": "go.test.generate.function"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFile && resourceLangId == go",
+          "command": "go.test.generate.file"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForPackage && resourceLangId == go",
+          "command": "go.test.generate.package"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.addImport && resourceLangId == go",
+          "command": "go.import.add"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testCoverage && resourceLangId == go",
+          "command": "go.test.coverage"
+        }
+      ]
     }
   }
 }

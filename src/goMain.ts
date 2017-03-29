@@ -19,52 +19,62 @@ import { GoDocumentSymbolProvider } from './goOutline';
 import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction';
-import { check, ICheckResult } from './goCheck';
-import { updateGoPathGoRootFromConfig, setupGoPathAndOfferToInstallTools } from './goInstallTools';
+import { check, ICheckResult, removeTestStatus } from './goCheck';
+import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious } from './goTest';
+import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTestOutput } from './goTest';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
+import { addTags, removeTags } from './goModifytags';
 
 let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
+	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
-	if (checkLanguageServer()) {
-		const c = new LanguageClient(
-			'langserver-go',
-			{
-				command: getBinPath('langserver-go'),
-				args: [
-					'-mode=stdio'
-				],
-			},
-			{
-				documentSelector: ['go'],
-				uriConverters: {
-					// Apply file:/// scheme to all file paths.
-					code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
-					protocol2Code: (uri: string) => vscode.Uri.parse(uri),
-				},
-			}
-		);
 
-		ctx.subscriptions.push(c.start());
-	} else {
-		ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
-		ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
-		ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
-		ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
-		ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
-		ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
-	}
+	updateGoPathGoRootFromConfig().then(() => {
+		offerToInstallTools();
+		let langServerAvailable = checkLanguageServer();
+		if (langServerAvailable) {
+			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
+			const c = new LanguageClient(
+				'go-langserver',
+				{
+					command: getBinPath('go-langserver'),
+					args: ['-mode=stdio', ...langServerFlags],
+				},
+				{
+					documentSelector: ['go'],
+					uriConverters: {
+						// Apply file:/// scheme to all file paths.
+						code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
+						protocol2Code: (uri: string) => vscode.Uri.parse(uri),
+					},
+				}
+			);
+
+			ctx.subscriptions.push(c.start());
+		} else {
+			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
+			ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
+			ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
+			ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
+			ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
+			ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
+		}
+
+		if (vscode.window.activeTextEditor && isGoPathSet()) {
+			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go'));
+		}
+	});
 
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
@@ -74,10 +84,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
 	ctx.subscriptions.push(diagnosticCollection);
 	vscode.workspace.onDidChangeTextDocument(removeCodeCoverage, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
 
-	setupGoPathAndOfferToInstallTools();
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
@@ -90,6 +100,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		} else {
 			vscode.window.showInformationMessage('Current GOPATH: ' + gopath);
 		}
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.add.tags', (args) => {
+		addTags(args);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.remove.tags', (args) => {
+		removeTags(args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {
@@ -115,6 +133,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		coverageCurrentPackage();
 	}));
 
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.showOutput', () => {
+		showTestOutput();
+	}));
+
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
 		return addImport(typeof arg === 'string' ? arg : null);
 	}));
@@ -124,12 +146,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
-		updateGoPathGoRootFromConfig();
 		let updatedGoConfig = vscode.workspace.getConfiguration('go');
+		sendTelemetryEventForConfig(updatedGoConfig);
+		updateGoPathGoRootFromConfig();
 
 		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
 		if (process.platform !== 'win32'
-			&& useLangServer !== updatedGoConfig['useLanguageServer']
+			&& didLangServerConfigChange(useLangServer, langServerFlags, updatedGoConfig)
 			&& (!updatedGoConfig['useLanguageServer'] || checkLanguageServer())) {
 			vscode.window.showInformationMessage('Reload VS Code window for the change in usage of language server to take effect', 'Reload').then(selected => {
 				if (selected === 'Reload') {
@@ -170,7 +193,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				'type': 'go',
 				'request': 'launch',
 				'mode': 'debug',
-				'program': '${workspaceRoot}'
+				'program': '${file}'
 			});
 		}
 		vscode.commands.executeCommand('vscode.startDebug', config);
@@ -186,10 +209,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
 
-	if (vscode.window.activeTextEditor && isGoPathSet()) {
-		let goConfig = vscode.workspace.getConfiguration('go');
-		runBuilds(vscode.window.activeTextEditor.document, goConfig);
-	}
+	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go'));
 }
 
 function deactivate() {
@@ -280,3 +300,46 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 
 }
 
+function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
+	sendTelemetryEvent('goConfig', {
+		buildOnSave: goConfig['buildOnSave'] + '',
+		buildFlags: goConfig['buildFlags'],
+		buildTags: goConfig['buildTags'],
+		formatOnSave: goConfig['formatOnSave'] + '',
+		formatTool: goConfig['formatTool'],
+		formatFlags: goConfig['formatFlags'],
+		lintOnSave: goConfig['lintOnSave'] + '',
+		lintFlags: goConfig['lintFlags'],
+		lintTool: goConfig['lintTool'],
+		vetOnSave: goConfig['vetOnSave'] + '',
+		vetFlags: goConfig['vetFlags'],
+		testOnSave: goConfig['testOnSave'] + '',
+		testFlags: goConfig['testFlags'],
+		coverOnSave: goConfig['coverOnSave'] + '',
+		useDiffForFormatting: goConfig['useDiffForFormatting'] + '',
+		gopath: goConfig['gopath'] ? 'set' : '',
+		goroot: goConfig['goroot'] ? 'set' : '',
+		inferGopath: goConfig['inferGopath'] + '',
+		toolsGopath: goConfig['toolsGopath'] ? 'set' : '',
+		gocodeAutoBuild: goConfig['gocodeAutoBuild'] + '',
+		useCodeSnippetsOnFunctionSuggest: goConfig['useCodeSnippetsOnFunctionSuggest'] + '',
+		autocompleteUnimportedPackages: goConfig['autocompleteUnimportedPackages'] + '',
+		docsTool: goConfig['docsTool'],
+		useLanguageServer: goConfig['useLanguageServer'] + '',
+		includeImports: goConfig['gotoSymbol'] && goConfig['gotoSymbol']['includeImports'] + ''
+	});
+}
+
+function didLangServerConfigChange(useLangServer: boolean, langServerFlags: string[], newconfig: vscode.WorkspaceConfiguration) {
+	let newLangServerFlags = newconfig['languageServerFlags'] || [];
+	if (useLangServer !== newconfig['useLanguageServer'] || langServerFlags.length !== newLangServerFlags.length) {
+		return true;
+	}
+
+	for (let i = 0; i < langServerFlags.length; i++) {
+		if (newLangServerFlags[i] !== langServerFlags[i]) {
+			return true;
+		}
+	}
+	return false;
+}

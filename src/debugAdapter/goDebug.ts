@@ -11,8 +11,9 @@ import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { getBinPathWithPreferredGopath, resolvePath } from '../goPath';
+import { getBinPathWithPreferredGopath, resolvePath, stripBOM, getGoRuntimePath } from '../goPath';
 import * as logger from 'vscode-debug-logger';
+import * as FS from 'fs';
 
 require('console-stamp')(console);
 
@@ -137,6 +138,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	buildFlags?: string;
 	init?: string;
 	trace?: boolean|'verbose';
+	/** Optional path to .env file. */
+	envFile?: string;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -172,65 +175,20 @@ class Delve {
 	connection: Promise<RPCConnection>;
 	onstdout: (str: string) => void;
 	onstderr: (str: string) => void;
-	onclose: () => void;
+	onclose: (code: number) => void;
 
-	constructor(mode: string, remotePath: string, port: number, host: string, program: string, args: string[], showLog: boolean, cwd: string, env: { [key: string]: string }, buildFlags: string, init: string) {
+	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = program;
 		this.remotePath = remotePath;
+		let mode = launchArgs.mode;
+		let env = launchArgs.env || {};
+		let dlvCwd = dirname(program);
+		let isProgramDirectory = false;
 		this.connection = new Promise((resolve, reject) => {
+			// Validations on the program
 			if (!program) {
 				return reject('The program attribute is missing in launch.json');
 			}
-			let serverRunning = false;
-			if (mode === 'remote') {
-				this.debugProcess = null;
-				serverRunning = true;  // assume server is running when in remote mode
-				connectClient(port, host);
-				return;
-			}
-
-			if (!env) env = {};
-
-			let dlv = getBinPathWithPreferredGopath('dlv', resolvePath(env['GOPATH']));
-
-			if (!existsSync(dlv)) {
-				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
-				return reject(`Cannot find Delve debugger. Ensure it is in your "GOPATH/bin" or "PATH".`);
-			}
-			verbose('Using dlv at: ' + dlv);
-
-			let dlvEnv: Object = null;
-			if (env) {
-				dlvEnv = {};
-				for (let k in process.env) {
-					dlvEnv[k] = process.env[k];
-				}
-				for (let k in env) {
-					dlvEnv[k] = env[k];
-				}
-			}
-			let dlvArgs = [mode || 'debug'];
-			if (mode === 'exec') {
-				dlvArgs = dlvArgs.concat([program]);
-			}
-			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
-			if (showLog) {
-				dlvArgs = dlvArgs.concat(['--log=' + showLog.toString()]);
-			}
-			if (cwd) {
-				dlvArgs = dlvArgs.concat(['--wd=' + cwd]);
-			}
-			if (buildFlags) {
-				dlvArgs = dlvArgs.concat(['--build-flags=' + buildFlags]);
-			}
-			if (init) {
-				dlvArgs = dlvArgs.concat(['--init=' + init]);
-			}
-			if (args) {
-				dlvArgs = dlvArgs.concat(['--', ...args]);
-			}
-
-			let dlvCwd = dirname(program);
 			try {
 				let pstats = lstatSync(program);
 				if (pstats.isDirectory()) {
@@ -239,6 +197,7 @@ class Delve {
 						return reject('The program attribute must be an executable in exec mode');
 					}
 					dlvCwd = program;
+					isProgramDirectory = true;
 				} else if (mode !== 'exec' && extname(program) !== '.go') {
 					logError(`The program "${program}" must be a valid go file in debug mode`);
 					return reject('The program attribute must be a directory or .go file in debug mode');
@@ -247,9 +206,102 @@ class Delve {
 				logError(`The program "${program}" does not exist: ${e}`);
 				return reject('The program attribute must point to valid directory, .go file or executable.');
 			}
+
+			// Consolidate env vars
+			let finalEnv: Object = null;
+			if (Object.keys(env).length > 0) {
+				finalEnv = {};
+				for (let k in process.env) {
+					finalEnv[k] = process.env[k];
+				}
+				for (let k in env) {
+					finalEnv[k] = env[k];
+				}
+			}
+
+			if (!!launchArgs.noDebug && mode === 'debug' && !isProgramDirectory) {
+				this.debugProcess = spawn(getGoRuntimePath(), ['run', program], {env: finalEnv});
+				this.debugProcess.stderr.on('data', chunk => {
+					let str = chunk.toString();
+					if (this.onstderr) { this.onstderr(str); }
+				});
+				this.debugProcess.stdout.on('data', chunk => {
+					let str = chunk.toString();
+					if (this.onstdout) { this.onstdout(str); }
+				});
+				this.debugProcess.on('close', (code) => {
+					logError('Process exiting with code: ' + code);
+					if (this.onclose) { this.onclose(code); }
+				});
+				this.debugProcess.on('error', function (err) {
+					reject(err);
+				});
+				resolve();
+				return;
+			}
+
+			let serverRunning = false;
+
+
+			if (mode === 'remote') {
+				this.debugProcess = null;
+				serverRunning = true;  // assume server is running when in remote mode
+				connectClient(port, host);
+				return;
+			}
+
+			// read env from disk and merge into envVars
+			if (launchArgs.envFile) {
+				try {
+					const buffer = stripBOM(FS.readFileSync(launchArgs.envFile, 'utf8'));
+					buffer.split('\n').forEach( line => {
+						const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
+						if (r !== null) {
+							let value = r[2] || '';
+							if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+								value = value.replace(/\\n/gm, '\n');
+							}
+							env[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
+						}
+					});
+				} catch (e) {
+					return reject('Cannot load environment variables from file');
+				}
+			}
+
+			let dlv = getBinPathWithPreferredGopath('dlv', resolvePath(env['GOPATH']));
+
+			if (!existsSync(dlv)) {
+				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
+				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
+			}
+			verbose('Using dlv at: ' + dlv);
+
+			let dlvArgs = [mode || 'debug'];
+			if (mode === 'exec') {
+				dlvArgs = dlvArgs.concat([program]);
+			}
+			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
+			if (launchArgs.showLog) {
+				dlvArgs = dlvArgs.concat(['--log=' + launchArgs.showLog.toString()]);
+			}
+			if (launchArgs.cwd) {
+				dlvArgs = dlvArgs.concat(['--wd=' + launchArgs.cwd]);
+			}
+			if (launchArgs.buildFlags) {
+				dlvArgs = dlvArgs.concat(['--build-flags=' + launchArgs.buildFlags]);
+			}
+			if (launchArgs.init) {
+				dlvArgs = dlvArgs.concat(['--init=' + launchArgs.init]);
+			}
+			if (launchArgs.args) {
+				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
+			}
+
+
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
-				env: dlvEnv,
+				env: finalEnv,
 			});
 
 			function connectClient(port: number, host: string) {
@@ -283,7 +335,7 @@ class Delve {
 			this.debugProcess.on('close', (code) => {
 				// TODO: Report `dlv` crash to user.
 				logError('Process exiting with code: ' + code);
-				if (code !== 0 && this.onclose) { this.onclose(); }
+				if (this.onclose) { this.onclose(code); }
 			});
 			this.debugProcess.on('error', function(err) {
 				reject(err);
@@ -394,21 +446,28 @@ class GoDebugSession extends DebugSession {
 			}
 		}
 
-		this.delve = new Delve(args.mode, remotePath, port, host, localPath, args.args, args.showLog, args.cwd, args.env, args.buildFlags, args.init);
+		this.delve = new Delve(remotePath, port, host, localPath, args);
 		this.delve.onstdout = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stdout'));
 		};
 		this.delve.onstderr = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stderr'));
 		};
-		this.delve.onclose = () => {
-			this.sendErrorResponse(response, 3000, 'Failed to continue: Check the debug console for details.');
+		this.delve.onclose = (code) => {
+			if (code !== 0) {
+				this.sendErrorResponse(response, 3000, 'Failed to continue: Check the debug console for details.');
+			} else {
+				this.sendEvent(new TerminatedEvent());
+				verbose('TerminatedEvent');
+			}
 			verbose('Delve is closed');
 		};
 
 		this.delve.connection.then(() => {
-			this.sendEvent(new InitializedEvent());
-			verbose('InitializeEvent');
+			if (!args.noDebug) {
+				this.sendEvent(new InitializedEvent());
+				verbose('InitializeEvent');
+			}
 			this.sendResponse(response);
 		}, err => {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: "{e}"', { e: err.toString() });

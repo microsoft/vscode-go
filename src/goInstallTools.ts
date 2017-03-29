@@ -25,12 +25,14 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		'go-outline': 'github.com/lukehoban/go-outline',
 		'go-symbols': 'github.com/acroca/go-symbols',
 		'guru': 'golang.org/x/tools/cmd/guru',
-		'gorename': 'golang.org/x/tools/cmd/gorename'
+		'gorename': 'golang.org/x/tools/cmd/gorename',
+		'gomodifytags': 'github.com/fatih/gomodifytags'
 	};
 
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools['godef'] = 'github.com/rogpeppe/godef';
+		tools['godoc'] = 'golang.org/x/tools/cmd/godoc';
 	} else if (goConfig['docsTool'] === 'gogetdoc') {
 		tools['gogetdoc'] = 'github.com/zmb3/gogetdoc';
 	}
@@ -52,10 +54,13 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		tools['gometalinter'] = 'github.com/alecthomas/gometalinter';
 	}
 
-	if (goConfig['useLanguageServer']) {
-		tools['langserver-go'] = 'github.com/sourcegraph/go-langserver/langserver/cmd/langserver-go';
+	if (goConfig['useLanguageServer'] && process.platform !== 'win32') {
+		tools['go-langserver'] = 'github.com/sourcegraph/go-langserver';
 	}
 
+	if (process.platform !== 'darwin') {
+		tools['dlv'] = 'github.com/derekparker/delve/cmd/dlv';
+	}
 	return tools;
 }
 
@@ -141,18 +146,19 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 	}
 
 	// If the go.toolsGopath is set, use
- 	// its value as the GOPATH for the "go get" child process.
+	// its value as the GOPATH for the "go get" child process.
 	let toolsGopath = getToolsGopath();
 	let envWithSeparateGoPathForTools = null;
 	if (toolsGopath) {
-		envWithSeparateGoPathForTools = Object.assign({}, envForTools, {GOPATH: toolsGopath});
+		envWithSeparateGoPathForTools = Object.assign({}, envForTools, { GOPATH: toolsGopath });
 	}
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
 			// gometalinter expects its linters to be in the user's GOPATH
-			// Therefore, cannot use an isolated GOPATH for installing gometalinter
-			let env = (envWithSeparateGoPathForTools && tool !== 'gometalinter') ? envWithSeparateGoPathForTools : envForTools;
+			// Debugger doesnt have access to settings, so cannot read `go.toolsGopath`
+			// Therefore, cannot use an isolated GOPATH for installing gometalinter or dlv
+			let env = (envWithSeparateGoPathForTools && tool !== 'gometalinter' && tool !== 'dlv') ? envWithSeparateGoPathForTools : envForTools;
 			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env }, (err, stdout, stderr) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + tool + ' FAILED');
@@ -199,7 +205,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 	});
 }
 
-export function updateGoPathGoRootFromConfig() {
+export function updateGoPathGoRootFromConfig(): Promise<void> {
 	let goroot = vscode.workspace.getConfiguration('go')['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = goroot;
@@ -220,10 +226,28 @@ export function updateGoPathGoRootFromConfig() {
 			process.env['GOPATH'] = vscode.workspace.rootPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
 		}
 	}
+
+	if (process.env['GOPATH']) {
+		return Promise.resolve();
+	}
+
+	// If GOPATH is still not set, then use the one from `go env`
+	let goRuntimePath = getGoRuntimePath();
+	return new Promise<void>((resolve, reject) => {
+		cp.execFile(goRuntimePath, ['env', 'GOPATH'], (err, stdout, stderr) => {
+			if (err) {
+				return reject();
+			}
+			let envOutput = stdout.split('\n');
+			if (!process.env['GOPATH'] && envOutput[0].trim()) {
+				process.env['GOPATH'] = envOutput[0].trim();
+			}
+			return resolve();
+		});
+	});
 }
 
-export function setupGoPathAndOfferToInstallTools() {
-	updateGoPathGoRootFromConfig();
+export function offerToInstallTools() {
 	isVendorSupported();
 
 	getGoVersion().then(goVersion => {
@@ -275,9 +299,9 @@ export function checkLanguageServer(): boolean {
 	let latestGoConfig = vscode.workspace.getConfiguration('go');
 	if (!latestGoConfig['useLanguageServer']) return false;
 
-	let langServerAvailable = getBinPath('langserver-go') !== 'langserver-go';
+	let langServerAvailable = getBinPath('go-langserver') !== 'go-langserver';
 	if (!langServerAvailable) {
-		promptForMissingTool('langserver-go');
+		promptForMissingTool('go-langserver');
 		vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
 	}
 	return langServerAvailable;
