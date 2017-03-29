@@ -2,7 +2,7 @@
 
 ### Editing improvements
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
-    * Use [gomodifytags](https://github.com/fatih/gomodifytags) to modify tags on selected struct fields. [PR 880](https://github.com/Microsoft/vscode-go/pull/880)
+    * Use [gomodifytags](https://github.com/fatih/gomodifytags) to add/remove tags on selected struct fields. [PR 880](https://github.com/Microsoft/vscode-go/pull/880)
          * If there is no selection, then the whole struct under the cursor will be selected for the tag modification.
          * `Go: Add Tags` command adds tags configured in `go.addTags` setting to selected struct fields. By default, `json` tags are added. Examples:
              * To add `xml` tags, set `go.addTags` to `{"tags": "xml"}` 
@@ -30,7 +30,7 @@
     * New Setting `go.languageServerFlags` that will be passed while running the Go language server. [PR 882](https://github.com/Microsoft/vscode-go/pull/882)
         * Set this to `["trace"]` to see the traces from the language server in the output pane under the channel "go-langserver"
         * Set this to `["trace", "logfile", "path to a text file to log the trace]` to log the traces and errors from the language server to a file.
-    * `Go: Install Tools` command now installs delve as well in Linux and Windows, but not in Mac OSX. [Commit 30ea096](https://github.com/Microsoft/vscode-go/commit/30ea0960d6f773cc2e8e18ba5113960d1f5faf08)
+    * `Go: Install Tools` command now installs delve as well in Linux and Windows, but not in Mac OSX. [Commit 30ea096](https://github.com/Microsoft/vscode-go/commit/30ea0960d6f773cc2e8e18ba5113960d1f5faf08) Fixes [Bug 874](https://github.com/Microsoft/vscode-go/issues/874)
 * [netroby @netroby](https://github.com/netroby)
     * `Go: Install Tools` command now installs `godoc`. [PR 854](https://github.com/Microsoft/vscode-go/pull/854)
 
@@ -40,6 +40,8 @@
     * Fix compiling errors for vendor packages in case of symlinks. [PR 864](https://github.com/Microsoft/vscode-go/pull/864)
     * Support links in the test output, which then navigates the user to the right line of the test file where tests are failing. [PR 885](https://github.com/Microsoft/vscode-go/pull/885)
     * Experimental new setting `go.editorContextMenuCommands` to control which commands show up in the editor context menu.
+* [Albert Callarisa (@acroca)](https://github.com/acroca) and [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * New setting `go.gotoSymbol.ignoreFolders` that allows to ignore folders while using the "Go to Symbol in Workspace" feature. This takes in an array of folder names (not paths). Best used to ignore vendor folders while doing a workspace symbol search. [PR 795](https://github.com/Microsoft/vscode-go/pull/795)
     
 ## 0.6.55 - 3rd March, 2017
 * Re-publishing the extension from a non Windows machine as the fix for [Bug 438](https://github.com/Microsoft/vscode-go/issues/438) worked only on Windows machines.
