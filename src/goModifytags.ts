@@ -121,7 +121,7 @@ function runGomodifytags(args: string[]) {
 	let gomodifytags = getBinPath('gomodifytags');
 	let editor = vscode.window.activeTextEditor;
 	let fileContents = editor.document.getText();
-	let input = editor.document.fileName + '\n' + fileContents.length + '\n' + fileContents;
+	let input = editor.document.fileName + '\n' + Buffer.byteLength(fileContents, 'utf8') + '\n' + fileContents;
 	let p = cp.execFile(gomodifytags, args, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gomodifytags');
