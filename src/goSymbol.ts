@@ -7,9 +7,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath } from './util';
-import { promptForMissingTool } from './goInstallTools';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
-// Keep in sync with github.com/newhook/go-symbols'
+// Keep in sync with github.com/acroca/go-symbols'
 interface GoSymbolDeclaration {
 	name: string;
 	kind: string;
@@ -47,11 +47,24 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 				symbols.push(symbolInfo);
 			});
 		};
-		let symArgs = vscode.workspace.getConfiguration('go')['symbols'];
-		let args = [vscode.workspace.rootPath, query];
-		if (symArgs !== undefined && symArgs !== '') {
-			args.unshift(symArgs);
+
+		return getWorkspaceSymbols(vscode.workspace.rootPath, query).then(results => {
+			let symbols: vscode.SymbolInformation[] = [];
+			convertToCodeSymbols(results, symbols);
+			return symbols;
+		});
+	}
+}
+
+export function getWorkspaceSymbols(workspacePath: string, query: string, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
+		if (!goConfig) {
+			goConfig = vscode.workspace.getConfiguration('go');
 		}
+		let gotoSymbolConfig = goConfig['gotoSymbol'];
+		let ignoreFolders: string[] = gotoSymbolConfig ? gotoSymbolConfig['ignoreFolders'] : [];
+		let args = (ignoreFolderFeatureOn && ignoreFolders && ignoreFolders.length > 0) ? ['-ignore', ignoreFolders.join(',')] : [];
+		args.push(workspacePath);
+		args.push(query);
 		let gosyms = getBinPath('go-symbols');
 		return new Promise((resolve, reject) => {
 			let p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
@@ -59,16 +72,19 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('go-symbols');
 					}
+					if (err && stderr && stderr.startsWith('flag provided but not defined: -ignore')) {
+						promptForUpdatingTool('go-symbols');
+						return getWorkspaceSymbols(workspacePath, query, goConfig, false).then(results => {
+							return resolve(results);
+						});
+					}
 					if (err) return resolve(null);
 					let result = stdout.toString();
 					let decls = <GoSymbolDeclaration[]>JSON.parse(result);
-					let symbols: vscode.SymbolInformation[] = [];
-					convertToCodeSymbols(decls, symbols);
-					return resolve(symbols);
+					return resolve(decls);
 				} catch (e) {
 					reject(e);
 				}
 			});
 		});
 	}
-}

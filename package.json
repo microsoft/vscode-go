@@ -596,6 +596,14 @@
             "testCoverage": false
           },
           "description": "Enable/Disable entries from the context menu in the editor."
+        },
+        "go.gotoSymbol.ignoreFolders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature"
         }
       }
     },
@@ -637,7 +645,7 @@
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForPackage && resourceLangId == go",
           "command": "go.test.generate.package"
         },
-         {
+        {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.addImport && resourceLangId == go",
           "command": "go.import.add"
         },

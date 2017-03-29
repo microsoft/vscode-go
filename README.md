@@ -198,7 +198,7 @@ If you wish to have the extension use a separate GOPATH for its tools, provide t
 - goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
 - gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
 - gopkgs: `go get -u -v github.com/tpng/gopkgs`
-- go-symbols: `go get -u -v github.com/newhook/go-symbols`
+- go-symbols: `go get -u -v github.com/acroca/go-symbols`
 - guru: `go get -u -v golang.org/x/tools/cmd/guru`
 - gotests: `go get -u -v github.com/cweill/gotests/...`
 - godoc: `go get -u -v golang.org/x/tools/cmd/godoc`
@@ -214,7 +214,7 @@ go get -u -v github.com/lukehoban/go-outline
 go get -u -v sourcegraph.com/sqs/goreturns
 go get -u -v golang.org/x/tools/cmd/gorename
 go get -u -v github.com/tpng/gopkgs
-go get -u -v github.com/newhook/go-symbols
+go get -u -v github.com/acroca/go-symbols
 go get -u -v golang.org/x/tools/cmd/guru
 go get -u -v github.com/cweill/gotests/...
 go get -u -v golang.org/x/tools/cmd/godoc
