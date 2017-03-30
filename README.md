@@ -96,6 +96,11 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Add Tags` Adds configured tags to selected struct fields.
 * `Go: Remove Tags` Removes configured tags from selected struct fields.
 
+You can access all of the above commands from the command pallet (`Cmd+Shift+P` or `Ctrl+Shift+P`).
+
+Few of these are available in the editor context menu as an experimental feature as well. To control which of these commands show up in the editor context menu, update the setting `go.editortorContextMenuCommands`
+
+
 ### _Optional_: Debugging
 
 To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation) for full details.  On OS X it requires creating a self-signed cert to sign the `dlv` binary.
@@ -109,67 +114,12 @@ To remote debug using VS Code, read [Remote Debugging](https://github.com/Micros
 ## Building and Debugging the Extension
 
 You can set up a development environment for debugging the extension during extension development.
-
-Clone the repo, run `npm install` and open a development instance of Code.
-
-```bash
-git clone https://github.com/Microsoft/vscode-go
-cd vscode-go
-npm install
-code .
-```
-
-You can now go to the Debug viewlet and select `Launch Extension` then hit run (`F5`).
-
-In the `[Extension Development Host]` instance, open any folder with Go code.
-
-You can now hit breakpoints and step through the extension.
-
-If you make edits in the extension `.ts` files, just reload (`cmd-r`) the `[Extension Development Host]` instance of Code to load in the new extension code.  The debugging instance will automatically reattach.
-
-To debug the debugger, see [the debugAdapter readme](src/debugAdapter/Readme.md).
+Read more at [https://github.com/Microsoft/vscode-go/wiki/Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code](https://github.com/Microsoft/vscode-go/wiki/Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code)
 
 ## Tools this extension depends on
 
-The extension uses the following tools, installed in the current GOPATH.  If any tools are missing, you will see an "Analysis Tools Missing" warning in the bottom right corner of the editor.  Clicking it will offer to install the missing tools for you.
+This extension uses a host of Go tools to provide the various rich features. These tools are installed in your GOPATH by default. If you wish to have the extension use a separate GOPATH for its tools, provide the desired location in the setting `go.toolsGopath`. Read more about this and the tools at [Go tools that the Go extension depends on](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on)
 
-If you wish to have the extension use a separate GOPATH for its tools, provide the desired location in the setting `go.toolsGopath`.
-`gometalinter` and `dlv` are two tools that are exceptions, and will need to be installed in your GOPATH.
-
-- gocode: `go get -u -v github.com/nsf/gocode`
-- godef: `go get -u -v github.com/rogpeppe/godef`
-- gogetdoc: `go get -u -v github.com/zmb3/gogetdoc`
-- golint: `go get -u -v github.com/golang/lint/golint`
-- go-outline: `go get -u -v github.com/lukehoban/go-outline`
-- goreturns: `go get -u -v sourcegraph.com/sqs/goreturns`
-- gorename: `go get -u -v golang.org/x/tools/cmd/gorename`
-- gopkgs: `go get -u -v github.com/tpng/gopkgs`
-- go-symbols: `go get -u -v github.com/acroca/go-symbols`
-- guru: `go get -u -v golang.org/x/tools/cmd/guru`
-- gotests: `go get -u -v github.com/cweill/gotests/...`
-- godoc: `go get -u -v golang.org/x/tools/cmd/godoc`
-- gomodifytags: `go get -u -v github.com/fatih/gomodifytags`
-
-To install the tools manually in the current GOPATH, just paste and run:
-```bash
-go get -u -v github.com/nsf/gocode
-go get -u -v github.com/rogpeppe/godef
-go get -u -v github.com/zmb3/gogetdoc
-go get -u -v github.com/golang/lint/golint
-go get -u -v github.com/lukehoban/go-outline
-go get -u -v sourcegraph.com/sqs/goreturns
-go get -u -v golang.org/x/tools/cmd/gorename
-go get -u -v github.com/tpng/gopkgs
-go get -u -v github.com/acroca/go-symbols
-go get -u -v golang.org/x/tools/cmd/guru
-go get -u -v github.com/cweill/gotests/...
-go get -u -v golang.org/x/tools/cmd/godoc
-go get -u -v github.com/fatih/gomodifytags
-```
-
-And for debugging:
-
-- delve: Follow the instructions at https://github.com/derekparker/delve/blob/master/Documentation/installation/README.md.
 
 ## License
 [MIT](LICENSE)
