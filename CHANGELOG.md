@@ -1,5 +1,5 @@
 ## 0.6.57 - 30th March, 2017
-Fix for [Bug 892](https://github.com/Microsoft/vscode-go/issues/892) which breaks build when the user's GOPATH has multiple workspaces and the Go project being worked on is not the first one among the multiple GOPATHs. [Commit d417fd6](https://github.com/Microsoft/vscode-go/commit/d417fd6725077d1233fb1bcd3aa5d097d02715a9)
+Fix for [Bug 892](https://github.com/Microsoft/vscode-go/issues/892) which breaks build when the user has multiple GOPATHs and the Go project being worked on is not the first one among the multiple GOPATHs. [Commit d417fd6](https://github.com/Microsoft/vscode-go/commit/d417fd6725077d1233fb1bcd3aa5d097d02715a9)
 
 ## 0.6.56 - 29th March, 2017
 

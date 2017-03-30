@@ -114,7 +114,7 @@ To remote debug using VS Code, read [Remote Debugging](https://github.com/Micros
 ## Building and Debugging the Extension
 
 You can set up a development environment for debugging the extension during extension development.
-Read more at [https://github.com/Microsoft/vscode-go/wiki/Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code](https://github.com/Microsoft/vscode-go/wiki/Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code)
+Read more at [Building, Debugging and Sideloading the extension in Visual Studio Code](https://github.com/Microsoft/vscode-go/wiki/Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code)
 
 ## Tools this extension depends on
 
