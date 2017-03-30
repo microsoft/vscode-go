@@ -259,16 +259,16 @@ export function getBinPath(tool: string): string {
 
 export function getCurrentGoWorkspaceFromGOPATH(currentFileDirPath: string): string {
 	let workspaces: string[] = process.env['GOPATH'].split(path.delimiter);
-	let currentWorkspace = path.join(workspaces[0], 'src');
+	let currentWorkspace = '';
 
 	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
 	if (process.platform === 'win32') {
 		currentFileDirPath = currentFileDirPath.substr(0, 1).toUpperCase() + currentFileDirPath.substr(1);
 	}
 
-	// In case of multiple workspaces, find current workspace by checking if current file is
+	// Find current workspace by checking if current file is
 	// under any of the workspaces in $GOPATH
-	for (let i = 1; i < workspaces.length; i++) {
+	for (let i = 0; i < workspaces.length; i++) {
 		let possibleCurrentWorkspace = path.join(workspaces[i], 'src');
 		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)) {
 			// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)

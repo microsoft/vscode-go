@@ -164,7 +164,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 				};
 
 				let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(cwd);
-				let importPath = cwd.substr(currentGoWorkspace.length + 1);
+				let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : cwd;
 
 				args = args.concat(['-o', tmppath, '-tags', buildTags, ...buildFlags, importPath]);
 				if (filename.match(/_test.go$/i)) {
