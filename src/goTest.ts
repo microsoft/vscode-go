@@ -75,7 +75,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 			}
 		};
 		if (!testFunction) {
-			vscode.window.setStatusBarMessage('No test function found at cursor.', 5000);
+			vscode.window.showInformationMessage('No test function found at cursor.');
 			return;
 		}
 		return goTest({
