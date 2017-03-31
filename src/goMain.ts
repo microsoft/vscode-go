@@ -32,8 +32,9 @@ import { isGoPathSet, getBinPath, sendTelemetryEvent } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
+import { parseLiveFile } from './goLiveErrors';
 
-let diagnosticCollection: vscode.DiagnosticCollection;
+export let diagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
@@ -87,6 +88,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 
 	startBuildOnSaveWatcher(ctx.subscriptions);
 

@@ -26,7 +26,8 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		'go-symbols': 'github.com/acroca/go-symbols',
 		'guru': 'golang.org/x/tools/cmd/guru',
 		'gorename': 'golang.org/x/tools/cmd/gorename',
-		'gomodifytags': 'github.com/fatih/gomodifytags'
+		'gomodifytags': 'github.com/fatih/gomodifytags',
+		'gotype-live': 'github.com/tylerb/gotype-live'
 	};
 
 	// Install the doc/def tool that was chosen by the user
