@@ -14,6 +14,7 @@ import { showGoStatus, hideGoStatus } from './goStatus';
 import { getGoRuntimePath, resolvePath } from './goPath';
 import { outputChannel } from './goStatus';
 import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported } from './util';
+import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
 
@@ -28,6 +29,9 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		'gorename': 'golang.org/x/tools/cmd/gorename',
 		'gomodifytags': 'github.com/fatih/gomodifytags'
 	};
+	if (goLiveErrorsEnabled()) {
+		tools['gotype-live'] = 'github.com/tylerb/gotype-live';
+	}
 
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {

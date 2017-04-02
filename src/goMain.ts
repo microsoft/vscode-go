@@ -32,8 +32,10 @@ import { isGoPathSet, getBinPath, sendTelemetryEvent } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
+import { parseLiveFile } from './goLiveErrors';
 
-let diagnosticCollection: vscode.DiagnosticCollection;
+export let errorDiagnosticCollection: vscode.DiagnosticCollection;
+let warningDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
@@ -81,12 +83,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
 
-	diagnosticCollection = vscode.languages.createDiagnosticCollection('go');
-	ctx.subscriptions.push(diagnosticCollection);
+	errorDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-error');
+	ctx.subscriptions.push(errorDiagnosticCollection);
+	warningDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-warning');
+	ctx.subscriptions.push(warningDiagnosticCollection);
 	vscode.workspace.onDidChangeTextDocument(removeCodeCoverage, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
@@ -231,9 +236,9 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 
 	let uri = document.uri;
 	check(uri.fsPath, goConfig).then(errors => {
-		diagnosticCollection.clear();
+		errorDiagnosticCollection.clear();
 
-		let diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
+		let diagnosticMap: Map<string, Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>> = new Map();
 
 		errors.forEach(error => {
 			let canonicalFile = vscode.Uri.file(error.file).toString();
@@ -247,16 +252,21 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 				endColumn = text.length - trailing.length;
 			}
 			let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
-			let diagnostic = new vscode.Diagnostic(range, error.msg, mapSeverityToVSCodeSeverity(error.severity));
+			let severity = mapSeverityToVSCodeSeverity(error.severity);
+			let diagnostic = new vscode.Diagnostic(range, error.msg, severity);
 			let diagnostics = diagnosticMap.get(canonicalFile);
 			if (!diagnostics) {
-				diagnostics = [];
+				diagnostics = new Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>();
 			}
-			diagnostics.push(diagnostic);
+			if (!diagnostics[severity]) {
+				diagnostics[severity] = [];
+			}
+			diagnostics[severity].push(diagnostic);
 			diagnosticMap.set(canonicalFile, diagnostics);
 		});
-		diagnosticMap.forEach((diags, file) => {
-			diagnosticCollection.set(vscode.Uri.parse(file), diags);
+		diagnosticMap.forEach((diagMap, file) => {
+			errorDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Error]);
+			warningDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Warning]);
 		});
 	}).catch(err => {
 		vscode.window.showInformationMessage('Error: ' + err);
