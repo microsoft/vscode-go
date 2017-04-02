@@ -559,7 +559,7 @@
             "enabled": false,
             "delay": 500
           },
-          "description": "Tags and options configured here will be used to configure how the live errors system behaves."
+          "description": "Use gotype on the file currently being edited and report any semantic or syntactic errors found after configured delay."
         },
         "go.removeTags": {
           "type": "object",

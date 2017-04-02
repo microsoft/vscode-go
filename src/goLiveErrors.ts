@@ -68,9 +68,6 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			// we want to take the error path here because the command we are calling
 			// returns a non-zero exit status if the checks fail
 			let diagnostics = [];
-			if (!diagnostics) {
-				diagnostics = [];
-			}
 
 			stderr.split('\n').forEach(error => {
 				if (error === null || error.length === 0) {

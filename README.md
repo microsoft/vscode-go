@@ -24,6 +24,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Generate unit tests skeleton (using `gotests`)
 - Add Imports (using `gopkgs`)
 - Add/Remove Tags on struct fields (using `gomodifytags`)
+- Semantic/Syntactic error reporting as you type (using `gotype-live`)
 - [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
