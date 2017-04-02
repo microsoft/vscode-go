@@ -542,16 +542,19 @@
           "description": "Tags and options configured here will be used by the Add Tags command to add tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, json tags are added."
         },
         "go.liveErrors": {
-          "enabled": {
+          "type": "object",
+          "properties": {
+            "enabled": {
             "type":"boolean",
             "default":false,
             "description": "If true, runs gotype on the file currently being edited and reports any semantic or syntactic errors found."
-          },
-          "delay": {
-            "type":"number",
-            "default":500,
-            "description": "The number of milliseconds to delay before execution. Resets with each keystroke."
-          },
+            },
+            "delay": {
+              "type":"number",
+              "default":500,
+              "description": "The number of milliseconds to delay before execution. Resets with each keystroke."
+            }
+          },          
           "default": {
             "enabled": false,
             "delay": 500
