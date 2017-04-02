@@ -76,7 +76,9 @@ function correctBinname(binname: string) {
 export function getGoRuntimePath(): string {
 	if (runtimePathCache) return runtimePathCache;
 	let correctBinNameGo = correctBinname('go');
-	if (process.env['GOROOT']) {
+	if (process.env['GOENV_ROOT']) {
+		runtimePathCache = path.join(process.env['GOENV_ROOT'], 'shims', correctBinNameGo);
+	} else if (process.env['GOROOT']) {
 		runtimePathCache = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);
 	} else if (process.env['PATH']) {
 		let pathparts = (<string>process.env.PATH).split(path.delimiter);
