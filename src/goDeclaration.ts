@@ -12,7 +12,7 @@ import { byteOffsetAt, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString } from './util';
 
-export interface GoDefinitionInformtation {
+export interface GoDefinitionInformation {
 	file: string;
 	line: number;
 	column: number;
@@ -22,7 +22,7 @@ export interface GoDefinitionInformtation {
 	toolUsed: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs = true): Promise<GoDefinitionInformtation> {
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs = true): Promise<GoDefinitionInformation> {
 	let wordRange = document.getWordRangeAtPosition(position);
 	let lineText = document.lineAt(position.line).text;
 	let word = wordRange ? document.getText(wordRange) : '';
@@ -44,8 +44,8 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	});
 }
 
-function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, offset: number, includeDocs = true): Promise<GoDefinitionInformtation> {
-	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
+function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, offset: number, includeDocs = true): Promise<GoDefinitionInformation> {
+	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		let godef = getBinPath('godef');
 
 		// Spawn `godef` process
@@ -70,7 +70,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 				let signature = lines[1];
 				let godoc = getBinPath('godoc');
 				let pkgPath = path.dirname(file);
-				let definitionInformation: GoDefinitionInformtation = {
+				let definitionInformation: GoDefinitionInformation = {
 					file: file,
 					line: +line - 1,
 					column: + col - 1,
@@ -112,8 +112,8 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 	});
 }
 
-function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number): Promise<GoDefinitionInformtation> {
-	return new Promise<GoDefinitionInformtation>((resolve, reject) => {
+function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number): Promise<GoDefinitionInformation> {
+	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		let gogetdoc = getBinPath('gogetdoc');
 		let p = cp.execFile(gogetdoc, ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()], {}, (err, stdout, stderr) => {
 			try {
