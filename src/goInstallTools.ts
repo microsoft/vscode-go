@@ -14,7 +14,7 @@ import { showGoStatus, hideGoStatus } from './goStatus';
 import { getGoRuntimePath, resolvePath } from './goPath';
 import { outputChannel } from './goStatus';
 import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported } from './util';
-import { goLiveErrorsEnabled } from "./goLiveErrors";
+import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
 
@@ -27,7 +27,7 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		'go-symbols': 'github.com/acroca/go-symbols',
 		'guru': 'golang.org/x/tools/cmd/guru',
 		'gorename': 'golang.org/x/tools/cmd/gorename',
-		'gomodifytags': 'github.com/fatih/gomodifytags'		
+		'gomodifytags': 'github.com/fatih/gomodifytags'
 	};
 	if (goLiveErrorsEnabled()) {
 		tools['gotype-live'] = 'github.com/tylerb/gotype-live';

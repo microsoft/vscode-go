@@ -40,7 +40,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 }
 
 export function goLiveErrorsEnabled() {
-	return <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go')['liveErrors'].enabled;	
+	return <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go')['liveErrors'].enabled;
 }
 
 // processFile does the actual work once the timeout has fired
@@ -76,9 +76,9 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 		// we want to keep all non-error level diagnostics that were previously
 		// reported, so add them back in
 		oldDiagnostics.forEach((value) => {
-			if (value.severity != vscode.DiagnosticSeverity.Error) {
-				newDiagnostics.push(value)
-			} 
+			if (value.severity !== vscode.DiagnosticSeverity.Error) {
+				newDiagnostics.push(value);
+			}
 		});
 
 		if (err) {
@@ -91,10 +91,10 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 
 				let range = new vscode.Range(+line - 1, +column, +line - 1, +column);
 				let diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
-				newDiagnostics.push(diagnostic)
-			});			
+				newDiagnostics.push(diagnostic);
+			});
 		}
-		diagnosticCollection.set(uri, newDiagnostics);		
+		diagnosticCollection.set(uri, newDiagnostics);
 	});
 	p.stdin.end(fileContents);
 }
