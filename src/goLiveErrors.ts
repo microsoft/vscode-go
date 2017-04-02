@@ -56,12 +56,32 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			return;
 		}
 
-		diagnosticCollection.clear();
-		if (err) {
-			// we want to take the error path here because the command we are calling
-			// returns a non-zero exit status if the checks fail
-			let diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
+		// we want to take the error path here because the command we are calling
+		// returns a non-zero exit status if the checks fail
+		let newDiagnostics = [];
+		if (!newDiagnostics) {
+			newDiagnostics = [];
+		}
 
+		// grab a copy of the existing diagnostics that are being reported for the
+		// current file
+		let oldDiagnostics = diagnosticCollection.get(uri);
+
+		// delete the existing diagnostics for the current file
+		//
+		// error-level diagnostics will be reported by this process, so we want to
+		// clear out the existing errors to avoid getting duplicates
+		diagnosticCollection.delete(uri);
+
+		// we want to keep all non-error level diagnostics that were previously
+		// reported, so add them back in
+		oldDiagnostics.forEach((value) => {
+			if (value.severity != vscode.DiagnosticSeverity.Error) {
+				newDiagnostics.push(value)
+			} 
+		});
+
+		if (err) {
 			stderr.split('\n').forEach(error => {
 				if (error === null || error.length === 0) {
 					return;
@@ -71,18 +91,10 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 
 				let range = new vscode.Range(+line - 1, +column, +line - 1, +column);
 				let diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
-				let diagnostics = diagnosticMap.get(uri.toString());
-				if (!diagnostics) {
-					diagnostics = [];
-				}
-				diagnostics.push(diagnostic);
-				diagnosticMap.set(uri.toString(), diagnostics);
-			});
-			diagnosticMap.forEach((diags, file) => {
-				diagnosticCollection.set(vscode.Uri.parse(file), diags);
-			});
-			return;
+				newDiagnostics.push(diagnostic)
+			});			
 		}
+		diagnosticCollection.set(uri, newDiagnostics);		
 	});
 	p.stdin.end(fileContents);
 }
