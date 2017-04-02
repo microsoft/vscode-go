@@ -15,6 +15,18 @@ interface GoLiveErrorsConfig {
 
 let runner;
 
+export function goLiveErrorsEnabled() {
+	let goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go')['liveErrors'];
+	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
+		return false;
+	}
+	let autoSave = vscode.workspace.getConfiguration('files')['autoSave'];
+	if (autoSave !== null && autoSave !== undefined && autoSave !== 'off') {
+		return false;
+	}
+	return goConfig.enabled;
+}
+
 // parseLiveFile runs the gotype command in live mode to check for any syntactic or
 // semantic errors and reports them immediately
 export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
@@ -24,9 +36,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	if (e.document.languageId !== 'go') {
 		return;
 	}
-
-	let config = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go')['liveErrors'];
-	if (config == null || !config.enabled) {
+	if (!goLiveErrorsEnabled()) {
 		return;
 	}
 
@@ -36,11 +46,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	runner = setTimeout(function(){
 		processFile(e);
 		runner = null;
-	}, config.delay);
-}
-
-export function goLiveErrorsEnabled() {
-	return <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go')['liveErrors'].enabled;
+	}, vscode.workspace.getConfiguration('go')['liveErrors']['delay']);
 }
 
 // processFile does the actual work once the timeout has fired
