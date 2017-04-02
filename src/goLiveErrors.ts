@@ -39,6 +39,10 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	}, config.delay);
 }
 
+export function goLiveErrorsEnabled() {
+	return <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go')['liveErrors'].enabled;	
+}
+
 // processFile does the actual work once the timeout has fired
 function processFile(e: vscode.TextDocumentChangeEvent) {
 	let uri = e.document.uri;
