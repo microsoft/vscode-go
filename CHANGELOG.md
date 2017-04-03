@@ -2,12 +2,13 @@
 
 * [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
     * Add live error feedback using `gotype-live` which is `gotype` with support for unsaved file contents. [PR 903](https://github.com/Microsoft/vscode-go/pull/903)
-        * New setting `go.liveErrors` controls this features. 
+        * New setting `go.liveErrors` controls this feature. 
         * Set `"go.liveErrors": { "enabled": true }` to enable this feature
         * Edit the delay property in `"go.liveErrors": { "enabled": true, "delay": 500 }` to update the delay (in milliseconds) after which `gotype-live` would be run post a keystroke
 
 * [Eon S. Jeon (@esjeon)](https://github.com/esjeon)
     * GOPATH from settings is now honored when users debug current file without having a `launch.json` file. [PR 904](https://github.com/Microsoft/vscode-go/pull/904)
+        * Note: Once you have a `launch.json` file, GOPATH from settings wont be read. You will need to set it in the `env` property as before
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * `--config` flag for `gometalinter` now supports the use of `${workspaceRoot}` and `~` that allows users to provide config file path relative to workspace or home directory respectively. [PR 909](https://github.com/Microsoft/vscode-go/pull/903)
