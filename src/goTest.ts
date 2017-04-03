@@ -50,9 +50,6 @@ let lastTestConfig: TestConfig;
 * is sent to the 'Go' channel.
 *
 * @param goConfig Configuration for the Go extension.
-*
-* TODO: go test returns filenames with no path information for failures,
-* so output doesn't produce navigable line references.
 */
 export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any) {
 	let editor = vscode.window.activeTextEditor;
