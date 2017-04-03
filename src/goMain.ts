@@ -245,6 +245,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	let uri = document.uri;
 	check(uri.fsPath, goConfig).then(errors => {
 		errorDiagnosticCollection.clear();
+		warningDiagnosticCollection.clear();
 
 		let diagnosticMap: Map<string, Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>> = new Map();
 
