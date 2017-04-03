@@ -193,17 +193,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				'type': 'go',
 				'request': 'launch',
 				'mode': 'debug',
-				'program': '${file}'
+				'program': '${file}',
+				'env': {
+					'GOPATH': process.env['GOPATH']
+				}
 			});
 		}
-
-		if (!config.env || !config.env['GOPATH']) {
-			let binpath = getBinPath('dlv');
-			config.env = config.env || {};
-			if (binpath != 'dlv')
-				config.env['GOPATH'] = path.dirname(path.dirname(binpath));
-		}
-
 		vscode.commands.executeCommand('vscode.startDebug', config);
 	}));
 
