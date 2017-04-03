@@ -24,7 +24,7 @@ import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTo
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTestOutput } from './goTest';
+import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTestOutput, testWorkspace } from './goTest';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
@@ -128,6 +128,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go');
 		testCurrentFile(goConfig, args);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.workspace', (args) => {
+		let goConfig = vscode.workspace.getConfiguration('go');
+		testWorkspace(goConfig, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.previous', () => {

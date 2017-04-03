@@ -39,6 +39,10 @@ interface TestConfig {
 	 * Test was not requested explicitly. The output should not appear in the UI.
 	 */
 	background?: boolean;
+	/**
+	 * Run all tests from all sub directories under `dir`
+	 */
+	includeSubDirectories?: boolean;
 }
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -101,6 +105,22 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 		goConfig: goConfig,
 		dir: path.dirname(editor.document.fileName),
 		flags: getTestFlags(goConfig, args)
+	}).then(null, err => {
+		console.error(err);
+	});
+}
+
+/**
+ * Runs all tests from all directories in the workspace.
+ *
+ * @param goConfig Configuration for the Go extension.
+ */
+export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any) {
+	goTest({
+		goConfig: goConfig,
+		dir: vscode.workspace.rootPath,
+		flags: getTestFlags(goConfig, args),
+		includeSubDirectories: true
 	}).then(null, err => {
 		console.error(err);
 	});
@@ -182,6 +202,8 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		if (testconfig.functions) {
 			args.push('-run');
 			args.push(util.format('^%s$', testconfig.functions.join('|')));
+		} else if (testconfig.includeSubDirectories) {
+			args.push('./...');
 		}
 
 		outputChannel.appendLine(['Running tool:', goRuntimePath, ...args].join(' '));

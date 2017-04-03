@@ -90,14 +90,19 @@
         "description": "Runs a unit test at the cursor."
       },
       {
+        "command": "go.test.file",
+        "title": "Go: Test File",
+        "description": "Runs all unit tests in the current file."
+      },
+      {
         "command": "go.test.package",
         "title": "Go: Test Package",
         "description": "Runs all unit tests in the package of the current file."
       },
       {
-        "command": "go.test.file",
-        "title": "Go: Test File",
-        "description": "Runs all unit tests in the current file."
+        "command": "go.test.workspace",
+        "title": "Go: Test All Packages in Workspace",
+        "description": "Runs all unit tests from all packages in the current workspace."
       },
       {
         "command": "go.test.previous",
@@ -618,7 +623,12 @@
             "testPackage": {
               "type": "boolean",
               "default": true,
-              "description": "If true, adds command to run all tests in the current pacakage to the editor context menu"
+              "description": "If true, adds command to run all tests in the current package to the editor context menu"
+            },
+            "testWorkspace": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to run all tests from all packages in the currentworkspace to the editor context menu"
             },
             "generateTestForFunction": {
               "type": "boolean",
@@ -653,6 +663,7 @@
             "testAtCursor": true,
             "testFile": false,
             "testPackage": false,
+            "testWorkspace": false,
             "generateTestForFunction": true,
             "generateTestForFile": false,
             "generateTestForPackage": false,
@@ -696,6 +707,10 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testPackage && resourceLangId == go",
           "command": "go.test.package"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testWorkspace && resourceLangId == go",
+          "command": "go.test.workspace"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFunction && resourceLangId == go",
