@@ -1,3 +1,18 @@
+## 0.6.59 - 3rd April, 2017
+
+* [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
+    * Add live error feedback using `gotype-live` which is `gotype` with support for unsaved file contents. [PR 903](https://github.com/Microsoft/vscode-go/pull/903)
+        * New setting `go.liveErrors` controls this features. 
+        * Set `"go.liveErrors": { "enabled": true }` to enable this feature
+        * Edit the delay property in `"go.liveErrors": { "enabled": true, "delay": 500 }` to update the delay (in milliseconds) after which `gotype-live` would be run post a keystroke
+
+* [Eon S. Jeon (@esjeon)](https://github.com/esjeon)
+    * GOPATH from settings is now honored when users debug current file without having a `launch.json` file. [PR 904](https://github.com/Microsoft/vscode-go/pull/904)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * `--config` flag for `gometalinter` now supports the use of `${workspaceRoot}` and `~` that allows users to provide config file path relative to workspace or home directory respectively. [PR 909](https://github.com/Microsoft/vscode-go/pull/903)
+    * New command `Go: Test All Packages in Workspace` to run tests from all packages in the workspace.
+
 ## 0.6.57 - 30th March, 2017
 Fix for [Bug 892](https://github.com/Microsoft/vscode-go/issues/892) which breaks build when the user has multiple GOPATHs and the Go project being worked on is not the first one among the multiple GOPATHs. [Commit d417fd6](https://github.com/Microsoft/vscode-go/commit/d417fd6725077d1233fb1bcd3aa5d097d02715a9)
 

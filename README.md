@@ -25,6 +25,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Add Imports (using `gopkgs`)
 - Add/Remove Tags on struct fields (using `gomodifytags`)
 - Semantic/Syntactic error reporting as you type (using `gotype-live`)
+- Run Tests under the cursor, in current file, in current package, in the whole workspace (using `go test`)
 - [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
@@ -90,6 +91,7 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Test Package` to run all tests in the package containing the active document
 * `Go: Test File` to run all tests in the current active document
 * `Go: Test Previous` to run the previously run test command
+* `Go: Test All Packages in Workspace` to run all tests in the current workspace
 * `Go: Generates unit tests for package` Generates unit tests for the current package
 * `Go: Generates unit tests for file` Generates unit tests for the current file
 * `Go: Generates unit tests for function` Generates unit tests for the selected function in the current file
