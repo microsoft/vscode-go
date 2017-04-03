@@ -198,7 +198,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				'type': 'go',
 				'request': 'launch',
 				'mode': 'debug',
-				'program': '${file}'
+				'program': '${file}',
+				'env': {
+					'GOPATH': process.env['GOPATH']
+				}
 			});
 		}
 		vscode.commands.executeCommand('vscode.startDebug', config);
