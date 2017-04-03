@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getGoRuntimePath } from './goPath';
+import { getGoRuntimePath, resolvePath } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
@@ -202,11 +202,21 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		let lintTool = goConfig['lintTool'] || 'golint';
 		let lintFlags: string[] = goConfig['lintFlags'] || [];
 
-		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
-		let jsonFlagindex = lintFlags.indexOf('--json');
-		if (jsonFlagindex > -1) lintFlags.splice(jsonFlagindex, 1);
-
-		let args = [...lintFlags];
+		let args = [];
+		let configFlag = '--config=';
+		lintFlags.forEach(flag => {
+			// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
+			if (flag === '--json') {
+				return;
+			}
+			if (flag.startsWith(configFlag)) {
+				let configFilePath = flag.substr(configFlag.length);
+				configFilePath = resolvePath(configFilePath, vscode.workspace.rootPath);
+				args.push(`${configFlag}${configFilePath}`);
+				return;
+			}
+			args.push(flag);
+		});
 
 		runningToolsPromises.push(runTool(
 			args,
