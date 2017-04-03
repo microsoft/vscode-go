@@ -624,12 +624,7 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to run all tests in the current package to the editor context menu"
-            },
-            "testWorkspace": {
-              "type": "boolean",
-              "default": true,
-              "description": "If true, adds command to run all tests from all packages in the currentworkspace to the editor context menu"
-            },
+            },          
             "generateTestForFunction": {
               "type": "boolean",
               "default": true,
@@ -663,7 +658,6 @@
             "testAtCursor": true,
             "testFile": false,
             "testPackage": false,
-            "testWorkspace": false,
             "generateTestForFunction": true,
             "generateTestForFile": false,
             "generateTestForPackage": false,
@@ -707,11 +701,7 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testPackage && resourceLangId == go",
           "command": "go.test.package"
-        },
-        {
-          "when": "editorTextFocus && config.go.editorContextMenuCommands.testWorkspace && resourceLangId == go",
-          "command": "go.test.workspace"
-        },
+        },       
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFunction && resourceLangId == go",
           "command": "go.test.generate.function"
