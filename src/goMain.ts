@@ -348,7 +348,8 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		includeImports: goConfig['gotoSymbol'] && goConfig['gotoSymbol']['includeImports'] + '',
 		addTags: JSON.stringify(goConfig['addTags']),
 		removeTags: JSON.stringify(goConfig['removeTags']),
-		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands'])
+		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands']),
+		liveErrors: JSON.stringify(goConfig['liveErrors'])
 	});
 }
 
