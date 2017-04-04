@@ -40,7 +40,11 @@ export class GoRenameProvider implements vscode.RenameProvider {
 						promptForMissingTool('gorename');
 						return resolve(null);
 					}
-					if (err) return reject('Cannot rename due to errors: ' + stderr);
+					if (err) {
+						let errMsg = stderr ? 'Rename failed: ' + stderr.replace(/\n/g, ' ') : 'Rename failed';
+						console.log(errMsg);
+						return reject(errMsg);
+					}
 
 					let result = new vscode.WorkspaceEdit();
 

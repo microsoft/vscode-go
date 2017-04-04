@@ -1,4 +1,4 @@
-## 0.6.59 - 3rd April, 2017
+## 0.6.59 - 4th April, 2017
 
 * [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
     * Add live error feedback using `gotype-live` which is `gotype` with support for unsaved file contents. [PR 903](https://github.com/Microsoft/vscode-go/pull/903)
