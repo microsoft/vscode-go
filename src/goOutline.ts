@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath, sendTelemetryEvent } from './util';
+import { getBinPath, getFileArchive } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with https://github.com/lukehoban/go-outline
@@ -30,8 +30,20 @@ export interface GoOutlineDeclaration {
 }
 
 export interface GoOutlineOptions {
+	/**
+	 * Path of the file for which outline is needed
+	 */
 	fileName: string;
+
+	/**
+	 * If true, then the file will be parsed only till imports are collected
+	 */
 	importsOnly?: boolean;
+
+	/**
+	 * Document to be parsed. If not provided, saved contents of the given fileName is used
+	 */
+	document?: vscode.TextDocument;
 }
 
 export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDeclaration[]> {
@@ -41,6 +53,9 @@ export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDec
 		if (options.importsOnly) {
 			gooutlineFlags.push('-imports-only');
 		}
+		if (options.document) {
+			gooutlineFlags.push('-modified');
+		}
 		// Spawn `go-outline` process
 		let p = cp.execFile(gooutline, gooutlineFlags, {}, (err, stdout, stderr) => {
 			try {
@@ -49,7 +64,13 @@ export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDec
 				}
 				if (stderr && stderr.startsWith('flag provided but not defined: -imports-only')) {
 					promptForUpdatingTool('go-outline');
-					options.importsOnly = false;
+					if (stderr.startsWith('flag provided but not defined: -imports-only')) {
+						options.importsOnly = false;
+					}
+					if (stderr.startsWith('flag provided but not defined: -modified')) {
+						options.document = null;
+					}
+
 					return documentSymbols(options).then(results => {
 						return resolve(results);
 					});
@@ -62,6 +83,9 @@ export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDec
 				reject(e);
 			}
 		});
+		if (options.document) {
+			p.stdin.end(getFileArchive(options.document));
+		}
 	});
 }
 
@@ -78,7 +102,6 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 	private convertToCodeSymbols(document: vscode.TextDocument, decls: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName: string): void {
 		let gotoSymbolConfig = vscode.workspace.getConfiguration('go')['gotoSymbol'];
 		let includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
-		sendTelemetryEvent('file-symbols', { includeImports: includeImports + '' });
 		decls.forEach(decl => {
 			if (!includeImports && decl.type === 'import') return;
 			let label = decl.label;
@@ -104,7 +127,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 	}
 
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-		let options = { fileName: document.fileName };
+		let options = { fileName: document.fileName, document: document };
 		return documentSymbols(options).then(decls => {
 			let symbols: vscode.SymbolInformation[] = [];
 			this.convertToCodeSymbols(document, decls, symbols, '');
