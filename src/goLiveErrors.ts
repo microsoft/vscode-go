@@ -86,7 +86,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			});
 
 			diagnosticMap.forEach((diagnostics, file) => {
-				errorDiagnosticCollection.set(vscode.Uri.parse(file), diagnostics);
+				errorDiagnosticCollection.set(vscode.Uri.parse('file://' + file), diagnostics);
 			});
 		}
 	});
