@@ -51,7 +51,6 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 
 // processFile does the actual work once the timeout has fired
 function processFile(e: vscode.TextDocumentChangeEvent) {
-	let uri = e.document.uri;
 	let gotypeLive = getBinPath('gotype-live');
 	let fileContents = e.document.getText();
 	let fileName = e.document.fileName;
@@ -62,12 +61,12 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			return;
 		}
 
-		errorDiagnosticCollection.delete(uri);
+		errorDiagnosticCollection.clear();
 
 		if (err) {
 			// we want to take the error path here because the command we are calling
 			// returns a non-zero exit status if the checks fail
-			let diagnostics = [];
+			let diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
 
 			stderr.split('\n').forEach(error => {
 				if (error === null || error.length === 0) {
@@ -75,22 +74,20 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 				}
 				// extract the line, column and error message from the gotype output
 				let [_, file, line, column, message] = /^(.+):(\d+):(\d+):\s+(.+)/.exec(error);
-
-				if (file !== uri.path) {
-					// skip the output if it is not in the file currently being edited
-					// a possible improvement here would be to display the additional errors
-					// as a diagnostic for the correct file
-					return;
-				}
-
-				console.log(file,"and",uri.path);
-
 				let range = new vscode.Range(+line - 1, +column, +line - 1, +column);
 				let diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
+
+				let diagnostics = diagnosticMap.get(file);
+				if (!diagnostics) {
+					diagnostics = [];
+				}
 				diagnostics.push(diagnostic);
+				diagnosticMap.set(file, diagnostics);
 			});
 
-			errorDiagnosticCollection.set(uri, diagnostics);
+			diagnosticMap.forEach((diagnostics, file) => {
+				errorDiagnosticCollection.set(vscode.Uri.parse(file), diagnostics);
+			});
 		}
 	});
 	p.stdin.end(fileContents);
