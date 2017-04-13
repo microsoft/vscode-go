@@ -74,7 +74,16 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 					return;
 				}
 				// extract the line, column and error message from the gotype output
-				let [_, line, column, message] = /^.+:(\d+):(\d+):\s+(.+)/.exec(error);
+				let [_, file, line, column, message] = /^(.+):(\d+):(\d+):\s+(.+)/.exec(error);
+
+				if (file !== uri.path) {
+					// skip the output if it is not in the file currently being edited
+					// a possible improvement here would be to display the additional errors
+					// as a diagnostic for the correct file
+					return;
+				}
+
+				console.log(file,"and",uri.path);
 
 				let range = new vscode.Range(+line - 1, +column, +line - 1, +column);
 				let diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
