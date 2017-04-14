@@ -15,6 +15,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Quick Info (using `gogetdoc` or `godef`+`godoc`)
 - Goto Definition (using `gogetdoc` or `godef`+`godoc`)
 - Find References (using `guru`)
+- References CodeLens
 - File outline (using `go-outline`)
 - Workspace symbol search (using `go-symbols`)
 - Rename (using `gorename`. Note: For Undo after rename to work in Windows you need to have `diff` tool in your path)
@@ -49,7 +50,7 @@ The Go extension is ready to use on the get go. If you want to customize the fea
 
 
 ### Go Language Server (Experimental)
-Set `go.useLanguageServer` to `true` to use the Go language server from [Sourcegraph](https://github.com/sourcegraph/go-langserver) for features like Hover, Definition, Find All References, Signature Help, Go to Symbol in File and Workspace. 
+Set `go.useLanguageServer` to `true` to use the Go language server from [Sourcegraph](https://github.com/sourcegraph/go-langserver) for features like Hover, Definition, Find All References, Signature Help, Go to Symbol in File and Workspace.
 * This is an experimental feature and is not available in Windows yet.
 * If set to true, you will be prompted to install the Go language server. Once installed, you will have to reload VS Code window. The language server will then be run by the Go extension in the background to provide services needed for the above mentioned features.
 * Everytime you change the value of the setting `go.useLanguageServer`, you need to reload the VS Code window for it to take effect.
@@ -112,7 +113,7 @@ For more read [Debugging Go Code Using VS Code](https://github.com/Microsoft/vsc
 
 #### Remote Debugging
 
-To remote debug using VS Code, read [Remote Debugging](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code#remote-debugging) 
+To remote debug using VS Code, read [Remote Debugging](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code#remote-debugging)
 
 ## Building and Debugging the Extension
 
