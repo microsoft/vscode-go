@@ -65,6 +65,10 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
+	if (editor.document.isDirty) {
+		vscode.window.showInformationMessage('File has unsaved changes. Save and try again.');
+		return;
+	}
 	getTestFunctions(editor.document).then(testFunctions => {
 		let testFunction: vscode.SymbolInformation;
 		// Find any test function containing the cursor.

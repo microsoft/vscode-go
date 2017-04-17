@@ -281,3 +281,8 @@ export function getCurrentGoWorkspaceFromGOPATH(currentFileDirPath: string): str
 	}
 	return currentWorkspace;
 }
+
+export function getFileArchive(document: vscode.TextDocument): string {
+	let fileContents = document.getText();
+	return document.fileName + '\n' + Buffer.byteLength(fileContents, 'utf8') + '\n' + fileContents;
+}
