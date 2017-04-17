@@ -11,7 +11,7 @@ import path = require('path');
 import { getBinPath, getFileArchive } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
-// Keep in sync with https://github.com/lukehoban/go-outline
+// Keep in sync with https://github.com/ramya-rao-a/go-outline
 export interface GoOutlineRange {
 	start: number;
 	end: number;
@@ -62,7 +62,7 @@ export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDec
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('go-outline');
 				}
-				if (stderr && stderr.startsWith('flag provided but not defined: -imports-only')) {
+				if (stderr && stderr.startsWith('flag provided but not defined: ')) {
 					promptForUpdatingTool('go-outline');
 					if (stderr.startsWith('flag provided but not defined: -imports-only')) {
 						options.importsOnly = false;
