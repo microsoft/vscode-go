@@ -219,7 +219,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
-		let pkgPromise = listPackages(true).then((pkgs: string[]) => {
+		let pkgPromise = listPackages(false).then((pkgs: string[]) => {
 			this.pkgsList = pkgs.map(pkg => {
 				let index = pkg.lastIndexOf('/');
 				let pkgName = index === -1 ? pkg : pkg.substr(index + 1);
