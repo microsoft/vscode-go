@@ -665,7 +665,7 @@ It returns the number of bytes written and any write error encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		let vendorSupportPromise = isVendorSupported();
-		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'lukehoban', 'go-outline', 'main.go');
+		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'ramya-rao-a', 'go-outline', 'main.go');
 		let vendorPkgs = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9',
