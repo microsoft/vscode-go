@@ -20,8 +20,11 @@ export function goLiveErrorsEnabled() {
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
-	let autoSave = vscode.workspace.getConfiguration('files')['autoSave'];
-	if (autoSave !== null && autoSave !== undefined && autoSave !== 'off') {
+	let files = vscode.workspace.getConfiguration('files');
+	let autoSave = files['autoSave'];
+	let autoSaveDelay = files['autoSaveDelay'];
+	if (autoSave !== null && autoSave !== undefined &&
+			autoSave === 'afterDelay' && autoSaveDelay < goConfig.delay * 1.5) {
 		return false;
 	}
 	return goConfig.enabled;
