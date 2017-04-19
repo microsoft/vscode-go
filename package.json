@@ -471,6 +471,11 @@
           "default": null,
           "description": "Flags to pass to `go test`. If null, then buildFlags will be used."
         },
+        "go.toolsEnvVars": {
+          "type": "object",
+          "default": {},
+          "description": "Environment variables that will passed to the processes that run the Go tools (e.g. CGO_CFLAGS)"
+        },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": true,
@@ -559,7 +564,7 @@
               "default": 500,
               "description": "The number of milliseconds to delay before execution. Resets with each keystroke."
             }
-          },          
+          },
           "default": {
             "enabled": false,
             "delay": 500
@@ -624,7 +629,7 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to run all tests in the current package to the editor context menu"
-            },          
+            },
             "generateTestForFunction": {
               "type": "boolean",
               "default": true,
@@ -701,7 +706,7 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testPackage && resourceLangId == go",
           "command": "go.test.package"
-        },       
+        },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFunction && resourceLangId == go",
           "command": "go.test.generate.function"
