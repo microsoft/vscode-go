@@ -207,18 +207,6 @@ class Delve {
 				return reject('The program attribute must point to valid directory, .go file or executable.');
 			}
 
-			// Consolidate env vars
-			let finalEnv: Object = null;
-			if (Object.keys(env).length > 0) {
-				finalEnv = {};
-				for (let k in process.env) {
-					finalEnv[k] = process.env[k];
-				}
-				for (let k in env) {
-					finalEnv[k] = env[k];
-				}
-			}
-
 			if (!!launchArgs.noDebug && mode === 'debug' && !isProgramDirectory) {
 				this.debugProcess = spawn(getGoRuntimePath(), ['run', program], {env: finalEnv});
 				this.debugProcess.stderr.on('data', chunk => {
@@ -266,6 +254,19 @@ class Delve {
 					});
 				} catch (e) {
 					return reject('Cannot load environment variables from file');
+				}
+			}
+
+
+			// Consolidate env vars
+			let finalEnv: Object = null;
+			if (Object.keys(env).length > 0) {
+				finalEnv = {};
+				for (let k in process.env) {
+					finalEnv[k] = process.env[k];
+				}
+				for (let k in env) {
+					finalEnv[k] = env[k];
 				}
 			}
 
