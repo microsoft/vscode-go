@@ -207,6 +207,37 @@ class Delve {
 				return reject('The program attribute must point to valid directory, .go file or executable.');
 			}
 
+			// read env from disk and merge into envVars
+			if (launchArgs.envFile) {
+				try {
+					const buffer = stripBOM(FS.readFileSync(launchArgs.envFile, 'utf8'));
+					buffer.split('\n').forEach( line => {
+						const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
+						if (r !== null) {
+							let value = r[2] || '';
+							if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+								value = value.replace(/\\n/gm, '\n');
+							}
+							env[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
+						}
+					});
+				} catch (e) {
+					return reject('Cannot load environment variables from file');
+				}
+			}
+
+			// Consolidate env vars
+			let finalEnv: Object = null;
+			if (Object.keys(env).length > 0) {
+				finalEnv = {};
+				for (let k in process.env) {
+					finalEnv[k] = process.env[k];
+				}
+				for (let k in env) {
+					finalEnv[k] = env[k];
+				}
+			}
+
 			if (!!launchArgs.noDebug && mode === 'debug' && !isProgramDirectory) {
 				this.debugProcess = spawn(getGoRuntimePath(), ['run', program], {env: finalEnv});
 				this.debugProcess.stderr.on('data', chunk => {
@@ -236,38 +267,6 @@ class Delve {
 				serverRunning = true;  // assume server is running when in remote mode
 				connectClient(port, host);
 				return;
-			}
-
-			// read env from disk and merge into envVars
-			if (launchArgs.envFile) {
-				try {
-					const buffer = stripBOM(FS.readFileSync(launchArgs.envFile, 'utf8'));
-					buffer.split('\n').forEach( line => {
-						const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
-						if (r !== null) {
-							let value = r[2] || '';
-							if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
-								value = value.replace(/\\n/gm, '\n');
-							}
-							env[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
-						}
-					});
-				} catch (e) {
-					return reject('Cannot load environment variables from file');
-				}
-			}
-
-
-			// Consolidate env vars
-			let finalEnv: Object = null;
-			if (Object.keys(env).length > 0) {
-				finalEnv = {};
-				for (let k in process.env) {
-					finalEnv[k] = process.env[k];
-				}
-				for (let k in env) {
-					finalEnv[k] = env[k];
-				}
 			}
 
 			let dlv = getBinPathWithPreferredGopath('dlv', resolvePath(env['GOPATH']));
