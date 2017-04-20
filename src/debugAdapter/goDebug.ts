@@ -181,7 +181,6 @@ class Delve {
 		this.program = program;
 		this.remotePath = remotePath;
 		let mode = launchArgs.mode;
-		let env = Object.assign({}, launchArgs.env, process.env);
 		let dlvCwd = dirname(program);
 		let isProgramDirectory = false;
 		this.connection = new Promise((resolve, reject) => {
@@ -208,6 +207,7 @@ class Delve {
 			}
 
 			// read env from disk and merge into envVars
+			let fileEnv = {};
 			if (launchArgs.envFile) {
 				try {
 					const buffer = stripBOM(FS.readFileSync(launchArgs.envFile, 'utf8'));
@@ -218,7 +218,7 @@ class Delve {
 							if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
 								value = value.replace(/\\n/gm, '\n');
 							}
-							env[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
+							fileEnv[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
 						}
 					});
 				} catch (e) {
@@ -226,6 +226,7 @@ class Delve {
 				}
 			}
 
+			let env = Object.assign({}, process.env, fileEnv, launchArgs.env);
 			if (!!launchArgs.noDebug && mode === 'debug' && !isProgramDirectory) {
 				this.debugProcess = spawn(getGoRuntimePath(), ['run', program], { env });
 				this.debugProcess.stderr.on('data', chunk => {
