@@ -95,6 +95,21 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 }
 
 /**
+ * Runs specific given test function.
+ *
+ * @param goConfig Configuration for the Go extension.
+ */
+export function testFunction(goConfig: vscode.WorkspaceConfiguration, functionName: string) {
+	let editor = vscode.window.activeTextEditor;
+	return goTest({
+		goConfig: goConfig,
+		dir: path.dirname(editor.document.fileName),
+		flags: getTestFlags(goConfig, null),
+		functions: [ functionName ]
+	});
+}
+
+/**
  * Runs all tests in the package of the source of the active editor.
  *
  * @param goConfig Configuration for the Go extension.
@@ -237,7 +252,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
  * @param the URI of a Go source file.
  * @return test function symbols for the source file.
  */
-function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
+export function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
 	let documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, null)
