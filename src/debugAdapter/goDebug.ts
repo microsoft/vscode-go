@@ -181,7 +181,7 @@ class Delve {
 		this.program = program;
 		this.remotePath = remotePath;
 		let mode = launchArgs.mode;
-		let env = launchArgs.env || {};
+		let env = Object.assign({}, launchArgs.env, process.env);
 		let dlvCwd = dirname(program);
 		let isProgramDirectory = false;
 		this.connection = new Promise((resolve, reject) => {
@@ -226,20 +226,8 @@ class Delve {
 				}
 			}
 
-			// Consolidate env vars
-			let finalEnv: Object = null;
-			if (Object.keys(env).length > 0) {
-				finalEnv = {};
-				for (let k in process.env) {
-					finalEnv[k] = process.env[k];
-				}
-				for (let k in env) {
-					finalEnv[k] = env[k];
-				}
-			}
-
 			if (!!launchArgs.noDebug && mode === 'debug' && !isProgramDirectory) {
-				this.debugProcess = spawn(getGoRuntimePath(), ['run', program], {env: finalEnv});
+				this.debugProcess = spawn(getGoRuntimePath(), ['run', program], { env });
 				this.debugProcess.stderr.on('data', chunk => {
 					let str = chunk.toString();
 					if (this.onstderr) { this.onstderr(str); }
@@ -301,7 +289,7 @@ class Delve {
 
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
-				env: finalEnv,
+				env,
 			});
 
 			function connectClient(port: number, host: string) {
