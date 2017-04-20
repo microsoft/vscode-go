@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import { CodeLensProvider, TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
 import { getTestFunctions } from './goTest';
 
-export class GoCodeLensProvider implements CodeLensProvider {
+export class GoRunTestCodeLensProvider implements CodeLensProvider {
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
 		return getTestFunctions(document).then(testFunctions => {
 			return testFunctions.map(func => {
