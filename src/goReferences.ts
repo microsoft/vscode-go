@@ -14,9 +14,7 @@ import { promptForMissingTool } from './goInstallTools';
 export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 	public provideReferences(document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
-		return vscode.workspace.saveAll(false).then(() => {
-			return this.doFindReferences(document, position, options, token);
-		});
+		return this.doFindReferences(document, position, options, token);
 	}
 
 	private doFindReferences(document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
@@ -41,10 +39,12 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 						promptForMissingTool('guru');
 						return resolve(null);
 					}
-					if (err) {
+
+					if (err && (<any>err).killed !== true) {
 						console.log(err);
 						return resolve(null);
 					}
+
 					let lines = stdout.toString().split('\n');
 					let results: vscode.Location[] = [];
 					for (let i = 0; i < lines.length; i++) {
@@ -53,6 +53,14 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 						if (!match) continue;
 						let [_, file, lineStartStr, colStartStr, lineEndStr, colEndStr] = match;
 						let referenceResource = vscode.Uri.file(path.resolve(cwd, file));
+
+						if (!options.includeDeclaration) {
+							if (document.uri.fsPath === referenceResource.fsPath &&
+								position.line === Number(lineStartStr) - 1) {
+								continue;
+							}
+						}
+
 						let range = new vscode.Range(
 							+lineStartStr - 1, +colStartStr - 1, +lineEndStr - 1, +colEndStr
 						);

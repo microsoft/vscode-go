@@ -510,16 +510,21 @@
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
         },
+        "go.referencesCodeLens.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable/disable references CodeLens"
+        },
         "go.addTags": {
           "type": "object",
           "properties": {
             "promptForTags": {
-              "type":"boolean",
+              "type": "boolean",
               "default": false,
               "description": "If true, Go: Add Tags command will prompt the user to provide tags and options instead of using the configured values"
             },
             "tags": {
-              "type":"string",
+              "type": "string",
               "default": "json",
               "description": "Comma separated tags to be used by Go: Add Tags command"
             },
@@ -559,7 +564,7 @@
               "default": 500,
               "description": "The number of milliseconds to delay before execution. Resets with each keystroke."
             }
-          },          
+          },
           "default": {
             "enabled": false,
             "delay": 500
@@ -570,12 +575,12 @@
           "type": "object",
           "properties": {
             "promptForTags": {
-              "type":"boolean",
+              "type": "boolean",
               "default": false,
               "description": "If true, Go: Remove Tags command will prompt the user to provide tags and options instead of using the configured values"
             },
             "tags": {
-              "type":"string",
+              "type": "string",
               "default": "json",
               "description": "Comma separated tags to be used by Go: Remove Tags command"
             },
@@ -624,7 +629,7 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to run all tests in the current package to the editor context menu"
-            },          
+            },
             "generateTestForFunction": {
               "type": "boolean",
               "default": true,
@@ -701,7 +706,7 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testPackage && resourceLangId == go",
           "command": "go.test.package"
-        },       
+        },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFunction && resourceLangId == go",
           "command": "go.test.generate.function"
