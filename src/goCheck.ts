@@ -177,8 +177,8 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 					'error',
 					true,
 					null,
-					true,
-					env
+					env,
+					true
 				).then(result => resolve(result), err => reject(err));
 			});
 		});
