@@ -5,6 +5,16 @@ import { CodeLensProvider, SymbolInformation, SymbolKind, TextDocument, Cancella
 import { documentSymbols, GoDocumentSymbolProvider } from './goOutline';
 import { GoReferenceProvider } from './goReferences';
 
+class ReferencesCodeLens extends CodeLens {
+	constructor(
+		public document: TextDocument,
+		public symbol: SymbolInformation,
+		range: Range
+	) {
+		super(range);
+	}
+}
+
 export class GoCodeLensProvider implements CodeLensProvider {
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
 		let codelensEnabled = vscode.workspace.getConfiguration('go').get('referencesCodeLens.enabled');
@@ -13,17 +23,15 @@ export class GoCodeLensProvider implements CodeLensProvider {
 		}
 
 		return this.provideDocumentSymbols(document, token).then(symbols => {
-			let symbolReferences = symbols.map(symbol => this.provideSymbolReferences(document, symbol, token));
-			return Promise.all(symbolReferences).then(values => {
-				let codelenses = [];
-				values.forEach(lens => {
-					if (lens) {
-						codelenses.push(lens);
-					}
-				});
-				return codelenses;
+			return symbols.map(symbol => {
+				return new ReferencesCodeLens(document, symbol, symbol.location.range);
 			});
 		});
+	}
+
+	public resolveCodeLens?(inputCodeLens: CodeLens, token: CancellationToken): CodeLens | Thenable<CodeLens> {
+		let codeLens = inputCodeLens as ReferencesCodeLens;
+		return this.provideSymbolReferences(codeLens.document, codeLens.symbol, token);
 	}
 
 	private provideDocumentSymbols(document: TextDocument, token: CancellationToken): Thenable<vscode.SymbolInformation[]> {
