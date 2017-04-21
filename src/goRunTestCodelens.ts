@@ -12,6 +12,10 @@ import { GoDocumentSymbolProvider } from './goOutline';
 
 export class GoRunTestCodeLensProvider implements CodeLensProvider {
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
+		if (!document.fileName.endsWith('_test.go')) {
+			return;
+		}
+
 		return Promise.all([
 			this.getCodeLensForPackage(document),
 			this.getCodeLensForFunctions(document)
@@ -21,10 +25,6 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 	}
 
 	private getCodeLensForPackage(document: TextDocument): Thenable<CodeLens[]> {
-		if (!document.fileName.endsWith('_test.go')) {
-			return;
-		}
-
 		let documentSymbolProvider = new GoDocumentSymbolProvider();
 		return documentSymbolProvider.provideDocumentSymbols(document, null)
 				.then(symbols => symbols.filter(sym => sym.kind === vscode.SymbolKind.Package))
