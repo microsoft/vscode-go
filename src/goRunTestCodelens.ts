@@ -27,10 +27,10 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 	private getCodeLensForPackage(document: TextDocument): Thenable<CodeLens[]> {
 		let documentSymbolProvider = new GoDocumentSymbolProvider();
 		return documentSymbolProvider.provideDocumentSymbols(document, null)
-				.then(symbols => symbols.filter(sym => sym.kind === vscode.SymbolKind.Package))
-				.then(pkgs => {
-					if (pkgs.length > 0 && pkgs[0].name) {
-						const range = pkgs[0].location.range;
+				.then(symbols => symbols.find(sym => sym.kind === vscode.SymbolKind.Package && !!sym.name))
+				.then(pkg => {
+					if (pkg) {
+						const range = pkg.location.range;
 						return [
 							new CodeLens(range, {
 								title: 'run package tests',
