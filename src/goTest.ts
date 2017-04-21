@@ -70,42 +70,35 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 		return;
 	}
 	getTestFunctions(editor.document).then(testFunctions => {
-		let testFunction: vscode.SymbolInformation;
-		// Find any test function containing the cursor.
-		for (let func of testFunctions) {
-			let selection = editor.selection;
-			if (selection && func.location.range.contains(selection.start)) {
-				testFunction = func;
-				break;
-			}
-		};
-		if (!testFunction) {
+		let testFunctionName: string;
+
+		// We use functionName if it was provided as argument
+		// Otherwise find any test function containing the cursor.
+		if (args.functionName) {
+			testFunctionName = args.functionName;
+		} else {
+			for (let func of testFunctions) {
+				let selection = editor.selection;
+				if (selection && func.location.range.contains(selection.start)) {
+					testFunctionName = func.name;
+					break;
+				}
+			};
+		}
+
+		if (!testFunctionName) {
 			vscode.window.showInformationMessage('No test function found at cursor.');
 			return;
 		}
+
 		return goTest({
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			flags: getTestFlags(goConfig, args),
-			functions: [testFunction.name]
+			functions: [ testFunctionName ]
 		});
 	}).then(null, err => {
 		console.error(err);
-	});
-}
-
-/**
- * Runs specific given test function.
- *
- * @param goConfig Configuration for the Go extension.
- */
-export function testFunction(goConfig: vscode.WorkspaceConfiguration, functionName: string) {
-	let editor = vscode.window.activeTextEditor;
-	return goTest({
-		goConfig: goConfig,
-		dir: path.dirname(editor.document.fileName),
-		flags: getTestFlags(goConfig, null),
-		functions: [ functionName ]
 	});
 }
 
