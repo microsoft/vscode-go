@@ -34,6 +34,7 @@ import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
 import { parseLiveFile } from './goLiveErrors';
 import { GoCodeLensProvider } from './goCodelens';
+import { implCursor } from './goImpl';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
@@ -115,6 +116,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.remove.tags', (args) => {
 		removeTags(args);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.impl.cursor', () => {
+		implCursor()
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {
