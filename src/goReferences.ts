@@ -18,7 +18,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 	}
 
 	private doFindReferences(document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
-		return new Promise((resolve, reject) => {
+		return new Promise<vscode.Location[]>((resolve, reject) => {
 			let filename = canonicalizeGOPATHPrefix(document.fileName);
 			let cwd = path.dirname(filename);
 
