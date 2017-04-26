@@ -450,6 +450,16 @@
           "default": false,
           "description": "Run 'go test -coverprofile' on save"
         },
+        "go.showCovered": {
+          "type": "boolean",
+          "default": true,
+          "description": "Decorate covered code"
+        },
+        "go.showUncovered": {
+          "type": "boolean",
+          "default": true,
+          "description": "Decorate uncovered code"
+        },
         "go.testTimeout": {
           "type": "string",
           "default": "30s",
