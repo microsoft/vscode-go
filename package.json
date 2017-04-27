@@ -492,7 +492,8 @@
           "description": "Pick 'godoc' or 'gogetdoc' to get documentation. In Go 1.5, godoc is used regardless of the choice here.",
           "enum": [
             "godoc",
-            "gogetdoc"
+            "gogetdoc",
+            "guru"
           ]
         },
         "go.useLanguageServer": {

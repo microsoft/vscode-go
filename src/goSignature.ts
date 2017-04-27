@@ -43,7 +43,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				let funcName = declarationText.substring(0, nameEnd);
 				sig = declarationText.substring(sigStart);
 				si = new SignatureInformation(funcName + sig, res.doc);
-			} else {
+			} else if (res.toolUsed === 'gogetdoc') {
 				// declaration is of the form "func Add(a int, b int) int"
 				declarationText = res.declarationlines[0].substring(5);
 				let funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it
