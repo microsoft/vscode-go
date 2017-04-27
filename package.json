@@ -446,19 +446,10 @@
           "description": "Run 'go test' on save for current package. It is not advised to set this to `true` when you have Auto Save enabled."
         },
         "go.coverOnSave": {
-          "type": "boolean",
+          "type": ["boolean", "string"],
+          "enum": [true, false, "showCoveredOnly", "showUncoveredOnly"],
           "default": false,
           "description": "Run 'go test -coverprofile' on save"
-        },
-        "go.showCovered": {
-          "type": "boolean",
-          "default": true,
-          "description": "Decorate covered code"
-        },
-        "go.showUncovered": {
-          "type": "boolean",
-          "default": true,
-          "description": "Decorate uncovered code"
         },
         "go.testTimeout": {
           "type": "string",
