@@ -449,7 +449,7 @@
           "type": ["boolean", "string"],
           "enum": [true, false, "showCoveredOnly", "showUncoveredOnly"],
           "default": false,
-          "description": "Run 'go test -coverprofile' on save"
+          "description": "If not false, runs 'go test -coverprofile' on save and shows test coverage. If set to showCoveredOnly, then only covered code is highlighted. If set to showUncoveredOnly, then only uncovered code is highlighted."
         },
         "go.testTimeout": {
           "type": "string",

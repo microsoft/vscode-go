@@ -108,8 +108,8 @@ function applyCoverage(remove: boolean = false) {
 function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
 	let cfg = vscode.workspace.getConfiguration('go');
 	let coverOnSave = cfg.get('coverOnSave', false);
-	let hideUncovered = remove || !coverOnSave || coverOnSave === "showCoveredOnly";
-	let hideCovered = remove || !coverOnSave || coverOnSave === "showUncoveredOnly";
+	let hideUncovered = remove || !coverOnSave || coverOnSave === 'showCoveredOnly';
+	let hideCovered = remove || !coverOnSave || coverOnSave === 'showUncoveredOnly';
 	editor.setDecorations(uncoveredHighLight, hideUncovered ? [] : file.uncoveredRange);
 	editor.setDecorations(coveredHighLight, hideCovered ? [] : file.coveredRange);
 }
