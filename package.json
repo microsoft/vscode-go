@@ -472,6 +472,11 @@
           "default": null,
           "description": "Flags to pass to `go test`. If null, then buildFlags will be used."
         },
+        "go.toolsEnvVars": {
+          "type": "object",
+          "default": {},
+          "description": "Environment variables that will passed to the processes that run the Go tools (e.g. CGO_CFLAGS)"
+        },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": true,

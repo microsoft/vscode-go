@@ -44,11 +44,11 @@ export interface ICheckResult {
  * @param toolName The name of the Go tool to run. If none is provided, the go runtime itself is used
  * @param printUnexpectedOutput If true, then output that doesnt match expected format is printed to the output channel
  */
-function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, printUnexpectedOutput?: boolean): Promise<ICheckResult[]> {
+function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput?: boolean): Promise<ICheckResult[]> {
 	let goRuntimePath = getGoRuntimePath();
 	let cmd = toolName ? getBinPath(toolName) : goRuntimePath;
 	return new Promise((resolve, reject) => {
-		cp.execFile(cmd, args, { cwd: cwd }, (err, stdout, stderr) => {
+		cp.execFile(cmd, args, { env: env, cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					if (toolName) {
@@ -110,6 +110,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(filename);
+	let env = Object.assign({}, process.env, goConfig['toolsEnvVars']);
 	let goRuntimePath = getGoRuntimePath();
 
 	if (!goRuntimePath) {
@@ -176,6 +177,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 					'error',
 					true,
 					null,
+					env,
 					true
 				).then(result => resolve(result), err => reject(err));
 			});
@@ -223,7 +225,8 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			cwd,
 			'warning',
 			false,
-			lintTool
+			lintTool,
+			env
 		));
 	}
 
@@ -234,7 +237,8 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			cwd,
 			'warning',
 			true,
-			null
+			null,
+			env
 		));
 	}
 
