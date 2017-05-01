@@ -39,10 +39,10 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		// Assume it's > Go 1.5
 		if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
 			return definitionLocation_godef(document, position, offset, includeDocs);
-		} else if (toolForDocs == 'guru') {
+		} else if (toolForDocs === 'guru') {
 			return definitionLocation_guru(document, position, offset);
 		}
-		return definitionLocation_gogetdoc(document, position, offset);	
+		return definitionLocation_gogetdoc(document, position, offset);
 	});
 }
 
