@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getFileArchive } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getFileArchive, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
@@ -29,11 +29,11 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			}
 
 			let offset = byteOffsetAt(document, position);
-
+			let env = getToolsEnvVars();
 			let goGuru = getBinPath('guru');
 			let buildTags = '"' + vscode.workspace.getConfiguration('go')['buildTags'] + '"';
 
-			let process = cp.execFile(goGuru, ['-modified', '-tags', buildTags, 'referrers', `${filename}:#${offset.toString()}`], {}, (err, stdout, stderr) => {
+			let process = cp.execFile(goGuru, ['-modified', '-tags', buildTags, 'referrers', `${filename}:#${offset.toString()}`], {env}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');

@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { isDiffToolAvailable, getEdits, getEditsFromUnifiedDiffStr } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
-import { sendTelemetryEvent, getBinPath } from './util';
+import { sendTelemetryEvent, getBinPath, getToolsEnvVars } from './util';
 
 export class Formatter {
 	public formatDocument(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
@@ -28,7 +28,8 @@ export class Formatter {
 				formatFlags.splice(formatFlags.indexOf('-w'), 1);
 			}
 			let t0 = Date.now();
-			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {}, (err, stdout, stderr) => {
+			let env = getToolsEnvVars();
+			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {env}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool(formatTool);

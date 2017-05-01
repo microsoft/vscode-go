@@ -15,7 +15,7 @@ import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
 import { goTest } from './goTest';
-import { getBinPath, parseFilePrelude, getCurrentGoWorkspaceFromGOPATH } from './util';
+import { getBinPath, parseFilePrelude, getCurrentGoWorkspaceFromGOPATH, getToolsEnvVars } from './util';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -110,7 +110,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(filename);
-	let env = Object.assign({}, process.env, goConfig['toolsEnvVars']);
+	let env = getToolsEnvVars();
 	let goRuntimePath = getGoRuntimePath();
 
 	if (!goRuntimePath) {

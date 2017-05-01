@@ -6,7 +6,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath } from './util';
+import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with github.com/acroca/go-symbols'
@@ -66,8 +66,9 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, goConf
 		args.push(workspacePath);
 		args.push(query);
 		let gosyms = getBinPath('go-symbols');
+		let env = getToolsEnvVars();
 		return new Promise((resolve, reject) => {
-			let p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
+			let p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024, env }, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('go-symbols');

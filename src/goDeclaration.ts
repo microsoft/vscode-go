@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { getGoVersion, SemVersion, goKeywords, isPositionInString } from './util';
+import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars } from './util';
 
 export interface GoDefinitionInformation {
 	file: string;
@@ -34,22 +34,23 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	}
 	let toolForDocs = goConfig['docsTool'] || 'godoc';
 	let offset = byteOffsetAt(document, position);
+	let env = getToolsEnvVars();
 	return getGoVersion().then((ver: SemVersion) => {
 		// If no Go version can be parsed, it means it's a non-tagged one.
 		// Assume it's > Go 1.5
 		if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
-			return definitionLocation_godef(document, position, offset, includeDocs);
+			return definitionLocation_godef(document, position, offset, includeDocs, env);
 		}
-		return definitionLocation_gogetdoc(document, position, offset);
+		return definitionLocation_gogetdoc(document, position, offset, env);
 	});
 }
 
-function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, offset: number, includeDocs = true): Promise<GoDefinitionInformation> {
+function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, offset: number, includeDocs: boolean, env: any): Promise<GoDefinitionInformation> {
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		let godef = getBinPath('godef');
 
 		// Spawn `godef` process
-		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {}, (err, stdout, stderr) => {
+		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {env}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('godef');
@@ -82,7 +83,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 				if (!includeDocs) {
 					return resolve(definitionInformation);
 				}
-				cp.execFile(godoc, [pkgPath], {}, (err, stdout, stderr) => {
+				cp.execFile(godoc, [pkgPath], {env}, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {
 						vscode.window.showInformationMessage('The "godoc" command is not available.');
 					}
@@ -112,10 +113,10 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 	});
 }
 
-function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number): Promise<GoDefinitionInformation> {
+function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any): Promise<GoDefinitionInformation> {
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		let gogetdoc = getBinPath('gogetdoc');
-		let p = cp.execFile(gogetdoc, ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()], {}, (err, stdout, stderr) => {
+		let p = cp.execFile(gogetdoc, ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()], {env}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('gogetdoc');

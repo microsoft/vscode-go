@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { dirname, basename } from 'path';
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords } from './util';
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { listPackages, getTextEditForAddImport } from './goImport';
 
@@ -129,7 +129,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			// Unset GOOS and GOARCH for the `gocode` process to ensure that GOHOSTOS and GOHOSTARCH
 			// are used as the target operating system and architecture. `gocode` is unable to provide
 			// autocompletion when the Go environment is configured for cross compilation.
-			let env = Object.assign({}, process.env, { GOOS: '', GOARCH: '' });
+			let env = Object.assign({}, getToolsEnvVars(), { GOOS: '', GOARCH: '' });
 			let stdout = '';
 			let stderr = '';
 
@@ -241,7 +241,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			}
 			let gocode = getBinPath('gocode');
 			let autobuild = vscode.workspace.getConfiguration('go')['gocodeAutoBuild'];
-			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], {}, (err, stdout, stderr) => {
+			let env = getToolsEnvVars();
+			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], {env}, (err, stdout, stderr) => {
 				cp.execFile(gocode, ['set', 'autobuild', autobuild], {}, (err, stdout, stderr) => {
 					resolve();
 				});
