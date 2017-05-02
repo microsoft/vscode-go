@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { getGoVersion, SemVersion, goKeywords, isPositionInString } from './util';
+import { getGoVersion, SemVersion, goKeywords, isPositionInString, getFileArchive } from './util';
 
 export interface GoDefinitionInformation {
 	file: string;
@@ -193,11 +193,7 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 				reject(e);
 			}
 		});
-		let documentText = document.getText();
-		let documentArchive = document.fileName + '\n';
-		documentArchive = documentArchive + Buffer.byteLength(documentText) + '\n';
-		documentArchive = documentArchive + documentText;
-		p.stdin.end(documentArchive);
+		p.stdin.end(getFileArchive(document));
 	});
 }
 
