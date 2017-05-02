@@ -78,6 +78,8 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 				}
 				// extract the line, column and error message from the gotype output
 				let [_, file, line, column, message] = /^(.+):(\d+):(\d+):\s+(.+)/.exec(error);
+				// get cannonical file path
+				file = vscode.Uri.file(file).toString();
 				let range = new vscode.Range(+line - 1, +column, +line - 1, +column);
 				let diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
 
@@ -90,7 +92,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			});
 
 			diagnosticMap.forEach((diagnostics, file) => {
-				errorDiagnosticCollection.set(vscode.Uri.parse('file://' + file), diagnostics);
+				errorDiagnosticCollection.set(vscode.Uri.parse(file), diagnostics);
 			});
 		}
 	});
