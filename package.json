@@ -153,6 +153,11 @@
         "command": "go.remove.tags",
         "title": "Go: Remove Tags from struct fields",
         "description": "Remove tags configured in go.removeTags setting from selected struct using gomodifytags"
+      },
+      {
+        "command": "go.show.commands",
+        "title": "Go: Show other commands",
+        "description": "Shows all commands from the Go extension in the wuick pick"
       }
     ],
     "debuggers": [
@@ -711,7 +716,7 @@
           "command": "go.remove.tags"
         },
         {
-          "when": "editorTextFocus && config.go.editorContextMenuCommands.testAtCursor && resourceLangId == go",
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testAtCursor && resourceLangId == go && !config.editor.codeLens",
           "command": "go.test.cursor"
         },
         {
@@ -741,6 +746,10 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testCoverage && resourceLangId == go",
           "command": "go.test.coverage"
+        },
+        {
+          "when": "editorTextFocus && resourceLangId == go",
+          "command": "go.show.commands"
         }
       ]
     }

@@ -26,7 +26,7 @@ import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTe
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -215,6 +215,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			});
 		}
 		vscode.commands.executeCommand('vscode.startDebug', config);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.show.commands', () => {
+		vscode.window.showQuickPick(getExtensionCommands().map(x => x.title)).then(cmd => {
+			let selectedCmd = getExtensionCommands().find(x => x.title === cmd);
+			if (selectedCmd) {
+				vscode.commands.executeCommand(selectedCmd.command);
+			}
+		});
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {

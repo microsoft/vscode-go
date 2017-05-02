@@ -230,6 +230,7 @@ export function sendTelemetryEvent(eventName: string, properties?: {
 	[key: string]: number;
 }): void {
 
+	let temp = vscode.extensions.getExtension(extensionId).packageJSON.contributes;
 	telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
 	telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
 }
@@ -293,4 +294,13 @@ export function getToolsEnvVars(): any {
 		return process.env;
 	}
 	return Object.assign({}, process.env, toolsEnvVars);
+}
+
+export function getExtensionCommands(): any[] {
+	let pkgJSON = vscode.extensions.getExtension(extensionId).packageJSON;
+	if (!pkgJSON.contributes || !pkgJSON.contributes.commands) {
+		return;
+	}
+	let extensionCommands: any[] = vscode.extensions.getExtension(extensionId).packageJSON.contributes.commands.filter(x => x.command !== 'go.show.commands');
+	return extensionCommands;
 }
