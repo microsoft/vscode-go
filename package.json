@@ -532,7 +532,7 @@
         },
         "go.referencesCodeLens.enabled": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Enable/disable references CodeLens"
         },
         "go.addTags": {
@@ -686,7 +686,7 @@
             "generateTestForFunction": true,
             "generateTestForFile": false,
             "generateTestForPackage": false,
-            "addImport": false,
+            "addImport": true,
             "testCoverage": true
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor."

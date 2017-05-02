@@ -1,3 +1,34 @@
+## 0.6.60 - Coming Soon
+
+### Codelens
+* [theSoenke (@theSoenke)](https://github.com/theSoenke)
+    * [Feature Request 726](https://github.com/Microsoft/vscode-go/issues/726): Display Reference count above functions using codelens. On clicking, the references are shown just like the `Find All References command`. [PR 933](https://github.com/Microsoft/vscode-go/pull/933) and [PR 938](https://github.com/Microsoft/vscode-go/pull/938). You can disable this by updating the setting `go.referencesCodeLens.enabled`.
+* [Guilherme Oenning (@goenning)](https://github.com/goenning)
+    * Use Codelens to run each test, tests in the file and tests in the package. [PR 937](https://github.com/Microsoft/vscode-go/pull/937)
+
+
+## Test Coverage
+* [Thomas Bradford (@kode4food)](https://github.com/kode4food)
+    * New setting `go.coverageOptions` to control whether you want to highlight only covered code or only uncovered code or both when code coverage is run.
+
+
+### Bug Fixes 
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix for [Bug 529](https://github.com/Microsoft/vscode-go/issues/529) Code completion for unimported packages now works on unsaved file after deleting imports.
+    * Fix for [Bug 922](https://github.com/Microsoft/vscode-go/issues/922) Go to Symbol in File feature now includes symbols from unsaved file contents.
+    * Fix for [Bug 878](https://github.com/Microsoft/vscode-go/issues/878) Debugging now works on current file even when there is no folder/workspace open. 
+* [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
+    * Fix for [Bug 943](https://github.com/Microsoft/vscode-go/issues/943) Live error reporting now works across multiple files in the current package, mapping errors to the correct files. [PR 923](https://github.com/Microsoft/vscode-go/pull/923)
+* [Guilherme Oenning (@goenning)](https://github.com/goenning)
+    * Fix for [Bug 934](https://github.com/Microsoft/vscode-go/issues/934) Environment variables from `envFile` attribute in the launch.json file is used while debugging and is overridden only by the ones in the `env` attribute. [PR 935](https://github.com/Microsoft/vscode-go/pull/935)
+
+### Others
+* [Luka Zakrajšek (@bancek)](https://github.com/bancek) and [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * New setting `go.toolsEnvVars` where you can specify env vars to be used by the Go tools that are used in the Go extension. [PR 932](https://github.com/Microsoft/vscode-go/pull/932) and [commit bca4dd5f](https://github.com/Microsoft/vscode-go/commit/bca4dd5f31f32ac49da79580c07b4000f06287a3). This fixes [Bug 632](https://github.com/Microsoft/vscode-go/issues/632) as well.
+* [Paweł Słomka (@slomek)](https://github.com/slomek)
+    * New snippet for writing table driven tests. [PR 952](https://github.com/Microsoft/vscode-go/pull/952)
+
+
 ## 0.6.59 - 4th April, 2017
 
 * [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
