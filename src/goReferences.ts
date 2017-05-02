@@ -37,12 +37,12 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
-						return resolve(null);
+						return resolve([]);
 					}
 
 					if (err && (<any>err).killed !== true) {
 						console.log(err);
-						return resolve(null);
+						return resolve([]);
 					}
 
 					let lines = stdout.toString().split('\n');
