@@ -198,13 +198,17 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.debug.startSession', config => {
+		let activeEditor = vscode.window.activeTextEditor;
+		if (!activeEditor || activeEditor.document.languageId !== 'go') {
+			return;
+		}
 		if (!config.request) { // if 'request' is missing interpret this as a missing launch.json
 			config = Object.assign(config, {
 				'name': 'Launch',
 				'type': 'go',
 				'request': 'launch',
 				'mode': 'debug',
-				'program': '${file}',
+				'program': activeEditor.document.fileName,
 				'env': {
 					'GOPATH': process.env['GOPATH']
 				}
