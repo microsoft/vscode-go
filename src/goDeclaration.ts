@@ -41,7 +41,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
 			return definitionLocation_godef(document, position, offset, includeDocs, env);
 		} else if (toolForDocs === 'guru') {
-			return definitionLocation_godef(document, position, offset, includeDocs, env);
+			return definitionLocation_guru(document, position, offset, env);
 		}
 		return definitionLocation_gogetdoc(document, position, offset, env);
 	});
@@ -151,18 +151,14 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 				reject(e);
 			}
 		});
-		let documentText = document.getText();
-		let documentArchive = document.fileName + '\n';
-		documentArchive = documentArchive + Buffer.byteLength(documentText) + '\n';
-		documentArchive = documentArchive + documentText;
-		p.stdin.end(documentArchive);
+		p.stdin.end(getFileArchive(document));
 	});
 }
 
-function definitionLocation_guru(document: vscode.TextDocument, position: vscode.Position, offset: number): Promise<GoDefinitionInformation> {
+function definitionLocation_guru(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any): Promise<GoDefinitionInformation> {
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		let guru = getBinPath('guru');
-		let p = cp.execFile(guru, ['-json', '-modified', 'definition', document.fileName + ':#' + offset.toString()], {}, (err, stdout, stderr) => {
+		let p = cp.execFile(guru, ['-json', '-modified', 'definition', document.fileName + ':#' + offset.toString()], {env}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('guru');

@@ -6,6 +6,7 @@
 'use strict';
 
 import cp = require('child_process');
+import vscode = require('vscode');
 import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken, WorkspaceConfiguration, workspace } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 import { parameters } from './util';
@@ -15,6 +16,9 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 	constructor(goConfig?: WorkspaceConfiguration) {
 		this.goConfig = goConfig;
+		if (!this.goConfig) {
+			this.goConfig = vscode.workspace.getConfiguration('go');
+		}
 	}
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
@@ -23,11 +27,10 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			return Promise.resolve(null);
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
-		let goConfig = this.goConfig;
 		if (this.goConfig['docsTool'] === 'guru') {
-			goConfig = Object.assign({}, goConfig, {'docsTool': 'godoc'});
+			this.goConfig = Object.assign({}, this.goConfig, {'docsTool': 'godoc'});
 		}
-		return definitionLocation(document, callerPos, goConfig).then(res => {
+		return definitionLocation(document, callerPos, this.goConfig).then(res => {
 			if (!res) {
 				// The definition was not found
 				return null;
