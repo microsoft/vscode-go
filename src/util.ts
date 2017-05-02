@@ -286,3 +286,11 @@ export function getFileArchive(document: vscode.TextDocument): string {
 	let fileContents = document.getText();
 	return document.fileName + '\n' + Buffer.byteLength(fileContents, 'utf8') + '\n' + fileContents;
 }
+
+export function getToolsEnvVars(): any {
+	let toolsEnvVars = vscode.workspace.getConfiguration('go')['toolsEnvVars'];
+	if (!toolsEnvVars || typeof toolsEnvVars !== 'object' || Object.keys(toolsEnvVars).length === 0) {
+		return process.env;
+	}
+	return Object.assign({}, process.env, toolsEnvVars);
+}

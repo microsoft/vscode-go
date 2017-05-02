@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars } from './util';
 import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 
@@ -25,7 +25,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			let range = document.getWordRangeAtPosition(position);
 			let pos = range ? range.start : position;
 			let offset = byteOffsetAt(document, pos);
-
+			let env = getToolsEnvVars();
 			let gorename = getBinPath('gorename');
 			let buildTags = '"' + vscode.workspace.getConfiguration('go')['buildTags'] + '"';
 			let gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName, '-tags', buildTags];
@@ -34,7 +34,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 				gorenameArgs.push('-d');
 			}
 
-			cp.execFile(gorename, gorenameArgs, {}, (err, stdout, stderr) => {
+			cp.execFile(gorename, gorenameArgs, {env}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gorename');

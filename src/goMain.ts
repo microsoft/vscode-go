@@ -6,9 +6,6 @@
 'use strict';
 
 import vscode = require('vscode');
-import fs = require('fs');
-import path = require('path');
-import cp = require('child_process');
 import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';

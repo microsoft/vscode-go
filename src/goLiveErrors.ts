@@ -1,7 +1,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath } from './util';
+import { byteOffsetAt, getBinPath, getToolsEnvVars } from './util';
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
@@ -58,7 +58,8 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 	let fileContents = e.document.getText();
 	let fileName = e.document.fileName;
 	let args = ['-e', '-a', '-lf=' + fileName, path.dirname(fileName)];
-	let p = cp.execFile(gotypeLive, args, (err, stdout, stderr) => {
+	let env = getToolsEnvVars();
+	let p = cp.execFile(gotypeLive, args, {env}, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gotype-live');
 			return;
@@ -77,6 +78,8 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 				}
 				// extract the line, column and error message from the gotype output
 				let [_, file, line, column, message] = /^(.+):(\d+):(\d+):\s+(.+)/.exec(error);
+				// get cannonical file path
+				file = vscode.Uri.file(file).toString();
 				let range = new vscode.Range(+line - 1, +column, +line - 1, +column);
 				let diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
 
@@ -89,7 +92,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			});
 
 			diagnosticMap.forEach((diagnostics, file) => {
-				errorDiagnosticCollection.set(vscode.Uri.parse('file://' + file), diagnostics);
+				errorDiagnosticCollection.set(vscode.Uri.parse(file), diagnostics);
 			});
 		}
 	});
