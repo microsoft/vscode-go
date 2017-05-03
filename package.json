@@ -328,6 +328,15 @@
                 "type": "string",
                 "description": "Absolute path to a file containing environment variable definitions.",
                 "default": "${workspaceRoot}/.env"
+              },
+              "backend": {
+                "type": "string",
+                "enum": [
+                  "default",
+                  "native",
+                  "lldb"
+                ],
+                "description": "Backend used by delve. Only available in delve version 0.12.2 and above."
               }
             }
           }

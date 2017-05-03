@@ -140,6 +140,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	trace?: boolean|'verbose';
 	/** Optional path to .env file. */
 	envFile?: string;
+	backend?: string;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -283,10 +284,12 @@ class Delve {
 			if (launchArgs.init) {
 				dlvArgs = dlvArgs.concat(['--init=' + launchArgs.init]);
 			}
+			if (launchArgs.backend) {
+				dlvArgs = dlvArgs.concat(['--backend=' + launchArgs.backend]);
+			}
 			if (launchArgs.args) {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
-
 
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
