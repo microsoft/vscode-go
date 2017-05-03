@@ -36,10 +36,24 @@ export class GoCodeLensProvider implements CodeLensProvider {
 
 	private provideDocumentSymbols(document: TextDocument, token: CancellationToken): Thenable<vscode.SymbolInformation[]> {
 		let symbolProvider = new GoDocumentSymbolProvider();
+		let isTestFile = document.fileName.endsWith('_test.go');
 		return symbolProvider.provideDocumentSymbols(document, token).then(symbols => {
-			return symbols.filter(symbol =>
-				symbol.kind === vscode.SymbolKind.Function ||
-				symbol.kind === vscode.SymbolKind.Interface);
+			return symbols.filter(symbol => {
+
+				if (symbol.kind === vscode.SymbolKind.Interface) {
+					return true;
+				}
+
+				if (symbol.kind === vscode.SymbolKind.Function) {
+					if (isTestFile && (symbol.name.startsWith('Test') || symbol.name.startsWith('Example') || symbol.name.startsWith('Benchmark'))) {
+						return false;
+					}
+					return true;
+				}
+
+				return false;
+			}
+			);
 		});
 	}
 
