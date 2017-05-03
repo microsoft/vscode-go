@@ -4,7 +4,9 @@
 * [theSoenke (@theSoenke)](https://github.com/theSoenke)
     * [Feature Request 726](https://github.com/Microsoft/vscode-go/issues/726): Display Reference count above functions using codelens. On clicking, the references are shown just like the `Find All References command`. [PR 933](https://github.com/Microsoft/vscode-go/pull/933) and [PR 938](https://github.com/Microsoft/vscode-go/pull/938). You can disable this by updating the setting `go.referencesCodeLens.enabled`.
 * [Guilherme Oenning (@goenning)](https://github.com/goenning)
-    * Use Codelens to run each test, tests in the file and tests in the package. [PR 937](https://github.com/Microsoft/vscode-go/pull/937)
+    * Use Codelens to run each test function, tests in the file and tests in the package. [PR 937](https://github.com/Microsoft/vscode-go/pull/937)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * [Feature Request 879](https://github.com/Microsoft/vscode-go/issues/879): Use Codelens to debug a test function. [Commit 5b1ced7](https://github.com/Microsoft/vscode-go/commit/5b1ced78cc06016d24539099aa164fe170fa7267)
 
 ## Test Coverage
 * [Thomas Bradford (@kode4food)](https://github.com/kode4food)
