@@ -1,14 +1,14 @@
 ## 0.6.60 - 3rd May, 2017
 
-### Codelens
+### Codelens for references, to run and debug tests
 * [theSoenke (@theSoenke)](https://github.com/theSoenke)
-    * [Feature Request 726](https://github.com/Microsoft/vscode-go/issues/726): Display Reference count above functions using codelens. On clicking, the references are shown just like the `Find All References command`. [PR 933](https://github.com/Microsoft/vscode-go/pull/933) and [PR 938](https://github.com/Microsoft/vscode-go/pull/938). You can disable this by updating the setting `go.referencesCodeLens.enabled`.
+    * [Feature Request 726](https://github.com/Microsoft/vscode-go/issues/726): Display Reference count above functions using codelens. On clicking, the references are shown just like the `Find All References` command. [PR 933](https://github.com/Microsoft/vscode-go/pull/933) and [PR 938](https://github.com/Microsoft/vscode-go/pull/938). You can disable this by updating the setting `go.referencesCodeLens.enabled`.
 * [Guilherme Oenning (@goenning)](https://github.com/goenning)
     * Use Codelens to run each test function, tests in the file and tests in the package. [PR 937](https://github.com/Microsoft/vscode-go/pull/937)
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * [Feature Request 879](https://github.com/Microsoft/vscode-go/issues/879): Use Codelens to debug a test function. [Commit 5b1ced7](https://github.com/Microsoft/vscode-go/commit/5b1ced78cc06016d24539099aa164fe170fa7267)
 
-## Test Coverage
+### Test Coverage
 * [Thomas Bradford (@kode4food)](https://github.com/kode4food)
     * New setting `go.coverageOptions` to control whether you want to highlight only covered code or only uncovered code or both when code coverage is run. [PR 945](https://github.com/Microsoft/vscode-go/pull/945)
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
@@ -19,6 +19,7 @@
     * Fix for [Bug 529](https://github.com/Microsoft/vscode-go/issues/529) Code completion for unimported packages now works on unsaved file after deleting imports.
     * Fix for [Bug 922](https://github.com/Microsoft/vscode-go/issues/922) Go to Symbol in File feature now includes symbols from unsaved file contents. [PR 929](https://github.com/Microsoft/vscode-go/pull/929)
     * Fix for [Bug 878](https://github.com/Microsoft/vscode-go/issues/878) Debugging now works on current file even when there is no folder/workspace open. [Commit 42646afc](https://github.com/Microsoft/vscode-go/commit/42646afc2d2442b5e962d3125a7cbf61b98b2a0a)
+    * Fix for [Bug 947](https://github.com/Microsoft/vscode-go/issues/947) Mac users using the latest delve from master may have this issue. You can now set the `backend` property in the debug config in the `launch.json` file to get around this. Root cause is expected to be fixed in delve itself. [Commit 4beecf1](https://github.com/Microsoft/vscode-go/commit/4beecf1db2aaa18b336be2ee64476b56202fc959)
 * [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
     * Fix for [Bug 943](https://github.com/Microsoft/vscode-go/issues/943) Live error reporting now works across multiple files in the current package, mapping errors to the correct files. [PR 923](https://github.com/Microsoft/vscode-go/pull/923)
 * [Guilherme Oenning (@goenning)](https://github.com/goenning)
