@@ -1,4 +1,4 @@
-## 0.6.60 - Coming Soon
+## 0.6.60 - 3rd May, 2017
 
 ### Codelens
 * [theSoenke (@theSoenke)](https://github.com/theSoenke)
@@ -6,18 +6,17 @@
 * [Guilherme Oenning (@goenning)](https://github.com/goenning)
     * Use Codelens to run each test, tests in the file and tests in the package. [PR 937](https://github.com/Microsoft/vscode-go/pull/937)
 
-
 ## Test Coverage
 * [Thomas Bradford (@kode4food)](https://github.com/kode4food)
-    * New setting `go.coverageOptions` to control whether you want to highlight only covered code or only uncovered code or both when code coverage is run.
+    * New setting `go.coverageOptions` to control whether you want to highlight only covered code or only uncovered code or both when code coverage is run. [PR 945](https://github.com/Microsoft/vscode-go/pull/945)
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
-    * The command `Go: Test Coverage In Current Package` is renamed to `Go: Toggle Test Coverage In Current Package` and it does exactly what the name suggests. Toggles test coverage.
+    * The command `Go: Test Coverage In Current Package` is renamed to `Go: Toggle Test Coverage In Current Package` and it does exactly what the name suggests. Toggles test coverage. [Commit cc661daf](https://github.com/Microsoft/vscode-go/commit/cc661dafd06770137459b72441e5f7cc877483f0)
         
 ### Bug Fixes 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Fix for [Bug 529](https://github.com/Microsoft/vscode-go/issues/529) Code completion for unimported packages now works on unsaved file after deleting imports.
-    * Fix for [Bug 922](https://github.com/Microsoft/vscode-go/issues/922) Go to Symbol in File feature now includes symbols from unsaved file contents.
-    * Fix for [Bug 878](https://github.com/Microsoft/vscode-go/issues/878) Debugging now works on current file even when there is no folder/workspace open. 
+    * Fix for [Bug 922](https://github.com/Microsoft/vscode-go/issues/922) Go to Symbol in File feature now includes symbols from unsaved file contents. [PR 929](https://github.com/Microsoft/vscode-go/pull/929)
+    * Fix for [Bug 878](https://github.com/Microsoft/vscode-go/issues/878) Debugging now works on current file even when there is no folder/workspace open. [Commit 42646afc](https://github.com/Microsoft/vscode-go/commit/42646afc2d2442b5e962d3125a7cbf61b98b2a0a)
 * [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
     * Fix for [Bug 943](https://github.com/Microsoft/vscode-go/issues/943) Live error reporting now works across multiple files in the current package, mapping errors to the correct files. [PR 923](https://github.com/Microsoft/vscode-go/pull/923)
 * [Guilherme Oenning (@goenning)](https://github.com/goenning)
