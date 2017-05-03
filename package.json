@@ -111,7 +111,7 @@
       },
       {
         "command": "go.test.coverage",
-        "title": "Go: Test Coverage In Current Package",
+        "title": "Go: Toggle Test Coverage In Current Package",
         "description": "Displays test coverage in the current package."
       },
       {

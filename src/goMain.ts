@@ -21,7 +21,7 @@ import { check, ICheckResult, removeTestStatus } from './goCheck';
 import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { coverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
+import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTestOutput, testWorkspace } from './goTest';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
@@ -141,7 +141,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.coverage', () => {
-		coverageCurrentPackage();
+		toggleCoverageCurrentPackage();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.showOutput', () => {

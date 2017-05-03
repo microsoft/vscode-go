@@ -10,8 +10,9 @@
 ## Test Coverage
 * [Thomas Bradford (@kode4food)](https://github.com/kode4food)
     * New setting `go.coverageOptions` to control whether you want to highlight only covered code or only uncovered code or both when code coverage is run.
-
-
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * The command `Go: Test Coverage In Current Package` is renamed to `Go: Toggle Test Coverage In Current Package` and it does exactly what the name suggests. Toggles test coverage.
+        
 ### Bug Fixes 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Fix for [Bug 529](https://github.com/Microsoft/vscode-go/issues/529) Code completion for unimported packages now works on unsaved file after deleting imports.

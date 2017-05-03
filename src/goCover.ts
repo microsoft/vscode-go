@@ -53,11 +53,19 @@ export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
 	}
 }
 
-export function coverageCurrentPackage() {
+export function toggleCoverageCurrentPackage() {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
+	}
+
+	// If current file has highlights, then remove coverage, else add coverage
+	for (let filename in coverageFiles) {
+		if (editor.document.uri.fsPath.endsWith(filename)) {			
+			clearCoverage();
+			return;
+		}
 	}
 
 	// FIXME: is there a better way to get goConfig?
