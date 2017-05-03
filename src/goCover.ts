@@ -62,7 +62,7 @@ export function toggleCoverageCurrentPackage() {
 
 	// If current file has highlights, then remove coverage, else add coverage
 	for (let filename in coverageFiles) {
-		if (editor.document.uri.fsPath.endsWith(filename)) {			
+		if (editor.document.uri.fsPath.endsWith(filename)) {
 			clearCoverage();
 			return;
 		}

@@ -6,11 +6,22 @@
 'use strict';
 
 import vscode = require('vscode');
+import path = require('path');
 import { CodeLensProvider, TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
 import { getTestFunctions } from './goTest';
 import { GoDocumentSymbolProvider } from './goOutline';
 
 export class GoRunTestCodeLensProvider implements CodeLensProvider {
+	private readonly debugConfig: any = {
+				'name': 'Launch',
+				'type': 'go',
+				'request': 'launch',
+				'mode': 'test',
+				'env': {
+					'GOPATH': process.env['GOPATH']
+				}
+			};
+
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
 		if (!document.fileName.endsWith('_test.go')) {
 			return;
@@ -47,14 +58,26 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 
 	private getCodeLensForFunctions(document: TextDocument): Thenable<CodeLens[]> {
 		return getTestFunctions(document).then(testFunctions => {
-			return testFunctions.map(func => {
-				let command: Command = {
+			let codelens = [];
+
+			testFunctions.forEach(func => {
+				let runTestCmd: Command = {
 					title: 'run test',
 					command: 'go.test.cursor',
 					arguments: [ { functionName: func.name} ]
 				};
-				return new CodeLens(func.location.range, command);
+
+				let config = Object.assign({}, this.debugConfig, { args: ['-test.run', func.name], program: path.dirname(document.fileName) });
+				let debugTestCmd: Command = {
+					title: 'debug test',
+					command: 'vscode.startDebug',
+					arguments: [ config ]
+				};
+
+				codelens.push(new CodeLens(func.location.range, runTestCmd));
+				codelens.push(new CodeLens(func.location.range, debugTestCmd));
 			});
+			return codelens;
 		});
 	}
 }
