@@ -31,7 +31,38 @@ export class GoCodeLensProvider implements CodeLensProvider {
 
 	public resolveCodeLens?(inputCodeLens: CodeLens, token: CancellationToken): CodeLens | Thenable<CodeLens> {
 		let codeLens = inputCodeLens as ReferencesCodeLens;
-		return this.provideSymbolReferences(codeLens.document, codeLens.symbol, token);
+
+		if (token.isCancellationRequested) {
+			return Promise.resolve(codeLens);
+		}
+
+		let options = {
+			includeDeclaration: false
+		};
+		let position = codeLens.symbol.location.range.start;
+
+		// Add offset for functions due to go parser returns always 1 as the start character in a line
+		if (codeLens.symbol.kind === vscode.SymbolKind.Function) {
+			position = position.translate(0, 5);
+		}
+		let referenceProvider = new GoReferenceProvider();
+		return referenceProvider.provideReferences(codeLens.document, position, options, token).then(references => {
+			if (references) {
+				codeLens.command = {
+					title: references.length === 1
+						? '1 reference'
+						: references.length + ' references',
+					command: 'editor.action.showReferences',
+					arguments: [codeLens.document.uri, position, references]
+				};
+			} else {
+				codeLens.command = {
+					title: 'No references found',
+					command: ''
+				};
+			}
+			return codeLens;
+		});
 	}
 
 	private provideDocumentSymbols(document: TextDocument, token: CancellationToken): Thenable<vscode.SymbolInformation[]> {
@@ -54,37 +85,6 @@ export class GoCodeLensProvider implements CodeLensProvider {
 				return false;
 			}
 			);
-		});
-	}
-
-	private provideSymbolReferences(document: TextDocument, symbol: SymbolInformation, token: CancellationToken): Thenable<CodeLens> {
-		if (token.isCancellationRequested) {
-			return Promise.resolve(null);
-		}
-
-		let options = {
-			includeDeclaration: false
-		};
-		let position = symbol.location.range.start;
-
-		// Add offset for functions due to go parser returns always 1 as the start character in a line
-		if (symbol.kind === vscode.SymbolKind.Function) {
-			position = position.translate(0, 5);
-		}
-		let referenceProvider = new GoReferenceProvider();
-		return referenceProvider.provideReferences(document, position, options, token).then(references => {
-			if (!references) {
-				return Promise.resolve(null);
-			}
-
-			let showReferences: Command = {
-				title: references.length === 1
-					? '1 reference'
-					: references.length + ' references',
-				command: 'editor.action.showReferences',
-				arguments: [document.uri, position, references]
-			};
-			return new CodeLens(symbol.location.range, showReferences);
 		});
 	}
 }
