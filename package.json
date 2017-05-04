@@ -130,6 +130,11 @@
         "description": "Generates unit tests for the selected function in the current file"
       },
       {
+        "command": "go.impl.cursor",
+        "title": "Go: Generate interface stub",
+        "description": "Generates and inserts stub methods for implementing the provided interface at the cursor."
+      },
+      {
         "command": "go.import.add",
         "title": "Go: Add Import",
         "description": "Add an import declaration"
