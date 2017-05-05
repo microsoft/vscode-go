@@ -9,6 +9,7 @@ import vscode = require('vscode');
 import path = require('path');
 import { CodeLensProvider, TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
 import { getTestFunctions } from './goTest';
+import { getTestEnvVars } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 
 export class GoRunTestCodeLensProvider implements CodeLensProvider {
@@ -17,9 +18,7 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 				'type': 'go',
 				'request': 'launch',
 				'mode': 'test',
-				'env': {
-					'GOPATH': process.env['GOPATH']
-				}
+				'env': getTestEnvVars()
 			};
 
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {

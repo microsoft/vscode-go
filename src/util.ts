@@ -5,9 +5,10 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath } from './goPath';
+import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath, stripBOM } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
+import fs = require('fs');
 
 const extensionId: string = 'lukehoban.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -294,6 +295,31 @@ export function getToolsEnvVars(): any {
 		return process.env;
 	}
 	return Object.assign({}, process.env, toolsEnvVars);
+}
+
+export function getTestEnvVars(): any {
+	let config = vscode.workspace.getConfiguration('go');
+	let testEnvFile = config['testEnvFile'];
+	let fileEnv = {};
+	if (testEnvFile) {
+		try {
+			testEnvFile = testEnvFile.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+			const buffer = stripBOM(fs.readFileSync(testEnvFile, 'utf8'));
+			buffer.split('\n').forEach( line => {
+				const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
+				if (r !== null) {
+					let value = r[2] || '';
+					if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+						value = value.replace(/\\n/gm, '\n');
+					}
+					fileEnv[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
+				}
+			});
+		} catch (e) {
+			throw('Cannot load environment variables from file');
+		}
+	}
+	return Object.assign({}, fileEnv, getToolsEnvVars(), config['testEnvVars'] || {});
 }
 
 export function getExtensionCommands(): any[] {
