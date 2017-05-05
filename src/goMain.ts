@@ -365,7 +365,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		removeTags: JSON.stringify(goConfig['removeTags']),
 		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands']),
 		liveErrors: JSON.stringify(goConfig['liveErrors']),
-		referencesCodeLens: goConfig['referencesCodeLens'] && goConfig['referencesCodeLens']['enabled'] + '',
+		codeLens: JSON.stringify(goConfig['enableCodeLens']),
 		coverageOptions: goConfig['coverageOptions']
 	});
 }

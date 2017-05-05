@@ -539,10 +539,25 @@
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
         },
-        "go.referencesCodeLens.enabled": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable/disable references CodeLens"
+        "go.enableCodeLens": {
+          "type": "object",
+          "properties": {
+            "references": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, enables the references code lens. Uses guru. Recalculates when there is change to the document followed by scrolling."
+            },
+            "runtest": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, enables code lens for running and debugging tests"
+            }
+          },
+          "default": {
+            "references": false,
+            "runtest": true
+          },
+          "description": "Feature level setting to enable/disable code lens for references and run/debug tests"
         },
         "go.addTags": {
           "type": "object",
