@@ -1,3 +1,14 @@
+## 0.6.61 - 4th May, 2017
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix for [Bug 963](https://github.com/Microsoft/vscode-go/issues/963) Fix for perf issues when references codelens is enabled. [Commit 352435a](https://github.com/Microsoft/vscode-go/commit/352435ab0e6846b7483958a90f61fb94329dd0ae)
+    * Fix for [Bug 964](https://github.com/Microsoft/vscode-go/issues/964) The setting `go.referencesCodeLens.enabled` is deprecated in favor of `go.enableCodeLens` to control multiple types of codelens.
+        ```json
+        "go.enableCodeLens": {
+            "references": false,
+            "runtest": true
+        }
+        ```
+
 ## 0.6.60 - 3rd May, 2017
 
 ### Codelens for references, to run and debug tests
