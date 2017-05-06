@@ -486,7 +486,7 @@
         },
         "go.testEnvFile": {
           "type": "string",
-          "default": {},
+          "default": null,
           "description": "Absolute path to a file containing environment variables definitions"
         },
         "go.testFlags": {
