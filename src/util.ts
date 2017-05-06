@@ -309,7 +309,7 @@ export function getTestEnvVars(): any {
 		fileEnv = parseEnvFile(testEnvFile);
 	}
 
-	return Object.assign({}, fileEnv, toolsEnv, testEnv);
+	return Object.assign({}, toolsEnv, fileEnv, testEnv);
 }
 
 export function getExtensionCommands(): any[] {
