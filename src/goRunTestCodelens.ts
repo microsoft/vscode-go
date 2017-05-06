@@ -17,12 +17,12 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 				'name': 'Launch',
 				'type': 'go',
 				'request': 'launch',
-				'mode': 'test',
-				'env': getTestEnvVars()
+				'mode': 'test'
 			};
 
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
-		let codeLensConfig = vscode.workspace.getConfiguration('go').get('enableCodeLens');
+		let config = vscode.workspace.getConfiguration('go');
+		let codeLensConfig = config.get('enableCodeLens');
 		let codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
 		if (!codelensEnabled || !document.fileName.endsWith('_test.go')) {
 			return;
@@ -30,7 +30,7 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 
 		return Promise.all([
 			this.getCodeLensForPackage(document),
-			this.getCodeLensForFunctions(document)
+			this.getCodeLensForFunctions(config, document)
 		]).then(res => {
 			return res[0].concat(res[1]);
 		});
@@ -57,7 +57,7 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 				});
 	}
 
-	private getCodeLensForFunctions(document: TextDocument): Thenable<CodeLens[]> {
+	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument): Thenable<CodeLens[]> {
 		return getTestFunctions(document).then(testFunctions => {
 			let codelens = [];
 
@@ -68,7 +68,12 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 					arguments: [ { functionName: func.name} ]
 				};
 
-				let config = Object.assign({}, this.debugConfig, { args: ['-test.run', func.name], program: path.dirname(document.fileName) });
+				const args = ['-test.run', func.name];
+				const program = path.dirname(document.fileName);
+				const env = vsConfig['testEnvVars'] || {};
+				const envFile = vsConfig['testEnvFile'];
+
+				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile });
 				let debugTestCmd: Command = {
 					title: 'debug test',
 					command: 'vscode.startDebug',
