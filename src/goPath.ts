@@ -77,8 +77,14 @@ export function getGoRuntimePath(): string {
 	if (runtimePathCache) return runtimePathCache;
 	let correctBinNameGo = correctBinname('go');
 	if (process.env['GOROOT']) {
-		runtimePathCache = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);
-	} else if (process.env['PATH']) {
+		let runtimePathFromGoRoot = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);
+		if (fileExists(runtimePathFromGoRoot)) {
+			runtimePathCache = runtimePathFromGoRoot;
+			return runtimePathCache;
+		}
+	}
+
+	if (process.env['PATH']) {
 		let pathparts = (<string>process.env.PATH).split(path.delimiter);
 		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinNameGo)).filter(candidate => fileExists(candidate))[0];
 	}
