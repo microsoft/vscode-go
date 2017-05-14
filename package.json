@@ -500,6 +500,19 @@
           "default": {},
           "description": "Environment variables that will passed to the processes that run the Go tools (e.g. CGO_CFLAGS)"
         },
+        "go.gocodeTool": {
+          "type": "string",
+          "default": null,
+          "description": "The gocode tool to run, e.g. '/usr/bin/mygocode'. Defaults to look up gocode in GOPATH."
+        },
+        "go.gocodeFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Flags to pass to gocode (e.g. ['-address', '-sock'])"
+        },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": true,

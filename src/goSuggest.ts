@@ -11,6 +11,7 @@ import { dirname, basename } from 'path';
 import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { listPackages, getTextEditForAddImport } from './goImport';
+import { outputChannel, showGoStatus, hideGoStatus } from './goStatus';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -117,14 +118,27 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						}
 					}
 					resolve(suggestions);
+				}, error => {
+					outputChannel.appendLine(error);
+					showGoStatus('Failed to run gocode', '', error);
+					setTimeout(() => hideGoStatus(), 5000);
 				});
 			});
 		});
 	}
 
+	private gocodeTool() {
+		return vscode.workspace.getConfiguration('go')['gocodeTool'] || getBinPath('gocode');
+	}
+
+	private args(...args: string[]): string[] {
+		let gocodeFlags = vscode.workspace.getConfiguration('go')['gocodeFlags'] || [];
+		return gocodeFlags.concat(args);
+	}
+
 	private runGoCode(filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
-			let gocode = getBinPath('gocode');
+			let gocode = this.gocodeTool();
 
 			// Unset GOOS and GOARCH for the `gocode` process to ensure that GOHOSTOS and GOHOSTARCH
 			// are used as the target operating system and architecture. `gocode` is unable to provide
@@ -134,7 +148,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			let stderr = '';
 
 			// Spawn `gocode` process
-			let p = cp.spawn(gocode, ['-f=json', 'autocomplete', filename, 'c' + offset], { env });
+			let p = cp.spawn(gocode, this.args('-f=json', 'autocomplete', filename, 'c' + offset), { env });
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
 			p.on('error', err => {
@@ -239,11 +253,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			if (this.gocodeConfigurationComplete) {
 				return resolve();
 			}
-			let gocode = getBinPath('gocode');
+			let gocode = this.gocodeTool();
 			let autobuild = vscode.workspace.getConfiguration('go')['gocodeAutoBuild'];
 			let env = getToolsEnvVars();
-			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], {env}, (err, stdout, stderr) => {
-				cp.execFile(gocode, ['set', 'autobuild', autobuild], {}, (err, stdout, stderr) => {
+			cp.execFile(gocode, this.args('set', 'propose-builtins', 'true'), {env}, (err, stdout, stderr) => {
+				cp.execFile(gocode, this.args('set', 'autobuild', autobuild), {}, (err, stdout, stderr) => {
 					resolve();
 				});
 			});
