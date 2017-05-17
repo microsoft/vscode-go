@@ -32,6 +32,10 @@
 			"prefix": "func",
 			"body": "func $1($2) $3 {\n\t$0\n}"
 		},
+		"typed function declaration": {
+			"prefix": "funct",
+			"body": "func ($1) $2($3) $4 {\n\t$0\n}"
+		},
 		"variable declaration": {
 			"prefix": "var",
 			"body": "var ${1:name} ${2:type}"
