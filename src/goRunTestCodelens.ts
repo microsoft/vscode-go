@@ -70,6 +70,7 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 				};
 
 				let config = Object.assign({}, this.debugConfig, { args: ['-test.run', func.name], program: path.dirname(document.fileName) });
+				Object.assign(config.env, vscode.workspace.getConfiguration("go").get("testEnvVars"));
 				let debugTestCmd: Command = {
 					title: 'debug test',
 					command: 'vscode.startDebug',
