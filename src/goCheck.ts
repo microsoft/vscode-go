@@ -219,6 +219,9 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			}
 			args.push(flag);
 		});
+		if (lintTool === 'gometalinter' && args.indexOf('--aggregate') === -1) {
+			args.push('--aggregate');
+		}
 
 		runningToolsPromises.push(runTool(
 			args,
