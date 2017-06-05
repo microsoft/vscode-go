@@ -489,6 +489,11 @@
           "default": {},
           "description": "Environment variables that will passed to the process that runs the Go tests"
         },
+        "go.testEnvFile": {
+          "type": "string",
+          "default": null,
+          "description": "Absolute path to a file containing environment variables definitions"
+        },
         "go.testFlags": {
           "type": [
             "array",

@@ -12,7 +12,7 @@ import util = require('util');
 import os = require('os');
 import { getGoRuntimePath } from './goPath';
 import { GoDocumentSymbolProvider } from './goOutline';
-import { getToolsEnvVars } from './util';
+import { getTestEnvVars } from './util';
 
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
 
@@ -204,7 +204,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
 		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags];
-		let testEnvVars = Object.assign({}, getToolsEnvVars(), testconfig.goConfig['testEnvVars']);
+		let testEnvVars = getTestEnvVars();
 		let goRuntimePath = getGoRuntimePath();
 
 		if (!goRuntimePath) {

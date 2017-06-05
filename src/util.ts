@@ -5,9 +5,10 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath } from './goPath';
+import { parseEnvFile, getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath, stripBOM } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
+import fs = require('fs');
 
 const extensionId: string = 'lukehoban.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -296,6 +297,21 @@ export function getToolsEnvVars(): any {
 		return process.env;
 	}
 	return Object.assign({}, process.env, toolsEnvVars);
+}
+
+export function getTestEnvVars(): any {
+	const config = vscode.workspace.getConfiguration('go');
+	const toolsEnv = getToolsEnvVars();
+	const testEnv = config['testEnvVars'] || {};
+
+	let fileEnv = {};
+	let testEnvFile = config['testEnvFile'];
+	if (testEnvFile) {
+		testEnvFile = testEnvFile.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+		fileEnv = parseEnvFile(testEnvFile);
+	}
+
+	return Object.assign({}, toolsEnv, fileEnv, testEnv);
 }
 
 export function getExtensionCommands(): any[] {
