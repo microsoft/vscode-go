@@ -419,8 +419,8 @@ class GoDebugSession extends DebugSession {
 			for (; i < llist.length; i++) if (llist[i] !== rlist[i]) break;
 
 			if (i) {
-				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator);
-				remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator);
+				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
+				remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
 			} else if ((remotePath.endsWith('\\')) || (remotePath.endsWith('/'))) {
 				remotePath = remotePath.substring(0, remotePath.length - 1);
 			}

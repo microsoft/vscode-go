@@ -75,7 +75,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 
 		// We use functionName if it was provided as argument
 		// Otherwise find any test function containing the cursor.
-		if (args.functionName) {
+		if (args && args.functionName) {
 			testFunctionName = args.functionName;
 		} else {
 			for (let func of testFunctions) {

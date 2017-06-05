@@ -143,46 +143,25 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	};
 
 	if (!!goConfig['buildOnSave']) {
-		// we need to parse the file to check the package name
-		// if the package is a main pkg, we won't be doing a go build -i
-		let buildPromise = new Promise<{}>((resolve, reject) => {
-			let isMainPkg = false;
-			fs.readFile(filename, 'utf8', (err, data) => {
-				if (err) {
-					return;
-				}
-				let prelude = parseFilePrelude(data);
-				if (prelude.pkg) {
-					isMainPkg = prelude.pkg.name === 'main';
-				}
+		let buildFlags = goConfig['buildFlags'] || [];
+		let buildTags = '"' + goConfig['buildTags'] + '"';
+		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
+		let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(cwd);
+		let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+		let args = ['build', '-i', '-o', tmppath, '-tags', buildTags, ...buildFlags, importPath];
+		if (filename.match(/_test.go$/i)) {
+			args = ['test', '-i', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, importPath];
+		}
 
-				let buildFlags = goConfig['buildFlags'] || [];
-				let buildTags = '"' + goConfig['buildTags'] + '"';
-				let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
-				let args = ['build'];
-				if (!isMainPkg) {
-					args.push('-i');
-				};
-
-				let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(cwd);
-				let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
-
-				args = args.concat(['-o', tmppath, '-tags', buildTags, ...buildFlags, importPath]);
-				if (filename.match(/_test.go$/i)) {
-					args = ['test', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, importPath];
-				}
-				runTool(
-					args,
-					cwd,
-					'error',
-					true,
-					null,
-					env,
-					true
-				).then(result => resolve(result), err => reject(err));
-			});
-		});
-		runningToolsPromises.push(buildPromise);
+		runningToolsPromises.push(runTool(
+			args,
+			cwd,
+			'error',
+			true,
+			null,
+			env,
+			true
+		));
 	}
 
 	if (!!goConfig['testOnSave']) {
@@ -219,6 +198,9 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			}
 			args.push(flag);
 		});
+		if (lintTool === 'gometalinter' && args.indexOf('--aggregate') === -1) {
+			args.push('--aggregate');
+		}
 
 		runningToolsPromises.push(runTool(
 			args,

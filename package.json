@@ -33,7 +33,7 @@
   "extensionDependencies": [],
   "dependencies": {
     "console-stamp": "^0.2.2",
-    "diff": "~3.0.0",
+    "diff": "~3.2.0",
     "json-rpc2": "^1.0.2",
     "vscode-debug-logger": "^0.0.4",
     "vscode-debugadapter": "^1.11.0",
@@ -128,6 +128,11 @@
         "command": "go.test.generate.function",
         "title": "Go: Generate Unit Tests For Function",
         "description": "Generates unit tests for the selected function in the current file"
+      },
+      {
+        "command": "go.impl.cursor",
+        "title": "Go: Generate interface stub",
+        "description": "Generates and inserts stub methods for implementing the provided interface at the cursor."
       },
       {
         "command": "go.import.add",
