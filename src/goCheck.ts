@@ -145,17 +145,12 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	if (!!goConfig['buildOnSave']) {
 		let buildFlags = goConfig['buildFlags'] || [];
 		let buildTags = '"' + goConfig['buildTags'] + '"';
-		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
-		let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(cwd);
-		let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
-		let args = ['build', '-i', '-o', tmppath, '-tags', buildTags, ...buildFlags, importPath];
-		if (filename.match(/_test.go$/i)) {
-			args = ['test', '-i', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, importPath];
-		}
+
+		let args = ['build', '-i', '-tags', buildTags, ...buildFlags, './...'];
 
 		runningToolsPromises.push(runTool(
 			args,
-			cwd,
+			vscode.workspace.rootPath,
 			'error',
 			true,
 			null,
