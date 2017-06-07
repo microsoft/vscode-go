@@ -202,9 +202,12 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			args.push('--aggregate');
 		}
 
+		// Lint the entire workspace recursively.
+		args.push('./...');
+
 		runningToolsPromises.push(runTool(
 			args,
-			cwd,
+			vscode.workspace.rootPath,
 			'warning',
 			false,
 			lintTool,
@@ -215,8 +218,8 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	if (!!goConfig['vetOnSave']) {
 		let vetFlags = goConfig['vetFlags'] || [];
 		runningToolsPromises.push(runTool(
-			['tool', 'vet', ...vetFlags, filename],
-			cwd,
+			['vet', ...vetFlags, './...'],
+			vscode.workspace.rootPath,
 			'warning',
 			true,
 			null,
