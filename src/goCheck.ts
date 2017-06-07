@@ -142,15 +142,41 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		return testPromise;
 	};
 
-	if (!!goConfig['buildOnSave']) {
+	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
 		let buildFlags = goConfig['buildFlags'] || [];
 		let buildTags = '"' + goConfig['buildTags'] + '"';
 
-		let args = ['build', '-i', '-tags', buildTags, ...buildFlags, './...'];
+		let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(cwd);
+		let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
+
+		let buildWorkDir = cwd;
+		let buildWorkspace = goConfig['buildOnSave'] === 'workspace';
+
+		let args: any[];
+		if (filename.match(/_test.go$/i)) {
+			args = ['test', '-i'];
+
+			if (!buildWorkspace) {
+				args.push('-copybinary', '-o', tmppath, '-c');
+			}
+		} else {
+			args = ['build', '-i'];
+
+			if (!buildWorkspace) {
+				args.push('-o', tmppath);
+			}
+		}
+
+		args.push('-tags', buildTags, ...buildFlags);
+
+		if (buildWorkspace) {
+			buildWorkDir = vscode.workspace.rootPath;
+			args.push('./...');
+		}
 
 		runningToolsPromises.push(runTool(
 			args,
-			vscode.workspace.rootPath,
+			buildWorkDir,
 			'error',
 			true,
 			null,
@@ -174,7 +200,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		});
 	}
 
-	if (!!goConfig['lintOnSave']) {
+	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
 		let lintTool = goConfig['lintTool'] || 'golint';
 		let lintFlags: string[] = goConfig['lintFlags'] || [];
 
@@ -197,12 +223,16 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			args.push('--aggregate');
 		}
 
-		// Lint the entire workspace recursively.
-		args.push('./...');
+		let lintWorkDir = cwd;
+
+		if (goConfig['lintOnSave'] === 'workspace') {
+			args.push('./...');
+			lintWorkDir = vscode.workspace.rootPath;
+		}
 
 		runningToolsPromises.push(runTool(
 			args,
-			vscode.workspace.rootPath,
+			lintWorkDir,
 			'warning',
 			false,
 			lintTool,
@@ -210,11 +240,19 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		));
 	}
 
-	if (!!goConfig['vetOnSave']) {
+	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		let vetFlags = goConfig['vetFlags'] || [];
+		let vetArgs = ['vet', ...vetFlags];
+		let vetWorkDir = cwd;
+
+		if (goConfig['vetOnSave'] === 'workspace') {
+			vetArgs.push('./...');
+			vetWorkDir = vscode.workspace.rootPath;
+		}
+
 		runningToolsPromises.push(runTool(
-			['vet', ...vetFlags, './...'],
-			vscode.workspace.rootPath,
+			vetArgs,
+			vetWorkDir,
 			'warning',
 			true,
 			null,
