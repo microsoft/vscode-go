@@ -22,7 +22,7 @@ export function implCursor() {
 	let cursor = vscode.window.activeTextEditor.selection;
 	return vscode.window.showInputBox({
 		placeHolder: 'f *File io.Closer',
-		prompt: 'What interface do you want to implement?'
+		prompt: 'Enter receiver and interface to implement.'
 	}).then(implInput => {
 		if (typeof implInput === 'undefined') {
 			return;
