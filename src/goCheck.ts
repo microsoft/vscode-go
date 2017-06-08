@@ -149,23 +149,19 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		let tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
 
 		let buildWorkDir = cwd;
-		let buildWorkspace = goConfig['buildOnSave'] === 'workspace';
+		let buildArgs: string[];
 
-		let args = ['build', '-i'];
-
-		if (!buildWorkspace) {
-			args.push('-o', tmpPath);
-		}
-
-		args.push('-tags', buildTags, ...buildFlags);
-
-		if (buildWorkspace) {
+		if (goConfig['buildOnSave'] === 'workspace') {
 			buildWorkDir = vscode.workspace.rootPath;
-			args.push('./...');
+			buildArgs = ['test', '-run=^$', '-tags', buildTags, ...buildFlags, './...'];
+		} else if (filename.match(/_test.go$/i)) {
+			buildArgs = ['test', '-c', '-copybinary', '-o', tmpPath, '-tags', buildTags, ...buildFlags];
+		} else {
+			buildArgs = ['build', '-i', '-o', tmpPath, '-tags', buildTags, ...buildFlags];
 		}
 
 		runningToolsPromises.push(runTool(
-			args,
+			buildArgs,
 			buildWorkDir,
 			'error',
 			true,
@@ -173,32 +169,6 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			env,
 			true
 		));
-
-		// This will test only the current package.
-		if (filename.match(/_test.go$/i) && !buildWorkspace) {
-			runningToolsPromises.push(runTool(
-				['test', '-c', '-copybinary', '-o', tmpPath + '-test', '-tags', buildTags, ...buildFlags],
-				cwd,
-				'error',
-				true,
-				null,
-				env,
-				true
-			));
-		}
-
-		// Compile tests for entire workspace.
-		if (buildWorkspace) {
-			runningToolsPromises.push(runTool(
-				['test', '-tags', buildTags, ...buildFlags, '-run', '!', './...'], // Doesn't run any tests.
-				buildWorkDir,
-				'error',
-				true,
-				null,
-				env,
-				true
-			));
-		}
 	}
 
 	if (!!goConfig['testOnSave']) {
