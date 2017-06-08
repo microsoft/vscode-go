@@ -360,7 +360,7 @@
             "off"
           ],
           "default": "package",
-          "description": "Run 'go build'/'go test -c' on save on the current workspace, current package or nothing."
+          "description": "On save, compiles the current workspace, current package or nothing at all."
         },
         "go.buildFlags": {
           "type": "array",
@@ -383,7 +383,7 @@
             "off"
           ],
           "default": "package",
-          "description": "Run Lint tool on save on current workspace, current package or nothing."
+          "description": "On save, runs the configured Lint tool on current workspace, current package or nothing at all."
         },
         "go.lintTool": {
           "type": "string",
@@ -410,7 +410,7 @@
             "off"
           ],
           "default": "package",
-          "description": "Run 'go vet' on save on current workspace, current package or nothing."
+          "description": "On save, runs 'go vet' on current workspace, current package or nothing."
         },
         "go.vetFlags": {
           "type": "array",

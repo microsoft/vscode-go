@@ -153,9 +153,12 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 		if (goConfig['buildOnSave'] === 'workspace') {
 			buildWorkDir = vscode.workspace.rootPath;
+			// To compile the whole workspace, we cant use `go build` as it skips test file
+			// So use `go test -run=^$ ./...`. Since the regex doesnt match any test functions, no test will be run
+			// But the workspace will get compiled
 			buildArgs = ['test', '-run=^$', '-tags', buildTags, ...buildFlags, './...'];
 		} else if (filename.match(/_test.go$/i)) {
-			buildArgs = ['test', '-c', '-copybinary', '-o', tmpPath, '-tags', buildTags, ...buildFlags];
+			buildArgs = ['test', '-i', '-c', '-o', tmpPath, '-tags', buildTags, ...buildFlags];
 		} else {
 			buildArgs = ['build', '-i', '-o', tmpPath, '-tags', buildTags, ...buildFlags];
 		}
