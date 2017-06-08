@@ -7,6 +7,7 @@
         - The stubs are then generated where the cursor is in the editor.
 * [Guilherme Oenning (@goenning)](https://github.com/goenning)
     * New setting `go.testEnvFile` to configure the location of a file that would have environment variables to use while running tests. 
+        - File contents should be of the form `key=value`.
         - Values from the existing setting `go.test.EnvVars` will override the above
         - These environment variables will also be used by the "Debug Test" codelens
         - When debugging using the debug viewlet or pressing `F5`, the above will not be used. Continue to use the `env` and/or `envFile` property in the debug configurations in the `launch.json` file.
