@@ -106,6 +106,43 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 	});
 }
 
+/**
+ * Check if the given path is a directory.
+ * @param filePath Path to the potential directory
+ */
+function isDirectory(filePath: string): boolean {
+	try {
+		return fs.statSync(filePath).isDirectory();
+	} catch (e) {
+		return false;
+	}
+}
+
+/**
+ * List directories (including the given dirPath) which contain files with the '_test.go' suffix.
+ * This ignores hidden directories and their sub-directories.
+ * @param dirPath Directory in which to start searching
+ */
+function findTestDirectories(dirPath: string): string[] {
+	let results = [];
+	let files = fs.readdirSync(dirPath);
+
+	// Contains test files?
+	if (files.some(name => name.endsWith('_test.go'))) {
+		results.push(dirPath);
+	}
+
+	let subDirs = files.filter(name => {
+		return isDirectory(path.join(dirPath, name)) && !name.startsWith('.');
+	});
+
+	subDirs.forEach(name => {
+		results = results.concat(findTestDirectories(path.join(dirPath, name)));
+	});
+
+	return results;
+}
+
 export function check(filename: string, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
 	outputChannel.clear();
 	let runningToolsPromises = [];
@@ -175,9 +212,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		));
 
 		// This will test only the current package.
-		if (filename.match(/_test.go$/i)) {
-			// TODO: Compile each package individually if 'buildOnSave' is set to 'workspace'.
-
+		if (filename.match(/_test.go$/i) && !buildWorkspace) {
 			runningToolsPromises.push(runTool(
 				['test', '-c', '-copybinary', '-o', tmpPath + '-test', '-tags', buildTags, ...buildFlags],
 				cwd,
@@ -187,6 +222,21 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 				env,
 				true
 			));
+		}
+
+		// Compile tests for entire workspace.
+		if (buildWorkspace) {
+			findTestDirectories(vscode.workspace.rootPath).forEach(testPath => {
+				runningToolsPromises.push(runTool(
+					['test', '-c', '-copybinary', '-o', tmpPath + '-test', '-tags', buildTags, ...buildFlags],
+					testPath,
+					'error',
+					true,
+					null,
+					env,
+					true
+				));
+			});
 		}
 	}
 
