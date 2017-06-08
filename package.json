@@ -353,9 +353,14 @@
       "title": "Go configuration",
       "properties": {
         "go.buildOnSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "Run 'go build'/'go test -c' on save."
+          "type": "string",
+          "enum": [
+            "package",
+            "workspace",
+            "off"
+          ],
+          "default": "package",
+          "description": "Run 'go build'/'go test -c' on save on the current workspace, current package or nothing."
         },
         "go.buildFlags": {
           "type": "array",
@@ -371,9 +376,14 @@
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
         },
         "go.lintOnSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "Run Lint tool on save."
+           "type": "string",
+          "enum": [
+            "package",
+            "workspace",
+            "off"
+          ],
+          "default": "package",
+          "description": "Run Lint tool on save on current workspace, current package or nothing."
         },
         "go.lintTool": {
           "type": "string",
@@ -393,9 +403,14 @@
           "description": "Flags to pass to Lint tool (e.g. [\"-min_confidence=.8\"])"
         },
         "go.vetOnSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "Run 'go tool vet' on save."
+          "type": "string",
+          "enum": [
+            "package",
+            "workspace",
+            "off"
+          ],
+          "default": "package",
+          "description": "Run 'go vet' on save on current workspace, current package or nothing."
         },
         "go.vetFlags": {
           "type": "array",
@@ -403,7 +418,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])"
+          "description": "Flags to pass to `go vet` (e.g. ['-all', '-shadow'])"
         },
         "go.formatOnSave": {
           "type": "boolean",
