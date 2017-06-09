@@ -2,17 +2,17 @@
 
 ### Features
 * [Jamie Stackhouse (@itsjamie)](https://github.com/itsjamie)
-   * New command `Go: Generate interface stub` to generate stubs that implement given interface using [impl](https://github.com/josharian/impl).
+   * New command `Go: Generate interface stub` to generate stubs that implement given interface using [impl](https://github.com/josharian/impl). [PR 939](https://github.com/Microsoft/vscode-go/pull/939)
         - When the command is run, you are prompted to provide interface name. Eg: `f *File io.Closer`
         - The stubs are then generated where the cursor is in the editor.
 * [Guilherme Oenning (@goenning)](https://github.com/goenning)
-    * New setting `go.testEnvFile` to configure the location of a file that would have environment variables to use while running tests. 
+    * New setting `go.testEnvFile` to configure the location of a file that would have environment variables to use while running tests. [PR 971](https://github.com/Microsoft/vscode-go/pull/971)
         - File contents should be of the form `key=value`.
         - Values from the existing setting `go.test.EnvVars` will override the above
         - These environment variables will also be used by the "Debug Test" codelens
         - When debugging using the debug viewlet or pressing `F5`, the above will not be used. Continue to use the `env` and/or `envFile` property in the debug configurations in the `launch.json` file.
 * [Ole (@vapourismo)](https://github.com/vapourismo)
-    * You can now run build/lint/vet on the whole workspace instead of just the current package on file save. 
+    * You can now run build/lint/vet on the whole workspace instead of just the current package on file save. [PR 1023](https://github.com/Microsoft/vscode-go/pull/1023)
         - To enable this, the settings `go.buildOnSave`, `go.lintOnSave` and `go.vetOnSave` now take values `package`, `workspace` or `off` instead of the previous `true`/`false`. 
         - These features are backward compatible and so if you are still using `true`/`false` for these settings, they will work as they did before, but you will get a warning in your settings file.
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
@@ -21,9 +21,9 @@
 
 ### Bug Fixes
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
-    * Fix for [Bug 968](https://github.com/Microsoft/vscode-go/issues/963) where rename fails if `---` is anywhere in the file
-    * Fix for [Bug 981](https://github.com/Microsoft/vscode-go/issues/963) where `Go: Test Function At Cursor` fails.
-    * Fix for [Bug 983](https://github.com/Microsoft/vscode-go/issues/963) where the Go binary is not found in MSYS2 as it is not located in GOROOT.
+    * Fix for [Bug 968](https://github.com/Microsoft/vscode-go/issues/968) where rename fails if `---` is anywhere in the file
+    * Fix for [Bug 981](https://github.com/Microsoft/vscode-go/issues/981) where `Go: Test Function At Cursor` fails.
+    * Fix for [Bug 983](https://github.com/Microsoft/vscode-go/issues/983) where the Go binary is not found in MSYS2 as it is not located in GOROOT.
     * Fix for [Bug 1022](https://github.com/Microsoft/vscode-go/issues/1002) where snippets from function auto complete do not insert the placeholders
     * Fix for [Bug 962](https://github.com/Microsoft/vscode-go/issues/962) where references codelens wouldnt work for methods.
 * [F0zi (@f0zi)](https://github.com/f0zi)
