@@ -5,6 +5,8 @@ import { CodeLensProvider, SymbolInformation, SymbolKind, TextDocument, Cancella
 import { documentSymbols, GoDocumentSymbolProvider } from './goOutline';
 import { GoReferenceProvider } from './goReferences';
 
+const methodRegex = /^func\s+\(\s*\w+\s+\*?\w+\s*\)\s+/;
+
 class ReferencesCodeLens extends CodeLens {
 	constructor(
 		public document: TextDocument,
@@ -25,7 +27,15 @@ export class GoCodeLensProvider implements CodeLensProvider {
 
 		return this.provideDocumentSymbols(document, token).then(symbols => {
 			return symbols.map(symbol => {
-				return new ReferencesCodeLens(document, symbol, symbol.location.range);
+				let position = symbol.location.range.start;
+
+				// Add offset for functions as go-outline returns position at the keyword func instead of func name
+				if (symbol.kind === vscode.SymbolKind.Function) {
+					let funcDecl = document.lineAt(position.line).text.substr(position.character);
+					let match = methodRegex.exec(funcDecl);
+					position = position.translate(0, match ? match[0].length : 5);
+				}
+				return new ReferencesCodeLens(document, symbol, new vscode.Range(position, position));
 			});
 		});
 	}
@@ -40,21 +50,15 @@ export class GoCodeLensProvider implements CodeLensProvider {
 		let options = {
 			includeDeclaration: false
 		};
-		let position = codeLens.symbol.location.range.start;
-
-		// Add offset for functions due to go parser returns always 1 as the start character in a line
-		if (codeLens.symbol.kind === vscode.SymbolKind.Function) {
-			position = position.translate(0, 5);
-		}
 		let referenceProvider = new GoReferenceProvider();
-		return referenceProvider.provideReferences(codeLens.document, position, options, token).then(references => {
+		return referenceProvider.provideReferences(codeLens.document, codeLens.range.start, options, token).then(references => {
 			if (references) {
 				codeLens.command = {
 					title: references.length === 1
 						? '1 reference'
 						: references.length + ' references',
 					command: 'editor.action.showReferences',
-					arguments: [codeLens.document.uri, position, references]
+					arguments: [codeLens.document.uri, codeLens.range.start, references]
 				};
 			} else {
 				codeLens.command = {
