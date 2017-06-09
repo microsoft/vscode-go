@@ -1,4 +1,4 @@
-## 0.6.62 - 8th June, 2017
+## 0.6.62 - 9th June, 2017
 
 ### Features
 * [Jamie Stackhouse (@itsjamie)](https://github.com/itsjamie)
@@ -25,6 +25,7 @@
     * Fix for [Bug 981](https://github.com/Microsoft/vscode-go/issues/963) where `Go: Test Function At Cursor` fails.
     * Fix for [Bug 983](https://github.com/Microsoft/vscode-go/issues/963) where the Go binary is not found in MSYS2 as it is not located in GOROOT.
     * Fix for [Bug 1022](https://github.com/Microsoft/vscode-go/issues/1002) where snippets from function auto complete do not insert the placeholders
+    * Fix for [Bug 962](https://github.com/Microsoft/vscode-go/issues/962) where references codelens wouldnt work for methods.
 * [F0zi (@f0zi)](https://github.com/f0zi)
     * Fix for [Bug 1009](https://github.com/Microsoft/vscode-go/issues/1009) where remote debugging fails to verify breakpoint if GOPATH partially matches remote GOPATH
 * [Anton Kryukov (@Emreu)](https://github.com/Emreu)
