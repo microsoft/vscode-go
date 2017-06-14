@@ -166,11 +166,11 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 			let env = (envWithSeparateGoPathForTools && tool !== 'gometalinter' && tool !== 'dlv') ? envWithSeparateGoPathForTools : envForTools;
 			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env }, (err, stdout, stderr) => {
 				if (err) {
-					outputChannel.appendLine('Installing ' + tool + ' FAILED');
+					outputChannel.appendLine('Installing ' + tools[tool] + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
 					resolve([...sofar, failureReason]);
 				} else {
-					outputChannel.appendLine('Installing ' + tool + ' SUCCEEDED');
+					outputChannel.appendLine('Installing ' + tools[tool] + ' SUCCEEDED');
 					if (tool === 'gometalinter') {
 						// Gometalinter needs to install all the linters it uses.
 						outputChannel.appendLine('Installing all linters used by gometalinter....');
