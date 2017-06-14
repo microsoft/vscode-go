@@ -16,7 +16,7 @@ interface GoImplInput {
 }
 
 // Supports only passing interface, see TODO in implCursor to finish
-const inputRegex = /^(\w+\ \*?\w+\ )?([\w.]+)$/;
+const inputRegex = /^(\w+\ \*?\w+\ )?([\w./]+)$/;
 
 export function implCursor() {
 	let cursor = vscode.window.activeTextEditor.selection;
