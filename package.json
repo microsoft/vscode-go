@@ -376,7 +376,7 @@
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
         },
         "go.lintOnSave": {
-           "type": "string",
+          "type": "string",
           "enum": [
             "package",
             "workspace",
@@ -391,7 +391,8 @@
           "description": "Specifies Lint tool name.",
           "enum": [
             "golint",
-            "gometalinter"
+            "gometalinter",
+            "megacheck"
           ]
         },
         "go.lintFlags": {
