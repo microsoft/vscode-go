@@ -27,10 +27,11 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			return Promise.resolve(null);
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
-		if (this.goConfig['docsTool'] === 'guru') {
-			this.goConfig = Object.assign({}, this.goConfig, {'docsTool': 'godoc'});
+		let goConfig = this.goConfig;
+		if (goConfig['docsTool'] === 'guru') {
+			goConfig = Object.assign({}, goConfig, {'docsTool': 'godoc'});
 		}
-		return definitionLocation(document, callerPos, this.goConfig).then(res => {
+		return definitionLocation(document, callerPos, goConfig).then(res => {
 			if (!res) {
 				// The definition was not found
 				return null;
@@ -59,9 +60,6 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				}
 				si = new SignatureInformation(declarationText, res.doc);
 				sig = declarationText.substring(res.name.length);
-			} else if (res.toolUsed === 'guru') {
-
-
 			}
 
 			si.parameters = parameters(sig).map(paramText =>
