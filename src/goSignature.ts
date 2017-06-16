@@ -27,6 +27,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			return Promise.resolve(null);
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
+		// Temporary fix to fall back to godoc if guru is the set docsTool
 		let goConfig = this.goConfig;
 		if (goConfig['docsTool'] === 'guru') {
 			goConfig = Object.assign({}, goConfig, {'docsTool': 'godoc'});
