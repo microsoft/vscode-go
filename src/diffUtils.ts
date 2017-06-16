@@ -130,13 +130,6 @@ function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 		});
 
 		let fileName = uniDiff.oldFileName;
-		if (process.platform === 'win32') {
-			// Cleanup the file Name to fix https://github.com/Microsoft/vscode-go/issues/665
-			fileName = fileName.replace(/\\\\/g, '\\');
-			if (fileName.startsWith('"') && fileName.endsWith('"')) {
-				fileName = fileName.substr(1, fileName.length - 2);
-			}
-		}
 		filePatches.push({ fileName, edits });
 	});
 
@@ -171,10 +164,6 @@ export function getEdits(fileName: string, oldStr: string, newStr: string): File
  * @returns Array of FilePatch objects, one for each file
  */
 export function getEditsFromUnifiedDiffStr(diffstr: string): FilePatch[] {
-	// Workaround for the bug https://github.com/kpdecker/jsdiff/issues/135
-	if (diffstr.startsWith('---')) {
-		diffstr = diffstr.split('---').join('Index\n---');
-	}
 	let unifiedDiffs: jsDiff.IUniDiff[] = jsDiff.parsePatch(diffstr);
 	let filePatches: FilePatch[] = parseUniDiffs(unifiedDiffs);
 	return filePatches;

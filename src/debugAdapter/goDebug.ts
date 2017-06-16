@@ -11,7 +11,7 @@ import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { getBinPathWithPreferredGopath, resolvePath, stripBOM, getGoRuntimePath } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, resolvePath, stripBOM, getGoRuntimePath } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 import * as FS from 'fs';
 
@@ -140,6 +140,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	trace?: boolean|'verbose';
 	/** Optional path to .env file. */
 	envFile?: string;
+	backend?: string;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -206,24 +207,12 @@ class Delve {
 				return reject('The program attribute must point to valid directory, .go file or executable.');
 			}
 
-			// read env from disk and merge into envVars
+			// read env from disk and merge into env variables
 			let fileEnv = {};
-			if (launchArgs.envFile) {
-				try {
-					const buffer = stripBOM(FS.readFileSync(launchArgs.envFile, 'utf8'));
-					buffer.split('\n').forEach( line => {
-						const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
-						if (r !== null) {
-							let value = r[2] || '';
-							if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
-								value = value.replace(/\\n/gm, '\n');
-							}
-							fileEnv[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
-						}
-					});
-				} catch (e) {
-					return reject('Cannot load environment variables from file');
-				}
+			try {
+				fileEnv = parseEnvFile(launchArgs.envFile);
+			} catch (e) {
+				return reject(e);
 			}
 
 			let env = Object.assign({}, process.env, fileEnv, launchArgs.env);
@@ -283,10 +272,12 @@ class Delve {
 			if (launchArgs.init) {
 				dlvArgs = dlvArgs.concat(['--init=' + launchArgs.init]);
 			}
+			if (launchArgs.backend) {
+				dlvArgs = dlvArgs.concat(['--backend=' + launchArgs.backend]);
+			}
 			if (launchArgs.args) {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
-
 
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
@@ -428,8 +419,8 @@ class GoDebugSession extends DebugSession {
 			for (; i < llist.length; i++) if (llist[i] !== rlist[i]) break;
 
 			if (i) {
-				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator);
-				remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator);
+				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
+				remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
 			} else if ((remotePath.endsWith('\\')) || (remotePath.endsWith('/'))) {
 				remotePath = remotePath.substring(0, remotePath.length - 1);
 			}

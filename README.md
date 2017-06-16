@@ -27,6 +27,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Add/Remove Tags on struct fields (using `gomodifytags`)
 - Semantic/Syntactic error reporting as you type (using `gotype-live`)
 - Run Tests under the cursor, in current file, in current package, in the whole workspace (using `go test`)
+- Generate method stubs for interfaces (using `impl`)
 - [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
@@ -99,6 +100,7 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Install Tools` Installs/updates all the Go tools that the extension depends on
 * `Go: Add Tags` Adds configured tags to selected struct fields.
 * `Go: Remove Tags` Removes configured tags from selected struct fields.
+* `Go: Generate Interface Stubs` Generates method stubs for given interface
 
 You can access all of the above commands from the command pallet (`Cmd+Shift+P` or `Ctrl+Shift+P`).
 

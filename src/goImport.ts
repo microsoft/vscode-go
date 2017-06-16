@@ -13,7 +13,7 @@ import { promptForMissingTool } from './goInstallTools';
 import path = require('path');
 
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
-	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document.fileName) : Promise.resolve([]);
+	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
 	let vendorSupportPromise = isVendorSupported();
 	let goPkgsPromise = new Promise<string[]>((resolve, reject) => {
 		cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
@@ -85,11 +85,11 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 /**
  * Returns the imported packages in the given file
  *
- * @param fileName File system path of the file whose imports need to be returned
+ * @param document TextDocument whose imports need to be returned
  * @returns Array of imported package paths wrapped in a promise
  */
-function getImports(fileName: string): Promise<string[]> {
-	let options = { fileName: fileName, importsOnly: true };
+function getImports(document: vscode.TextDocument): Promise<string[]> {
+	let options = { fileName: document.fileName, importsOnly: true, document };
 	return documentSymbols(options).then(symbols => {
 		if (!symbols || !symbols[0] || !symbols[0].children) {
 			return [];

@@ -142,47 +142,36 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		return testPromise;
 	};
 
-	if (!!goConfig['buildOnSave']) {
-		// we need to parse the file to check the package name
-		// if the package is a main pkg, we won't be doing a go build -i
-		let buildPromise = new Promise<{}>((resolve, reject) => {
-			let isMainPkg = false;
-			fs.readFile(filename, 'utf8', (err, data) => {
-				if (err) {
-					return;
-				}
-				let prelude = parseFilePrelude(data);
-				if (prelude.pkg) {
-					isMainPkg = prelude.pkg.name === 'main';
-				}
+	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
+		let buildFlags = goConfig['buildFlags'] || [];
+		let buildTags = '"' + goConfig['buildTags'] + '"';
 
-				let buildFlags = goConfig['buildFlags'] || [];
-				let buildTags = '"' + goConfig['buildTags'] + '"';
-				let tmppath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
-				let args = ['build'];
-				if (!isMainPkg) {
-					args.push('-i');
-				};
+		let tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
 
-				let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(cwd);
-				let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+		let buildWorkDir = cwd;
+		let buildArgs: string[];
 
-				args = args.concat(['-o', tmppath, '-tags', buildTags, ...buildFlags, importPath]);
-				if (filename.match(/_test.go$/i)) {
-					args = ['test', '-copybinary', '-o', tmppath, '-c', '-tags', buildTags, ...buildFlags, importPath];
-				}
-				runTool(
-					args,
-					cwd,
-					'error',
-					true,
-					null,
-					env,
-					true
-				).then(result => resolve(result), err => reject(err));
-			});
-		});
-		runningToolsPromises.push(buildPromise);
+		if (goConfig['buildOnSave'] === 'workspace') {
+			buildWorkDir = vscode.workspace.rootPath;
+			// To compile the whole workspace, we cant use `go build` as it skips test file
+			// So use `go test -run=^$ ./...`. Since the regex doesnt match any test functions, no test will be run
+			// But the workspace will get compiled
+			buildArgs = ['test', '-run=^$', '-tags', buildTags, ...buildFlags, './...'];
+		} else if (filename.match(/_test.go$/i)) {
+			buildArgs = ['test', '-i', '-c', '-o', tmpPath, '-tags', buildTags, ...buildFlags];
+		} else {
+			buildArgs = ['build', '-i', '-o', tmpPath, '-tags', buildTags, ...buildFlags];
+		}
+
+		runningToolsPromises.push(runTool(
+			buildArgs,
+			buildWorkDir,
+			'error',
+			true,
+			null,
+			env,
+			true
+		));
 	}
 
 	if (!!goConfig['testOnSave']) {
@@ -200,7 +189,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		});
 	}
 
-	if (!!goConfig['lintOnSave']) {
+	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
 		let lintTool = goConfig['lintTool'] || 'golint';
 		let lintFlags: string[] = goConfig['lintFlags'] || [];
 
@@ -219,10 +208,20 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			}
 			args.push(flag);
 		});
+		if (lintTool === 'gometalinter' && args.indexOf('--aggregate') === -1) {
+			args.push('--aggregate');
+		}
+
+		let lintWorkDir = cwd;
+
+		if (goConfig['lintOnSave'] === 'workspace') {
+			args.push('./...');
+			lintWorkDir = vscode.workspace.rootPath;
+		}
 
 		runningToolsPromises.push(runTool(
 			args,
-			cwd,
+			lintWorkDir,
 			'warning',
 			false,
 			lintTool,
@@ -230,11 +229,19 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		));
 	}
 
-	if (!!goConfig['vetOnSave']) {
+	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		let vetFlags = goConfig['vetFlags'] || [];
+		let vetArgs = ['vet', ...vetFlags];
+		let vetWorkDir = cwd;
+
+		if (goConfig['vetOnSave'] === 'workspace') {
+			vetArgs.push('./...');
+			vetWorkDir = vscode.workspace.rootPath;
+		}
+
 		runningToolsPromises.push(runTool(
-			['tool', 'vet', ...vetFlags, filename],
-			cwd,
+			vetArgs,
+			vetWorkDir,
 			'warning',
 			true,
 			null,

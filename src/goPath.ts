@@ -77,8 +77,14 @@ export function getGoRuntimePath(): string {
 	if (runtimePathCache) return runtimePathCache;
 	let correctBinNameGo = correctBinname('go');
 	if (process.env['GOROOT']) {
-		runtimePathCache = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);
-	} else if (process.env['PATH']) {
+		let runtimePathFromGoRoot = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);
+		if (fileExists(runtimePathFromGoRoot)) {
+			runtimePathCache = runtimePathFromGoRoot;
+			return runtimePathCache;
+		}
+	}
+
+	if (process.env['PATH']) {
 		let pathparts = (<string>process.env.PATH).split(path.delimiter);
 		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinNameGo)).filter(candidate => fileExists(candidate))[0];
 	}
@@ -119,4 +125,28 @@ export function stripBOM(s: string): string {
 		s = s.substr(1);
 	}
 	return s;
+}
+
+export function parseEnvFile(path: string): { [key: string]: string } {
+	const env = { };
+	if (!path) {
+		return env;
+	}
+
+	try {
+		const buffer = stripBOM(fs.readFileSync(path, 'utf8'));
+		buffer.split('\n').forEach( line => {
+			const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
+			if (r !== null) {
+				let value = r[2] || '';
+				if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+					value = value.replace(/\\n/gm, '\n');
+				}
+				env[r[1]] = value.replace(/(^['"]|['"]$)/g, '');
+			}
+		});
+		return env;
+	} catch (e) {
+		throw(`Cannot load environment variables from file ${path}`);
+	}
 }

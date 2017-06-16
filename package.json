@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.59",
+  "version": "0.6.62",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -33,7 +33,7 @@
   "extensionDependencies": [],
   "dependencies": {
     "console-stamp": "^0.2.2",
-    "diff": "~3.0.0",
+    "diff": "~3.2.0",
     "json-rpc2": "^1.0.2",
     "vscode-debug-logger": "^0.0.4",
     "vscode-debugadapter": "^1.11.0",
@@ -86,7 +86,7 @@
       },
       {
         "command": "go.test.cursor",
-        "title": "Go: Test Function at cursor",
+        "title": "Go: Test Function At Cursor",
         "description": "Runs a unit test at the cursor."
       },
       {
@@ -101,7 +101,7 @@
       },
       {
         "command": "go.test.workspace",
-        "title": "Go: Test All Packages in Workspace",
+        "title": "Go: Test All Packages In Workspace",
         "description": "Runs all unit tests from all packages in the current workspace."
       },
       {
@@ -111,23 +111,28 @@
       },
       {
         "command": "go.test.coverage",
-        "title": "Go: Test coverage in current package",
+        "title": "Go: Toggle Test Coverage In Current Package",
         "description": "Displays test coverage in the current package."
       },
       {
         "command": "go.test.generate.package",
-        "title": "Go: Generate unit tests for package",
+        "title": "Go: Generate Unit Tests For Package",
         "description": "Generates unit tests for the current package"
       },
       {
         "command": "go.test.generate.file",
-        "title": "Go: Generate unit tests for file",
+        "title": "Go: Generate Unit Tests For File",
         "description": "Generates unit tests for the current file"
       },
       {
         "command": "go.test.generate.function",
-        "title": "Go: Generate unit tests for function",
+        "title": "Go: Generate Unit Tests For Function",
         "description": "Generates unit tests for the selected function in the current file"
+      },
+      {
+        "command": "go.impl.cursor",
+        "title": "Go: Generate Interface Stubs",
+        "description": "Generates method stub for implementing the provided interface and inserts at the cursor."
       },
       {
         "command": "go.import.add",
@@ -136,7 +141,7 @@
       },
       {
         "command": "go.tools.install",
-        "title": "Go: Install Tools",
+        "title": "Go: Install/Update Tools",
         "description": "install/update the required go packages"
       },
       {
@@ -146,13 +151,18 @@
       },
       {
         "command": "go.add.tags",
-        "title": "Go: Add Tags to struct fields",
+        "title": "Go: Add Tags To Struct Fields",
         "description": "Add tags configured in go.addTags setting to selected struct using gomodifytags"
       },
       {
         "command": "go.remove.tags",
-        "title": "Go: Remove Tags from struct fields",
+        "title": "Go: Remove Tags From Struct Fields",
         "description": "Remove tags configured in go.removeTags setting from selected struct using gomodifytags"
+      },
+      {
+        "command": "go.show.commands",
+        "title": "Go: Show Other Commands...",
+        "description": "Shows all commands from the Go extension in the wuick pick"
       }
     ],
     "debuggers": [
@@ -323,6 +333,15 @@
                 "type": "string",
                 "description": "Absolute path to a file containing environment variable definitions.",
                 "default": "${workspaceRoot}/.env"
+              },
+              "backend": {
+                "type": "string",
+                "enum": [
+                  "default",
+                  "native",
+                  "lldb"
+                ],
+                "description": "Backend used by delve. Only available in delve version 0.12.2 and above."
               }
             }
           }
@@ -334,9 +353,14 @@
       "title": "Go configuration",
       "properties": {
         "go.buildOnSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "Run 'go build'/'go test -c' on save."
+          "type": "string",
+          "enum": [
+            "package",
+            "workspace",
+            "off"
+          ],
+          "default": "package",
+          "description": "On save, compiles the current workspace, current package or nothing at all."
         },
         "go.buildFlags": {
           "type": "array",
@@ -352,9 +376,14 @@
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
         },
         "go.lintOnSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "Run Lint tool on save."
+           "type": "string",
+          "enum": [
+            "package",
+            "workspace",
+            "off"
+          ],
+          "default": "package",
+          "description": "On save, runs the configured Lint tool on current workspace, current package or nothing at all."
         },
         "go.lintTool": {
           "type": "string",
@@ -374,9 +403,14 @@
           "description": "Flags to pass to Lint tool (e.g. [\"-min_confidence=.8\"])"
         },
         "go.vetOnSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "Run 'go tool vet' on save."
+          "type": "string",
+          "enum": [
+            "package",
+            "workspace",
+            "off"
+          ],
+          "default": "package",
+          "description": "On save, runs 'go vet' on current workspace, current package or nothing."
         },
         "go.vetFlags": {
           "type": "array",
@@ -384,7 +418,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])"
+          "description": "Flags to pass to `go vet` (e.g. ['-all', '-shadow'])"
         },
         "go.formatOnSave": {
           "type": "boolean",
@@ -446,10 +480,19 @@
           "description": "Run 'go test' on save for current package. It is not advised to set this to `true` when you have Auto Save enabled."
         },
         "go.coverOnSave": {
-          "type": ["boolean", "string"],
-          "enum": [true, false, "showCoveredOnly", "showUncoveredOnly"],
+          "type": "boolean",
           "default": false,
-          "description": "If not false, runs 'go test -coverprofile' on save and shows test coverage. If set to showCoveredOnly, then only covered code is highlighted. If set to showUncoveredOnly, then only uncovered code is highlighted."
+          "description": "If true, runs 'go test -coverprofile' on save and shows test coverage."
+        },
+        "go.coverageOptions": {
+          "type": "string",
+          "enum": [
+            "showCoveredCodeOnly",
+            "showUncoveredCodeOnly",
+            "showBothCoveredAndUncoveredCode"
+          ],
+          "default": "showBothCoveredAndUncoveredCode",
+          "description": "Use these options to control whether only covered or only uncovered code or both should be highlighted after running test coverage"
         },
         "go.testTimeout": {
           "type": "string",
@@ -460,6 +503,11 @@
           "type": "object",
           "default": {},
           "description": "Environment variables that will passed to the process that runs the Go tests"
+        },
+        "go.testEnvFile": {
+          "type": "string",
+          "default": null,
+          "description": "Absolute path to a file containing environment variables definitions. File contents should be of the form key=value."
         },
         "go.testFlags": {
           "type": [
@@ -517,10 +565,25 @@
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
         },
-        "go.referencesCodeLens.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable/disable references CodeLens"
+        "go.enableCodeLens": {
+          "type": "object",
+          "properties": {
+            "references": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, enables the references code lens. Uses guru. Recalculates when there is change to the document followed by scrolling."
+            },
+            "runtest": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, enables code lens for running and debugging tests"
+            }
+          },
+          "default": {
+            "references": false,
+            "runtest": true
+          },
+          "description": "Feature level setting to enable/disable code lens for references and run/debug tests"
         },
         "go.addTags": {
           "type": "object",
@@ -673,8 +736,8 @@
             "generateTestForFunction": true,
             "generateTestForFile": false,
             "generateTestForPackage": false,
-            "addImport": false,
-            "testCoverage": false
+            "addImport": true,
+            "testCoverage": true
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor."
         },
@@ -692,47 +755,63 @@
       "editor/context": [
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.toggleTestFile && resourceLangId == go",
-          "command": "go.toggle.test.file"
+          "command": "go.toggle.test.file",
+          "group": "Go group 1"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.addTags && resourceLangId == go",
-          "command": "go.add.tags"
+          "command": "go.add.tags",
+          "group": "Go group 1"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.removeTags && resourceLangId == go",
-          "command": "go.remove.tags"
+          "command": "go.remove.tags",
+          "group": "Go group 1"
         },
         {
-          "when": "editorTextFocus && config.go.editorContextMenuCommands.testAtCursor && resourceLangId == go",
-          "command": "go.test.cursor"
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.testAtCursor && resourceLangId == go && !config.editor.codeLens",
+          "command": "go.test.cursor",
+          "group": "Go group 1"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testFile && resourceLangId == go",
-          "command": "go.test.file"
+          "command": "go.test.file",
+          "group": "Go group 1"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testPackage && resourceLangId == go",
-          "command": "go.test.package"
+          "command": "go.test.package",
+          "group": "Go group 1"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFunction && resourceLangId == go",
-          "command": "go.test.generate.function"
+          "command": "go.test.generate.function",
+          "group": "Go group 1"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForFile && resourceLangId == go",
-          "command": "go.test.generate.file"
+          "command": "go.test.generate.file",
+          "group": "Go group 1"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForPackage && resourceLangId == go",
-          "command": "go.test.generate.package"
+          "command": "go.test.generate.package",
+          "group": "Go group 1"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.addImport && resourceLangId == go",
-          "command": "go.import.add"
+          "command": "go.import.add",
+          "group": "Go group 1"
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testCoverage && resourceLangId == go",
-          "command": "go.test.coverage"
+          "command": "go.test.coverage",
+          "group": "Go group 1"
+        },
+        {
+          "when": "editorTextFocus && resourceLangId == go",
+          "command": "go.show.commands",
+          "group": "Go group 2"
         }
       ]
     }

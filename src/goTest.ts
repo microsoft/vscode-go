@@ -10,9 +10,9 @@ import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
 import os = require('os');
-import { getGoRuntimePath } from './goPath';
-import { GoDocumentSymbolProvider } from './goOutline';
+import { parseEnvFile, getGoRuntimePath, resolvePath } from './goPath';
 import { getToolsEnvVars } from './util';
+import { GoDocumentSymbolProvider } from './goOutline';
 
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
 
@@ -75,7 +75,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 
 		// We use functionName if it was provided as argument
 		// Otherwise find any test function containing the cursor.
-		if (args.functionName) {
+		if (args && args.functionName) {
 			testFunctionName = args.functionName;
 		} else {
 			for (let func of testFunctions) {
@@ -137,6 +137,25 @@ export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any
 	}).then(null, err => {
 		console.error(err);
 	});
+}
+
+export function getTestEnvVars(): any {
+	const config = vscode.workspace.getConfiguration('go');
+	const toolsEnv = getToolsEnvVars();
+	const testEnv = config['testEnvVars'] || {};
+
+	let fileEnv = {};
+	let testEnvFile = config['testEnvFile'];
+	if (testEnvFile) {
+		testEnvFile = resolvePath(testEnvFile, vscode.workspace.rootPath);
+		try {
+			fileEnv = parseEnvFile(testEnvFile);
+		} catch (e) {
+			console.log(e);
+		}
+	}
+
+	return Object.assign({}, toolsEnv, fileEnv, testEnv);
 }
 
 /**
@@ -204,7 +223,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
 		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags];
-		let testEnvVars = Object.assign({}, getToolsEnvVars(), testconfig.goConfig['testEnvVars']);
+		let testEnvVars = getTestEnvVars();
 		let goRuntimePath = getGoRuntimePath();
 
 		if (!goRuntimePath) {

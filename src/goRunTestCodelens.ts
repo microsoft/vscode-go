@@ -6,19 +6,30 @@
 'use strict';
 
 import vscode = require('vscode');
+import path = require('path');
 import { CodeLensProvider, TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
-import { getTestFunctions } from './goTest';
+import { getTestFunctions, getTestEnvVars } from './goTest';
 import { GoDocumentSymbolProvider } from './goOutline';
 
 export class GoRunTestCodeLensProvider implements CodeLensProvider {
+	private readonly debugConfig: any = {
+				'name': 'Launch',
+				'type': 'go',
+				'request': 'launch',
+				'mode': 'test'
+			};
+
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
-		if (!document.fileName.endsWith('_test.go')) {
+		let config = vscode.workspace.getConfiguration('go');
+		let codeLensConfig = config.get('enableCodeLens');
+		let codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
+		if (!codelensEnabled || !document.fileName.endsWith('_test.go')) {
 			return;
 		}
 
 		return Promise.all([
 			this.getCodeLensForPackage(document),
-			this.getCodeLensForFunctions(document)
+			this.getCodeLensForFunctions(config, document)
 		]).then(res => {
 			return res[0].concat(res[1]);
 		});
@@ -45,16 +56,33 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 				});
 	}
 
-	private getCodeLensForFunctions(document: TextDocument): Thenable<CodeLens[]> {
+	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument): Thenable<CodeLens[]> {
 		return getTestFunctions(document).then(testFunctions => {
-			return testFunctions.map(func => {
-				let command: Command = {
+			let codelens = [];
+
+			testFunctions.forEach(func => {
+				let runTestCmd: Command = {
 					title: 'run test',
 					command: 'go.test.cursor',
 					arguments: [ { functionName: func.name} ]
 				};
-				return new CodeLens(func.location.range, command);
+
+				const args = ['-test.run', func.name];
+				const program = path.dirname(document.fileName);
+				const env = vsConfig['testEnvVars'] || {};
+				const envFile = vsConfig['testEnvFile'];
+
+				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile });
+				let debugTestCmd: Command = {
+					title: 'debug test',
+					command: 'vscode.startDebug',
+					arguments: [ config ]
+				};
+
+				codelens.push(new CodeLens(func.location.range, runTestCmd));
+				codelens.push(new CodeLens(func.location.range, debugTestCmd));
 			});
+			return codelens;
 		});
 	}
 }

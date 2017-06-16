@@ -192,7 +192,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 									let param = params[i].trim();
 									if (param) {
 										param = param.replace('${', '\\${').replace('}', '\\}');
-										paramSnippets.push('${' + param + '}');
+										paramSnippets.push('${' + (i + 1) + ':' + param + '}');
 									}
 								}
 								item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
@@ -242,7 +242,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			let gocode = getBinPath('gocode');
 			let autobuild = vscode.workspace.getConfiguration('go')['gocodeAutoBuild'];
 			let env = getToolsEnvVars();
-			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], {env}, (err, stdout, stderr) => {
+			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], { env }, (err, stdout, stderr) => {
 				cp.execFile(gocode, ['set', 'autobuild', autobuild], {}, (err, stdout, stderr) => {
 					resolve();
 				});

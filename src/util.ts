@@ -8,6 +8,7 @@ import path = require('path');
 import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
+import fs = require('fs');
 
 const extensionId: string = 'lukehoban.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -230,6 +231,7 @@ export function sendTelemetryEvent(eventName: string, properties?: {
 	[key: string]: number;
 }): void {
 
+	let temp = vscode.extensions.getExtension(extensionId).packageJSON.contributes;
 	telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
 	telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
 }
@@ -239,8 +241,10 @@ export function isPositionInString(document: vscode.TextDocument, position: vsco
 	let lineTillCurrentPosition = lineText.substr(0, position.character);
 
 	// Count the number of double quotes in the line till current position. Ignore escaped double quotes
-	let doubleQuotesCnt = (lineTillCurrentPosition.match(/[^\\]\"/g) || []).length;
-	doubleQuotesCnt += lineTillCurrentPosition.startsWith('\"') ? 1 : 0;
+	let doubleQuotesCnt = (lineTillCurrentPosition.match(/\"/g) || []).length;
+	let escapedDoubleQuotesCnt = (lineTillCurrentPosition.match(/\\\"/g) || []).length;
+
+	doubleQuotesCnt -= escapedDoubleQuotesCnt;
 	return doubleQuotesCnt % 2 === 1;
 }
 
@@ -293,4 +297,13 @@ export function getToolsEnvVars(): any {
 		return process.env;
 	}
 	return Object.assign({}, process.env, toolsEnvVars);
+}
+
+export function getExtensionCommands(): any[] {
+	let pkgJSON = vscode.extensions.getExtension(extensionId).packageJSON;
+	if (!pkgJSON.contributes || !pkgJSON.contributes.commands) {
+		return;
+	}
+	let extensionCommands: any[] = vscode.extensions.getExtension(extensionId).packageJSON.contributes.commands.filter(x => x.command !== 'go.show.commands');
+	return extensionCommands;
 }

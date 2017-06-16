@@ -160,6 +160,10 @@
 			"prefix": "bf",
 			"body": "func Benchmark$1(b *testing.B) {\n\tfor ${2:i} := 0; ${2:i} < b.N; ${2:i}++ {\n\t\t$0\n\t}\n}"
 		},
+		"table driven test": {
+		"prefix": "tdt",
+			"body": "func Test$1(t *testing.T) {\n\ttestCases := []struct {\n\t\tdesc\tstring\n\t\t$2\n\t}{\n\t\t{\n\t\t\tdesc: \"$3\",\n\t\t\t$4\n\t\t},\n\t}\n\tfor _, tC := range testCases {\n\t\tt.Run(tC.desc, func(t *testing.T) {\n\t\t\t$0\n\t\t})\n\t}\n}"
+		},
 		"init function": {
 			"prefix": "finit",
 			"body": "func init() {\n\t$1\n}"

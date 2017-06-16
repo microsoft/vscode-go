@@ -1,3 +1,81 @@
+## 0.6.62 - 9th June, 2017
+
+### Features
+* [Jamie Stackhouse (@itsjamie)](https://github.com/itsjamie)
+   * New command `Go: Generate interface stub` to generate stubs that implement given interface using [impl](https://github.com/josharian/impl). [PR 939](https://github.com/Microsoft/vscode-go/pull/939)
+        - When the command is run, you are prompted to provide interface name. Eg: `f *File io.Closer`
+        - The stubs are then generated where the cursor is in the editor.
+* [Guilherme Oenning (@goenning)](https://github.com/goenning)
+    * New setting `go.testEnvFile` to configure the location of a file that would have environment variables to use while running tests. [PR 971](https://github.com/Microsoft/vscode-go/pull/971)
+        - File contents should be of the form `key=value`.
+        - Values from the existing setting `go.test.EnvVars` will override the above
+        - These environment variables will also be used by the "Debug Test" codelens
+        - When debugging using the debug viewlet or pressing `F5`, the above will not be used. Continue to use the `env` and/or `envFile` property in the debug configurations in the `launch.json` file.
+* [Ole (@vapourismo)](https://github.com/vapourismo)
+    * You can now run build/lint/vet on the whole workspace instead of just the current package on file save. [PR 1023](https://github.com/Microsoft/vscode-go/pull/1023)
+        - To enable this, the settings `go.buildOnSave`, `go.lintOnSave` and `go.vetOnSave` now take values `package`, `workspace` or `off` instead of the previous `true`/`false`. 
+        - These features are backward compatible and so if you are still using `true`/`false` for these settings, they will work as they did before, but you will get a warning in your settings file.
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Better build performance when working on main packages and test files by using the `-i` flag.
+    * Better linting experience while running `gometalinter` by using the `--aggregate` flag which aggregates similar errors from multiple linters.
+
+### Bug Fixes
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix for [Bug 968](https://github.com/Microsoft/vscode-go/issues/968) where rename fails if `---` is anywhere in the file
+    * Fix for [Bug 981](https://github.com/Microsoft/vscode-go/issues/981) where `Go: Test Function At Cursor` fails.
+    * Fix for [Bug 983](https://github.com/Microsoft/vscode-go/issues/983) where the Go binary is not found in MSYS2 as it is not located in GOROOT.
+    * Fix for [Bug 1022](https://github.com/Microsoft/vscode-go/issues/1002) where snippets from function auto complete do not insert the placeholders
+    * Fix for [Bug 962](https://github.com/Microsoft/vscode-go/issues/962) where references codelens wouldnt work for methods.
+* [F0zi (@f0zi)](https://github.com/f0zi)
+    * Fix for [Bug 1009](https://github.com/Microsoft/vscode-go/issues/1009) where remote debugging fails to verify breakpoint if GOPATH partially matches remote GOPATH
+* [Anton Kryukov (@Emreu)](https://github.com/Emreu)
+    * Use the `go.testEnvVars` while debugging tests using codelens
+
+## 0.6.61 - 4th May, 2017
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix for [Bug 963](https://github.com/Microsoft/vscode-go/issues/963) Fix for perf issues when references codelens is enabled. [Commit 352435a](https://github.com/Microsoft/vscode-go/commit/352435ab0e6846b7483958a90f61fb94329dd0ae)
+    * Fix for [Bug 964](https://github.com/Microsoft/vscode-go/issues/964) The setting `go.referencesCodeLens.enabled` is deprecated in favor of `go.enableCodeLens` to control multiple types of codelens.
+        ```json
+        "go.enableCodeLens": {
+            "references": false,
+            "runtest": true
+        }
+        ```
+
+## 0.6.60 - 3rd May, 2017
+
+### Codelens for references, to run and debug tests
+* [theSoenke (@theSoenke)](https://github.com/theSoenke)
+    * [Feature Request 726](https://github.com/Microsoft/vscode-go/issues/726): Display Reference count above functions using codelens. On clicking, the references are shown just like the `Find All References` command. [PR 933](https://github.com/Microsoft/vscode-go/pull/933) and [PR 938](https://github.com/Microsoft/vscode-go/pull/938). You can disable this by updating the setting `go.referencesCodeLens.enabled`.
+* [Guilherme Oenning (@goenning)](https://github.com/goenning)
+    * Use Codelens to run each test function, tests in the file and tests in the package. [PR 937](https://github.com/Microsoft/vscode-go/pull/937)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * [Feature Request 879](https://github.com/Microsoft/vscode-go/issues/879): Use Codelens to debug a test function. [Commit 5b1ced7](https://github.com/Microsoft/vscode-go/commit/5b1ced78cc06016d24539099aa164fe170fa7267)
+
+### Test Coverage
+* [Thomas Bradford (@kode4food)](https://github.com/kode4food)
+    * New setting `go.coverageOptions` to control whether you want to highlight only covered code or only uncovered code or both when code coverage is run. [PR 945](https://github.com/Microsoft/vscode-go/pull/945)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * The command `Go: Test Coverage In Current Package` is renamed to `Go: Toggle Test Coverage In Current Package` and it does exactly what the name suggests. Toggles test coverage. [Commit cc661daf](https://github.com/Microsoft/vscode-go/commit/cc661dafd06770137459b72441e5f7cc877483f0)
+        
+### Bug Fixes 
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix for [Bug 529](https://github.com/Microsoft/vscode-go/issues/529) Code completion for unimported packages now works on unsaved file after deleting imports.
+    * Fix for [Bug 922](https://github.com/Microsoft/vscode-go/issues/922) Go to Symbol in File feature now includes symbols from unsaved file contents. [PR 929](https://github.com/Microsoft/vscode-go/pull/929)
+    * Fix for [Bug 878](https://github.com/Microsoft/vscode-go/issues/878) Debugging now works on current file even when there is no folder/workspace open. [Commit 42646afc](https://github.com/Microsoft/vscode-go/commit/42646afc2d2442b5e962d3125a7cbf61b98b2a0a)
+    * Fix for [Bug 947](https://github.com/Microsoft/vscode-go/issues/947) Mac users using the latest delve from master may see that all env variables are empty while debugging their code. This is due to delve using the `--backend=lldb` option in Mac by default. You can now change this default value by setting the `backend` property to `native` in the `launch.json` file. [Commit 4beecf1](https://github.com/Microsoft/vscode-go/commit/4beecf1db2aaa18b336be2ee64476b56202fc959). Root cause is expected to be fixed in delve itself and is being tracked in [derekparker/delve/818](https://github.com/derekparker/delve/issues/818)
+* [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
+    * Fix for [Bug 943](https://github.com/Microsoft/vscode-go/issues/943) Live error reporting now works across multiple files in the current package, mapping errors to the correct files. [PR 923](https://github.com/Microsoft/vscode-go/pull/923)
+* [Guilherme Oenning (@goenning)](https://github.com/goenning)
+    * Fix for [Bug 934](https://github.com/Microsoft/vscode-go/issues/934) Environment variables from `envFile` attribute in the launch.json file is used while debugging and is overridden only by the ones in the `env` attribute. [PR 935](https://github.com/Microsoft/vscode-go/pull/935)
+
+### Others
+* [Luka Zakrajšek (@bancek)](https://github.com/bancek) and [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * New setting `go.toolsEnvVars` where you can specify env vars to be used by the Go tools that are used in the Go extension. [PR 932](https://github.com/Microsoft/vscode-go/pull/932) and [commit bca4dd5f](https://github.com/Microsoft/vscode-go/commit/bca4dd5f31f32ac49da79580c07b4000f06287a3). This fixes [Bug 632](https://github.com/Microsoft/vscode-go/issues/632) as well.
+* [Paweł Słomka (@slomek)](https://github.com/slomek)
+    * New snippet for writing table driven tests. [PR 952](https://github.com/Microsoft/vscode-go/pull/952)
+
+
 ## 0.6.59 - 4th April, 2017
 
 * [Tyler Bunnell (@tylerb)](https://github.com/tylerb)

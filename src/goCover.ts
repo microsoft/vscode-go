@@ -53,11 +53,19 @@ export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
 	}
 }
 
-export function coverageCurrentPackage() {
+export function toggleCoverageCurrentPackage() {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
+	}
+
+	// If current file has highlights, then remove coverage, else add coverage
+	for (let filename in coverageFiles) {
+		if (editor.document.uri.fsPath.endsWith(filename)) {
+			clearCoverage();
+			return;
+		}
 	}
 
 	// FIXME: is there a better way to get goConfig?
@@ -107,9 +115,9 @@ function applyCoverage(remove: boolean = false) {
 
 function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
 	let cfg = vscode.workspace.getConfiguration('go');
-	let coverOnSave = cfg.get('coverOnSave', false);
-	let hideUncovered = remove || !coverOnSave || coverOnSave === 'showCoveredOnly';
-	let hideCovered = remove || !coverOnSave || coverOnSave === 'showUncoveredOnly';
+	let coverageOptions = cfg['coverageOptions'];
+	let hideUncovered = remove || coverageOptions === 'showCoveredCodeOnly';
+	let hideCovered = remove || coverageOptions === 'showUncoveredCodeOnly';
 	editor.setDecorations(uncoveredHighLight, hideUncovered ? [] : file.uncoveredRange);
 	editor.setDecorations(coveredHighLight, hideCovered ? [] : file.coveredRange);
 }
