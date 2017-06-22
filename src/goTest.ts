@@ -139,8 +139,7 @@ export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any
 	});
 }
 
-export function getTestEnvVars(): any {
-	const config = vscode.workspace.getConfiguration('go');
+export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 	const toolsEnv = getToolsEnvVars();
 	const testEnv = config['testEnvVars'] || {};
 
@@ -223,7 +222,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
 		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags];
-		let testEnvVars = getTestEnvVars();
+		let testEnvVars = getTestEnvVars(testconfig.goConfig);
 		let goRuntimePath = getGoRuntimePath();
 
 		if (!goRuntimePath) {
