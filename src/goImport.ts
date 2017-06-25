@@ -33,7 +33,7 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 	return vendorSupportPromise.then((vendorSupport: boolean) => {
 		return Promise.all<string[]>([goPkgsPromise, importsPromise]).then(values => {
 			let pkgs = values[0];
-			let importedPkgs = values [1];
+			let importedPkgs = values[1];
 
 			if (!vendorSupport) {
 				if (importedPkgs.length > 0) {
@@ -112,12 +112,17 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit {
 		return null;
 	}
 
-	let {imports, pkg} = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
+	let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
 	let multis = imports.filter(x => x.kind === 'multi');
 	if (multis.length > 0) {
 		// There is a multiple import declaration, add to the last one
-		let closeParenLine = multis[multis.length - 1].end;
-		return vscode.TextEdit.insert(new vscode.Position(closeParenLine, 0), '\t"' + arg + '"\n');
+		const lastImportSection = multis[multis.length - 1];
+		if (lastImportSection.end === -1) {
+			// For some reason there was an empty import section like `import ()`
+			return vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), `import "${arg}"\n`);
+		}
+		// Add import at the start of the block so that goimports/goreturns can order them correctly
+		return vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), '\t"' + arg + '"\n');
 	} else if (imports.length > 0) {
 		// There are only single import declarations, add after the last one
 		let lastSingleImport = imports[imports.length - 1].end;
