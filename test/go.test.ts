@@ -521,23 +521,21 @@ It returns the number of bytes written and any write error encountered.
 		});
 	});
 
-	// This test is failing in Travis for Mac OS X with Go 1.7.
-	// Commenting this and created issue https://github.com/Microsoft/vscode-go/issues/609 to track the problem
-	// test('Test Env Variables are passed to Tests', (done) => {
-	// 	let config = Object.create(vscode.workspace.getConfiguration('go'), {
-	// 		'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
-	// 	});
+	test('Test Env Variables are passed to Tests', (done) => {
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
+		});
 
-	// 	let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
-	// 	vscode.workspace.openTextDocument(uri).then(document => {
-	// 		return vscode.window.showTextDocument(document).then(editor => {
-	// 			return testCurrentFile(config).then((result: boolean) => {
-	// 				assert.equal(result, true);
-	// 				return Promise.resolve();
-	// 			});
-	// 		});
-	// 	}).then(() => done(), done);
-	// });
+		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				return testCurrentFile(config, []).then((result: boolean) => {
+					assert.equal(result, true);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
 
 	test('Test Outline', (done) => {
 		let filePath = path.join(fixturePath, 'test.go');
