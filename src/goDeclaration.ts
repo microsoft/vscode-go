@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars } from './util';
+import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive } from './util';
 
 export interface GoDefinitionInformation {
 	file: string;
@@ -40,6 +40,8 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		// Assume it's > Go 1.5
 		if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
 			return definitionLocation_godef(document, position, offset, includeDocs, env);
+		} else if (toolForDocs === 'guru') {
+			return definitionLocation_guru(document, position, offset, env);
 		}
 		return definitionLocation_gogetdoc(document, position, offset, env);
 	});
@@ -149,13 +151,49 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 				reject(e);
 			}
 		});
-		let documentText = document.getText();
-		let documentArchive = document.fileName + '\n';
-		documentArchive = documentArchive + Buffer.byteLength(documentText) + '\n';
-		documentArchive = documentArchive + documentText;
-		p.stdin.end(documentArchive);
+		p.stdin.end(getFileArchive(document));
 	});
 }
+
+function definitionLocation_guru(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any): Promise<GoDefinitionInformation> {
+	return new Promise<GoDefinitionInformation>((resolve, reject) => {
+		let guru = getBinPath('guru');
+		let p = cp.execFile(guru, ['-json', '-modified', 'definition', document.fileName + ':#' + offset.toString()], {env}, (err, stdout, stderr) => {
+			try {
+				if (err && (<any>err).code === 'ENOENT') {
+					promptForMissingTool('guru');
+					return reject();
+				}
+				if (err) {
+					return reject(err);
+				};
+				let guruOutput = <GuruDefinitionOuput>JSON.parse(stdout.toString());
+				let match = /(.*):(\d+):(\d+)/.exec(guruOutput.objpos);
+				let definitionInfo = {
+					file: null,
+					line: 0,
+					column: 0,
+					toolUsed: 'guru',
+					declarationlines: [guruOutput.desc],
+					doc: null,
+					name: null,
+				};
+				if (!match) {
+					return resolve(definitionInfo);
+				}
+				let [_, file, line, col] = match;
+				definitionInfo.file = match[1];
+				definitionInfo.line = +match[2] - 1;
+				definitionInfo.column = +match[3] - 1;
+				return resolve(definitionInfo);
+			} catch (e) {
+				reject(e);
+			}
+		});
+		p.stdin.end(getFileArchive(document));
+	});
+}
+
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
 	private goConfig = null;
@@ -185,4 +223,9 @@ interface GoGetDocOuput {
 	decl: string;
 	doc: string;
 	pos: string;
+}
+
+interface GuruDefinitionOuput {
+	objpos: string;
+	desc: string;
 }

@@ -6,6 +6,7 @@
 'use strict';
 
 import cp = require('child_process');
+import vscode = require('vscode');
 import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken, WorkspaceConfiguration, workspace } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 import { parameters } from './util';
@@ -15,6 +16,9 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 	constructor(goConfig?: WorkspaceConfiguration) {
 		this.goConfig = goConfig;
+		if (!this.goConfig) {
+			this.goConfig = vscode.workspace.getConfiguration('go');
+		}
 	}
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
@@ -23,7 +27,12 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			return Promise.resolve(null);
 		}
 		let callerPos = this.previousTokenPosition(document, theCall.openParen);
-		return definitionLocation(document, callerPos, this.goConfig).then(res => {
+		// Temporary fix to fall back to godoc if guru is the set docsTool
+		let goConfig = this.goConfig;
+		if (goConfig['docsTool'] === 'guru') {
+			goConfig = Object.assign({}, goConfig, {'docsTool': 'godoc'});
+		}
+		return definitionLocation(document, callerPos, goConfig).then(res => {
 			if (!res) {
 				// The definition was not found
 				return null;
@@ -43,7 +52,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				let funcName = declarationText.substring(0, nameEnd);
 				sig = declarationText.substring(sigStart);
 				si = new SignatureInformation(funcName + sig, res.doc);
-			} else {
+			} else if (res.toolUsed === 'gogetdoc') {
 				// declaration is of the form "func Add(a int, b int) int"
 				declarationText = res.declarationlines[0].substring(5);
 				let funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it
