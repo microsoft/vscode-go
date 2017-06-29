@@ -35,6 +35,7 @@
     "console-stamp": "^0.2.2",
     "diff": "~3.2.0",
     "json-rpc2": "^1.0.2",
+    "vscode": "^1.1.1",
     "vscode-debug-logger": "^0.0.4",
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0",
@@ -376,7 +377,7 @@
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
         },
         "go.lintOnSave": {
-           "type": "string",
+          "type": "string",
           "enum": [
             "package",
             "workspace",
@@ -493,6 +494,15 @@
           ],
           "default": "showBothCoveredAndUncoveredCode",
           "description": "Use these options to control whether only covered or only uncovered code or both should be highlighted after running test coverage"
+        },
+        "go.coverageDecorator": {
+          "type": "string",
+          "enum": [
+            "highlight",
+            "gutter"
+          ],
+          "default": "hightligh",
+          "description": "This option lets you choose the way to display code coverage. Highlight, as its name states, highlights the line in red or green, gutter shows the colors in the gutter of the editor."
         },
         "go.testTimeout": {
           "type": "string",

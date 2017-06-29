@@ -14,6 +14,7 @@ import { showTestOutput, goTest } from './goTest';
 import { getBinPath } from './util';
 import rl = require('readline');
 import { outputChannel } from './goStatus';
+import { coveredGutter, uncoveredGutter } from './goGutter';
 
 let coveredHighLight = vscode.window.createTextEditorDecorationType({
 	// Green
@@ -116,10 +117,17 @@ function applyCoverage(remove: boolean = false) {
 function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
 	let cfg = vscode.workspace.getConfiguration('go');
 	let coverageOptions = cfg['coverageOptions'];
+	let coverageDecorator = cfg['coverageDecorator'];
 	let hideUncovered = remove || coverageOptions === 'showCoveredCodeOnly';
 	let hideCovered = remove || coverageOptions === 'showUncoveredCodeOnly';
-	editor.setDecorations(uncoveredHighLight, hideUncovered ? [] : file.uncoveredRange);
-	editor.setDecorations(coveredHighLight, hideCovered ? [] : file.coveredRange);
+
+	if (coverageDecorator === "gutter") {
+		editor.setDecorations(coveredGutter, hideCovered ? [] : file.coveredRange);
+	    editor.setDecorations(uncoveredGutter, hideUncovered ? [] : file.uncoveredRange);
+	} else {
+		editor.setDecorations(uncoveredHighLight, hideUncovered ? [] : file.uncoveredRange);
+		editor.setDecorations(coveredHighLight, hideCovered ? [] : file.coveredRange);
+	}
 }
 
 export function getCoverage(coverProfilePath: string, showErrOutput: boolean = false): Promise<any[]> {
@@ -139,6 +147,13 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				// The first line will be "mode: set" which will be ignored
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
+
+				// I really don't know how to fix this elsewhere. I get an underscores in front o thef path (on macOS)
+				//  in go-code-cover file. This fixes it.
+				// _/Users/me/.../file.go => /Users/me/.../file.go
+				if (fileRange[1].charAt(0) === '_') {
+					fileRange[1] = fileRange[1].substr(1);
+				}
 
 				let coverage = coverageFiles[fileRange[1]] || { coveredRange: [], uncoveredRange: [] };
 				let range = new vscode.Range(
