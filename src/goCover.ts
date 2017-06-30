@@ -121,9 +121,9 @@ function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove
 	let hideUncovered = remove || coverageOptions === 'showCoveredCodeOnly';
 	let hideCovered = remove || coverageOptions === 'showUncoveredCodeOnly';
 
-	if (coverageDecorator === "gutter") {
+	if (coverageDecorator === 'gutter') {
 		editor.setDecorations(coveredGutter, hideCovered ? [] : file.coveredRange);
-	    editor.setDecorations(uncoveredGutter, hideUncovered ? [] : file.uncoveredRange);
+		editor.setDecorations(uncoveredGutter, hideUncovered ? [] : file.uncoveredRange);
 	} else {
 		editor.setDecorations(uncoveredHighLight, hideUncovered ? [] : file.uncoveredRange);
 		editor.setDecorations(coveredHighLight, hideCovered ? [] : file.coveredRange);
