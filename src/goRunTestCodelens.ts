@@ -16,7 +16,10 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 				'name': 'Launch',
 				'type': 'go',
 				'request': 'launch',
-				'mode': 'test'
+				'mode': 'test',
+				'env': {
+					'GOPATH': process.env['GOPATH']
+				}
 			};
 
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
@@ -69,7 +72,7 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 
 				const args = ['-test.run', func.name];
 				const program = path.dirname(document.fileName);
-				const env = vsConfig['testEnvVars'] || {};
+				const env = Object.assign({ }, this.debugConfig.env, vsConfig['testEnvVars']);
 				const envFile = vsConfig['testEnvFile'];
 
 				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile });
