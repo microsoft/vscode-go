@@ -16,6 +16,7 @@ export class Formatter {
 	public formatDocument(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
 		return new Promise((resolve, reject) => {
 			let filename = document.fileName;
+			let documentText = document.getText();
 			let formatTool = vscode.workspace.getConfiguration('go')['formatTool'] || 'goreturns';
 			let formatCommandBinPath = getBinPath(formatTool);
 			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
@@ -29,7 +30,7 @@ export class Formatter {
 			}
 			let t0 = Date.now();
 			let env = getToolsEnvVars();
-			cp.execFile(formatCommandBinPath, [...formatFlags, filename], {env}, (err, stdout, stderr) => {
+			let process = cp.execFile(formatCommandBinPath, [...formatFlags], {env}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool(formatTool);
@@ -41,7 +42,7 @@ export class Formatter {
 					};
 
 					let textEdits: vscode.TextEdit[] = [];
-					let filePatch = canFormatToolUseDiff ? getEditsFromUnifiedDiffStr(stdout)[0] : getEdits(filename, document.getText(), stdout);
+					let filePatch = canFormatToolUseDiff ? getEditsFromUnifiedDiffStr(stdout)[0] : getEdits(filename, documentText, stdout);
 
 					filePatch.edits.forEach((edit) => {
 						textEdits.push(edit.apply());
@@ -54,6 +55,7 @@ export class Formatter {
 					reject('Internal issues while getting diff from formatted content');
 				}
 			});
+			process.stdin.end(documentText);
 		});
 	}
 }
@@ -66,9 +68,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 	}
 
 	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
-		return document.save().then(() => {
-			return this.formatter.formatDocument(document);
-		});
+		return this.formatter.formatDocument(document);
 	}
 }
 

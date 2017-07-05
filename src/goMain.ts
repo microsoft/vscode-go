@@ -95,6 +95,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 
+	formatOnSaveWatcher(ctx.subscriptions);
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
@@ -302,41 +303,29 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	});
 }
 
-function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
-
-	// TODO: This is really ugly.  I'm not sure we can do better until
-	// Code supports a pre-save event where we can do the formatting before
-	// the file is written to disk.
-	let ignoreNextSave = new WeakSet<vscode.TextDocument>();
-
-	vscode.workspace.onDidSaveTextDocument(document => {
-		if (document.languageId !== 'go' || ignoreNextSave.has(document)) {
+function formatOnSaveWatcher(subscriptions: vscode.Disposable[]) {
+	vscode.workspace.onWillSaveTextDocument(event => {
+		let document = event.document;
+		if (document.languageId !== 'go') {
 			return;
 		}
 		let goConfig = vscode.workspace.getConfiguration('go');
 		let textEditor = vscode.window.activeTextEditor;
-		let formatPromise: PromiseLike<void> = Promise.resolve();
 		if (goConfig['formatOnSave'] && textEditor.document === document) {
 			let formatter = new Formatter();
-			formatPromise = formatter.formatDocument(document).then(edits => {
-				return textEditor.edit(editBuilder => {
-					edits.forEach(edit => editBuilder.replace(edit.range, edit.newText));
-				});
-			}).then(applied => {
-				ignoreNextSave.add(document);
-				return document.save();
-			}).then(() => {
-				ignoreNextSave.delete(document);
-			}, () => {
-				// Catch any errors and ignore so that we still trigger
-				// the file save.
-			});
+			event.waitUntil(formatter.formatDocument(document));
 		}
-		formatPromise.then(() => {
-			runBuilds(document, goConfig);
-		});
 	}, null, subscriptions);
+}
 
+function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
+	vscode.workspace.onDidSaveTextDocument(document => {
+		if (document.languageId !== 'go') {
+			return;
+		}
+		let goConfig = vscode.workspace.getConfiguration('go');
+		runBuilds(document, goConfig);
+	}, null, subscriptions);
 }
 
 function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
