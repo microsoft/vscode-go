@@ -115,14 +115,20 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 	});
 }
 
-function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any): Promise<GoDefinitionInformation> {
+function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any, useTags: boolean = true): Promise<GoDefinitionInformation> {
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		let gogetdoc = getBinPath('gogetdoc');
-		let p = cp.execFile(gogetdoc, ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()], {env}, (err, stdout, stderr) => {
+		let gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()];
+		let buildTags = vscode.workspace.getConfiguration('go')['buildTags'];
+		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', '"' + buildTags + '"'] : gogetdocFlagsWithoutTags;
+		let p = cp.execFile(gogetdoc, gogetdocFlags, {env}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('gogetdoc');
 					return reject();
+				}
+				if (stderr && stderr.startsWith('flag provided but not defined: -tags')) {
+					return definitionLocation_gogetdoc(document, position, offset, env, false);
 				}
 				if (err) {
 					return reject(err);
