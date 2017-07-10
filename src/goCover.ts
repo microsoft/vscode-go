@@ -133,7 +133,7 @@ function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove
 	let coverageDecorator = cfg['coverageDecorator'];
 	let hideUncovered = remove || coverageOptions === 'showCoveredCodeOnly';
 	let hideCovered = remove || coverageOptions === 'showUncoveredCodeOnly';
-	
+
 	if (coverageDecorator === 'gutter') {
 		editor.setDecorations(coveredGutter, hideCovered ? [] : file.coveredRange);
 		editor.setDecorations(uncoveredGutter, hideUncovered ? [] : file.uncoveredRange);
@@ -160,13 +160,6 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				// The first line will be "mode: set" which will be ignored
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
-
-				// I really don't know how to fix this elsewhere. I get an underscores in front of the path (on macOS)
-				//  in go-code-cover file. This fixes it.
-				// _/Users/me/.../file.go => /Users/me/.../file.go
-				if (fileRange[1].charAt(0) === '_') {
-					fileRange[1] = fileRange[1].substr(1);
-				}
 
 				let coverage = coverageFiles[fileRange[1]] || { coveredRange: [], uncoveredRange: [] };
 				let range = new vscode.Range(
