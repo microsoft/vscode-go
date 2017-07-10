@@ -143,40 +143,67 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	};
 
 	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
+		const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
 		let buildFlags = goConfig['buildFlags'] || [];
 		// Remove the -i flag as it will be added later anyway
 		if (buildFlags.indexOf('-i') > -1) {
 			buildFlags.splice(buildFlags.indexOf('-i'), 1);
 		}
 
-		let buildTags = '"' + goConfig['buildTags'] + '"';
-
-		let tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
-
-		let buildWorkDir = cwd;
-		let buildArgs: string[];
-
-		if (goConfig['buildOnSave'] === 'workspace') {
-			buildWorkDir = vscode.workspace.rootPath;
-			// To compile the whole workspace, we cant use `go build` as it skips test file
-			// So use `go test -run=^$ ./...`. Since the regex doesnt match any test functions, no test will be run
-			// But the workspace will get compiled
-			buildArgs = ['test', '-run=^$', '-tags', buildTags, ...buildFlags, './...'];
-		} else if (filename.match(/_test.go$/i)) {
-			buildArgs = ['test', '-i', '-c', '-o', tmpPath, '-tags', buildTags, ...buildFlags];
-		} else {
-			buildArgs = ['build', '-i', '-o', tmpPath, '-tags', buildTags, ...buildFlags];
+		// We use `go test` instead of `go build` because the latter ignores test files
+		let buildArgs: string[] = ['test', '-i', '-c', '-o', tmpPath, ...buildFlags];
+		if (goConfig['buildTags']) {
+			buildArgs.push('-tags');
+			buildArgs.push('"' + goConfig['buildTags'] + '"');
 		}
 
-		runningToolsPromises.push(runTool(
-			buildArgs,
-			buildWorkDir,
-			'error',
-			true,
-			null,
-			env,
-			true
-		));
+		if (goConfig['buildOnSave'] === 'workspace') {
+			// Use `go list ./...` to get list of all packages under the vscode workspace
+			// And then run `go test -i -c -o` on each of them
+			let outerBuildPromise = new Promise<any>((resolve, reject) => {
+				cp.execFile(goRuntimePath, ['list', './...'], { cwd: vscode.workspace.rootPath }, (err, stdout, stderr) => {
+					if (err) {
+						console.log('Could not find packages to build');
+						return resolve([]);
+					}
+					let importPaths = stdout.split('\n');
+					let buildPromises = [];
+					importPaths.forEach(pkgPath => {
+						// Skip compiling vendor packages
+						if (!pkgPath || pkgPath.indexOf('/vendor/') > -1) {
+							return;
+						}
+						buildPromises.push(runTool(
+							buildArgs.concat(pkgPath),
+							cwd,
+							'error',
+							true,
+							null,
+							env,
+							true
+						));
+					});
+					return Promise.all(buildPromises).then((resultSets) => {
+						return resolve([].concat.apply([], resultSets));
+					});
+				});
+			});
+			runningToolsPromises.push(outerBuildPromise);
+		} else {
+			// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
+			let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(cwd);
+			let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+
+			runningToolsPromises.push(runTool(
+				buildArgs.concat(importPath),
+				cwd,
+				'error',
+				true,
+				null,
+				env,
+				true
+			));
+		}
 	}
 
 	if (!!goConfig['testOnSave']) {
