@@ -231,11 +231,10 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		let vetFlags = goConfig['vetFlags'] || [];
-		let vetArgs = ['vet', ...vetFlags];
+		let vetArgs = ['tool', 'vet', ...vetFlags, '.'];
 		let vetWorkDir = cwd;
 
 		if (goConfig['vetOnSave'] === 'workspace') {
-			vetArgs.push('./...');
 			vetWorkDir = vscode.workspace.rootPath;
 		}
 

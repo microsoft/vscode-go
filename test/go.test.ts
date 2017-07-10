@@ -293,11 +293,16 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Error checking', (done) => {
-		let config = vscode.workspace.getConfiguration('go');
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'package' },
+			'vetFlags': { value: ['-all'] },
+			'lintTool': { value: 'golint' },
+			'lintFlags': { value: [] }
+		});
 		let expected = [
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
-			// { line: 7, severity: 'warning', msg: 'no formatting directive in Printf call' },
-			{ line: 11, severity: 'error', msg: 'undefined: prin' },
+			{ line: 9, severity: 'warning', msg: 'possible formatting directive in Println call' },
+			{ line: 12, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
 			if (version.major === 1 && version.minor < 6) {
@@ -409,12 +414,13 @@ It returns the number of bytes written and any write error encountered.
 
 			let config = Object.create(vscode.workspace.getConfiguration('go'), {
 				'lintTool': { value: 'gometalinter' },
-				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck']}
+				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
+				'vetOnSave': { value: 'off' },
+				'buildOnSave': { value: 'off' }
 			});
 			let expected = [
-				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-				{ line: 11, severity: 'error', msg: 'undefined: prin' },
-				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
+				{ line: 12, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ line: 12, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
 			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
