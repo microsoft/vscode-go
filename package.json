@@ -459,7 +459,7 @@
             "null"
           ],
           "default": null,
-          "description": "Specifies the GOPATH to use when no environment variable is set. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true."
+          "description": "Specify GOPATH here to override the one that is set as environment variable. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true."
         },
         "go.toolsGopath": {
           "type": "string",
