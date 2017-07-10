@@ -22,7 +22,7 @@ import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTo
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
-import { initGutterDecorators } from './goGutter';
+import { initGoCover } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTestOutput, testWorkspace } from './goTest';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
@@ -79,7 +79,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 	});
 
-	initGutterDecorators(ctx);
+	initGoCover(ctx);
 
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));

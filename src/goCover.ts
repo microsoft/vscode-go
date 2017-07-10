@@ -14,7 +14,9 @@ import { showTestOutput, goTest } from './goTest';
 import { getBinPath } from './util';
 import rl = require('readline');
 import { outputChannel } from './goStatus';
-import { coveredGutter, uncoveredGutter } from './goGutter';
+
+export let coveredGutter;
+export let uncoveredGutter;
 
 let coveredHighLight = vscode.window.createTextEditorDecorationType({
 	// Green
@@ -37,6 +39,17 @@ interface CoverageFile {
 function clearCoverage() {
 	applyCoverage(true);
 	coverageFiles = {};
+}
+
+export function initGoCover(ctx: vscode.ExtensionContext) {
+	coveredGutter = vscode.window.createTextEditorDecorationType({
+		// Gutter green
+		gutterIconPath: ctx.asAbsolutePath('images/gutter-green.svg')
+	});
+	uncoveredGutter = vscode.window.createTextEditorDecorationType({
+		// Gutter red
+		gutterIconPath: ctx.asAbsolutePath('images/gutter-red.svg')
+	});
 }
 
 export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
@@ -120,7 +133,7 @@ function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove
 	let coverageDecorator = cfg['coverageDecorator'];
 	let hideUncovered = remove || coverageOptions === 'showCoveredCodeOnly';
 	let hideCovered = remove || coverageOptions === 'showUncoveredCodeOnly';
-
+	
 	if (coverageDecorator === 'gutter') {
 		editor.setDecorations(coveredGutter, hideCovered ? [] : file.coveredRange);
 		editor.setDecorations(uncoveredGutter, hideUncovered ? [] : file.uncoveredRange);
@@ -148,7 +161,7 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
 
-				// I really don't know how to fix this elsewhere. I get an underscores in front o thef path (on macOS)
+				// I really don't know how to fix this elsewhere. I get an underscores in front of the path (on macOS)
 				//  in go-code-cover file. This fixes it.
 				// _/Users/me/.../file.go => /Users/me/.../file.go
 				if (fileRange[1].charAt(0) === '_') {

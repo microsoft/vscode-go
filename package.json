@@ -501,7 +501,7 @@
             "highlight",
             "gutter"
           ],
-          "default": "hightligh",
+          "default": "highlight",
           "description": "This option lets you choose the way to display code coverage. Highlight, as its name states, highlights the line in red or green, gutter shows the colors in the gutter of the editor."
         },
         "go.testTimeout": {
