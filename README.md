@@ -31,7 +31,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
-![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
+![IDE](https://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
 
 ## Using
 
