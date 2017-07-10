@@ -144,6 +144,11 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
 		let buildFlags = goConfig['buildFlags'] || [];
+		// Remove the -i flag as it will be added later anyway
+		if (buildFlags.indexOf('-i') > -1) {
+			buildFlags.splice(buildFlags.indexOf('-i'), 1);
+		}
+
 		let buildTags = '"' + goConfig['buildTags'] + '"';
 
 		let tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
