@@ -169,6 +169,17 @@ function logError(...args: any[]) {
 	logger.error(logArgsToString(args));
 }
 
+function normalizePath(filePath: string) {
+	if (os.platform() === 'win32') {
+		filePath = path.normalize(filePath)
+		let i = filePath.indexOf(":")
+		if (i >= 0) {
+			return filePath.slice(0, i).toUpperCase() + filePath.slice(i)
+		}
+	}
+	return filePath
+}
+
 class Delve {
 	program: string;
 	remotePath: string;
@@ -490,12 +501,11 @@ class GoDebugSession extends DebugSession {
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
 		verbose('SetBreakPointsRequest');
-		if (!this.breakpoints.get(args.source.path)) {
-			this.breakpoints.set(args.source.path, []);
+		let file = normalizePath(args.source.path);
+		if (!this.breakpoints.get(file)) {
+			this.breakpoints.set(file, []);
 		}
-		let file = args.source.path;
 		let remoteFile = this.toDebuggerPath(file);
-		let existingBPs = this.breakpoints.get(file);
 		Promise.all(this.breakpoints.get(file).map(existingBP => {
 			verbose('Clearing: ' + existingBP.id);
 			return this.delve.callPromise<DebugBreakpoint>('ClearBreakpoint', [existingBP.id]);
@@ -511,25 +521,25 @@ class GoDebugSession extends DebugSession {
 					verbose('Error on CreateBreakpoint');
 					return null;
 				});
-			}));
-		}).then(newBreakpoints => {
-			verbose('All set:' + JSON.stringify(newBreakpoints));
-			let breakpoints = newBreakpoints.map((bp, i) => {
-				if (bp) {
-					return { verified: true, line: bp.line };
-				} else {
-					return { verified: false, line: args.lines[i] };
-				}
+			})).then(newBreakpoints => {
+				verbose('All set:' + JSON.stringify(newBreakpoints));
+				let breakpoints = newBreakpoints.map((bp, i) => {
+					if (bp) {
+						return { verified: true, line: bp.line };
+					} else {
+						return { verified: false, line: args.lines[i] };
+					}
+				});
+				this.breakpoints.set(file, newBreakpoints.filter(x => !!x));
+				return breakpoints;
+			}).then(breakpoints => {
+				response.body = { breakpoints };
+				this.sendResponse(response);
+				verbose('SetBreakPointsResponse');
+			}, err => {
+				this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
+				logError(err);
 			});
-			this.breakpoints.set(args.source.path, newBreakpoints.filter(x => !!x));
-			return breakpoints;
-		}).then(breakpoints => {
-			response.body = { breakpoints };
-			this.sendResponse(response);
-			verbose('SetBreakPointsResponse');
-		}, err => {
-			this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
-			logError(err);
 		});
 	}
 
