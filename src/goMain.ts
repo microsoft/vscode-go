@@ -34,6 +34,7 @@ import { addTags, removeTags } from './goModifytags';
 import { parseLiveFile } from './goLiveErrors';
 import { GoCodeLensProvider } from './goCodelens';
 import { implCursor } from './goImpl';
+import { goListAll } from './goPackages';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
@@ -44,6 +45,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
 
 	updateGoPathGoRootFromConfig().then(() => {
+		goListAll();
 		offerToInstallTools();
 		let langServerAvailable = checkLanguageServer();
 		if (langServerAvailable) {
