@@ -392,7 +392,8 @@
           "description": "Specifies Lint tool name.",
           "enum": [
             "golint",
-            "gometalinter"
+            "gometalinter",
+            "megacheck"
           ]
         },
         "go.lintFlags": {

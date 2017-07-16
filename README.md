@@ -80,6 +80,9 @@ If you want to run only specific linters (some linters are slow), you can modify
   "go.lintFlags": ["--disable-all", "--enable=errcheck"],
 ```
 
+Alternatively, you can use [megacheck](https://github.com/dominikh/go-tools/tree/master/cmd/megacheck) which 
+may have significantly better performance than `gometalinter`, while only supporting a subset of the tools.
+
 Finally, the result of those linters will show right in the code (locations with suggestions will be underlined),
 as well as in the output pane.
 
