@@ -170,14 +170,14 @@ function logError(...args: any[]) {
 }
 
 function normalizePath(filePath: string) {
-	if (os.platform() === 'win32') {
-		filePath = path.normalize(filePath)
-		let i = filePath.indexOf(":")
+	if (process.platform === 'win32') {
+		filePath = path.normalize(filePath);
+		let i = filePath.indexOf(':');
 		if (i >= 0) {
-			return filePath.slice(0, i).toUpperCase() + filePath.slice(i)
+			return filePath.slice(0, i).toUpperCase() + filePath.slice(i);
 		}
 	}
-	return filePath
+	return filePath;
 }
 
 class Delve {
