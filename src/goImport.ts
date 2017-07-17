@@ -13,14 +13,15 @@ import { promptForMissingTool } from './goInstallTools';
 import path = require('path');
 import { getRelativePackagePath } from './goPackages';
 
+const missingToolMsg = 'Missing tool: ';
+
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
 	let vendorSupportPromise = isVendorSupported();
 	let goPkgsPromise = new Promise<string[]>((resolve, reject) => {
 		cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
-				promptForMissingTool('gopkgs');
-				return reject();
+				return reject(missingToolMsg + 'gopkgs');
 			}
 			let lines = stdout.toString().split('\n');
 			if (lines[lines.length - 1] === '') {
@@ -84,6 +85,10 @@ function getImports(document: vscode.TextDocument): Promise<string[]> {
 function askUserForImport(): Thenable<string> {
 	return listPackages(true).then(packages => {
 		return vscode.window.showQuickPick(packages);
+	}, err => {
+		if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
+			promptForMissingTool(err.substr(missingToolMsg.length));
+		}
 	});
 }
 

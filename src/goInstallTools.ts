@@ -17,6 +17,7 @@ import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
+let installsDeclinedTools: string[] = [];
 
 function getTools(goVersion: SemVersion): { [key: string]: string } {
 	let goConfig = vscode.workspace.getConfiguration('go');
@@ -78,7 +79,10 @@ export function installAllTools() {
 }
 
 export function promptForMissingTool(tool: string) {
-
+	// If user has declined to install, then don't prompt
+	if (installsDeclinedTools.indexOf(tool) > -1) {
+		return;
+	}
 	getGoVersion().then((goVersion) => {
 		if (goVersion && goVersion.major === 1 && goVersion.minor < 6) {
 			if (tool === 'golint') {
@@ -97,6 +101,8 @@ export function promptForMissingTool(tool: string) {
 			} else if (selected === 'Install All') {
 				getMissingTools(goVersion).then((missing) => installTools(goVersion, missing));
 				hideGoStatus();
+			} else {
+				installsDeclinedTools.push(tool);
 			}
 		});
 	});

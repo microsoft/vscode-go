@@ -51,11 +51,9 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 		cp.execFile(cmd, args, { env: env, cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					if (toolName) {
-						promptForMissingTool(toolName);
-					} else {
-						vscode.window.showInformationMessage(`Cannot find ${goRuntimePath}`);
-					}
+					// Since the tool is run on save which can be frequent
+					// we avoid sending explicit notification if tool is missing
+					console.log(`Cannot find ${toolName ? toolName : goRuntimePath}`);
 					return resolve([]);
 				}
 				if (err && stderr && !useStdErr) {
