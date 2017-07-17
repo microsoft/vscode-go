@@ -128,7 +128,7 @@ suite('Go Extension Tests', () => {
 			'docsTool': { value: 'gogetdoc' }
 		});
 		getGoVersion().then(version => {
-			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
+			if (!version || version.major > 1 || (version.major === 1 && version.minor > 5)) {
 				return testDefinitionProvider(config);
 			}
 			return Promise.resolve();
@@ -166,7 +166,7 @@ It returns the number of bytes written and any write error encountered.
 			'docsTool': { value: 'gogetdoc' }
 		});
 		getGoVersion().then(version => {
-			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
+			if (!version || version.major > 1 || (version.major === 1 && version.minor > 5)) {
 				return testSignatureHelpProvider(config, testCases);
 			}
 			return Promise.resolve();
@@ -217,7 +217,7 @@ It returns the number of bytes written and any write error encountered.
 			'docsTool': { value: 'gogetdoc' }
 		});
 		getGoVersion().then(version => {
-			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
+			if (!version || version.major > 1 || (version.major === 1 && version.minor > 5)) {
 				return testHoverProvider(config, testCases);
 			}
 			return Promise.resolve();
@@ -305,7 +305,7 @@ It returns the number of bytes written and any write error encountered.
 			{ line: 12, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// golint is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -326,7 +326,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Generate unit tests squeleton for file', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -352,7 +352,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Generate unit tests squeleton for a function', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -381,7 +381,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Generate unit tests squeleton for package', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -407,7 +407,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Gometalinter error checking', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// golint in gometalinter is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
