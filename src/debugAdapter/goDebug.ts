@@ -137,7 +137,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	host?: string;
 	buildFlags?: string;
 	init?: string;
-	trace?: boolean|'verbose';
+	trace?: boolean | 'verbose';
 	/** Optional path to .env file. */
 	envFile?: string;
 	backend?: string;
@@ -317,7 +317,7 @@ class Delve {
 				logError('Process exiting with code: ' + code);
 				if (this.onclose) { this.onclose(code); }
 			});
-			this.debugProcess.on('error', function(err) {
+			this.debugProcess.on('error', function (err) {
 				reject(err);
 			});
 		});
@@ -679,7 +679,7 @@ class GoDebugSession extends DebugSession {
 		let variables;
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice || vari.kind === GoReflectKind.Map) {
 			variables = vari.children.map((v, i) => {
-				let { result, variablesReference} = this.convertDebugVariableToProtocolVariable(v, i);
+				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
 				return {
 					name: '[' + i + ']',
 					value: result,
@@ -688,7 +688,7 @@ class GoDebugSession extends DebugSession {
 			});
 		} else {
 			variables = vari.children.map((v, i) => {
-				let { result, variablesReference} = this.convertDebugVariableToProtocolVariable(v, i);
+				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
 				return {
 					name: v.name,
 					value: result,
@@ -845,7 +845,7 @@ function killTree(processId: number): void {
 		// on linux and OS X we kill all direct and indirect child processes as well
 		try {
 			const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
-			spawnSync(cmd, [ processId.toString() ]);
+			spawnSync(cmd, [processId.toString()]);
 		} catch (err) {
 		}
 	}
