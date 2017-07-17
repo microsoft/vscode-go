@@ -16,13 +16,19 @@ export function browsePackages() {
 	if (!goRuntimePath) {
 		return;
 	}
+	let selection = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.selection : undefined;
+	let selectedText = (selection && !selection.isEmpty) ? vscode.window.activeTextEditor.document.getText(selection) : '';
 
 	goListAll().then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (!pkgs || pkgs.length === 0) {
 			return;
 		}
-		vscode.window.showQuickPick(pkgs).then(pkg => {
+		let selectPkgPromise: Thenable<string> = Promise.resolve(selectedText);
+		if (!selectedText || pkgs.indexOf(selectedText) === -1) {
+			selectPkgPromise = vscode.window.showQuickPick(pkgs);
+		}
+		selectPkgPromise.then(pkg => {
 			cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], (err, stdout, stderr) => {
 				if (!stdout || stdout.indexOf(':') === -1) {
 					return;
