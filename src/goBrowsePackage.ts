@@ -49,6 +49,6 @@ export function browsePackages() {
 				}
 			});
 		});
-	})
+	});
 
 }
