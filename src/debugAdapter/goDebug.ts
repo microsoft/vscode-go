@@ -177,6 +177,7 @@ class Delve {
 	onstdout: (str: string) => void;
 	onstderr: (str: string) => void;
 	onclose: (code: number) => void;
+	noDebug: boolean;
 
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = program;
@@ -216,29 +217,31 @@ class Delve {
 			}
 
 			let env = Object.assign({}, process.env, fileEnv, launchArgs.env);
-			if (!!launchArgs.noDebug && mode === 'debug' && !isProgramDirectory) {
-				this.debugProcess = spawn(getGoRuntimePath(), ['run', program], { env });
-				this.debugProcess.stderr.on('data', chunk => {
-					let str = chunk.toString();
-					if (this.onstderr) { this.onstderr(str); }
-				});
-				this.debugProcess.stdout.on('data', chunk => {
-					let str = chunk.toString();
-					if (this.onstdout) { this.onstdout(str); }
-				});
-				this.debugProcess.on('close', (code) => {
-					logError('Process exiting with code: ' + code);
-					if (this.onclose) { this.onclose(code); }
-				});
-				this.debugProcess.on('error', function (err) {
-					reject(err);
-				});
-				resolve();
-				return;
+			if (!!launchArgs.noDebug) {
+				if (mode === 'debug' && !isProgramDirectory) {
+					this.noDebug = true;
+					this.debugProcess = spawn(getGoRuntimePath(), ['run', program], { env });
+					this.debugProcess.stderr.on('data', chunk => {
+						let str = chunk.toString();
+						if (this.onstderr) { this.onstderr(str); }
+					});
+					this.debugProcess.stdout.on('data', chunk => {
+						let str = chunk.toString();
+						if (this.onstdout) { this.onstdout(str); }
+					});
+					this.debugProcess.on('close', (code) => {
+						logError('Process exiting with code: ' + code);
+						if (this.onclose) { this.onclose(code); }
+					});
+					this.debugProcess.on('error', function (err) {
+						reject(err);
+					});
+					resolve();
+					return;
+				}
 			}
-
+			this.noDebug = false;
 			let serverRunning = false;
-
 
 			if (mode === 'remote') {
 				this.debugProcess = null;
@@ -444,7 +447,7 @@ class GoDebugSession extends DebugSession {
 		};
 
 		this.delve.connection.then(() => {
-			if (!args.noDebug) {
+			if (!this.delve.noDebug) {
 				this.sendEvent(new InitializedEvent());
 				verbose('InitializeEvent');
 			}
