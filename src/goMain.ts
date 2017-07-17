@@ -35,6 +35,7 @@ import { parseLiveFile } from './goLiveErrors';
 import { GoCodeLensProvider } from './goCodelens';
 import { implCursor } from './goImpl';
 import { goListAll } from './goPackages';
+import { browsePackages } from './goBrowsePackage';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
@@ -181,6 +182,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', () => {
 		installAllTools();
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.browse.packages', () => {
+		browsePackages();
 	}));
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {

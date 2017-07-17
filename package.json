@@ -164,6 +164,11 @@
         "command": "go.show.commands",
         "title": "Go: Show Other Commands...",
         "description": "Shows all commands from the Go extension in the wuick pick"
+      },
+      {
+        "command": "go.browse.packages",
+        "title": "Go: Browse Packages",
+        "description": "Browse packages and Go files inside the packages."
       }
     ],
     "debuggers": [

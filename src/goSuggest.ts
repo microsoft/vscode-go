@@ -11,7 +11,7 @@ import { dirname, basename } from 'path';
 import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
-import { getAllPackageDetails } from './goPackages';
+import { getImportablePackages } from './goPackages';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -215,7 +215,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
-		getAllPackageDetails(vscode.window.activeTextEditor.document.fileName).then(pkgMap => {
+		getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => {
 			this.pkgsList = pkgMap;
 		});
 

@@ -28,9 +28,7 @@ export function goListAll(): Promise<Map<string, string>> {
 			stdout.split('\n').forEach(pkgDetail => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
-				if (pkgName !== 'main') {
-					allPkgs.set(pkgPath, pkgName);
-				}
+				allPkgs.set(pkgPath, pkgName);
 			});
 			goListAllCompleted = true;
 			return resolve(allPkgs);
@@ -39,26 +37,29 @@ export function goListAll(): Promise<Map<string, string>> {
 }
 
 /**
- * Returns mapping of import path and package name for packages
+ * Returns mapping of import path and package name for packages that can be imported
  * @param filePath. Used to determine the right relative path for vendor pkgs
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function getAllPackageDetails(filePath: string): Promise<Map<string, string>> {
+export function getImportablePackages(filePath: string): Promise<Map<string, string>> {
 
 	return Promise.all([isVendorSupported(), goListAll()]).then(values => {
 		let isVendorSupported = values[0];
-		let pkgs: Map<string, string> = values[1];
 		let currentFileDirPath = path.dirname(filePath);
 		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(currentFileDirPath);
-		if (!isVendorSupported || !currentWorkspace) {
-			return pkgs;
-		}
-
 		let pkgMap = new Map<string, string>();
-		pkgs.forEach((pkgName, pkgPath) => {
+
+		allPkgs.forEach((pkgName, pkgPath) => {
+			if (pkgName === 'main') {
+				return;
+			}
+			if (!isVendorSupported || !currentWorkspace) {
+				pkgMap.set(pkgPath, pkgName);
+				return;
+			}
 			let relativePkgPath = getRelativePackagePath(currentFileDirPath, currentWorkspace, pkgPath);
 			if (relativePkgPath) {
-				pkgMap.set(relativePkgPath, pkgs.get(pkgPath));
+				pkgMap.set(relativePkgPath, pkgName);
 			}
 		});
 		return pkgMap;
