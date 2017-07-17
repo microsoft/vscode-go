@@ -17,6 +17,7 @@ import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
+let installsDeclinedTools: string[] = [];
 
 function getTools(goVersion: SemVersion): { [key: string]: string } {
 	let goConfig = vscode.workspace.getConfiguration('go');
@@ -59,6 +60,10 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 		tools['gometalinter'] = 'github.com/alecthomas/gometalinter';
 	}
 
+	if (goConfig['lintTool'] === 'megacheck') {
+		tools['megacheck'] = 'honnef.co/go/tools/...';
+	}
+
 	if (goConfig['useLanguageServer'] && process.platform !== 'win32') {
 		tools['go-langserver'] = 'github.com/sourcegraph/go-langserver';
 	}
@@ -74,7 +79,10 @@ export function installAllTools() {
 }
 
 export function promptForMissingTool(tool: string) {
-
+	// If user has declined to install, then don't prompt
+	if (installsDeclinedTools.indexOf(tool) > -1) {
+		return;
+	}
 	getGoVersion().then((goVersion) => {
 		if (goVersion && goVersion.major === 1 && goVersion.minor < 6) {
 			if (tool === 'golint') {
@@ -93,6 +101,8 @@ export function promptForMissingTool(tool: string) {
 			} else if (selected === 'Install All') {
 				getMissingTools(goVersion).then((missing) => installTools(goVersion, missing));
 				hideGoStatus();
+			} else {
+				installsDeclinedTools.push(tool);
 			}
 		});
 	});
@@ -166,11 +176,11 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 			let env = (envWithSeparateGoPathForTools && tool !== 'gometalinter' && tool !== 'dlv') ? envWithSeparateGoPathForTools : envForTools;
 			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env }, (err, stdout, stderr) => {
 				if (err) {
-					outputChannel.appendLine('Installing ' + tool + ' FAILED');
+					outputChannel.appendLine('Installing ' + tools[tool] + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
 					resolve([...sofar, failureReason]);
 				} else {
-					outputChannel.appendLine('Installing ' + tool + ' SUCCEEDED');
+					outputChannel.appendLine('Installing ' + tools[tool] + ' SUCCEEDED');
 					if (tool === 'gometalinter') {
 						// Gometalinter needs to install all the linters it uses.
 						outputChannel.appendLine('Installing all linters used by gometalinter....');

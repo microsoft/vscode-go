@@ -139,8 +139,7 @@ export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any
 	});
 }
 
-export function getTestEnvVars(): any {
-	const config = vscode.workspace.getConfiguration('go');
+export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 	const toolsEnv = getToolsEnvVars();
 	const testEnv = config['testEnvVars'] || {};
 
@@ -223,7 +222,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
 		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags];
-		let testEnvVars = getTestEnvVars();
+		let testEnvVars = getTestEnvVars(testconfig.goConfig);
 		let goRuntimePath = getGoRuntimePath();
 
 		if (!goRuntimePath) {
@@ -295,7 +294,7 @@ function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): strin
 function expandFilePathInOutput(output: string, cwd: string): string {
 	let lines = output.split('\n');
 	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\t(\S+_test.go):(\d+):/);
+		let matches = lines[i].match(/^\s+(\S+_test.go):(\d+):/);
 		if (matches) {
 			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
 		}

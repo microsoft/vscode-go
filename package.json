@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.62",
+  "version": "0.6.63",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -33,8 +33,9 @@
   "extensionDependencies": [],
   "dependencies": {
     "console-stamp": "^0.2.2",
-    "diff": "~3.2.0",
+    "diff": "~3.3.0",
     "json-rpc2": "^1.0.2",
+    "vscode": "^1.1.1",
     "vscode-debug-logger": "^0.0.4",
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0",
@@ -163,6 +164,11 @@
         "command": "go.show.commands",
         "title": "Go: Show Other Commands...",
         "description": "Shows all commands from the Go extension in the wuick pick"
+      },
+      {
+        "command": "go.browse.packages",
+        "title": "Go: Browse Packages",
+        "description": "Browse packages and Go files inside the packages."
       }
     ],
     "debuggers": [
@@ -376,7 +382,7 @@
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
         },
         "go.lintOnSave": {
-           "type": "string",
+          "type": "string",
           "enum": [
             "package",
             "workspace",
@@ -391,7 +397,8 @@
           "description": "Specifies Lint tool name.",
           "enum": [
             "golint",
-            "gometalinter"
+            "gometalinter",
+            "megacheck"
           ]
         },
         "go.lintFlags": {
@@ -459,7 +466,7 @@
             "null"
           ],
           "default": null,
-          "description": "Specifies the GOPATH to use when no environment variable is set. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true."
+          "description": "Specify GOPATH here to override the one that is set as environment variable. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true."
         },
         "go.toolsGopath": {
           "type": "string",
@@ -493,6 +500,15 @@
           ],
           "default": "showBothCoveredAndUncoveredCode",
           "description": "Use these options to control whether only covered or only uncovered code or both should be highlighted after running test coverage"
+        },
+        "go.coverageDecorator": {
+          "type": "string",
+          "enum": [
+            "highlight",
+            "gutter"
+          ],
+          "default": "highlight",
+          "description": "This option lets you choose the way to display code coverage. Highlight, as its name states, highlights the line in red or green, gutter shows the colors in the gutter of the editor."
         },
         "go.testTimeout": {
           "type": "string",

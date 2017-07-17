@@ -3,7 +3,7 @@
 [![Join the chat at https://gitter.im/Microsoft/vscode-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/vscode-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/Microsoft/vscode-go.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-go)
 
 
-**Important Note: If you have recently upgraded to Go 1.7 or Go 1.8, you may need to run `gocode close` in your terminal and rebuild `gocode` to ensure Go completion lists continue to work correctly.  See https://github.com/Microsoft/vscode-go/issues/441.**
+**Important Note: If you have recently upgraded to Go 1.8 or Go 1.9, you may need to run `gocode close` in your terminal and rebuild `gocode` to ensure Go completion lists continue to work correctly.  See https://github.com/Microsoft/vscode-go/issues/441.**
 
 Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Notes) to know what has changed over the last few versions of this extension
 
@@ -31,13 +31,13 @@ This extension adds rich language support for the Go language to VS Code, includ
 - [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
-![IDE](http://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
+![IDE](https://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
 
 ## Using
 
 First, you will need to install Visual Studio Code. Then, in the command palette (`cmd-shift-p`) select `Install Extension` and choose `Go`.
 
-In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open your GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.  You should see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the Go tooling needed for the extension to support its full feature set.  See the [Tools](#tools) section below for more details.
+In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open your GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.  You should see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the Go tooling needed for the extension to support its full feature set.  See the [Tools](#tools-this-extension-depends-on) section below for more details.
 
 _Note 1_: Read [GOPATH in the VS Code Go extension](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension) to learn about the different ways you can get the extension to set GOPATH.
 
@@ -79,6 +79,9 @@ If you want to run only specific linters (some linters are slow), you can modify
 ```javascript
   "go.lintFlags": ["--disable-all", "--enable=errcheck"],
 ```
+
+Alternatively, you can use [megacheck](https://github.com/dominikh/go-tools/tree/master/cmd/megacheck) which 
+may have significantly better performance than `gometalinter`, while only supporting a subset of the tools.
 
 Finally, the result of those linters will show right in the code (locations with suggestions will be underlined),
 as well as in the output pane.

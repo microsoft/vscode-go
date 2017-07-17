@@ -15,6 +15,9 @@ import { getBinPath } from './util';
 import rl = require('readline');
 import { outputChannel } from './goStatus';
 
+export let coveredGutter;
+export let uncoveredGutter;
+
 let coveredHighLight = vscode.window.createTextEditorDecorationType({
 	// Green
 	backgroundColor: 'rgba(64,128,64,0.5)',
@@ -36,6 +39,17 @@ interface CoverageFile {
 function clearCoverage() {
 	applyCoverage(true);
 	coverageFiles = {};
+}
+
+export function initGoCover(ctx: vscode.ExtensionContext) {
+	coveredGutter = vscode.window.createTextEditorDecorationType({
+		// Gutter green
+		gutterIconPath: ctx.asAbsolutePath('images/gutter-green.svg')
+	});
+	uncoveredGutter = vscode.window.createTextEditorDecorationType({
+		// Gutter red
+		gutterIconPath: ctx.asAbsolutePath('images/gutter-red.svg')
+	});
 }
 
 export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
@@ -116,10 +130,17 @@ function applyCoverage(remove: boolean = false) {
 function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
 	let cfg = vscode.workspace.getConfiguration('go');
 	let coverageOptions = cfg['coverageOptions'];
+	let coverageDecorator = cfg['coverageDecorator'];
 	let hideUncovered = remove || coverageOptions === 'showCoveredCodeOnly';
 	let hideCovered = remove || coverageOptions === 'showUncoveredCodeOnly';
-	editor.setDecorations(uncoveredHighLight, hideUncovered ? [] : file.uncoveredRange);
-	editor.setDecorations(coveredHighLight, hideCovered ? [] : file.coveredRange);
+
+	if (coverageDecorator === 'gutter') {
+		editor.setDecorations(coveredGutter, hideCovered ? [] : file.coveredRange);
+		editor.setDecorations(uncoveredGutter, hideUncovered ? [] : file.uncoveredRange);
+	} else {
+		editor.setDecorations(uncoveredHighLight, hideUncovered ? [] : file.uncoveredRange);
+		editor.setDecorations(coveredHighLight, hideCovered ? [] : file.coveredRange);
+	}
 }
 
 export function getCoverage(coverProfilePath: string, showErrOutput: boolean = false): Promise<any[]> {

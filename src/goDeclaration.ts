@@ -12,6 +12,8 @@ import { byteOffsetAt, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive } from './util';
 
+const missingToolMsg = 'Missing tool: ';
+
 export interface GoDefinitionInformation {
 	file: string;
 	line: number;
@@ -55,8 +57,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {env}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('godef');
-					return reject();
+					return reject(missingToolMsg + 'godef');
 				}
 				if (err) {
 					return reject(err);
@@ -115,14 +116,19 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 	});
 }
 
-function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any): Promise<GoDefinitionInformation> {
+function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any, useTags: boolean = true): Promise<GoDefinitionInformation> {
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		let gogetdoc = getBinPath('gogetdoc');
-		let p = cp.execFile(gogetdoc, ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()], {env}, (err, stdout, stderr) => {
+		let gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()];
+		let buildTags = vscode.workspace.getConfiguration('go')['buildTags'];
+		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', '"' + buildTags + '"'] : gogetdocFlagsWithoutTags;
+		let p = cp.execFile(gogetdoc, gogetdocFlags, {env}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('gogetdoc');
-					return reject();
+					return reject(missingToolMsg + 'gogetdoc');
+				}
+				if (stderr && stderr.startsWith('flag provided but not defined: -tags')) {
+					return definitionLocation_gogetdoc(document, position, offset, env, false);
 				}
 				if (err) {
 					return reject(err);
@@ -161,8 +167,7 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 		let p = cp.execFile(guru, ['-json', '-modified', 'definition', document.fileName + ':#' + offset.toString()], {env}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('guru');
-					return reject();
+					return reject(missingToolMsg + 'guru');
 				}
 				if (err) {
 					return reject(err);
@@ -210,7 +215,13 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 			return new vscode.Location(definitionResource, pos);
 		}, err => {
 			if (err) {
-				console.log(err);
+				// Prompt for missing tool is located here so that the
+				// prompts dont show up on hover or signature help
+				if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
+					promptForMissingTool(err.substr(missingToolMsg.length));
+				} else {
+					console.log(err);
+				}
 			}
 			return Promise.resolve(null);
 		});

@@ -21,6 +21,7 @@ import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
+import { goListAll } from '../src/goPackages';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -128,7 +129,7 @@ suite('Go Extension Tests', () => {
 			'docsTool': { value: 'gogetdoc' }
 		});
 		getGoVersion().then(version => {
-			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
+			if (!version || version.major > 1 || (version.major === 1 && version.minor > 5)) {
 				return testDefinitionProvider(config);
 			}
 			return Promise.resolve();
@@ -166,7 +167,7 @@ It returns the number of bytes written and any write error encountered.
 			'docsTool': { value: 'gogetdoc' }
 		});
 		getGoVersion().then(version => {
-			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
+			if (!version || version.major > 1 || (version.major === 1 && version.minor > 5)) {
 				return testSignatureHelpProvider(config, testCases);
 			}
 			return Promise.resolve();
@@ -217,7 +218,7 @@ It returns the number of bytes written and any write error encountered.
 			'docsTool': { value: 'gogetdoc' }
 		});
 		getGoVersion().then(version => {
-			if (version.major > 1 || (version.major === 1 && version.minor > 5)) {
+			if (!version || version.major > 1 || (version.major === 1 && version.minor > 5)) {
 				return testHoverProvider(config, testCases);
 			}
 			return Promise.resolve();
@@ -265,22 +266,26 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(12, 5), ['Abs', 'Acos', 'Asin']]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let goListAllPromise = goListAll();
 
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
+
 				return editor.edit(editbuilder => {
 					editbuilder.insert(new vscode.Position(12, 1), 'by\n');
 					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
 				}).then(() => {
-					let promises = testCases.map(([position, expected]) =>
-						provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
-							let labels = items.map(x => x.label);
-							for (let entry of expected) {
-								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
-							}
-						})
-					);
-					return Promise.all(promises);
+					return goListAllPromise.then(() => {
+						let promises = testCases.map(([position, expected]) =>
+							provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+								let labels = items.map(x => x.label);
+								for (let entry of expected) {
+									assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
+								}
+							})
+						);
+						return Promise.all(promises);
+					});
 				});
 			}).then(() => {
 				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
@@ -293,14 +298,19 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Error checking', (done) => {
-		let config = vscode.workspace.getConfiguration('go');
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'package' },
+			'vetFlags': { value: ['-all'] },
+			'lintTool': { value: 'golint' },
+			'lintFlags': { value: [] }
+		});
 		let expected = [
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
-			// { line: 7, severity: 'warning', msg: 'no formatting directive in Printf call' },
-			{ line: 11, severity: 'error', msg: 'undefined: prin' },
+			{ line: 9, severity: 'warning', msg: 'possible formatting directive in Println call' },
+			{ line: 12, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// golint is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -321,7 +331,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Generate unit tests squeleton for file', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -347,7 +357,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Generate unit tests squeleton for a function', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -376,7 +386,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Generate unit tests squeleton for package', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
@@ -402,19 +412,20 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Gometalinter error checking', (done) => {
 		getGoVersion().then(version => {
-			if (version.major === 1 && version.minor < 6) {
+			if (version && version.major === 1 && version.minor < 6) {
 				// golint in gometalinter is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
 
 			let config = Object.create(vscode.workspace.getConfiguration('go'), {
 				'lintTool': { value: 'gometalinter' },
-				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck']}
+				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
+				'vetOnSave': { value: 'off' },
+				'buildOnSave': { value: 'off' }
 			});
 			let expected = [
-				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-				{ line: 11, severity: 'error', msg: 'undefined: prin' },
-				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
+				{ line: 12, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ line: 12, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
 			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
@@ -521,23 +532,21 @@ It returns the number of bytes written and any write error encountered.
 		});
 	});
 
-	// This test is failing in Travis for Mac OS X with Go 1.7.
-	// Commenting this and created issue https://github.com/Microsoft/vscode-go/issues/609 to track the problem
-	// test('Test Env Variables are passed to Tests', (done) => {
-	// 	let config = Object.create(vscode.workspace.getConfiguration('go'), {
-	// 		'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
-	// 	});
+	test('Test Env Variables are passed to Tests', (done) => {
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
+		});
 
-	// 	let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
-	// 	vscode.workspace.openTextDocument(uri).then(document => {
-	// 		return vscode.window.showTextDocument(document).then(editor => {
-	// 			return testCurrentFile(config).then((result: boolean) => {
-	// 				assert.equal(result, true);
-	// 				return Promise.resolve();
-	// 			});
-	// 		});
-	// 	}).then(() => done(), done);
-	// });
+		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				return testCurrentFile(config, []).then((result: boolean) => {
+					assert.equal(result, true);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
 
 	test('Test Outline', (done) => {
 		let filePath = path.join(fixturePath, 'test.go');

@@ -10,7 +10,8 @@ import cp = require('child_process');
 import { dirname, basename } from 'path';
 import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { listPackages, getTextEditForAddImport } from './goImport';
+import { getTextEditForAddImport } from './goImport';
+import { getImportablePackages } from './goPackages';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -34,15 +35,10 @@ interface GoCodeSuggestion {
 	type: string;
 }
 
-interface PackageInfo {
-	name: string;
-	path: string;
-}
-
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	private gocodeConfigurationComplete = false;
-	private pkgsList: PackageInfo[] = [];
+	private pkgsList = new Map<string, string>();
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
 		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go'));
@@ -219,21 +215,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
-		let pkgPromise = listPackages(false).then((pkgs: string[]) => {
-			this.pkgsList = pkgs.map(pkg => {
-				let index = pkg.lastIndexOf('/');
-				let pkgName = index === -1 ? pkg : pkg.substr(index + 1);
-				// pkgs from gopkg.in will be of the form gopkg.in/user/somepkg.v3
-				if (pkg.match(/gopkg\.in\/.*\.v\d+/)) {
-					pkgName = pkgName.substr(0, pkgName.lastIndexOf('.v'));
-				}
-				return {
-					name: pkgName,
-					path: pkg
-				};
-			});
+		getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => {
+			this.pkgsList = pkgMap;
 		});
-		let configPromise = new Promise<void>((resolve, reject) => {
+
+		return new Promise<void>((resolve, reject) => {
 			// TODO: Since the gocode daemon is shared amongst clients, shouldn't settings be
 			// adjusted per-invocation to avoid conflicts from other gocode-using programs?
 			if (this.gocodeConfigurationComplete) {
@@ -244,33 +230,34 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			let env = getToolsEnvVars();
 			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], { env }, (err, stdout, stderr) => {
 				cp.execFile(gocode, ['set', 'autobuild', autobuild], {}, (err, stdout, stderr) => {
-					resolve();
+					return resolve();
 				});
 			});
 		});
-		return Promise.all([pkgPromise, configPromise]).then(() => {
-			return Promise.resolve();
-		});
+
 	}
 
 	// Return importable packages that match given word as Completion Items
 	private getMatchingPackages(word: string, suggestionSet: Set<string>): vscode.CompletionItem[] {
 		if (!word) return [];
-		let completionItems = this.pkgsList.filter((pkgInfo: PackageInfo) => {
-			return pkgInfo.name.startsWith(word) && !suggestionSet.has(pkgInfo.name);
-		}).map((pkgInfo: PackageInfo) => {
-			let item = new vscode.CompletionItem(pkgInfo.name, vscode.CompletionItemKind.Keyword);
-			item.detail = pkgInfo.path;
-			item.documentation = 'Imports the package';
-			item.insertText = pkgInfo.name;
-			item.command = {
-				title: 'Import Package',
-				command: 'go.import.add',
-				arguments: [pkgInfo.path]
-			};
-			// Add same sortText to the unimported packages so that they appear after the suggestions from gocode
-			item.sortText = 'z';
-			return item;
+		let completionItems = [];
+
+		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
+			if (pkgName.startsWith(word) && !suggestionSet.has(pkgName)) {
+
+				let item = new vscode.CompletionItem(pkgName, vscode.CompletionItemKind.Keyword);
+				item.detail = pkgPath;
+				item.documentation = 'Imports the package';
+				item.insertText = pkgName;
+				item.command = {
+					title: 'Import Package',
+					command: 'go.import.add',
+					arguments: [pkgPath]
+				};
+				// Add same sortText to the unimported packages so that they appear after the suggestions from gocode
+				item.sortText = 'z';
+				completionItems.push(item);
+			}
 		});
 		return completionItems;
 	}
@@ -283,14 +270,17 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			return;
 		}
 
-		let [_, pkgName] = wordmatches;
+		let [_, pkgNameFromWord] = wordmatches;
 		// Word is isolated. Now check pkgsList for a match
-		let matchingPackages = this.pkgsList.filter(pkgInfo => {
-			return pkgInfo.name === pkgName;
+		let matchingPackages = [];
+		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
+			if (pkgNameFromWord === pkgName) {
+				matchingPackages.push(pkgPath);
+			}
 		});
 
 		if (matchingPackages && matchingPackages.length === 1) {
-			return matchingPackages[0].path;
+			return matchingPackages[0];
 		}
 	}
 }

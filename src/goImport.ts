@@ -11,6 +11,9 @@ import { parseFilePrelude, isVendorSupported, getBinPath, getCurrentGoWorkspaceF
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import path = require('path');
+import { getRelativePackagePath } from './goPackages';
+
+const missingToolMsg = 'Missing tool: ';
 
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
@@ -18,8 +21,7 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 	let goPkgsPromise = new Promise<string[]>((resolve, reject) => {
 		cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
-				promptForMissingTool('gopkgs');
-				return reject();
+				return reject(missingToolMsg + 'gopkgs');
 			}
 			let lines = stdout.toString().split('\n');
 			if (lines[lines.length - 1] === '') {
@@ -33,7 +35,7 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 	return vendorSupportPromise.then((vendorSupport: boolean) => {
 		return Promise.all<string[]>([goPkgsPromise, importsPromise]).then(values => {
 			let pkgs = values[0];
-			let importedPkgs = values [1];
+			let importedPkgs = values[1];
 
 			if (!vendorSupport) {
 				if (importedPkgs.length > 0) {
@@ -51,30 +53,10 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 				if (!pkg || importedPkgs.indexOf(pkg) > -1) {
 					return;
 				}
-
-				let magicVendorString = '/vendor/';
-				let vendorIndex = pkg.indexOf(magicVendorString);
-				if (vendorIndex === -1) {
-					magicVendorString = 'vendor/';
-					if (pkg.startsWith(magicVendorString)) {
-						vendorIndex = 0;
-					}
+				let relativePkgPath = getRelativePackagePath(currentFileDirPath, currentWorkspace, pkg);
+				if (relativePkgPath) {
+					pkgSet.add(relativePkgPath);
 				}
-				// Check if current file and the vendor pkg belong to the same root project
-				// If yes, then vendor pkg can be replaced with its relative path to the "vendor" folder
-				// If not, then the vendor pkg should not be allowed to be imported.
-				if (vendorIndex > -1) {
-					let rootProjectForVendorPkg = path.join(currentWorkspace, pkg.substr(0, vendorIndex));
-					let relativePathForVendorPkg = pkg.substring(vendorIndex + magicVendorString.length);
-
-					if (relativePathForVendorPkg && currentFileDirPath.startsWith(rootProjectForVendorPkg)) {
-						pkgSet.add(relativePathForVendorPkg);
-					}
-					return;
-				}
-
-				// pkg is not a vendor project
-				pkgSet.add(pkg);
 			});
 
 			return Array.from(pkgSet).sort();
@@ -103,6 +85,10 @@ function getImports(document: vscode.TextDocument): Promise<string[]> {
 function askUserForImport(): Thenable<string> {
 	return listPackages(true).then(packages => {
 		return vscode.window.showQuickPick(packages);
+	}, err => {
+		if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
+			promptForMissingTool(err.substr(missingToolMsg.length));
+		}
 	});
 }
 
@@ -112,12 +98,17 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit {
 		return null;
 	}
 
-	let {imports, pkg} = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
+	let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
 	let multis = imports.filter(x => x.kind === 'multi');
 	if (multis.length > 0) {
 		// There is a multiple import declaration, add to the last one
-		let closeParenLine = multis[multis.length - 1].end;
-		return vscode.TextEdit.insert(new vscode.Position(closeParenLine, 0), '\t"' + arg + '"\n');
+		const lastImportSection = multis[multis.length - 1];
+		if (lastImportSection.end === -1) {
+			// For some reason there was an empty import section like `import ()`
+			return vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), `import "${arg}"\n`);
+		}
+		// Add import at the start of the block so that goimports/goreturns can order them correctly
+		return vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), '\t"' + arg + '"\n');
 	} else if (imports.length > 0) {
 		// There are only single import declarations, add after the last one
 		let lastSingleImport = imports[imports.length - 1].end;
