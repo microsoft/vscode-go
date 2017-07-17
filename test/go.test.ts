@@ -21,6 +21,7 @@ import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
+import { goListAll } from '../src/goPackages';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -265,22 +266,26 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(12, 5), ['Abs', 'Acos', 'Asin']]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let goListAllPromise = goListAll();
 
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
+
 				return editor.edit(editbuilder => {
 					editbuilder.insert(new vscode.Position(12, 1), 'by\n');
 					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
 				}).then(() => {
-					let promises = testCases.map(([position, expected]) =>
-						provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
-							let labels = items.map(x => x.label);
-							for (let entry of expected) {
-								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
-							}
-						})
-					);
-					return Promise.all(promises);
+					return goListAllPromise.then(() => {
+						let promises = testCases.map(([position, expected]) =>
+							provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+								let labels = items.map(x => x.label);
+								for (let entry of expected) {
+									assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
+								}
+							})
+						);
+						return Promise.all(promises);
+					});
 				});
 			}).then(() => {
 				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
