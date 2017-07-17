@@ -1,3 +1,41 @@
+## 0.6.63 - Coming Soon
+
+### Features
+    
+* [Ian Chiles (@fortytw2)](https://github.com/fortytw2)
+    * Option to use [megacheck](https://github.com/dominikh/go-tools/tree/master/cmd/megacheck) as a linting tool which 
+can have significantly better performance than `gometalinter`, while only supporting a subset of the tools. Use the setting `go.lintTool` to try this.
+* [alexandrevez (@alexandrevez)](https://github.com/alexandrevez)
+    * Option to highlight gutters rather than full text for code coverage. Use the new setting `go.coverageDecorator` to try this.
+* [Saud Khan (@bidrohi)](https://github.com/bidrohi)
+    * Print import paths of Go tools as they get installed. [PR 1032](https://github.com/Microsoft/vscode-go/pull/1032)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Browse packages and go files with new command `Go: Browse Packages`. [Feature Request 330](https://github.com/Microsoft/vscode-go/issues/330)
+         - If selected text is a valid import path for a package, then files from that package will be shown in the quick pick control
+         - Else, all packages are shown in the quick pick control. Select any and corresponding Go files will be shown next.
+         - Selecting any of the Go files, will open the file in a new editor.
+    * Prompt to update dependent Go tools when there is a change in the Go version. [Feature Request 797](https://github.com/Microsoft/vscode-go/issues/797)
+    * Better user experience when dependent Go tools are missing. [Feature Request 998](https://github.com/Microsoft/vscode-go/issues/998)
+         - Prompts will only show up for tools that are used for features that are explicitly executed by the user. Eg: Rename, Generate Unit Tests, Modify tags. And not for features that get triggered behind the scenes like linting, hover or format on save.
+         - When the prompts do show up, closing them will ensure that they wont show up for the duration of the current session of VS Code.
+
+### Bug Fixes
+
+* [Roman Peshkov (@rpeshkov)](https://github.com/rpeshkov)
+    * Expand file names to file paths in test output for subtests. [Bug 1049](https://github.com/Microsoft/vscode-go/issues/1049)
+* [Guilherme Oenning (@goenning)](https://github.com/goenning)
+    * Pass GOPATH to debug adapter when debugging tests via codelens. [Bug 1057](https://github.com/Microsoft/vscode-go/issues/1057)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Start without debugging should fallback to debug mode when configured program is not a file. [Bug 1084](https://github.com/Microsoft/vscode-go/issues/1084)
+    * Fix for incorrect package name during autocomplete of unimported packages when package name is not the same as the last part of the import path. [Bug 647](https://github.com/Microsoft/vscode-go/issues/647)
+    * Skip building vendor folders when `go.buildOnSave` is set to `workspace`. [Bug 1060](https://github.com/Microsoft/vscode-go/issues/1060)
+    * Honor `go.buildTags` when using `gogetdoc`. [Bug 1024](https://github.com/Microsoft/vscode-go/issues/1024)
+    * Fix build failure when `-i` is passed as a build flag. [Bug 1064](https://github.com/Microsoft/vscode-go/issues/1064)
+    * Fix vet failure when any flag is passed. [Bug 1073](https://github.com/Microsoft/vscode-go/issues/1073)
+    * Better formatting in import blocks when imports get added during auto-completion or when `Go: Add Import` command is used. [Bug 1056](https://github.com/Microsoft/vscode-go/issues/1056)
+    * `Go: Generate Interface Stubs` should work when interface is prefixed with package path
+
+
 ## 0.6.62 - 9th June, 2017
 
 ### Features
