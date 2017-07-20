@@ -521,25 +521,25 @@ class GoDebugSession extends DebugSession {
 					verbose('Error on CreateBreakpoint');
 					return null;
 				});
-			})).then(newBreakpoints => {
-				verbose('All set:' + JSON.stringify(newBreakpoints));
-				let breakpoints = newBreakpoints.map((bp, i) => {
-					if (bp) {
-						return { verified: true, line: bp.line };
-					} else {
-						return { verified: false, line: args.lines[i] };
-					}
-				});
-				this.breakpoints.set(file, newBreakpoints.filter(x => !!x));
-				return breakpoints;
-			}).then(breakpoints => {
-				response.body = { breakpoints };
-				this.sendResponse(response);
-				verbose('SetBreakPointsResponse');
-			}, err => {
-				this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
-				logError(err);
+			}));
+		}).then(newBreakpoints => {
+			verbose('All set:' + JSON.stringify(newBreakpoints));
+			let breakpoints = newBreakpoints.map((bp, i) => {
+				if (bp) {
+					return { verified: true, line: bp.line };
+				} else {
+					return { verified: false, line: args.lines[i] };
+				}
 			});
+			this.breakpoints.set(file, newBreakpoints.filter(x => !!x));
+			return breakpoints;
+		}).then(breakpoints => {
+			response.body = { breakpoints };
+			this.sendResponse(response);
+			verbose('SetBreakPointsResponse');
+		}, err => {
+			this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
+			logError(err);
 		});
 	}
 
