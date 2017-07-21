@@ -257,7 +257,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				resolve(code === 0);
 			});
 		}, err => {
-			outputChannel.appendLine('Error: Test failed.');
+			outputChannel.appendLine('Error: Tests failed.');
 			outputChannel.appendLine(err);
 			resolve(false);
 		});
