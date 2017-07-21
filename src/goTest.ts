@@ -231,16 +231,16 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		targetArgs(testconfig).then(targets => {
-			let outTargets = args.slice(0)
+			let outTargets = args.slice(0);
 			if (targets.length > 2) {
-				outTargets.push('<long arguments omitted>')
+				outTargets.push('<long arguments omitted>');
 			} else {
-				outTargets.push(...targets)
+				outTargets.push(...targets);
 			}
 			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
 			outputChannel.appendLine('');
 
-			args.push(...targets)
+			args.push(...targets);
 			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			proc.stdout.on('data', chunk => {
 				let testOutput = expandFilePathInOutput(chunk.toString(), testconfig.dir);
@@ -257,10 +257,10 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				resolve(code === 0);
 			});
 		}, err => {
-			outputChannel.appendLine('Error: Test failed.')
-			outputChannel.appendLine(err)
-			resolve(false)
-		})
+			outputChannel.appendLine('Error: Test failed.');
+			outputChannel.appendLine(err);
+			resolve(false);
+		});
 	});
 }
 
@@ -317,21 +317,21 @@ function goList(testconfig: TestConfig): Thenable<Array<string>> {
 	return new Promise<Array<string>>((resolve, reject) => {
 		const goRuntimePath = getGoRuntimePath();
 		const testEnvVars = getTestEnvVars(testconfig.goConfig);
-		const proc = cp.spawn(goRuntimePath, ['list', './...'], { env: testEnvVars, cwd: testconfig.dir })
+		const proc = cp.spawn(goRuntimePath, ['list', './...'], { env: testEnvVars, cwd: testconfig.dir });
 
-		let out = ''
-		let err = ''
-		proc.stdout.on('data', chunk => out += chunk.toString())
-		proc.stderr.on('data', chunk => out += chunk.toString())
+		let out = '';
+		let err = '';
+		proc.stdout.on('data', chunk => out += chunk.toString());
+		proc.stderr.on('data', chunk => out += chunk.toString());
 		proc.on('close', code => {
 			if (code) {
-				reject(err)
+				reject(err);
 			} else {
 				// Exclude vendor directory
-				resolve(out.split('\n').filter(line => !line.includes('/vendor/')))
+				resolve(out.split('\n').filter(line => !line.includes('/vendor/')));
 			}
-		})
-	})
+		});
+	});
 }
 
 /**
@@ -342,13 +342,13 @@ function goList(testconfig: TestConfig): Thenable<Array<string>> {
 function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
 		return new Promise<Array<string>>((resolve, reject) => {
-			const args = []
+			const args = [];
 			args.push('-run');
 			args.push(util.format('^%s$', testconfig.functions.join('|')));
-			return Promise.resolve(args)
-		})
+			return Promise.resolve(args);
+		});
 	} else if (testconfig.includeSubDirectories) {
-		return goList(testconfig)
+		return goList(testconfig);
 	}
-	return Promise.resolve([])
+	return Promise.resolve([]);
 }
