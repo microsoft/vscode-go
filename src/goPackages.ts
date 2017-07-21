@@ -23,7 +23,7 @@ export function goListAll(): Promise<Map<string, string>> {
 		return Promise.resolve(allPkgs);
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], {env: {}}, (err, stdout, stderr) => {
 			if (err) return reject();
 			stdout.split('\n').forEach(pkgDetail => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
