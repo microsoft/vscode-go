@@ -345,7 +345,7 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 			const args = [];
 			args.push('-run');
 			args.push(util.format('^%s$', testconfig.functions.join('|')));
-			return Promise.resolve(args);
+			return resolve(args);
 		});
 	} else if (testconfig.includeSubDirectories) {
 		return goList(testconfig);
