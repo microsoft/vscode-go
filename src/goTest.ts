@@ -230,31 +230,37 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			return Promise.resolve();
 		}
 
-		if (testconfig.functions) {
-			args.push('-run');
-			args.push(util.format('^%s$', testconfig.functions.join('|')));
-		} else if (testconfig.includeSubDirectories) {
-			args.push('./...');
-		}
-
-		outputChannel.appendLine(['Running tool:', goRuntimePath, ...args].join(' '));
-		outputChannel.appendLine('');
-
-		let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
-		proc.stdout.on('data', chunk => {
-			let testOutput = expandFilePathInOutput(chunk.toString(), testconfig.dir);
-			outputChannel.append(testOutput);
-
-		});
-		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
-		proc.on('close', code => {
-			if (code) {
-				outputChannel.append('Error: Tests failed.');
+		targetArgs(testconfig).then(targets => {
+			let outTargets = args.slice(0)
+			if (targets.length > 2) {
+				outTargets.push('<long arguments omitted>')
 			} else {
-				outputChannel.append('Success: Tests passed.');
+				outTargets.push(...targets)
 			}
-			resolve(code === 0);
-		});
+			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
+			outputChannel.appendLine('');
+
+			args.push(...targets)
+			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
+			proc.stdout.on('data', chunk => {
+				let testOutput = expandFilePathInOutput(chunk.toString(), testconfig.dir);
+				outputChannel.append(testOutput);
+
+			});
+			proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
+			proc.on('close', code => {
+				if (code) {
+					outputChannel.append('Error: Tests failed.');
+				} else {
+					outputChannel.append('Success: Tests passed.');
+				}
+				resolve(code === 0);
+			});
+		}, err => {
+			outputChannel.appendLine('Error: Test failed.')
+			outputChannel.appendLine(err)
+			resolve(false)
+		})
 	});
 }
 
@@ -300,4 +306,49 @@ function expandFilePathInOutput(output: string, cwd: string): string {
 		}
 	}
 	return lines.join('\n');
+}
+
+/**
+ * Get the list of packages on current workspace.
+ *
+ * @param testconfig Configuration for the Go extension.
+ */
+function goList(testconfig: TestConfig): Thenable<Array<string>> {
+	return new Promise<Array<string>>((resolve, reject) => {
+		const goRuntimePath = getGoRuntimePath();
+		const testEnvVars = getTestEnvVars(testconfig.goConfig);
+		const proc = cp.spawn(goRuntimePath, ['list', './...'], { env: testEnvVars, cwd: testconfig.dir })
+
+		let out = ''
+		let err = ''
+		proc.stdout.on('data', chunk => out += chunk.toString())
+		proc.stderr.on('data', chunk => out += chunk.toString())
+		proc.on('close', code => {
+			if (code) {
+				reject(err)
+			} else {
+				// Exclude vendor directory
+				resolve(out.split('\n').filter(line => !line.includes('/vendor/')))
+			}
+		})
+	})
+}
+
+/**
+ * Get the test target arguments.
+ *
+ * @param testconfig Configuration for the Go extension.
+ */
+function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
+	if (testconfig.functions) {
+		return new Promise<Array<string>>((resolve, reject) => {
+			const args = []
+			args.push('-run');
+			args.push(util.format('^%s$', testconfig.functions.join('|')));
+			return Promise.resolve(args)
+		})
+	} else if (testconfig.includeSubDirectories) {
+		return goList(testconfig)
+	}
+	return Promise.resolve([])
 }
