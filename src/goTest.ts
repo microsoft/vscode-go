@@ -322,7 +322,7 @@ function goList(testconfig: TestConfig): Thenable<Array<string>> {
 		let out = '';
 		let err = '';
 		proc.stdout.on('data', chunk => out += chunk.toString());
-		proc.stderr.on('data', chunk => out += chunk.toString());
+		proc.stderr.on('data', chunk => err += chunk.toString());
 		proc.on('close', code => {
 			if (code) {
 				reject(err);
