@@ -16,8 +16,18 @@ export function browsePackages() {
 	if (!goRuntimePath) {
 		return;
 	}
-	let selection = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.selection : undefined;
-	let selectedText = (selection && !selection.isEmpty) ? vscode.window.activeTextEditor.document.getText(selection) : '';
+	let selectedText = '';
+	if (vscode.window.activeTextEditor) {
+		let selection = vscode.window.activeTextEditor.selection;
+		if (!selection.isEmpty) {
+			// get selected text
+			selectedText = vscode.window.activeTextEditor.document.getText(selection);
+		} else {
+			// if selection is empty, then get the whole line the cursor is currently on.
+			selectedText = vscode.window.activeTextEditor.document.lineAt(selection.active.line).text;
+		}
+		selectedText = getImportPath(selectedText);
+	}
 
 	goListAll().then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
@@ -26,7 +36,7 @@ export function browsePackages() {
 		}
 		let selectPkgPromise: Thenable<string> = Promise.resolve(selectedText);
 		if (!selectedText || pkgs.indexOf(selectedText) === -1) {
-			selectPkgPromise = vscode.window.showQuickPick(pkgs);
+			selectPkgPromise = vscode.window.showQuickPick(pkgs, { placeHolder: 'Select a package to browse' });
 		}
 		selectPkgPromise.then(pkg => {
 			cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], (err, stdout, stderr) => {
@@ -41,7 +51,11 @@ export function browsePackages() {
 					let xtestfiles = matches[4] ? matches[4].split(' ') : [];
 					files = files.concat(testfiles);
 					files = files.concat(xtestfiles);
-					vscode.window.showQuickPick(files).then(file => {
+					vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then(file => {
+						// if user abandoned list, file will be null and path.join will error out.
+						// therefore return.
+						if (!file) return;
+
 						vscode.workspace.openTextDocument(path.join(dir, file)).then(document => {
 							vscode.window.showTextDocument(document);
 						});
@@ -50,5 +64,20 @@ export function browsePackages() {
 			});
 		});
 	});
+}
 
+function getImportPath(text: string): string {
+	// Catch cases like `import alias "importpath"` and `import "importpath"`
+	let singleLineImportMatches = text.match(/^\s*import\s+([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
+	if (singleLineImportMatches) {
+		return singleLineImportMatches[2];
+	}
+
+	// Catch cases like `alias "importpath"` and "importpath"
+	let groupImportMatches = text.match(/^\s*([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
+	if (groupImportMatches) {
+		return groupImportMatches[2];
+	}
+
+	return text.trim();
 }
