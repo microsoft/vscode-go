@@ -13,6 +13,7 @@ import os = require('os');
 import { parseEnvFile, getGoRuntimePath, resolvePath } from './goPath';
 import { getToolsEnvVars } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
+import { getNonVendorPackages } from './goPackages';
 
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
 
@@ -309,32 +310,6 @@ function expandFilePathInOutput(output: string, cwd: string): string {
 }
 
 /**
- * Get the list of packages on current workspace.
- *
- * @param testconfig Configuration for the Go extension.
- */
-function goList(testconfig: TestConfig): Thenable<Array<string>> {
-	return new Promise<Array<string>>((resolve, reject) => {
-		const goRuntimePath = getGoRuntimePath();
-		const testEnvVars = getTestEnvVars(testconfig.goConfig);
-		const proc = cp.spawn(goRuntimePath, ['list', './...'], { env: testEnvVars, cwd: testconfig.dir });
-
-		let out = '';
-		let err = '';
-		proc.stdout.on('data', chunk => out += chunk.toString());
-		proc.stderr.on('data', chunk => err += chunk.toString());
-		proc.on('close', code => {
-			if (code) {
-				reject(err);
-			} else {
-				// Exclude vendor directory
-				resolve(out.split('\n').filter(line => !line.includes('/vendor/')));
-			}
-		});
-	});
-}
-
-/**
  * Get the test target arguments.
  *
  * @param testconfig Configuration for the Go extension.
@@ -348,7 +323,7 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 			return resolve(args);
 		});
 	} else if (testconfig.includeSubDirectories) {
-		return goList(testconfig);
+		return getNonVendorPackages(vscode.workspace.rootPath);
 	}
 	return Promise.resolve([]);
 }
