@@ -23,13 +23,23 @@ export function goListAll(): Promise<Map<string, string>> {
 		return Promise.resolve(allPkgs);
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], (err, stdout, stderr) => {
-			if (err) return reject();
-			stdout.split('\n').forEach(pkgDetail => {
+		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all']);
+		cmd.stdout.on('data', (d) => {
+			d.toString().split('\n').forEach(pkgDetail => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
 				allPkgs.set(pkgPath, pkgName);
-			});
+			})
+		});
+
+		cmd.on('close', (status) => {
+			// this command usually exists with 1 because `go list` expists certain folders
+			// to be packages but they can just be regular folders and therefore the cmd will 
+			// send those "failed imports" to stderr and exist with error 1. 
+			if (status > 1) {
+				return reject();
+			}
+
 			goListAllCompleted = true;
 			return resolve(allPkgs);
 		});

@@ -17,7 +17,21 @@ export function browsePackages() {
 		return;
 	}
 	let selection = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.selection : undefined;
-	let selectedText = (selection && !selection.isEmpty) ? vscode.window.activeTextEditor.document.getText(selection) : '';
+	let selectedText = '';
+	if (selection && !selection.isEmpty) {
+		selectedText = vscode.window.activeTextEditor.document.getText(selection).replace(/"/g, "");
+	} else {
+		// if selectedText is not highlighted, then get the whole line the cursor is currently on. 
+		selectedText = vscode.window.activeTextEditor.document.lineAt(selection.active.line).text.trim();
+
+		// if selectedText is a group import and not a single import line.
+		const isGroupImport = selectedText.startsWith("import \"");
+		if (isGroupImport) {
+			selectedText = selectedText.replace(/"/g, "");
+		} else {
+			selectedText = selectedText.replace("import", "").trim()
+		}
+	}
 
 	goListAll().then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
@@ -42,6 +56,10 @@ export function browsePackages() {
 					files = files.concat(testfiles);
 					files = files.concat(xtestfiles);
 					vscode.window.showQuickPick(files).then(file => {
+						// if user abandoned list, file will be null and path.join will error out. 
+						// therefore return.
+						if (!file) return;
+
 						vscode.workspace.openTextDocument(path.join(dir, file)).then(document => {
 							vscode.window.showTextDocument(document);
 						});
@@ -50,5 +68,4 @@ export function browsePackages() {
 			});
 		});
 	});
-
 }
