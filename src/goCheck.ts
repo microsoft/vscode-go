@@ -16,6 +16,7 @@ import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
 import { goTest } from './goTest';
 import { getBinPath, parseFilePrelude, getCurrentGoWorkspaceFromGOPATH, getToolsEnvVars } from './util';
+import { getNonVendorPackages } from './goPackages';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -156,34 +157,21 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		}
 
 		if (goConfig['buildOnSave'] === 'workspace') {
-			// Use `go list ./...` to get list of all packages under the vscode workspace
-			// And then run `go test -i -c -o` on each of them
-			let outerBuildPromise = new Promise<any>((resolve, reject) => {
-				cp.execFile(goRuntimePath, ['list', './...'], { cwd: vscode.workspace.rootPath }, (err, stdout, stderr) => {
-					if (err) {
-						console.log('Could not find packages to build');
-						return resolve([]);
-					}
-					let importPaths = stdout.split('\n');
-					let buildPromises = [];
-					importPaths.forEach(pkgPath => {
-						// Skip compiling vendor packages
-						if (!pkgPath || pkgPath.indexOf('/vendor/') > -1) {
-							return;
-						}
-						buildPromises.push(runTool(
-							buildArgs.concat(pkgPath),
-							cwd,
-							'error',
-							true,
-							null,
-							env,
-							true
-						));
-					});
-					return Promise.all(buildPromises).then((resultSets) => {
-						return resolve([].concat.apply([], resultSets));
-					});
+			let buildPromises = [];
+			let outerBuildPromise = getNonVendorPackages(vscode.workspace.rootPath).then(pkgs => {
+				buildPromises = pkgs.map(pkgPath => {
+					return runTool(
+						buildArgs.concat(pkgPath),
+						cwd,
+						'error',
+						true,
+						null,
+						env,
+						true
+					);
+				});
+				return Promise.all(buildPromises).then((resultSets) => {
+					return Promise.resolve([].concat.apply([], resultSets));
 				});
 			});
 			runningToolsPromises.push(outerBuildPromise);

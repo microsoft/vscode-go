@@ -106,3 +106,26 @@ export function getRelativePackagePath(currentFileDirPath: string, currentWorksp
 	return pkgPath;
 }
 
+/**
+ * Returns import paths for all non vendor packages under given folder
+ */
+export function getNonVendorPackages(folderPath: string): Promise<string[]> {
+	let goRuntimePath = getGoRuntimePath();
+
+	if (!goRuntimePath) {
+		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		return Promise.resolve(null);
+	}
+	return new Promise<string[]>((resolve, reject) => {
+		const childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath });
+		let pkgs = [];
+		childProcess.stdout.on('data', (stdout) => {
+			pkgs = pkgs.concat(stdout.toString().split('\n').filter(pkgPath => pkgPath && pkgPath.indexOf('/vendor/') === -1));
+		});
+
+		childProcess.on('close', (status) => {
+			return resolve(pkgs);
+		});
+	});
+}
+
