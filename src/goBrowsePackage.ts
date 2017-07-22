@@ -16,21 +16,17 @@ export function browsePackages() {
 	if (!goRuntimePath) {
 		return;
 	}
-	let selection = vscode.window.activeTextEditor ? vscode.window.activeTextEditor.selection : undefined;
 	let selectedText = '';
-	if (selection && !selection.isEmpty) {
-		selectedText = vscode.window.activeTextEditor.document.getText(selection).replace(/"/g, "");
-	} else {
-		// if selectedText is not highlighted, then get the whole line the cursor is currently on. 
-		selectedText = vscode.window.activeTextEditor.document.lineAt(selection.active.line).text.trim();
-
-		// if selectedText is a group import and not a single import line.
-		const isGroupImport = selectedText.startsWith("import \"");
-		if (isGroupImport) {
-			selectedText = selectedText.replace(/"/g, "");
+	if (vscode.window.activeTextEditor) {
+		let selection = vscode.window.activeTextEditor.selection;
+		if (!selection.isEmpty) {
+			// get selected text
+			selectedText = vscode.window.activeTextEditor.document.getText(selection);
 		} else {
-			selectedText = selectedText.replace("import", "").trim()
+			// if selection is empty, then get the whole line the cursor is currently on.
+			selectedText = vscode.window.activeTextEditor.document.lineAt(selection.active.line).text;
 		}
+		selectedText = getImportPath(selectedText);
 	}
 
 	goListAll().then(pkgMap => {
@@ -40,7 +36,7 @@ export function browsePackages() {
 		}
 		let selectPkgPromise: Thenable<string> = Promise.resolve(selectedText);
 		if (!selectedText || pkgs.indexOf(selectedText) === -1) {
-			selectPkgPromise = vscode.window.showQuickPick(pkgs);
+			selectPkgPromise = vscode.window.showQuickPick(pkgs, { placeHolder: 'Select a package to browse' });
 		}
 		selectPkgPromise.then(pkg => {
 			cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], (err, stdout, stderr) => {
@@ -55,8 +51,8 @@ export function browsePackages() {
 					let xtestfiles = matches[4] ? matches[4].split(' ') : [];
 					files = files.concat(testfiles);
 					files = files.concat(xtestfiles);
-					vscode.window.showQuickPick(files).then(file => {
-						// if user abandoned list, file will be null and path.join will error out. 
+					vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then(file => {
+						// if user abandoned list, file will be null and path.join will error out.
 						// therefore return.
 						if (!file) return;
 
@@ -68,4 +64,20 @@ export function browsePackages() {
 			});
 		});
 	});
+}
+
+function getImportPath(text: string): string {
+	// Catch cases like `import alias "importpath"` and `import "importpath"`
+	let singleLineImportMatches = text.match(/^\s*import\s+([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
+	if (singleLineImportMatches) {
+		return singleLineImportMatches[2];
+	}
+
+	// Catch cases like `alias "importpath"` and "importpath"
+	let groupImportMatches = text.match(/^\s*([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
+	if (groupImportMatches) {
+		return groupImportMatches[2];
+	}
+
+	return text.trim();
 }
