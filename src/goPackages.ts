@@ -23,13 +23,23 @@ export function goListAll(): Promise<Map<string, string>> {
 		return Promise.resolve(allPkgs);
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], {env: {}}, (err, stdout, stderr) => {
-			if (err) return reject();
-			stdout.split('\n').forEach(pkgDetail => {
+		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all']);
+		cmd.stdout.on('data', (d) => {
+			d.toString().split('\n').forEach(pkgDetail => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
 				allPkgs.set(pkgPath, pkgName);
 			});
+		});
+
+		cmd.on('close', (status) => {
+			// this command usually exists with 1 because `go list` expists certain folders
+			// to be packages but they can just be regular folders and therefore the cmd will
+			// send those "failed imports" to stderr and exist with error 1.
+			if (status > 1) {
+				return reject();
+			}
+
 			goListAllCompleted = true;
 			return resolve(allPkgs);
 		});
@@ -94,5 +104,28 @@ export function getRelativePackagePath(currentFileDirPath: string, currentWorksp
 	}
 
 	return pkgPath;
+}
+
+/**
+ * Returns import paths for all non vendor packages under given folder
+ */
+export function getNonVendorPackages(folderPath: string): Promise<string[]> {
+	let goRuntimePath = getGoRuntimePath();
+
+	if (!goRuntimePath) {
+		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		return Promise.resolve(null);
+	}
+	return new Promise<string[]>((resolve, reject) => {
+		const childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath });
+		let pkgs = [];
+		childProcess.stdout.on('data', (stdout) => {
+			pkgs = pkgs.concat(stdout.toString().split('\n').filter(pkgPath => pkgPath && pkgPath.indexOf('/vendor/') === -1));
+		});
+
+		childProcess.on('close', (status) => {
+			return resolve(pkgs);
+		});
+	});
 }
 
