@@ -17,14 +17,15 @@ export function browsePackages() {
 		return;
 	}
 	let selectedText = '';
+	const { activeTextEditor } = vscode.window;
 	if (vscode.window.activeTextEditor) {
-		let selection = vscode.window.activeTextEditor.selection;
+		let selection = activeTextEditor.selection;
 		if (!selection.isEmpty) {
 			// get selected text
-			selectedText = vscode.window.activeTextEditor.document.getText(selection);
+			selectedText = activeTextEditor.document.getText(selection);
 		} else {
 			// if selection is empty, then get the whole line the cursor is currently on.
-			selectedText = vscode.window.activeTextEditor.document.lineAt(selection.active.line).text;
+			selectedText = activeTextEditor.document.lineAt(selection.active.line).text;
 		}
 		selectedText = getImportPath(selectedText);
 	}
