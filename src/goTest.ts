@@ -243,17 +243,30 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 			args.push(...targets);
 			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
+			let leftOver = '';
+			let errChunks = [];
 			proc.stdout.on('data', chunk => {
-				let testOutput = expandFilePathInOutput(chunk.toString(), testconfig.dir);
-				outputChannel.append(testOutput);
+				let s = chunk.toString();
+				let lastNewLineIndex = s.lastIndexOf('\n');
+				if (lastNewLineIndex > -1) {
+					let sub = leftOver + s.substring(0, lastNewLineIndex);
+					leftOver = s.substring(lastNewLineIndex + 1);
 
+					let testOutput = expandFilePathInOutput(sub, testconfig.dir);
+					outputChannel.appendLine(testOutput);
+				} else {
+					leftOver += s;
+				}
 			});
-			proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
+			proc.stderr.on('data', chunk => errChunks.push(chunk));
 			proc.on('close', code => {
 				if (code) {
-					outputChannel.append('Error: Tests failed.');
+					if (errChunks.length) {
+						outputChannel.append(errChunks.toString());
+					}
+					outputChannel.appendLine('Error: Tests failed.');
 				} else {
-					outputChannel.append('Success: Tests passed.');
+					outputChannel.appendLine('Success: Tests passed.');
 				}
 				resolve(code === 0);
 			});
