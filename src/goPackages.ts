@@ -24,12 +24,9 @@ export function goListAll(): Promise<Map<string, string>> {
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all']);
+		const chunks = [];
 		cmd.stdout.on('data', (d) => {
-			d.toString().split('\n').forEach(pkgDetail => {
-				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
-				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
-				allPkgs.set(pkgPath, pkgName);
-			});
+			chunks.push(d);
 		});
 
 		cmd.on('close', (status) => {
@@ -40,6 +37,11 @@ export function goListAll(): Promise<Map<string, string>> {
 				return reject();
 			}
 
+			chunks.toString().split('\n').forEach(pkgDetail => {
+				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
+				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
+				allPkgs.set(pkgPath, pkgName);
+			});
 			goListAllCompleted = true;
 			return resolve(allPkgs);
 		});
@@ -118,12 +120,13 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 	}
 	return new Promise<string[]>((resolve, reject) => {
 		const childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath });
-		let pkgs = [];
+		const chunks = [];
 		childProcess.stdout.on('data', (stdout) => {
-			pkgs = pkgs.concat(stdout.toString().split('\n').filter(pkgPath => pkgPath && pkgPath.indexOf('/vendor/') === -1));
+			chunks.push(stdout);
 		});
 
 		childProcess.on('close', (status) => {
+			const pkgs = chunks.toString().split('\n').filter(pkgPath => pkgPath && !pkgPath.includes('/vendor/'));
 			return resolve(pkgs);
 		});
 	});
