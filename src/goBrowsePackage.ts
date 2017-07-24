@@ -9,27 +9,44 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getGoRuntimePath } from './goPath';
 import path = require('path');
-import { goListAll } from './goPackages';
+import { goListAll, isGoListComplete } from './goPackages';
 
 export function browsePackages() {
-	const goRuntimePath = getGoRuntimePath();
-	if (!goRuntimePath) {
-		return;
-	}
 	let selectedText = '';
-	const { activeTextEditor } = vscode.window;
-	if (vscode.window.activeTextEditor) {
-		let selection = activeTextEditor.selection;
+	const editor = vscode.window.activeTextEditor;
+	if (editor) {
+		let selection = editor.selection;
 		if (!selection.isEmpty) {
 			// get selected text
-			selectedText = activeTextEditor.document.getText(selection);
+			selectedText = editor.document.getText(selection);
 		} else {
 			// if selection is empty, then get the whole line the cursor is currently on.
-			selectedText = activeTextEditor.document.lineAt(selection.active.line).text;
+			selectedText = editor.document.lineAt(selection.active.line).text;
 		}
 		selectedText = getImportPath(selectedText);
 	}
 
+	if (isGoListComplete()) {
+		return showPackages(selectedText);
+	}
+
+	// `go list all` has not completed. Wait for a second which is an acceptable duration of delay.
+	setTimeout(() => {
+		// `go list all` still not complete. It takes a long time on slower machines or when there are way too many folders in GOPATH
+		if (!isGoListComplete()) {
+			vscode.window.showInformationMessage('Finding packages... Try after sometime.');
+			return;
+		}
+		showPackages(selectedText);
+	}, 1000);
+
+}
+
+function showPackages(selectedText: string) {
+	const goRuntimePath = getGoRuntimePath();
+	if (!goRuntimePath) {
+		return;
+	}
 	goListAll().then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (!pkgs || pkgs.length === 0) {

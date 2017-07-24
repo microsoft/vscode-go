@@ -6,6 +6,11 @@ import { isVendorSupported, getCurrentGoWorkspaceFromGOPATH } from './util';
 
 let allPkgs = new Map<string, string>();
 let goListAllCompleted: boolean = false;
+let goListAllPromise: Promise<Map<string, string>>;
+
+export function isGoListComplete(): boolean {
+	return goListAllCompleted;
+}
 
 /**
  * Runs go list all
@@ -19,12 +24,13 @@ export function goListAll(): Promise<Map<string, string>> {
 		return Promise.resolve(null);
 	}
 
-	if (goListAllCompleted) {
-		return Promise.resolve(allPkgs);
+	if (goListAllPromise) {
+		return goListAllPromise;
 	}
-	return new Promise<Map<string, string>>((resolve, reject) => {
+
+	goListAllPromise = new Promise<Map<string, string>>((resolve, reject) => {
 		// Use `{env: {}}` to make the execution faster
-		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], {env: {}});
+		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], { env: {} });
 		const chunks = [];
 		cmd.stdout.on('data', (d) => {
 			chunks.push(d);
@@ -47,6 +53,8 @@ export function goListAll(): Promise<Map<string, string>> {
 			return resolve(allPkgs);
 		});
 	});
+
+	return goListAllPromise;
 }
 
 /**
