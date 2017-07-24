@@ -23,7 +23,8 @@ export function goListAll(): Promise<Map<string, string>> {
 		return Promise.resolve(allPkgs);
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all']);
+		// Use `{env: {}}` to make the execution faster
+		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], {env: {}});
 		const chunks = [];
 		cmd.stdout.on('data', (d) => {
 			chunks.push(d);
