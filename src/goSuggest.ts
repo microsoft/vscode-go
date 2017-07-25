@@ -44,6 +44,14 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go'));
 	}
 
+	private isInBlockComment(document: vscode.TextDocument, position: vscode.Position): boolean {
+		let text = document.getText();
+		let currentOffset = document.offsetAt(position);
+		let lastBlockCommentStartIndex = text.lastIndexOf('/*', currentOffset);
+		let lastBlockCommentEndIndex = text.lastIndexOf('*/', currentOffset);
+		return lastBlockCommentStartIndex > lastBlockCommentEndIndex;
+	}
+
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return this.ensureGoCodeConfigured().then(() => {
 			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
@@ -52,7 +60,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let lineTillCurrentPosition = lineText.substr(0, position.character);
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
+				// no completions within single line comment
 				if (lineText.match(/^\s*\/\//)) {
+					return resolve([]);
+				}
+
+				// no completions within block comment
+				if (this.isInBlockComment(document, position)) {
 					return resolve([]);
 				}
 
