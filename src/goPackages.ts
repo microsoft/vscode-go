@@ -2,7 +2,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath } from './goPath';
-import { isVendorSupported, getCurrentGoWorkspaceFromGOPATH } from './util';
+import { isVendorSupported, getCurrentGoWorkspaceFromGOPATH, getToolsEnvVars } from './util';
 
 let allPkgs = new Map<string, string>();
 let goListAllCompleted: boolean = false;
@@ -30,10 +30,7 @@ export function goListAll(): Promise<Map<string, string>> {
 
 	goListAllPromise = new Promise<Map<string, string>>((resolve, reject) => {
 		// Use `{env: {}}` to make the execution faster. Include GOPATH to account if custom work space exists.
-		const env: any = {};
-		if (process.env.GOPATH) {
-			env.GOPATH = process.env.GOPATH;
-		}
+		const env: any = getToolsEnvVars();
 
 		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], { env: env });
 		const chunks = [];
@@ -133,7 +130,7 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 		return Promise.resolve(null);
 	}
 	return new Promise<string[]>((resolve, reject) => {
-		const childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath });
+		const childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath, env: getToolsEnvVars() });
 		const chunks = [];
 		childProcess.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
