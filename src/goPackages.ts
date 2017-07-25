@@ -29,8 +29,13 @@ export function goListAll(): Promise<Map<string, string>> {
 	}
 
 	goListAllPromise = new Promise<Map<string, string>>((resolve, reject) => {
-		// Use `{env: {}}` to make the execution faster
-		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], { env: {} });
+		// Use `{env: {}}` to make the execution faster. Include GOPATH to account if custom work space exists.
+		const env: any = {};
+		if (process.env.GOPATH) {
+			env.GOPATH = process.env.GOPATH;
+		}
+
+		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], { env: env });
 		const chunks = [];
 		cmd.stdout.on('data', (d) => {
 			chunks.push(d);
