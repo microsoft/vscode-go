@@ -53,8 +53,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 				if (prevVersion !== currVersionString) {
 					if (prevVersion) {
-						vscode.window.showInformationMessage('Your Go version is different than before, few Go tools may need re-compiling', 'Update tools').then(selected => {
-							if (selected === 'Rebuild tools') {
+						const updateToolsCmdText = 'Update tools';
+						vscode.window.showInformationMessage('Your Go version is different than before, few Go tools may need re-compiling', updateToolsCmdText).then(selected => {
+							if (selected === updateToolsCmdText) {
 								vscode.commands.executeCommand('go.tools.install');
 							}
 						});
