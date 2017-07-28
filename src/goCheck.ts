@@ -218,7 +218,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
 		let lintTool = goConfig['lintTool'] || 'golint';
 		let lintFlags: string[] = goConfig['lintFlags'] || [];
-
+		let lintEnv = Object.assign({}, env);
 		let args = [];
 		let configFlag = '--config=';
 		lintFlags.forEach(flag => {
@@ -234,8 +234,15 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			}
 			args.push(flag);
 		});
-		if (lintTool === 'gometalinter' && args.indexOf('--aggregate') === -1) {
-			args.push('--aggregate');
+		if (lintTool === 'gometalinter') {
+			if (args.indexOf('--aggregate') === -1) {
+				args.push('--aggregate');
+			}
+			if (goConfig['toolsGopath']) {
+				// gometalinter will expect its linters to be in the GOPATH
+				// So add the toolsGopath to GOPATH
+				lintEnv['GOPATH'] += path.delimiter + goConfig['toolsGopath'];
+			}
 		}
 
 		let lintWorkDir = cwd;
@@ -251,7 +258,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			'warning',
 			false,
 			lintTool,
-			env
+			lintEnv
 		));
 	}
 
