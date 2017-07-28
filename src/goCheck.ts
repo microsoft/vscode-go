@@ -81,6 +81,14 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 					atleastSingleMatch = true;
 					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
 					let line = +lineStr;
+
+					// Building skips vendor folders,
+					// But vet and lint take in directories and not import paths, so no way to skip them
+					// So prune out the results from vendor folders herehere.
+					if (!path.isAbsolute(file) && (file.startsWith(`vendor${path.sep}`) || file.indexOf(`${path.sep}vendor${path.sep}`) > -1)) {
+						continue;
+					}
+
 					file = path.resolve(cwd, file);
 					ret.push({ file, line, msg, severity });
 					outputChannel.appendLine(`${file}:${line}: ${msg}`);
