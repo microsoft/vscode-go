@@ -314,22 +314,22 @@ export class LineBuffer {
 	private lastListeners: { (last: string): void; }[] = [];
 
 	append(chunk: string) {
-		this.buf += chunk
-    	do {
-      		const idx = this.buf.indexOf('\n')
-      		if (idx == -1) {
-        		break
-      		}
+		this.buf += chunk;
+		do {
+			const idx = this.buf.indexOf('\n');
+			if (idx === -1) {
+				break;
+			}
 
-      		this.fireLine(this.buf.substring(0, idx))
-      		this.buf = this.buf.substring(idx + 1)
-    	} while(true)
-  	}
+			this.fireLine(this.buf.substring(0, idx));
+			this.buf = this.buf.substring(idx + 1);
+		} while (true);
+	}
 
 	done() {
-		this.fireDone(this.buf != '' ? this.buf : null)
+		this.fireDone(this.buf !== '' ? this.buf : null);
 	}
-	
+
 	private fireLine(line: string) {
 		this.lineListeners.forEach(listener => listener(line));
 	}
@@ -338,11 +338,11 @@ export class LineBuffer {
 		this.lastListeners.forEach(listener => listener(last));
 	}
 
-  	onLine(listener: (line: string) => void) {
-    	this.lineListeners.push(listener);
-  	}
+	onLine(listener: (line: string) => void) {
+		this.lineListeners.push(listener);
+	}
 
-  	onDone(listener: (last: string) => void) {
-    	this.lastListeners.push(listener);
-  	}
+	onDone(listener: (last: string) => void) {
+		this.lastListeners.push(listener);
+	}
 }
