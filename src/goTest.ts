@@ -11,7 +11,7 @@ import vscode = require('vscode');
 import util = require('util');
 import os = require('os');
 import { parseEnvFile, getGoRuntimePath, resolvePath } from './goPath';
-import { getToolsEnvVars } from './util';
+import { getToolsEnvVars, LineBuffer } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
@@ -243,26 +243,22 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 			args.push(...targets);
 			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
-			let leftOver = '';
-			let errChunks = [];
-			proc.stdout.on('data', chunk => {
-				let s = chunk.toString();
-				let lastNewLineIndex = s.lastIndexOf('\n');
-				if (lastNewLineIndex > -1) {
-					let sub = leftOver + s.substring(0, lastNewLineIndex);
-					leftOver = s.substring(lastNewLineIndex + 1);
+			const outBuf = new LineBuffer();
+			const errBuf = new LineBuffer();
 
-					let testOutput = expandFilePathInOutput(sub, testconfig.dir);
-					outputChannel.appendLine(testOutput);
-				} else {
-					leftOver += s;
-				}
-			});
-			proc.stderr.on('data', chunk => errChunks.push(chunk));
+			outBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
+			outBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
+
+			errBuf.onLine(line => outputChannel.appendLine(line));
+			errBuf.onDone(last => last && outputChannel.appendLine(last));
+
+			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
+			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
+
 			proc.on('close', code => {
-				if (errChunks.length) {
-					outputChannel.append(errChunks.toString());
-				}
+				outBuf.done();
+				errBuf.done();
+
 				if (code) {
 					outputChannel.appendLine('Error: Tests failed.');
 				} else {
