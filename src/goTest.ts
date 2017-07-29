@@ -97,7 +97,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			flags: getTestFlags(goConfig, args),
-			functions: [ testFunctionName ]
+			functions: [testFunctionName]
 		});
 	}).then(null, err => {
 		console.error(err);
@@ -260,10 +260,10 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			});
 			proc.stderr.on('data', chunk => errChunks.push(chunk));
 			proc.on('close', code => {
+				if (errChunks.length) {
+					outputChannel.append(errChunks.toString());
+				}
 				if (code) {
-					if (errChunks.length) {
-						outputChannel.append(errChunks.toString());
-					}
 					outputChannel.appendLine('Error: Tests failed.');
 				} else {
 					outputChannel.appendLine('Success: Tests passed.');
