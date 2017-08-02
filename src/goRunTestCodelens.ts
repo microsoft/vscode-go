@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import path = require('path');
 import { CodeLensProvider, TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
-import { getTestFunctions, getTestEnvVars } from './goTest';
+import { getTestFunctions, getTestEnvVars, getTestFlags } from './goTest';
 import { GoDocumentSymbolProvider } from './goOutline';
 
 export class GoRunTestCodeLensProvider implements CodeLensProvider {
@@ -74,8 +74,13 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 				const program = path.dirname(document.fileName);
 				const env = Object.assign({ }, this.debugConfig.env, vsConfig['testEnvVars']);
 				const envFile = vsConfig['testEnvFile'];
+				let buildFlags = getTestFlags(vsConfig, null);
+				if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
+					buildFlags.push('-tags');
+					buildFlags.push(`"${vsConfig['buildTags']}"`);
+				}
 
-				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile });
+				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile, buildFlags });
 				let debugTestCmd: Command = {
 					title: 'debug test',
 					command: 'vscode.startDebug',

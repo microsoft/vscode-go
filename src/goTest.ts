@@ -222,7 +222,11 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
-		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags];
+		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
+		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
+			args.push('-tags');
+			args.push(buildTags);
+		}
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
 		let goRuntimePath = getGoRuntimePath();
 
@@ -302,7 +306,7 @@ function hasTestFunctionPrefix(name: string): boolean {
 	return name.startsWith('Test') || name.startsWith('Example');
 }
 
-function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
+export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
 	let testFlags = goConfig['testFlags'] ? goConfig['testFlags'] : goConfig['buildFlags'];
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
 }

@@ -159,7 +159,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 		// We use `go test` instead of `go build` because the latter ignores test files
 		let buildArgs: string[] = ['test', '-i', '-c', '-o', tmpPath, ...buildFlags];
-		if (goConfig['buildTags']) {
+		if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 			buildArgs.push('-tags');
 			buildArgs.push('"' + goConfig['buildTags'] + '"');
 		}
