@@ -264,10 +264,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
-			// ^(.*\*/)?\s*\}.*$
-			decreaseIndentPattern: /^(.*\*\/)?\s*\}.*$/,
-			// ^.*\{[^}'']*$
-			increaseIndentPattern: /^.*\{[^}'']*$/
+			decreaseIndentPattern: /^\s*(\bcase\b.*:|\bdefault\b:|}[),]?|\)[,]?)$/,
+			increaseIndentPattern: /^.*(\bcase\b.*:|\bdefault\b:|(\b(func|if|else|switch|select|for|struct)\b.*)?{[^}]*|\([^)]*)$/
 		},
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
