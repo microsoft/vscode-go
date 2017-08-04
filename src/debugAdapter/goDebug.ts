@@ -191,7 +191,7 @@ class Delve {
 	noDebug: boolean;
 
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
-		this.program = program;
+		this.program = normalizePath(program);
 		this.remotePath = remotePath;
 		let mode = launchArgs.mode;
 		let dlvCwd = dirname(program);
