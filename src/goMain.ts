@@ -347,9 +347,10 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 		if (goConfig['formatOnSave'] && textEditor.document === document) {
 			let formatter = new Formatter();
 			formatPromise = formatter.formatDocument(document).then(edits => {
-				return textEditor.edit(editBuilder => {
-					edits.forEach(edit => editBuilder.replace(edit.range, edit.newText));
-				});
+				let workspaceEdit = new vscode.WorkspaceEdit();
+				workspaceEdit.set(document.uri, edits);
+				return vscode.workspace.applyEdit(workspaceEdit);
+
 			}).then(applied => {
 				ignoreNextSave.add(document);
 				return document.save();
