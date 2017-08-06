@@ -50,7 +50,7 @@ function showPackages(selectedText: string) {
 	goListAll().then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (!pkgs || pkgs.length === 0) {
-			return;
+			return vscode.window.showErrorMessage('Could not find packages. Ensure `go list all` runs successfully.');
 		}
 		let selectPkgPromise: Thenable<string> = Promise.resolve(selectedText);
 		if (!selectedText || pkgs.indexOf(selectedText) === -1) {
