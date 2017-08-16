@@ -11,8 +11,9 @@ import vscode = require('vscode');
 import util = require('util');
 import os = require('os');
 import { parseEnvFile, getGoRuntimePath, resolvePath } from './goPath';
-import { getToolsEnvVars } from './util';
+import { getToolsEnvVars, LineBuffer } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
+import { getNonVendorPackages } from './goPackages';
 
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
 
@@ -96,7 +97,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			flags: getTestFlags(goConfig, args),
-			functions: [ testFunctionName ]
+			functions: [testFunctionName]
 		});
 	}).then(null, err => {
 		console.error(err);
@@ -221,7 +222,11 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
-		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout'], '-tags', buildTags];
+		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
+		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
+			args.push('-tags');
+			args.push(buildTags);
+		}
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
 		let goRuntimePath = getGoRuntimePath();
 
@@ -230,30 +235,45 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			return Promise.resolve();
 		}
 
-		if (testconfig.functions) {
-			args.push('-run');
-			args.push(util.format('^%s$', testconfig.functions.join('|')));
-		} else if (testconfig.includeSubDirectories) {
-			args.push('./...');
-		}
-
-		outputChannel.appendLine(['Running tool:', goRuntimePath, ...args].join(' '));
-		outputChannel.appendLine('');
-
-		let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
-		proc.stdout.on('data', chunk => {
-			let testOutput = expandFilePathInOutput(chunk.toString(), testconfig.dir);
-			outputChannel.append(testOutput);
-
-		});
-		proc.stderr.on('data', chunk => outputChannel.append(chunk.toString()));
-		proc.on('close', code => {
-			if (code) {
-				outputChannel.append('Error: Tests failed.');
+		targetArgs(testconfig).then(targets => {
+			let outTargets = args.slice(0);
+			if (targets.length > 2) {
+				outTargets.push('<long arguments omitted>');
 			} else {
-				outputChannel.append('Success: Tests passed.');
+				outTargets.push(...targets);
 			}
-			resolve(code === 0);
+			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
+			outputChannel.appendLine('');
+
+			args.push(...targets);
+			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
+			const outBuf = new LineBuffer();
+			const errBuf = new LineBuffer();
+
+			outBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
+			outBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
+
+			errBuf.onLine(line => outputChannel.appendLine(line));
+			errBuf.onDone(last => last && outputChannel.appendLine(last));
+
+			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
+			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
+
+			proc.on('close', code => {
+				outBuf.done();
+				errBuf.done();
+
+				if (code) {
+					outputChannel.appendLine('Error: Tests failed.');
+				} else {
+					outputChannel.appendLine('Success: Tests passed.');
+				}
+				resolve(code === 0);
+			});
+		}, err => {
+			outputChannel.appendLine('Error: Tests failed.');
+			outputChannel.appendLine(err);
+			resolve(false);
 		});
 	});
 }
@@ -286,7 +306,7 @@ function hasTestFunctionPrefix(name: string): boolean {
 	return name.startsWith('Test') || name.startsWith('Example');
 }
 
-function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
+export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
 	let testFlags = goConfig['testFlags'] ? goConfig['testFlags'] : goConfig['buildFlags'];
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
 }
@@ -300,4 +320,23 @@ function expandFilePathInOutput(output: string, cwd: string): string {
 		}
 	}
 	return lines.join('\n');
+}
+
+/**
+ * Get the test target arguments.
+ *
+ * @param testconfig Configuration for the Go extension.
+ */
+function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
+	if (testconfig.functions) {
+		return new Promise<Array<string>>((resolve, reject) => {
+			const args = [];
+			args.push('-run');
+			args.push(util.format('^%s$', testconfig.functions.join('|')));
+			return resolve(args);
+		});
+	} else if (testconfig.includeSubDirectories) {
+		return getNonVendorPackages(vscode.workspace.rootPath);
+	}
+	return Promise.resolve([]);
 }

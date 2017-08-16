@@ -169,6 +169,17 @@ function logError(...args: any[]) {
 	logger.error(logArgsToString(args));
 }
 
+function normalizePath(filePath: string) {
+	if (process.platform === 'win32') {
+		filePath = path.normalize(filePath);
+		let i = filePath.indexOf(':');
+		if (i >= 0) {
+			return filePath.slice(0, i).toUpperCase() + filePath.slice(i);
+		}
+	}
+	return filePath;
+}
+
 class Delve {
 	program: string;
 	remotePath: string;
@@ -180,7 +191,7 @@ class Delve {
 	noDebug: boolean;
 
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
-		this.program = program;
+		this.program = normalizePath(program);
 		this.remotePath = remotePath;
 		let mode = launchArgs.mode;
 		let dlvCwd = dirname(program);
@@ -493,12 +504,11 @@ class GoDebugSession extends DebugSession {
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
 		verbose('SetBreakPointsRequest');
-		if (!this.breakpoints.get(args.source.path)) {
-			this.breakpoints.set(args.source.path, []);
+		let file = normalizePath(args.source.path);
+		if (!this.breakpoints.get(file)) {
+			this.breakpoints.set(file, []);
 		}
-		let file = args.source.path;
 		let remoteFile = this.toDebuggerPath(file);
-		let existingBPs = this.breakpoints.get(file);
 		Promise.all(this.breakpoints.get(file).map(existingBP => {
 			verbose('Clearing: ' + existingBP.id);
 			return this.delve.callPromise<DebugBreakpoint>('ClearBreakpoint', [existingBP.id]);
@@ -524,7 +534,7 @@ class GoDebugSession extends DebugSession {
 					return { verified: false, line: args.lines[i] };
 				}
 			});
-			this.breakpoints.set(args.source.path, newBreakpoints.filter(x => !!x));
+			this.breakpoints.set(file, newBreakpoints.filter(x => !!x));
 			return breakpoints;
 		}).then(breakpoints => {
 			response.body = { breakpoints };

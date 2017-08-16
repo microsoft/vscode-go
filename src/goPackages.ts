@@ -2,10 +2,15 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath } from './goPath';
-import { isVendorSupported, getCurrentGoWorkspaceFromGOPATH } from './util';
+import { isVendorSupported, getCurrentGoWorkspaceFromGOPATH, getToolsEnvVars } from './util';
 
 let allPkgs = new Map<string, string>();
 let goListAllCompleted: boolean = false;
+let goListAllPromise: Promise<Map<string, string>>;
+
+export function isGoListComplete(): boolean {
+	return goListAllCompleted;
+}
 
 /**
  * Runs go list all
@@ -19,13 +24,22 @@ export function goListAll(): Promise<Map<string, string>> {
 		return Promise.resolve(null);
 	}
 
-	if (goListAllCompleted) {
-		return Promise.resolve(allPkgs);
+	if (goListAllPromise) {
+		return goListAllPromise;
 	}
-	return new Promise<Map<string, string>>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], (err, stdout, stderr) => {
-			if (err) return reject();
-			stdout.split('\n').forEach(pkgDetail => {
+
+	goListAllPromise = new Promise<Map<string, string>>((resolve, reject) => {
+		// Use `{env: {}}` to make the execution faster. Include GOPATH to account if custom work space exists.
+		const env: any = getToolsEnvVars();
+
+		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], { env: env });
+		const chunks = [];
+		cmd.stdout.on('data', (d) => {
+			chunks.push(d);
+		});
+
+		cmd.on('close', (status) => {
+			chunks.toString().split('\n').forEach(pkgDetail => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
 				allPkgs.set(pkgPath, pkgName);
@@ -34,6 +48,8 @@ export function goListAll(): Promise<Map<string, string>> {
 			return resolve(allPkgs);
 		});
 	});
+
+	return goListAllPromise;
 }
 
 /**
@@ -94,5 +110,29 @@ export function getRelativePackagePath(currentFileDirPath: string, currentWorksp
 	}
 
 	return pkgPath;
+}
+
+/**
+ * Returns import paths for all non vendor packages under given folder
+ */
+export function getNonVendorPackages(folderPath: string): Promise<string[]> {
+	let goRuntimePath = getGoRuntimePath();
+
+	if (!goRuntimePath) {
+		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		return Promise.resolve(null);
+	}
+	return new Promise<string[]>((resolve, reject) => {
+		const childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath, env: getToolsEnvVars() });
+		const chunks = [];
+		childProcess.stdout.on('data', (stdout) => {
+			chunks.push(stdout);
+		});
+
+		childProcess.on('close', (status) => {
+			const pkgs = chunks.toString().split('\n').filter(pkgPath => pkgPath && !pkgPath.includes('/vendor/'));
+			return resolve(pkgs);
+		});
+	});
 }
 

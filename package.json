@@ -35,7 +35,7 @@
     "console-stamp": "^0.2.2",
     "diff": "~3.3.0",
     "json-rpc2": "^1.0.2",
-    "vscode": "^1.1.1",
+    "vscode": "^1.1.4",
     "vscode-debug-logger": "^0.0.4",
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0",
@@ -49,10 +49,10 @@
     "fs-extra": "^1.0.0",
     "tslint": "^4.0.2",
     "typescript": "^2.1.5",
-    "vscode": "^1.0.3"
+    "vscode": "^1.1.4"
   },
   "engines": {
-    "vscode": "^1.8.0"
+    "vscode": "^1.9.0"
   },
   "activationEvents": [
     "onLanguage:go",

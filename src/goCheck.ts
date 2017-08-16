@@ -16,6 +16,7 @@ import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
 import { goTest } from './goTest';
 import { getBinPath, parseFilePrelude, getCurrentGoWorkspaceFromGOPATH, getToolsEnvVars } from './util';
+import { getNonVendorPackages } from './goPackages';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -80,6 +81,14 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 					atleastSingleMatch = true;
 					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
 					let line = +lineStr;
+
+					// Building skips vendor folders,
+					// But vet and lint take in directories and not import paths, so no way to skip them
+					// So prune out the results from vendor folders herehere.
+					if (!path.isAbsolute(file) && (file.startsWith(`vendor${path.sep}`) || file.indexOf(`${path.sep}vendor${path.sep}`) > -1)) {
+						continue;
+					}
+
 					file = path.resolve(cwd, file);
 					ret.push({ file, line, msg, severity });
 					outputChannel.appendLine(`${file}:${line}: ${msg}`);
@@ -150,40 +159,27 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 		// We use `go test` instead of `go build` because the latter ignores test files
 		let buildArgs: string[] = ['test', '-i', '-c', '-o', tmpPath, ...buildFlags];
-		if (goConfig['buildTags']) {
+		if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 			buildArgs.push('-tags');
 			buildArgs.push('"' + goConfig['buildTags'] + '"');
 		}
 
 		if (goConfig['buildOnSave'] === 'workspace') {
-			// Use `go list ./...` to get list of all packages under the vscode workspace
-			// And then run `go test -i -c -o` on each of them
-			let outerBuildPromise = new Promise<any>((resolve, reject) => {
-				cp.execFile(goRuntimePath, ['list', './...'], { cwd: vscode.workspace.rootPath }, (err, stdout, stderr) => {
-					if (err) {
-						console.log('Could not find packages to build');
-						return resolve([]);
-					}
-					let importPaths = stdout.split('\n');
-					let buildPromises = [];
-					importPaths.forEach(pkgPath => {
-						// Skip compiling vendor packages
-						if (!pkgPath || pkgPath.indexOf('/vendor/') > -1) {
-							return;
-						}
-						buildPromises.push(runTool(
-							buildArgs.concat(pkgPath),
-							cwd,
-							'error',
-							true,
-							null,
-							env,
-							true
-						));
-					});
-					return Promise.all(buildPromises).then((resultSets) => {
-						return resolve([].concat.apply([], resultSets));
-					});
+			let buildPromises = [];
+			let outerBuildPromise = getNonVendorPackages(vscode.workspace.rootPath).then(pkgs => {
+				buildPromises = pkgs.map(pkgPath => {
+					return runTool(
+						buildArgs.concat(pkgPath),
+						cwd,
+						'error',
+						true,
+						null,
+						env,
+						true
+					);
+				});
+				return Promise.all(buildPromises).then((resultSets) => {
+					return Promise.resolve([].concat.apply([], resultSets));
 				});
 			});
 			runningToolsPromises.push(outerBuildPromise);
@@ -222,7 +218,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
 		let lintTool = goConfig['lintTool'] || 'golint';
 		let lintFlags: string[] = goConfig['lintFlags'] || [];
-
+		let lintEnv = Object.assign({}, env);
 		let args = [];
 		let configFlag = '--config=';
 		lintFlags.forEach(flag => {
@@ -238,8 +234,15 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			}
 			args.push(flag);
 		});
-		if (lintTool === 'gometalinter' && args.indexOf('--aggregate') === -1) {
-			args.push('--aggregate');
+		if (lintTool === 'gometalinter') {
+			if (args.indexOf('--aggregate') === -1) {
+				args.push('--aggregate');
+			}
+			if (goConfig['toolsGopath']) {
+				// gometalinter will expect its linters to be in the GOPATH
+				// So add the toolsGopath to GOPATH
+				lintEnv['GOPATH'] += path.delimiter + goConfig['toolsGopath'];
+			}
 		}
 
 		let lintWorkDir = cwd;
@@ -255,7 +258,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			'warning',
 			false,
 			lintTool,
-			env
+			lintEnv
 		));
 	}
 

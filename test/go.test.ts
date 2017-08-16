@@ -31,6 +31,7 @@ suite('Go Extension Tests', () => {
 	let generateTestsSourcePath = path.join(repoPath, 'generatetests');
 	let generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
 	let generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
+	let goListAllPromise = goListAll();
 
 	suiteSetup(() => {
 		assert.ok(gopath !== null, 'GOPATH is not defined');
@@ -222,78 +223,6 @@ It returns the number of bytes written and any write error encountered.
 				return testHoverProvider(config, testCases);
 			}
 			return Promise.resolve();
-		}).then(() => done(), done);
-	});
-
-	test('Test Completion', (done) => {
-		let provider = new GoCompletionItemProvider();
-		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(1, 0), []],
-			[new vscode.Position(4, 1), ['main', 'print', 'fmt']],
-			[new vscode.Position(7, 4), ['fmt']],
-			[new vscode.Position(8, 0), ['main', 'print', 'fmt', 'txt']]
-		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			return vscode.window.showTextDocument(textDocument).then(editor => {
-				let promises = testCases.map(([position, expected]) =>
-					provider.provideCompletionItems(editor.document, position, null).then(items => {
-						let labels = items.map(x => x.label);
-						for (let entry of expected) {
-							if (labels.indexOf(entry) < 0) {
-								assert.fail('', entry, 'missing expected item in competion list', '');
-							}
-						}
-					})
-				);
-				return Promise.all(promises);
-			}).then(() => {
-				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-				return Promise.resolve();
-			});
-		}, (err) => {
-			assert.ok(false, `error in OpenTextDocument ${err}`);
-		}).then(() => done(), done);
-	});
-
-	test('Test Completion on unimported packages', (done) => {
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'autocompleteUnimportedPackages': { value: true }
-		});
-		let provider = new GoCompletionItemProvider();
-		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(11, 3), ['bytes']],
-			[new vscode.Position(12, 5), ['Abs', 'Acos', 'Asin']]
-		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
-		let goListAllPromise = goListAll();
-
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			return vscode.window.showTextDocument(textDocument).then(editor => {
-
-				return editor.edit(editbuilder => {
-					editbuilder.insert(new vscode.Position(12, 1), 'by\n');
-					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
-				}).then(() => {
-					return goListAllPromise.then(() => {
-						let promises = testCases.map(([position, expected]) =>
-							provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
-								let labels = items.map(x => x.label);
-								for (let entry of expected) {
-									assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
-								}
-							})
-						);
-						return Promise.all(promises);
-					});
-				});
-			}).then(() => {
-				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-				return Promise.resolve();
-			});
-
-		}, (err) => {
-			assert.ok(false, `error in OpenTextDocument ${err}`);
 		}).then(() => done(), done);
 	});
 
@@ -741,5 +670,76 @@ It returns the number of bytes written and any write error encountered.
 			assert.equal(results.length, 0);
 		});
 		Promise.all([withIgnoringFolders, withoutIgnoringFolders]).then(() => done(), done);
+	});
+
+	test('Test Completion', (done) => {
+		let provider = new GoCompletionItemProvider();
+		let testCases: [vscode.Position, string[]][] = [
+			[new vscode.Position(1, 0), []],
+			[new vscode.Position(4, 1), ['main', 'print', 'fmt']],
+			[new vscode.Position(7, 4), ['fmt']],
+			[new vscode.Position(8, 0), ['main', 'print', 'fmt', 'txt']]
+		];
+		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				let promises = testCases.map(([position, expected]) =>
+					provider.provideCompletionItems(editor.document, position, null).then(items => {
+						let labels = items.map(x => x.label);
+						for (let entry of expected) {
+							if (labels.indexOf(entry) < 0) {
+								assert.fail('', entry, 'missing expected item in competion list', '');
+							}
+						}
+					})
+				);
+				return Promise.all(promises);
+			}).then(() => {
+				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				return Promise.resolve();
+			});
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+	});
+
+	test('Test Completion on unimported packages', (done) => {
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'autocompleteUnimportedPackages': { value: true }
+		});
+		let provider = new GoCompletionItemProvider();
+		let testCases: [vscode.Position, string[]][] = [
+			[new vscode.Position(11, 3), ['bytes']],
+			[new vscode.Position(12, 5), ['Abs', 'Acos', 'Asin']]
+		];
+		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+
+				return editor.edit(editbuilder => {
+					editbuilder.insert(new vscode.Position(12, 1), 'by\n');
+					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
+				}).then(() => {
+					return goListAllPromise.then(() => {
+						let promises = testCases.map(([position, expected]) =>
+							provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+								let labels = items.map(x => x.label);
+								for (let entry of expected) {
+									assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
+								}
+							})
+						);
+						return Promise.all(promises);
+					});
+				});
+			}).then(() => {
+				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				return Promise.resolve();
+			});
+
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
 	});
 });

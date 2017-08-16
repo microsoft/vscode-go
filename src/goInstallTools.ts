@@ -170,10 +170,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			// gometalinter expects its linters to be in the user's GOPATH
-			// Debugger doesnt have access to settings, so cannot read `go.toolsGopath`
-			// Therefore, cannot use an isolated GOPATH for installing gometalinter or dlv
-			let env = (envWithSeparateGoPathForTools && tool !== 'gometalinter' && tool !== 'dlv') ? envWithSeparateGoPathForTools : envForTools;
+			let env = envWithSeparateGoPathForTools ? envWithSeparateGoPathForTools : envForTools;
 			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env }, (err, stdout, stderr) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + tools[tool] + ' FAILED');
@@ -185,7 +182,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 						// Gometalinter needs to install all the linters it uses.
 						outputChannel.appendLine('Installing all linters used by gometalinter....');
 						let gometalinterBinPath = getBinPath('gometalinter');
-						cp.execFile(gometalinterBinPath, ['--install'], (err, stdout, stderr) => {
+						cp.execFile(gometalinterBinPath, ['--install'], { env }, (err, stdout, stderr) => {
 							if (!err) {
 								outputChannel.appendLine('Installing all linters used by gometalinter SUCCEEDED.');
 								resolve([...sofar, null]);
