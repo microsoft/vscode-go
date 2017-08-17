@@ -39,7 +39,7 @@ export function goListAll(): Promise<Map<string, string>> {
 		});
 
 		cmd.on('close', (status) => {
-			chunks.toString().split('\n').forEach(pkgDetail => {
+			chunks.join('').split('\n').forEach(pkgDetail => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
 				allPkgs.set(pkgPath, pkgName);
