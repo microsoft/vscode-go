@@ -125,7 +125,7 @@ export function parameters(signature: string): string[] {
 }
 
 export function canonicalizeGOPATHPrefix(filename: string): string {
-	let gopath: string = process.env['GOPATH'];
+	let gopath: string = getCurrentGoPath();
 	if (!gopath) return filename;
 	let workspaces = gopath.split(path.delimiter);
 	let filenameLowercase = filename.toLowerCase();
@@ -212,7 +212,7 @@ export function isVendorSupported(): Promise<boolean> {
  * If not set, then prompts user to do set GOPATH
  */
 export function isGoPathSet(): boolean {
-	if (!process.env['GOPATH']) {
+	if (!getCurrentGoPath()) {
 		vscode.window.showInformationMessage('Set GOPATH environment variable and restart VS Code or set GOPATH in Workspace settings', 'Set GOPATH in Workspace Settings').then(selected => {
 			if (selected === 'Set GOPATH in Workspace Settings') {
 				let settingsFilePath = path.join(vscode.workspace.rootPath, '.vscode', 'settings.json');
@@ -258,11 +258,11 @@ export function getToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, getToolsGopath());
+	return getBinPathWithPreferredGopath(tool, getToolsGopath(), getCurrentGoPath());
 }
 
 export function getCurrentGoWorkspaceFromGOPATH(currentFileDirPath: string): string {
-	let workspaces: string[] = process.env['GOPATH'].split(path.delimiter);
+	let workspaces: string[] = getCurrentGoPath().split(path.delimiter);
 	let currentWorkspace = '';
 
 	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
@@ -293,10 +293,34 @@ export function getFileArchive(document: vscode.TextDocument): string {
 
 export function getToolsEnvVars(): any {
 	let toolsEnvVars = vscode.workspace.getConfiguration('go')['toolsEnvVars'];
+
+	let gopath = getCurrentGoPath();
+
+	let envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
+
 	if (!toolsEnvVars || typeof toolsEnvVars !== 'object' || Object.keys(toolsEnvVars).length === 0) {
-		return process.env;
+		return envVars;
 	}
-	return Object.assign({}, process.env, toolsEnvVars);
+	return Object.assign(envVars, toolsEnvVars);
+}
+
+export function getCurrentGoPath(): string {
+	let inferredGopath = getInferredGopath();
+	let configGopath = vscode.workspace.getConfiguration('go')['gopath'];
+	return inferredGopath ? inferredGopath : (configGopath ? resolvePath(configGopath, vscode.workspace.rootPath) : process.env['GOPATH']);
+}
+
+function getInferredGopath(): string {
+	let inferGoPath = vscode.workspace.getConfiguration('go')['inferGopath'];
+	if (inferGoPath) {
+		let dirs = vscode.workspace.rootPath.toLowerCase().split(path.sep);
+		// find src directory closest to workspace root
+		let srcIdx = dirs.lastIndexOf('src');
+
+		if (srcIdx > 0) {
+			return vscode.workspace.rootPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
+		}
+	}
 }
 
 export function getExtensionCommands(): any[] {

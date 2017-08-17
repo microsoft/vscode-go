@@ -5,7 +5,7 @@ import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { goKeywords, isPositionInString } from './util';
+import { goKeywords, isPositionInString, getToolsEnvVars } from './util';
 import { getGoRuntimePath, resolvePath } from './goPath';
 
 interface GoListOutput {
@@ -31,8 +31,8 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 			if (token.isCancellationRequested) {
 				return resolve(null);
 			}
-
-			let listProcess = cp.execFile(getGoRuntimePath(), ['list', '-e', '-json'], { cwd: vscode.workspace.rootPath }, (err, stdout, stderr) => {
+			let env = getToolsEnvVars();
+			let listProcess = cp.execFile(getGoRuntimePath(), ['list', '-e', '-json'], { cwd: vscode.workspace.rootPath, env }, (err, stdout, stderr) => {
 				if (err) {
 					return reject(err);
 				}
@@ -45,7 +45,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				let buildTags = '"' + vscode.workspace.getConfiguration('go')['buildTags'] + '"';
 				let args = ['-scope', `${scope}/...`, '-json', '-tags', buildTags, 'implements', `${filename}:#${offset.toString()}`];
 
-				let guruProcess = cp.execFile(goGuru, args, {}, (err, stdout, stderr) => {
+				let guruProcess = cp.execFile(goGuru, args, {env}, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
 						return resolve(null);

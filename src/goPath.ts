@@ -30,19 +30,17 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 	return null;
 }
 
-export function getBinPathWithPreferredGopath(binname: string, preferredGopath: string = null) {
+export function getBinPathWithPreferredGopath(binname: string, ...preferredGopaths) {
 	if (binPathCache[correctBinname(binname)]) return binPathCache[correctBinname(binname)];
 
-	// Search in the preferred GOPATH workspace's bin folder
-	let pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferredGopath, true);
-	if (pathFrompreferredGoPath) {
-		return pathFrompreferredGoPath;
-	}
-
-	// Then search user's GOPATH workspace's bin folder
-	let pathFromGoPath = getBinPathFromEnvVar(binname, process.env['GOPATH'], true);
-	if (pathFromGoPath) {
-		return pathFromGoPath;
+	for (let i = 0; i < preferredGopaths.length; i++) {
+		if (typeof preferredGopaths[i] === 'string') {
+			// Search in the preferred GOPATH workspace's bin folder
+			let pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferredGopaths[i], true);
+			if (pathFrompreferredGoPath) {
+				return pathFrompreferredGoPath;
+			}
+		}
 	}
 
 	// Then search PATH parts
@@ -128,14 +126,14 @@ export function stripBOM(s: string): string {
 }
 
 export function parseEnvFile(path: string): { [key: string]: string } {
-	const env = { };
+	const env = {};
 	if (!path) {
 		return env;
 	}
 
 	try {
 		const buffer = stripBOM(fs.readFileSync(path, 'utf8'));
-		buffer.split('\n').forEach( line => {
+		buffer.split('\n').forEach(line => {
 			const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
 			if (r !== null) {
 				let value = r[2] || '';
@@ -147,6 +145,6 @@ export function parseEnvFile(path: string): { [key: string]: string } {
 		});
 		return env;
 	} catch (e) {
-		throw(`Cannot load environment variables from file ${path}`);
+		throw (`Cannot load environment variables from file ${path}`);
 	}
 }

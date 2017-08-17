@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath } from './util';
+import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
 interface GoImplInput {
@@ -49,7 +49,7 @@ export function implCursor() {
 function runGoImpl(input: GoImplInput, insertPos: vscode.Position) {
 	let goimpl = getBinPath('impl');
 	let editor = vscode.window.activeTextEditor;
-	let p = cp.execFile(goimpl, [input.receiver, input.interface], (err, stdout, stderr) => {
+	let p = cp.execFile(goimpl, [input.receiver, input.interface], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('impl');
 			return;

@@ -261,7 +261,7 @@ class Delve {
 				return;
 			}
 
-			let dlv = getBinPathWithPreferredGopath('dlv', resolvePath(env['GOPATH']));
+			let dlv = getBinPathWithPreferredGopath('dlv', resolvePath(env['GOPATH']), process.env['GOPATH']);
 
 			if (!existsSync(dlv)) {
 				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);

@@ -13,7 +13,7 @@ import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
 import { getGoRuntimePath, resolvePath } from './goPath';
 import { outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported } from './util';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
@@ -139,14 +139,6 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 	if (!missing) {
 		missing = Object.keys(tools);
 	}
-	outputChannel.show();
-	outputChannel.clear();
-	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'}`);
-	missing.forEach((missingTool, index, missing) => {
-		outputChannel.appendLine('  ' + missingTool);
-	});
-
-	outputChannel.appendLine(''); // Blank line for spacing.
 
 	// http.proxy setting takes precedence over environment variables
 	let httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
@@ -160,18 +152,34 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 		});
 	}
 
-	// If the go.toolsGopath is set, use
-	// its value as the GOPATH for the "go get" child process.
-	let toolsGopath = getToolsGopath();
-	let envWithSeparateGoPathForTools = null;
+	// If the go.toolsGopath is set, use its value as the GOPATH for the "go get" child process.
+	// Else use the Current Gopath
+	let toolsGopath = getToolsGopath() || getCurrentGoPath();
 	if (toolsGopath) {
-		envWithSeparateGoPathForTools = Object.assign({}, envForTools, { GOPATH: toolsGopath });
+		envForTools['GOPATH'] = toolsGopath;
+	} else {
+		vscode.window.showInformationMessage('Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.', 'Open User settings', 'Open Workspace Settings').then(selected => {
+			if (selected === 'Open User settings') {
+				vscode.commands.executeCommand('workbench.action.openGlobalSettings');
+			} else if (selected === 'Open User settings') {
+				vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
+			}
+		});
+		return;
 	}
+
+	outputChannel.show();
+	outputChannel.clear();
+	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${path.sep}bin`);
+	missing.forEach((missingTool, index, missing) => {
+		outputChannel.appendLine('  ' + missingTool);
+	});
+
+	outputChannel.appendLine(''); // Blank line for spacing.
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			let env = envWithSeparateGoPathForTools ? envWithSeparateGoPathForTools : envForTools;
-			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env }, (err, stdout, stderr) => {
+			cp.execFile(goRuntimePath, ['get', '-u', '-v', tools[tool]], { env: envForTools }, (err, stdout, stderr) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + tools[tool] + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
@@ -182,7 +190,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 						// Gometalinter needs to install all the linters it uses.
 						outputChannel.appendLine('Installing all linters used by gometalinter....');
 						let gometalinterBinPath = getBinPath('gometalinter');
-						cp.execFile(gometalinterBinPath, ['--install'], { env }, (err, stdout, stderr) => {
+						cp.execFile(gometalinterBinPath, ['--install'], { env: envForTools }, (err, stdout, stderr) => {
 							if (!err) {
 								outputChannel.appendLine('Installing all linters used by gometalinter SUCCEEDED.');
 								resolve([...sofar, null]);
@@ -221,22 +229,6 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	let goroot = vscode.workspace.getConfiguration('go')['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = goroot;
-	}
-
-	let gopath = vscode.workspace.getConfiguration('go')['gopath'];
-	if (gopath) {
-		process.env['GOPATH'] = resolvePath(gopath, vscode.workspace.rootPath);
-	}
-
-	let inferGoPath = vscode.workspace.getConfiguration('go')['inferGopath'];
-	if (inferGoPath) {
-		let dirs = vscode.workspace.rootPath.toLowerCase().split(path.sep);
-		// find src directory closest to workspace root
-		let srcIdx = dirs.lastIndexOf('src');
-
-		if (srcIdx > 0) {
-			process.env['GOPATH'] = vscode.workspace.rootPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
-		}
 	}
 
 	if (process.env['GOPATH']) {

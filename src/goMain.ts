@@ -28,7 +28,7 @@ import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTe
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -124,7 +124,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
-		let gopath = process.env['GOPATH'];
+		let gopath = getCurrentGoPath();
 		let wasInfered = vscode.workspace.getConfiguration('go')['inferGopath'];
 
 		// not only if it was configured, but if it was successful.
@@ -246,7 +246,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				'mode': 'debug',
 				'program': activeEditor.document.fileName,
 				'env': {
-					'GOPATH': process.env['GOPATH']
+					'GOPATH': getCurrentGoPath()
 				}
 			});
 		}

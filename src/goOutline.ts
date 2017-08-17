@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath, getFileArchive } from './util';
+import { getBinPath, getFileArchive, getToolsEnvVars } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with https://github.com/ramya-rao-a/go-outline
@@ -57,7 +57,7 @@ export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDec
 			gooutlineFlags.push('-modified');
 		}
 		// Spawn `go-outline` process
-		let p = cp.execFile(gooutline, gooutlineFlags, {}, (err, stdout, stderr) => {
+		let p = cp.execFile(gooutline, gooutlineFlags, {env: getToolsEnvVars()}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('go-outline');

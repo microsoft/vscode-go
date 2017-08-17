@@ -6,7 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getFileArchive } from './util';
+import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars } from './util';
 import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
 
@@ -126,7 +126,7 @@ function runGomodifytags(args: string[]) {
 	let gomodifytags = getBinPath('gomodifytags');
 	let editor = vscode.window.activeTextEditor;
 	let input = getFileArchive(editor.document);
-	let p = cp.execFile(gomodifytags, args, (err, stdout, stderr) => {
+	let p = cp.execFile(gomodifytags, args, {env: getToolsEnvVars()}, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gomodifytags');
 			return;

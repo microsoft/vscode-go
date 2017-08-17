@@ -10,7 +10,7 @@ import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
 
-import { getBinPath } from './util';
+import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
 
@@ -127,7 +127,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 		} else {
 			args = ['-w', '-all', conf.dir];
 		}
-		cp.execFile(cmd, args, {}, (err, stdout, stderr) => {
+		cp.execFile(cmd, args, {env: getToolsEnvVars()}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('gotests');
