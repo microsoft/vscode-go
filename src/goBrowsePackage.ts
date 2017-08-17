@@ -35,13 +35,13 @@ function showPackageFiles(pkg: string)  {
 		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
 	}
 
+	if (!pkg) {
+		return showPackageList();
+	}
+
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], (err, stdout, stderr) => {
 		if (!stdout || stdout.indexOf(':') === -1) {
-			if (isGoListComplete()) {
-				return showPackageList();
-			}
-
-			return showTryAgainLater();
+			return showPackageList();
 		}
 
 		let matches = stdout && stdout.match(/(.*):\[(.*)\]:\[(.*)\]:\[(.*)\]/);
@@ -66,6 +66,10 @@ function showPackageFiles(pkg: string)  {
 }
 
 function showPackageList() {
+	if (!isGoListComplete()) {
+		return showTryAgainLater();
+	}
+
 	goListAll().then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (!pkgs || pkgs.length === 0) {
@@ -83,14 +87,7 @@ function showPackageList() {
 }
 
 function showTryAgainLater() {
-	// `go list all` has not completed. Wait for a second which is an acceptable duration of delay.
-	setTimeout(() => {
-		// `go list all` still not complete. It takes a long time on slower machines or when there are way too many folders in GOPATH
-		if (!isGoListComplete()) {
-			vscode.window.showInformationMessage('Finding packages... Try after sometime.');
-			return;
-		}
-	}, 1000);
+	vscode.window.showInformationMessage('Finding packages... Try after sometime.');
 }
 
 function getImportPath(text: string): string {
