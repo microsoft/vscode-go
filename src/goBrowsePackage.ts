@@ -26,22 +26,26 @@ export function browsePackages() {
 		selectedText = getImportPath(selectedText);
 	}
 
-	showPackageFiles(selectedText);
+	showPackageFiles(selectedText, true);
 }
 
-function showPackageFiles(pkg: string)  {
+function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean)  {
 	const goRuntimePath = getGoRuntimePath();
 	if (!goRuntimePath) {
 		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
 	}
 
-	if (!pkg) {
+	if (!pkg && showAllPkgsIfPkgNotFound) {
 		return showPackageList();
 	}
 
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], (err, stdout, stderr) => {
 		if (!stdout || stdout.indexOf(':') === -1) {
-			return showPackageList();
+			if (showAllPkgsIfPkgNotFound) {
+				return showPackageList();
+			}
+
+			return;
 		}
 
 		let matches = stdout && stdout.match(/(.*):\[(.*)\]:\[(.*)\]:\[(.*)\]/);
@@ -81,7 +85,7 @@ function showPackageList() {
 			.showQuickPick(pkgs, { placeHolder: 'Select a package to browse' })
 			.then(pkgFromDropdown => {
 				if (!pkgFromDropdown) return;
-				showPackageFiles(pkgFromDropdown);
+				showPackageFiles(pkgFromDropdown, false);
 			});
 	});
 }
