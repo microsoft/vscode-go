@@ -10,12 +10,12 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getGoRuntimePath, resolvePath } from './goPath';
+import { getGoRuntimePath, resolvePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
 import { goTest } from './goTest';
-import { getBinPath, parseFilePrelude, getCurrentGoWorkspaceFromGOPATH, getToolsEnvVars } from './util';
+import { getBinPath, parseFilePrelude, getCurrentGoPath, getToolsEnvVars } from './util';
 import { getNonVendorPackages } from './goPackages';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
@@ -185,7 +185,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			runningToolsPromises.push(outerBuildPromise);
 		} else {
 			// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
-			let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(cwd);
+			let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
 			let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
 
 			runningToolsPromises.push(runTool(

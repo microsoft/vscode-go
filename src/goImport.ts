@@ -7,11 +7,12 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { parseFilePrelude, isVendorSupported, getBinPath, getCurrentGoWorkspaceFromGOPATH, getToolsEnvVars } from './util';
+import { parseFilePrelude, isVendorSupported, getBinPath, getCurrentGoPath, getToolsEnvVars } from './util';
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import path = require('path');
 import { getRelativePackagePath } from './goPackages';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -47,7 +48,7 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 			}
 
 			let currentFileDirPath = path.dirname(vscode.window.activeTextEditor.document.fileName);
-			let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(currentFileDirPath);
+			let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
 			let pkgSet = new Set<string>();
 			pkgs.forEach(pkg => {
 				if (!pkg || importedPkgs.indexOf(pkg) > -1) {

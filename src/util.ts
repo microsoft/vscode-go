@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath } from './goPath';
+import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath, getInferredGopath } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -261,31 +261,6 @@ export function getBinPath(tool: string): string {
 	return getBinPathWithPreferredGopath(tool, getToolsGopath(), getCurrentGoPath());
 }
 
-export function getCurrentGoWorkspaceFromGOPATH(currentFileDirPath: string): string {
-	let workspaces: string[] = getCurrentGoPath().split(path.delimiter);
-	let currentWorkspace = '';
-
-	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
-	if (process.platform === 'win32') {
-		currentFileDirPath = currentFileDirPath.substr(0, 1).toUpperCase() + currentFileDirPath.substr(1);
-	}
-
-	// Find current workspace by checking if current file is
-	// under any of the workspaces in $GOPATH
-	for (let i = 0; i < workspaces.length; i++) {
-		let possibleCurrentWorkspace = path.join(workspaces[i], 'src');
-		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)) {
-			// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)
-			// both parent & child workspace in the nested workspaces pair can make it inside the above if block
-			// Therefore, the below check will take longer (more specific to current file) of the two
-			if (possibleCurrentWorkspace.length > currentWorkspace.length) {
-				currentWorkspace = possibleCurrentWorkspace;
-			}
-		}
-	}
-	return currentWorkspace;
-}
-
 export function getFileArchive(document: vscode.TextDocument): string {
 	let fileContents = document.getText();
 	return document.fileName + '\n' + Buffer.byteLength(fileContents, 'utf8') + '\n' + fileContents;
@@ -305,22 +280,13 @@ export function getToolsEnvVars(): any {
 }
 
 export function getCurrentGoPath(): string {
-	let inferredGopath = getInferredGopath();
 	let configGopath = vscode.workspace.getConfiguration('go')['gopath'];
-	return inferredGopath ? inferredGopath : (configGopath ? resolvePath(configGopath, vscode.workspace.rootPath) : process.env['GOPATH']);
-}
-
-function getInferredGopath(): string {
-	let inferGoPath = vscode.workspace.getConfiguration('go')['inferGopath'];
-	if (inferGoPath) {
-		let dirs = vscode.workspace.rootPath.toLowerCase().split(path.sep);
-		// find src directory closest to workspace root
-		let srcIdx = dirs.lastIndexOf('src');
-
-		if (srcIdx > 0) {
-			return vscode.workspace.rootPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
-		}
+	let inferredGopath;
+	if (vscode.workspace.getConfiguration('go')['inferGopath'] === true) {
+		inferredGopath = getInferredGopath(vscode.workspace.rootPath);
 	}
+
+	return inferredGopath ? inferredGopath : (configGopath ? resolvePath(configGopath, vscode.workspace.rootPath) : process.env['GOPATH']);
 }
 
 export function getExtensionCommands(): any[] {
