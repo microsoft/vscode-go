@@ -160,6 +160,11 @@ export function getInferredGopath(folderPath: string): string {
 	}
 }
 
+/**
+ * Returns the workspace in the given Gopath to which given directory path belongs to
+ * @param gopath string Current Gopath. Can be ; or : separated (as per os) to support multiple paths
+ * @param currentFileDirPath string
+ */
 export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPath: string): string {
 	let workspaces: string[] = gopath.split(path.delimiter);
 	let currentWorkspace = '';
