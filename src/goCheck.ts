@@ -282,14 +282,13 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 	}
 
 	if (!!goConfig['coverOnSave']) {
-		let coverPromise = runTest().then(success => {
+		runTest().then(success => {
 			if (!success) {
 				return [];
 			}
 			// FIXME: it's not obvious that tmpCoverPath comes from runTest()
 			return getCoverage(tmpCoverPath);
 		});
-		runningToolsPromises.push(coverPromise);
 	}
 
 	return Promise.all(runningToolsPromises).then(resultSets => [].concat.apply([], resultSets));
