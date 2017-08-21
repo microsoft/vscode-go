@@ -11,7 +11,7 @@ import { readFileSync, existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolvePath, stripBOM, getGoRuntimePath } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, resolvePath, stripBOM, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 import * as FS from 'fs';
 
@@ -228,6 +228,14 @@ class Delve {
 			}
 
 			let env = Object.assign({}, process.env, fileEnv, launchArgs.env);
+
+			// If file/package to debug is not under env['GOPATH'], then infer it from the file/package path
+			// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
+			let programNotUnderGopath = !env['GOPATH'] || !getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], isProgramDirectory ? program : path.dirname(program));
+			if (programNotUnderGopath && (mode === 'debug' || mode === 'test')) {
+				env['GOPATH'] = getInferredGopath(isProgramDirectory ? program : path.dirname(program));
+			}
+
 			if (!!launchArgs.noDebug) {
 				if (mode === 'debug' && !isProgramDirectory) {
 					this.noDebug = true;

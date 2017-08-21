@@ -148,3 +148,44 @@ export function parseEnvFile(path: string): { [key: string]: string } {
 		throw (`Cannot load environment variables from file ${path}`);
 	}
 }
+
+// Walks up given folder path to return the closest ancestor that has `src` as a child
+export function getInferredGopath(folderPath: string): string {
+	let dirs = folderPath.toLowerCase().split(path.sep);
+
+	// find src directory closest to given folder path
+	let srcIdx = dirs.lastIndexOf('src');
+	if (srcIdx > 0) {
+		return folderPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
+	}
+}
+
+/**
+ * Returns the workspace in the given Gopath to which given directory path belongs to
+ * @param gopath string Current Gopath. Can be ; or : separated (as per os) to support multiple paths
+ * @param currentFileDirPath string
+ */
+export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPath: string): string {
+	let workspaces: string[] = gopath.split(path.delimiter);
+	let currentWorkspace = '';
+
+	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+	if (process.platform === 'win32') {
+		currentFileDirPath = currentFileDirPath.substr(0, 1).toUpperCase() + currentFileDirPath.substr(1);
+	}
+
+	// Find current workspace by checking if current file is
+	// under any of the workspaces in $GOPATH
+	for (let i = 0; i < workspaces.length; i++) {
+		let possibleCurrentWorkspace = path.join(workspaces[i], 'src');
+		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)) {
+			// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)
+			// both parent & child workspace in the nested workspaces pair can make it inside the above if block
+			// Therefore, the below check will take longer (more specific to current file) of the two
+			if (possibleCurrentWorkspace.length > currentWorkspace.length) {
+				currentWorkspace = possibleCurrentWorkspace;
+			}
+		}
+	}
+	return currentWorkspace;
+}
