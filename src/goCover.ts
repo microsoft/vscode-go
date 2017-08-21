@@ -10,7 +10,7 @@ import path = require('path');
 import os = require('os');
 import fs = require('fs');
 import { getGoRuntimePath } from './goPath';
-import { showTestOutput, goTest } from './goTest';
+import { showTestOutput, goTest } from './testUtils';
 import { getBinPath } from './util';
 import rl = require('readline');
 import { outputChannel } from './goStatus';

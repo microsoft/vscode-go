@@ -24,7 +24,8 @@ import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { initGoCover } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, showTestOutput, testWorkspace } from './goTest';
+import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
+import { showTestOutput } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
@@ -384,6 +385,9 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		testOnSave: goConfig['testOnSave'] + '',
 		testFlags: goConfig['testFlags'],
 		coverOnSave: goConfig['coverOnSave'] + '',
+		coverOnTestPackage: goConfig['coverOnTestPackage'] + '',
+		coverageDecorator: goConfig['coverageDecorator'],
+		coverageOptions: goConfig['coverageOptions'],
 		useDiffForFormatting: goConfig['useDiffForFormatting'] + '',
 		gopath: goConfig['gopath'] ? 'set' : '',
 		goroot: goConfig['goroot'] ? 'set' : '',
@@ -399,8 +403,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		removeTags: JSON.stringify(goConfig['removeTags']),
 		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands']),
 		liveErrors: JSON.stringify(goConfig['liveErrors']),
-		codeLens: JSON.stringify(goConfig['enableCodeLens']),
-		coverageOptions: goConfig['coverageOptions']
+		codeLens: JSON.stringify(goConfig['enableCodeLens'])
 	});
 }
 

@@ -491,6 +491,11 @@
           "default": false,
           "description": "If true, runs 'go test -coverprofile' on save and shows test coverage."
         },
+        "go.coverOnTestPackage": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, shows test coverage when Go: Test Package command is run."
+        },
         "go.coverageOptions": {
           "type": "string",
           "enum": [

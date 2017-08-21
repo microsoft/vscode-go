@@ -14,7 +14,7 @@ import { getGoRuntimePath, resolvePath, getCurrentGoWorkspaceFromGOPATH } from '
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
-import { goTest } from './goTest';
+import { goTest } from './testUtils';
 import { getBinPath, parseFilePrelude, getCurrentGoPath, getToolsEnvVars } from './util';
 import { getNonVendorPackages } from './goPackages';
 
