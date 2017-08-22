@@ -1,26 +1,21 @@
 ## 0.6.64 - Coming Soon..
 
-* [Dan Mace (@ironcladlou](https://github.com/ironcladlou) and [Vincent Chinedu Okonkwo (@codmajik)](https://github.com/codmajik)
+* [Dan Mace (@ironcladlou)](https://github.com/ironcladlou) and [Vincent Chinedu Okonkwo (@codmajik)](https://github.com/codmajik)
     * Support for the `Go To Implementation` command on interfaces. [Feature Request #771](https://github.com/Microsoft/vscode-go/771).
-
 * [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
     * Refactor the test output to show output of `log.Println`. Fixes [Issue #1120](https://github.com/Microsoft/vscode-go/1120) with [PR 1124](https://github.com/Microsoft/vscode-go/pull/1124)
-
 * [Thomas Darimont (@thomasdarimont)](https://github.com/thomasdarimont)
     * A new snippet called `helloweb` that generates a web app with an http endpoint returning a greeting and current time. [PR 1113](https://github.com/Microsoft/vscode-go/pull/1113)
-
 * [Craig-Stone (@Craig-Stone)](https://github.com/Craig-Stone)
     * Normalize program path in Windows which otherwise prevented breakpoints from being set correctly when remote debugging. [PR 1131](https://github.com/Microsoft/vscode-go/pull/1131)
-
 * [Marwan Sulaiman (@marwan-at-work)](https://github.com/marwan-at-work)
     * Refactor the code behind `Go: Browse Packages` to make browsing selected package faster. [PR 1136](https://github.com/Microsoft/vscode-go/pull/1136)
-
-* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Show test coverage after the command `Go: Test Package` is run. You can disable this by setting `go.coverOnTestPackage` to `false`.
     * No need to set GOPATH in debug configuration in the `launch.json` file anymore. When no GOPATH is provided this way, the debug adapter will now infer the GOPATH based on the path of the file/package being debugged. This fixes [Issue #840](https://github.com/Microsoft/vscode-go/840).
     * Decouple running test coverage on save from running build/lint/test on save. Fixes the issue where the problems view was not getting updated until `go.coverOnSave` was disabled.
     * Fix the extra text being selected at the end of formatting run on save. Fixes [Issue #899](https://github.com/Microsoft/vscode-go/899) and [Issue #1096](https://github.com/Microsoft/vscode-go/1096).
-    * The debug code lens will now honor the `go.buildFlags`, `go.buildTags` and `go.testFlags` settings.
+    * The debug code lens will now honor the `go.buildFlags`, `go.buildTags` and `go.testFlags` settings. Fixes [Issue #1117](https://github.com/Microsoft/vscode-go/issues/1117)
     * `gometalinter` and `dlv` will honor the `go.toolsGopath` setting. Fixes [Issue #1110](https://github.com/Microsoft/vscode-go/1110)
     * Show test coverage even if files are outside of GOPATH. Fixes [Issue #1122](https://github.com/Microsoft/vscode-go/1122)
     * Skip vendor folders from lint and vet results. Fixes [Issue #1119](https://github.com/Microsoft/vscode-go/1119) and [Issue #1121](https://github.com/Microsoft/vscode-go/1121)
