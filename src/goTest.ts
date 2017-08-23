@@ -85,23 +85,16 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 	}
 
 	let tmpCoverPath = '';
+	let testFlags = getTestFlags(goConfig, args) || [];
 	if (goConfig['coverOnTestPackage'] === true) {
-		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
-		let coverArgs = '-coverprofile=' + tmpCoverPath;
-		if (!args) {
-			args = {};
-		}
-		if (args.hasOwnProperty('flags') && Array.isArray(args['flags'])) {
-			args['flags'].push(coverArgs);
-		} else {
-			args['flags'] = [coverArgs];
-		}
+		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));		
+		testFlags.push('-coverprofile=' + tmpCoverPath);
 	}
 
 	const testConfig = {
 		goConfig: goConfig,
 		dir: path.dirname(editor.document.fileName),
-		flags: getTestFlags(goConfig, args),
+		flags: testFlags,
 		showTestCoverage: true
 	};
 	// Remember this config as the last executed test.
