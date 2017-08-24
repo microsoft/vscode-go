@@ -130,7 +130,7 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 		});
 
 		childProcess.on('close', (status) => {
-			const pkgs = chunks.toString().split('\n').filter(pkgPath => pkgPath && !pkgPath.includes('/vendor/'));
+			const pkgs = chunks.join('').toString().split('\n').filter(pkgPath => pkgPath && !pkgPath.includes('/vendor/'));
 			return resolve(pkgs);
 		});
 	});
