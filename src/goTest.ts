@@ -87,7 +87,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 	let tmpCoverPath = '';
 	let testFlags = getTestFlags(goConfig, args) || [];
 	if (goConfig['coverOnTestPackage'] === true) {
-		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));		
+		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
 		testFlags.push('-coverprofile=' + tmpCoverPath);
 	}
 
