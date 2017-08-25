@@ -67,17 +67,17 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 							let range = new vscode.Range(
 								+lineStartStr - 1, +colStartStr - 1, +lineStartStr - 1, +colStartStr
 							);
-							results.push(new vscode.Location(referenceResource, range));							
+							results.push(new vscode.Location(referenceResource, range));
 						});
-					}
+					};
 
 					// If we looked for implementation of method go to method implementations only
 					if (guruOutput.to_method) {
-						addResults(guruOutput.to_method)
+						addResults(guruOutput.to_method);
 					} else if (guruOutput.to) {
-						addResults(guruOutput.to)
+						addResults(guruOutput.to);
 					}
-					
+
 					return resolve(results);
 				});
 				token.onCancellationRequested(() => guruProcess.kill());
