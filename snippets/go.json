@@ -100,6 +100,14 @@
 			"prefix": "lv",
 			"body": "log.Printf(\"${1:var}: %#+v\\\\n\", ${1:var})"
 		},
+		"t.Log": {
+			"prefix": "tp",
+			"body": "t.Log(\"$1\")"
+		},
+		"t.Logf variable content": {
+			"prefix": "tv",
+			"body": "t.Logf(\"${1:var}: %#+v\\\\n\", ${1:var})"
+		},
 		"make(...)": {
 			"prefix": "make",
 			"body": "make(${1:type}, ${2:0})"
