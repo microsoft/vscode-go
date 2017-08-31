@@ -10,7 +10,7 @@ import util = require('util');
 import { parseEnvFile, getGoRuntimePath, resolvePath } from './goPath';
 import { getToolsEnvVars, LineBuffer } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
-import { getNonVendorPackages } from './goPackages';
+import { getPackages } from './goPackages';
 
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
 
@@ -199,7 +199,7 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 			return resolve(args);
 		});
 	} else if (testconfig.includeSubDirectories) {
-		return getNonVendorPackages(vscode.workspace.rootPath);
+		return getPackages(vscode.workspace.rootPath);
 	}
 	return Promise.resolve([]);
 }
