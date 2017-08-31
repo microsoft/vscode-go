@@ -8,7 +8,7 @@ import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
 import { parseEnvFile, getGoRuntimePath, resolvePath } from './goPath';
-import { getToolsEnvVars, LineBuffer } from './util';
+import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getPackages } from './goPackages';
 
@@ -194,7 +194,12 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
 		return Promise.resolve(['-run', util.format('^%s$', testconfig.functions.join('|'))]);
 	} else if (testconfig.includeSubDirectories) {
-		return getPackages(vscode.workspace.rootPath);
+		return getGoVersion().then((ver: SemVersion) => {
+			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
+				return ['./...'];
+			}
+			return getPackages(vscode.workspace.rootPath);
+		});
 	}
 	return Promise.resolve([]);
 }
