@@ -192,12 +192,7 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  */
 function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
-		return new Promise<Array<string>>((resolve, reject) => {
-			const args = [];
-			args.push('-run');
-			args.push(util.format('^%s$', testconfig.functions.join('|')));
-			return resolve(args);
-		});
+		return Promise.resolve(['-run', util.format('^%s$', testconfig.functions.join('|'))]);
 	} else if (testconfig.includeSubDirectories) {
 		return getPackages(vscode.workspace.rootPath);
 	}
