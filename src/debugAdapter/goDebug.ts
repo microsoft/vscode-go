@@ -511,10 +511,10 @@ class GoDebugSession extends DebugSession {
 		// Fix for https://github.com/Microsoft/vscode-go/issues/1178
 		// When the pathToConvert is under GOROOT, replace the remote GOROOT with local GOROOT
 		if (!pathToConvert.startsWith(this.delve.remotePath)) {
-			let index = pathToConvert.indexOf('src');
+			let index = pathToConvert.indexOf(`${this.remotePathSeparator}src${this.remotePathSeparator}`);
 			let goroot = process.env['GOROOT'];
-			if (goroot) {
-				return path.join(goroot, ...pathToConvert.substr(index).split(this.remotePathSeparator));
+			if (goroot && index > 0) {
+				return path.join(goroot, pathToConvert.substr(index));
 			}
 		}
 		return pathToConvert.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
