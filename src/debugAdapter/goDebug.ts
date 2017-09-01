@@ -543,8 +543,8 @@ class GoDebugSession extends DebugSession {
 				} else {
 					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
 				}
-				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remoteFile, line }]).then(null, err => {
-					verbose('Error on CreateBreakpoint');
+				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{Breakpoint: { file: remoteFile, line }}]).then(null, err => {
+					verbose('Error on CreateBreakpoint: ' + err.toString());
 					return null;
 				});
 			}));
@@ -779,7 +779,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to continue.');
 			}
-			verbose('state', state);
+			verbose('continue state', state);
 			this.debugState = state;
 			this.handleReenterDebug('breakpoint');
 		});
@@ -793,7 +793,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to next.');
 			}
-			verbose('state', state);
+			verbose('next state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
@@ -807,7 +807,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to step.');
 			}
-			verbose('state', state);
+			verbose('stop state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
@@ -821,7 +821,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to stepout.');
 			}
-			verbose('state', state);
+			verbose('stepout state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
@@ -836,7 +836,7 @@ class GoDebugSession extends DebugSession {
 				logError('Failed to halt.');
 				return this.sendErrorResponse(response, 2010, 'Unable to halt execution: "{e}"', { e: err.toString() });
 			}
-			verbose('state', state);
+			verbose('pause state', state);
 			this.sendResponse(response);
 			verbose('PauseResponse');
 		});

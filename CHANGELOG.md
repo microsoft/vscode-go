@@ -1,6 +1,6 @@
 ## 0.6.64 - Coming Soon..
 
-* [Dan Mace (@ironcladlou)](https://github.com/ironcladlou) and [Vincent Chinedu Okonkwo (@codmajik)](https://github.com/codmajik)
+* [Dan Mace (@ironcladlou)](https://github.com/ironcladlou), [Vincent Chinedu Okonkwo (@codmajik)](https://github.com/codmajik) & [Dima (@hummerd)](https://github.com/hummerd)
     * Support for the `Go To Implementation` command on interfaces. [Feature Request #771](https://github.com/Microsoft/vscode-go/771).
 * [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
     * Refactor the test output to show output of `log.Println`. Fixes [Issue #1120](https://github.com/Microsoft/vscode-go/1120) with [PR 1124](https://github.com/Microsoft/vscode-go/pull/1124)
@@ -19,6 +19,7 @@
     * `gometalinter` and `dlv` will honor the `go.toolsGopath` setting. Fixes [Issue #1110](https://github.com/Microsoft/vscode-go/1110)
     * Show test coverage even if files are outside of GOPATH. Fixes [Issue #1122](https://github.com/Microsoft/vscode-go/1122)
     * Skip vendor folders from lint and vet results. Fixes [Issue #1119](https://github.com/Microsoft/vscode-go/1119) and [Issue #1121](https://github.com/Microsoft/vscode-go/1121)
+    * Fix issue with stepping over standard library code when remote debugging in Windows. Fixes [Issue #1178](https://github.com/Microsoft/vscode-go/issues/1178)
 
 ## 0.6.63 - 26th July, 2017
 
