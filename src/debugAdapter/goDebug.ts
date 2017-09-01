@@ -508,11 +508,21 @@ class GoDebugSession extends DebugSession {
 		return path.replace(this.delve.program, this.delve.remotePath).split(this.localPathSeparator).join(this.remotePathSeparator);
 	}
 
-	protected toLocalPath(path: string): string {
+	protected toLocalPath(pathToConvert: string): string {
 		if (this.delve.remotePath.length === 0) {
-			return this.convertDebuggerPathToClient(path);
+			return this.convertDebuggerPathToClient(pathToConvert);
 		}
-		return path.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
+
+		// Fix for https://github.com/Microsoft/vscode-go/issues/1178
+		// When the pathToConvert is under GOROOT, replace the remote GOROOT with local GOROOT
+		if (!pathToConvert.startsWith(this.delve.remotePath)) {
+			let index = pathToConvert.indexOf(`${this.remotePathSeparator}src${this.remotePathSeparator}`);
+			let goroot = process.env['GOROOT'];
+			if (goroot && index > 0) {
+				return path.join(goroot, pathToConvert.substr(index));
+			}
+		}
+		return pathToConvert.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
 	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
