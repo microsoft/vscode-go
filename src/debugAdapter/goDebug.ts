@@ -199,7 +199,7 @@ class Delve {
 		this.connection = new Promise((resolve, reject) => {
 			// Validations on the program
 			if (!program) {
-				return reject('The program attribute is missing in launch.json');
+				return reject('The program attribute is missing in the debug configuration in launch.json');
 			}
 			try {
 				let pstats = lstatSync(program);
@@ -424,6 +424,11 @@ class GoDebugSession extends DebugSession {
 			args.trace ? logger.LogLevel.Log :
 				logger.LogLevel.Error;
 		logger.setMinLogLevel(logLevel);
+
+		if (!args.program) {
+			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
+			return;
+		}
 
 		// Launch the Delve debugger on the program
 		let localPath = args.program;
