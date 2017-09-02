@@ -543,7 +543,7 @@ class GoDebugSession extends DebugSession {
 				} else {
 					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
 				}
-				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{Breakpoint: { file: remoteFile, line }}]).then(null, err => {
+				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remoteFile, line }]).then(null, err => {
 					verbose('Error on CreateBreakpoint: ' + err.toString());
 					return null;
 				});
