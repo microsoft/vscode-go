@@ -47,8 +47,9 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 				symbols.push(symbolInfo);
 			});
 		};
+		let root = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
 
-		return getWorkspaceSymbols(vscode.workspace.rootPath, query).then(results => {
+		return getWorkspaceSymbols(root, query).then(results => {
 			let symbols: vscode.SymbolInformation[] = [];
 			convertToCodeSymbols(results, symbols);
 			return symbols;
@@ -57,35 +58,35 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 }
 
 export function getWorkspaceSymbols(workspacePath: string, query: string, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
-		if (!goConfig) {
-			goConfig = vscode.workspace.getConfiguration('go');
-		}
-		let gotoSymbolConfig = goConfig['gotoSymbol'];
-		let ignoreFolders: string[] = gotoSymbolConfig ? gotoSymbolConfig['ignoreFolders'] : [];
-		let args = (ignoreFolderFeatureOn && ignoreFolders && ignoreFolders.length > 0) ? ['-ignore', ignoreFolders.join(',')] : [];
-		args.push(workspacePath);
-		args.push(query);
-		let gosyms = getBinPath('go-symbols');
-		let env = getToolsEnvVars();
-		return new Promise((resolve, reject) => {
-			let p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024, env }, (err, stdout, stderr) => {
-				try {
-					if (err && (<any>err).code === 'ENOENT') {
-						promptForMissingTool('go-symbols');
-					}
-					if (err && stderr && stderr.startsWith('flag provided but not defined: -ignore')) {
-						promptForUpdatingTool('go-symbols');
-						return getWorkspaceSymbols(workspacePath, query, goConfig, false).then(results => {
-							return resolve(results);
-						});
-					}
-					if (err) return resolve(null);
-					let result = stdout.toString();
-					let decls = <GoSymbolDeclaration[]>JSON.parse(result);
-					return resolve(decls);
-				} catch (e) {
-					reject(e);
-				}
-			});
-		});
+	if (!goConfig) {
+		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	}
+	let gotoSymbolConfig = goConfig['gotoSymbol'];
+	let ignoreFolders: string[] = gotoSymbolConfig ? gotoSymbolConfig['ignoreFolders'] : [];
+	let args = (ignoreFolderFeatureOn && ignoreFolders && ignoreFolders.length > 0) ? ['-ignore', ignoreFolders.join(',')] : [];
+	args.push(workspacePath);
+	args.push(query);
+	let gosyms = getBinPath('go-symbols');
+	let env = getToolsEnvVars();
+	return new Promise((resolve, reject) => {
+		let p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024, env }, (err, stdout, stderr) => {
+			try {
+				if (err && (<any>err).code === 'ENOENT') {
+					promptForMissingTool('go-symbols');
+				}
+				if (err && stderr && stderr.startsWith('flag provided but not defined: -ignore')) {
+					promptForUpdatingTool('go-symbols');
+					return getWorkspaceSymbols(workspacePath, query, goConfig, false).then(results => {
+						return resolve(results);
+					});
+				}
+				if (err) return resolve(null);
+				let result = stdout.toString();
+				let decls = <GoSymbolDeclaration[]>JSON.parse(result);
+				return resolve(decls);
+			} catch (e) {
+				reject(e);
+			}
+		});
+	});
+}

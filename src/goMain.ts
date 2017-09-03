@@ -101,7 +101,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 
 		if (vscode.window.activeTextEditor && isGoPathSet()) {
-			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go'));
+			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri));
 		}
 	});
 
@@ -128,11 +128,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
 		let gopath = getCurrentGoPath();
-		let wasInfered = vscode.workspace.getConfiguration('go')['inferGopath'];
+
+		let wasInfered = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['inferGopath'];
+		let root = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
 
 		// not only if it was configured, but if it was successful.
-		if (wasInfered && vscode.workspace.rootPath.indexOf(gopath) === 0) {
-			vscode.window.showInformationMessage('Current GOPATH is inferred from workspace root: ' + gopath);
+		if (wasInfered && root.indexOf(gopath) === 0) {
+			const inferredFrom = vscode.window.activeTextEditor ? 'current folder': 'workspace root';
+			vscode.window.showInformationMessage(`Current GOPATH is inferred from ${inferredFrom}: ${gopath}`);
 		} else {
 			vscode.window.showInformationMessage('Current GOPATH: ' + gopath);
 		}
@@ -151,17 +154,17 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		testAtCursor(goConfig, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		testCurrentPackage(goConfig, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		testCurrentFile(goConfig, args);
 	}));
 
@@ -273,7 +276,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
 
-	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go'));
+	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri: null));
 }
 
 function deactivate() {
@@ -294,7 +297,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	}
 
 	let uri = document.uri;
-	check(uri.fsPath, goConfig).then(errors => {
+	check(uri, goConfig).then(errors => {
 		errorDiagnosticCollection.clear();
 		warningDiagnosticCollection.clear();
 
@@ -344,7 +347,7 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 		if (document.languageId !== 'go' || ignoreNextSave.has(document)) {
 			return;
 		}
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
 		let textEditor = vscode.window.activeTextEditor;
 		let formatPromise: PromiseLike<void> = Promise.resolve();
 		if (goConfig['formatOnSave'] && textEditor.document === document) {

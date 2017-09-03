@@ -215,8 +215,7 @@ export function isGoPathSet(): boolean {
 	if (!getCurrentGoPath()) {
 		vscode.window.showInformationMessage('Set GOPATH environment variable and restart VS Code or set GOPATH in Workspace settings', 'Set GOPATH in Workspace Settings').then(selected => {
 			if (selected === 'Set GOPATH in Workspace Settings') {
-				let settingsFilePath = path.join(vscode.workspace.rootPath, '.vscode', 'settings.json');
-				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(settingsFilePath));
+				vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
 			}
 		});
 		return false;
@@ -249,10 +248,12 @@ export function isPositionInString(document: vscode.TextDocument, position: vsco
 }
 
 export function getToolsGopath(): string {
-	let goConfig = vscode.workspace.getConfiguration('go');
+	let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri: null);
 	let toolsGopath = goConfig['toolsGopath'];
+	let root = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
+
 	if (toolsGopath) {
-		toolsGopath = resolvePath(toolsGopath, vscode.workspace.rootPath);
+		toolsGopath = resolvePath(toolsGopath, root);
 	}
 	return toolsGopath;
 }
@@ -267,8 +268,9 @@ export function getFileArchive(document: vscode.TextDocument): string {
 }
 
 export function getToolsEnvVars(): any {
-	let toolsEnvVars = vscode.workspace.getConfiguration('go')['toolsEnvVars'];
-
+	const config = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri: null);
+	const toolsEnvVars = config['toolsEnvVars'];
+	
 	let gopath = getCurrentGoPath();
 
 	let envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
@@ -280,13 +282,12 @@ export function getToolsEnvVars(): any {
 }
 
 export function getCurrentGoPath(): string {
-	let configGopath = vscode.workspace.getConfiguration('go')['gopath'];
-	let inferredGopath;
-	if (vscode.workspace.getConfiguration('go')['inferGopath'] === true) {
-		inferredGopath = getInferredGopath(vscode.workspace.rootPath);
-	}
-
-	return inferredGopath ? inferredGopath : (configGopath ? resolvePath(configGopath, vscode.workspace.rootPath) : process.env['GOPATH']);
+	const config = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	const currentRoot = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
+	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
+	const inferredGopath = config['inferGopath'] === true ? getInferredGopath(currentRoot): '';
+	
+	return inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
 }
 
 export function getExtensionCommands(): any[] {

@@ -49,7 +49,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	runner = setTimeout(function(){
 		processFile(e);
 		runner = null;
-	}, vscode.workspace.getConfiguration('go')['liveErrors']['delay']);
+	}, vscode.workspace.getConfiguration('go', e.document.uri)['liveErrors']['delay']);
 }
 
 // processFile does the actual work once the timeout has fired

@@ -33,7 +33,8 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				return resolve(null);
 			}
 			let env = getToolsEnvVars();
-			let listProcess = cp.execFile(getGoRuntimePath(), ['list', '-e', '-json'], { cwd: vscode.workspace.rootPath, env }, (err, stdout, stderr) => {
+			let cwd = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+			let listProcess = cp.execFile(getGoRuntimePath(), ['list', '-e', '-json'], { cwd, env }, (err, stdout, stderr) => {
 				if (err) {
 					return reject(err);
 				}
@@ -43,7 +44,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				let cwd = path.dirname(filename);
 				let offset = byteOffsetAt(document, position);
 				let goGuru = getBinPath('guru');
-				let buildTags = '"' + vscode.workspace.getConfiguration('go')['buildTags'] + '"';
+				let buildTags = '"' + vscode.workspace.getConfiguration('go', document.uri)['buildTags'] + '"';
 				let args = ['-scope', `${scope}/...`, '-json', '-tags', buildTags, 'implements', `${filename}:#${offset.toString()}`];
 
 				let guruProcess = cp.execFile(goGuru, args, {env}, (err, stdout, stderr) => {

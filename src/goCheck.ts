@@ -113,10 +113,11 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 	});
 }
 
-export function check(filename: string, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
 	outputChannel.clear();
 	let runningToolsPromises = [];
-	let cwd = path.dirname(filename);
+	let cwd = path.dirname(fileUri.fsPath);
+	let currentWorkspace = vscode.workspace.getWorkspaceFolder(fileUri).uri.fsPath;
 	let env = getToolsEnvVars();
 	let goRuntimePath = getGoRuntimePath();
 
@@ -166,7 +167,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 		if (goConfig['buildOnSave'] === 'workspace') {
 			let buildPromises = [];
-			let outerBuildPromise = getNonVendorPackages(vscode.workspace.rootPath).then(pkgs => {
+			let outerBuildPromise = getNonVendorPackages(currentWorkspace).then(pkgs => {
 				buildPromises = pkgs.map(pkgPath => {
 					return runTool(
 						buildArgs.concat(pkgPath),
@@ -228,7 +229,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			}
 			if (flag.startsWith(configFlag)) {
 				let configFilePath = flag.substr(configFlag.length);
-				configFilePath = resolvePath(configFilePath, vscode.workspace.rootPath);
+				configFilePath = resolvePath(configFilePath, currentWorkspace);
 				args.push(`${configFlag}${configFilePath}`);
 				return;
 			}
@@ -249,7 +250,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 		if (goConfig['lintOnSave'] === 'workspace') {
 			args.push('./...');
-			lintWorkDir = vscode.workspace.rootPath;
+			lintWorkDir = currentWorkspace;
 		}
 
 		runningToolsPromises.push(runTool(
@@ -268,7 +269,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		let vetWorkDir = cwd;
 
 		if (goConfig['vetOnSave'] === 'workspace') {
-			vetWorkDir = vscode.workspace.rootPath;
+			vetWorkDir = currentWorkspace;
 		}
 
 		runningToolsPromises.push(runTool(

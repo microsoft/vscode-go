@@ -243,7 +243,7 @@ It returns the number of bytes written and any write error encountered.
 				// golint is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
-			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
+			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
 				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
 				for (let i in expected) {
@@ -356,7 +356,7 @@ It returns the number of bytes written and any write error encountered.
 				{ line: 12, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
 				{ line: 12, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
-			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
+			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
 					if (a.msg < b.msg)
 						return -1;

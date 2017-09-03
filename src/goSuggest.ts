@@ -41,7 +41,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private pkgsList = new Map<string, string>();
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
-		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go'));
+		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go', document.uri));
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
@@ -180,7 +180,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 									suggest.name
 								);
 							}
-							let conf = vscode.workspace.getConfiguration('go');
+							let conf = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 							if (conf.get('useCodeSnippetsOnFunctionSuggest') && suggest.class === 'func') {
 								let params = parameters(suggest.type.substring(4));
 								let paramSnippets = [];
@@ -226,7 +226,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				return resolve();
 			}
 			let gocode = getBinPath('gocode');
-			let autobuild = vscode.workspace.getConfiguration('go')['gocodeAutoBuild'];
+			let autobuild = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['gocodeAutoBuild'];
 			let env = getToolsEnvVars();
 			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], { env }, (err, stdout, stderr) => {
 				cp.execFile(gocode, ['set', 'autobuild', autobuild], {}, (err, stdout, stderr) => {
