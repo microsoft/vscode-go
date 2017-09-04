@@ -9,6 +9,7 @@ import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath, getInferr
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
+import os = require('os');
 
 const extensionId: string = 'lukehoban.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -50,6 +51,7 @@ export interface SemVersion {
 let goVersion: SemVersion = null;
 let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
+let toolsGopath: string;
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
 	let offset = document.offsetAt(position);
@@ -247,15 +249,39 @@ export function isPositionInString(document: vscode.TextDocument, position: vsco
 	return doubleQuotesCnt % 2 === 1;
 }
 
-export function getToolsGopath(): string {
-	let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri: null);
-	let toolsGopath = goConfig['toolsGopath'];
-	let root = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
-
-	if (toolsGopath) {
-		toolsGopath = resolvePath(toolsGopath, root);
+export function getToolsGopath(useCache: boolean = true): string {
+	if (!useCache || !toolsGopath) {
+		toolsGopath = resolveToolsGopath();
 	}
+
 	return toolsGopath;
+}
+
+function resolveToolsGopath(): string {
+
+	let toolsGopathForWorkspace = vscode.workspace.getConfiguration('go')['toolsGopath'] || '';
+
+	// In case of single root, use resolvePath to resolve ~ and ${workspaceRoot}
+	if (vscode.workspace.workspaceFolders.length === 1) {
+		return resolvePath(toolsGopathForWorkspace);
+	}
+
+	// In case of multi-root, resolve ~ and ignore ${workspaceRoot}
+	if (toolsGopathForWorkspace.startsWith('~')) {
+		toolsGopathForWorkspace = path.join(os.homedir(), toolsGopathForWorkspace.substr(1));
+	}
+	if (toolsGopathForWorkspace && toolsGopathForWorkspace.trim() && !/\${workspaceRoot}/.test(toolsGopathForWorkspace)) {
+		return toolsGopathForWorkspace;
+	}
+
+	// If any of the folders in multi root have toolsGopath set, use it.
+	for (let i = 0; i < vscode.workspace.workspaceFolders.length; i++) {
+		let toolsGopath = <string>vscode.workspace.getConfiguration('go', vscode.workspace.workspaceFolders[i].uri).inspect('toolsGopath').workspaceFolderValue;
+		toolsGopath = resolvePath(toolsGopath, vscode.workspace.workspaceFolders[i].uri.fsPath);
+		if (toolsGopath) {
+			return toolsGopath;
+		}
+	}
 }
 
 export function getBinPath(tool: string): string {
@@ -268,9 +294,9 @@ export function getFileArchive(document: vscode.TextDocument): string {
 }
 
 export function getToolsEnvVars(): any {
-	const config = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri: null);
+	const config = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const toolsEnvVars = config['toolsEnvVars'];
-	
+
 	let gopath = getCurrentGoPath();
 
 	let envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
@@ -285,8 +311,8 @@ export function getCurrentGoPath(): string {
 	const config = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const currentRoot = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
 	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
-	const inferredGopath = config['inferGopath'] === true ? getInferredGopath(currentRoot): '';
-	
+	const inferredGopath = config['inferGopath'] === true ? getInferredGopath(currentRoot) : '';
+
 	return inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
 }
 

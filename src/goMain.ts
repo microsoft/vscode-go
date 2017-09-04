@@ -29,7 +29,7 @@ import { showTestOutput } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -45,7 +45,6 @@ let warningDiagnosticCollection: vscode.DiagnosticCollection;
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
-	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
 
 	updateGoPathGoRootFromConfig().then(() => {
 		getGoVersion().then(currentVersion => {
@@ -134,7 +133,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		// not only if it was configured, but if it was successful.
 		if (wasInfered && root.indexOf(gopath) === 0) {
-			const inferredFrom = vscode.window.activeTextEditor ? 'current folder': 'workspace root';
+			const inferredFrom = vscode.window.activeTextEditor ? 'current folder' : 'workspace root';
 			vscode.window.showInformationMessage(`Current GOPATH is inferred from ${inferredFrom}: ${gopath}`);
 		} else {
 			vscode.window.showInformationMessage('Current GOPATH: ' + gopath);
@@ -215,9 +214,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		useLangServer = updatedGoConfig['useLanguageServer'];
 
 		// If there was a change in "toolsGopath" setting, then clear cache for go tools
-		if (toolsGopath !== updatedGoConfig['toolsGopath']) {
+		if (getToolsGopath() !== getToolsGopath(false)) {
 			clearCacheForTools();
-			toolsGopath = updatedGoConfig['toolsGopath'];
 		}
 
 	}));
@@ -276,7 +274,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
 
-	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri: null));
+	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null));
 }
 
 function deactivate() {
