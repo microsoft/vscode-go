@@ -282,9 +282,38 @@ export function offerToInstallTools() {
 	}
 }
 
+function gopkgsMissing(): Promise<boolean> {
+	return new Promise<boolean>((resolve, reject) => {
+		const cmd = cp.spawn(getBinPath('gopkgs'), ['-help']);
+		cmd.stdout.on('data', (d) => {
+			resolve(true);
+		});
+
+		cmd.stderr.on('data', (d) => {
+			// expect the correct gopkgs
+			const lines = d.toString().split('\n').filter((line) => (line.indexOf('Usage of') > -1) || (line.indexOf('-fullpath') > -1) || (line.indexOf('-short') > -1));
+			resolve(lines.length !== 3);
+		});
+
+		cmd.on('error', (err) => {
+			if ((<any>err).code === 'ENOENT') {
+				return resolve(true);
+			}
+			reject(err);
+		});
+	});
+}
+
 function getMissingTools(goVersion: SemVersion): Promise<string[]> {
 	let keys = Object.keys(getTools(goVersion));
 	return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
+		if (tool === 'gopkgs') {
+			gopkgsMissing().then((missing) => {
+				resolve(missing ? tool : null);
+			});
+			return;
+		}
+
 		let toolPath = getBinPath(tool);
 		fs.exists(toolPath, exists => {
 			resolve(exists ? null : tool);
