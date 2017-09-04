@@ -117,7 +117,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(fileUri.fsPath);
-	let currentWorkspace = vscode.workspace.getWorkspaceFolder(fileUri).uri.fsPath;
+	let currentWorkspace = vscode.workspace.getWorkspaceFolder(fileUri) ? vscode.workspace.getWorkspaceFolder(fileUri).uri.fsPath : '';
 	let env = getToolsEnvVars();
 	let goRuntimePath = getGoRuntimePath();
 

@@ -309,7 +309,8 @@ export function getToolsEnvVars(): any {
 
 export function getCurrentGoPath(): string {
 	const config = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	const currentRoot = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
+	const currentWorkpace = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri) : null;
+	const currentRoot = currentWorkpace ? currentWorkpace.uri.fsPath : vscode.workspace.rootPath;
 	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
 	const inferredGopath = config['inferGopath'] === true ? getInferredGopath(currentRoot) : '';
 
