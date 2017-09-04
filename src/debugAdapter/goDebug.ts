@@ -199,7 +199,7 @@ class Delve {
 		this.connection = new Promise((resolve, reject) => {
 			// Validations on the program
 			if (!program) {
-				return reject('The program attribute is missing in launch.json');
+				return reject('The program attribute is missing in the debug configuration in launch.json');
 			}
 			try {
 				let pstats = lstatSync(program);
@@ -425,6 +425,11 @@ class GoDebugSession extends DebugSession {
 				logger.LogLevel.Error;
 		logger.setMinLogLevel(logLevel);
 
+		if (!args.program) {
+			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
+			return;
+		}
+
 		// Launch the Delve debugger on the program
 		let localPath = args.program;
 		let remotePath = args.remotePath || '';
@@ -503,11 +508,21 @@ class GoDebugSession extends DebugSession {
 		return path.replace(this.delve.program, this.delve.remotePath).split(this.localPathSeparator).join(this.remotePathSeparator);
 	}
 
-	protected toLocalPath(path: string): string {
+	protected toLocalPath(pathToConvert: string): string {
 		if (this.delve.remotePath.length === 0) {
-			return this.convertDebuggerPathToClient(path);
+			return this.convertDebuggerPathToClient(pathToConvert);
 		}
-		return path.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
+
+		// Fix for https://github.com/Microsoft/vscode-go/issues/1178
+		// When the pathToConvert is under GOROOT, replace the remote GOROOT with local GOROOT
+		if (!pathToConvert.startsWith(this.delve.remotePath)) {
+			let index = pathToConvert.indexOf(`${this.remotePathSeparator}src${this.remotePathSeparator}`);
+			let goroot = process.env['GOROOT'];
+			if (goroot && index > 0) {
+				return path.join(goroot, pathToConvert.substr(index));
+			}
+		}
+		return pathToConvert.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
 	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
@@ -529,7 +544,7 @@ class GoDebugSession extends DebugSession {
 					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
 				}
 				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remoteFile, line }]).then(null, err => {
-					verbose('Error on CreateBreakpoint');
+					verbose('Error on CreateBreakpoint: ' + err.toString());
 					return null;
 				});
 			}));
@@ -764,7 +779,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to continue.');
 			}
-			verbose('state', state);
+			verbose('continue state', state);
 			this.debugState = state;
 			this.handleReenterDebug('breakpoint');
 		});
@@ -778,7 +793,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to next.');
 			}
-			verbose('state', state);
+			verbose('next state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
@@ -792,7 +807,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to step.');
 			}
-			verbose('state', state);
+			verbose('stop state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
@@ -806,7 +821,7 @@ class GoDebugSession extends DebugSession {
 			if (err) {
 				logError('Failed to stepout.');
 			}
-			verbose('state', state);
+			verbose('stepout state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
@@ -821,7 +836,7 @@ class GoDebugSession extends DebugSession {
 				logError('Failed to halt.');
 				return this.sendErrorResponse(response, 2010, 'Unable to halt execution: "{e}"', { e: err.toString() });
 			}
-			verbose('state', state);
+			verbose('pause state', state);
 			this.sendResponse(response);
 			verbose('PauseResponse');
 		});
