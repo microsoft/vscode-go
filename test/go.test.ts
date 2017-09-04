@@ -552,8 +552,11 @@ It returns the number of bytes written and any write error encountered.
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
 			let gopkgsPromise = new Promise<string[]>((resolve, reject) => {
-				cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
-					let pkgs = stdout.split('\n').sort().slice(1);
+				let cmd = cp.spawn(getBinPath('gopkgs'), ['-short=false'], { env: process.env });
+				let chunks = [];
+				cmd.stdout.on('data', (d) => chunks.push(d));
+				cmd.on('close', () => {
+					let pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
 					if (vendorSupport) {
 						vendorPkgsFullPath.forEach(pkg => {
 							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
@@ -612,8 +615,11 @@ It returns the number of bytes written and any write error encountered.
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
 			let gopkgsPromise = new Promise<void>((resolve, reject) => {
-				cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
-					let pkgs = stdout.split('\n').sort().slice(1);
+				let cmd = cp.execFile(getBinPath('gopkgs'), ['-short=false'], { env: process.env });
+				let chunks = [];
+				cmd.stdout.on('data', (d) => chunks.push(d))
+				cmd.on('close', () => {
+					let pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
 					if (vendorSupport) {
 						vendorPkgs.forEach(pkg => {
 							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
