@@ -232,7 +232,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 		return Promise.all([setPkgsList, setGocodeProps]).then(() => {
 			return;
-		})
+		});
 	}
 
 	// Return importable packages that match given word as Completion Items

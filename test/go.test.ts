@@ -616,7 +616,7 @@ It returns the number of bytes written and any write error encountered.
 			let gopkgsPromise = new Promise<void>((resolve, reject) => {
 				let cmd = cp.execFile(getBinPath('gopkgs'), ['-short=false'], { env: process.env });
 				let chunks = [];
-				cmd.stdout.on('data', (d) => chunks.push(d))
+				cmd.stdout.on('data', (d) => chunks.push(d));
 				cmd.on('close', () => {
 					let pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
 					if (vendorSupport) {
