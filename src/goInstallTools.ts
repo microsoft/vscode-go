@@ -299,7 +299,7 @@ function getMissingTools(goVersion: SemVersion): Promise<string[]> {
 // If langserver needs to be used, and is installed, this will return true
 // Returns false in all other cases
 export function checkLanguageServer(): boolean {
-	if (process.platform === 'win32') return false;
+	if (process.platform === 'win32' || !allFoldersHaveSameGopath()) return false;
 	let latestGoConfig = vscode.workspace.getConfiguration('go');
 	if (!latestGoConfig['useLanguageServer']) return false;
 
@@ -309,6 +309,25 @@ export function checkLanguageServer(): boolean {
 		vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
 	}
 	return langServerAvailable;
+}
+
+function allFoldersHaveSameGopath(): boolean {
+	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length <= 1) {
+		return true;
+	}
+
+	let sameGopath = true;
+	let tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
+
+	for (let i = 1; i < vscode.workspace.workspaceFolders.length; i++) {
+		let gopath = getCurrentGoPath(vscode.workspace.workspaceFolders[i].uri);
+		if (tempGopath !== gopath) {
+			sameGopath = false;
+			break;
+		}
+	}
+
+	return sameGopath;
 }
 
 
