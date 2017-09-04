@@ -31,7 +31,6 @@ suite('Go Extension Tests', () => {
 	let generateTestsSourcePath = path.join(repoPath, 'generatetests');
 	let generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
 	let generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
-	let goListAllPromise = goListAll();
 
 	suiteSetup(() => {
 		assert.ok(gopath !== null, 'GOPATH is not defined');
@@ -727,17 +726,15 @@ It returns the number of bytes written and any write error encountered.
 					editbuilder.insert(new vscode.Position(12, 1), 'by\n');
 					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
 				}).then(() => {
-					return goListAllPromise.then(() => {
-						let promises = testCases.map(([position, expected]) =>
-							provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
-								let labels = items.map(x => x.label);
-								for (let entry of expected) {
-									assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
-								}
-							})
-						);
-						return Promise.all(promises);
-					});
+					let promises = testCases.map(([position, expected]) =>
+						provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+							let labels = items.map(x => x.label);
+							for (let entry of expected) {
+								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
+							}
+						})
+					);
+					return Promise.all(promises);
 				});
 			}).then(() => {
 				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
