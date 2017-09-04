@@ -66,7 +66,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				}
 			}
 		});
-		goListAll();
 		offerToInstallTools();
 		let langServerAvailable = checkLanguageServer();
 		if (langServerAvailable) {

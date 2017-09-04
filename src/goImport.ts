@@ -20,7 +20,7 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
 	let vendorSupportPromise = isVendorSupported();
 	let goPkgsPromise = new Promise<string[]>((resolve, reject) => {
-		cp.execFile(getBinPath('gopkgs'), [], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+		cp.execFile(getBinPath('gopkgs'), ['-short=false'], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
 				return reject(missingToolMsg + 'gopkgs');
 			}

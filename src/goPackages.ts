@@ -2,15 +2,8 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, SemVersion } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion } from './util';
 
-let allPkgs = new Map<string, string>();
-let goListAllCompleted: boolean = false;
-let goListAllPromise: Promise<Map<string, string>>;
-
-export function isGoListComplete(): boolean {
-	return goListAllCompleted;
-}
 
 /**
  * Runs go list all
@@ -19,37 +12,31 @@ export function isGoListComplete(): boolean {
 export function goListAll(): Promise<Map<string, string>> {
 	let goRuntimePath = getGoRuntimePath();
 
+	// TODO prompt for missing tools, attach cmd.on('error')
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return Promise.resolve(null);
 	}
 
-	if (goListAllPromise) {
-		return goListAllPromise;
-	}
-
-	goListAllPromise = new Promise<Map<string, string>>((resolve, reject) => {
-		// Use `{env: {}}` to make the execution faster. Include GOPATH to account if custom work space exists.
-		const env: any = getToolsEnvVars();
-
-		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], { env: env });
+	return new Promise<Map<string, string>>((resolve, reject) => {
+		const cmd = cp.spawn(getBinPath('gopkgs'), ['-short=false'], { env: getToolsEnvVars() });
 		const chunks = [];
 		cmd.stdout.on('data', (d) => {
 			chunks.push(d);
 		});
 
 		cmd.on('close', (status) => {
-			chunks.join('').split('\n').forEach(pkgDetail => {
-				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
-				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
-				allPkgs.set(pkgPath, pkgName);
+			// TODO do we need to cache?
+			let pkgs = new Map<string, string>();
+			chunks.join('').split('\n').forEach((pkgPath) => {
+				if (!pkgPath) return;
+				const lastIndex = pkgPath.lastIndexOf('/');
+				let pkgName = lastIndex > -1 ? pkgPath.substr(lastIndex + 1) : pkgPath;
+				pkgs.set(pkgPath, pkgName);
 			});
-			goListAllCompleted = true;
-			return resolve(allPkgs);
+			return resolve(pkgs);
 		});
 	});
-
-	return goListAllPromise;
 }
 
 /**
@@ -61,11 +48,12 @@ export function getImportablePackages(filePath: string): Promise<Map<string, str
 
 	return Promise.all([isVendorSupported(), goListAll()]).then(values => {
 		let isVendorSupported = values[0];
+		let pkgs = values[1];
 		let currentFileDirPath = path.dirname(filePath);
 		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
 		let pkgMap = new Map<string, string>();
 
-		allPkgs.forEach((pkgName, pkgPath) => {
+		pkgs.forEach((pkgName, pkgPath) => {
 			if (pkgName === 'main') {
 				return;
 			}
