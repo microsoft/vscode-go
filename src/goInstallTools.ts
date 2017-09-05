@@ -39,7 +39,7 @@ const allTools: { [key: string]: string } = {
 	'megacheck': 'honnef.co/go/tools/...',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
 	'dlv': 'github.com/derekparker/delve/cmd/dlv'
-}
+};
 
 function getTools(goVersion: SemVersion): string[] {
 	let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
@@ -248,7 +248,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 }
 
 export function updateGoPathGoRootFromConfig(): Promise<void> {
-	let goroot = vscode.workspace.getConfiguration('go')['goroot'];
+	let goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = goroot;
 	}

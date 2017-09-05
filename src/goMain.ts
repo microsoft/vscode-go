@@ -168,7 +168,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.workspace', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		testWorkspace(goConfig, args);
 	}));
 
@@ -197,7 +197,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
-		let updatedGoConfig = vscode.workspace.getConfiguration('go');
+		let updatedGoConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		sendTelemetryEventForConfig(updatedGoConfig);
 		updateGoPathGoRootFromConfig();
 

@@ -16,7 +16,7 @@ interface GoLiveErrorsConfig {
 let runner;
 
 export function goLiveErrorsEnabled() {
-	let goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go')['liveErrors'];
+	let goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['liveErrors'];
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
