@@ -237,7 +237,7 @@ class Delve {
 					env['GOPATH'] = getInferredGopath(isProgramDirectory ? program : path.dirname(program)) || env['GOPATH'];
 				}
 			}
-			
+
 			verbose(`Using GOPATH: ${env['GOPATH']}`);
 
 			if (!!launchArgs.noDebug) {
