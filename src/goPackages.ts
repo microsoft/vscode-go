@@ -32,7 +32,7 @@ export function goListAll(): Promise<Map<string, string>> {
 		// Use `{env: {}}` to make the execution faster. Include GOPATH to account if custom work space exists.
 		const env: any = getToolsEnvVars();
 
-		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], { env: env });
+		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], { env: env, stdio: ['pipe', 'pipe', 'ignore'] });
 		const chunks = [];
 		cmd.stdout.on('data', (d) => {
 			chunks.push(d);
