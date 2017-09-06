@@ -1,7 +1,9 @@
 ## 0.6.65 - 6th September, 2017
 
-Fixes for the below bugs by [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+[Seonggi Yang @ sgyang](https://github.com/sgyang)
 * [Bug #1152](https://github.com/Microsoft/vscode-go/issues/1152): Auto completions for unimported packages do not work anymore on certain machines. [PR 1197](https://github.com/Microsoft/vscode-go/pull/1197)
+
+[Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
 * [Bug #1194](https://github.com/Microsoft/vscode-go/issues/1194) and [Bug #1196](https://github.com/Microsoft/vscode-go/issues/1196): Debugger doesnt use GOPATH from env in debug configuration
 * Go to implementation cmd doesnt show up when using the language server.
 
