@@ -2,7 +2,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, SemVersion } from './util';
 
 let allPkgs = new Map<string, string>();
 let goListAllCompleted: boolean = false;
@@ -113,9 +113,9 @@ export function getRelativePackagePath(currentFileDirPath: string, currentWorksp
 }
 
 /**
- * Returns import paths for all non vendor packages under given folder
+ * Returns import paths for all packages under given folder (vendor will be excluded)
  */
-export function getNonVendorPackages(folderPath: string): Promise<string[]> {
+export function getPackages(folderPath: string): Promise<string[]> {
 	let goRuntimePath = getGoRuntimePath();
 
 	if (!goRuntimePath) {
@@ -123,15 +123,21 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 		return Promise.resolve(null);
 	}
 	return new Promise<string[]>((resolve, reject) => {
-		const childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath, env: getToolsEnvVars() });
-		const chunks = [];
+		let childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath, env: getToolsEnvVars() });
+		let chunks = [];
 		childProcess.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
 		});
 
 		childProcess.on('close', (status) => {
-			const pkgs = chunks.join('').toString().split('\n').filter(pkgPath => pkgPath && !pkgPath.includes('/vendor/'));
-			return resolve(pkgs);
+			let pkgs = chunks.join('').toString().split('\n');
+			getGoVersion().then((ver: SemVersion) => {
+				if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
+					resolve(pkgs);
+				} else {
+					resolve(pkgs.filter(pkgPath => pkgPath && !pkgPath.includes('/vendor/')));
+				}
+			});
 		});
 	});
 }

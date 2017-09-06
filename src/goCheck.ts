@@ -16,7 +16,7 @@ import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
 import { goTest } from './testUtils';
 import { getBinPath, parseFilePrelude, getCurrentGoPath, getToolsEnvVars } from './util';
-import { getNonVendorPackages } from './goPackages';
+import { getPackages } from './goPackages';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -166,7 +166,7 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 		if (goConfig['buildOnSave'] === 'workspace') {
 			let buildPromises = [];
-			let outerBuildPromise = getNonVendorPackages(vscode.workspace.rootPath).then(pkgs => {
+			let outerBuildPromise = getPackages(vscode.workspace.rootPath).then(pkgs => {
 				buildPromises = pkgs.map(pkgPath => {
 					return runTool(
 						buildArgs.concat(pkgPath),
