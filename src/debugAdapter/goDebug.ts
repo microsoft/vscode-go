@@ -233,8 +233,10 @@ class Delve {
 			// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
 			let programNotUnderGopath = !env['GOPATH'] || !getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], isProgramDirectory ? program : path.dirname(program));
 			if (programNotUnderGopath && (mode === 'debug' || mode === 'test')) {
-				env['GOPATH'] = getInferredGopath(isProgramDirectory ? program : path.dirname(program));
+				env['GOPATH'] = getInferredGopath(isProgramDirectory ? program : path.dirname(program)) || env['GOPATH'];
 			}
+
+			verbose(`Using GOPATH: ${env['GOPATH']}`);
 
 			if (!!launchArgs.noDebug) {
 				if (mode === 'debug' && !isProgramDirectory) {
