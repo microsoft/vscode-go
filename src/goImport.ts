@@ -16,9 +16,7 @@ import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 
 const missingToolMsg = 'Missing tool: ';
 
-let allPkgsCache: string[];
-
-function goPkgsNoCache(): Promise<string[]> {
+function goPkgs(): Promise<string[]> {
 	return new Promise<string[]>((resolve, reject) => {
 		let cmd = cp.spawn(getBinPath('gopkgs'), ['-f', '{{.ImportPath}}'], { env: getToolsEnvVars() });
 		let chunks = [];
@@ -33,19 +31,6 @@ function goPkgsNoCache(): Promise<string[]> {
 			let lines = chunks.join('').split('\n').filter((pkg) => pkg);
 			return resolve(lines);
 		});
-	});
-}
-
-function goPkgs(): Promise<string[]> {
-	if (allPkgsCache) {
-		goPkgsNoCache().then((pkgs: string[]) => {
-			allPkgsCache = pkgs;
-		});
-		return Promise.resolve(allPkgsCache);
-	}
-
-	return goPkgsNoCache().then((pkgs: string[]) => {
-		return allPkgsCache = pkgs;
 	});
 }
 
