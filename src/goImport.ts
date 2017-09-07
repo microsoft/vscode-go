@@ -18,7 +18,7 @@ const missingToolMsg = 'Missing tool: ';
 
 function goPkgs(): Promise<string[]> {
 	return new Promise<string[]>((resolve, reject) => {
-		let cmd = cp.spawn(getBinPath('gopkgs'), ['-f', '{{.ImportPath}}'], { env: getToolsEnvVars() });
+		let cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: getToolsEnvVars() });
 		let chunks = [];
 		let err;
 		cmd.stdout.on('data', (d) => chunks.push(d));

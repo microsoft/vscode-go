@@ -10,7 +10,7 @@ import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, get
  */
 export function goListAll(): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		const cmd = cp.spawn(getBinPath('gopkgs'), ['-f', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
+		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
 		const chunks = [];
 		cmd.stdout.on('data', (d) => {
 			chunks.push(d);

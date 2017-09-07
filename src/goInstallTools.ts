@@ -291,7 +291,7 @@ function gopkgsMissing(): Promise<boolean> {
 
 		cmd.stderr.on('data', (d) => {
 			// expect the correct gopkgs, scan the output of the usage
-			const lines = d.toString().split('\n').filter((line) => (line.indexOf('Usage of') > -1) || (line.indexOf('output format of the package') > -1) || (line.indexOf('Use -f to custom the output using template syntax') > -1));
+			const lines = d.toString().split('\n').filter((line) => (line.indexOf('Usage of') > -1) || (line.indexOf('custom output format') > -1) || (line.indexOf('Use -format to custom the output using template syntax') > -1));
 			resolve(lines.length !== 3);
 		});
 
