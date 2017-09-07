@@ -23,7 +23,7 @@ function getTools(goVersion: SemVersion): { [key: string]: string } {
 	let goConfig = vscode.workspace.getConfiguration('go');
 	let tools: { [key: string]: string } = {
 		'gocode': 'github.com/nsf/gocode',
-		'gopkgs': 'github.com/haya14busa/gopkgs/cmd/gopkgs',
+		'gopkgs': 'github.com/uudashr/gopkgs/cmd/gopkgs',
 		'go-outline': 'github.com/ramya-rao-a/go-outline',
 		'go-symbols': 'github.com/acroca/go-symbols',
 		'guru': 'golang.org/x/tools/cmd/guru',
@@ -290,8 +290,8 @@ function gopkgsMissing(): Promise<boolean> {
 		});
 
 		cmd.stderr.on('data', (d) => {
-			// expect the correct gopkgs
-			const lines = d.toString().split('\n').filter((line) => (line.indexOf('Usage of') > -1) || (line.indexOf('-fullpath') > -1) || (line.indexOf('-short') > -1));
+			// expect the correct gopkgs, scan the output of the usage
+			const lines = d.toString().split('\n').filter((line) => (line.indexOf('Usage of gopkgs') > -1) || (line.indexOf('output format of the package') > -1) || (line.indexOf('Use -f to custom') > -1));
 			resolve(lines.length !== 3);
 		});
 

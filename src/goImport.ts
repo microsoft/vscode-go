@@ -20,7 +20,7 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
 	let vendorSupportPromise = isVendorSupported();
 	let goPkgsPromise = new Promise<string[]>((resolve, reject) => {
-		let cmd = cp.spawn(getBinPath('gopkgs'), ['-short=false'], { env: getToolsEnvVars() });
+		let cmd = cp.spawn(getBinPath('gopkgs'), ['-f', '{{.ImportPath}}'], { env: getToolsEnvVars() });
 		let chunks = [];
 		let err;
 		cmd.stdout.on('data', (d) => chunks.push(d));

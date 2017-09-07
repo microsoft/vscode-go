@@ -10,28 +10,18 @@ import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, get
  * @returns Map<string, string> mapping between package import path and package name
  */
 export function goListAll(): Promise<Map<string, string>> {
-	let goRuntimePath = getGoRuntimePath();
-
-	// TODO prompt for missing tools, attach cmd.on('error')
-	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-		return Promise.resolve(null);
-	}
-
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		const cmd = cp.spawn(getBinPath('gopkgs'), ['-short=false'], { env: getToolsEnvVars() });
+		const cmd = cp.spawn(getBinPath('gopkgs'), ['-f', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
 		const chunks = [];
 		cmd.stdout.on('data', (d) => {
 			chunks.push(d);
 		});
 
 		cmd.on('close', (status) => {
-			// TODO do we need to cache?
 			let pkgs = new Map<string, string>();
-			chunks.join('').split('\n').forEach((pkgPath) => {
-				if (!pkgPath) return;
-				const lastIndex = pkgPath.lastIndexOf('/');
-				let pkgName = lastIndex > -1 ? pkgPath.substr(lastIndex + 1) : pkgPath;
+			chunks.join('').split('\n').forEach((pkgDetail) => {
+				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
+				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
 				pkgs.set(pkgPath, pkgName);
 			});
 			return resolve(pkgs);

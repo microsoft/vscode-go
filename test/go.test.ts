@@ -551,7 +551,7 @@ It returns the number of bytes written and any write error encountered.
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
 			let gopkgsPromise = new Promise<string[]>((resolve, reject) => {
-				let cmd = cp.spawn(getBinPath('gopkgs'), ['-short=false'], { env: process.env });
+				let cmd = cp.spawn(getBinPath('gopkgs'), ['-f', '{{.ImportPath}}'], { env: process.env });
 				let chunks = [];
 				cmd.stdout.on('data', (d) => chunks.push(d));
 				cmd.on('close', () => {
@@ -614,7 +614,7 @@ It returns the number of bytes written and any write error encountered.
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
 			let gopkgsPromise = new Promise<void>((resolve, reject) => {
-				let cmd = cp.spawn(getBinPath('gopkgs'), ['-short=false'], { env: process.env });
+				let cmd = cp.spawn(getBinPath('gopkgs'), ['-f', '{{.ImportPath}}'], { env: process.env });
 				let chunks = [];
 				cmd.stdout.on('data', (d) => chunks.push(d));
 				cmd.on('close', () => {
