@@ -40,9 +40,7 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 	let goPkgsPromise = goPkgs();
 
 	return vendorSupportPromise.then((vendorSupport: boolean) => {
-		return Promise.all<string[]>([goPkgsPromise, importsPromise]).then(values => {
-			let pkgs = values[0];
-			let importedPkgs = values[1];
+		return Promise.all<string[]>([goPkgsPromise, importsPromise]).then(([pkgs, importedPkgs]) => {
 
 			if (!vendorSupport) {
 				if (importedPkgs.length > 0) {
