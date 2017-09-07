@@ -38,6 +38,9 @@ function goPkgsNoCache(): Promise<string[]> {
 
 function goPkgs(): Promise<string[]> {
 	if (allPkgsCache) {
+		goPkgsNoCache().then((pkgs: string[]) => {
+			allPkgsCache = pkgs;
+		});
 		return Promise.resolve(allPkgsCache);
 	}
 

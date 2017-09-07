@@ -32,6 +32,9 @@ function goListAllNoCache(): Promise<Map<string, string>> {
  */
 export function goListAll(): Promise<Map<string, string>> {
 	if (allPkgMapCache) {
+		goListAllNoCache().then((pkgs: Map<string, string>) => {
+			allPkgMapCache = pkgs;
+		});
 		return Promise.resolve(allPkgMapCache);
 	}
 
