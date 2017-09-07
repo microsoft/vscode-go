@@ -16,10 +16,10 @@ import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 
 const missingToolMsg = 'Missing tool: ';
 
-export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
-	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
-	let vendorSupportPromise = isVendorSupported();
-	let goPkgsPromise = new Promise<string[]>((resolve, reject) => {
+let allPkgsCache: string[];
+
+function goPkgsNoCache(): Promise<string[]> {
+	return new Promise<string[]>((resolve, reject) => {
 		let cmd = cp.spawn(getBinPath('gopkgs'), ['-f', '{{.ImportPath}}'], { env: getToolsEnvVars() });
 		let chunks = [];
 		let err;
@@ -34,6 +34,22 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 			return resolve(lines);
 		});
 	});
+}
+
+function goPkgs(): Promise<string[]> {
+	if (allPkgsCache) {
+		return Promise.resolve(allPkgsCache);
+	}
+
+	return goPkgsNoCache().then((pkgs: string[]) => {
+		return allPkgsCache = pkgs;
+	});
+}
+
+export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
+	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
+	let vendorSupportPromise = isVendorSupported();
+	let goPkgsPromise = goPkgs();
 
 	return vendorSupportPromise.then((vendorSupport: boolean) => {
 		return Promise.all<string[]>([goPkgsPromise, importsPromise]).then(values => {

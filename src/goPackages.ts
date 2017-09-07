@@ -4,12 +4,9 @@ import path = require('path');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion } from './util';
 
+let allPkgMapCache: Map<string, string>;
 
-/**
- * Runs go list all
- * @returns Map<string, string> mapping between package import path and package name
- */
-export function goListAll(): Promise<Map<string, string>> {
+function goListAllNoCache(): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const cmd = cp.spawn(getBinPath('gopkgs'), ['-f', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
 		const chunks = [];
@@ -26,6 +23,20 @@ export function goListAll(): Promise<Map<string, string>> {
 			});
 			return resolve(pkgs);
 		});
+	});
+}
+
+/**
+ * Runs go list all
+ * @returns Map<string, string> mapping between package import path and package name
+ */
+export function goListAll(): Promise<Map<string, string>> {
+	if (allPkgMapCache) {
+		return Promise.resolve(allPkgMapCache);
+	}
+
+	return goListAllNoCache().then((pkgs: Map<string, string>) => {
+		return allPkgMapCache = pkgs;
 	});
 }
 
