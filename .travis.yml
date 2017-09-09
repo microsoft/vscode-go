@@ -18,7 +18,8 @@ before_install:
       export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
       sh -e /etc/init.d/xvfb start;
       apt-get update && apt-get install -y libsecret-1-0
-      // sleep 3; // the apt-get should buy enough time
+      # disable sleep, the apt-get should buy enough time
+      # sleep 3;
     fi
 
 install:
