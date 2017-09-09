@@ -17,7 +17,8 @@ before_install:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
       export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
       sh -e /etc/init.d/xvfb start;
-      sleep 3;
+      apt-get update && apt-get install -y libsecret-1-0
+      // sleep 3; // the apt-get should buy enough time
     fi
 
 install:
