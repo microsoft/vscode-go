@@ -6,7 +6,7 @@ import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, get
 import { promptForMissingTool } from './goInstallTools';
 
 /**
- * Runs go list all
+ * Runs gopkgs
  * @returns Map<string, string> mapping between package import path and package name
  */
 export function goListAll(): Promise<Map<string, string>> {
