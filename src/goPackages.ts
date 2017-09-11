@@ -97,7 +97,7 @@ export function getRelativePackagePath(currentFileDirPath: string, currentWorksp
 /**
  * Returns import paths for all packages under given folder (vendor will be excluded)
  */
-export function getPackages(folderPath: string): Promise<string[]> {
+export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 	let goRuntimePath = getGoRuntimePath();
 
 	if (!goRuntimePath) {
