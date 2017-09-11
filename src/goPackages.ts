@@ -7,11 +7,10 @@ import { promptForMissingTool } from './goInstallTools';
 
 const missingToolMsg = 'Missing tool: ';
 
-/**
- * Runs gopkgs
- * @returns Map<string, string> mapping between package import path and package name
- */
-export function getAllPackages(): Promise<Map<string, string>> {
+let allPkgsCache: Map<string, string>
+let allPkgsLastHit: number;
+
+function getAllPackagesNoCache(): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
 		const chunks = [];
@@ -20,7 +19,7 @@ export function getAllPackages(): Promise<Map<string, string>> {
 		cmd.on('error', e => err = e);
 		cmd.on('close', () => {
 			let pkgs = new Map<string, string>();
-			if (err && (<any>err).code === 'ENOENT') {
+			if (err && err.code === 'ENOENT') {
 				return reject(missingToolMsg + 'gopkgs');
 			}
 
@@ -33,6 +32,23 @@ export function getAllPackages(): Promise<Map<string, string>> {
 			});
 			return resolve(pkgs);
 		});
+	});
+}
+
+/**
+ * Runs gopkgs
+ * @returns Map<string, string> mapping between package import path and package name
+ */
+export function getAllPackages(): Promise<Map<string, string>> {
+	let useCache = allPkgsCache && allPkgsLastHit && (new Date().getTime() - allPkgsLastHit) < 5000;
+	if (useCache) {
+		allPkgsLastHit = new Date().getTime();
+		return Promise.resolve(allPkgsCache);
+	}
+
+	return getAllPackagesNoCache().then((pkgs) => {
+		allPkgsLastHit = new Date().getTime();
+		return allPkgsCache = pkgs;
 	});
 }
 
