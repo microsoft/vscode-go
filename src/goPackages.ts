@@ -12,7 +12,7 @@ let allPkgsLastHit: number;
 
 function getAllPackagesNoCache(): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
+		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars(), stdio: ['pipe', 'pipe', 'ignore'] });
 		const chunks = [];
 		let err: any;
 		cmd.stdout.on('data', d => chunks.push(d));
