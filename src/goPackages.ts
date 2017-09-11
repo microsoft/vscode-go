@@ -3,6 +3,7 @@ import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion } from './util';
+import { promptForMissingTool } from './goInstallTools';
 
 /**
  * Runs go list all
@@ -12,12 +13,16 @@ export function goListAll(): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
 		const chunks = [];
-		cmd.stdout.on('data', (d) => {
-			chunks.push(d);
-		});
-
-		cmd.on('close', (status) => {
+		let err: any;
+		cmd.stdout.on('data', d => chunks.push(d));
+		cmd.on('error', e => err = e);
+		cmd.on('close', () => {
 			let pkgs = new Map<string, string>();
+			if (err && (<any>err).code === 'ENOENT') {
+				promptForMissingTool('gopkgs');
+			}
+			if (err) return resolve(pkgs);
+
 			chunks.join('').split('\n').forEach((pkgDetail) => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
