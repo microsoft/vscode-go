@@ -26,8 +26,8 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
 
 	return Promise.all([pkgsPromise, importsPromise]).then(([pkgMap, importedPkgs]) => {
 		let pkgs = Array.from(pkgMap.keys());
-		pkgs = pkgs.filter(pkg => importedPkgs.indexOf(pkg) === -1)
-		return Array.from(new Set(pkgs)).sort()
+		pkgs = pkgs.filter(pkg => importedPkgs.indexOf(pkg) === -1);
+		return Array.from(new Set(pkgs)).sort();
 	});
 }
 

@@ -7,7 +7,7 @@ import { promptForMissingTool } from './goInstallTools';
 
 const missingToolMsg = 'Missing tool: ';
 
-let allPkgsCache: Map<string, string>
+let allPkgsCache: Map<string, string>;
 let allPkgsLastHit: number;
 
 function getAllPackagesNoCache(): Promise<Map<string, string>> {
