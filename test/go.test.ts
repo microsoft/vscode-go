@@ -21,7 +21,6 @@ import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
-import { getAllPackages } from '../src/goPackages';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
