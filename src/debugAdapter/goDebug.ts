@@ -196,6 +196,7 @@ class Delve {
 		let mode = launchArgs.mode;
 		let dlvCwd = dirname(program);
 		let isProgramDirectory = false;
+		let launchArgsEnv = launchArgs.env || {};
 		this.connection = new Promise((resolve, reject) => {
 			// Validations on the program
 			if (!program) {
@@ -227,9 +228,9 @@ class Delve {
 				return reject(e);
 			}
 
-			let env = Object.assign({}, process.env, fileEnv, launchArgs.env);
+			let env = Object.assign({}, process.env, fileEnv, launchArgsEnv);
 
-			if (!fileEnv['GOPATH'] && !launchArgs.env['GOPATH'] && (mode === 'debug' || mode === 'test')) {
+			if (!fileEnv['GOPATH'] && !launchArgsEnv['GOPATH'] && (mode === 'debug' || mode === 'test')) {
 				// If user hasnt specified GOPATH & file/package to debug is not under env['GOPATH'], then infer it from the file/package path
 				// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
 				let programNotUnderGopath = !env['GOPATH'] || !getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], isProgramDirectory ? program : path.dirname(program));
