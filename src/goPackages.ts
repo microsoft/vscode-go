@@ -5,6 +5,8 @@ import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
+const missingToolMsg = 'Missing tool: ';
+
 /**
  * Runs gopkgs
  * @returns Map<string, string> mapping between package import path and package name
@@ -19,8 +21,9 @@ export function getAllPackages(): Promise<Map<string, string>> {
 		cmd.on('close', () => {
 			let pkgs = new Map<string, string>();
 			if (err && (<any>err).code === 'ENOENT') {
-				promptForMissingTool('gopkgs');
+				return reject(missingToolMsg + 'gopkgs');
 			}
+
 			if (err) return resolve(pkgs);
 
 			chunks.join('').split('\n').forEach((pkgDetail) => {
