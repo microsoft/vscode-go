@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getGoRuntimePath } from './goPath';
 import path = require('path');
-import { goListAll } from './goPackages';
+import { getAllPackages } from './goPackages';
 
 export function browsePackages() {
 	let selectedText = '';
@@ -70,7 +70,7 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean)  {
 }
 
 function showPackageList() {
-	goListAll().then(pkgMap => {
+	getAllPackages().then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (pkgs.length === 0) {
 			return vscode.window.showErrorMessage('Could not find packages. Ensure `go list all` runs successfully.');

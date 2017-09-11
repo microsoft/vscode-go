@@ -9,7 +9,7 @@ import { promptForMissingTool } from './goInstallTools';
  * Runs gopkgs
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function goListAll(): Promise<Map<string, string>> {
+export function getAllPackages(): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
 		const chunks = [];
@@ -40,7 +40,7 @@ export function goListAll(): Promise<Map<string, string>> {
  */
 export function getImportablePackages(filePath: string): Promise<Map<string, string>> {
 
-	return Promise.all([isVendorSupported(), goListAll()]).then(values => {
+	return Promise.all([isVendorSupported(), getAllPackages()]).then(values => {
 		let isVendorSupported = values[0];
 		let pkgs = values[1];
 		let currentFileDirPath = path.dirname(filePath);
