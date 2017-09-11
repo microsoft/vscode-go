@@ -10,6 +10,9 @@ import cp = require('child_process');
 import { getGoRuntimePath } from './goPath';
 import path = require('path');
 import { getAllPackages } from './goPackages';
+import { promptForMissingTool } from './goInstallTools';
+
+const missingToolMsg = 'Missing tool: ';
 
 export function browsePackages() {
 	let selectedText = '';
@@ -83,6 +86,10 @@ function showPackageList() {
 				if (!pkgFromDropdown) return;
 				showPackageFiles(pkgFromDropdown, false);
 			});
+	},  err => {
+		if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
+			promptForMissingTool(err.substr(missingToolMsg.length));
+		}
 	});
 }
 
