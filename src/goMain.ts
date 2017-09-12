@@ -36,7 +36,6 @@ import { addTags, removeTags } from './goModifytags';
 import { parseLiveFile } from './goLiveErrors';
 import { GoCodeLensProvider } from './goCodelens';
 import { implCursor } from './goImpl';
-import { getAllPackages } from './goPackages';
 import { browsePackages } from './goBrowsePackage';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;

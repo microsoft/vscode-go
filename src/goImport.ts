@@ -19,15 +19,13 @@ const missingToolMsg = 'Missing tool: ';
 
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
-
-	let currentFileDirPath = path.dirname(vscode.window.activeTextEditor.document.fileName);
-	let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
 	let pkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName);
 
 	return Promise.all([pkgsPromise, importsPromise]).then(([pkgMap, importedPkgs]) => {
-		let pkgs = Array.from(pkgMap.keys());
-		pkgs = pkgs.filter(pkg => importedPkgs.indexOf(pkg) === -1);
-		return Array.from(new Set(pkgs)).sort();
+		importedPkgs.forEach(pkg => {
+			pkgMap.delete(pkg);
+		});
+		return Array.from(pkgMap.keys()).sort();
 	});
 }
 

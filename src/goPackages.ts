@@ -5,8 +5,6 @@ import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
-const missingToolMsg = 'Missing tool: ';
-
 let allPkgsCache: Map<string, string>;
 let allPkgsLastHit: number;
 
