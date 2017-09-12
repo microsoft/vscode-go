@@ -582,8 +582,8 @@ It returns the number of bytes written and any write error encountered.
 
 			return Promise.all<string[]>([gopkgsPromise, listPkgPromise]).then((values: string[][]) => {
 				if (!vendorSupport) {
-					let originalPkgs = values[0];
-					let updatedPkgs = values[1];
+					let originalPkgs = values[0].sort();
+					let updatedPkgs = values[1].sort();
 					assert.equal(originalPkgs.length, updatedPkgs.length);
 					for (let index = 0; index < originalPkgs.length; index++) {
 						assert.equal(updatedPkgs[index], originalPkgs[index]);
