@@ -336,3 +336,9 @@ export class LineBuffer {
 		this.lastListeners.push(listener);
 	}
 }
+
+export function timeout(millis): Promise<void> {
+	return new Promise<void>((resolve, reject) => {
+		setTimeout(() => resolve(), millis);
+	});
+}
