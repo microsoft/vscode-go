@@ -518,13 +518,10 @@ It returns the number of bytes written and any write error encountered.
 			return vscode.window.showTextDocument(document).then(editor => {
 				let includeImportedPkgs = listPackages(false);
 				let excludeImportedPkgs = listPackages(true);
-				includeImportedPkgs.then(pkgs => {
-					assert.equal(pkgs.indexOf('fmt') > -1, true);
+				return Promise.all([includeImportedPkgs, excludeImportedPkgs]).then(([pkgsInclude, pkgsExclude]) => {
+					assert.equal(pkgsInclude.indexOf('fmt') > -1, true);
+					assert.equal(pkgsExclude.indexOf('fmt') > -1, false);
 				});
-				excludeImportedPkgs.then(pkgs => {
-					assert.equal(pkgs.indexOf('fmt') > -1, false);
-				});
-				return Promise.all([includeImportedPkgs, excludeImportedPkgs]);
 			});
 		}).then(() => done(), done);
 	});
