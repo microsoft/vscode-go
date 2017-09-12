@@ -5,10 +5,13 @@ import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
+type GopkgsDone = (res: Map<string, string>) => void;
 let allPkgsCache: Map<string, string>;
 let allPkgsLastHit: number;
+let gopkgsRunning: boolean = false;
+let gopkgsSubscriptions: GopkgsDone[] = [];
 
-function getAllPackagesNoCache(): Promise<Map<string, string>> {
+function gopkgs(): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
 		const chunks = [];
@@ -38,6 +41,29 @@ function getAllPackagesNoCache(): Promise<Map<string, string>> {
 			});
 			return resolve(pkgs);
 		});
+	});
+}
+
+function getAllPackagesNoCache(): Promise<Map<string, string>> {
+	return new Promise<Map<string, string>>((resolve, reject) => {
+		// Use subscription style to guard costly/long running invocation
+		let callback = function(pkgMap: Map<string, string>) {
+			resolve(pkgMap);
+		};
+		gopkgsSubscriptions.push(callback);
+
+		// Ensure only single gokpgs running
+		if (!gopkgsRunning) {
+			gopkgsRunning = true;
+			gopkgs().then((pkgMap) => {
+				gopkgsRunning = false;
+
+				let subs = gopkgsSubscriptions;
+				gopkgsSubscriptions = [];
+
+				subs.forEach((callback) => callback(pkgMap));
+			});
+		}
 	});
 }
 
