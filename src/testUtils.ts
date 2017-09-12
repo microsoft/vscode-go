@@ -8,7 +8,7 @@ import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
 import { parseEnvFile, getGoRuntimePath, resolvePath } from './goPath';
-import { getToolsEnvVars, LineBuffer } from './util';
+import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
@@ -193,14 +193,14 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  */
 function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
-		return new Promise<Array<string>>((resolve, reject) => {
-			const args = [];
-			args.push('-run');
-			args.push(util.format('^%s$', testconfig.functions.join('|')));
-			return resolve(args);
-		});
+		return Promise.resolve(['-run', util.format('^%s$', testconfig.functions.join('|'))]);
 	} else if (testconfig.includeSubDirectories) {
-		return getNonVendorPackages(vscode.workspace.rootPath);
+		return getGoVersion().then((ver: SemVersion) => {
+			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
+				return ['./...'];
+			}
+			return getNonVendorPackages(vscode.workspace.rootPath);
+		});
 	}
 	return Promise.resolve([]);
 }

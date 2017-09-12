@@ -11,57 +11,19 @@ import { parseFilePrelude, isVendorSupported, getBinPath, getCurrentGoPath, getT
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import path = require('path');
-import { getRelativePackagePath } from './goPackages';
-import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { getImportablePackages } from './goPackages';
 
 const missingToolMsg = 'Missing tool: ';
 
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
-	let vendorSupportPromise = isVendorSupported();
-	let goPkgsPromise = new Promise<string[]>((resolve, reject) => {
-		cp.execFile(getBinPath('gopkgs'), [], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
-			if (err && (<any>err).code === 'ENOENT') {
-				return reject(missingToolMsg + 'gopkgs');
-			}
-			let lines = stdout.toString().split('\n');
-			if (lines[lines.length - 1] === '') {
-				// Drop the empty entry from the final '\n'
-				lines.pop();
-			}
-			return resolve(lines);
+	let pkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName);
+
+	return Promise.all([pkgsPromise, importsPromise]).then(([pkgMap, importedPkgs]) => {
+		importedPkgs.forEach(pkg => {
+			pkgMap.delete(pkg);
 		});
-	});
-
-	return vendorSupportPromise.then((vendorSupport: boolean) => {
-		return Promise.all<string[]>([goPkgsPromise, importsPromise]).then(values => {
-			let pkgs = values[0];
-			let importedPkgs = values[1];
-
-			if (!vendorSupport) {
-				if (importedPkgs.length > 0) {
-					pkgs = pkgs.filter(element => {
-						return importedPkgs.indexOf(element) === -1;
-					});
-				}
-				return pkgs.sort();
-			}
-
-			let currentFileDirPath = path.dirname(vscode.window.activeTextEditor.document.fileName);
-			let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
-			let pkgSet = new Set<string>();
-			pkgs.forEach(pkg => {
-				if (!pkg || importedPkgs.indexOf(pkg) > -1) {
-					return;
-				}
-				let relativePkgPath = getRelativePackagePath(currentFileDirPath, currentWorkspace, pkg);
-				if (relativePkgPath) {
-					pkgSet.add(relativePkgPath);
-				}
-			});
-
-			return Array.from(pkgSet).sort();
-		});
+		return Array.from(pkgMap.keys()).sort();
 	});
 }
 

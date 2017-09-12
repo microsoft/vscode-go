@@ -21,7 +21,7 @@ import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
-import { goListAll } from '../src/goPackages';
+import { getAllPackages } from '../src/goPackages';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -31,7 +31,6 @@ suite('Go Extension Tests', () => {
 	let generateTestsSourcePath = path.join(repoPath, 'generatetests');
 	let generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
 	let generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
-	let goListAllPromise = goListAll();
 
 	suiteSetup(() => {
 		assert.ok(gopath !== null, 'GOPATH is not defined');
@@ -551,19 +550,18 @@ It returns the number of bytes written and any write error encountered.
 		];
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
-			let gopkgsPromise = new Promise<string[]>((resolve, reject) => {
-				cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
-					let pkgs = stdout.split('\n').sort().slice(1);
-					if (vendorSupport) {
-						vendorPkgsFullPath.forEach(pkg => {
-							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
-						});
-						vendorPkgsRelativePath.forEach(pkg => {
-							assert.equal(pkgs.indexOf(pkg), -1, `Relative path to vendor package ${pkg} should not be returned by gopkgs command`);
-						});
-					}
-					return resolve(pkgs);
-				});
+			let gopkgsPromise = getAllPackages().then(pkgMap => {
+				let pkgs = Array.from(pkgMap.keys());
+				pkgs = pkgs.filter(p => pkgMap.get(p) !== 'main');
+				if (vendorSupport) {
+					vendorPkgsFullPath.forEach(pkg => {
+						assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
+					});
+					vendorPkgsRelativePath.forEach(pkg => {
+						assert.equal(pkgs.indexOf(pkg), -1, `Relative path to vendor package ${pkg} should not be returned by gopkgs command`);
+					});
+				}
+				return Promise.resolve(pkgs);
 			});
 
 			let listPkgPromise: Thenable<string[]> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(document => {
@@ -584,8 +582,8 @@ It returns the number of bytes written and any write error encountered.
 
 			return Promise.all<string[]>([gopkgsPromise, listPkgPromise]).then((values: string[][]) => {
 				if (!vendorSupport) {
-					let originalPkgs = values[0];
-					let updatedPkgs = values[1];
+					let originalPkgs = values[0].sort();
+					let updatedPkgs = values[1].sort();
 					assert.equal(originalPkgs.length, updatedPkgs.length);
 					for (let index = 0; index < originalPkgs.length; index++) {
 						assert.equal(updatedPkgs[index], originalPkgs[index]);
@@ -612,8 +610,11 @@ It returns the number of bytes written and any write error encountered.
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
 			let gopkgsPromise = new Promise<void>((resolve, reject) => {
-				cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
-					let pkgs = stdout.split('\n').sort().slice(1);
+				let cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
+				let chunks = [];
+				cmd.stdout.on('data', (d) => chunks.push(d));
+				cmd.on('close', () => {
+					let pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
 					if (vendorSupport) {
 						vendorPkgs.forEach(pkg => {
 							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
@@ -721,17 +722,15 @@ It returns the number of bytes written and any write error encountered.
 					editbuilder.insert(new vscode.Position(12, 1), 'by\n');
 					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
 				}).then(() => {
-					return goListAllPromise.then(() => {
-						let promises = testCases.map(([position, expected]) =>
-							provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
-								let labels = items.map(x => x.label);
-								for (let entry of expected) {
-									assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
-								}
-							})
-						);
-						return Promise.all(promises);
-					});
+					let promises = testCases.map(([position, expected]) =>
+						provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+							let labels = items.map(x => x.label);
+							for (let entry of expected) {
+								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
+							}
+						})
+					);
+					return Promise.all(promises);
 				});
 			}).then(() => {
 				vscode.commands.executeCommand('workbench.action.closeActiveEditor');

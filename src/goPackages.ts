@@ -2,54 +2,60 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion } from './util';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
-let allPkgs = new Map<string, string>();
-let goListAllCompleted: boolean = false;
-let goListAllPromise: Promise<Map<string, string>>;
+let allPkgsCache: Map<string, string>;
+let allPkgsLastHit: number;
 
-export function isGoListComplete(): boolean {
-	return goListAllCompleted;
+function getAllPackagesNoCache(): Promise<Map<string, string>> {
+	return new Promise<Map<string, string>>((resolve, reject) => {
+		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
+		const chunks = [];
+		const errchunks = [];
+		let err: any;
+		cmd.stdout.on('data', d => chunks.push(d));
+		cmd.stderr.on('data', d => errchunks.push(d));
+		cmd.on('error', e => err = e);
+		cmd.on('close', () => {
+			let pkgs = new Map<string, string>();
+			if (err && err.code === 'ENOENT') {
+				return promptForMissingTool('gopkgs');
+			}
+
+			if (err || errchunks.length > 0) return resolve(pkgs);
+
+			const output = chunks.join('');
+			if (output.indexOf(';') === -1) {
+				// User might be using the old gopkgs tool, prompt to update
+				return promptForUpdatingTool('gopkgs');
+			}
+
+			output.split('\n').forEach((pkgDetail) => {
+				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
+				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
+				pkgs.set(pkgPath, pkgName);
+			});
+			return resolve(pkgs);
+		});
+	});
 }
 
 /**
- * Runs go list all
+ * Runs gopkgs
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function goListAll(): Promise<Map<string, string>> {
-	let goRuntimePath = getGoRuntimePath();
-
-	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-		return Promise.resolve(null);
+export function getAllPackages(): Promise<Map<string, string>> {
+	let useCache = allPkgsCache && allPkgsLastHit && (new Date().getTime() - allPkgsLastHit) < 5000;
+	if (useCache) {
+		allPkgsLastHit = new Date().getTime();
+		return Promise.resolve(allPkgsCache);
 	}
 
-	if (goListAllPromise) {
-		return goListAllPromise;
-	}
-
-	goListAllPromise = new Promise<Map<string, string>>((resolve, reject) => {
-		// Use `{env: {}}` to make the execution faster. Include GOPATH to account if custom work space exists.
-		const env: any = getToolsEnvVars();
-
-		const cmd = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], { env: env, stdio: ['pipe', 'pipe', 'ignore'] });
-		const chunks = [];
-		cmd.stdout.on('data', (d) => {
-			chunks.push(d);
-		});
-
-		cmd.on('close', (status) => {
-			chunks.join('').split('\n').forEach(pkgDetail => {
-				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
-				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
-				allPkgs.set(pkgPath, pkgName);
-			});
-			goListAllCompleted = true;
-			return resolve(allPkgs);
-		});
+	return getAllPackagesNoCache().then((pkgs) => {
+		allPkgsLastHit = new Date().getTime();
+		return allPkgsCache = pkgs;
 	});
-
-	return goListAllPromise;
 }
 
 /**
@@ -59,13 +65,14 @@ export function goListAll(): Promise<Map<string, string>> {
  */
 export function getImportablePackages(filePath: string): Promise<Map<string, string>> {
 
-	return Promise.all([isVendorSupported(), goListAll()]).then(values => {
+	return Promise.all([isVendorSupported(), getAllPackages()]).then(values => {
 		let isVendorSupported = values[0];
+		let pkgs = values[1];
 		let currentFileDirPath = path.dirname(filePath);
 		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
 		let pkgMap = new Map<string, string>();
 
-		allPkgs.forEach((pkgName, pkgPath) => {
+		pkgs.forEach((pkgName, pkgPath) => {
 			if (pkgName === 'main') {
 				return;
 			}
@@ -87,7 +94,7 @@ export function getImportablePackages(filePath: string): Promise<Map<string, str
  * If given pkgPath is not vendor pkg, then the same pkgPath is returned
  * Else, the import path for the vendor pkg relative to given filePath is returned.
  */
-export function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: string, pkgPath: string): string {
+function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: string, pkgPath: string): string {
 	let magicVendorString = '/vendor/';
 	let vendorIndex = pkgPath.indexOf(magicVendorString);
 	if (vendorIndex === -1) {
@@ -113,7 +120,7 @@ export function getRelativePackagePath(currentFileDirPath: string, currentWorksp
 }
 
 /**
- * Returns import paths for all non vendor packages under given folder
+ * Returns import paths for all packages under given folder (vendor will be excluded)
  */
 export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 	let goRuntimePath = getGoRuntimePath();
@@ -123,15 +130,21 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 		return Promise.resolve(null);
 	}
 	return new Promise<string[]>((resolve, reject) => {
-		const childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath, env: getToolsEnvVars() });
-		const chunks = [];
+		let childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath, env: getToolsEnvVars() });
+		let chunks = [];
 		childProcess.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
 		});
 
 		childProcess.on('close', (status) => {
-			const pkgs = chunks.join('').toString().split('\n').filter(pkgPath => pkgPath && !pkgPath.includes('/vendor/'));
-			return resolve(pkgs);
+			let pkgs = chunks.join('').toString().split('\n');
+			getGoVersion().then((ver: SemVersion) => {
+				if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
+					resolve(pkgs);
+				} else {
+					resolve(pkgs.filter(pkgPath => pkgPath && !pkgPath.includes('/vendor/')));
+				}
+			});
 		});
 	});
 }
