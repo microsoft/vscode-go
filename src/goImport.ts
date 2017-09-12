@@ -11,8 +11,6 @@ import { parseFilePrelude, isVendorSupported, getBinPath, getCurrentGoPath, getT
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import path = require('path');
-import { getRelativePackagePath } from './goPackages';
-import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { getImportablePackages } from './goPackages';
 
 const missingToolMsg = 'Missing tool: ';

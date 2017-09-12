@@ -94,7 +94,7 @@ export function getImportablePackages(filePath: string): Promise<Map<string, str
  * If given pkgPath is not vendor pkg, then the same pkgPath is returned
  * Else, the import path for the vendor pkg relative to given filePath is returned.
  */
-export function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: string, pkgPath: string): string {
+function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: string, pkgPath: string): string {
 	let magicVendorString = '/vendor/';
 	let vendorIndex = pkgPath.indexOf(magicVendorString);
 	if (vendorIndex === -1) {

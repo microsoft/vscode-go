@@ -21,6 +21,7 @@ import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
+import { getAllPackages } from '../src/goPackages';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -549,22 +550,18 @@ It returns the number of bytes written and any write error encountered.
 		];
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
-			let gopkgsPromise = new Promise<string[]>((resolve, reject) => {
-				let cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
-				let chunks = [];
-				cmd.stdout.on('data', (d) => chunks.push(d));
-				cmd.on('close', () => {
-					let pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
-					if (vendorSupport) {
-						vendorPkgsFullPath.forEach(pkg => {
-							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
-						});
-						vendorPkgsRelativePath.forEach(pkg => {
-							assert.equal(pkgs.indexOf(pkg), -1, `Relative path to vendor package ${pkg} should not be returned by gopkgs command`);
-						});
-					}
-					return resolve(pkgs);
-				});
+			let gopkgsPromise = getAllPackages().then(pkgMap => {
+				let pkgs = Array.from(pkgMap.keys());
+				pkgs = pkgs.filter(p => pkgMap.get(p) !== 'main');
+				if (vendorSupport) {
+					vendorPkgsFullPath.forEach(pkg => {
+						assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
+					});
+					vendorPkgsRelativePath.forEach(pkg => {
+						assert.equal(pkgs.indexOf(pkg), -1, `Relative path to vendor package ${pkg} should not be returned by gopkgs command`);
+					});
+				}
+				return Promise.resolve(pkgs);
 			});
 
 			let listPkgPromise: Thenable<string[]> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(document => {
