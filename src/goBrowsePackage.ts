@@ -86,10 +86,6 @@ function showPackageList() {
 				if (!pkgFromDropdown) return;
 				showPackageFiles(pkgFromDropdown, false);
 			});
-	},  err => {
-		if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
-			promptForMissingTool(err.substr(missingToolMsg.length));
-		}
 	});
 }
 

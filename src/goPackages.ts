@@ -3,7 +3,7 @@ import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion } from './util';
-import { promptForMissingTool } from './goInstallTools';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -12,20 +12,28 @@ let allPkgsLastHit: number;
 
 function getAllPackagesNoCache(): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars(), stdio: ['pipe', 'pipe', 'ignore'] });
+		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
 		const chunks = [];
+		const errchunks = [];
 		let err: any;
 		cmd.stdout.on('data', d => chunks.push(d));
+		cmd.stderr.on('data', d => errchunks.push(d));
 		cmd.on('error', e => err = e);
 		cmd.on('close', () => {
 			let pkgs = new Map<string, string>();
 			if (err && err.code === 'ENOENT') {
-				return reject(missingToolMsg + 'gopkgs');
+				return promptForMissingTool('gopkgs');
 			}
 
-			if (err) return resolve(pkgs);
+			if (err || errchunks.length > 0) return resolve(pkgs);
 
-			chunks.join('').split('\n').forEach((pkgDetail) => {
+			const output = chunks.join('');
+			if (output.indexOf(';') === -1) {
+				// User might be using the old gopkgs tool, prompt to update
+				return promptForUpdatingTool('gopkgs');
+			}
+
+			output.split('\n').forEach((pkgDetail) => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
 				pkgs.set(pkgPath, pkgName);
