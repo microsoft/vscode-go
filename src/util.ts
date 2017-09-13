@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath, getInferredGopath } from './goPath';
+import { getGoRuntimePath, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -252,7 +252,7 @@ export function getToolsGopath(): string {
 	let goConfig = vscode.workspace.getConfiguration('go');
 	let toolsGopath = goConfig['toolsGopath'];
 	if (toolsGopath) {
-		toolsGopath = resolvePath(toolsGopath, vscode.workspace.rootPath);
+		toolsGopath = resolvePath(toolsGopath);
 	}
 	return toolsGopath;
 }
@@ -273,10 +273,11 @@ export function getToolsEnvVars(): any {
 
 	let envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
 
-	if (!toolsEnvVars || typeof toolsEnvVars !== 'object' || Object.keys(toolsEnvVars).length === 0) {
-		return envVars;
+	if (toolsEnvVars && typeof toolsEnvVars === 'object') {
+		Object.keys(toolsEnvVars).forEach(key => envVars[key] = resolvePath(toolsEnvVars[key]));
 	}
-	return Object.assign(envVars, toolsEnvVars);
+
+	return envVars;
 }
 
 export function getCurrentGoPath(): string {
@@ -286,7 +287,7 @@ export function getCurrentGoPath(): string {
 		inferredGopath = getInferredGopath(vscode.workspace.rootPath);
 	}
 
-	return inferredGopath ? inferredGopath : (configGopath ? resolvePath(configGopath, vscode.workspace.rootPath) : process.env['GOPATH']);
+	return inferredGopath ? inferredGopath : (configGopath ? resolvePath(configGopath) : process.env['GOPATH']);
 }
 
 export function getExtensionCommands(): any[] {
@@ -335,4 +336,13 @@ export class LineBuffer {
 	onDone(listener: (last: string) => void) {
 		this.lastListeners.push(listener);
 	}
+}
+
+/**
+ * Exapnds ~ to homedir in non-Windows platform and resolves ${workspaceRoot}
+ */
+export function resolvePath(inputPath: string): string {
+	if (!inputPath || !inputPath.trim()) return inputPath;
+	inputPath = inputPath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+	return resolveHomeDir(inputPath);
 }
