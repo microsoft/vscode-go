@@ -338,6 +338,12 @@ export class LineBuffer {
 	}
 }
 
+export function timeout(millis): Promise<void> {
+	return new Promise<void>((resolve, reject) => {
+		setTimeout(() => resolve(), millis);
+	});
+}
+
 /**
  * Exapnds ~ to homedir in non-Windows platform and resolves ${workspaceRoot}
  */
@@ -346,3 +352,4 @@ export function resolvePath(inputPath: string): string {
 	inputPath = inputPath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
 	return resolveHomeDir(inputPath);
 }
+
