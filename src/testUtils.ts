@@ -7,8 +7,8 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
-import { parseEnvFile, getGoRuntimePath, resolvePath } from './goPath';
-import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion } from './util';
+import { parseEnvFile, getGoRuntimePath } from './goPath';
+import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
@@ -46,13 +46,13 @@ export interface TestConfig {
 }
 
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
-	const toolsEnv = getToolsEnvVars();
-	const testEnv = config['testEnvVars'] || {};
+	const envVars = getToolsEnvVars();
+	const testEnvConfig = config['testEnvVars'] || {};
 
 	let fileEnv = {};
 	let testEnvFile = config['testEnvFile'];
 	if (testEnvFile) {
-		testEnvFile = resolvePath(testEnvFile, vscode.workspace.rootPath);
+		testEnvFile = resolvePath(testEnvFile);
 		try {
 			fileEnv = parseEnvFile(testEnvFile);
 		} catch (e) {
@@ -60,7 +60,10 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 		}
 	}
 
-	return Object.assign({}, toolsEnv, fileEnv, testEnv);
+	Object.keys(testEnvConfig).forEach(key => envVars[key] = resolvePath(testEnvConfig[key]));
+	Object.keys(fileEnv).forEach(key => envVars[key] = resolvePath(fileEnv[key]));
+
+	return envVars;
 }
 
 export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
