@@ -37,7 +37,7 @@ import { parseLiveFile } from './goLiveErrors';
 import { GoCodeLensProvider } from './goCodelens';
 import { implCursor } from './goImpl';
 import { browsePackages } from './goBrowsePackage';
-import { goGetImport } from './goGetImports';
+import { goGetImport } from './goGetImport';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
