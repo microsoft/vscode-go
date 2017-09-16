@@ -25,7 +25,7 @@ import { showHideStatus } from './goStatus';
 import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
 import { initGoCover } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
-import { showTestOutput } from './testUtils';
+import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
@@ -226,6 +226,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		showTestOutput();
 	}));
 
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cancel', () => {
+		cancelRunningTests();
+	}));
+
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
 		return addImport(typeof arg === 'string' ? arg : null);
 	}));
@@ -331,7 +335,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 }
 
 export function deactivate() {
-	return disposeTelemetryReporter();
+	return Promise.all([disposeTelemetryReporter(), cancelRunningTests()]);
 }
 
 function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConfiguration) {

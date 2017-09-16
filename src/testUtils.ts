@@ -13,6 +13,14 @@ import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
+let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+statusBarItem.command = 'go.test.cancel';
+statusBarItem.text = 'Cancel Running Tests';
+
+/**
+ *  testProcesses holds a list of currently running test processes.
+ */
+let testProcesses = [];
 
 
 /**
@@ -117,32 +125,41 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
  */
 export function goTest(testconfig: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		outputChannel.clear();
-		if (!testconfig.background) {
 
+		// We only want to clear the outputChannel if there are no tests in flight.
+		// We do not want to clear it if tests are already running, as that could
+		// lose valuable output.
+		if (testProcesses.length < 1) {
+			outputChannel.clear();
+		}
+
+		if (!testconfig.background) {
+			let buildTags: string = testconfig.goConfig['buildTags'];
+			let args: Array<string> = ['test', ...testconfig.flags];
+			let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
+
+			if (testconfig.isBenchmark) {
+				args.push('-benchmem', '-run=^$');
+			} else {
+				args.push('-timeout', testconfig.goConfig['testTimeout']);
+			}
+			if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
+				args.push('-tags', buildTags);
+			}
+
+			let testEnvVars = getTestEnvVars(testconfig.goConfig);
+			let goRuntimePath = getGoRuntimePath();
 			outputChannel.show(true);
 		}
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
-		let args: Array<string> = ['test', ...testconfig.flags];
-		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
-
-		if (testconfig.isBenchmark) {
-			args.push('-benchmem', '-run=^$');
-		} else {
-			args.push('-timeout', testconfig.goConfig['testTimeout']);
-		}
+		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
 		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
-			args.push('-tags', buildTags);
+			args.push('-tags');
+			args.push(buildTags);
 		}
-
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
 		let goRuntimePath = getGoRuntimePath();
-
-		if (!goRuntimePath) {
-			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-			return Promise.resolve();
-		}
 
 		// Append the package name to args to enable running tests in symlinked directories
 		let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
@@ -162,32 +179,54 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 			args.push(...targets);
 
-			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
+			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir, detached: true });
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
 			outBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
 			outBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
 
-			errBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
-			errBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
+			errBuf.onLine(line => outputChannel.appendLine(line));
+			errBuf.onDone(last => last && outputChannel.appendLine(last));
 
-			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
-			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
+			tp.stdout.on('data', chunk => outBuf.append(chunk.toString()));
+			tp.stderr.on('data', chunk => errBuf.append(chunk.toString()));
 
-			proc.on('close', code => {
+			statusBarItem.show();
+
+			tp.on('close', (code, signal) => {
 				outBuf.done();
 				errBuf.done();
 
+				statusBarItem.hide();
+
 				if (code) {
-					outputChannel.appendLine(`Error: ${testType} failed.`);
+					outputChannel.appendLine('Error: Tests failed.');
+				} else if (signal === 'SIGKILL') {
+					outputChannel.appendLine('Tests killed.');
 				} else {
-					outputChannel.appendLine(`Success: ${testType} passed.`);
+					outputChannel.appendLine('Success: Tests passed.');
 				}
+
+				// We need to remove this particular test process from the array of test
+				// processes so that a subsequent cancel does not attempt to kill a
+				// process that no longer exists. This is only an issue if we have
+				// multiple test processes running in parallel.
+				//
+				// If this test process was killed by calling cancelRunningTests, the
+				// array will be empty and this entry will not be found or removed.
+				let index = testProcesses.indexOf(tp, 0);
+				if (index > -1) {
+					testProcesses.splice(index, 1);
+				}
+
 				resolve(code === 0);
 			});
+
+			testProcesses.push(tp);
+
 		}, err => {
-			outputChannel.appendLine(`Error: ${testType} failed.`);
+			outputChannel.appendLine('Error: Tests failed.');
 			outputChannel.appendLine(err);
 			resolve(false);
 		});
@@ -199,6 +238,21 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
  */
 export function showTestOutput() {
 	outputChannel.show(true);
+}
+
+/**
+ * Iterates the list of currently running test processes and kills them all.
+ */
+export function cancelRunningTests(): Thenable<boolean> {
+	return new Promise<boolean>((resolve, reject) => {
+		let tp: cp.ChildProcess;
+		testProcesses.forEach(function(tp){
+			process.kill(-tp.pid, 'SIGKILL');
+		});
+		// All processes are now dead. Empty the array to prepare for the next run.
+		testProcesses.splice(0, testProcesses.length);
+		resolve(true);
+	});
 }
 
 function expandFilePathInOutput(output: string, cwd: string): string {
