@@ -169,6 +169,11 @@
         "command": "go.browse.packages",
         "title": "Go: Browse Packages",
         "description": "Browse packages and Go files inside the packages."
+      },
+      {
+        "command": "go.get.import",
+        "title": "Go: Get Import on Curent Line",
+        "description": "Fetch import on the current line and save it to $GOPATH/src."
       }
     ],
     "debuggers": [

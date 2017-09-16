@@ -37,6 +37,7 @@ import { parseLiveFile } from './goLiveErrors';
 import { GoCodeLensProvider } from './goCodelens';
 import { implCursor } from './goImpl';
 import { browsePackages } from './goBrowsePackage';
+import { goGetImport } from './goGetImports';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
@@ -274,6 +275,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			}
 		});
 	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.get.imports', goGetImport));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
