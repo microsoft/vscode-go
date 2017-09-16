@@ -166,6 +166,9 @@ export function getInferredGopath(folderPath: string): string {
  * @param currentFileDirPath string
  */
 export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPath: string): string {
+	if (!gopath) {
+		return;
+	}
 	let workspaces: string[] = gopath.split(path.delimiter);
 	let currentWorkspace = '';
 

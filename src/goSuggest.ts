@@ -37,7 +37,6 @@ interface GoCodeSuggestion {
 
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
-	private gocodeConfigurationComplete = false;
 	private pkgsList = new Map<string, string>();
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
@@ -215,16 +214,12 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
-		getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => {
+		let setPkgsList = getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => {
 			this.pkgsList = pkgMap;
+			return;
 		});
 
-		return new Promise<void>((resolve, reject) => {
-			// TODO: Since the gocode daemon is shared amongst clients, shouldn't settings be
-			// adjusted per-invocation to avoid conflicts from other gocode-using programs?
-			if (this.gocodeConfigurationComplete) {
-				return resolve();
-			}
+		let setGocodeProps = new Promise<void>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
 			let autobuild = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['gocodeAutoBuild'];
 			let env = getToolsEnvVars();
@@ -235,6 +230,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			});
 		});
 
+		return Promise.all([setPkgsList, setGocodeProps]).then(() => {
+			return;
+		});
 	}
 
 	// Return importable packages that match given word as Completion Items

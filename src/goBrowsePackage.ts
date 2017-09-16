@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getGoRuntimePath } from './goPath';
 import path = require('path');
-import { goListAll, isGoListComplete } from './goPackages';
+import { getAllPackages } from './goPackages';
 
 export function browsePackages() {
 	let selectedText = '';
@@ -70,28 +70,20 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean)  {
 }
 
 function showPackageList() {
-	if (!isGoListComplete()) {
-		return showTryAgainLater();
-	}
-
-	goListAll().then(pkgMap => {
+	getAllPackages().then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
-		if (!pkgs || pkgs.length === 0) {
+		if (pkgs.length === 0) {
 			return vscode.window.showErrorMessage('Could not find packages. Ensure `go list all` runs successfully.');
 		}
 
 		vscode
 			.window
-			.showQuickPick(pkgs, { placeHolder: 'Select a package to browse' })
+			.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
 			.then(pkgFromDropdown => {
 				if (!pkgFromDropdown) return;
 				showPackageFiles(pkgFromDropdown, false);
 			});
 	});
-}
-
-function showTryAgainLater() {
-	vscode.window.showInformationMessage('Finding packages... Try after sometime.');
 }
 
 function getImportPath(text: string): string {
