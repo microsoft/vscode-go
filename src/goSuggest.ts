@@ -30,7 +30,7 @@ function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 }
 
 function defaultPackageName(filename: string): string {
-	let goFilename = basename(filename);
+	let goFilename = basename(filename)
 	if (goFilename === 'main.go') {
 		return 'main';
 	}
