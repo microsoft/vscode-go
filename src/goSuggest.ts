@@ -29,6 +29,23 @@ function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	return vscode.CompletionItemKind.Property; // TODO@EG additional mappings needed?
 }
 
+function defaultPackageName(filename: string): string {
+	let goFilename = basename(filename)
+	if (goFilename === 'main.go') {
+		return 'main';
+	}
+
+	if (goFilename.endsWith('internal_test.go')) {
+		return basename(dirname(filename));
+	}
+
+	if (goFilename.endsWith('_test.go')) {
+		return basename(dirname(filename)) + '_test';
+	}
+
+	return basename(dirname(filename));
+}
+
 interface GoCodeSuggestion {
 	class: string;
 	name: string;
@@ -151,18 +168,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					// 'Smart Snippet' for package clause
 					// TODO: Factor this out into a general mechanism
 					if (!inputText.match(/package\s+(\w+)/)) {
-						let defaultPackageName =
-							basename(filename) === 'main.go'
-								? 'main'
-								: basename(dirname(filename));
-						if (defaultPackageName.match(/[a-zA-Z_]\w*/)) {
-							let packageItem = new vscode.CompletionItem('package ' + defaultPackageName);
+						let defPkgName = defaultPackageName(filename);
+						if (defPkgName.match(/[a-zA-Z_]\w*/)) {
+							let packageItem = new vscode.CompletionItem('package ' + defPkgName);
 							packageItem.kind = vscode.CompletionItemKind.Snippet;
-							packageItem.insertText = 'package ' + defaultPackageName + '\r\n\r\n';
+							packageItem.insertText = 'package ' + defPkgName + '\r\n\r\n';
 							suggestions.push(packageItem);
 						}
-
 					}
+
 					if (results[1]) {
 						for (let suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
