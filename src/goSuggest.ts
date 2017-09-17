@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { dirname, basename } from 'path';
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars } from './util';
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, timeout } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
@@ -214,10 +214,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
-		let setPkgsList = getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => {
-			this.pkgsList = pkgMap;
-			return;
-		});
+		let importablePkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => this.pkgsList = pkgMap);
+		let setPkgsList = Promise.race([timeout(1000).then(() => this.pkgsList), importablePkgsPromise]);
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
 			let gocode = getBinPath('gocode');

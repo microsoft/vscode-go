@@ -11,7 +11,7 @@ import path = require('path');
 import os = require('os');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
-import { getGoRuntimePath, resolvePath } from './goPath';
+import { getGoRuntimePath } from './goPath';
 import { outputChannel } from './goStatus';
 import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';

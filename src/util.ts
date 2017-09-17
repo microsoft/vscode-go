@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath, getBinPathWithPreferredGopath, resolvePath, getInferredGopath } from './goPath';
+import { getGoRuntimePath, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -301,10 +301,11 @@ export function getToolsEnvVars(): any {
 
 	let envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
 
-	if (!toolsEnvVars || typeof toolsEnvVars !== 'object' || Object.keys(toolsEnvVars).length === 0) {
-		return envVars;
+	if (toolsEnvVars && typeof toolsEnvVars === 'object') {
+		Object.keys(toolsEnvVars).forEach(key => envVars[key] = resolvePath(toolsEnvVars[key]));
 	}
-	return Object.assign(envVars, toolsEnvVars);
+
+	return envVars;
 }
 
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
@@ -366,3 +367,25 @@ export class LineBuffer {
 		this.lastListeners.push(listener);
 	}
 }
+
+export function timeout(millis): Promise<void> {
+	return new Promise<void>((resolve, reject) => {
+		setTimeout(() => resolve(), millis);
+	});
+}
+
+/**
+ * Exapnds ~ to homedir in non-Windows platform and resolves ${workspaceRoot}
+ */
+export function resolvePath(inputPath: string, workspaceRoot?: string): string {
+	if (!inputPath || !inputPath.trim()) return inputPath;
+	if (!workspaceRoot && vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+		workspaceRoot = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+	}
+	workspaceRoot = workspaceRoot || vscode.workspace.rootPath;
+	if (workspaceRoot) {
+		inputPath = inputPath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+	}
+	return resolveHomeDir(inputPath);
+}
+

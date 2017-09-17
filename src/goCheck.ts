@@ -10,12 +10,12 @@ import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getGoRuntimePath, resolvePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { promptForMissingTool } from './goInstallTools';
 import { goTest } from './testUtils';
-import { getBinPath, parseFilePrelude, getCurrentGoPath, getToolsEnvVars } from './util';
+import { getBinPath, parseFilePrelude, getCurrentGoPath, getToolsEnvVars, resolvePath } from './util';
 import { getNonVendorPackages } from './goPackages';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
@@ -229,7 +229,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			}
 			if (flag.startsWith(configFlag)) {
 				let configFilePath = flag.substr(configFlag.length);
-				configFilePath = resolvePath(configFilePath, currentWorkspace);
+				configFilePath = resolvePath(configFilePath);
 				args.push(`${configFlag}${configFilePath}`);
 				return;
 			}

@@ -108,13 +108,10 @@ export function clearCacheForTools() {
 }
 
 /**
- * Exapnds ~ to homedir in non-Windows platform and replaces ${workspaceRoot} token with given workspaceroot
+ * Exapnds ~ to homedir in non-Windows platform
  */
-export function resolvePath(inputPath: string, workspaceRoot?: string): string {
+export function resolveHomeDir(inputPath: string): string {
 	if (!inputPath || !inputPath.trim()) return inputPath;
-	if (workspaceRoot) {
-		inputPath = inputPath.replace(/\${workspaceRoot}/g, workspaceRoot);
-	}
 	return inputPath.startsWith('~') ? path.join(os.homedir(), inputPath.substr(1)) : inputPath;
 }
 
