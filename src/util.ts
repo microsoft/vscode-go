@@ -379,10 +379,15 @@ export function timeout(millis): Promise<void> {
  */
 export function resolvePath(inputPath: string, workspaceRoot?: string): string {
 	if (!inputPath || !inputPath.trim()) return inputPath;
-	if (!workspaceRoot && vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-		workspaceRoot = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+
+	if (!workspaceRoot && vscode.workspace.workspaceFolders) {
+		if (vscode.workspace.workspaceFolders.length === 1) {
+			workspaceRoot = vscode.workspace.rootPath;
+		} else if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+			workspaceRoot = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+		}
 	}
-	workspaceRoot = workspaceRoot || vscode.workspace.rootPath;
+
 	if (workspaceRoot) {
 		inputPath = inputPath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
 	}
