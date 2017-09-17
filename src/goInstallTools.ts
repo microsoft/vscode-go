@@ -346,18 +346,8 @@ function allFoldersHaveSameGopath(): boolean {
 		return true;
 	}
 
-	let sameGopath = true;
 	let tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
-
-	for (let i = 1; i < vscode.workspace.workspaceFolders.length; i++) {
-		let gopath = getCurrentGoPath(vscode.workspace.workspaceFolders[i].uri);
-		if (tempGopath !== gopath) {
-			sameGopath = false;
-			break;
-		}
-	}
-
-	return sameGopath;
+	return vscode.workspace.workspaceFolders.find(x => tempGopath !== getCurrentGoPath(x.uri)) ? false: true;
 }
 
 

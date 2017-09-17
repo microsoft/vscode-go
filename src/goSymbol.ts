@@ -47,7 +47,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 				symbols.push(symbolInfo);
 			});
 		};
-		let root = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
+		let root = vscode.window.activeTextEditor ? (vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri) || vscode.window.activeTextEditor.document).uri.fsPath : vscode.workspace.rootPath;
 
 		return getWorkspaceSymbols(root, query).then(results => {
 			let symbols: vscode.SymbolInformation[] = [];

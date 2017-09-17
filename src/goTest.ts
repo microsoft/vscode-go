@@ -117,7 +117,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any) {
 	const testConfig = {
 		goConfig: goConfig,
-		dir: vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath,
+		dir: vscode.window.activeTextEditor ? (vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri) || vscode.window.activeTextEditor.document).uri.fsPath : vscode.workspace.rootPath,
 		flags: getTestFlags(goConfig, args),
 		includeSubDirectories: true
 	};

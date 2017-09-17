@@ -33,7 +33,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				return resolve(null);
 			}
 			let env = getToolsEnvVars();
-			let cwd = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+			let cwd = vscode.workspace.getWorkspaceFolder(document.uri).uri.fsPath;
 			let listProcess = cp.execFile(getGoRuntimePath(), ['list', '-e', '-json'], { cwd, env }, (err, stdout, stderr) => {
 				if (err) {
 					return reject(err);

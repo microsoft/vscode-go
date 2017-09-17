@@ -165,7 +165,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			buildArgs.push('"' + goConfig['buildTags'] + '"');
 		}
 
-		if (goConfig['buildOnSave'] === 'workspace') {
+		if (goConfig['buildOnSave'] === 'workspace' && currentWorkspace) {
 			let buildPromises = [];
 			let outerBuildPromise = getNonVendorPackages(currentWorkspace).then(pkgs => {
 				buildPromises = pkgs.map(pkgPath => {
@@ -248,7 +248,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 		let lintWorkDir = cwd;
 
-		if (goConfig['lintOnSave'] === 'workspace') {
+		if (goConfig['lintOnSave'] === 'workspace' && currentWorkspace) {
 			args.push('./...');
 			lintWorkDir = currentWorkspace;
 		}
@@ -268,7 +268,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		let vetArgs = ['tool', 'vet', ...vetFlags, '.'];
 		let vetWorkDir = cwd;
 
-		if (goConfig['vetOnSave'] === 'workspace') {
+		if (goConfig['vetOnSave'] === 'workspace' && currentWorkspace) {
 			vetWorkDir = currentWorkspace;
 		}
 

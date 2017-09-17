@@ -92,7 +92,6 @@ export function toggleCoverageCurrentPackage() {
 		}
 	}
 
-	// FIXME: is there a better way to get goConfig?
 	let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let cwd = path.dirname(editor.document.uri.fsPath);
 

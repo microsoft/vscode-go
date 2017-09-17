@@ -127,7 +127,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		let gopath = getCurrentGoPath();
 
 		let wasInfered = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['inferGopath'];
-		let root = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
+		let root = vscode.window.activeTextEditor ? (vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri) || vscode.window.activeTextEditor.document).uri.fsPath : vscode.workspace.rootPath;
 
 		// not only if it was configured, but if it was successful.
 		if (wasInfered && root.indexOf(gopath) === 0) {
