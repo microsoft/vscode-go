@@ -10,6 +10,7 @@ import cp = require('child_process');
 import { getGoRuntimePath } from './goPath';
 import path = require('path');
 import { getAllPackages } from './goPackages';
+import { getImportPath } from './util';
 
 export function browsePackages() {
 	let selectedText = '';
@@ -84,20 +85,4 @@ function showPackageList() {
 				showPackageFiles(pkgFromDropdown, false);
 			});
 	});
-}
-
-function getImportPath(text: string): string {
-	// Catch cases like `import alias "importpath"` and `import "importpath"`
-	let singleLineImportMatches = text.match(/^\s*import\s+([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
-	if (singleLineImportMatches) {
-		return singleLineImportMatches[2];
-	}
-
-	// Catch cases like `alias "importpath"` and "importpath"
-	let groupImportMatches = text.match(/^\s*([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
-	if (groupImportMatches) {
-		return groupImportMatches[2];
-	}
-
-	return text.trim();
 }
