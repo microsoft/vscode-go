@@ -16,12 +16,13 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 	constructor(goConfig?: WorkspaceConfiguration) {
 		this.goConfig = goConfig;
-		if (!this.goConfig) {
-			this.goConfig = vscode.workspace.getConfiguration('go');
-		}
 	}
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
+		if (!this.goConfig) {
+			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
+		}
+
 		let theCall = this.walkBackwardsToBeginningOfCall(document, position);
 		if (theCall == null) {
 			return Promise.resolve(null);
@@ -30,7 +31,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		// Temporary fix to fall back to godoc if guru is the set docsTool
 		let goConfig = this.goConfig;
 		if (goConfig['docsTool'] === 'guru') {
-			goConfig = Object.assign({}, goConfig, {'docsTool': 'godoc'});
+			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
 		return definitionLocation(document, callerPos, goConfig).then(res => {
 			if (!res) {

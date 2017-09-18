@@ -113,10 +113,11 @@ function runTool(args: string[], cwd: string, severity: string, useStdErr: boole
 	});
 }
 
-export function check(filename: string, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
 	outputChannel.clear();
 	let runningToolsPromises = [];
-	let cwd = path.dirname(filename);
+	let cwd = path.dirname(fileUri.fsPath);
+	let currentWorkspace = vscode.workspace.getWorkspaceFolder(fileUri) ? vscode.workspace.getWorkspaceFolder(fileUri).uri.fsPath : '';
 	let env = getToolsEnvVars();
 	let goRuntimePath = getGoRuntimePath();
 
@@ -164,9 +165,9 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 			buildArgs.push('"' + goConfig['buildTags'] + '"');
 		}
 
-		if (goConfig['buildOnSave'] === 'workspace') {
+		if (goConfig['buildOnSave'] === 'workspace' && currentWorkspace) {
 			let buildPromises = [];
-			let outerBuildPromise = getNonVendorPackages(vscode.workspace.rootPath).then(pkgs => {
+			let outerBuildPromise = getNonVendorPackages(currentWorkspace).then(pkgs => {
 				buildPromises = pkgs.map(pkgPath => {
 					return runTool(
 						buildArgs.concat(pkgPath),
@@ -247,9 +248,9 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 
 		let lintWorkDir = cwd;
 
-		if (goConfig['lintOnSave'] === 'workspace') {
+		if (goConfig['lintOnSave'] === 'workspace' && currentWorkspace) {
 			args.push('./...');
-			lintWorkDir = vscode.workspace.rootPath;
+			lintWorkDir = currentWorkspace;
 		}
 
 		runningToolsPromises.push(runTool(
@@ -267,8 +268,8 @@ export function check(filename: string, goConfig: vscode.WorkspaceConfiguration)
 		let vetArgs = ['tool', 'vet', ...vetFlags, '.'];
 		let vetWorkDir = cwd;
 
-		if (goConfig['vetOnSave'] === 'workspace') {
-			vetWorkDir = vscode.workspace.rootPath;
+		if (goConfig['vetOnSave'] === 'workspace' && currentWorkspace) {
+			vetWorkDir = currentWorkspace;
 		}
 
 		runningToolsPromises.push(runTool(

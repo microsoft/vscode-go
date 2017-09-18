@@ -92,8 +92,7 @@ export function toggleCoverageCurrentPackage() {
 		}
 	}
 
-	// FIXME: is there a better way to get goConfig?
-	let goConfig = vscode.workspace.getConfiguration('go');
+	let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let cwd = path.dirname(editor.document.uri.fsPath);
 
 	let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
@@ -143,7 +142,7 @@ function applyCoverage(remove: boolean = false) {
 }
 
 function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
-	let cfg = vscode.workspace.getConfiguration('go');
+	let cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let coverageOptions = cfg['coverageOptions'];
 	let coverageDecorator = cfg['coverageDecorator'];
 	let hideUncovered = remove || coverageOptions === 'showCoveredCodeOnly';

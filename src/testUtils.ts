@@ -202,7 +202,7 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
 				return ['./...'];
 			}
-			return getNonVendorPackages(vscode.workspace.rootPath);
+			return getNonVendorPackages(testconfig.dir);
 		});
 	}
 	return Promise.resolve([]);

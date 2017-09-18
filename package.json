@@ -52,7 +52,7 @@
     "vscode": "^1.1.4"
   },
   "engines": {
-    "vscode": "^1.9.0"
+    "vscode": "^1.15.0"
   },
   "activationEvents": [
     "onLanguage:go",
@@ -366,7 +366,8 @@
             "off"
           ],
           "default": "package",
-          "description": "On save, compiles the current workspace, current package or nothing at all."
+          "description": "On save, compiles the current workspace, current package or nothing at all.",
+          "scope": "resource"
         },
         "go.buildFlags": {
           "type": "array",
@@ -374,12 +375,14 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. ['-ldflags=\"-s\"'])"
+          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. ['-ldflags=\"-s\"'])",
+          "scope": "resource"
         },
         "go.buildTags": {
           "type": "string",
           "default": "",
-          "description": "The Go build tags to use for all commands that support a `-tags '...'` argument"
+          "description": "The Go build tags to use for all commands that support a `-tags '...'` argument",
+          "scope": "resource"
         },
         "go.lintOnSave": {
           "type": "string",
@@ -389,12 +392,14 @@
             "off"
           ],
           "default": "package",
-          "description": "On save, runs the configured Lint tool on current workspace, current package or nothing at all."
+          "description": "On save, runs the configured Lint tool on current workspace, current package or nothing at all.",
+          "scope": "resource"
         },
         "go.lintTool": {
           "type": "string",
           "default": "golint",
           "description": "Specifies Lint tool name.",
+          "scope": "resource",
           "enum": [
             "golint",
             "gometalinter",
@@ -407,7 +412,8 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to Lint tool (e.g. [\"-min_confidence=.8\"])"
+          "description": "Flags to pass to Lint tool (e.g. [\"-min_confidence=.8\"])",
+          "scope": "resource"
         },
         "go.vetOnSave": {
           "type": "string",
@@ -417,7 +423,8 @@
             "off"
           ],
           "default": "package",
-          "description": "On save, runs 'go vet' on current workspace, current package or nothing."
+          "description": "On save, runs 'go vet' on current workspace, current package or nothing.",
+          "scope": "resource"
         },
         "go.vetFlags": {
           "type": "array",
@@ -425,17 +432,20 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to `go vet` (e.g. ['-all', '-shadow'])"
+          "description": "Flags to pass to `go vet` (e.g. ['-all', '-shadow'])",
+          "scope": "resource"
         },
         "go.formatOnSave": {
           "type": "boolean",
           "default": true,
-          "description": "Runs formatting tool on save."
+          "description": "Runs formatting tool on save.",
+          "scope": "resource"
         },
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
           "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format.",
+          "scope": "resource",
           "enum": [
             "gofmt",
             "goimports",
@@ -448,17 +458,20 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to format tool (e.g. ['-s'])"
+          "description": "Flags to pass to format tool (e.g. ['-s'])",
+          "scope": "resource"
         },
         "go.useDiffForFormatting": {
           "type": "boolean",
           "default": true,
-          "description": "Run the formatting tools with the -d flag"
+          "description": "Run the formatting tools with the -d flag",
+          "scope": "resource"
         },
         "go.inferGopath": {
           "type": "boolean",
           "default": false,
-          "description": "Infer GOPATH from the workspace root."
+          "description": "Infer GOPATH from the workspace root.",
+          "scope": "resource"
         },
         "go.gopath": {
           "type": [
@@ -466,12 +479,14 @@
             "null"
           ],
           "default": null,
-          "description": "Specify GOPATH here to override the one that is set as environment variable. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true."
+          "description": "Specify GOPATH here to override the one that is set as environment variable. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true.",
+          "scope": "resource"
         },
         "go.toolsGopath": {
           "type": "string",
           "default": "",
-          "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH."
+          "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH.",
+          "scope": "resource"
         },
         "go.goroot": {
           "type": [
@@ -479,17 +494,20 @@
             "null"
           ],
           "default": null,
-          "description": "Specifies the GOROOT to use when no environment variable is set."
+          "description": "Specifies the GOROOT to use when no environment variable is set.",
+          "scope": "resource"
         },
         "go.testOnSave": {
           "type": "boolean",
           "default": false,
-          "description": "Run 'go test' on save for current package. It is not advised to set this to `true` when you have Auto Save enabled."
+          "description": "Run 'go test' on save for current package. It is not advised to set this to `true` when you have Auto Save enabled.",
+          "scope": "resource"
         },
         "go.coverOnSave": {
           "type": "boolean",
           "default": false,
-          "description": "If true, runs 'go test -coverprofile' on save and shows test coverage."
+          "description": "If true, runs 'go test -coverprofile' on save and shows test coverage.",
+          "scope": "resource"
         },
         "go.coverOnTestPackage": {
           "type": "boolean",
@@ -504,7 +522,8 @@
             "showBothCoveredAndUncoveredCode"
           ],
           "default": "showBothCoveredAndUncoveredCode",
-          "description": "Use these options to control whether only covered or only uncovered code or both should be highlighted after running test coverage"
+          "description": "Use these options to control whether only covered or only uncovered code or both should be highlighted after running test coverage",
+          "scope": "resource"
         },
         "go.coverageDecorator": {
           "type": "string",
@@ -513,22 +532,26 @@
             "gutter"
           ],
           "default": "highlight",
-          "description": "This option lets you choose the way to display code coverage. Highlight, as its name states, highlights the line in red or green, gutter shows the colors in the gutter of the editor."
+          "description": "This option lets you choose the way to display code coverage. Highlight, as its name states, highlights the line in red or green, gutter shows the colors in the gutter of the editor.",
+          "scope": "resource"
         },
         "go.testTimeout": {
           "type": "string",
           "default": "30s",
-          "description": "Specifies the timeout for go test in ParseDuration format."
+          "description": "Specifies the timeout for go test in ParseDuration format.",
+          "scope": "resource"
         },
         "go.testEnvVars": {
           "type": "object",
           "default": {},
-          "description": "Environment variables that will passed to the process that runs the Go tests"
+          "description": "Environment variables that will passed to the process that runs the Go tests",
+          "scope": "resource"
         },
         "go.testEnvFile": {
           "type": "string",
           "default": null,
-          "description": "Absolute path to a file containing environment variables definitions. File contents should be of the form key=value."
+          "description": "Absolute path to a file containing environment variables definitions. File contents should be of the form key=value.",
+          "scope": "resource"
         },
         "go.testFlags": {
           "type": [
@@ -539,32 +562,38 @@
             "type": "string"
           },
           "default": null,
-          "description": "Flags to pass to `go test`. If null, then buildFlags will be used."
+          "description": "Flags to pass to `go test`. If null, then buildFlags will be used.",
+          "scope": "resource"
         },
         "go.toolsEnvVars": {
           "type": "object",
           "default": {},
-          "description": "Environment variables that will passed to the processes that run the Go tools (e.g. CGO_CFLAGS)"
+          "description": "Environment variables that will passed to the processes that run the Go tools (e.g. CGO_CFLAGS)",
+          "scope": "resource"
         },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": true,
-          "description": "Enable gocode's autobuild feature"
+          "description": "Enable gocode's autobuild feature",
+          "scope": "resource"
         },
         "go.useCodeSnippetsOnFunctionSuggest": {
           "type": "boolean",
           "default": false,
-          "description": "Complete functions with their parameter signature"
+          "description": "Complete functions with their parameter signature",
+          "scope": "resource"
         },
         "go.autocompleteUnimportedPackages": {
           "type": "boolean",
           "default": false,
-          "description": "Include unimported packages in auto-complete suggestions."
+          "description": "Include unimported packages in auto-complete suggestions.",
+          "scope": "resource"
         },
         "go.docsTool": {
           "type": "string",
           "default": "godoc",
           "description": "Pick 'godoc' or 'gogetdoc' to get documentation. In Go 1.5, godoc is used regardless of the choice here.",
+          "scope": "resource",
           "enum": [
             "godoc",
             "gogetdoc",
@@ -584,7 +613,8 @@
         "go.gotoSymbol.includeImports": {
           "type": "boolean",
           "default": false,
-          "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature"
+          "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature",
+          "scope": "resource"
         },
         "go.enableCodeLens": {
           "type": "object",
@@ -604,7 +634,8 @@
             "references": false,
             "runtest": true
           },
-          "description": "Feature level setting to enable/disable code lens for references and run/debug tests"
+          "description": "Feature level setting to enable/disable code lens for references and run/debug tests",
+          "scope": "resource"
         },
         "go.addTags": {
           "type": "object",
@@ -640,7 +671,8 @@
             "promptForTags": false,
             "transform": "snakecase"
           },
-          "description": "Tags and options configured here will be used by the Add Tags command to add tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, json tags are added."
+          "description": "Tags and options configured here will be used by the Add Tags command to add tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, json tags are added.",
+          "scope": "resource"
         },
         "go.liveErrors": {
           "type": "object",
@@ -660,7 +692,8 @@
             "enabled": false,
             "delay": 500
           },
-          "description": "Use gotype on the file currently being edited and report any semantic or syntactic errors found after configured delay."
+          "description": "Use gotype on the file currently being edited and report any semantic or syntactic errors found after configured delay.",
+          "scope": "resource"
         },
         "go.removeTags": {
           "type": "object",
@@ -686,7 +719,8 @@
             "options": "",
             "promptForTags": false
           },
-          "description": "Tags and options configured here will be used by the Remove Tags command to remove tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, all tags and options will be removed."
+          "description": "Tags and options configured here will be used by the Remove Tags command to remove tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, all tags and options will be removed.",
+          "scope": "resource"
         },
         "go.editorContextMenuCommands": {
           "type": "object",
@@ -760,7 +794,8 @@
             "addImport": true,
             "testCoverage": true
           },
-          "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor."
+          "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor.",
+          "scope": "resource"
         },
         "go.gotoSymbol.ignoreFolders": {
           "type": "array",
@@ -768,7 +803,8 @@
             "type": "string"
           },
           "default": [],
-          "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature"
+          "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature",
+          "scope": "resource"
         }
       }
     },

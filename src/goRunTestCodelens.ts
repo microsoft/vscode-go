@@ -24,7 +24,7 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 			};
 
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
-		let config = vscode.workspace.getConfiguration('go');
+		let config = vscode.workspace.getConfiguration('go', document.uri);
 		let codeLensConfig = config.get('enableCodeLens');
 		let codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
 		if (!codelensEnabled || !document.fileName.endsWith('_test.go')) {

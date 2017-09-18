@@ -29,7 +29,7 @@ import { showTestOutput } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -44,7 +44,6 @@ let warningDiagnosticCollection: vscode.DiagnosticCollection;
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
-	let toolsGopath = vscode.workspace.getConfiguration('go')['toolsGopath'];
 
 	updateGoPathGoRootFromConfig().then(() => {
 		getGoVersion().then(currentVersion => {
@@ -98,7 +97,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 
 		if (vscode.window.activeTextEditor && isGoPathSet()) {
-			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go'));
+			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri));
 		}
 	});
 
@@ -126,11 +125,17 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
 		let gopath = getCurrentGoPath();
-		let wasInfered = vscode.workspace.getConfiguration('go')['inferGopath'];
+
+		let wasInfered = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['inferGopath'];
+		let root = vscode.workspace.rootPath;
+		if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+			root = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+		}
 
 		// not only if it was configured, but if it was successful.
-		if (wasInfered && vscode.workspace.rootPath.indexOf(gopath) === 0) {
-			vscode.window.showInformationMessage('Current GOPATH is inferred from workspace root: ' + gopath);
+		if (wasInfered && root && root.indexOf(gopath) === 0) {
+			const inferredFrom = vscode.window.activeTextEditor ? 'current folder' : 'workspace root';
+			vscode.window.showInformationMessage(`Current GOPATH is inferred from ${inferredFrom}: ${gopath}`);
 		} else {
 			vscode.window.showInformationMessage('Current GOPATH: ' + gopath);
 		}
@@ -149,22 +154,22 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		testAtCursor(goConfig, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		testCurrentPackage(goConfig, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		testCurrentFile(goConfig, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.workspace', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		testWorkspace(goConfig, args);
 	}));
 
@@ -193,7 +198,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
-		let updatedGoConfig = vscode.workspace.getConfiguration('go');
+		let updatedGoConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		sendTelemetryEventForConfig(updatedGoConfig);
 		updateGoPathGoRootFromConfig();
 
@@ -210,9 +215,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		useLangServer = updatedGoConfig['useLanguageServer'];
 
 		// If there was a change in "toolsGopath" setting, then clear cache for go tools
-		if (toolsGopath !== updatedGoConfig['toolsGopath']) {
+		if (getToolsGopath() !== getToolsGopath(false)) {
 			clearCacheForTools();
-			toolsGopath = updatedGoConfig['toolsGopath'];
 		}
 
 	}));
@@ -271,7 +275,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
 
-	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go'));
+	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null));
 }
 
 function deactivate() {
@@ -292,7 +296,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	}
 
 	let uri = document.uri;
-	check(uri.fsPath, goConfig).then(errors => {
+	check(uri, goConfig).then(errors => {
 		errorDiagnosticCollection.clear();
 		warningDiagnosticCollection.clear();
 
@@ -342,7 +346,7 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 		if (document.languageId !== 'go' || ignoreNextSave.has(document)) {
 			return;
 		}
-		let goConfig = vscode.workspace.getConfiguration('go');
+		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
 		let textEditor = vscode.window.activeTextEditor;
 		let formatPromise: PromiseLike<void> = Promise.resolve();
 		if (goConfig['formatOnSave'] && textEditor.document === document) {

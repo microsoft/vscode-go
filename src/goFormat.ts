@@ -18,10 +18,11 @@ export class Formatter {
 	public formatDocument(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
 		return new Promise((resolve, reject) => {
 			let filename = document.fileName;
-			let formatTool = vscode.workspace.getConfiguration('go')['formatTool'] || 'goreturns';
+			let goConfig = vscode.workspace.getConfiguration('go', document.uri);
+			let formatTool = goConfig['formatTool'] || 'goreturns';
 			let formatCommandBinPath = getBinPath(formatTool);
-			let formatFlags = vscode.workspace.getConfiguration('go')['formatFlags'] || [];
-			let canFormatToolUseDiff = vscode.workspace.getConfiguration('go')['useDiffForFormatting'] && isDiffToolAvailable();
+			let formatFlags = goConfig['formatFlags'] || [];
+			let canFormatToolUseDiff = goConfig['useDiffForFormatting'] && isDiffToolAvailable();
 			if (canFormatToolUseDiff && formatFlags.indexOf('-d') === -1) {
 				formatFlags.push('-d');
 			}
