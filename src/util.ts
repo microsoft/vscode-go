@@ -309,8 +309,8 @@ export function getToolsEnvVars(): any {
 }
 
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
-	if (!workspaceUri && vscode.window.activeTextEditor) {
-		workspaceUri = (vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri) || vscode.window.activeTextEditor.document).uri;
+	if (!workspaceUri && vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+		workspaceUri = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
 	}
 	const config = vscode.workspace.getConfiguration('go', workspaceUri);
 	const currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
@@ -389,7 +389,7 @@ export function resolvePath(inputPath: string, workspaceRoot?: string): string {
 	}
 
 	if (workspaceRoot) {
-		inputPath = inputPath.replace(/\${workspaceRoot}/g, vscode.workspace.rootPath);
+		inputPath = inputPath.replace(/\${workspaceRoot}/g, workspaceRoot);
 	}
 	return resolveHomeDir(inputPath);
 }

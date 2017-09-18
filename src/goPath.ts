@@ -148,6 +148,10 @@ export function parseEnvFile(path: string): { [key: string]: string } {
 
 // Walks up given folder path to return the closest ancestor that has `src` as a child
 export function getInferredGopath(folderPath: string): string {
+	if (!folderPath) {
+		return;
+	}
+
 	let dirs = folderPath.toLowerCase().split(path.sep);
 
 	// find src directory closest to given folder path

@@ -115,9 +115,17 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
  * @param goConfig Configuration for the Go extension.
  */
 export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any) {
+	let dir = vscode.workspace.rootPath;
+	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+		dir = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+	}
+	if (!dir) {
+		vscode.window.showInformationMessage('No workspace is open to run tests.');
+		return;
+	}
 	const testConfig = {
 		goConfig: goConfig,
-		dir: vscode.window.activeTextEditor ? (vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri) || vscode.window.activeTextEditor.document).uri.fsPath : vscode.workspace.rootPath,
+		dir: dir,
 		flags: getTestFlags(goConfig, args),
 		includeSubDirectories: true
 	};
