@@ -42,6 +42,8 @@ export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
+	sendTelemetryEvent('beta-testing', { version: "0.6.66", date: "09/18/2017" });
+
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
