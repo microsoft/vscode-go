@@ -1,3 +1,18 @@
+## 0.6.66 - Coming Soon..
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * `$workspaceRoot` will now be resolved when part of `go.testEnvVars` and `go.toolsEnvVars` setting.
+    * [Multi Root support](https://code.visualstudio.com/updates/v1_15#_preview-multi-root-workspaces) when using [VS Code Insiders](https://code.visualstudio.com/insiders)
+         * Read more on [Multi Root support](https://code.visualstudio.com/updates/v1_15#_preview-multi-root-workspaces) in general
+         * The experimental language server feature is not supported ff the different roots in your multi root support use different GOPATHs
+         * All current Go related features that refer "workspace" will refer to the individual roots in the multi root mode. For example: Build/lint/vet/test workspace or `Go to Symbol in workspace`.
+         * Give it a try and log any issues that you find.
+    
+* [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
+    * Auto-completion for unimported packages that are newly installed/built without the need for reloading VS Code. 
+    * `Go: Browse Packages` will now include newly installed/built packages without the need for reloading VS Code.
+
+
 ## 0.6.65 - 6th September, 2017
 
 [Seonggi Yang @ sgyang](https://github.com/sgyang)
