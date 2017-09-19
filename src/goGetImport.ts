@@ -26,11 +26,11 @@ export function goGetImport() {
 		}
 
 		cp.execFile(goRuntimePath, ['get', '-u', importPath], (err, stdout, stderr) => {
-			if (stderr != '') {
+			if (stderr !== '') {
 				vscode.window.showErrorMessage(stderr);
 				return;
 			}
-	
+
 			vscode.window.showInformationMessage(`Successfully fetched package ${importPath}`);
 		});
 	});
