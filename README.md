@@ -2,9 +2,6 @@
 
 [![Join the chat at https://gitter.im/Microsoft/vscode-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/vscode-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/Microsoft/vscode-go.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-go)
 
-
-**Important Note: If you have recently upgraded to Go 1.8 or Go 1.9, you may need to run `gocode close` in your terminal and rebuild `gocode` to ensure Go completion lists continue to work correctly.  See https://github.com/Microsoft/vscode-go/issues/441.**
-
 Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Notes) to know what has changed over the last few versions of this extension
 
 This extension adds rich language support for the Go language to VS Code, including:
@@ -15,35 +12,39 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Quick Info (using `gogetdoc` or `godef`+`godoc`)
 - Goto Definition (using `gogetdoc` or `godef`+`godoc`)
 - Find References (using `guru`)
+- Find implementations (using `guru`)
 - References CodeLens
 - File outline (using `go-outline`)
 - Workspace symbol search (using `go-symbols`)
 - Rename (using `gorename`. Note: For Undo after rename to work in Windows you need to have `diff` tool in your path)
 - Build-on-save (using `go build` and `go test`)
 - Lint-on-save (using `golint` or `gometalinter`)
-- Format (using `goreturns` or `goimports` or `gofmt`)
+- Format on save as well as format manually (using `goreturns` or `goimports` or `gofmt`)
 - Generate unit tests skeleton (using `gotests`)
 - Add Imports (using `gopkgs`)
 - Add/Remove Tags on struct fields (using `gomodifytags`)
 - Semantic/Syntactic error reporting as you type (using `gotype-live`)
 - Run Tests under the cursor, in current file, in current package, in the whole workspace (using `go test`)
+- Show code coverage
 - Generate method stubs for interfaces (using `impl`)
 - [_partially implemented_] Debugging (using `delve`)
 
 ### IDE Features
 ![IDE](https://i.giphy.com/xTiTndDHV3GeIy6aNa.gif)
 
-## Using
+## How to use this extension?
 
-First, you will need to install Visual Studio Code. Then, in the command palette (`cmd-shift-p`) select `Install Extension` and choose `Go`.
+Install and open [Visual Studio Code](https://code.visualstudio.com). Press `Ctrl+Shift+X` or `Cmd+Shift+X` to open the Extensions pane. Find and install the Go extension. You can also install the extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=lukehoban.Go).Open any `.go` file in VS Code. The extension is now activated.
 
-In a terminal window with the GOPATH environment variable set to the GOPATH you want to work on, launch `code`.  Open your GOPATH folder or any subfolder you want to work on, then open a `.go` file to start editing.  You should see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the Go tooling needed for the extension to support its full feature set.  See the [Tools](#tools-this-extension-depends-on) section below for more details.
+This extension uses a set of Go tools to provide the various rich features. These tools are installed in your GOPATH by default. If you wish to have these tools in a separate location, provide the desired location in the setting `go.toolsGopath`. Read more about this and the tools at [Go tools that the Go extension depends on](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on)
 
-_Note 1_: Read [GOPATH in the VS Code Go extension](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension) to learn about the different ways you can get the extension to set GOPATH.
+You will see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the dependent Go tools. You can also run the command `Go: Install/Update tools` to install/update the same.
 
-_Note 2_: Users may want to consider turning `Auto Save` on in Visual Studio Code (`"files.autoSave": "afterDelay"`) when using this extension.  Many of the Go tools work only on saved files, and error reporting will be more interactive with `Auto Save` turned on. If you do turn `Auto Save` on, you may also want to turn format-on-save off (`"go.formatOnSave": false`), so that it is not triggered while typing.
+**Note 1**: Read [GOPATH in the VS Code Go extension](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension) to learn about the different ways you can get the extension to set GOPATH.
 
-_Note 3_:  This extension uses `gocode` to provide completion lists as you type. To provide fresh results, including against not-yet-built dependencies, the extension uses `gocode`'s `autobuild=true` setting. If you experience any performance issues with autocomplete, you should try setting `"go.gocodeAutoBuild": false` in your VS Code settings.
+**Note 2**: Users may want to consider turning `Auto Save` on in Visual Studio Code (`"files.autoSave": "afterDelay"`) when using this extension.  Many of the Go tools work only on saved files, and error reporting will be more interactive with `Auto Save` turned on. If you do turn `Auto Save` on, you may also want to turn format-on-save off (`"go.formatOnSave": false`), so that it is not triggered while typing.
+
+**Note 3**:  This extension uses `gocode` to provide completion lists as you type. To provide fresh results, including against not-yet-built dependencies, the extension uses `gocode`'s `autobuild=true` setting. If you experience any performance issues with autocomplete, you should try setting `"go.gocodeAutoBuild": false` in your VS Code settings.
 
 ### Customizing the Go extension features
 
