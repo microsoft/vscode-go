@@ -20,7 +20,7 @@ let updatesDeclinedTools: string[] = [];
 let installsDeclinedTools: string[] = [];
 const allTools: { [key: string]: string } = {
 	'gocode': 'github.com/nsf/gocode',
-	'gopkgs': 'github.com/tpng/gopkgs',
+	'gopkgs': 'github.com/uudashr/gopkgs/cmd/gopkgs',
 	'go-outline': 'github.com/ramya-rao-a/go-outline',
 	'go-symbols': 'github.com/acroca/go-symbols',
 	'guru': 'golang.org/x/tools/cmd/guru',
