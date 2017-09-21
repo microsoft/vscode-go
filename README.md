@@ -48,7 +48,7 @@ You will see `Analysis Tools Missing` in the bottom right, clicking this will of
 
 ### Customizing the Go extension features
 
-The Go extension is ready to use on the get go. If you want to customize the features, you can edit the settings in your User or Workspace settings. Read [Settings for Visual Studio Code Go extension](https://github.com/Microsoft/vscode-go/wiki/Settings-for-Visual-Studio-Code-Go-extension) for the full list of options and their descriptions.
+The Go extension is ready to use on the get go. If you want to customize the features, you can edit the settings in your User or Workspace settings. Read [All Settings & Commands in Visual Studio Code Go extension](https://github.com/Microsoft/vscode-go/wiki/All-Settings-&-Commands-in-Visual-Studio-Code-Go-extension) for the full list of options and their descriptions.
 
 
 ### Go Language Server (Experimental)
