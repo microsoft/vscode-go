@@ -42,6 +42,12 @@ export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
+	/* __GDPR__
+	   "beta-testing" : {
+		  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "data": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+	   }
+	 */
 	sendTelemetryEvent('beta-testing', { version: '0.6.66', date: '09/18/2017' });
 
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
@@ -376,6 +382,43 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 }
 
 function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
+	/* __GDPR__
+	   "goConfig" : {
+		  "buildOnSave" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "buildFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "buildTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "formatOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "formatTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "formatFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "lintOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "lintFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "lintTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "vetOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "vetFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "testOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "testFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "coverOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "coverOnTestPackage": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "coverageDecorator": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "coverageOptions": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "useDiffForFormatting": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "gopath": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "goroot": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "inferGopath": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "toolsGopath": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "gocodeAutoBuild": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "useCodeSnippetsOnFunctionSuggest": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "autocompleteUnimportedPackages": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "docsTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "useLanguageServer": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "includeImports": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "addTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "removeTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "editorContextMenuCommands": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "liveErrors": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+	   }
+	 */
 	sendTelemetryEvent('goConfig', {
 		buildOnSave: goConfig['buildOnSave'] + '',
 		buildFlags: goConfig['buildFlags'],

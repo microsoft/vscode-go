@@ -162,6 +162,11 @@ export function getGoVersion(): Promise<SemVersion> {
 	}
 
 	if (goVersion) {
+		/* __GDPR__
+		   "getGoVersion" : {
+			  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+		   }
+		 */
 		sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
 		return Promise.resolve(goVersion);
 	}
@@ -173,8 +178,18 @@ export function getGoVersion(): Promise<SemVersion> {
 					major: parseInt(matches[1]),
 					minor: parseInt(matches[2])
 				};
+				/* __GDPR__
+				   "getGoVersion" : {
+					  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+				   }
+				 */
 				sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
 			} else {
+				/* __GDPR__
+				   "getGoVersion" : {
+					  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+				   }
+				 */
 				sendTelemetryEvent('getGoVersion', { version: stdout });
 			}
 			return resolve(goVersion);

@@ -50,6 +50,12 @@ export class Formatter {
 					});
 
 					let timeTaken = Date.now() - t0;
+					/* __GDPR__
+					   "format" : {
+						  "tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+						  "timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
+					   }
+					 */
 					sendTelemetryEvent('format', { tool: formatTool }, { timeTaken });
 					return resolve(textEdits);
 				} catch (e) {
