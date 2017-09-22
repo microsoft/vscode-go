@@ -428,3 +428,14 @@ export function getImportPath(text: string): string {
 
 	return '';
 }
+
+export function readDir(path): Promise<string[]> {
+	return new Promise<string[]>((resolve, reject) => {
+		fs.readdir(path, (err, files) => {
+			if (err) {
+				return reject(err);
+			}
+			resolve(files);
+		});
+	});
+}

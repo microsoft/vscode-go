@@ -12,6 +12,7 @@ import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeyword
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
+import { readDir } from './util';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -44,6 +45,31 @@ function defaultPackageName(filename: string): string {
 	}
 
 	return basename(dirname(filename));
+}
+
+function packageNameSuggestion(filename: string): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const goFilename = basename(filename);
+		if (goFilename === 'main.go') {
+			return resolve('main');
+		}
+
+		if (goFilename.endsWith('internal_test.go')) {
+			return resolve(basename(dirname(filename)));
+		}
+
+		if (goFilename.endsWith('_test.go')) {
+			return resolve(basename(dirname(filename)) + '_test');
+		}
+
+		readDir(dirname(filename)).then(files => {
+			if (files.indexOf('main.go') > -1) {
+				return resolve('main');
+			}
+
+			resolve(basename(dirname(filename)));
+		}, err => reject(err));
+	});
 }
 
 interface GoCodeSuggestion {
@@ -165,18 +191,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					let suggestions = [];
 					let suggestionSet = new Set<string>();
 
-					// 'Smart Snippet' for package clause
-					// TODO: Factor this out into a general mechanism
-					if (!inputText.match(/package\s+(\w+)/)) {
-						let defPkgName = defaultPackageName(filename);
-						if (defPkgName.match(/[a-zA-Z_]\w*/)) {
-							let packageItem = new vscode.CompletionItem('package ' + defPkgName);
-							packageItem.kind = vscode.CompletionItemKind.Snippet;
-							packageItem.insertText = 'package ' + defPkgName + '\r\n\r\n';
-							suggestions.push(packageItem);
-						}
-					}
-
 					if (results[1]) {
 						for (let suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
@@ -217,6 +231,20 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					// Add importable packages matching currentword to suggestions
 					let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(currentWord, suggestionSet) : [];
 					suggestions = suggestions.concat(importablePkgs);
+
+					// 'Smart Snippet' for package clause
+					// TODO: Factor this out into a general mechanism
+					if (!inputText.match(/package\s+(\w+)/)) {
+						return packageNameSuggestion(filename).then(pkgName => {
+							if (pkgName.match(/[a-zA-Z_]\w*/)) {
+								let packageItem = new vscode.CompletionItem('package ' + pkgName);
+								packageItem.kind = vscode.CompletionItemKind.Snippet;
+								packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
+								suggestions.push(packageItem);
+								resolve(suggestions);
+							}
+						});
+					}
 
 					resolve(suggestions);
 				} catch (e) {
