@@ -7,7 +7,7 @@ import fs = require('fs');
 import { getGoRuntimePath } from './goPath';
 import { getCurrentGoPath, getImportPath } from './util';
 
-export function goGetImport() {
+export function goGetPackage() {
 	const editor = vscode.window.activeTextEditor;
 	const selection = editor.selection;
 	const selectedText = editor.document.lineAt(selection.active.line).text;
