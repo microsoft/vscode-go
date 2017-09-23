@@ -426,5 +426,5 @@ export function getImportPath(text: string): string {
 		return groupImportMatches[2];
 	}
 
-	return text.trim();
+	return '';
 }

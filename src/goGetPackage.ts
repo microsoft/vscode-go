@@ -13,6 +13,10 @@ export function goGetPackage() {
 	const selectedText = editor.document.lineAt(selection.active.line).text;
 
 	const importPath = getImportPath(selectedText);
+	if (importPath === '') {
+		vscode.window.showErrorMessage('No import path to get');
+		return;
+	}
 
 	const goRuntimePath = getGoRuntimePath();
 	if (!goRuntimePath) {

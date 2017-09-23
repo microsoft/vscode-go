@@ -22,6 +22,7 @@ import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
+import { getImportPath } from '../src/util';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -737,5 +738,20 @@ It returns the number of bytes written and any write error encountered.
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
 		}).then(() => done(), done);
+	});
+
+	test('getImportPath()', () => {
+		let testCases: [string, string][] = [
+			['import "github.com/sirupsen/logrus"', 'github.com/sirupsen/logrus'],
+			['import "net/http"', 'net/http'],
+			['"github.com/sirupsen/logrus"', 'github.com/sirupsen/logrus'],
+			['', ''],
+			['func foo(bar int) (int, error) {', ''],
+			['// This is a comment, complete with punctuation.', '']
+		];
+
+		testCases.forEach(run => {
+			assert.equal(run[1], getImportPath(run[0]));
+		});
 	});
 });
