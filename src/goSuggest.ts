@@ -73,7 +73,7 @@ function packageNameSuggestion(filename: string): Promise<string> {
 }
 
 /**
- * guess the package name based on directory name.
+ * Guess the package name based on directory name.
  *
  * Cases:
  * - dir 'go-i18n' -> 'i18n'
