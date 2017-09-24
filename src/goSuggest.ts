@@ -67,9 +67,30 @@ function packageNameSuggestion(filename: string): Promise<string> {
 				return resolve('main');
 			}
 
-			resolve(basename(dirname(filename)));
+			resolve(guestPackageName(basename(dirname(filename))));
 		}, err => reject(err));
 	});
+}
+
+/**
+ * Guest the package name based on directory name.
+ *
+ * Cases:
+ * - dir 'go-i18n' -> 'i18n'
+ * - dir 'go-spew' -> 'spew'
+ * - dir 'kingpin' -> 'kingpin'
+ * - dir 'go-expand-tilde' -> 'tilde'
+ * - dir 'gax-go' -> 'gax'
+ * - dir 'go-difflib' -> 'difflib'
+ * - dir 'jwt-go' -> 'jwt'
+ * - dir 'go-radix' -> 'radix'
+ *
+ * @param {string} dirName where the go file located.
+ */
+function guestPackageName(dirName) {
+	let segments = dirName.split(/[\.-]/);
+	segments = segments.filter(val => val !== 'go');
+	return segments[segments.length - 1];
 }
 
 interface GoCodeSuggestion {
