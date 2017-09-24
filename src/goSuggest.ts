@@ -55,11 +55,11 @@ function packageNameSuggestion(filename: string): Promise<string> {
 		}
 
 		if (goFilename.endsWith('internal_test.go')) {
-			return resolve(basename(dirname(filename)));
+			return resolve(guessPackageName(basename(dirname(filename))));
 		}
 
 		if (goFilename.endsWith('_test.go')) {
-			return resolve(basename(dirname(filename)) + '_test');
+			return resolve(guessPackageName(basename(dirname(filename))) + '_test');
 		}
 
 		readDir(dirname(filename)).then(files => {
