@@ -32,8 +32,12 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 		return;
 	}
 	if (editor.document.isDirty) {
-		vscode.window.showInformationMessage('File has unsaved changes. Save and try again.');
-		return;
+		if (goConfig['saveTestFileOnRunOrDebug'] === true) {
+			editor.document.save();
+		} else {
+			vscode.window.showInformationMessage('File has unsaved changes. Save and try again.');
+			return;
+		}
 	}
 	getTestFunctions(editor.document).then(testFunctions => {
 		let testFunctionName: string;
