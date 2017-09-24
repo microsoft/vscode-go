@@ -17,6 +17,7 @@ import { promptForMissingTool } from './goInstallTools';
 import { goTest } from './testUtils';
 import { getBinPath, parseFilePrelude, getCurrentGoPath, getToolsEnvVars, resolvePath } from './util';
 import { getNonVendorPackages } from './goPackages';
+import { getTestFlags } from './testUtils';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -152,20 +153,22 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
 		const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
-		let buildFlags = goConfig['buildFlags'] || [];
+		const isTestFile = fileUri.fsPath.endsWith("_test.go");
+		let buildFlags = isTestFile ? getTestFlags(goConfig, null) : (goConfig['buildFlags'] || []);
 		// Remove the -i flag as it will be added later anyway
 		if (buildFlags.indexOf('-i') > -1) {
 			buildFlags.splice(buildFlags.indexOf('-i'), 1);
 		}
 
-		// We use `go test` instead of `go build` because the latter ignores test files
-		let buildArgs: string[] = ['test', '-i', '-c', '-o', tmpPath, ...buildFlags];
+		// If current file is a test file, then use `go test -c` instead of `go build` to find build errors
+		let buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
+		buildArgs.push('-i', '-o', tmpPath, ...buildFlags);
 		if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 			buildArgs.push('-tags');
 			buildArgs.push('"' + goConfig['buildTags'] + '"');
 		}
 
-		if (goConfig['buildOnSave'] === 'workspace' && currentWorkspace) {
+		if (goConfig['buildOnSave'] === 'workspace' && currentWorkspace && !isTestFile) {
 			let buildPromises = [];
 			let outerBuildPromise = getNonVendorPackages(currentWorkspace).then(pkgs => {
 				buildPromises = pkgs.map(pkgPath => {
@@ -188,7 +191,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
 			let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
 			let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
-
+			
 			runningToolsPromises.push(runTool(
 				buildArgs.concat(importPath),
 				cwd,
