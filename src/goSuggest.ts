@@ -67,13 +67,13 @@ function packageNameSuggestion(filename: string): Promise<string> {
 				return resolve('main');
 			}
 
-			resolve(guestPackageName(basename(dirname(filename))));
+			resolve(guessPackageName(basename(dirname(filename))));
 		}, err => reject(err));
 	});
 }
 
 /**
- * Guest the package name based on directory name.
+ * guess the package name based on directory name.
  *
  * Cases:
  * - dir 'go-i18n' -> 'i18n'
@@ -87,7 +87,7 @@ function packageNameSuggestion(filename: string): Promise<string> {
  *
  * @param {string} dirName where the go file located.
  */
-function guestPackageName(dirName) {
+function guessPackageName(dirName) {
 	let segments = dirName.split(/[\.-]/);
 	segments = segments.filter(val => val !== 'go');
 	return segments[segments.length - 1];
