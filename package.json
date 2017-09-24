@@ -366,7 +366,7 @@
             "off"
           ],
           "default": "package",
-          "description": "On save, compiles the current workspace, current package or nothing at all.",
+          "description": "Compiles code on file save using 'go build -i' or 'go test -c -i'. Options are 'workspace', 'package or 'off'.",
           "scope": "resource"
         },
         "go.buildFlags": {
@@ -392,7 +392,7 @@
             "off"
           ],
           "default": "package",
-          "description": "On save, runs the configured Lint tool on current workspace, current package or nothing at all.",
+          "description": "Lints code on file save using the configured Lint tool. Options are 'workspace', 'package or 'off'.",
           "scope": "resource"
         },
         "go.lintTool": {
@@ -423,7 +423,7 @@
             "off"
           ],
           "default": "package",
-          "description": "On save, runs 'go vet' on current workspace, current package or nothing.",
+          "description": "Vets code on file save using 'go tool vet'. Options are 'workspace', 'package or 'off'.",
           "scope": "resource"
         },
         "go.vetFlags": {
@@ -432,7 +432,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to `go vet` (e.g. ['-all', '-shadow'])",
+          "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])",
           "scope": "resource"
         },
         "go.formatOnSave": {

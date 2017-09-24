@@ -153,7 +153,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
 		const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
-		const isTestFile = fileUri.fsPath.endsWith("_test.go");
+		const isTestFile = fileUri.fsPath.endsWith('_test.go');
 		let buildFlags = isTestFile ? getTestFlags(goConfig, null) : (goConfig['buildFlags'] || []);
 		// Remove the -i flag as it will be added later anyway
 		if (buildFlags.indexOf('-i') > -1) {
@@ -191,7 +191,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
 			let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
 			let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
-			
+
 			runningToolsPromises.push(runTool(
 				buildArgs.concat(importPath),
 				cwd,
