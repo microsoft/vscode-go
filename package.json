@@ -565,12 +565,6 @@
           "description": "Flags to pass to `go test`. If null, then buildFlags will be used.",
           "scope": "resource"
         },
-        "go.saveTestFileOnRunOrDebug": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically test files when 'Run Test' or 'Debug Test' is run.",
-          "scope": "resource"
-        },
         "go.toolsEnvVars": {
           "type": "object",
           "default": {},
