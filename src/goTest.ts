@@ -151,7 +151,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 		return;
 	}
 
-	editor.document.save().then(() => {
+	return editor.document.save().then(() => {
 		return getTestFunctions(editor.document).then(testFunctions => {
 			const testConfig = {
 				goConfig: goConfig,
