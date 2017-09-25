@@ -152,17 +152,17 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 	}
 
 	editor.document.save().then(() => {
-	return getTestFunctions(editor.document).then(testFunctions => {
-		const testConfig = {
-			goConfig: goConfig,
-			dir: path.dirname(editor.document.fileName),
-			flags: getTestFlags(goConfig, args),
-			functions: testFunctions.map(func => { return func.name; })
-		};
-		// Remember this config as the last executed test.
-		lastTestConfig = testConfig;
+		return getTestFunctions(editor.document).then(testFunctions => {
+			const testConfig = {
+				goConfig: goConfig,
+				dir: path.dirname(editor.document.fileName),
+				flags: getTestFlags(goConfig, args),
+				functions: testFunctions.map(func => { return func.name; })
+			};
+			// Remember this config as the last executed test.
+			lastTestConfig = testConfig;
 
-		return goTest(testConfig);
+			return goTest(testConfig);
 		});
 	}).then(null, err => {
 		console.error(err);
