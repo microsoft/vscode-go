@@ -50,9 +50,12 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 }
 
 function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, offset: number, includeDocs: boolean, env: any): Promise<GoDefinitionInformation> {
-	return new Promise<GoDefinitionInformation>((resolve, reject) => {
-		let godef = getBinPath('godef');
+	let godef = getBinPath('godef');
+	if (!path.isAbsolute(godef)) {
+		return Promise.reject(missingToolMsg + 'godef');
+	}
 
+	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
 		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {env}, (err, stdout, stderr) => {
 			try {
@@ -117,8 +120,13 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 }
 
 function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any, useTags: boolean = true): Promise<GoDefinitionInformation> {
+	let gogetdoc = getBinPath('gogetdoc');
+	if (!path.isAbsolute(gogetdoc)) {
+		return Promise.reject(missingToolMsg + 'gogetdoc');
+	}
+
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
-		let gogetdoc = getBinPath('gogetdoc');
+		
 		let gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()];
 		let buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
 		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', '"' + buildTags + '"'] : gogetdocFlagsWithoutTags;
@@ -162,8 +170,12 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 }
 
 function definitionLocation_guru(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any): Promise<GoDefinitionInformation> {
+	let guru = getBinPath('guru');
+	if (!path.isAbsolute(guru)) {
+		return Promise.reject(missingToolMsg + 'guru');
+	}
+	
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
-		let guru = getBinPath('guru');
 		let p = cp.execFile(guru, ['-json', '-modified', 'definition', document.fileName + ':#' + offset.toString()], {env}, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
