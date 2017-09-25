@@ -31,11 +31,8 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
-	if (editor.document.isDirty) {
-		vscode.window.showInformationMessage('File has unsaved changes. Save and try again.');
-		return;
-	}
-	getTestFunctions(editor.document).then(testFunctions => {
+	editor.document.save().then(() => {
+		return getTestFunctions(editor.document).then(testFunctions => {
 		let testFunctionName: string;
 
 		// We use functionName if it was provided as argument
@@ -67,6 +64,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 		lastTestConfig = testConfig;
 
 		return goTest(testConfig);
+		});
 	}).then(null, err => {
 		console.error(err);
 	});
@@ -153,17 +151,19 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 		return;
 	}
 
-	return getTestFunctions(editor.document).then(testFunctions => {
-		const testConfig = {
-			goConfig: goConfig,
-			dir: path.dirname(editor.document.fileName),
-			flags: getTestFlags(goConfig, args),
-			functions: testFunctions.map(func => { return func.name; })
-		};
-		// Remember this config as the last executed test.
-		lastTestConfig = testConfig;
+	return editor.document.save().then(() => {
+		return getTestFunctions(editor.document).then(testFunctions => {
+			const testConfig = {
+				goConfig: goConfig,
+				dir: path.dirname(editor.document.fileName),
+				flags: getTestFlags(goConfig, args),
+				functions: testFunctions.map(func => { return func.name; })
+			};
+			// Remember this config as the last executed test.
+			lastTestConfig = testConfig;
 
-		return goTest(testConfig);
+			return goTest(testConfig);
+		});
 	}).then(null, err => {
 		console.error(err);
 		return Promise.resolve(false);
