@@ -24,7 +24,7 @@ export function browsePackages() {
 			// if selection is empty, then get the whole line the cursor is currently on.
 			selectedText = editor.document.lineAt(selection.active.line).text;
 		}
-		selectedText = getImportPath(selectedText);
+		selectedText = getImportPath(selectedText) || selectedText.trim();
 	}
 
 	showPackageFiles(selectedText, true);
