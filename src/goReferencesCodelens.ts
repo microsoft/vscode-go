@@ -4,6 +4,7 @@ import vscode = require('vscode');
 import { CodeLensProvider, SymbolInformation, SymbolKind, TextDocument, CancellationToken, CodeLens, Range, Command, Location, commands } from 'vscode';
 import { documentSymbols, GoDocumentSymbolProvider } from './goOutline';
 import { GoReferenceProvider } from './goReferences';
+import { GoBaseCodeLensProvider } from './goBaseCodelens';
 
 const methodRegex = /^func\s+\(\s*\w+\s+\*?\w+\s*\)\s+/;
 
@@ -17,8 +18,11 @@ class ReferencesCodeLens extends CodeLens {
 	}
 }
 
-export class GoCodeLensProvider implements CodeLensProvider {
+export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
+		if (!this.enabled) {
+			return [];
+		}
 		let codeLensConfig = vscode.workspace.getConfiguration('go', document.uri).get('enableCodeLens');
 		let codelensEnabled = codeLensConfig ? codeLensConfig['references'] : false;
 		if (!codelensEnabled) {

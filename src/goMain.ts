@@ -34,7 +34,7 @@ import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
 import { parseLiveFile } from './goLiveErrors';
-import { GoCodeLensProvider } from './goCodelens';
+import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
 import { browsePackages } from './goBrowsePackage';
 
@@ -111,12 +111,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	initGoCover(ctx);
 
+	let testCodeLensProvider = new GoRunTestCodeLensProvider();
+	let referencesCodeLensProvider = new GoReferencesCodeLensProvider();
+
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
-	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, new GoRunTestCodeLensProvider()));
-	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, new GoCodeLensProvider()));
+	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
+	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, referencesCodeLensProvider));
 	ctx.subscriptions.push(vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider()));
 
 	errorDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-error');
@@ -225,6 +228,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		// If there was a change in "toolsGopath" setting, then clear cache for go tools
 		if (getToolsGopath() !== getToolsGopath(false)) {
 			clearCacheForTools();
+		}
+
+		if (updatedGoConfig['enableCodeLens']) {
+			testCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['runtest']);
+			referencesCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['references']);
 		}
 
 	}));

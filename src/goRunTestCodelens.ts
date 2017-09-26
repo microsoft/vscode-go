@@ -11,8 +11,9 @@ import { CodeLensProvider, TextDocument, CancellationToken, CodeLens, Command } 
 import { getTestFunctions, getTestEnvVars, getTestFlags } from './testUtils';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getCurrentGoPath } from './util';
+import { GoBaseCodeLensProvider } from './goBaseCodelens';
 
-export class GoRunTestCodeLensProvider implements CodeLensProvider {
+export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private readonly debugConfig: any = {
 				'name': 'Launch',
 				'type': 'go',
@@ -24,6 +25,9 @@ export class GoRunTestCodeLensProvider implements CodeLensProvider {
 			};
 
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
+		if (!this.enabled) {
+			return [];
+		}
 		let config = vscode.workspace.getConfiguration('go', document.uri);
 		let codeLensConfig = config.get('enableCodeLens');
 		let codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
