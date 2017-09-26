@@ -145,15 +145,22 @@ function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove
 	let cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let coverageOptions = cfg['coverageOptions'];
 	let coverageDecorator = cfg['coverageDecorator'];
-	let hideUncovered = remove || coverageOptions === 'showCoveredCodeOnly';
-	let hideCovered = remove || coverageOptions === 'showUncoveredCodeOnly';
 
-	if (coverageDecorator === 'gutter') {
-		editor.setDecorations(coveredGutter, hideCovered ? [] : file.coveredRange);
-		editor.setDecorations(uncoveredGutter, hideUncovered ? [] : file.uncoveredRange);
-	} else {
-		editor.setDecorations(uncoveredHighLight, hideUncovered ? [] : file.uncoveredRange);
-		editor.setDecorations(coveredHighLight, hideCovered ? [] : file.coveredRange);
+	editor.setDecorations(coveredGutter, []);
+	editor.setDecorations(coveredHighLight, []);
+	editor.setDecorations(uncoveredGutter, []);
+	editor.setDecorations(uncoveredHighLight, []);
+
+	if (remove) {
+		return;
+	}
+
+	if (coverageOptions === 'showCoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
+		editor.setDecorations(coverageDecorator === 'gutter' ? coveredGutter : coveredHighLight, file.coveredRange);
+	}
+
+	if (coverageOptions === 'showUncoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
+		editor.setDecorations(coverageDecorator === 'gutter' ? uncoveredGutter : uncoveredHighLight, file.uncoveredRange);
 	}
 }
 

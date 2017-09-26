@@ -57,7 +57,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
-		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], {env}, (err, stdout, stderr) => {
+		let p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], { env }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'godef');
@@ -89,7 +89,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 				if (!includeDocs) {
 					return resolve(definitionInformation);
 				}
-				cp.execFile(godoc, [pkgPath], {env}, (err, stdout, stderr) => {
+				cp.execFile(godoc, [pkgPath], { env }, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {
 						vscode.window.showInformationMessage('The "godoc" command is not available.');
 					}
@@ -126,11 +126,11 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 	}
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
-		
+
 		let gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()];
 		let buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
 		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', '"' + buildTags + '"'] : gogetdocFlagsWithoutTags;
-		let p = cp.execFile(gogetdoc, gogetdocFlags, {env}, (err, stdout, stderr) => {
+		let p = cp.execFile(gogetdoc, gogetdocFlags, { env }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'gogetdoc');
@@ -174,9 +174,9 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 	if (!path.isAbsolute(guru)) {
 		return Promise.reject(missingToolMsg + 'guru');
 	}
-	
+
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
-		let p = cp.execFile(guru, ['-json', '-modified', 'definition', document.fileName + ':#' + offset.toString()], {env}, (err, stdout, stderr) => {
+		let p = cp.execFile(guru, ['-json', '-modified', 'definition', document.fileName + ':#' + offset.toString()], { env }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'guru');
