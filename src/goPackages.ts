@@ -2,7 +2,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 type GopkgsDone = (res: Map<string, string>) => void;
@@ -12,6 +12,7 @@ let gopkgsRunning: boolean = false;
 let gopkgsSubscriptions: GopkgsDone[] = [];
 
 function gopkgs(): Promise<Map<string, string>> {
+	let t0 = Date.now();
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
 		const chunks = [];
@@ -39,6 +40,16 @@ function gopkgs(): Promise<Map<string, string>> {
 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
 				pkgs.set(pkgPath, pkgName);
 			});
+
+			let timeTaken = Date.now() - t0;
+			/* __GDPR__
+				"gopkgs" : {
+					"tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+					"timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
+				}
+			*/
+			sendTelemetryEvent('gopkgs', {}, { timeTaken });
+
 			return resolve(pkgs);
 		});
 	});
@@ -47,7 +58,7 @@ function gopkgs(): Promise<Map<string, string>> {
 function getAllPackagesNoCache(): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
-		let callback = function(pkgMap: Map<string, string>) {
+		let callback = function (pkgMap: Map<string, string>) {
 			resolve(pkgMap);
 		};
 		gopkgsSubscriptions.push(callback);

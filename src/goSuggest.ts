@@ -215,7 +215,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
 		let importablePkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => this.pkgsList = pkgMap);
-		let setPkgsList = Promise.race([timeout(1000).then(() => this.pkgsList), importablePkgsPromise]);
+		// let setPkgsList = Promise.race([timeout(1000).then(() => this.pkgsList), importablePkgsPromise]);
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
@@ -227,10 +227,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				});
 			});
 		});
-
-		return Promise.all([setPkgsList, setGocodeProps]).then(() => {
-			return;
-		});
+		return setGocodeProps;
+		// return Promise.all([setPkgsList, setGocodeProps]).then(() => {
+		// 	return;
+		// });
 	}
 
 	// Return importable packages that match given word as Completion Items
