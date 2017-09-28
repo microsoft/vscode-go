@@ -428,3 +428,55 @@ export function getImportPath(text: string): string {
 
 	return '';
 }
+
+// TODO: Add unit tests for the below
+
+/**
+ * Guess the package name based on parent directory name of the given file
+ *
+ * Cases:
+ * - dir 'go-i18n' -> 'i18n'
+ * - dir 'go-spew' -> 'spew'
+ * - dir 'kingpin' -> 'kingpin'
+ * - dir 'go-expand-tilde' -> 'tilde'
+ * - dir 'gax-go' -> 'gax'
+ * - dir 'go-difflib' -> 'difflib'
+ * - dir 'jwt-go' -> 'jwt'
+ * - dir 'go-radix' -> 'radix'
+ *
+ * @param {string} filePath.
+ */
+export function guessPackageNameFromFile(filePath): Promise<string> {
+	return new Promise((resolve, reject) => {
+
+		const goFilename = path.basename(filePath);
+		if (goFilename === 'main.go') {
+			return resolve('main');
+		}
+
+		const directoryPath = path.dirname(filePath);
+		let segments = directoryPath.split(/[\.-]/);
+		segments = segments.filter(val => val !== 'go');
+
+		if (segments.length === 0 || !/[a-zA-Z_]\w*/.test(segments[segments.length - 1])) {
+			return reject();
+		}
+
+		const proposedPkgName = segments[segments.length - 1];
+
+		if (goFilename.endsWith('internal_test.go')) {
+			return resolve(proposedPkgName);
+		}
+
+		if (goFilename.endsWith('_test.go')) {
+			return resolve(proposedPkgName + '_test');
+		}
+
+		fs.stat(path.join(directoryPath, 'main.go'), (err, stats) => {
+			if (stats && stats.isFile()) {
+				return resolve('main');
+			}
+			return resolve(proposedPkgName);
+		});
+	});
+}

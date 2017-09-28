@@ -7,12 +7,11 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { dirname, basename, join } from 'path';
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, timeout } from './util';
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, timeout, guessPackageNameFromFile } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
-import fs = require('fs');
+
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -28,53 +27,6 @@ function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 			return vscode.CompletionItemKind.Module;
 	}
 	return vscode.CompletionItemKind.Property; // TODO@EG additional mappings needed?
-}
-
-function packageNameSuggestion(filename: string): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const goFilename = basename(filename);
-		if (goFilename === 'main.go') {
-			return resolve('main');
-		}
-
-		const directoryPath = dirname(filename);
-		const proposedPkgName = guessPackageName(basename(directoryPath));
-		if (goFilename.endsWith('internal_test.go')) {
-			return resolve(proposedPkgName);
-		}
-
-		if (goFilename.endsWith('_test.go')) {
-			return resolve(proposedPkgName + '_test');
-		}
-
-		fs.stat(join(directoryPath, 'main.go'), (err, stats) => {
-			if (stats && stats.isFile()) {
-				return resolve('main');
-			}
-			return resolve(proposedPkgName);
-		});
-	});
-}
-
-/**
- * Guess the package name based on directory name.
- *
- * Cases:
- * - dir 'go-i18n' -> 'i18n'
- * - dir 'go-spew' -> 'spew'
- * - dir 'kingpin' -> 'kingpin'
- * - dir 'go-expand-tilde' -> 'tilde'
- * - dir 'gax-go' -> 'gax'
- * - dir 'go-difflib' -> 'difflib'
- * - dir 'jwt-go' -> 'jwt'
- * - dir 'go-radix' -> 'radix'
- *
- * @param {string} dirName where the go file located.
- */
-function guessPackageName(dirName) {
-	let segments = dirName.split(/[\.-]/);
-	segments = segments.filter(val => val !== 'go');
-	return segments[segments.length - 1];
 }
 
 interface GoCodeSuggestion {
@@ -240,15 +192,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					// 'Smart Snippet' for package clause
 					// TODO: Factor this out into a general mechanism
 					if (!inputText.match(/package\s+(\w+)/)) {
-						return packageNameSuggestion(filename).then(pkgName => {
-							if (pkgName.match(/[a-zA-Z_]\w*/)) {
-								let packageItem = new vscode.CompletionItem('package ' + pkgName);
-								packageItem.kind = vscode.CompletionItemKind.Snippet;
-								packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
-								suggestions.push(packageItem);
-							}
+						return guessPackageNameFromFile(filename).then(pkgName => {
+							let packageItem = new vscode.CompletionItem('package ' + pkgName);
+							packageItem.kind = vscode.CompletionItemKind.Snippet;
+							packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
+							suggestions.push(packageItem);
 							resolve(suggestions);
-						});
+						}, () => resolve(suggestions));
 					}
 
 					resolve(suggestions);
