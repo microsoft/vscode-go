@@ -23,19 +23,12 @@ export function goGetPackage() {
 		return vscode.window.showErrorMessage('Could not locate Go binaries. Make sure you have Go installed');
 	}
 
-	fs.exists(path.join(getCurrentGoPath(), 'src', importPath), (exists) => {
-		if (exists) {
-			vscode.window.showInformationMessage(`Package ${importPath} already exists`);
+	cp.execFile(goRuntimePath, ['get', importPath], (err, stdout, stderr) => {
+		if (stderr !== '') {
+			vscode.window.showErrorMessage(stderr);
 			return;
 		}
 
-		cp.execFile(goRuntimePath, ['get', '-u', importPath], (err, stdout, stderr) => {
-			if (stderr !== '') {
-				vscode.window.showErrorMessage(stderr);
-				return;
-			}
-
-			vscode.window.showInformationMessage(`Successfully fetched package ${importPath}`);
-		});
+		vscode.window.showInformationMessage(`Successfully fetched package ${importPath}`);
 	});
 };
