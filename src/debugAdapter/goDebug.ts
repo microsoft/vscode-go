@@ -234,15 +234,11 @@ class Delve {
 			if (!fileEnv['GOPATH'] && !launchArgsEnv['GOPATH'] && (mode === 'debug' || mode === 'test')) {
 				// If user hasnt specified GOPATH & file/package to debug is not under env['GOPATH'], then infer it from the file/package path
 				// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
-				let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
-				let programNotUnderGopath = !env['GOPATH'] || !currentGOWorkspace;
+				let programNotUnderGopath = !env['GOPATH'] || !getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
 				if (programNotUnderGopath ) {
 					env['GOPATH'] = getInferredGopath(dirname) || env['GOPATH'];
 				}
 			}
-
-			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
-			let importPath = currentGOWorkspace ? dirname.substr(currentGOWorkspace.length + 1) : '.';
 
 			verbose(`Using GOPATH: ${env['GOPATH']}`);
 
@@ -287,11 +283,12 @@ class Delve {
 			}
 			verbose('Using dlv at: ' + dlv);
 
+			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
 			let dlvArgs = [mode || 'debug'];
 			if (mode === 'exec') {
 				dlvArgs = dlvArgs.concat([program]);
-			} else if (importPath !== '.') {
-				dlvArgs = dlvArgs.concat([importPath]);
+			} else if (currentGOWorkspace) {
+				dlvArgs = dlvArgs.concat([dirname.substr(currentGOWorkspace.length + 1)]);
 			}
 			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
 			if (launchArgs.showLog) {

@@ -129,9 +129,8 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		// append the package name to args if applicable
 		let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
-		let importPath = currentGoWorkspace ? testconfig.dir.substr(currentGoWorkspace.length + 1) : '.';
-		if (importPath !== '.') {
-			args.push(importPath);
+		if (currentGoWorkspace && !testconfig.includeSubDirectories) {
+			args.push(testconfig.dir.substr(currentGoWorkspace.length + 1));
 		}
 
 		targetArgs(testconfig).then(targets => {
