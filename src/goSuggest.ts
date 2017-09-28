@@ -48,9 +48,10 @@ function packageNameSuggestion(filename: string): Promise<string> {
 		}
 
 		fs.stat(join(directoryPath, 'main.go'), (err, stats) => {
-			if (stats) {
-				return resolve(stats.isFile() ? 'main' : proposedPkgName);
+			if (stats && stats.isFile()) {
+				return resolve('main');
 			}
+			return resolve(proposedPkgName);
 		});
 	});
 }
