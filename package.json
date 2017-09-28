@@ -169,6 +169,11 @@
         "command": "go.browse.packages",
         "title": "Go: Browse Packages",
         "description": "Browse packages and Go files inside the packages."
+      },
+      {
+        "command": "go.get.package",
+        "title": "Go: Get Package",
+        "description": "Run `go get -v` on the package on the current line."
       }
     ],
     "debuggers": [

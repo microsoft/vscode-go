@@ -409,3 +409,22 @@ export function resolvePath(inputPath: string, workspaceRoot?: string): string {
 	return resolveHomeDir(inputPath);
 }
 
+/**
+ * Returns the import path in a passed in string.
+ * @param text The string to search for an import path
+ */
+export function getImportPath(text: string): string {
+	// Catch cases like `import alias "importpath"` and `import "importpath"`
+	let singleLineImportMatches = text.match(/^\s*import\s+([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
+	if (singleLineImportMatches) {
+		return singleLineImportMatches[2];
+	}
+
+	// Catch cases like `alias "importpath"` and "importpath"
+	let groupImportMatches = text.match(/^\s*([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
+	if (groupImportMatches) {
+		return groupImportMatches[2];
+	}
+
+	return '';
+}
