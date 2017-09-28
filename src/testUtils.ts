@@ -7,8 +7,8 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
-import { parseEnvFile, getGoRuntimePath } from './goPath';
-import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath } from './util';
+import { parseEnvFile, getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
@@ -125,6 +125,12 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		if (!goRuntimePath) {
 			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 			return Promise.resolve();
+		}
+
+		// append the package name to args if applicable
+		let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
+		if (currentGoWorkspace && !testconfig.includeSubDirectories) {
+			args.push(testconfig.dir.substr(currentGoWorkspace.length + 1));
 		}
 
 		targetArgs(testconfig).then(targets => {
