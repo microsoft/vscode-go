@@ -7,11 +7,11 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { dirname, basename } from 'path';
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, timeout } from './util';
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, timeout, guessPackageNameFromFile } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
+
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -148,21 +148,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					let suggestions = [];
 					let suggestionSet = new Set<string>();
 
-					// 'Smart Snippet' for package clause
-					// TODO: Factor this out into a general mechanism
-					if (!inputText.match(/package\s+(\w+)/)) {
-						let defaultPackageName =
-							basename(filename) === 'main.go'
-								? 'main'
-								: basename(dirname(filename));
-						if (defaultPackageName.match(/[a-zA-Z_]\w*/)) {
-							let packageItem = new vscode.CompletionItem('package ' + defaultPackageName);
-							packageItem.kind = vscode.CompletionItemKind.Snippet;
-							packageItem.insertText = 'package ' + defaultPackageName + '\r\n\r\n';
-							suggestions.push(packageItem);
-						}
-
-					}
 					if (results[1]) {
 						for (let suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
@@ -203,6 +188,18 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					// Add importable packages matching currentword to suggestions
 					let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(currentWord, suggestionSet) : [];
 					suggestions = suggestions.concat(importablePkgs);
+
+					// 'Smart Snippet' for package clause
+					// TODO: Factor this out into a general mechanism
+					if (!inputText.match(/package\s+(\w+)/)) {
+						return guessPackageNameFromFile(filename).then(pkgName => {
+							let packageItem = new vscode.CompletionItem('package ' + pkgName);
+							packageItem.kind = vscode.CompletionItemKind.Snippet;
+							packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
+							suggestions.push(packageItem);
+							resolve(suggestions);
+						}, () => resolve(suggestions));
+					}
 
 					resolve(suggestions);
 				} catch (e) {
