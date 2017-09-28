@@ -6,6 +6,7 @@ import path = require('path');
 import fs = require('fs');
 import { getGoRuntimePath } from './goPath';
 import { getCurrentGoPath, getImportPath } from './util';
+import { outputChannel } from './goStatus';
 
 export function goGetPackage() {
 	const editor = vscode.window.activeTextEditor;
@@ -23,12 +24,17 @@ export function goGetPackage() {
 		return vscode.window.showErrorMessage('Could not locate Go binaries. Make sure you have Go installed');
 	}
 
-	cp.execFile(goRuntimePath, ['get', importPath], (err, stdout, stderr) => {
+	cp.execFile(goRuntimePath, ['get', '-v', importPath], (err, stdout, stderr) => {
+		// go get -v uses stderr to write output regardless of success or failure
 		if (stderr !== '') {
-			vscode.window.showErrorMessage(stderr);
+			outputChannel.show();
+			outputChannel.clear();
+			outputChannel.appendLine(stderr);
+
 			return;
 		}
 
-		vscode.window.showInformationMessage(`Successfully fetched package ${importPath}`);
+		// go get -v doesn't write anything when the package already exists
+		vscode.window.showInformationMessage(`Package already exists: ${importPath}`);
 	});
 };
