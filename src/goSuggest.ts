@@ -7,12 +7,12 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { dirname, basename } from 'path';
+import { dirname, basename, join } from 'path';
 import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, timeout } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
-import { readDir } from './util';
+import fs = require('fs');
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -30,23 +30,6 @@ function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	return vscode.CompletionItemKind.Property; // TODO@EG additional mappings needed?
 }
 
-function defaultPackageName(filename: string): string {
-	let goFilename = basename(filename);
-	if (goFilename === 'main.go') {
-		return 'main';
-	}
-
-	if (goFilename.endsWith('internal_test.go')) {
-		return basename(dirname(filename));
-	}
-
-	if (goFilename.endsWith('_test.go')) {
-		return basename(dirname(filename)) + '_test';
-	}
-
-	return basename(dirname(filename));
-}
-
 function packageNameSuggestion(filename: string): Promise<string> {
 	return new Promise((resolve, reject) => {
 		const goFilename = basename(filename);
@@ -54,21 +37,21 @@ function packageNameSuggestion(filename: string): Promise<string> {
 			return resolve('main');
 		}
 
+		const directoryPath = dirname(filename);
+		const proposedPkgName = guessPackageName(basename(directoryPath));
 		if (goFilename.endsWith('internal_test.go')) {
-			return resolve(guessPackageName(basename(dirname(filename))));
+			return resolve(proposedPkgName);
 		}
 
 		if (goFilename.endsWith('_test.go')) {
-			return resolve(guessPackageName(basename(dirname(filename))) + '_test');
+			return resolve(proposedPkgName + '_test');
 		}
 
-		readDir(dirname(filename)).then(files => {
-			if (files.indexOf('main.go') > -1) {
-				return resolve('main');
+		fs.stat(join(directoryPath, 'main.go'), (err, stats) => {
+			if (stats) {
+				return resolve(stats.isFile() ? 'main' : proposedPkgName);
 			}
-
-			resolve(guessPackageName(basename(dirname(filename))));
-		}, err => reject(err));
+		});
 	});
 }
 
