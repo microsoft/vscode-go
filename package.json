@@ -173,7 +173,7 @@
       {
         "command": "go.get.package",
         "title": "Go: Get Package",
-        "description": "Run `go get -u` on the package on the current line."
+        "description": "Run `go get -v` on the package on the current line."
       }
     ],
     "debuggers": [
