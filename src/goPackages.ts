@@ -140,14 +140,15 @@ function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: st
 			vendorIndex = 0;
 		}
 	}
-	// Check if current file and the vendor pkg belong to the same root project
+	// Check if current file and the vendor pkg belong to the same root project and not sub vendor
 	// If yes, then vendor pkg can be replaced with its relative path to the "vendor" folder
 	// If not, then the vendor pkg should not be allowed to be imported.
 	if (vendorIndex > -1) {
 		let rootProjectForVendorPkg = path.join(currentWorkspace, pkgPath.substr(0, vendorIndex));
 		let relativePathForVendorPkg = pkgPath.substring(vendorIndex + magicVendorString.length);
+		let subVendor = relativePathForVendorPkg.indexOf('/vendor/') !== -1;
 
-		if (relativePathForVendorPkg && currentFileDirPath.startsWith(rootProjectForVendorPkg)) {
+		if (relativePathForVendorPkg && currentFileDirPath.startsWith(rootProjectForVendorPkg) && !subVendor) {
 			return relativePathForVendorPkg;
 		}
 		return '';
