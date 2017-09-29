@@ -455,7 +455,8 @@ export function guessPackageNameFromFile(filePath): Promise<string> {
 		}
 
 		const directoryPath = path.dirname(filePath);
-		let segments = directoryPath.split(/[\.-]/);
+		const dirName = path.basename(directoryPath);
+		let segments = dirName.split(/[\.-]/);
 		segments = segments.filter(val => val !== 'go');
 
 		if (segments.length === 0 || !/[a-zA-Z_]\w*/.test(segments[segments.length - 1])) {
