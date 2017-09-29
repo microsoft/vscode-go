@@ -173,7 +173,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 									if (param) {
 										param = param.replace('${', '\\${').replace('}', '\\}');
 										if (conf.get('useCodeSnippetsOnFunctionSuggestWithoutType')) {
-											param = param.substr(0, param.indexOf(" "));	
+											param = param.substr(0, param.indexOf(' '));
 										}
 										paramSnippets.push('${' + (i + 1) + ':' + param + '}');
 									}
