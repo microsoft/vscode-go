@@ -23,6 +23,7 @@ import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
+import { lintCurrentPackage, lintWorkspace } from '../src/goLint';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -32,10 +33,12 @@ suite('Go Extension Tests', () => {
 	let generateTestsSourcePath = path.join(repoPath, 'generatetests');
 	let generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
 	let generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
+	let testPath = path.join(__dirname, 'tests');
 
 	suiteSetup(() => {
 		assert.ok(gopath !== null, 'GOPATH is not defined');
 		fs.removeSync(repoPath);
+		fs.removeSync(testPath);
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
@@ -47,10 +50,16 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file2.go'), path.join(fixturePath, 'diffTest1Data', 'file2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file1.go'), path.join(fixturePath, 'diffTest2Data', 'file1.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file2.go'), path.join(fixturePath, 'diffTest2Data', 'file2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_1.go'), path.join(fixturePath, 'linterTest', 'linter_1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'), path.join(fixturePath, 'linterTest', 'linter_2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(testPath, 'errorsTest', 'errors.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_1.go'), path.join(testPath, 'linterTest', 'linter_1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'), path.join(testPath, 'linterTest', 'linter_2.go'));
 	});
 
 	suiteTeardown(() => {
 		fs.removeSync(repoPath);
+		fs.removeSync(testPath);
 	});
 
 	function testDefinitionProvider(goConfig: vscode.WorkspaceConfiguration): Thenable<any> {
@@ -755,5 +764,84 @@ It returns the number of bytes written and any write error encountered.
 		testCases.forEach(run => {
 			assert.equal(run[1], getImportPath(run[0]));
 		});
+	});
+
+	test('Test Linter for Package', (done) => {
+		getGoVersion().then(version => {
+			if (version && version.major === 1 && version.minor < 6) {
+				// golint in gometalinter is not supported in Go 1.5, so skip the test
+				return Promise.resolve();
+			}
+
+			let config = Object.create(vscode.workspace.getConfiguration('go'), {
+				'lintTool': { value: 'gometalinter' },
+				'lintFlags': { value: ['--json', '--disable-all', '--enable=golint', '--enable=errcheck'] },
+			});
+			let linterTestPath = path.join(fixturePath, 'linterTest');
+			let expected = [
+				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck, errcheck)' },
+				{ file: path.join(linterTestPath, 'linter_2.go'), line: 5, severity: 'warning', msg: 'error return value not checked (missing return) (errcheck)' },
+				{ file: path.join(linterTestPath, 'linter_1.go'), line: 5, severity: 'warning', msg: 'exported function ExportedFunc should have comment or be unexported (golint)' },
+			];
+			return lintCurrentPackage(vscode.Uri.file(path.join(linterTestPath, 'linter_1.go')), config).then(diagnostics => {
+				let sortedDiagnostics = diagnostics.sort((a, b) => {
+					if (a.msg < b.msg)
+						return -1;
+					if (a.msg > b.msg)
+						return 1;
+					return 0;
+				});
+				for (let i in expected) {
+					let errorMsg = `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`;
+					assert.equal(sortedDiagnostics[i].msg, expected[i].msg, errorMsg);
+					assert.equal(sortedDiagnostics[i].file, expected[i].file, errorMsg);
+					assert.equal(sortedDiagnostics[i].line, expected[i].line, errorMsg);
+					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, errorMsg);
+				}
+				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+				return Promise.resolve();
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Test Linter for Workspace', (done) => {
+		getGoVersion().then(version => {
+			if (version && version.major === 1 && version.minor < 6) {
+				// golint in gometalinter is not supported in Go 1.5, so skip the test
+				return Promise.resolve();
+			}
+
+			let config = Object.create(vscode.workspace.getConfiguration('go'), {
+				'lintTool': { value: 'gometalinter' },
+				'lintFlags': { value: ['--json', '--disable-all', '--enable=golint', '--enable=errcheck'] },
+			});
+			let linterTestPath = path.join(testPath, 'linterTest');
+			let errorTestPath = path.join(testPath, 'errorsTest');
+			let expected = [
+				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck, errcheck)' },
+				{ file: path.join(linterTestPath, 'linter_2.go'), line: 5, severity: 'warning', msg: 'error return value not checked (missing return) (errcheck)' },
+				{ file: path.join(errorTestPath, 'errors.go'), line: 12, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ file: path.join(linterTestPath, 'linter_1.go'), line: 5, severity: 'warning', msg: 'exported function ExportedFunc should have comment or be unexported (golint)' },
+				{ file: path.join(errorTestPath, 'errors.go'), line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported (golint)' },
+			];
+			return lintWorkspace(vscode.Uri.file(path.join(linterTestPath, 'linter_1.go')), config).then(diagnostics => {
+				let sortedDiagnostics = diagnostics.sort((a, b) => {
+					if (a.msg < b.msg)
+						return -1;
+					if (a.msg > b.msg)
+						return 1;
+					return 0;
+				});
+				for (let i in expected) {
+					let errorMsg = `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`;
+					assert.equal(sortedDiagnostics[i].msg, expected[i].msg, errorMsg);
+					assert.equal(sortedDiagnostics[i].file, expected[i].file, errorMsg);
+					assert.equal(sortedDiagnostics[i].line, expected[i].line, errorMsg);
+					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, errorMsg);
+				}
+				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+				return Promise.resolve();
+			});
+		}).then(() => done(), done);
 	});
 });
