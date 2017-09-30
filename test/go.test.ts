@@ -230,6 +230,7 @@ It returns the number of bytes written and any write error encountered.
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'package' },
 			'vetFlags': { value: ['-all'] },
+			'lintOnSave': { value: 'package' },
 			'lintTool': { value: 'golint' },
 			'lintFlags': { value: [] }
 		});
@@ -347,6 +348,7 @@ It returns the number of bytes written and any write error encountered.
 			}
 
 			let config = Object.create(vscode.workspace.getConfiguration('go'), {
+				'lintOnSave': { value: 'package' },
 				'lintTool': { value: 'gometalinter' },
 				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
 				'vetOnSave': { value: 'off' },
