@@ -113,12 +113,19 @@ export function getImportablePackages(filePath: string): Promise<Map<string, str
 			if (pkgName === 'main') {
 				return;
 			}
+
 			if (!isVendorSupported || !currentWorkspace) {
 				pkgMap.set(pkgPath, pkgName);
 				return;
 			}
+
 			let relativePkgPath = getRelativePackagePath(currentFileDirPath, currentWorkspace, pkgPath);
-			if (relativePkgPath) {
+			if (!relativePkgPath) {
+				return;
+			}
+
+			let allowToImport = isAllowToImport(currentFileDirPath, currentWorkspace, relativePkgPath);
+			if (allowToImport) {
 				pkgMap.set(relativePkgPath, pkgName);
 			}
 		});
@@ -155,6 +162,20 @@ function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: st
 	}
 
 	return pkgPath;
+}
+
+// This will check whether it's regular package or internal package
+// Regular package will always allowed
+// Internal package only allowed if the package doing the import is within the tree rooted at the parent of "internal" directory
+// see: https://golang.org/doc/go1.4#internalpackages
+// see: https://golang.org/s/go14internal
+function isAllowToImport(currentFileDirPath: string, currentWorkspace: string, pkgPath: string) {
+	let found = pkgPath.match(/\/internal\/|\/internal$/);
+	if (found) {
+		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, found.index));
+		return currentFileDirPath.startsWith(rootProjectForInternalPkg);
+	}
+	return true;
 }
 
 /**
