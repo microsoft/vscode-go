@@ -309,6 +309,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 // see: https://golang.org/doc/go1.4#internalpackages
 // see: https://golang.org/s/go14internal
 function isAllowToImport(toDirPath: string, currentWorkspace: string, pkgPath: string, goVersion: SemVersion) {
+	if (toDirPath === path.join(currentWorkspace, pkgPath)) {
+		// cannot import it's own package
+		return false;
+	}
 
 	if (goVersion.major < 1 || goVersion.major === 1 && goVersion.minor < 4) {
 		return true;
