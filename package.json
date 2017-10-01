@@ -585,7 +585,13 @@
         "go.useCodeSnippetsOnFunctionSuggest": {
           "type": "boolean",
           "default": false,
-          "description": "Complete functions with their parameter signature",
+          "description": "Complete functions with their parameter signature, including the variable types",
+          "scope": "resource"
+        },
+        "go.useCodeSnippetsOnFunctionSuggestWithoutType": {
+          "type": "boolean",
+          "default": false,
+          "description": "Complete functions with their parameter signature, excluding the variable types",
           "scope": "resource"
         },
         "go.autocompleteUnimportedPackages": {
