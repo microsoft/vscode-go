@@ -7,11 +7,12 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, timeout, guessPackageNameFromFile } from './util';
+import path = require('path');
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, getGoVersion, SemVersion, getCurrentGoPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
-
+import { getCurrentGoWorkspaceFromGOPATH} from './goPath';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -38,6 +39,7 @@ interface GoCodeSuggestion {
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	private pkgsList = new Map<string, string>();
+	private goVersion: SemVersion;
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
 		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go', document.uri));
@@ -90,7 +92,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					// If yes, then import the package in the inputText and run gocode again to get suggestions
 					if (suggestions.length === 0 && lineTillCurrentPosition.endsWith('.')) {
 
-						let pkgPath = this.getPackagePathFromLine(lineTillCurrentPosition);
+						let pkgPath = this.getPackagePathFromLine(filename, lineTillCurrentPosition);
 						if (pkgPath) {
 							// Now that we have the package path, import it right after the "package" statement
 							let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
@@ -189,7 +191,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					}
 
 					// Add importable packages matching currentword to suggestions
-					let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(currentWord, suggestionSet) : [];
+					let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(filename, currentWord, suggestionSet) : [];
 					suggestions = suggestions.concat(importablePkgs);
 
 					// 'Smart Snippet' for package clause
@@ -215,6 +217,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
 		let importablePkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => this.pkgsList = pkgMap);
+		let goVersionPromise = getGoVersion().then((version: SemVersion) => {
+			console.log('Go Version:', version);
+			this.goVersion = version;
+		});
 		// let setPkgsList = Promise.race([timeout(1000).then(() => this.pkgsList), importablePkgsPromise]);
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
@@ -227,18 +233,21 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				});
 			});
 		});
-		return setGocodeProps;
+		// return setGocodeProps;
 		// return Promise.all([setPkgsList, setGocodeProps]).then(() => {
 		// 	return;
 		// });
+		return Promise.all([setGocodeProps, goVersionPromise]).then(() => {
+			return;
+		});
 	}
 
 	// Return importable packages that match given word as Completion Items
-	private getMatchingPackages(word: string, suggestionSet: Set<string>): vscode.CompletionItem[] {
+	private getMatchingPackages(filename: string, word: string, suggestionSet: Set<string>): vscode.CompletionItem[] {
 		if (!word) return [];
 		let completionItems = [];
 
-		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
+		this.getPkgsList(filename).forEach((pkgName: string, pkgPath: string) => {
 			if (pkgName.startsWith(word) && !suggestionSet.has(pkgName)) {
 
 				let item = new vscode.CompletionItem(pkgName, vscode.CompletionItemKind.Keyword);
@@ -259,7 +268,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	// Given a line ending with dot, return the word preceeding the dot if it is a package name that can be imported
-	private getPackagePathFromLine(line: string): string {
+	private getPackagePathFromLine(filename: string, line: string): string {
 		let pattern = /(\w+)\.$/g;
 		let wordmatches = pattern.exec(line);
 		if (!wordmatches) {
@@ -269,7 +278,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		let [_, pkgNameFromWord] = wordmatches;
 		// Word is isolated. Now check pkgsList for a match
 		let matchingPackages = [];
-		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
+		this.getPkgsList(filename).forEach((pkgName: string, pkgPath: string) => {
 			if (pkgNameFromWord === pkgName) {
 				matchingPackages.push(pkgPath);
 			}
@@ -279,4 +288,36 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			return matchingPackages[0];
 		}
 	}
+
+	private getPkgsList(filename: string): Map<string, string> {
+		let filtered = new Map<string, string>();
+		let fileDirPath = path.dirname(filename);
+		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
+		this.pkgsList.forEach((pkgName, pkgPath) => {
+			let allowToImport = isAllowToImport(fileDirPath, currentWorkspace, pkgPath, this.goVersion);
+			if (allowToImport) {
+				filtered.set(pkgPath, pkgName);
+			}
+		});
+		return filtered;
+	}
+}
+
+// This will check whether it's regular package or internal package
+// Regular package will always allowed
+// Internal package only allowed if the package doing the import is within the tree rooted at the parent of "internal" directory
+// see: https://golang.org/doc/go1.4#internalpackages
+// see: https://golang.org/s/go14internal
+function isAllowToImport(toDirPath: string, currentWorkspace: string, pkgPath: string, goVersion: SemVersion) {
+
+	if (goVersion.major < 1 || goVersion.major === 1 && goVersion.minor < 4) {
+		return true;
+	}
+
+	let internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
+	if (internalPkgFound) {
+		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));
+		return toDirPath.startsWith(rootProjectForInternalPkg);
+	}
+	return true;
 }

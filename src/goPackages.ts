@@ -101,7 +101,7 @@ export function getAllPackages(): Promise<Map<string, string>> {
  * @returns Map<string, string> mapping between package import path and package name
  */
 export function getImportablePackages(filePath: string): Promise<Map<string, string>> {
-	return Promise.all([isVendorSupported(), getAllPackages(), getGoVersion()]).then(([vendorSupported, pkgs, goVersion]) => {
+	return Promise.all([isVendorSupported(), getAllPackages()]).then(([vendorSupported, pkgs]) => {
 		let currentFileDirPath = path.dirname(filePath);
 		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
 		let pkgMap = new Map<string, string>();
@@ -117,18 +117,12 @@ export function getImportablePackages(filePath: string): Promise<Map<string, str
 			}
 
 			let relativePkgPath = getRelativePackagePath(currentFileDirPath, currentWorkspace, pkgPath);
-			if (!relativePkgPath) {
-				return;
-			}
-
-			let allowToImport = isAllowToImport(currentFileDirPath, currentWorkspace, relativePkgPath, goVersion);
-			if (allowToImport) {
+			if (relativePkgPath) {
 				pkgMap.set(relativePkgPath, pkgName);
 			}
 		});
 		return pkgMap;
 	});
-
 }
 
 /**
@@ -159,24 +153,6 @@ function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: st
 	}
 
 	return pkgPath;
-}
-
-// This will check whether it's regular package or internal package
-// Regular package will always allowed
-// Internal package only allowed if the package doing the import is within the tree rooted at the parent of "internal" directory
-// see: https://golang.org/doc/go1.4#internalpackages
-// see: https://golang.org/s/go14internal
-function isAllowToImport(currentFileDirPath: string, currentWorkspace: string, pkgPath: string, goVersion: SemVersion) {
-	if (goVersion.major < 1 || goVersion.major === 1 && goVersion.minor < 4) {
-		return true;
-	}
-
-	let found = pkgPath.match(/\/internal\/|\/internal$/);
-	if (found) {
-		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, found.index));
-		return currentFileDirPath.startsWith(rootProjectForInternalPkg);
-	}
-	return true;
 }
 
 /**
