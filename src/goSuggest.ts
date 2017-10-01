@@ -217,10 +217,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
 		let importablePkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => this.pkgsList = pkgMap);
-		let goVersionPromise = getGoVersion().then((version: SemVersion) => {
-			console.log('Go Version:', version);
-			this.goVersion = version;
-		});
+		let goVersionPromise = getGoVersion().then((version: SemVersion) => this.goVersion = version);
 		// let setPkgsList = Promise.race([timeout(1000).then(() => this.pkgsList), importablePkgsPromise]);
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
