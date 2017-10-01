@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, getGoVersion, SemVersion, getCurrentGoPath } from './util';
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, getGoVersion, SemVersion, getCurrentGoPath, isAllowToImportPackage } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
@@ -300,25 +300,3 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 }
 
-// This will check whether it's regular package or internal package
-// Regular package will always allowed
-// Internal package only allowed if the package doing the import is within the tree rooted at the parent of "internal" directory
-// see: https://golang.org/doc/go1.4#internalpackages
-// see: https://golang.org/s/go14internal
-function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkgPath: string, goVersion: SemVersion) {
-	if (toDirPath === path.join(currentWorkspace, pkgPath)) {
-		// cannot import it's own package
-		return false;
-	}
-
-	if (goVersion.major < 1 || goVersion.major === 1 && goVersion.minor < 4) {
-		return true;
-	}
-
-	let internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
-	if (internalPkgFound) {
-		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));
-		return toDirPath.startsWith(rootProjectForInternalPkg);
-	}
-	return true;
-}

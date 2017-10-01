@@ -481,3 +481,27 @@ export function guessPackageNameFromFile(filePath): Promise<string> {
 		});
 	});
 }
+
+// This will check whether it's regular package or internal package
+// Regular package will always allowed
+// Internal package only allowed if the package doing the import is within the tree rooted at the parent of "internal" directory
+// see: https://golang.org/doc/go1.4#internalpackages
+// see: https://golang.org/s/go14internal
+export function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkgPath: string, goVersion: SemVersion) {
+	if (toDirPath === path.join(currentWorkspace, pkgPath)) {
+		// cannot import it's own package
+		return false;
+	}
+
+	// internal package restriction applied since Go 1.4
+	if (goVersion.major < 1 || goVersion.major === 1 && goVersion.minor < 4) {
+		return true;
+	}
+
+	let internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
+	if (internalPkgFound) {
+		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));
+		return toDirPath.startsWith(rootProjectForInternalPkg);
+	}
+	return true;
+}
