@@ -101,10 +101,7 @@ export function getAllPackages(): Promise<Map<string, string>> {
  * @returns Map<string, string> mapping between package import path and package name
  */
 export function getImportablePackages(filePath: string): Promise<Map<string, string>> {
-
-	return Promise.all([isVendorSupported(), getAllPackages()]).then(values => {
-		let isVendorSupported = values[0];
-		let pkgs = values[1];
+	return Promise.all([isVendorSupported(), getAllPackages(), getGoVersion()]).then(([vendorSupported, pkgs, goVersion]) => {
 		let currentFileDirPath = path.dirname(filePath);
 		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
 		let pkgMap = new Map<string, string>();
@@ -114,7 +111,7 @@ export function getImportablePackages(filePath: string): Promise<Map<string, str
 				return;
 			}
 
-			if (!isVendorSupported || !currentWorkspace) {
+			if (!vendorSupported || !currentWorkspace) {
 				pkgMap.set(pkgPath, pkgName);
 				return;
 			}
@@ -124,7 +121,7 @@ export function getImportablePackages(filePath: string): Promise<Map<string, str
 				return;
 			}
 
-			let allowToImport = isAllowToImport(currentFileDirPath, currentWorkspace, relativePkgPath);
+			let allowToImport = isAllowToImport(currentFileDirPath, currentWorkspace, relativePkgPath, goVersion);
 			if (allowToImport) {
 				pkgMap.set(relativePkgPath, pkgName);
 			}
@@ -169,7 +166,11 @@ function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: st
 // Internal package only allowed if the package doing the import is within the tree rooted at the parent of "internal" directory
 // see: https://golang.org/doc/go1.4#internalpackages
 // see: https://golang.org/s/go14internal
-function isAllowToImport(currentFileDirPath: string, currentWorkspace: string, pkgPath: string) {
+function isAllowToImport(currentFileDirPath: string, currentWorkspace: string, pkgPath: string, goVersion: SemVersion) {
+	if (goVersion.major < 1 || goVersion.major === 1 && goVersion.minor < 4) {
+		return true;
+	}
+
 	let found = pkgPath.match(/\/internal\/|\/internal$/);
 	if (found) {
 		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, found.index));
