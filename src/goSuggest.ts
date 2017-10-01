@@ -39,7 +39,6 @@ interface GoCodeSuggestion {
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	private pkgsList = new Map<string, string>();
-	private goVersion: SemVersion;
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
 		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go', document.uri));
@@ -217,7 +216,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
 		let importablePkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => this.pkgsList = pkgMap);
-		let goVersionPromise = getGoVersion().then((version: SemVersion) => this.goVersion = version);
 		// let setPkgsList = Promise.race([timeout(1000).then(() => this.pkgsList), importablePkgsPromise]);
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
@@ -230,13 +228,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				});
 			});
 		});
-		// return setGocodeProps;
+		return setGocodeProps;
 		// return Promise.all([setPkgsList, setGocodeProps]).then(() => {
 		// 	return;
 		// });
-		return Promise.all([setGocodeProps, goVersionPromise]).then(() => {
-			return;
-		});
 	}
 
 	// Return importable packages that match given word as Completion Items
@@ -291,7 +286,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		let fileDirPath = path.dirname(filename);
 		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
 		this.pkgsList.forEach((pkgName, pkgPath) => {
-			let allowToImport = isAllowToImportPackage(fileDirPath, currentWorkspace, pkgPath, this.goVersion);
+			let allowToImport = isAllowToImportPackage(fileDirPath, currentWorkspace, pkgPath);
 			if (allowToImport) {
 				filtered.set(pkgPath, pkgName);
 			}
