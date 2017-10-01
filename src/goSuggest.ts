@@ -294,7 +294,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		let fileDirPath = path.dirname(filename);
 		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
 		this.pkgsList.forEach((pkgName, pkgPath) => {
-			let allowToImport = isAllowToImport(fileDirPath, currentWorkspace, pkgPath, this.goVersion);
+			let allowToImport = isAllowToImportPackage(fileDirPath, currentWorkspace, pkgPath, this.goVersion);
 			if (allowToImport) {
 				filtered.set(pkgPath, pkgName);
 			}
@@ -308,7 +308,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 // Internal package only allowed if the package doing the import is within the tree rooted at the parent of "internal" directory
 // see: https://golang.org/doc/go1.4#internalpackages
 // see: https://golang.org/s/go14internal
-function isAllowToImport(toDirPath: string, currentWorkspace: string, pkgPath: string, goVersion: SemVersion) {
+function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkgPath: string, goVersion: SemVersion) {
 	if (toDirPath === path.join(currentWorkspace, pkgPath)) {
 		// cannot import it's own package
 		return false;
