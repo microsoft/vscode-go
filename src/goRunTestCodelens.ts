@@ -81,10 +81,11 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				const envFile = vsConfig['testEnvFile'];
 				let buildFlags = getTestFlags(vsConfig, null);
 				if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
-					buildFlags.push(`-tags '${vsConfig['buildTags']}'`);
+					buildFlags.push('-tags');
+					buildFlags.push(`${vsConfig['buildTags']}`);
 				}
 
-				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile, buildFlags });
+				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
 				let debugTestCmd: Command = {
 					title: 'debug test',
 					command: 'vscode.startDebug',
