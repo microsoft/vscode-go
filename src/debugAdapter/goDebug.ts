@@ -235,7 +235,7 @@ class Delve {
 				// If user hasnt specified GOPATH & file/package to debug is not under env['GOPATH'], then infer it from the file/package path
 				// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
 				let programNotUnderGopath = !env['GOPATH'] || !getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
-				if (programNotUnderGopath ) {
+				if (programNotUnderGopath) {
 					env['GOPATH'] = getInferredGopath(dirname) || env['GOPATH'];
 				}
 			}
@@ -281,7 +281,6 @@ class Delve {
 				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
 				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
 			}
-			verbose('Using dlv at: ' + dlv);
 
 			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
 			let dlvArgs = [mode || 'debug'];
@@ -309,6 +308,8 @@ class Delve {
 			if (launchArgs.args) {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
+
+			verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
 
 			this.debugProcess = spawn(dlv, dlvArgs, {
 				cwd: dlvCwd,
