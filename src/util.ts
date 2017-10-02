@@ -328,7 +328,11 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 		workspaceUri = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
 	}
 	const config = vscode.workspace.getConfiguration('go', workspaceUri);
-	const currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
+	let currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
+	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+	if (process.platform === 'win32') {
+		currentRoot = currentRoot.substr(0, 1).toUpperCase() + currentRoot.substr(1);
+	}
 	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
 	const inferredGopath = config['inferGopath'] === true ? getInferredGopath(currentRoot) : '';
 
