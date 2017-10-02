@@ -20,6 +20,8 @@ We now have [Multi Root support](https://code.visualstudio.com/updates/v1_15#_pr
         * If the folder name in above cases has `-` or `.`, then what appears after the `-` or `.` is suggested.
 * [Alexander Kohler (@alexkohler)](https://github.com/alexkohler)
     * A new setting `go.useCodeSnippetsOnFunctionSuggestWithoutType` is introduced. This allows completions of functions with their parameter signature but without the parameter types. [Feature Request 1241](https://github.com/Microsoft/vscode-go/issues/1241)
+* [Miklós @kmikiy](https://github.com/kmikiy)
+    * 3 New snippets for the `Log` methods from the `testing` package
 
 ### Improvements around running and debugging tests
 
