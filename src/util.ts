@@ -450,12 +450,12 @@ export function getImportPath(text: string): string {
  *
  * @param {string} filePath.
  */
-export function guessPackageNameFromFile(filePath): Promise<string> {
+export function guessPackageNameFromFile(filePath): Promise<string[]> {
 	return new Promise((resolve, reject) => {
 
 		const goFilename = path.basename(filePath);
 		if (goFilename === 'main.go') {
-			return resolve('main');
+			return resolve(['main']);
 		}
 
 		const directoryPath = path.dirname(filePath);
@@ -469,19 +469,15 @@ export function guessPackageNameFromFile(filePath): Promise<string> {
 
 		const proposedPkgName = segments[segments.length - 1];
 
-		if (goFilename.endsWith('internal_test.go')) {
-			return resolve(proposedPkgName);
-		}
-
 		if (goFilename.endsWith('_test.go')) {
-			return resolve(proposedPkgName + '_test');
+			return resolve([proposedPkgName, proposedPkgName + '_test']);
 		}
 
 		fs.stat(path.join(directoryPath, 'main.go'), (err, stats) => {
 			if (stats && stats.isFile()) {
-				return resolve('main');
+				return resolve(['main']);
 			}
-			return resolve(proposedPkgName);
+			return resolve([proposedPkgName]);
 		});
 	});
 }
