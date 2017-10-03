@@ -201,7 +201,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								packageItem.kind = vscode.CompletionItemKind.Snippet;
 								packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
 								suggestions.push(packageItem);
-							})
+							});
 							resolve(suggestions);
 						}, () => resolve(suggestions));
 					}
