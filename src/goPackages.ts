@@ -97,11 +97,21 @@ export function getAllPackages(): Promise<Map<string, string>> {
 
 /**
  * Returns mapping of import path and package name for packages that can be imported
+ * Possible to return empty if useCache options is used.
  * @param filePath. Used to determine the right relative path for vendor pkgs
+ * @param useCache. Force to use cache
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function getImportablePackages(filePath: string): Promise<Map<string, string>> {
-	return Promise.all([isVendorSupported(), getAllPackages()]).then(([vendorSupported, pkgs]) => {
+export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, string>> {
+	let getAllPackagesPromise: Promise<Map<string, string>>;
+	if (useCache) {
+		// forced to use cache
+		getAllPackagesPromise = Promise.race([getAllPackages(), allPkgsCache]);
+	} else {
+		getAllPackagesPromise = getAllPackages();
+	}
+
+	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {
 		let currentFileDirPath = path.dirname(filePath);
 		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
 		let pkgMap = new Map<string, string>();
@@ -117,7 +127,12 @@ export function getImportablePackages(filePath: string): Promise<Map<string, str
 			}
 
 			let relativePkgPath = getRelativePackagePath(currentFileDirPath, currentWorkspace, pkgPath);
-			if (relativePkgPath) {
+			if (!relativePkgPath) {
+				return;
+			}
+
+			let allowToImport = isAllowToImportPackage(currentFileDirPath, currentWorkspace, relativePkgPath);
+			if (allowToImport) {
 				pkgMap.set(relativePkgPath, pkgName);
 			}
 		});
@@ -185,3 +200,21 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 	});
 }
 
+// This will check whether it's regular package or internal package
+// Regular package will always allowed
+// Internal package only allowed if the package doing the import is within the tree rooted at the parent of "internal" directory
+// see: https://golang.org/doc/go1.4#internalpackages
+// see: https://golang.org/s/go14internal
+export function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkgPath: string) {
+	if (toDirPath === path.join(currentWorkspace, pkgPath)) {
+		// cannot import it's own package
+		return false;
+	}
+
+	let internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
+	if (internalPkgFound) {
+		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));
+		return toDirPath.startsWith(rootProjectForInternalPkg);
+	}
+	return true;
+}
