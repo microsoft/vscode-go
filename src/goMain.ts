@@ -487,14 +487,11 @@ function didLangServerConfigChange(useLangServer: boolean, langServerFlags: stri
 	return false;
 }
 
-function loadPackages(): Promise<void> {
-	return new Promise<void>((resolve, reject) => {
-		vscode.window.withProgress<void>({location: vscode.ProgressLocation.Window, title: 'Loading packages'}, p => {
-			p.report({message: 'Load Packages'});
-			return getAllPackages().then(() => {
-				resolve();
-				return;
-			});
+function loadPackages(): Thenable<void> {
+	return vscode.window.withProgress<void>({location: vscode.ProgressLocation.Window, title: 'Loading packages'}, p => {
+		p.report({message: 'Load Packages'});
+		return getAllPackages().then(() => {
+			return;
 		});
 	});
 }
