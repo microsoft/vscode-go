@@ -111,6 +111,11 @@ export function getAllPackages(): Promise<Map<string, string>> {
  */
 export function getImportablePackages(filePath: string): Promise<Map<string, string>> {
 
+	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+	if (process.platform === 'win32' && filePath) {
+		filePath = filePath.substr(0, 1).toUpperCase() + filePath.substr(1);
+	}
+
 	return Promise.all([isVendorSupported(), getAllPackages()]).then(values => {
 		let isVendorSupported = values[0];
 		let pkgs = values[1];
