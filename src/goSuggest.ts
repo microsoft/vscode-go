@@ -7,11 +7,11 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, timeout, guessPackageNameFromFile } from './util';
+import path = require('path');
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
-
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -216,7 +216,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
-		let importablePkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName).then(pkgMap => this.pkgsList = pkgMap);
+		let setPkgsList = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true).then(pkgMap => this.pkgsList = pkgMap);
 		// let setPkgsList = Promise.race([timeout(1000).then(() => this.pkgsList), importablePkgsPromise]);
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
@@ -229,10 +229,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				});
 			});
 		});
-		return setGocodeProps;
-		// return Promise.all([setPkgsList, setGocodeProps]).then(() => {
-		// 	return;
-		// });
+		// return setGocodeProps;
+		return Promise.all([setPkgsList, setGocodeProps]).then(() => {
+			return;
+		});
 	}
 
 	// Return importable packages that match given word as Completion Items
@@ -282,3 +282,4 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		}
 	}
 }
+
