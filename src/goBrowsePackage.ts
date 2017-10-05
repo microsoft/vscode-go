@@ -10,7 +10,7 @@ import cp = require('child_process');
 import { getGoRuntimePath } from './goPath';
 import path = require('path');
 import { getAllPackages } from './goPackages';
-import { getImportPath } from './util';
+import { getImportPath, getCurrentGoPath } from './util';
 
 export function browsePackages() {
 	let selectedText = '';
@@ -30,7 +30,7 @@ export function browsePackages() {
 	showPackageFiles(selectedText, true);
 }
 
-function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean)  {
+function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean) {
 	const goRuntimePath = getGoRuntimePath();
 	if (!goRuntimePath) {
 		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
@@ -40,7 +40,9 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean)  {
 		return showPackageList();
 	}
 
-	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], (err, stdout, stderr) => {
+	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
+
+	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], { env }, (err, stdout, stderr) => {
 		if (!stdout || stdout.indexOf(':') === -1) {
 			if (showAllPkgsIfPkgNotFound) {
 				return showPackageList();

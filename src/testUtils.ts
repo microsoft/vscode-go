@@ -127,7 +127,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			return Promise.resolve();
 		}
 
-		// append the package name to args if applicable
+		// Append the package name to args to enable running tests in symlinked directories
 		let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
 		if (currentGoWorkspace && !testconfig.includeSubDirectories) {
 			args.push(testconfig.dir.substr(currentGoWorkspace.length + 1));

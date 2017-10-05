@@ -17,14 +17,14 @@ export class GoHoverProvider implements HoverProvider {
 	}
 
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
-		let goConfig = this.goConfig;
 		if (!this.goConfig) {
 			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
 		}
+		let goConfig = this.goConfig;
 
 		// Temporary fix to fall back to godoc if guru is the set docsTool
 		if (goConfig['docsTool'] === 'guru') {
-			goConfig = Object.assign({}, goConfig, {'docsTool': 'godoc'});
+			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
 		return definitionLocation(document, position, goConfig, true).then(definitionInfo => {
 			if (definitionInfo == null) return null;

@@ -195,11 +195,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					// 'Smart Snippet' for package clause
 					// TODO: Factor this out into a general mechanism
 					if (!inputText.match(/package\s+(\w+)/)) {
-						return guessPackageNameFromFile(filename).then(pkgName => {
-							let packageItem = new vscode.CompletionItem('package ' + pkgName);
-							packageItem.kind = vscode.CompletionItemKind.Snippet;
-							packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
-							suggestions.push(packageItem);
+						return guessPackageNameFromFile(filename).then((pkgNames: string[]) => {
+							pkgNames.forEach(pkgName => {
+								let packageItem = new vscode.CompletionItem('package ' + pkgName);
+								packageItem.kind = vscode.CompletionItemKind.Snippet;
+								packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
+								suggestions.push(packageItem);
+							});
 							resolve(suggestions);
 						}, () => resolve(suggestions));
 					}

@@ -328,7 +328,11 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 		workspaceUri = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
 	}
 	const config = vscode.workspace.getConfiguration('go', workspaceUri);
-	const currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
+	let currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
+	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+	if (process.platform === 'win32' && currentRoot) {
+		currentRoot = currentRoot.substr(0, 1).toUpperCase() + currentRoot.substr(1);
+	}
 	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
 	const inferredGopath = config['inferGopath'] === true ? getInferredGopath(currentRoot) : '';
 
@@ -446,12 +450,12 @@ export function getImportPath(text: string): string {
  *
  * @param {string} filePath.
  */
-export function guessPackageNameFromFile(filePath): Promise<string> {
+export function guessPackageNameFromFile(filePath): Promise<string[]> {
 	return new Promise((resolve, reject) => {
 
 		const goFilename = path.basename(filePath);
 		if (goFilename === 'main.go') {
-			return resolve('main');
+			return resolve(['main']);
 		}
 
 		const directoryPath = path.dirname(filePath);
@@ -465,19 +469,15 @@ export function guessPackageNameFromFile(filePath): Promise<string> {
 
 		const proposedPkgName = segments[segments.length - 1];
 
-		if (goFilename.endsWith('internal_test.go')) {
-			return resolve(proposedPkgName);
-		}
-
 		if (goFilename.endsWith('_test.go')) {
-			return resolve(proposedPkgName + '_test');
+			return resolve([proposedPkgName, proposedPkgName + '_test']);
 		}
 
 		fs.stat(path.join(directoryPath, 'main.go'), (err, stats) => {
 			if (stats && stats.isFile()) {
-				return resolve('main');
+				return resolve(['main']);
 			}
-			return resolve(proposedPkgName);
+			return resolve([proposedPkgName]);
 		});
 	});
 }

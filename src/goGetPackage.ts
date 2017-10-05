@@ -3,7 +3,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getGoRuntimePath } from './goPath';
-import { getImportPath } from './util';
+import { getImportPath, getCurrentGoPath } from './util';
 import { outputChannel } from './goStatus';
 
 export function goGetPackage() {
@@ -22,7 +22,9 @@ export function goGetPackage() {
 		return vscode.window.showErrorMessage('Could not locate Go binaries. Make sure you have Go installed');
 	}
 
-	cp.execFile(goRuntimePath, ['get', '-v', importPath], (err, stdout, stderr) => {
+	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
+
+	cp.execFile(goRuntimePath, ['get', '-v', importPath], { env }, (err, stdout, stderr) => {
 		// go get -v uses stderr to write output regardless of success or failure
 		if (stderr !== '') {
 			outputChannel.show();

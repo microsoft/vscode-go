@@ -32,7 +32,16 @@ function gopkgs(): Promise<Map<string, string>> {
 			const output = chunks.join('');
 			if (output.indexOf(';') === -1) {
 				// User might be using the old gopkgs tool, prompt to update
-				return promptForUpdatingTool('gopkgs');
+				promptForUpdatingTool('gopkgs');
+				output.split('\n').forEach(pkgPath => {
+					if (!pkgPath || !pkgPath.trim()) {
+						return;
+					}
+					let index = pkgPath.lastIndexOf('/');
+					let pkgName = index === -1 ? pkgPath : pkgPath.substr(index + 1);
+					pkgs.set(pkgPath, pkgName);
+				});
+				return resolve(pkgs);
 			}
 
 			output.split('\n').forEach((pkgDetail) => {
@@ -109,6 +118,11 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 		getAllPackagesPromise = Promise.race([getAllPackages(), allPkgsCache]);
 	} else {
 		getAllPackagesPromise = getAllPackages();
+	}
+
+  // Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+	if (process.platform === 'win32' && filePath) {
+		filePath = filePath.substr(0, 1).toUpperCase() + filePath.substr(1);
 	}
 
 	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {

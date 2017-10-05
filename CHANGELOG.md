@@ -1,21 +1,51 @@
-## 0.6.66 - Coming Soon..
+## 0.6.66 - 2nd October, 2017
 
-* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
-    * `$workspaceRoot` will now be resolved when part of `go.testEnvVars` and `go.toolsEnvVars` setting.
-    * [Multi Root support](https://code.visualstudio.com/updates/v1_15#_preview-multi-root-workspaces) when using [VS Code Insiders](https://code.visualstudio.com/insiders)
-         * Read more on [Multi Root support](https://code.visualstudio.com/updates/v1_15#_preview-multi-root-workspaces) in general
-         * The experimental language server feature is not supported ff the different roots in your multi root support use different GOPATHs
-         * All current Go related features that refer "workspace" will refer to the individual roots in the multi root mode. For example: Build/lint/vet/test workspace or `Go to Symbol in workspace`.
-         * Give it a try and log any issues that you find.
-    
+### [Multi Root support](https://code.visualstudio.com/updates/v1_15#_preview-multi-root-workspaces) when using [VS Code Insiders](https://code.visualstudio.com/insiders)
+   
+We now have [Multi Root support](https://code.visualstudio.com/updates/v1_15#_preview-multi-root-workspaces) for Go. [PR 1221](https://github.com/Microsoft/vscode-go/pull/1221) Please note:
+* The settings at Folder level takes precedence over the ones at the Workspace level which in turn take precedence over the ones at the User level
+* You can have the different roots in the multi-root mode use different GOPATHs. The experimental language server feature is not supported in such cases though.
+* All current Go related features that refer to "workspace" will refer to the individual roots in the multi root mode. For example: Build/lint/vet/test workspace or `Go to Symbol in workspace`.
+* Give it a try and log any issues that you find in the [vscode-go repo](https://github.com/Microsoft/vscode-go/issues)
+
+### Auto-completion improvements
+
 * [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
-    * Auto-completion for unimported packages that are newly installed/built without the need for reloading VS Code. 
-    * `Go: Browse Packages` will now include newly installed/built packages without the need for reloading VS Code.
+    * Auto-completion for unimported packages that are newly installed/built will now show up without the need for reloading VS Code.
+    * Completions from sub vendor packages that were showing up are ignored now. Fixes [Bug 1251](https://github.com/Microsoft/vscode-go/issues/1251)
+    * The `package` snippet completion is now smarter when suggesting package names. [PR 1220](https://github.com/Microsoft/vscode-go/pull/1220). It suggests
+        * `main` when current file is `main.go` or there exists a `main.go` file in current folder
+        * The folder name when the current file is `internal_test.go`
+        * The folder name with `_test` when current file is a test file 
+        * If the folder name in above cases has `-` or `.`, then what appears after the `-` or `.` is suggested.
+* [Alexander Kohler (@alexkohler)](https://github.com/alexkohler)
+    * A new setting `go.useCodeSnippetsOnFunctionSuggestWithoutType` is introduced. This allows completions of functions with their parameter signature but without the parameter types. [Feature Request 1241](https://github.com/Microsoft/vscode-go/issues/1241)
+* [Miklós @kmikiy](https://github.com/kmikiy)
+    * 3 New snippets for the `Log` methods from the `testing` package
 
+### Improvements around running and debugging tests
+
+* [zhouhaibing089 (@zhouhaibing089)](https://github.com/zhouhaibing089)
+    * Running and debugging tests for packages in symlinked folders is now possible. [PR 1164](https://github.com/Microsoft/vscode-go/pull/1164)
+* [Katsuma Ito (@ka2n)](https://github.com/ka2n)
+    * The Debug Test codelens now uses the buildTags and buildFlags correctly. [PR 1248](https://github.com/Microsoft/vscode-go/pull/1248)
+* [Chase Adams (@chaseadamsio)](https://github.com/chaseadamsio)
+    * You can now run tests from unsaved files. Fixes [Bug 1225](https://github.com/Microsoft/vscode-go/issues/1225)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Changes done to coverage options and decorators in settings now apply immediately without the need for moving to another file and back. Fixes [Bug 1171](https://github.com/Microsoft/vscode-go/issues/1171)
+    * The Run Test and Debug Test codelens react to change in the codelens setting immediately without the need for moving to another file and back. Fixes [Bug 1172](https://github.com/Microsoft/vscode-go/issues/1172)
+    * `$workspaceRoot` will now be resolved when part of `go.testEnvVars` and `go.toolsEnvVars` setting.
+
+
+### Improvements around Packages
+* [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
+    * `Go: Browse Packages` command will now include newly installed/built packages without the need for reloading VS Code.
+* [Hugo (@juicemia)](https://github.com/juicemia)
+    * A new command `Go: Get Package` is introduced to run `go get` on the package in the import statement under the cursor. [PR 1222](https://github.com/Microsoft/vscode-go/pull/1222)
 
 ## 0.6.65 - 6th September, 2017
 
-[Seonggi Yang @ sgyang](https://github.com/sgyang)
+[Seonggi Yang (@sgyang)](https://github.com/sgyang)
 * [Bug #1152](https://github.com/Microsoft/vscode-go/issues/1152): Auto completions for unimported packages do not work anymore on certain machines. [PR 1197](https://github.com/Microsoft/vscode-go/pull/1197)
 
 [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
