@@ -108,9 +108,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		if (vscode.window.activeTextEditor && isGoPathSet()) {
 			// preload packages so the cache are ready to use
-			loadPackages().then(() => {
-				runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri));
-			});
+			loadPackages();
+			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri));
 		}
 	});
 
@@ -487,11 +486,6 @@ function didLangServerConfigChange(useLangServer: boolean, langServerFlags: stri
 	return false;
 }
 
-function loadPackages(): Thenable<void> {
-	return vscode.window.withProgress<void>({location: vscode.ProgressLocation.Window, title: 'Loading packages'}, p => {
-		p.report({message: 'Load Packages'});
-		return getAllPackages().then(() => {
-			return;
-		});
-	});
+function loadPackages() {
+	getAllPackages();
 }
