@@ -174,6 +174,11 @@
         "command": "go.get.package",
         "title": "Go: Get Package",
         "description": "Run `go get -v` on the package on the current line."
+      },
+      {
+        "command": "go.playground",
+        "title": "Go: Run on Go Playground",
+        "description": "Upload the current selection or file to the Go Playground"
       }
     ],
     "debuggers": [
@@ -733,6 +738,32 @@
           "description": "Tags and options configured here will be used by the Remove Tags command to remove tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, all tags and options will be removed.",
           "scope": "resource"
         },
+        "go.playground": {
+          "type": "object",
+          "properties": {
+            "openbrowser": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether to open the created Go Playground in the default browser"
+            },
+            "share": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether to make the created Go Playground shareable"
+            },
+            "run": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether to run the created Go Playground after creation"
+            },
+            "description": "The flags configured here will be passed through to command `goplay`"
+          },
+          "default": {
+            "openbrowser": true,
+            "share": true,
+            "run": true
+          }
+        },
         "go.editorContextMenuCommands": {
           "type": "object",
           "properties": {
@@ -790,6 +821,11 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to run test coverage to the editor context menu"
+            },
+            "playground": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to upload the current file or selection to the Go Playground"
             }
           },
           "default": {
@@ -803,7 +839,8 @@
             "generateTestForFile": false,
             "generateTestForPackage": false,
             "addImport": true,
-            "testCoverage": true
+            "testCoverage": true,
+            "playground": true
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor.",
           "scope": "resource"

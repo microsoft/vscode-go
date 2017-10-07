@@ -39,6 +39,7 @@ import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
 import { browsePackages } from './goBrowsePackage';
 import { goGetPackage } from './goGetPackage';
+import { uploadAndRun } from './goPlayground';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
@@ -288,6 +289,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.get.package', goGetPackage));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.playground', uploadAndRun));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {

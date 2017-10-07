@@ -26,6 +26,7 @@ const allTools: { [key: string]: string } = {
 	'guru': 'golang.org/x/tools/cmd/guru',
 	'gorename': 'golang.org/x/tools/cmd/gorename',
 	'gomodifytags': 'github.com/fatih/gomodifytags',
+	'goplay': 'github.com/haya14busa/goplay/cmd/goplay',
 	'impl': 'github.com/josharian/impl',
 	'gotype-live': 'github.com/tylerb/gotype-live',
 	'godef': 'github.com/rogpeppe/godef',
@@ -51,6 +52,7 @@ function getTools(goVersion: SemVersion): string[] {
 		'guru',
 		'gorename',
 		'gomodifytags',
+		'goplay',
 		'impl'
 	];
 
