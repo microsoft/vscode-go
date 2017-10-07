@@ -296,10 +296,10 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	return Promise.all(runningToolsPromises).then(function(resultSets){
-		let results: ICheckResult[]=[].concat.apply([], resultSets);
+		let results: ICheckResult[] = [].concat.apply([], resultSets);
 		// Filter duplicates
-		return results.filter((results, index, self) => 
+		return results.filter((results, index, self) =>
 			self.findIndex((t) => {
-				return t.file === results.file && t.line === results.line && t.msg === results.msg && t.severity == results.severity; }) === index);
+				return t.file === results.file && t.line === results.line && t.msg === results.msg && t.severity === results.severity; }) === index);
 	});
 }
