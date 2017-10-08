@@ -22,7 +22,7 @@ import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
-import { uploadAndRun } from '../src/goPlayground';
+import { uploadUsingTool, createCommandWith, isENOENT, stringifyFlags } from '../src/goPlayground';
 import { getImportPath } from '../src/util';
 
 suite('Go Extension Tests', () => {
@@ -759,19 +759,107 @@ It returns the number of bytes written and any write error encountered.
 		});
 	});
 
-	test('playground command', (done) => {
-		let uri = vscode.Uri.file(path.join(fixturePath, 'playground', 'main.go'));
-		vscode.workspace.openTextDocument(uri).then((document) => {
-			return vscode.window.showTextDocument(document);
-		}).then(() => {
-			return uploadAndRun(['-run=true', '-openbrowser=false', '-share=false']);
-		})
-		.then((stdout: string) => {
-			assert(
-				stdout.includes('1 2 3 Go!')
-			);
-		})
-		.then(() => done(), done);
-	});
+	suite('playground command', () => {
+		test('uploadUsingTool - success', (done) => {
+			const validCode = `
+package main
 
+import (
+	"fmt"
+)
+
+func main() {
+	for i := 1; i < 4; i++ {
+		fmt.Printf("%v ", i)
+	}
+	fmt.Print("Go!")
+}`;
+			uploadUsingTool(validCode, { run: true, openbrowser: false, share: false })
+				.then((stdout: string) => {
+					assert(
+						stdout.includes('1 2 3 Go!')
+					);
+				})
+				.then(() => done(), done);
+		});
+
+		test('uploadUsingTool - error', (done) => {
+			const invalidCode = `
+package notmain
+
+import (
+	"fmt"
+)
+
+func fantasy() {
+	fmt.Print("not a main package, sorry")
+}`;
+			uploadUsingTool(invalidCode, { run: true, openbrowser: false, share: false })
+				.then(() => done(new Error('Expected error to be returned')), () => done());
+		});
+
+		test('createCommandWith', (done) => {
+			const mockUploader = (code: string, flags: any): Promise<string> => {
+				(<any>mockUploader).code = code;
+				(<any>mockUploader).flags = flags;
+				return Promise.resolve('OK!');
+			};
+			const commandWithMock = createCommandWith(mockUploader);
+			const config = vscode.workspace.getConfiguration('go').get('playground');
+
+			let uri = vscode.Uri.file(path.join(fixturePath, 'playground', 'main.go'));
+			vscode.workspace.openTextDocument(uri).then((document) => {
+				return vscode.window.showTextDocument(document);
+			}).then(() => {
+				return commandWithMock();
+			})
+			.then(() => {
+				assert.strictEqual(
+					(<any>mockUploader).code,
+					'package main\n'
+				);
+				assert.deepStrictEqual(
+					(<any>mockUploader).flags,
+					config
+				);
+			})
+			.then(() => done(), done);
+		});
+
+		test('isENOENT', () => {
+			const tests: [Error, Boolean][] = [
+				[null, false],
+				[new Error('Something went wrong'), false],
+				[(() => {
+					const err = new Error('Could not find the requested file');
+					(<any>err).code = 'ENOENT';
+					return err;
+				})(), true],
+				[(() => {
+					const err = new Error('Missing permissions');
+					(<any>err).code = 'EPERM';
+					return err;
+				})(), false]
+			];
+			tests.forEach(([err, expected]) => {
+				assert.strictEqual(
+					isENOENT(err),
+					expected
+				);
+			});
+		});
+
+		test('stringifyFlags', () => {
+			const tests: [any, string[]][] = [
+				[{foo: true, bar: false}, ['-foo=true', '-bar=false']],
+				[{}, []]
+			];
+			tests.forEach(([input, expected]) => {
+				assert.deepStrictEqual(
+					stringifyFlags(input),
+					expected
+				);
+			});
+		});
+	});
 });

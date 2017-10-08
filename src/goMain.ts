@@ -39,7 +39,7 @@ import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
 import { browsePackages } from './goBrowsePackage';
 import { goGetPackage } from './goGetPackage';
-import { playgroundCommand } from './goPlayground';
+import playgroundCommand from './goPlayground';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
