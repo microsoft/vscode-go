@@ -233,6 +233,11 @@
         "command": "go.install.package",
         "title": "Go: Install Current Package",
         "description": "Install the current package."
+      },
+      {
+        "command": "go.doc",
+        "title": "Go: Doc",
+        "description": "Get go documentation."
       }
     ],
     "debuggers": [
