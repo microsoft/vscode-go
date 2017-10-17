@@ -4,33 +4,52 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { CancellationToken, TextDocumentContentProvider, Uri } from 'vscode';
-import { getBinPath, getToolsEnvVars } from './util';
+import { getBinPath, getToolsEnvVars, byteOffsetAt, getFileArchive } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 
 export function getDocumentation(): void {
-	// TODO: somehow detect context menu vs. command menu invocation to skip the
-	// input box when somebody right-clicks on an identifier in the code.
+	let gogetdoc = getBinPath('gogetdoc');
+	if (!path.isAbsolute(gogetdoc)) {
+		vscode.window.showErrorMessage(missingToolMsg + 'gogetdoc');
+		return;
+	}
 
+	let ate = vscode.window.activeTextEditor;
+	if (typeof ate != 'undefined') {
+		let document = ate.document;
+		let gogetDocsFlags = ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + byteOffsetAt(document, ate.selection.active).toString()];
+		let p = cp.execFile(gogetdoc, gogetDocsFlags, {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+			try {
+				let goGetDocOutput = <GoGetDocOutput>JSON.parse(stdout.toString());
+
+				// drop the stuff before /vendor/ if we have it
+				let imprt = goGetDocOutput.import.replace(/(.*\/vendor\/)?(.*)/, '$2');
+
+				_getDocumentationForImport(imprt);
+			} catch (e) {
+				_getDocumentationForImport("");
+			}
+		});
+		p.stdin.end(getFileArchive(document))
+	} else {
+		_getDocumentationForImport("");
+	}
+}
+
+function _getDocumentationForImport(imprt: string): void {
 	vscode.window.showInputBox({
-		prompt: "package name or blank to detect with cursor"
+		prompt: "Please enter a package name",
+		value: imprt,
+		placeHolder: imprt === "" ? "no package detected" : "",
 	}).then(pkgInput => {
-		let pkg;
-
-		if (typeof pkgInput === 'undefined') {
+		if (typeof pkgInput === 'undefined' || pkgInput === '') {
 			return;
-		}
-
-		if (pkgInput === '') {
-			pkg = 'need-to-detect';
-			vscode.window.showWarningMessage("location detection not implemented")
-		} else {
-			pkg = pkgInput;
 		}
 
 		let uri = vscode.Uri.parse("godocumentation://");
 		uri = uri.with({
-			path: pkg,
+			path: pkgInput,
 		})
 
 		vscode.workspace.openTextDocument(
@@ -61,20 +80,29 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 				if (!match) {
 					return resolve(output)
 				} else {
-					return resolve(new Promise<string>((resolve, reject) => {
-						cp.execFile(godoc, [pkg], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
-							let output = stdout + stderr
-
-							let match = /cannot find package/.exec(output);
-							if (!match) {
-								return resolve(output)
-							} else {
-								return resolve("Could not find package " + pkg)
-							}
-						})
-					}))
+					return resolve("")
 				}
+			})
+		}).then(vendorOutput => {
+			if (vendorOutput != "") {
+				return vendorOutput
+			}
+
+			return new Promise<string>((resolve, reject) => {
+				cp.execFile(godoc, [pkg], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+					let output = stdout + stderr
+					let match = /cannot find package/.exec(output);
+					if (!match) {
+						return resolve(output)
+					} else {
+						return resolve("Could not find package " + pkg)
+					}
+				})
 			})
 		})
 	}
+}
+
+interface GoGetDocOutput {
+	import: string;
 }
