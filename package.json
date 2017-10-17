@@ -888,6 +888,11 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to upload the current file or selection to the Go Playground"
+            },
+            "goDoc": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to get go documentation to the editor context menu"
             }
           },
           "default": {
@@ -902,7 +907,8 @@
             "generateTestForPackage": false,
             "addImport": true,
             "testCoverage": true,
-            "playground": true
+            "playground": true,
+            "goDoc": true
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor.",
           "scope": "resource"
@@ -983,6 +989,11 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testCoverage && resourceLangId == go",
           "command": "go.test.coverage",
+          "group": "Go group 1"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.goDoc && resourceLangId == go",
+          "command": "go.doc",
           "group": "Go group 1"
         },
         {
