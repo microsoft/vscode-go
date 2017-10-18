@@ -104,9 +104,9 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 }
 
 function _cleanupGodocOutput(output: string): string {
-	output = output.replace(/.*\n\n(PACKAGE DOCUMENTATION\n\n.*)/, '$1')
-	output = output.replace(/import ".*\/vendor\/(.*?)"/, 'import "$1"')
-	return output
+	output = output.replace(/.*\n\n(PACKAGE DOCUMENTATION\n\n.*)/, '$1');
+	output = output.replace(/import ".*\/vendor\/(.*?)"/, 'import "$1"');
+	return output;
 }
 
 interface GoGetDocOutput {
