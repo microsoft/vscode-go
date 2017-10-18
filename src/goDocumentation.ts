@@ -78,7 +78,7 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 
 				let match = /cannot find package/.exec(output);
 				if (!match) {
-					return resolve(output);
+					return resolve(_cleanupGodocOutput(output));
 				} else {
 					return resolve('');
 				}
@@ -93,7 +93,7 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 					let output = stdout + stderr;
 					let match = /cannot find package/.exec(output);
 					if (!match) {
-						return resolve(output);
+						return resolve(_cleanupGodocOutput(output));
 					} else {
 						return resolve('Could not find package ' + pkg);
 					}
@@ -101,6 +101,12 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 			});
 		});
 	}
+}
+
+function _cleanupGodocOutput(output: string): string {
+	output = output.replace(/.*\n\n(PACKAGE DOCUMENTATION\n\n.*)/, '$1')
+	output = output.replace(/import ".*\/vendor\/(.*?)"/, 'import "$1"')
+	return output
 }
 
 interface GoGetDocOutput {
