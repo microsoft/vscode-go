@@ -231,13 +231,10 @@ class Delve {
 			let env = Object.assign({}, process.env, fileEnv, launchArgsEnv);
 
 			let dirname = isProgramDirectory ? program : path.dirname(program);
-			if (!fileEnv['GOPATH'] && !launchArgsEnv['GOPATH'] && (mode === 'debug' || mode === 'test')) {
-				// If user hasnt specified GOPATH & file/package to debug is not under env['GOPATH'], then infer it from the file/package path
+			if (!env['GOPATH'] && (mode === 'debug' || mode === 'test')) {
+				// If no GOPATH is set, then infer it from the file/package path
 				// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
-				let programNotUnderGopath = !env['GOPATH'] || !getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
-				if (programNotUnderGopath) {
-					env['GOPATH'] = getInferredGopath(dirname) || env['GOPATH'];
-				}
+				env['GOPATH'] = getInferredGopath(dirname) || env['GOPATH'];
 			}
 
 			verbose(`Using GOPATH: ${env['GOPATH']}`);
