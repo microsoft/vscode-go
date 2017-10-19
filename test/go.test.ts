@@ -22,7 +22,7 @@ import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
-import { GoplayUploader, IPlaygroundUploader, createCommandWith, isENOENT } from '../src/goPlayground';
+import { GoplayUploader, IPlaygroundUploader, createCommandWith } from '../src/goPlayground';
 import { getImportPath } from '../src/util';
 
 suite('Go Extension Tests', () => {
@@ -853,29 +853,6 @@ func fantasy() {
 					);
 				})
 				.then(() => done(), done);
-			});
-		});
-
-		test('isENOENT', () => {
-			const tests: [Error, Boolean][] = [
-				[null, false],
-				[new Error('Something went wrong'), false],
-				[(() => {
-					const err = new Error('Could not find the requested file');
-					(<any>err).code = 'ENOENT';
-					return err;
-				})(), true],
-				[(() => {
-					const err = new Error('Missing permissions');
-					(<any>err).code = 'EPERM';
-					return err;
-				})(), false]
-			];
-			tests.forEach(([err, expected]) => {
-				assert.strictEqual(
-					isENOENT(err),
-					expected
-				);
 			});
 		});
 	});
