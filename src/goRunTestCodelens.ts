@@ -88,7 +88,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
 				let debugTestCmd: Command = {
 					title: 'debug test',
-					command: 'vscode.startDebug',
+					command: 'go.debug.startSession',
 					arguments: [ config ]
 				};
 

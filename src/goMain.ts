@@ -39,6 +39,7 @@ import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
 import { browsePackages } from './goBrowsePackage';
 import { goGetPackage } from './goGetPackage';
+import { GoDebugConfigurationProvider } from './goDebugConfiguration';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
@@ -125,6 +126,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, referencesCodeLensProvider));
 	ctx.subscriptions.push(vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider()));
+	ctx.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('go', new GoDebugConfigurationProvider()));
 
 	errorDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-error');
 	ctx.subscriptions.push(errorDiagnosticCollection);
@@ -258,24 +260,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.debug.startSession', config => {
-		if (!config.request) { // if 'request' is missing interpret this as a missing launch.json
-			let activeEditor = vscode.window.activeTextEditor;
-			if (!activeEditor || activeEditor.document.languageId !== 'go') {
-				return;
-			}
-
-			config = Object.assign(config, {
-				'name': 'Launch',
-				'type': 'go',
-				'request': 'launch',
-				'mode': 'debug',
-				'program': activeEditor.document.fileName,
-				'env': {
-					'GOPATH': getCurrentGoPath()
-				}
-			});
+		let workspaceFolder;
+		if (vscode.window.activeTextEditor) {
+			workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri);
 		}
-		vscode.commands.executeCommand('vscode.startDebug', config);
+
+		return vscode.debug.startDebugging(workspaceFolder, config);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.show.commands', () => {
