@@ -52,13 +52,13 @@
     "vscode": "^1.1.4"
   },
   "engines": {
-    "vscode": "^1.15.0"
+    "vscode": "^1.17.0"
   },
   "activationEvents": [
     "onLanguage:go",
     "onCommand:go.gopath",
     "onCommand:go.tools.install",
-    "onCommand:go.debug.startSession"
+    "onDebug"
   ],
   "main": "./out/src/goMain",
   "contributes": {
@@ -195,7 +195,6 @@
         "languages": [
           "go"
         ],
-        "startSessionCommand": "go.debug.startSession",
         "configurationSnippets": [
           {
             "label": "Go: Launch package",
@@ -244,21 +243,6 @@
                 "${2:MyTestFunction}"
               ]
             }
-          }
-        ],
-        "initialConfigurations": [
-          {
-            "name": "Launch",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "remotePath": "",
-            "port": 2345,
-            "host": "127.0.0.1",
-            "program": "${fileDirname}",
-            "env": {},
-            "args": [],
-            "showLog": true
           }
         ],
         "configurationAttributes": {

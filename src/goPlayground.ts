@@ -58,10 +58,12 @@ export class GoplayUploader implements IPlaygroundUploader {
 					err = err || new Error('Missing tool');
 					(<any>err).missingTool = this.TOOL_CMD_NAME;
 					reject(err);
+					return;
 				}
 				execFile(binaryLocation, [...GoplayUploader.stringifyFlags(config), '-'], (err, stdout, stderr) => {
 					if (err) {
-						return reject(new Error(`${this.TOOL_CMD_NAME}: ${stdout || stderr || err.message}`));
+						reject(new Error(`${this.TOOL_CMD_NAME}: ${stdout || stderr || err.message}`));
+						return;
 					}
 					resolve(this.formatStdout(stdout || stderr, config));
 				}).stdin.end(code);
