@@ -333,7 +333,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider(
 		'godocumentation', new GoDocumentationContentProvider()
 	));
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.doc', () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.get.doc', () => {
 		getDocumentation();
 	}));
 

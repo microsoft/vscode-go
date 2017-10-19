@@ -238,6 +238,11 @@
         "command": "go.doc",
         "title": "Go: Doc",
         "description": "Get go documentation."
+      },
+      {
+        "command": "go.get.doc",
+        "title": "Go: Get Documentation",
+        "description": "Get docuemtnation for package using godoc."
       }
     ],
     "debuggers": [
@@ -993,7 +998,7 @@
         },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.goDoc && resourceLangId == go",
-          "command": "go.doc",
+          "command": "go.get.doc",
           "group": "Go group 1"
         },
         {

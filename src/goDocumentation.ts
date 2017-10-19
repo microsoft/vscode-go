@@ -5,14 +5,13 @@ import cp = require('child_process');
 import path = require('path');
 import { CancellationToken, TextDocumentContentProvider, Uri } from 'vscode';
 import { getBinPath, getToolsEnvVars, byteOffsetAt, getFileArchive } from './util';
-
-const missingToolMsg = 'Missing tool: ';
+import { promptForMissingTool } from './goInstallTools';
 
 export function getDocumentation(): void {
 	let gogetdoc = getBinPath('gogetdoc');
 	if (!path.isAbsolute(gogetdoc)) {
-		vscode.window.showErrorMessage(missingToolMsg + 'gogetdoc');
-		return;
+		promptForMissingTool('gogetdoc');
+		_getDocumentationForImport();
 	}
 
 	let ate = vscode.window.activeTextEditor;
@@ -28,22 +27,22 @@ export function getDocumentation(): void {
 
 				_getDocumentationForImport(imprt);
 			} catch (e) {
-				_getDocumentationForImport('');
+				_getDocumentationForImport();
 			}
 		});
 		p.stdin.end(getFileArchive(document));
 	} else {
-		_getDocumentationForImport('');
+		_getDocumentationForImport();
 	}
 }
 
-function _getDocumentationForImport(imprt: string): void {
+function _getDocumentationForImport(imprt?: string): void {
 	vscode.window.showInputBox({
 		prompt: 'Please enter a package name',
 		value: imprt,
-		placeHolder: imprt === '' ? 'no package detected' : '',
+		placeHolder: imprt ? 'no package detected' : '',
 	}).then(pkgInput => {
-		if (typeof pkgInput === 'undefined' || pkgInput === '') {
+		if (!pkgInput) {
 			return;
 		}
 
@@ -52,17 +51,20 @@ function _getDocumentationForImport(imprt: string): void {
 			path: pkgInput,
 		});
 
-		vscode.workspace.openTextDocument(
-			uri,
-		).then(doc => vscode.window.showTextDocument(
-			doc, vscode.window.activeTextEditor.viewColumn + 1, true),
-		);
+		vscode.window.showTextDocument(uri, {
+			viewColumn: vscode.window.activeTextEditor.viewColumn + 1,
+			preserveFocus: true,
+		});
 	});
 }
 
 export class GoDocumentationContentProvider implements TextDocumentContentProvider {
-	public provideTextDocumentContent(uri: Uri, token: CancellationToken): Thenable<string> {
+	public provideTextDocumentContent(uri: Uri, token: CancellationToken): Thenable<string>|string {
 		let godoc = getBinPath('godoc');
+		if (!path.isAbsolute(godoc)) {
+			promptForMissingTool('godoc');
+			return '';
+		}
 
 		let pkg = uri.path;
 
@@ -74,13 +76,10 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 
 		return new Promise<string>((resolve, reject) => {
 			cp.execFile(godoc, [vendorPkg], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
-				let output = stdout + stderr;
-
-				let match = /cannot find package/.exec(output);
-				if (!match) {
-					return resolve(_cleanupGodocOutput(output));
-				} else {
+				if (_packageNotFound(stderr)) {
 					return resolve('');
+				} else {
+					return resolve(_cleanupGodocOutput(stdout));
 				}
 			});
 		}).then(vendorOutput => {
@@ -90,17 +89,20 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 
 			return new Promise<string>((resolve, reject) => {
 				cp.execFile(godoc, [pkg], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
-					let output = stdout + stderr;
-					let match = /cannot find package/.exec(output);
-					if (!match) {
-						return resolve(_cleanupGodocOutput(output));
-					} else {
+					if (_packageNotFound(stderr)) {
 						return resolve('Could not find package ' + pkg);
+					} else {
+						return resolve(_cleanupGodocOutput(stdout));
 					}
 				});
 			});
 		});
 	}
+}
+
+function _packageNotFound(stderr: string): boolean {
+	let match = /cannot find package/.exec(stderr);
+	return !!match;
 }
 
 function _cleanupGodocOutput(output: string): string {
