@@ -1007,6 +1007,13 @@
           "group": "Go group 2"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "go.get.doc",
+        "key": "ctrl+alt+d",
+        "when": "editorTextFocus && resourceLangId == go"
+      }
+    ]
   }
 }

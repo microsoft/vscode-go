@@ -333,8 +333,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider(
 		'godocumentation', new GoDocumentationContentProvider()
 	));
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.get.doc', () => {
-		getDocumentation();
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.get.doc', config => {
+		getDocumentation(config !== undefined);
 	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {

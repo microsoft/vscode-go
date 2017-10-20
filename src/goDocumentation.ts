@@ -6,8 +6,17 @@ import path = require('path');
 import { CancellationToken, TextDocumentContentProvider, Uri } from 'vscode';
 import { getBinPath, getToolsEnvVars, byteOffsetAt, getFileArchive } from './util';
 import { promptForMissingTool } from './goInstallTools';
+import { getAllPackages } from './goPackages';
 
-export function getDocumentation(): void {
+// fromEditor should indicate if the command is being invoked from an editor
+// using a context menu or a keyboard shortcut, or the command is being invoked
+// from the command palette manually.
+export function getDocumentation(fromEditor = false): void {
+	if (!fromEditor) {
+		_getDocumentationForImport();
+		return;
+	}
+
 	let gogetdoc = getBinPath('gogetdoc');
 	if (!path.isAbsolute(gogetdoc)) {
 		promptForMissingTool('gogetdoc');
@@ -23,7 +32,7 @@ export function getDocumentation(): void {
 				let goGetDocOutput = <GoGetDocOutput>JSON.parse(stdout.toString());
 
 				// drop the stuff before /vendor/ if we have it
-				let imprt = goGetDocOutput.import.replace(/(.*\/vendor\/)?(.*)/, '$2');
+				let imprt = goGetDocOutput.import.replace(/.*\/vendor\/(.*)/, '$1');
 
 				_getDocumentationForImport(imprt);
 			} catch (e) {
@@ -32,29 +41,67 @@ export function getDocumentation(): void {
 		});
 		p.stdin.end(getFileArchive(document));
 	} else {
+		// we should never get here, but better safe than undefined
 		_getDocumentationForImport();
 	}
 }
 
 function _getDocumentationForImport(imprt?: string): void {
-	vscode.window.showInputBox({
-		prompt: 'Please enter a package name',
-		value: imprt,
-		placeHolder: imprt ? 'no package detected' : '',
-	}).then(pkgInput => {
-		if (!pkgInput) {
+	if (imprt) {
+		_showDocumentationForPackage(imprt);
+		return;
+	}
+
+	getAllPackages().then(pkgMap => {
+		let pkgs: string[] = Array.from(pkgMap.keys());
+		if (pkgs.length === 0) {
+			vscode.window.showInputBox({
+				placeHolder: 'Please enter a package name',
+			}).then(pkgInput => {
+				if (!pkgInput) {
+					return;
+				}
+				_showDocumentationForPackage(pkgInput);
+			});
 			return;
 		}
 
-		let uri = vscode.Uri.parse('godocumentation://');
-		uri = uri.with({
-			path: pkgInput,
+		vscode.window.showQuickPick(_devendorPkgs(pkgs), {
+			placeHolder: 'Please select a package',
+		}).then(pkgSelected => {
+			if (!pkgSelected) {
+				return;
+			}
+			_showDocumentationForPackage(pkgSelected);
 		});
+	});
+}
 
-		vscode.window.showTextDocument(uri, {
-			viewColumn: vscode.window.activeTextEditor.viewColumn + 1,
-			preserveFocus: true,
-		});
+// We're looking for documentation in the local context. So lets drop any vendor
+// junk and let the documentation finder figure things out.
+function _devendorPkgs(pkgs: string[]): string[] {
+	pkgs = pkgs.map(s => {
+		return s.replace(/.*\/vendor\/(.*)/, '$1');
+	});
+
+	let seen = {};
+	pkgs = pkgs.filter(s => {
+		return seen.hasOwnProperty(s) ? false : (seen[s] = true);
+	});
+
+	pkgs = pkgs.sort();
+
+	return pkgs;
+}
+
+function _showDocumentationForPackage(pkg: string): void {
+	let uri = vscode.Uri.parse('godocumentation://').with({
+		path: pkg,
+	});
+
+	vscode.window.showTextDocument(uri, {
+		viewColumn: vscode.window.activeTextEditor.viewColumn + 1,
+		preserveFocus: true,
 	});
 }
 
