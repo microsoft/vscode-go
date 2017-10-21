@@ -421,7 +421,8 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "removeTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "editorContextMenuCommands": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "liveErrors": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "toolCommands": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
 	   }
 	 */
 	sendTelemetryEvent('goConfig', {
@@ -458,7 +459,8 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		removeTags: JSON.stringify(goConfig['removeTags']),
 		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands']),
 		liveErrors: JSON.stringify(goConfig['liveErrors']),
-		codeLens: JSON.stringify(goConfig['enableCodeLens'])
+		codeLens: JSON.stringify(goConfig['enableCodeLens']),
+		toolCommands: JSON.stringify(goConfig['toolCommands'])
 	});
 }
 

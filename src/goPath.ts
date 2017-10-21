@@ -11,16 +11,21 @@
 import fs = require('fs');
 import path = require('path');
 import os = require('os');
+import vscode = require('vscode');
 
 let binPathCache: { [bin: string]: string; } = {};
 let runtimePathCache: string = '';
 
 export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appendBinToPath: boolean): string {
-	toolName = correctBinname(toolName);
+	let binname = correctBinname(toolName);
+	if (path.isAbsolute(binname)) {
+		binPathCache[toolName] = binname;
+		return binname;
+	}
 	if (envVarValue) {
 		let paths = envVarValue.split(path.delimiter);
 		for (let i = 0; i < paths.length; i++) {
-			let binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', toolName);
+			let binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', binname);
 			if (fileExists(binpath)) {
 				binPathCache[toolName] = binpath;
 				return binpath;
@@ -30,8 +35,14 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 	return null;
 }
 
-export function getBinPathWithPreferredGopath(binname: string, ...preferredGopaths) {
-	if (binPathCache[correctBinname(binname)]) return binPathCache[correctBinname(binname)];
+export function getBinPathWithPreferredGopath(toolName: string, ...preferredGopaths) {
+	if (binPathCache[toolName]) return binPathCache[toolName];
+
+	let binname = correctBinname(toolName);
+	if (path.isAbsolute(binname)) {
+		// Configured by the user
+		return binname;
+	}
 
 	for (let i = 0; i < preferredGopaths.length; i++) {
 		if (typeof preferredGopaths[i] === 'string') {
@@ -59,11 +70,36 @@ export function getBinPathWithPreferredGopath(binname: string, ...preferredGopat
 	return binname;
 }
 
-function correctBinname(binname: string) {
+/**
+ * Returns the actual name of the tool.
+ *
+ * This can be overridden with `go.toolCommands` configuration.
+ *
+ * @param toolName the name of the tool such as "go", "godoc" and so on.
+ *
+ * @return the actual name of the tool, such as "go", "go.exe", "/path/to/go".
+ *    May be an absolute path or only a file name (relative to GOROOT/bin).
+ *    Returns an absolute path only when it exists.
+ */
+function correctBinname(toolName: string) {
+	let goConfig = vscode.workspace.getConfiguration('go');
+	let toolCommands = goConfig['toolCommands'];
+	if (toolCommands[toolName]) {
+		let binname = toolCommands[toolName];
+		if (!path.isAbsolute(binname)) {
+			// Relative name like 'go.sh', 'go.bat'
+			return binname;
+		}
+		// Absolute path.
+		// Valid only when it exists.
+		if (fileExists(binname)) {
+			return binname;
+		}
+	}
 	if (process.platform === 'win32')
-		return binname + '.exe';
+		return toolName + '.exe';
 	else
-		return binname;
+		return toolName;
 }
 
 /**
@@ -74,6 +110,9 @@ function correctBinname(binname: string) {
 export function getGoRuntimePath(): string {
 	if (runtimePathCache) return runtimePathCache;
 	let correctBinNameGo = correctBinname('go');
+	if (path.isAbsolute(correctBinNameGo)) {
+		return correctBinNameGo;
+	}
 	if (process.env['GOROOT']) {
 		let runtimePathFromGoRoot = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);
 		if (fileExists(runtimePathFromGoRoot)) {
