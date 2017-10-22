@@ -4,7 +4,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { CancellationToken, TextDocumentContentProvider, Uri } from 'vscode';
-import { getBinPath, getToolsEnvVars, byteOffsetAt, getFileArchive } from './util';
+import { getBinPath, getToolsEnvVars, byteOffsetAt, getFileArchive, godocHtmlStaticPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getAllPackages } from './goPackages';
 
@@ -99,10 +99,21 @@ function _showDocumentationForPackage(pkg: string): void {
 		path: pkg,
 	});
 
-	vscode.window.showTextDocument(uri, {
-		viewColumn: vscode.window.activeTextEditor.viewColumn + 1,
-		preserveFocus: true,
-	});
+	if (_docsHtml()) {
+		uri = uri.with({
+			query: 'html',
+		});
+		vscode.commands.executeCommand('vscode.previewHtml', uri, vscode.window.activeTextEditor.viewColumn + 1);
+	} else {
+		vscode.window.showTextDocument(uri, {
+			viewColumn: vscode.window.activeTextEditor.viewColumn + 1,
+			preserveFocus: true,
+		});
+	}
+}
+
+function _docsHtml(): boolean {
+	return vscode.workspace.getConfiguration('go').docsHtml;
 }
 
 export class GoDocumentationContentProvider implements TextDocumentContentProvider {
@@ -121,12 +132,19 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 		// normally say.
 		let vendorPkg = vscode.workspace.workspaceFolders[0].uri.fsPath + '/vendor/' + pkg;
 
+		let needHtml = uri.query === 'html';
+
+		let godocArguments: string[] = [];
+		if (needHtml) {
+			godocArguments.push('-html');
+		}
+
 		return new Promise<string>((resolve, reject) => {
-			cp.execFile(godoc, [vendorPkg], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+			cp.execFile(godoc, godocArguments.concat([vendorPkg]), {env: getToolsEnvVars()}, (err, stdout, stderr) => {
 				if (_packageNotFound(stderr)) {
 					return resolve('');
 				} else {
-					return resolve(_cleanupGodocOutput(stdout));
+					return resolve(_cleanupGodocOutput(stdout, needHtml));
 				}
 			});
 		}).then(vendorOutput => {
@@ -135,11 +153,11 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 			}
 
 			return new Promise<string>((resolve, reject) => {
-				cp.execFile(godoc, [pkg], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+				cp.execFile(godoc, godocArguments.concat([pkg]), {env: getToolsEnvVars()}, (err, stdout, stderr) => {
 					if (_packageNotFound(stderr)) {
 						return resolve('Could not find package ' + pkg);
 					} else {
-						return resolve(_cleanupGodocOutput(stdout));
+						return resolve(_cleanupGodocOutput(stdout, needHtml));
 					}
 				});
 			});
@@ -152,9 +170,46 @@ function _packageNotFound(stderr: string): boolean {
 	return !!match;
 }
 
-function _cleanupGodocOutput(output: string): string {
+function _cleanupGodocOutput(output: string, html: boolean): string {
+	return html ? _cleanupHtmlGodocOutput(output) : _cleanupTextGodocOutput(output);
+}
+
+function _cleanupTextGodocOutput(output: string): string {
 	output = output.replace(/.*\n\n(PACKAGE DOCUMENTATION\n\n.*)/, '$1');
 	output = output.replace(/import ".*\/vendor\/(.*?)"/, 'import "$1"');
+	return output;
+}
+
+function _cleanupHtmlGodocOutput(output: string): string {
+	let staticPath = godocHtmlStaticPath();
+
+	output = output.replace(/document\.ANALYSIS_DATA = ;/, '');
+	output = output.replace(/document\.CALLGRAPH = ;/, '');
+
+	output = `
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<!--temporarily commented until we figure out what the licence situation is
+			<link type="text/css" rel="stylesheet" href="${staticPath}/style.css">
+			<link type="text/css" rel="stylesheet" href="${staticPath}/jquery.treeview.css">
+			<script type="text/javascript">window.initFuncs = [];</script>
+
+			<script type="text/javascript" src="${staticPath}/jquery.js"></script>
+			<script type="text/javascript" src="${staticPath}/jquery.treeview.js"></script>
+			<script type="text/javascript" src="${staticPath}/jquery.treeview.edit.js"></script>
+			<script type="text/javascript" src="${staticPath}/godocs.js"></script>
+			-->
+		</head>
+		<body>
+			<div id="page" class="wide">
+				<div class="container">
+					${output}
+				</div>
+			</div>
+		</body>
+		</html>
+	`;
 	return output;
 }
 

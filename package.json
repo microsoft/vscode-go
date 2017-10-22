@@ -926,6 +926,11 @@
           "default": [],
           "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature",
           "scope": "resource"
+        },
+        "go.docsHtml": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show rendered HTML godoc instead of plain text"
         }
       }
     },

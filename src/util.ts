@@ -766,3 +766,7 @@ export function killTree(processId: number): void {
 		}
 	}
 }
+
+export function godocHtmlStaticPath(): string {
+	return path.join(vscode.extensions.getExtension(extensionId).extensionPath, 'godoc-static');
+}
