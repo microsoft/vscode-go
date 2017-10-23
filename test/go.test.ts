@@ -22,7 +22,6 @@ import { documentSymbols } from '../src/goOutline';
 import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
-import { GoplayUploader, IPlaygroundUploader, createCommandWith } from '../src/goPlayground';
 import { getImportPath } from '../src/util';
 
 suite('Go Extension Tests', () => {
@@ -48,7 +47,6 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file2.go'), path.join(fixturePath, 'diffTest1Data', 'file2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file1.go'), path.join(fixturePath, 'diffTest2Data', 'file1.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file2.go'), path.join(fixturePath, 'diffTest2Data', 'file2.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'playground', 'main.go'), path.join(fixturePath, 'playground', 'main.go'));
 	});
 
 	suiteTeardown(() => {
@@ -756,104 +754,6 @@ It returns the number of bytes written and any write error encountered.
 
 		testCases.forEach(run => {
 			assert.equal(run[1], getImportPath(run[0]));
-		});
-	});
-
-	suite('playground command', () => {
-		test('GoplayUploader#upload - success', (done) => {
-			const validCode = `
-package main
-
-import (
-	"fmt"
-)
-
-func main() {
-	for i := 1; i < 4; i++ {
-		fmt.Printf("%v ", i)
-	}
-	fmt.Print("Go!")
-}`;
-			const uploader = new GoplayUploader();
-			uploader.upload(validCode, { run: true, openbrowser: false, share: false })
-				.then((stdout: string) => {
-					assert(
-						stdout.includes('1 2 3 Go!')
-					);
-				})
-				.then(() => done(), done);
-		});
-
-		test('GoplayUploader#upload - error', (done) => {
-			const invalidCode = `
-package notmain
-
-import (
-	"fmt"
-)
-
-func fantasy() {
-	fmt.Print("not a main package, sorry")
-}`;
-			const uploader = new GoplayUploader();
-			uploader.upload(invalidCode, { run: true, openbrowser: false, share: false })
-				.then(() => done(new Error('Expected error to be returned')), () => done());
-		});
-
-		test('GoplayUploader#stringifyFlags', () => {
-			const tests: [any, string[]][] = [
-				[{foo: true, bar: false}, ['-foo=true', '-bar=false']],
-				[{}, []]
-			];
-			tests.forEach(([input, expected]) => {
-				assert.deepStrictEqual(
-					GoplayUploader.stringifyFlags(input),
-					expected
-				);
-			});
-		});
-
-		class MockPlaygroundUploader implements IPlaygroundUploader {
-			public code: string;
-			public config: any;
-			private result: Promise<any>;
-			constructor(result: Promise<any>) {
-				this.result = result;
-			}
-			upload(code: string, config: any): Promise<string> {
-				this.code = code;
-				this.config = config;
-				return this.result;
-			}
-		}
-
-		(<[string, Promise<any>][]>[
-			['success', Promise.resolve('OK!')],
-			['error', Promise.reject('Not OK!')]
-		]).forEach(([scenario, result]) => {
-			test(`createCommandWith - ${scenario}`, (done) => {
-				const mockUploader = new MockPlaygroundUploader(result);
-				const commandWithMock = createCommandWith(mockUploader);
-				const config = vscode.workspace.getConfiguration('go').get('playground');
-
-				let uri = vscode.Uri.file(path.join(fixturePath, 'playground', 'main.go'));
-				vscode.workspace.openTextDocument(uri).then((document) => {
-					return vscode.window.showTextDocument(document);
-				}).then(() => {
-					return commandWithMock();
-				})
-				.then(() => {
-					assert.strictEqual(
-						mockUploader.code,
-						'package main\n'
-					);
-					assert.deepStrictEqual(
-						mockUploader.config,
-						config
-					);
-				})
-				.then(() => done(), done);
-			});
 		});
 	});
 });
