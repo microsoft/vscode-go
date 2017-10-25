@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestEnvVars, getTestFlags, getTestFunctions } from './testUtils';
+import { goTest, hasTestFunctionPrefix, hasBenchmarkFunctionPrefix, TestConfig, getTestEnvVars, getTestFlags, getTestFunctions } from './testUtils';
 import { getCoverage } from './goCover';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -21,7 +21,7 @@ let lastTestConfig: TestConfig;
 *
 * @param goConfig Configuration for the Go extension.
 */
-export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any) {
+export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -31,8 +31,14 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
+
+	let checker = hasTestFunctionPrefix;
+	if (isBenchmark) {
+		checker = hasBenchmarkFunctionPrefix;
+	}
+
 	editor.document.save().then(() => {
-		return getTestFunctions(editor.document).then(testFunctions => {
+		return getTestFunctions(editor.document, checker).then(testFunctions => {
 		let testFunctionName: string;
 
 		// We use functionName if it was provided as argument
@@ -58,8 +64,10 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 			goConfig: goConfig,
 			dir: path.dirname(editor.document.fileName),
 			flags: getTestFlags(goConfig, args),
-			functions: [testFunctionName]
+			functions: [testFunctionName],
+			isBenchmark: isBenchmark
 		};
+
 		// Remember this config as the last executed test.
 		lastTestConfig = testConfig;
 
@@ -152,7 +160,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 	}
 
 	return editor.document.save().then(() => {
-		return getTestFunctions(editor.document).then(testFunctions => {
+		return getTestFunctions(editor.document, hasTestFunctionPrefix).then(testFunctions => {
 			const testConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),

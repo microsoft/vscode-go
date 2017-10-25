@@ -43,6 +43,10 @@ export interface TestConfig {
 	 * Run all tests from all sub directories under `dir`
 	 */
 	includeSubDirectories?: boolean;
+	/**
+	 * Whether this is a benchmark.
+	 */
+	isBenchmark?: boolean;
 }
 
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
@@ -78,16 +82,25 @@ export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any)
  * @param the URI of a Go source file.
  * @return test function symbols for the source file.
  */
-export function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
+export function getTestFunctions(doc: vscode.TextDocument, checker: prefixChecker): Thenable<vscode.SymbolInformation[]> {
 	let documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, null)
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& hasTestFunctionPrefix(sym.name))
+				&& checker(sym.name))
 		);
 }
+
+/**
+ * Function type for function that given a function name has 
+ * returns whether it is of a certain type of prefix.
+ * 
+ * @param the function name.
+ * @return whether the name has a function prefix.
+ */
+type prefixChecker = (name: string) => boolean;
 
 /**
  * Returns whether a given function name has a test prefix.
@@ -96,8 +109,19 @@ export function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.Symb
  * @param the function name.
  * @return whether the name has a test function prefix.
  */
-function hasTestFunctionPrefix(name: string): boolean {
+export function hasTestFunctionPrefix(name: string): boolean {
 	return name.startsWith('Test') || name.startsWith('Example');
+}
+
+/**
+ * Returns whether a given function name has a benchmark prefix.
+ * Benchmark functions have "Benchmark" as a prefix.
+ *
+ * @param the function name.
+ * @return whether the name has a benchmark function prefix.
+ */
+export function hasBenchmarkFunctionPrefix(name: string): boolean {
+	return name.startsWith('Benchmark');
 }
 
 /**
@@ -114,7 +138,20 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
-		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
+
+		let args: Array<string>;
+		let handleFunc: argsHandleFunc;
+		let testType: string;
+
+		if (testconfig.isBenchmark) {
+			args = ['test', ...testconfig.flags, '-benchmem', '-run=^$'];
+			handleFunc = benchmarkTargetArgs;
+			testType = "Benchmarks";
+		} else {
+			args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
+			handleFunc = testTargetArgs;
+			testType = "Tests";
+		}
 		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
 			args.push('-tags');
 			args.push(buildTags);
@@ -133,7 +170,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			args.push(testconfig.dir.substr(currentGoWorkspace.length + 1));
 		}
 
-		targetArgs(testconfig).then(targets => {
+		handleFunc(testconfig).then(targets => {
 			let outTargets = args.slice(0);
 			if (targets.length > 2) {
 				outTargets.push('<long arguments omitted>');
@@ -154,23 +191,23 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 			errBuf.onLine(line => outputChannel.appendLine(line));
 			errBuf.onDone(last => last && outputChannel.appendLine(last));
-
+		
 			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
 			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
-
+			
 			proc.on('close', code => {
 				outBuf.done();
 				errBuf.done();
 
 				if (code) {
-					outputChannel.appendLine('Error: Tests failed.');
+					outputChannel.appendLine(`Error: ${testType} failed.`);
 				} else {
-					outputChannel.appendLine('Success: Tests passed.');
+					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
 				resolve(code === 0);
 			});
 		}, err => {
-			outputChannel.appendLine('Error: Tests failed.');
+			outputChannel.appendLine(`Error: ${testType} failed.`);
 			outputChannel.appendLine(err);
 			resolve(false);
 		});
@@ -196,11 +233,18 @@ function expandFilePathInOutput(output: string, cwd: string): string {
 }
 
 /**
+ * Function type for getting the target arguments.
+ *
+ * @param testconfig Configuration for the Go extension.
+ */
+type argsHandleFunc = (testconfig: TestConfig) => Thenable<Array<string>>;
+
+/**
  * Get the test target arguments.
  *
  * @param testconfig Configuration for the Go extension.
  */
-function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
+function testTargetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
 		return Promise.resolve(['-run', util.format('^%s$', testconfig.functions.join('|'))]);
 	} else if (testconfig.includeSubDirectories) {
@@ -212,4 +256,13 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 		});
 	}
 	return Promise.resolve([]);
+}
+
+/**
+ * Get the benchmark target arguments.
+ *
+ * @param testconfig Configuration for the Go extension.
+ */
+function benchmarkTargetArgs(testconfig: TestConfig): Thenable<Array<string>> {
+	return Promise.resolve(['-bench', util.format('^%s$', testconfig.functions.join('|'))]);
 }

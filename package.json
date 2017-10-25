@@ -91,6 +91,11 @@
         "description": "Runs a unit test at the cursor."
       },
       {
+        "command": "go.benchmark.cursor",
+        "title": "Go: Benchmark Function At Cursor",
+        "description": "Runs a benchmark at the cursor."
+      },
+      {
         "command": "go.test.file",
         "title": "Go: Test File",
         "description": "Runs all unit tests in the current file."
@@ -823,6 +828,11 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testAtCursor && resourceLangId == go && !config.editor.codeLens",
           "command": "go.test.cursor",
+          "group": "Go group 1"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.benchmarkAtCursor && resourceLangId == go && !config.editor.codeLens",
+          "command": "go.benchmark.cursor",
           "group": "Go group 1"
         },
         {
