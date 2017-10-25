@@ -94,9 +94,9 @@ export function getTestFunctions(doc: vscode.TextDocument, checker: prefixChecke
 }
 
 /**
- * Function type for function that given a function name has 
+ * Function type for function that given a function name has
  * returns whether it is of a certain type of prefix.
- * 
+ *
  * @param the function name.
  * @return whether the name has a function prefix.
  */
@@ -146,11 +146,11 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		if (testconfig.isBenchmark) {
 			args = ['test', ...testconfig.flags, '-benchmem', '-run=^$'];
 			handleFunc = benchmarkTargetArgs;
-			testType = "Benchmarks";
+			testType = 'Benchmarks';
 		} else {
 			args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
 			handleFunc = testTargetArgs;
-			testType = "Tests";
+			testType = 'Tests';
 		}
 		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
 			args.push('-tags');
@@ -191,10 +191,10 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 			errBuf.onLine(line => outputChannel.appendLine(line));
 			errBuf.onDone(last => last && outputChannel.appendLine(last));
-		
+
 			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
 			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
-			
+
 			proc.on('close', code => {
 				outBuf.done();
 				errBuf.done();
