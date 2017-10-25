@@ -65,7 +65,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	}
 
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument): Thenable<CodeLens[]> {
-		let codelens: CodeLens[] = [];		
+		let codelens: CodeLens[] = [];
 
 		getTestFunctions(document, hasTestFunctionPrefix).then(testFunctions => {
 			testFunctions.forEach(func => {
@@ -104,8 +104,8 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 					command: 'go.benchmark.cursor',
 					arguments: [ { functionName: func.name, isBenchmark: true } ]
 				};
-				
-				codelens.push(new CodeLens(func.location.range, runBenchmarkCmd))
+
+				codelens.push(new CodeLens(func.location.range, runBenchmarkCmd));
 			});
 
 		});
