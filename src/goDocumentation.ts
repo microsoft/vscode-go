@@ -97,11 +97,12 @@ function _devendorPkgs(pkgs: string[]): string[] {
 function _showDocumentationForPackage(pkg: string): void {
 	let uri = vscode.Uri.parse('godocumentation://').with({
 		path: pkg,
+		query: 'now=' + new Date().getTime().toString(),
 	});
 
 	if (_docsHtml()) {
 		uri = uri.with({
-			query: 'html',
+			query: uri.query ? uri.query + '&html' : 'html',
 		});
 		vscode.commands.executeCommand('vscode.previewHtml', uri, vscode.window.activeTextEditor.viewColumn + 1);
 	} else {
@@ -130,9 +131,13 @@ export class GoDocumentationContentProvider implements TextDocumentContentProvid
 		// the local workspace vendor directory to see if there's a vendored
 		// version of the package. If not, we'll return whatever godoc would
 		// normally say.
-		let vendorPkg = vscode.workspace.workspaceFolders[0].uri.fsPath + '/vendor/' + pkg;
+		let workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri);
+		if (!workspaceFolder) {
+			workspaceFolder = vscode.workspace.workspaceFolders[0];
+		}
+		let vendorPkg = workspaceFolder.uri.fsPath + '/vendor/' + pkg;
 
-		let needHtml = uri.query === 'html';
+		let needHtml = uri.query.search(/html/) !== -1;
 
 		let godocArguments: string[] = [];
 		if (needHtml) {
