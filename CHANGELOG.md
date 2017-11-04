@@ -1,7 +1,7 @@
-## 0.6.67 - 3rd November, 2017
+## 0.6.67 - 4th November, 2017
 
 * [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
-    * Do not show suggestions from internal packages from other projects. Fixes [Bug 1256](https://github.com/Microsoft/vscode-go/issues/1256).
+    * Do not show suggestions from internal packages of other projects. Fixes [Bug 1256](https://github.com/Microsoft/vscode-go/issues/1256).
 
 * [Alexander Kohler (@alexkohler)](https://github.com/alexkohler)
     * Fix issue with `go.useCodeSnippetsOnFunctionSuggestWithoutType` setting dropping parameters of same type. Fixes [Bug 1279](https://github.com/Microsoft/vscode-go/issues/1279) via [PR 1284](https://github.com/Microsoft/vscode-go/pull/1284)
