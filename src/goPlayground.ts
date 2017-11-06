@@ -18,7 +18,7 @@ export const playgroundCommand = () => {
 
 	const binaryLocation = getBinPath(TOOL_CMD_NAME);
 	if (!path.isAbsolute(binaryLocation)) {
-		return promptForMissingTool(TOOL_CMD_NAME);;
+		return promptForMissingTool(TOOL_CMD_NAME);
 	}
 
 	outputChannel.clear();
@@ -41,7 +41,7 @@ export const playgroundCommand = () => {
 export function goPlay(code: string, goConfig: vscode.WorkspaceConfiguration): Thenable<string> {
 	const cliArgs = Object.keys(goConfig).map(key => `-${key}=${goConfig[key]}`);
 	const binaryLocation = getBinPath(TOOL_CMD_NAME);
-	
+
 	return new Promise<string>((resolve, reject) => {
 		execFile(binaryLocation, [...cliArgs, '-'], (err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
