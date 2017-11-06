@@ -14,6 +14,12 @@ os:
   - osx
   - linux
 
+# Exclude linux for tip as go get fails there for some reason
+matrix:
+  exclude:
+    - go: tip
+      os: linux 
+
 before_install:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
       export CXX="g++-4.9" CC="gcc-4.9" DISPLAY=:99.0;
