@@ -236,8 +236,7 @@ It returns the number of bytes written and any write error encountered.
 		});
 		let expected = [
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
-			{ line: 9, severity: 'warning', msg: 'possible formatting directive in Println call' },
-			{ line: 12, severity: 'error', msg: 'undefined: prin' },
+			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
@@ -355,8 +354,8 @@ It returns the number of bytes written and any write error encountered.
 				'buildOnSave': { value: 'off' }
 			});
 			let expected = [
-				{ line: 12, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-				{ line: 12, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
+				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
