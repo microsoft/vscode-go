@@ -23,6 +23,7 @@ import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
+import { goPlay } from '../src/goPlayground';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -756,4 +757,75 @@ It returns the number of bytes written and any write error encountered.
 			assert.equal(run[1], getImportPath(run[0]));
 		});
 	});
+
+	test('goPlay - success run', (done) => {
+		const validCode = `
+			package main
+			import (
+				"fmt"
+			)
+			func main() {
+				for i := 1; i < 4; i++ {
+					fmt.Printf("%v ", i)
+				}
+				fmt.Print("Go!")
+			}`;
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
+			'playground': { value: { run: true, openbrowser: false, share: false } }
+		});
+
+		goPlay(validCode, goConfig['playground']).then(result => {
+			assert(
+				result.includes('1 2 3 Go!')
+			);
+		}, (e) => {
+			assert.ifError(e);
+		}).then(() => done(), done);
+	});
+
+
+	test('goPlay - success run & share', (done) => {
+		const validCode = `
+			package main
+			import (
+				"fmt"
+			)
+			func main() {
+				for i := 1; i < 4; i++ {
+					fmt.Printf("%v ", i)
+				}
+				fmt.Print("Go!")
+			}`;
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
+			'playground': { value: { run: true, openbrowser: false, share: true } }
+		});
+
+		goPlay(validCode, goConfig['playground']).then(result => {
+			assert(result.includes('1 2 3 Go!'));
+			assert(result.includes('https://play.golang.org/'));
+		}, (e) => {
+			assert.ifError(e);
+		}).then(() => done(), done);
+	});
+
+	test('goPlay - fail', (done) => {
+		const invalidCode = `
+			package main
+			import (
+				"fmt"
+			)
+			func fantasy() {
+				fmt.Print("not a main package, sorry")
+			}`;
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
+			'playground': { value: { run: true, openbrowser: false, share: false } }
+		});
+
+		goPlay(invalidCode, goConfig['playground']).then(result => {
+			assert.ifError(result);
+		}, (e) => {
+			assert.ok(e);
+		}).then(() => done(), done);
+	});
+
 });
