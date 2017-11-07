@@ -40,6 +40,7 @@ import { implCursor } from './goImpl';
 import { browsePackages } from './goBrowsePackage';
 import { goGetPackage } from './goGetPackage';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';
+import { playgroundCommand } from './goPlayground';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 let warningDiagnosticCollection: vscode.DiagnosticCollection;
@@ -278,6 +279,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.get.package', goGetPackage));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.playground', playgroundCommand));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
