@@ -568,10 +568,16 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 	});
 }
 
-export function handleDiagnosticErrors(document: vscode.TextDocument, errors: ICheckResult[]) {
+export function handleDiagnosticErrors(document: vscode.TextDocument, errors: ICheckResult[], diagnosticSeverity?: vscode.DiagnosticSeverity) {
+
+	if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Error) {
+		errorDiagnosticCollection.clear();
+	}
+	if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Warning) {
+		warningDiagnosticCollection.clear();
+	}
 
 	let diagnosticMap: Map<string, Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>> = new Map();
-
 	errors.forEach(error => {
 		let canonicalFile = vscode.Uri.file(error.file).toString();
 		let startColumn = 0;
@@ -596,9 +602,14 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 		diagnostics[severity].push(diagnostic);
 		diagnosticMap.set(canonicalFile, diagnostics);
 	});
+
 	diagnosticMap.forEach((diagMap, file) => {
-		errorDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Error]);
-		warningDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Warning]);
+		if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Error) {
+			errorDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Error]);
+		}
+		if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Warning) {
+			warningDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Warning]);
+		}
 	});
 };
 
