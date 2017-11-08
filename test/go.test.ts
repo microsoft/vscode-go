@@ -24,7 +24,7 @@ import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurren
 import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
 import { goPlay } from '../src/goPlayground';
-import { lintCurrentPackage, lintWorkspace } from '../src/goLint';
+import { goLint } from '../src/goLint';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -852,7 +852,7 @@ It returns the number of bytes written and any write error encountered.
 				{ file: path.join(linterTestPath, 'linter_2.go'), line: 5, severity: 'warning', msg: 'error return value not checked (missing return) (errcheck)' },
 				{ file: path.join(linterTestPath, 'linter_1.go'), line: 5, severity: 'warning', msg: 'exported function ExportedFunc should have comment or be unexported (golint)' },
 			];
-			return lintCurrentPackage(vscode.Uri.file(path.join(linterTestPath, 'linter_1.go')), config).then(diagnostics => {
+			return goLint(vscode.Uri.file(path.join(linterTestPath, 'linter_1.go')), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
 					if (a.msg < b.msg)
 						return -1;
@@ -889,11 +889,11 @@ It returns the number of bytes written and any write error encountered.
 			let expected = [
 				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck, errcheck)' },
 				{ file: path.join(linterTestPath, 'linter_2.go'), line: 5, severity: 'warning', msg: 'error return value not checked (missing return) (errcheck)' },
-				{ file: path.join(errorTestPath, 'errors.go'), line: 12, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ file: path.join(errorTestPath, 'errors.go'), line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
 				{ file: path.join(linterTestPath, 'linter_1.go'), line: 5, severity: 'warning', msg: 'exported function ExportedFunc should have comment or be unexported (golint)' },
 				{ file: path.join(errorTestPath, 'errors.go'), line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported (golint)' },
 			];
-			return lintWorkspace(vscode.Uri.file(path.join(linterTestPath, 'linter_1.go')), config).then(diagnostics => {
+			return goLint(vscode.Uri.file(path.join(linterTestPath, 'linter_1.go')), config, true).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
 					if (a.msg < b.msg)
 						return -1;

@@ -30,7 +30,7 @@ import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, ICheckResult } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, ICheckResult, handleDiagnosticErrors } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -44,7 +44,7 @@ import { playgroundCommand } from './goPlayground';
 import { lintCurrentPackage, lintWorkspace } from './goLint';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
-let warningDiagnosticCollection: vscode.DiagnosticCollection;
+export let warningDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	/* __GDPR__
@@ -283,29 +283,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.playground', playgroundCommand));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.package', () => {
-		let editor = vscode.window.activeTextEditor;
-		let documentUri = editor ? editor.document.uri : null;
-		let goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.package', lintCurrentPackage));
 
-		lintCurrentPackage(documentUri, goConfig)
-			.then(handleDiagnosticErrors(editor ? editor.document : null))
-			.catch(err => {
-				vscode.window.showInformationMessage('Error: ' + err);
-			});
-	}));
-
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.workspace', () => {
-		let editor = vscode.window.activeTextEditor;
-		let documentUri = editor ? editor.document.uri : null;
-		let goConfig = vscode.workspace.getConfiguration('go', documentUri);
-
-		lintWorkspace(documentUri, goConfig)
-			.then(handleDiagnosticErrors(editor ? editor.document : null))
-			.catch(err => {
-				vscode.window.showInformationMessage('Error: ' + err);
-			});
-	}));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.workspace', lintWorkspace));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
@@ -328,7 +308,11 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 
 	let uri = document.uri;
 	check(uri, goConfig)
-		.then(handleDiagnosticErrors(document))
+		.then(() => {
+			errorDiagnosticCollection.clear();
+			warningDiagnosticCollection.clear();
+			handleDiagnosticErrors(document);
+		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
 		});
@@ -466,50 +450,3 @@ function didLangServerConfigChange(useLangServer: boolean, langServerFlags: stri
 function loadPackages() {
 	getAllPackages();
 }
-
-function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {
-	switch (sev) {
-		case 'error': return vscode.DiagnosticSeverity.Error;
-		case 'warning': return vscode.DiagnosticSeverity.Warning;
-		default: return vscode.DiagnosticSeverity.Error;
-	}
-}
-
-function handleDiagnosticErrors(document: vscode.TextDocument) {
-	return (errors: ICheckResult[]) => {
-		errorDiagnosticCollection.clear();
-		warningDiagnosticCollection.clear();
-
-		let diagnosticMap: Map<string, Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>> = new Map();
-
-		errors.forEach(error => {
-			let canonicalFile = vscode.Uri.file(error.file).toString();
-			let startColumn = 0;
-			let endColumn = 1;
-			if (document && document.uri.toString() === canonicalFile) {
-				let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1);
-				let text = document.getText(range);
-				let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
-				startColumn = leading.length;
-				endColumn = text.length - trailing.length;
-			}
-			let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
-			let severity = mapSeverityToVSCodeSeverity(error.severity);
-			let diagnostic = new vscode.Diagnostic(range, error.msg, severity);
-			let diagnostics = diagnosticMap.get(canonicalFile);
-			if (!diagnostics) {
-				diagnostics = new Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>();
-			}
-			if (!diagnostics[severity]) {
-				diagnostics[severity] = [];
-			}
-			diagnostics[severity].push(diagnostic);
-			diagnosticMap.set(canonicalFile, diagnostics);
-		});
-		diagnosticMap.forEach((diagMap, file) => {
-			errorDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Error]);
-			warningDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Warning]);
-		});
-	};
-}
-

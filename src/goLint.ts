@@ -2,36 +2,48 @@ import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
 import cp = require('child_process');
-import { getToolsEnvVars, resolvePath, getBinPath, runTool, ICheckResult } from './util';
+import { getToolsEnvVars, resolvePath, getBinPath, runTool, ICheckResult, handleDiagnosticErrors } from './util';
 import { outputChannel } from './goStatus';
 import { getGoRuntimePath } from './goPath';
 
 /**
  * Runs linter in the current package.
- *
- * @param fileUri Document uri.
- * @param goConfig Configuration for the Go extension.
  */
-export function lintCurrentPackage(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+export function lintCurrentPackage(): Promise<ICheckResult[]> {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
-		return Promise.resolve([]);
+		return;
 	}
 
+	let documentUri = editor ? editor.document.uri : null;
+	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 	outputChannel.clear();
-	return goLint(fileUri, goConfig);
+	goLint(documentUri, goConfig)
+		.then(handleDiagnosticErrors(editor ? editor.document : null))
+		.catch(err => {
+			vscode.window.showInformationMessage('Error: ' + err);
+		});
 }
 
 /**
  * Runs linter in all packages in the current workspace.
- *
- * @param fileUri Document uri.
- * @param goConfig Configuration for the Go extension.
  */
-export function lintWorkspace(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+export function lintWorkspace() {
+	let editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage('No editor is active.');
+		return;
+	}
+
+	let documentUri = editor ? editor.document.uri : null;
+	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 	outputChannel.clear();
-	return goLint(fileUri, goConfig, true);
+	goLint(documentUri, goConfig, true)
+		.then(handleDiagnosticErrors(editor ? editor.document : null))
+		.catch(err => {
+			vscode.window.showInformationMessage('Error: ' + err);
+		});
 }
 
 /**
