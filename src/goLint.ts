@@ -20,7 +20,7 @@ export function lintCurrentPackage(): Promise<ICheckResult[]> {
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 	outputChannel.clear();
 	goLint(documentUri, goConfig)
-		.then(handleDiagnosticErrors(editor ? editor.document : null))
+		.then(warnings => handleDiagnosticErrors(editor ? editor.document : null, warnings))
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
 		});
@@ -40,7 +40,7 @@ export function lintWorkspace() {
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 	outputChannel.clear();
 	goLint(documentUri, goConfig, true)
-		.then(handleDiagnosticErrors(editor ? editor.document : null))
+		.then(warnings => handleDiagnosticErrors(editor ? editor.document : null, warnings))
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
 		});
