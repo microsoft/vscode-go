@@ -56,7 +56,7 @@ function runGoImpl(input: GoImplInput, insertPos: vscode.Position) {
 		}
 
 		if (err) {
-			vscode.window.showInformationMessage(`Cannot stub inteface: ${stderr}`);
+			vscode.window.showInformationMessage(`Cannot stub interface: ${stderr}`);
 			return;
 		}
 

@@ -23,6 +23,7 @@ import { listPackages } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
+import { goPlay } from '../src/goPlayground';
 import { lintCurrentPackage, lintWorkspace } from '../src/goLint';
 
 suite('Go Extension Tests', () => {
@@ -245,8 +246,7 @@ It returns the number of bytes written and any write error encountered.
 		});
 		let expected = [
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
-			{ line: 9, severity: 'warning', msg: 'possible formatting directive in Println call' },
-			{ line: 12, severity: 'error', msg: 'undefined: prin' },
+			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
@@ -364,8 +364,8 @@ It returns the number of bytes written and any write error encountered.
 				'buildOnSave': { value: 'off' }
 			});
 			let expected = [
-				{ line: 12, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-				{ line: 12, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
+				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
@@ -764,6 +764,75 @@ It returns the number of bytes written and any write error encountered.
 		testCases.forEach(run => {
 			assert.equal(run[1], getImportPath(run[0]));
 		});
+	});
+
+	test('goPlay - success run', (done) => {
+		const validCode = `
+			package main
+			import (
+				"fmt"
+			)
+			func main() {
+				for i := 1; i < 4; i++ {
+					fmt.Printf("%v ", i)
+				}
+				fmt.Print("Go!")
+			}`;
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
+			'playground': { value: { run: true, openbrowser: false, share: false } }
+		});
+
+		goPlay(validCode, goConfig['playground']).then(result => {
+			assert(
+				result.includes('1 2 3 Go!')
+			);
+		}, (e) => {
+			assert.ifError(e);
+		}).then(() => done(), done);
+	});
+
+	test('goPlay - success run & share', (done) => {
+		const validCode = `
+			package main
+			import (
+				"fmt"
+			)
+			func main() {
+				for i := 1; i < 4; i++ {
+					fmt.Printf("%v ", i)
+				}
+				fmt.Print("Go!")
+			}`;
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
+			'playground': { value: { run: true, openbrowser: false, share: true } }
+		});
+
+		goPlay(validCode, goConfig['playground']).then(result => {
+			assert(result.includes('1 2 3 Go!'));
+			assert(result.includes('https://play.golang.org/'));
+		}, (e) => {
+			assert.ifError(e);
+		}).then(() => done(), done);
+	});
+
+	test('goPlay - fail', (done) => {
+		const invalidCode = `
+			package main
+			import (
+				"fmt"
+			)
+			func fantasy() {
+				fmt.Print("not a main package, sorry")
+			}`;
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
+			'playground': { value: { run: true, openbrowser: false, share: false } }
+		});
+
+		goPlay(invalidCode, goConfig['playground']).then(result => {
+			assert.ifError(result);
+		}, (e) => {
+			assert.ok(e);
+		}).then(() => done(), done);
 	});
 
 	test('Test Linter for Package', (done) => {

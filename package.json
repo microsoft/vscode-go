@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.66",
+  "version": "0.6.67",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -23,6 +23,9 @@
     "type": "git",
     "url": "https://github.com/Microsoft/vscode-go.git"
   },
+  "keywords": [
+    "multi-root ready"
+  ],
   "scripts": {
     "vscode:prepublish": "tsc -p ./",
     "compile": "tsc -watch -p ./",
@@ -52,13 +55,13 @@
     "vscode": "^1.1.4"
   },
   "engines": {
-    "vscode": "^1.15.0"
+    "vscode": "^1.17.0"
   },
   "activationEvents": [
     "onLanguage:go",
     "onCommand:go.gopath",
     "onCommand:go.tools.install",
-    "onCommand:go.debug.startSession"
+    "onDebug"
   ],
   "main": "./out/src/goMain",
   "contributes": {
@@ -176,6 +179,11 @@
         "description": "Run `go get -v` on the package on the current line."
       },
       {
+        "command": "go.playground",
+        "title": "Go: Run on Go Playground",
+        "description": "Upload the current selection or file to the Go Playground"
+      },
+      {
         "command": "go.lint.package",
         "title": "Go: Lint Package",
         "description": "Run linter in the package of the current file."
@@ -200,7 +208,6 @@
         "languages": [
           "go"
         ],
-        "startSessionCommand": "go.debug.startSession",
         "configurationSnippets": [
           {
             "label": "Go: Launch package",
@@ -249,21 +256,6 @@
                 "${2:MyTestFunction}"
               ]
             }
-          }
-        ],
-        "initialConfigurations": [
-          {
-            "name": "Launch",
-            "type": "go",
-            "request": "launch",
-            "mode": "debug",
-            "remotePath": "",
-            "port": 2345,
-            "host": "127.0.0.1",
-            "program": "${fileDirname}",
-            "env": {},
-            "args": [],
-            "showLog": true
           }
         ],
         "configurationAttributes": {
@@ -743,6 +735,32 @@
           "description": "Tags and options configured here will be used by the Remove Tags command to remove tags to struct fields. If promptForTags is true, then user will be prompted for tags and options. By default, all tags and options will be removed.",
           "scope": "resource"
         },
+        "go.playground": {
+          "type": "object",
+          "properties": {
+            "openbrowser": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether to open the created Go Playground in the default browser"
+            },
+            "share": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether to make the created Go Playground shareable"
+            },
+            "run": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether to run the created Go Playground after creation"
+            },
+            "description": "The flags configured here will be passed through to command `goplay`"
+          },
+          "default": {
+            "openbrowser": true,
+            "share": true,
+            "run": true
+          }
+        },
         "go.editorContextMenuCommands": {
           "type": "object",
           "properties": {
@@ -800,6 +818,11 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to run test coverage to the editor context menu"
+            },
+            "playground": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to upload the current file or selection to the Go Playground"
             }
           },
           "default": {
@@ -813,7 +836,8 @@
             "generateTestForFile": false,
             "generateTestForPackage": false,
             "addImport": true,
-            "testCoverage": true
+            "testCoverage": true,
+            "playground": true
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor.",
           "scope": "resource"

@@ -173,7 +173,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 									if (param) {
 										param = param.replace('${', '\\${').replace('}', '\\}');
 										if (conf.get('useCodeSnippetsOnFunctionSuggestWithoutType')) {
+											if (param.includes(' ')) {
+											// Separate the variable name from the type
 											param = param.substr(0, param.indexOf(' '));
+											}
 										}
 										paramSnippets.push('${' + (i + 1) + ':' + param + '}');
 									}
@@ -253,7 +256,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					arguments: [pkgPath]
 				};
 				// Add same sortText to the unimported packages so that they appear after the suggestions from gocode
-				item.sortText = 'z';
+				const isStandardPackage = !item.detail.includes('.');
+				item.sortText = isStandardPackage ? 'za' : 'zb';
 				completionItems.push(item);
 			}
 		});

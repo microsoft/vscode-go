@@ -126,10 +126,13 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 	}
 
 	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {
+		let pkgMap = new Map<string, string>();
+		if (!pkgs) {
+			return pkgMap;
+		}
+
 		let currentFileDirPath = path.dirname(filePath);
 		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
-		let pkgMap = new Map<string, string>();
-
 		pkgs.forEach((pkgName, pkgPath) => {
 			if (pkgName === 'main') {
 				return;

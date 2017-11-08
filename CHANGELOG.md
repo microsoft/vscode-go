@@ -1,3 +1,20 @@
+## 0.6.67 - 4th November, 2017
+
+* [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
+    * Do not show suggestions from internal packages of other projects. Fixes [Bug 1256](https://github.com/Microsoft/vscode-go/issues/1256).
+
+* [Alexander Kohler (@alexkohler)](https://github.com/alexkohler)
+    * Fix issue with `go.useCodeSnippetsOnFunctionSuggestWithoutType` setting dropping parameters of same type. Fixes [Bug 1279](https://github.com/Microsoft/vscode-go/issues/1279) via [PR 1284](https://github.com/Microsoft/vscode-go/pull/1284)
+    * Remove duplciate compilation errors that can show up when entire workspace is built. Fixes [Bug 1228](https://github.com/Microsoft/vscode-go/issues/1228) via [PR 1269](https://github.com/Microsoft/vscode-go/pull/1269)
+
+* [Paweł Słomka @slomek](https://github.com/slomek)
+    * Snippet for Example functions. [PR 1281](https://github.com/Microsoft/vscode-go/pull/1281)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix suggestions to import vendored packages in Windows. Fixes [Bug 1147](https://github.com/Microsoft/vscode-go/issues/1147).
+    * Fix extension activation issue in Windows when a Go file is opened without any folder open. Fixes [Bug 1306](https://github.com/Microsoft/vscode-go/issues/1306)
+    * Use the newer debug APIs as the older ones will be deprecated in VS Code 1.18
+
 ## 0.6.66 - 2nd October, 2017
 
 ### [Multi Root support](https://code.visualstudio.com/updates/v1_15#_preview-multi-root-workspaces) when using [VS Code Insiders](https://code.visualstudio.com/insiders)
