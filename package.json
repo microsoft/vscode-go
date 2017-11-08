@@ -570,7 +570,7 @@
         },
         "go.gocodeAutoBuild": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable gocode's autobuild feature",
           "scope": "resource"
         },
