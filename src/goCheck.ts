@@ -143,12 +143,8 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		let vetFlags = goConfig['vetFlags'] || [];
-		let vetArgs = ['tool', 'vet', ...vetFlags, '.'];
-		let vetWorkDir = cwd;
-
-		if (goConfig['vetOnSave'] === 'workspace' && currentWorkspace) {
-			vetWorkDir = currentWorkspace;
-		}
+		let vetArgs = vetFlags.length ? ['tool', 'vet', ...vetFlags, '.'] : ['vet', './...'];
+		let vetWorkDir = (goConfig['vetOnSave'] === 'workspace' && currentWorkspace) ? currentWorkspace : cwd;
 
 		runningToolsPromises.push(runTool(
 			vetArgs,
@@ -170,11 +166,12 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		});
 	}
 
-	return Promise.all(runningToolsPromises).then(function(resultSets){
+	return Promise.all(runningToolsPromises).then(function (resultSets) {
 		let results: ICheckResult[] = [].concat.apply([], resultSets);
 		// Filter duplicates
 		return results.filter((results, index, self) =>
 			self.findIndex((t) => {
-				return t.file === results.file && t.line === results.line && t.msg === results.msg && t.severity === results.severity; }) === index);
+				return t.file === results.file && t.line === results.line && t.msg === results.msg && t.severity === results.severity;
+			}) === index);
 	});
 }
