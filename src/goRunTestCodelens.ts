@@ -102,7 +102,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				let runBenchmarkCmd: Command = {
 					title: 'run benchmark',
 					command: 'go.benchmark.cursor',
-					arguments: [ { functionName: func.name, isBenchmark: true } ]
+					arguments: [ { functionName: func.name } ]
 				};
 
 				codelens.push(new CodeLens(func.location.range, runBenchmarkCmd));

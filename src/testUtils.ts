@@ -213,13 +213,6 @@ function expandFilePathInOutput(output: string, cwd: string): string {
 }
 
 /**
- * Function type for getting the target arguments.
- *
- * @param testconfig Configuration for the Go extension.
- */
-type argsHandleFunc = (testconfig: TestConfig) => Thenable<Array<string>>;
-
-/**
  * Get the test target arguments.
  *
  * @param testconfig Configuration for the Go extension.
