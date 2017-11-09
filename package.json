@@ -182,6 +182,16 @@
         "command": "go.playground",
         "title": "Go: Run on Go Playground",
         "description": "Upload the current selection or file to the Go Playground"
+      },
+      {
+        "command": "go.lint.package",
+        "title": "Go: Lint Package",
+        "description": "Run linter in the package of the current file."
+      },
+      {
+        "command": "go.lint.workspace",
+        "title": "Go: Lint Workspace",
+        "description": "Run linter in the current workspace."
       }
     ],
     "debuggers": [
