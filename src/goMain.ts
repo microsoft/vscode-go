@@ -109,7 +109,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
 		}
 
-		if (vscode.window.activeTextEditor && isGoPathSet()) {
+		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'go' && isGoPathSet()) {
 			// preload packages so the cache are ready to use
 			loadPackages();
 			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri));
