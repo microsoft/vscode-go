@@ -82,46 +82,32 @@ export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any)
  * @param the URI of a Go source file.
  * @return test function symbols for the source file.
  */
-export function getTestFunctions(doc: vscode.TextDocument, checker: prefixChecker): Thenable<vscode.SymbolInformation[]> {
+export function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
 	let documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, null)
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& checker(sym.name))
+				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example')))
 		);
 }
 
 /**
- * Function type for function that given a function name has
- * returns whether it is of a certain type of prefix.
+ * Returns all Benchmark functions in the given source file.
  *
- * @param the function name.
- * @return whether the name has a function prefix.
+ * @param the URI of a Go source file.
+ * @return benchmark function symbols for the source file.
  */
-type prefixChecker = (name: string) => boolean;
-
-/**
- * Returns whether a given function name has a test prefix.
- * Test functions have "Test" or "Example" as a prefix.
- *
- * @param the function name.
- * @return whether the name has a test function prefix.
- */
-export function hasTestFunctionPrefix(name: string): boolean {
-	return name.startsWith('Test') || name.startsWith('Example');
-}
-
-/**
- * Returns whether a given function name has a benchmark prefix.
- * Benchmark functions have "Benchmark" as a prefix.
- *
- * @param the function name.
- * @return whether the name has a benchmark function prefix.
- */
-export function hasBenchmarkFunctionPrefix(name: string): boolean {
-	return name.startsWith('Benchmark');
+export function getBenchmarkFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
+	let documentSymbolProvider = new GoDocumentSymbolProvider();
+	return documentSymbolProvider
+		.provideDocumentSymbols(doc, null)
+		.then(symbols =>
+			symbols.filter(sym =>
+				sym.kind === vscode.SymbolKind.Function
+				&& sym.name.startsWith('Benchmark'))
+		);
 }
 
 /**
@@ -138,24 +124,18 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
-
-		let args: Array<string>;
-		let handleFunc: argsHandleFunc;
-		let testType: string;
+		let args: Array<string> = ['test', ...testconfig.flags];
+		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
 
 		if (testconfig.isBenchmark) {
-			args = ['test', ...testconfig.flags, '-benchmem', '-run=^$'];
-			handleFunc = benchmarkTargetArgs;
-			testType = 'Benchmarks';
+			args.push('-benchmem', '-run=^$');
 		} else {
-			args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
-			handleFunc = testTargetArgs;
-			testType = 'Tests';
+			args.push('-timeout', testconfig.goConfig['testTimeout']);
 		}
 		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
-			args.push('-tags');
-			args.push(buildTags);
+			args.push('-tags', buildTags);
 		}
+
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
 		let goRuntimePath = getGoRuntimePath();
 
@@ -170,7 +150,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			args.push(testconfig.dir.substr(currentGoWorkspace.length + 1));
 		}
 
-		handleFunc(testconfig).then(targets => {
+		targetArgs(testconfig).then(targets => {
 			let outTargets = args.slice(0);
 			if (targets.length > 2) {
 				outTargets.push('<long arguments omitted>');
@@ -244,10 +224,10 @@ type argsHandleFunc = (testconfig: TestConfig) => Thenable<Array<string>>;
  *
  * @param testconfig Configuration for the Go extension.
  */
-function testTargetArgs(testconfig: TestConfig): Thenable<Array<string>> {
+function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
-		return Promise.resolve(['-run', util.format('^%s$', testconfig.functions.join('|'))]);
-	} else if (testconfig.includeSubDirectories) {
+		return Promise.resolve([testconfig.isBenchmark ? '-bench' : '-run', util.format('^%s$', testconfig.functions.join('|'))]);
+	} else if (testconfig.includeSubDirectories && !testconfig.isBenchmark) {
 		return getGoVersion().then((ver: SemVersion) => {
 			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
 				return ['./...'];
@@ -258,11 +238,3 @@ function testTargetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	return Promise.resolve([]);
 }
 
-/**
- * Get the benchmark target arguments.
- *
- * @param testconfig Configuration for the Go extension.
- */
-function benchmarkTargetArgs(testconfig: TestConfig): Thenable<Array<string>> {
-	return Promise.resolve(['-bench', util.format('^%s$', testconfig.functions.join('|'))]);
-}
