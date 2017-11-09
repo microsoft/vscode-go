@@ -7,17 +7,21 @@
 
 import vscode = require('vscode');
 import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
-import { definitionLocation } from './goDeclaration';
+import { DefinitionHelper } from './goDeclaration';
 import { parameters } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	private goConfig = null;
+	private helper: DefinitionHelper;
 
-	constructor(goConfig?: WorkspaceConfiguration) {
+	constructor(goConfig?: vscode.WorkspaceConfiguration) {
 		this.goConfig = goConfig;
+		this.helper = new DefinitionHelper();
 	}
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
+		token.onCancellationRequested(this.helper.cancelCurrentRunningProcess);
+
 		if (!this.goConfig) {
 			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
 		}
@@ -32,7 +36,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		if (goConfig['docsTool'] === 'guru') {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
-		return definitionLocation(document, callerPos, goConfig).then(res => {
+		return this.helper.definitionLocation(document, callerPos, goConfig).then(res => {
 			if (!res) {
 				// The definition was not found
 				return null;
