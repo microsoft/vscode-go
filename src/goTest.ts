@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestEnvVars, getTestFlags, getTestFunctions } from './testUtils';
+import { goTest, TestConfig, getTestEnvVars, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
 import { getCoverage } from './goCover';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -21,7 +21,7 @@ let lastTestConfig: TestConfig;
 *
 * @param goConfig Configuration for the Go extension.
 */
-export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any) {
+export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -31,39 +31,44 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
+
+	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
+
 	editor.document.save().then(() => {
-		return getTestFunctions(editor.document).then(testFunctions => {
-		let testFunctionName: string;
+		return getFunctions(editor.document).then(testFunctions => {
+			let testFunctionName: string;
 
-		// We use functionName if it was provided as argument
-		// Otherwise find any test function containing the cursor.
-		if (args && args.functionName) {
-			testFunctionName = args.functionName;
-		} else {
-			for (let func of testFunctions) {
-				let selection = editor.selection;
-				if (selection && func.location.range.contains(selection.start)) {
-					testFunctionName = func.name;
-					break;
-				}
+			// We use functionName if it was provided as argument
+			// Otherwise find any test function containing the cursor.
+			if (args && args.functionName) {
+				testFunctionName = args.functionName;
+			} else {
+				for (let func of testFunctions) {
+					let selection = editor.selection;
+					if (selection && func.location.range.contains(selection.start)) {
+						testFunctionName = func.name;
+						break;
+					}
+				};
+			}
+
+			if (!testFunctionName) {
+				vscode.window.showInformationMessage('No test function found at cursor.');
+				return;
+			}
+
+			const testConfig = {
+				goConfig: goConfig,
+				dir: path.dirname(editor.document.fileName),
+				flags: getTestFlags(goConfig, args),
+				functions: [testFunctionName],
+				isBenchmark: isBenchmark
 			};
-		}
 
-		if (!testFunctionName) {
-			vscode.window.showInformationMessage('No test function found at cursor.');
-			return;
-		}
+			// Remember this config as the last executed test.
+			lastTestConfig = testConfig;
 
-		const testConfig = {
-			goConfig: goConfig,
-			dir: path.dirname(editor.document.fileName),
-			flags: getTestFlags(goConfig, args),
-			functions: [testFunctionName]
-		};
-		// Remember this config as the last executed test.
-		lastTestConfig = testConfig;
-
-		return goTest(testConfig);
+			return goTest(testConfig);
 		});
 	}).then(null, err => {
 		console.error(err);

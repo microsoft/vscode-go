@@ -43,6 +43,10 @@ export interface TestConfig {
 	 * Run all tests from all sub directories under `dir`
 	 */
 	includeSubDirectories?: boolean;
+	/**
+	 * Whether this is a benchmark.
+	 */
+	isBenchmark?: boolean;
 }
 
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
@@ -85,19 +89,25 @@ export function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.Symb
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& hasTestFunctionPrefix(sym.name))
+				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example')))
 		);
 }
 
 /**
- * Returns whether a given function name has a test prefix.
- * Test functions have "Test" or "Example" as a prefix.
+ * Returns all Benchmark functions in the given source file.
  *
- * @param the function name.
- * @return whether the name has a test function prefix.
+ * @param the URI of a Go source file.
+ * @return benchmark function symbols for the source file.
  */
-function hasTestFunctionPrefix(name: string): boolean {
-	return name.startsWith('Test') || name.startsWith('Example');
+export function getBenchmarkFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
+	let documentSymbolProvider = new GoDocumentSymbolProvider();
+	return documentSymbolProvider
+		.provideDocumentSymbols(doc, null)
+		.then(symbols =>
+			symbols.filter(sym =>
+				sym.kind === vscode.SymbolKind.Function
+				&& sym.name.startsWith('Benchmark'))
+		);
 }
 
 /**
@@ -114,11 +124,18 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
-		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
-		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
-			args.push('-tags');
-			args.push(buildTags);
+		let args: Array<string> = ['test', ...testconfig.flags];
+		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
+
+		if (testconfig.isBenchmark) {
+			args.push('-benchmem', '-run=^$');
+		} else {
+			args.push('-timeout', testconfig.goConfig['testTimeout']);
 		}
+		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
+			args.push('-tags', buildTags);
+		}
+
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
 		let goRuntimePath = getGoRuntimePath();
 
@@ -163,14 +180,14 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				errBuf.done();
 
 				if (code) {
-					outputChannel.appendLine('Error: Tests failed.');
+					outputChannel.appendLine(`Error: ${testType} failed.`);
 				} else {
-					outputChannel.appendLine('Success: Tests passed.');
+					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
 				resolve(code === 0);
 			});
 		}, err => {
-			outputChannel.appendLine('Error: Tests failed.');
+			outputChannel.appendLine(`Error: ${testType} failed.`);
 			outputChannel.appendLine(err);
 			resolve(false);
 		});
@@ -202,8 +219,8 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  */
 function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
-		return Promise.resolve(['-run', util.format('^%s$', testconfig.functions.join('|'))]);
-	} else if (testconfig.includeSubDirectories) {
+		return Promise.resolve([testconfig.isBenchmark ? '-bench' : '-run', util.format('^%s$', testconfig.functions.join('|'))]);
+	} else if (testconfig.includeSubDirectories && !testconfig.isBenchmark) {
 		return getGoVersion().then((ver: SemVersion) => {
 			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
 				return ['./...'];
@@ -213,3 +230,4 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	}
 	return Promise.resolve([]);
 }
+

@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import path = require('path');
 import { CodeLensProvider, TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
-import { getTestFunctions, getTestEnvVars, getTestFlags } from './testUtils';
+import { getTestFunctions, getBenchmarkFunctions, getTestEnvVars, getTestFlags } from './testUtils';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getCurrentGoPath } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
@@ -65,14 +65,14 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	}
 
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument): Thenable<CodeLens[]> {
-		return getTestFunctions(document).then(testFunctions => {
-			let codelens = [];
+		const codelens: CodeLens[] = [];
 
+		const testPromise = getTestFunctions(document).then(testFunctions => {
 			testFunctions.forEach(func => {
 				let runTestCmd: Command = {
 					title: 'run test',
 					command: 'go.test.cursor',
-					arguments: [ { functionName: func.name} ]
+					arguments: [ { functionName: func.name } ]
 				};
 
 				const args = ['-test.run', func.name];
@@ -95,7 +95,21 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				codelens.push(new CodeLens(func.location.range, runTestCmd));
 				codelens.push(new CodeLens(func.location.range, debugTestCmd));
 			});
-			return codelens;
 		});
+
+		const benchmarkPromise = getBenchmarkFunctions(document).then(benchmarkFunctions => {
+			benchmarkFunctions.forEach(func => {
+				let runBenchmarkCmd: Command = {
+					title: 'run benchmark',
+					command: 'go.benchmark.cursor',
+					arguments: [ { functionName: func.name } ]
+				};
+
+				codelens.push(new CodeLens(func.location.range, runBenchmarkCmd));
+			});
+
+		});
+
+		return Promise.all([testPromise, benchmarkPromise]).then(() => codelens);
 	}
 }
