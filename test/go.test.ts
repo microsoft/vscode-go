@@ -837,7 +837,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Linter for Package', (done) => {
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
+			if (!version || (version.major === 1 && version.minor < 6)) {
 				// golint in gometalinter is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
