@@ -8,15 +8,14 @@
 import vscode = require('vscode');
 import path = require('path');
 import os = require('os');
-import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
 import { goTest } from './testUtils';
-import { getCurrentGoPath, getToolsEnvVars, ICheckResult, runTool } from './util';
-import { getNonVendorPackages } from './goPackages';
-import { getTestFlags } from './testUtils';
+import { ICheckResult } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
+import { goBuild } from './goBuild';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -33,8 +32,6 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(fileUri.fsPath);
-	let currentWorkspace = vscode.workspace.getWorkspaceFolder(fileUri) ? vscode.workspace.getWorkspaceFolder(fileUri).uri.fsPath : '';
-	let env = getToolsEnvVars();
 	let goRuntimePath = getGoRuntimePath();
 
 	if (!goRuntimePath) {
@@ -67,56 +64,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	};
 
 	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
-		const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
-		const isTestFile = fileUri.fsPath.endsWith('_test.go');
-		let buildFlags = isTestFile ? getTestFlags(goConfig, null) : (goConfig['buildFlags'] || []);
-		// Remove the -i flag as it will be added later anyway
-		if (buildFlags.indexOf('-i') > -1) {
-			buildFlags.splice(buildFlags.indexOf('-i'), 1);
-		}
-
-		// If current file is a test file, then use `go test -c` instead of `go build` to find build errors
-		let buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
-		buildArgs.push('-i', '-o', tmpPath, ...buildFlags);
-		if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
-			buildArgs.push('-tags');
-			buildArgs.push('"' + goConfig['buildTags'] + '"');
-		}
-
-		if (goConfig['buildOnSave'] === 'workspace' && currentWorkspace && !isTestFile) {
-			let buildPromises = [];
-			let outerBuildPromise = getNonVendorPackages(currentWorkspace).then(pkgs => {
-				buildPromises = pkgs.map(pkgPath => {
-					return runTool(
-						buildArgs.concat(pkgPath),
-						cwd,
-						'error',
-						true,
-						null,
-						env,
-						true
-					);
-				});
-				return Promise.all(buildPromises).then((resultSets) => {
-					return Promise.resolve([].concat.apply([], resultSets));
-				});
-			});
-			runningToolsPromises.push(outerBuildPromise);
-		} else {
-			// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
-			let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
-			let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
-
-			runningToolsPromises.push(runTool(
-				buildArgs.concat(importPath),
-				cwd,
-				'error',
-				true,
-				null,
-				env,
-				true
-			));
-		}
+		runningToolsPromises.push(goBuild(fileUri, goConfig, goConfig['buildOnSave'] === 'workspace'));
 	}
 
 	if (!!goConfig['testOnSave']) {
@@ -135,13 +83,11 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
-		let lintWorkspace = goConfig['lintOnSave'] === 'workspace';
-		runningToolsPromises.push(goLint(fileUri, goConfig, lintWorkspace));
+		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'] === 'workspace'));
 	}
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
-		let vetWorkspace = goConfig['vetOnSave'] === 'workspace';
-		runningToolsPromises.push(goVet(fileUri, goConfig, vetWorkspace));
+		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace'));
 	}
 
 	if (!!goConfig['coverOnSave']) {
@@ -155,11 +101,6 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	return Promise.all(runningToolsPromises).then(function (resultSets) {
-		let results: ICheckResult[] = [].concat.apply([], resultSets);
-		// Filter duplicates
-		return results.filter((results, index, self) =>
-			self.findIndex((t) => {
-				return t.file === results.file && t.line === results.line && t.msg === results.msg && t.severity === results.severity;
-			}) === index);
+		return [].concat.apply([], resultSets);
 	});
 }

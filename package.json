@@ -207,6 +207,16 @@
         "command": "go.vet.workspace",
         "title": "Go: Vet Workspace",
         "description": "Run go vet in the current workspace."
+      },
+      {
+        "command": "go.build.package",
+        "title": "Go: Build Package",
+        "description": "Build the package of the current file."
+      },
+      {
+        "command": "go.build.workspace",
+        "title": "Go: Build Workspace",
+        "description": "Build the current workspace."
       }
     ],
     "debuggers": [

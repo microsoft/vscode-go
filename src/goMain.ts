@@ -43,6 +43,7 @@ import { GoDebugConfigurationProvider } from './goDebugConfiguration';
 import { playgroundCommand } from './goPlayground';
 import { lintCode } from './goLint';
 import { vetCode } from './goVet';
+import { buildCode } from './goBuild';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 export let warningDiagnosticCollection: vscode.DiagnosticCollection;
@@ -298,6 +299,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.vet.package', vetCode));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.vet.workspace', () => vetCode(true)));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.build.package', buildCode));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.build.workspace', () => buildCode(true)));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {
