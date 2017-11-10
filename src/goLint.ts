@@ -71,12 +71,27 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		args.push('./...');
 	}
 
-	return runTool(
+	if (running) {
+		tokenSource.cancel();
+	}
+
+	running = true;
+	const lintPromise = runTool(
 		args,
 		(lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath),
 		'warning',
 		false,
 		lintTool,
-		lintEnv
-	);
+		lintEnv,
+		false,
+		tokenSource.token
+	).then((result) => {
+		running = false;
+		return result;
+	});
+
+	return lintPromise;
 }
+
+let tokenSource = new vscode.CancellationTokenSource();
+let running = false;

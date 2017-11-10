@@ -499,11 +499,19 @@ export interface ICheckResult {
  * @param toolName The name of the Go tool to run. If none is provided, the go runtime itself is used
  * @param printUnexpectedOutput If true, then output that doesnt match expected format is printed to the output channel
  */
-export function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput?: boolean): Promise<ICheckResult[]> {
+export function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput: boolean, token?: vscode.CancellationToken): Promise<ICheckResult[]> {
 	let goRuntimePath = getGoRuntimePath();
 	let cmd = toolName ? getBinPath(toolName) : goRuntimePath;
+	let p: cp.ChildProcess;
+	if (token) {
+		token.onCancellationRequested(() => {
+			if (p) {
+				killTree(p.pid);
+			}
+		});
+	}
 	return new Promise((resolve, reject) => {
-		cp.execFile(cmd, args, { env: env, cwd: cwd }, (err, stdout, stderr) => {
+		p = cp.execFile(cmd, args, { env: env, cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					// Since the tool is run on save which can be frequent
@@ -655,6 +663,26 @@ export function killProcess(p: cp.ChildProcess) {
 				}
 			}
 
+		}
+	}
+}
+
+export function killTree(processId: number): void {
+	if (process.platform === 'win32') {
+		const TASK_KILL = 'C:\\Windows\\System32\\taskkill.exe';
+
+		// when killing a process in Windows its child processes are *not* killed but become root processes.
+		// Therefore we use TASKKILL.EXE
+		try {
+			cp.execSync(`${TASK_KILL} /F /T /PID ${processId}`);
+		} catch (err) {
+		}
+	} else {
+		// on linux and OS X we kill all direct and indirect child processes as well
+		try {
+			const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
+			cp.spawnSync(cmd, [processId.toString()]);
+		} catch (err) {
 		}
 	}
 }
