@@ -82,10 +82,10 @@ export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any)
  * @param the URI of a Go source file.
  * @return test function symbols for the source file.
  */
-export function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
+export function getTestFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
 	let documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
-		.provideDocumentSymbols(doc, null)
+		.provideDocumentSymbols(doc, token)
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
@@ -99,10 +99,10 @@ export function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.Symb
  * @param the URI of a Go source file.
  * @return benchmark function symbols for the source file.
  */
-export function getBenchmarkFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
+export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
 	let documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
-		.provideDocumentSymbols(doc, null)
+		.provideDocumentSymbols(doc, token)
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function

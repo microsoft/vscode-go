@@ -635,3 +635,26 @@ export function getWorkspaceFolderPath(fileUri: vscode.Uri): string {
 		return folders[0].uri.fsPath;
 	}
 }
+
+export function killProcess(p: cp.ChildProcess) {
+	if (p) {
+		try {
+			p.kill();
+		} catch (e) {
+			console.log('Error killing process: ' + e);
+			if (e && e.message && e.stack) {
+				let matches = e.stack.match(/(src.go[a-z,A-Z]+\.js)/g);
+				if (matches) {
+					/* __GDPR__
+					   "errorKillingProcess" : {
+						  "message" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+						  "stack": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
+					   }
+					 */
+					sendTelemetryEvent('errorKillingProcess', { message: e.message, stack: matches });
+				}
+			}
+
+		}
+	}
+}

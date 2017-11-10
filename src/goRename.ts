@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess } from './util';
 import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 
@@ -34,7 +34,12 @@ export class GoRenameProvider implements vscode.RenameProvider {
 				gorenameArgs.push('-d');
 			}
 
-			cp.execFile(gorename, gorenameArgs, {env}, (err, stdout, stderr) => {
+			let p: cp.ChildProcess;
+			if (token) {
+				token.onCancellationRequested(() => killProcess(p));
+			}
+
+			p = cp.execFile(gorename, gorenameArgs, {env}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gorename');

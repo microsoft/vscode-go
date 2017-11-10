@@ -33,7 +33,7 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
  */
 function getImports(document: vscode.TextDocument): Promise<string[]> {
 	let options = { fileName: document.fileName, importsOnly: true, document };
-	return documentSymbols(options).then(symbols => {
+	return documentSymbols(options, null).then(symbols => {
 		if (!symbols || !symbols[0] || !symbols[0].children) {
 			return [];
 		}

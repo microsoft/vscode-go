@@ -6,7 +6,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars } from './util';
+import { getBinPath, getToolsEnvVars, killProcess } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with github.com/acroca/go-symbols'
@@ -56,7 +56,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 			return;
 		}
 
-		return getWorkspaceSymbols(root, query).then(results => {
+		return getWorkspaceSymbols(root, query, token).then(results => {
 			let symbols: vscode.SymbolInformation[] = [];
 			convertToCodeSymbols(results, symbols);
 			return symbols;
@@ -64,7 +64,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 	}
 }
 
-export function getWorkspaceSymbols(workspacePath: string, query: string, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
+export function getWorkspaceSymbols(workspacePath: string, query: string, token: vscode.CancellationToken, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
 	if (!goConfig) {
 		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	}
@@ -75,15 +75,21 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, goConf
 	args.push(query);
 	let gosyms = getBinPath('go-symbols');
 	let env = getToolsEnvVars();
+	let p: cp.ChildProcess;
+	if (token) {
+		token.onCancellationRequested(() => killProcess(p));
+	}
+
 	return new Promise((resolve, reject) => {
-		cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024, env }, (err, stdout, stderr) => {
+		p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024, env }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('go-symbols');
 				}
 				if (err && stderr && stderr.startsWith('flag provided but not defined: -ignore')) {
 					promptForUpdatingTool('go-symbols');
-					return getWorkspaceSymbols(workspacePath, query, goConfig, false).then(results => {
+					p = null;
+					return getWorkspaceSymbols(workspacePath, query, token, goConfig, false).then(results => {
 						return resolve(results);
 					});
 				}

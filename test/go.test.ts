@@ -491,7 +491,7 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Outline', (done) => {
 		let filePath = path.join(fixturePath, 'test.go');
 		let options = { fileName: filePath };
-		documentSymbols(options).then(outlines => {
+		documentSymbols(options, null).then(outlines => {
 			let packageOutline = outlines[0];
 			let symbols = packageOutline.children;
 			let imports = symbols.filter(x => x.type === 'import');
@@ -509,7 +509,7 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Outline imports only', (done) => {
 		let filePath = path.join(fixturePath, 'test.go');
 		let options = { fileName: filePath, importsOnly: true };
-		documentSymbols(options).then(outlines => {
+		documentSymbols(options, null).then(outlines => {
 			let packageOutline = outlines[0];
 			let symbols = packageOutline.children;
 			let imports = symbols.filter(x => x.type === 'import');
@@ -672,11 +672,11 @@ It returns the number of bytes written and any write error encountered.
 				}
 			}
 		});
-		let withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', configWithoutIgnoringFolders).then(results => {
+		let withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithoutIgnoringFolders).then(results => {
 			assert.equal(results[0].name, 'WinInfo');
 			assert.equal(results[0].path, path.join(workspacePath, 'vendor/9fans.net/go/acme/acme.go'));
 		});
-		let withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', configWithIgnoringFolders).then(results => {
+		let withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithIgnoringFolders).then(results => {
 			assert.equal(results.length, 0);
 		});
 		Promise.all([withIgnoringFolders, withoutIgnoringFolders]).then(() => done(), done);

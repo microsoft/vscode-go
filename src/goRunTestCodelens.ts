@@ -36,16 +36,16 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		}
 
 		return Promise.all([
-			this.getCodeLensForPackage(document),
-			this.getCodeLensForFunctions(config, document)
+			this.getCodeLensForPackage(document, token),
+			this.getCodeLensForFunctions(config, document, token)
 		]).then(res => {
 			return res[0].concat(res[1]);
 		});
 	}
 
-	private getCodeLensForPackage(document: TextDocument): Thenable<CodeLens[]> {
+	private getCodeLensForPackage(document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		let documentSymbolProvider = new GoDocumentSymbolProvider();
-		return documentSymbolProvider.provideDocumentSymbols(document, null)
+		return documentSymbolProvider.provideDocumentSymbols(document, token)
 				.then(symbols => symbols.find(sym => sym.kind === vscode.SymbolKind.Package && !!sym.name))
 				.then(pkg => {
 					if (pkg) {
@@ -64,10 +64,10 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				});
 	}
 
-	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument): Thenable<CodeLens[]> {
+	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		const codelens: CodeLens[] = [];
 
-		const testPromise = getTestFunctions(document).then(testFunctions => {
+		const testPromise = getTestFunctions(document, token).then(testFunctions => {
 			testFunctions.forEach(func => {
 				let runTestCmd: Command = {
 					title: 'run test',
@@ -97,7 +97,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			});
 		});
 
-		const benchmarkPromise = getBenchmarkFunctions(document).then(benchmarkFunctions => {
+		const benchmarkPromise = getBenchmarkFunctions(document, token).then(benchmarkFunctions => {
 			benchmarkFunctions.forEach(func => {
 				let runBenchmarkCmd: Command = {
 					title: 'run benchmark',

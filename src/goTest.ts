@@ -35,7 +35,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
 	editor.document.save().then(() => {
-		return getFunctions(editor.document).then(testFunctions => {
+		return getFunctions(editor.document, null).then(testFunctions => {
 			let testFunctionName: string;
 
 			// We use functionName if it was provided as argument
@@ -157,7 +157,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 	}
 
 	return editor.document.save().then(() => {
-		return getTestFunctions(editor.document).then(testFunctions => {
+		return getTestFunctions(editor.document, null).then(testFunctions => {
 			const testConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),

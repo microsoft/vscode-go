@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive } from './util';
+import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -56,15 +56,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 	}
 	let p: cp.ChildProcess;
 	if (token) {
-		token.onCancellationRequested(() => {
-			if (p) {
-				try {
-					p.kill();
-				} catch (e) {
-					console.log('Error cancelling process: ' + e);
-				}
-			}
-		});
+		token.onCancellationRequested(() => killProcess(p));
 	}
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -138,15 +130,7 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 	}
 	let p: cp.ChildProcess;
 	if (token) {
-		token.onCancellationRequested(() => {
-			if (p) {
-				try {
-					p.kill();
-				} catch (e) {
-					console.log('Error cancelling process: ' + e);
-				}
-			}
-		});
+		token.onCancellationRequested(() => killProcess(p));
 	}
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
@@ -200,15 +184,7 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 	}
 	let p: cp.ChildProcess;
 	if (token) {
-		token.onCancellationRequested(() => {
-			if (p) {
-				try {
-					p.kill();
-				} catch (e) {
-					console.log('Error cancelling process: ' + e);
-				}
-			}
-		});
+		token.onCancellationRequested(() => killProcess(p));
 	}
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		p = cp.execFile(guru, ['-json', '-modified', 'definition', document.fileName + ':#' + offset.toString()], { env }, (err, stdout, stderr) => {

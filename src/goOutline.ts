@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getFileArchive, getToolsEnvVars } from './util';
+import { getBinPath, getFileArchive, getToolsEnvVars, killProcess } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with https://github.com/ramya-rao-a/go-outline
@@ -45,7 +45,7 @@ export interface GoOutlineOptions {
 	document?: vscode.TextDocument;
 }
 
-export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDeclaration[]> {
+export function documentSymbols(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<GoOutlineDeclaration[]> {
 	return new Promise<GoOutlineDeclaration[]>((resolve, reject) => {
 		let gooutline = getBinPath('go-outline');
 		let gooutlineFlags = ['-f', options.fileName];
@@ -55,8 +55,14 @@ export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDec
 		if (options.document) {
 			gooutlineFlags.push('-modified');
 		}
+
+		let p: cp.ChildProcess;
+		if (token) {
+			token.onCancellationRequested(() => killProcess(p));
+		}
+
 		// Spawn `go-outline` process
-		let p = cp.execFile(gooutline, gooutlineFlags, {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+		p = cp.execFile(gooutline, gooutlineFlags, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('go-outline');
@@ -69,8 +75,8 @@ export function documentSymbols(options: GoOutlineOptions): Promise<GoOutlineDec
 					if (stderr.startsWith('flag provided but not defined: -modified')) {
 						options.document = null;
 					}
-
-					return documentSymbols(options).then(results => {
+					p = null;
+					return documentSymbols(options, token).then(results => {
 						return resolve(results);
 					});
 				}
@@ -127,7 +133,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
 		let options = { fileName: document.fileName, document: document };
-		return documentSymbols(options).then(decls => {
+		return documentSymbols(options, token).then(decls => {
 			let symbols: vscode.SymbolInformation[] = [];
 			this.convertToCodeSymbols(document, decls, symbols, '');
 			return symbols;
