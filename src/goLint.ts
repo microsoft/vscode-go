@@ -1,45 +1,22 @@
 import path = require('path');
 import vscode = require('vscode');
-import os = require('os');
-import cp = require('child_process');
-import { getToolsEnvVars, resolvePath, getBinPath, runTool, ICheckResult, handleDiagnosticErrors } from './util';
+import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath } from './util';
 import { outputChannel } from './goStatus';
-import { getGoRuntimePath } from './goPath';
 
 /**
- * Runs linter in the current package.
+ * Runs linter in the current package or workspace.
  */
-export function lintCurrentPackage(): Promise<ICheckResult[]> {
+export function lintCode(lintWorkspace?: boolean) {
 	let editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage('No editor is active.');
+	if (!editor && !lintWorkspace) {
+		vscode.window.showInformationMessage('No editor is active, cant find current package to lint');
 		return;
 	}
 
 	let documentUri = editor ? editor.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 	outputChannel.clear();
-	goLint(documentUri, goConfig)
-		.then(warnings => handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning))
-		.catch(err => {
-			vscode.window.showInformationMessage('Error: ' + err);
-		});
-}
-
-/**
- * Runs linter in all packages in the current workspace.
- */
-export function lintWorkspace() {
-	let editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage('No editor is active.');
-		return;
-	}
-
-	let documentUri = editor ? editor.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
-	outputChannel.clear();
-	goLint(documentUri, goConfig, true)
+	goLint(documentUri, goConfig, lintWorkspace)
 		.then(warnings => handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning))
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
@@ -59,6 +36,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	let lintEnv = Object.assign({}, getToolsEnvVars());
 	let args = [];
 	let configFlag = '--config=';
+	let currentWorkspace = getWorkspaceFolderPath(fileUri);
 	lintFlags.forEach(flag => {
 		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
 		if (flag === '--json') {
@@ -83,36 +61,13 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		}
 	}
 
-	let lintWorkDir: string;
-
-	if (lintWorkspace) {
-		let currentWorkspace: string;
-		if (fileUri) {
-			let workspace = vscode.workspace.getWorkspaceFolder(fileUri);
-			if (workspace) {
-				currentWorkspace = workspace.uri.fsPath;
-			}
-		}
-
-		if (!currentWorkspace) {
-			// finding workspace root path
-			let folders = vscode.workspace.workspaceFolders;
-			if (folders && folders.length) {
-				currentWorkspace = folders[0].uri.fsPath;
-			} else {
-				return Promise.resolve([]);
-			}
-		}
-
-		lintWorkDir = currentWorkspace;
+	if (lintWorkspace && currentWorkspace) {
 		args.push('./...');
-	} else {
-		lintWorkDir = path.dirname(fileUri.fsPath);
 	}
 
 	return runTool(
 		args,
-		lintWorkDir,
+		(lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath),
 		'warning',
 		false,
 		lintTool,

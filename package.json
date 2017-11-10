@@ -197,6 +197,16 @@
         "command": "go.lint.workspace",
         "title": "Go: Lint Workspace",
         "description": "Run linter in the current workspace."
+      },
+      {
+        "command": "go.vet.package",
+        "title": "Go: Vet Package",
+        "description": "Run go vet in the package of the current file."
+      },
+      {
+        "command": "go.vet.workspace",
+        "title": "Go: Vet Workspace",
+        "description": "Run go vet in the current workspace."
       }
     ],
     "debuggers": [

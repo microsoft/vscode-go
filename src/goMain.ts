@@ -41,7 +41,8 @@ import { browsePackages } from './goBrowsePackage';
 import { goGetPackage } from './goGetPackage';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';
 import { playgroundCommand } from './goPlayground';
-import { lintCurrentPackage, lintWorkspace } from './goLint';
+import { lintCode } from './goLint';
+import { vetCode } from './goVet';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 export let warningDiagnosticCollection: vscode.DiagnosticCollection;
@@ -290,9 +291,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.playground', playgroundCommand));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.package', lintCurrentPackage));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.package', lintCode));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.workspace', lintWorkspace));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.workspace', () => lintCode(true)));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.vet.package', vetCode));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.vet.workspace', () => vetCode(true)));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		indentationRules: {

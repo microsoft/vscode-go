@@ -249,7 +249,6 @@ export function sendTelemetryEvent(eventName: string, properties?: {
 	[key: string]: number;
 }): void {
 
-	let temp = vscode.extensions.getExtension(extensionId).packageJSON.contributes;
 	telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
 	telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
 }
@@ -619,5 +618,20 @@ function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {
 		case 'error': return vscode.DiagnosticSeverity.Error;
 		case 'warning': return vscode.DiagnosticSeverity.Warning;
 		default: return vscode.DiagnosticSeverity.Error;
+	}
+}
+
+export function getWorkspaceFolderPath(fileUri: vscode.Uri): string {
+	if (fileUri) {
+		let workspace = vscode.workspace.getWorkspaceFolder(fileUri);
+		if (workspace) {
+			return workspace.uri.fsPath;
+		}
+	}
+
+	// fall back to the first workspace
+	let folders = vscode.workspace.workspaceFolders;
+	if (folders && folders.length) {
+		return folders[0].uri.fsPath;
 	}
 }

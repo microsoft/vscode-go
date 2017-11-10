@@ -19,6 +19,7 @@ import { getBinPath, parseFilePrelude, getCurrentGoPath, getToolsEnvVars, resolv
 import { getNonVendorPackages } from './goPackages';
 import { getTestFlags } from './testUtils';
 import { goLint } from './goLint';
+import { goVet } from './goVet';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -142,18 +143,8 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
-		let vetFlags = goConfig['vetFlags'] || [];
-		let vetArgs = vetFlags.length ? ['tool', 'vet', ...vetFlags, '.'] : ['vet', './...'];
-		let vetWorkDir = (goConfig['vetOnSave'] === 'workspace' && currentWorkspace) ? currentWorkspace : cwd;
-
-		runningToolsPromises.push(runTool(
-			vetArgs,
-			vetWorkDir,
-			'warning',
-			true,
-			null,
-			env
-		));
+		let vetWorkspace = goConfig['vetOnSave'] === 'workspace';
+		runningToolsPromises.push(goVet(fileUri, goConfig, vetWorkspace));
 	}
 
 	if (!!goConfig['coverOnSave']) {
