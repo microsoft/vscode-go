@@ -50,8 +50,13 @@ export class DefinitionHelper {
 	}
 
 	public cancelCurrentRunningProcess() {
-		if (this.currentRunningProcess) {
-			this.currentRunningProcess.kill();
+		try {
+			if (this.currentRunningProcess) {
+				this.currentRunningProcess.kill();
+				this.currentRunningProcess = null;
+			}
+		} catch (e) {
+			console.log(e)
 		}
 	}
 
@@ -146,10 +151,8 @@ export class DefinitionHelper {
 						}
 						return resolve(definitionInformation);
 					});
-					this.currentRunningProcess.on('close', () => { this.currentRunningProcess = null; });
 				});
 				this.currentRunningProcess.stdin.end(tool === 'godef' ? document.getText() : getFileArchive(document));
-				this.currentRunningProcess.on('close', () => { this.currentRunningProcess = null; });
 			});
 		});
 	}
