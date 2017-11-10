@@ -1,8 +1,8 @@
 'use strict';
 
 import vscode = require('vscode');
-import { CodeLensProvider, SymbolInformation, SymbolKind, TextDocument, CancellationToken, CodeLens, Range, Command, Location, commands } from 'vscode';
-import { documentSymbols, GoDocumentSymbolProvider } from './goOutline';
+import { SymbolInformation, TextDocument, CancellationToken, CodeLens, Range, Command, Location, commands } from 'vscode';
+import { GoDocumentSymbolProvider } from './goOutline';
 import { GoReferenceProvider } from './goReferences';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 

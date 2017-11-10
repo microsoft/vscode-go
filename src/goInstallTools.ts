@@ -8,7 +8,6 @@
 import vscode = require('vscode');
 import fs = require('fs');
 import path = require('path');
-import os = require('os');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
 import { getGoRuntimePath } from './goPath';

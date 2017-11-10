@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestEnvVars, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
 import { getCoverage } from './goCover';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -179,7 +179,6 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
  * Runs the previously executed test.
  */
 export function testPrevious() {
-	let editor = vscode.window.activeTextEditor;
 	if (!lastTestConfig) {
 		vscode.window.showInformationMessage('No test has been recently executed.');
 		return;

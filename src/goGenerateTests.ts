@@ -8,7 +8,6 @@
 import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
-import util = require('util');
 
 import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';

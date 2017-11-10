@@ -7,8 +7,6 @@ import { promptForMissingTool } from './goInstallTools';
 
 const TOOL_CMD_NAME = 'goplay';
 
-type flags = { [key: string]: Boolean };
-
 export const playgroundCommand = () => {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor) {

@@ -6,16 +6,13 @@
 'use strict';
 
 import vscode = require('vscode');
-import cp = require('child_process');
 import path = require('path');
 import os = require('os');
-import fs = require('fs');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel } from './goStatus';
-import { promptForMissingTool } from './goInstallTools';
 import { goTest } from './testUtils';
-import { getBinPath, parseFilePrelude, getCurrentGoPath, getToolsEnvVars, resolvePath, ICheckResult, runTool } from './util';
+import { getCurrentGoPath, getToolsEnvVars, ICheckResult, runTool } from './util';
 import { getNonVendorPackages } from './goPackages';
 import { getTestFlags } from './testUtils';
 import { goLint } from './goLint';

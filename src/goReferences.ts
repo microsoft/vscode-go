@@ -48,7 +48,6 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 					let lines = stdout.toString().split('\n');
 					let results: vscode.Location[] = [];
 					for (let i = 0; i < lines.length; i++) {
-						let line = lines[i];
 						let match = /^(.*):(\d+)\.(\d+)-(\d+)\.(\d+):/.exec(lines[i]);
 						if (!match) continue;
 						let [_, file, lineStartStr, colStartStr, lineEndStr, colEndStr] = match;

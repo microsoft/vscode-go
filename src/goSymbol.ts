@@ -76,7 +76,7 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, goConf
 	let gosyms = getBinPath('go-symbols');
 	let env = getToolsEnvVars();
 	return new Promise((resolve, reject) => {
-		let p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024, env }, (err, stdout, stderr) => {
+		cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024, env }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('go-symbols');

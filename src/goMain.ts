@@ -30,7 +30,7 @@ import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, ICheckResult, handleDiagnosticErrors } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors } from './util';
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';

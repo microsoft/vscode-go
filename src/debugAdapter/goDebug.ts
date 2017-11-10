@@ -7,13 +7,12 @@ import * as path from 'path';
 import * as os from 'os';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
-import { readFileSync, existsSync, lstatSync } from 'fs';
+import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, stripBOM, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH } from '../goPath';
 import * as logger from 'vscode-debug-logger';
-import * as FS from 'fs';
 
 require('console-stamp')(console);
 

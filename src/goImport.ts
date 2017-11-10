@@ -6,11 +6,9 @@
 'use strict';
 
 import vscode = require('vscode');
-import cp = require('child_process');
-import { parseFilePrelude, isVendorSupported, getBinPath, getCurrentGoPath, getToolsEnvVars } from './util';
+import { parseFilePrelude } from './util';
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
-import path = require('path');
 import { getImportablePackages } from './goPackages';
 
 const missingToolMsg = 'Missing tool: ';

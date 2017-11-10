@@ -7,7 +7,6 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import path = require('path');
 import { isDiffToolAvailable, getEdits, getEditsFromUnifiedDiffStr } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 import { sendTelemetryEvent, getBinPath, getToolsEnvVars } from './util';

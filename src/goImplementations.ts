@@ -5,7 +5,7 @@ import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { goKeywords, isPositionInString, getToolsEnvVars } from './util';
+import { getToolsEnvVars } from './util';
 import { getGoRuntimePath } from './goPath';
 
 interface GoListOutput {

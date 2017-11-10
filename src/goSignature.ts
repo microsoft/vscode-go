@@ -5,9 +5,8 @@
 
 'use strict';
 
-import cp = require('child_process');
 import vscode = require('vscode');
-import { languages, window, commands, SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, Range, CancellationToken, WorkspaceConfiguration, workspace } from 'vscode';
+import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 import { parameters } from './util';
 

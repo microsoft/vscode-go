@@ -5,15 +5,11 @@
 'use strict';
 
 import vscode = require('vscode');
-import cp = require('child_process');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getGoRuntimePath } from './goPath';
 import { showTestOutput, goTest } from './testUtils';
-import { getBinPath } from './util';
 import rl = require('readline');
-import { outputChannel } from './goStatus';
 
 export let coveredGutter;
 export let uncoveredGutter;
