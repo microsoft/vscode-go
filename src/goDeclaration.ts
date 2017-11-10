@@ -55,15 +55,17 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 		return Promise.reject(missingToolMsg + 'godef');
 	}
 	let p: cp.ChildProcess;
-	token.onCancellationRequested(() => {
-		if (p) {
-			try {
-				p.kill();
-			} catch (e) {
-				console.log('Error cancelling process: ' + e);
+	if (token) {
+		token.onCancellationRequested(() => {
+			if (p) {
+				try {
+					p.kill();
+				} catch (e) {
+					console.log('Error cancelling process: ' + e);
+				}
 			}
-		}
-	});
+		});
+	}
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
@@ -135,15 +137,17 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 		return Promise.reject(missingToolMsg + 'gogetdoc');
 	}
 	let p: cp.ChildProcess;
-	token.onCancellationRequested(() => {
-		if (p) {
-			try {
-				p.kill();
-			} catch (e) {
-				console.log('Error cancelling process: ' + e);
+	if (token) {
+		token.onCancellationRequested(() => {
+			if (p) {
+				try {
+					p.kill();
+				} catch (e) {
+					console.log('Error cancelling process: ' + e);
+				}
 			}
-		}
-	});
+		});
+	}
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		let gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()];
@@ -195,15 +199,17 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 		return Promise.reject(missingToolMsg + 'guru');
 	}
 	let p: cp.ChildProcess;
-	token.onCancellationRequested(() => {
-		if (p) {
-			try {
-				p.kill();
-			} catch (e) {
-				console.log('Error cancelling process: ' + e);
+	if (token) {
+		token.onCancellationRequested(() => {
+			if (p) {
+				try {
+					p.kill();
+				} catch (e) {
+					console.log('Error cancelling process: ' + e);
+				}
 			}
-		}
-	});
+		});
+	}
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		p = cp.execFile(guru, ['-json', '-modified', 'definition', document.fileName + ':#' + offset.toString()], { env }, (err, stdout, stderr) => {
 			try {
