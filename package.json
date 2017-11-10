@@ -170,7 +170,7 @@
       },
       {
         "command": "go.show.commands",
-        "title": "Go: Show Other Commands...",
+        "title": "Go: Show All Commands...",
         "description": "Shows all commands from the Go extension in the wuick pick"
       },
       {
@@ -190,7 +190,7 @@
       },
       {
         "command": "go.lint.package",
-        "title": "Go: Lint Package",
+        "title": "Go: Lint Current Package",
         "description": "Run linter in the package of the current file."
       },
       {
@@ -200,7 +200,7 @@
       },
       {
         "command": "go.vet.package",
-        "title": "Go: Vet Package",
+        "title": "Go: Vet Current Package",
         "description": "Run go vet in the package of the current file."
       },
       {
@@ -210,13 +210,18 @@
       },
       {
         "command": "go.build.package",
-        "title": "Go: Build Package",
+        "title": "Go: Build Current Package",
         "description": "Build the package of the current file."
       },
       {
         "command": "go.build.workspace",
         "title": "Go: Build Workspace",
         "description": "Build the current workspace."
+      },
+      {
+        "command": "go.install.package",
+        "title": "Go: Install Current Package",
+        "description": "Install the current package."
       }
     ],
     "debuggers": [

@@ -13,7 +13,11 @@ import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 export function buildCode(buildWorkspace?: boolean) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor && !buildWorkspace) {
-		vscode.window.showInformationMessage('No editor is active, cant find current package to build');
+		vscode.window.showInformationMessage('No editor is active, cannot find current package to build');
+		return;
+	}
+	if (editor.document.languageId !== 'go' && !buildWorkspace) {
+		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to build');
 		return;
 	}
 

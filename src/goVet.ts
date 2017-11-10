@@ -9,7 +9,11 @@ import { outputChannel } from './goStatus';
 export function vetCode(vetWorkspace?: boolean) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor && !vetWorkspace) {
-		vscode.window.showInformationMessage('No editor is active, cant find current package to vet');
+		vscode.window.showInformationMessage('No editor is active, cannot find current package to vet');
+		return;
+	}
+	if (editor.document.languageId !== 'go' && !vetWorkspace) {
+		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to vet');
 		return;
 	}
 

@@ -9,7 +9,11 @@ import { outputChannel } from './goStatus';
 export function lintCode(lintWorkspace?: boolean) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor && !lintWorkspace) {
-		vscode.window.showInformationMessage('No editor is active, cant find current package to lint');
+		vscode.window.showInformationMessage('No editor is active, cannot find current package to lint');
+		return;
+	}
+	if (editor.document.languageId !== 'go' && !lintWorkspace) {
+		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to lint');
 		return;
 	}
 
