@@ -7,16 +7,20 @@
 
 import vscode = require('vscode');
 import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
-import { definitionLocation } from './goDeclaration';
+import { DefinitionHelper } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
 	private goConfig = null;
+	private helper: DefinitionHelper;
 
-	constructor(goConfig?: WorkspaceConfiguration) {
+	constructor(goConfig?: vscode.WorkspaceConfiguration) {
 		this.goConfig = goConfig;
+		this.helper = new DefinitionHelper();
 	}
 
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
+		token.onCancellationRequested(this.helper.cancelCurrentRunningProcess);
+
 		if (!this.goConfig) {
 			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
 		}
@@ -26,7 +30,7 @@ export class GoHoverProvider implements HoverProvider {
 		if (goConfig['docsTool'] === 'guru') {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
-		return definitionLocation(document, position, goConfig, true).then(definitionInfo => {
+		return this.helper.definitionLocation(document, position, goConfig, true).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let lines = definitionInfo.declarationlines
 				.filter(line => !line.startsWith('\t//') && line !== '')
