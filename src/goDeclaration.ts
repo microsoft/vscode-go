@@ -252,6 +252,7 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 			if (err && typeof err === 'string' && err.startsWith(missingToolMsg)) {
 				promptForMissingTool(err.substr(missingToolMsg.length));
 			}
+			console.log(err);
 			return Promise.resolve(null);
 		});
 	}
