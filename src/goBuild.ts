@@ -24,6 +24,8 @@ export function buildCode(buildWorkspace?: boolean) {
 	let documentUri = editor ? editor.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 	outputChannel.clear();
+	outputChannel.show();
+	outputChannel.appendLine('Building in progress...');
 	goBuild(documentUri, goConfig, buildWorkspace)
 		.then(errors => handleDiagnosticErrors(editor ? editor.document : null, errors, vscode.DiagnosticSeverity.Error))
 		.catch(err => {

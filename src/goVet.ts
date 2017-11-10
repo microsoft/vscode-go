@@ -20,6 +20,8 @@ export function vetCode(vetWorkspace?: boolean) {
 	let documentUri = editor ? editor.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 	outputChannel.clear();
+	outputChannel.show();
+	outputChannel.appendLine('Vetting in progress...');
 	goVet(documentUri, goConfig, vetWorkspace)
 		.then(warnings => handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning))
 		.catch(err => {
