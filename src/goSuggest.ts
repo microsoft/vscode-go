@@ -173,8 +173,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 										param = param.replace('${', '\\${').replace('}', '\\}');
 										if (conf.get('useCodeSnippetsOnFunctionSuggestWithoutType')) {
 											if (param.includes(' ')) {
-											// Separate the variable name from the type
-											param = param.substr(0, param.indexOf(' '));
+												// Separate the variable name from the type
+												param = param.substr(0, param.indexOf(' '));
 											}
 										}
 										paramSnippets.push('${' + (i + 1) + ':' + param + '}');
@@ -219,19 +219,43 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
 		let setPkgsList = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true).then(pkgMap => this.pkgsList = pkgMap);
-		// let setPkgsList = Promise.race([timeout(1000).then(() => this.pkgsList), importablePkgsPromise]);
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
-			let autobuild = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['gocodeAutoBuild'];
+			let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 			let env = getToolsEnvVars();
-			cp.execFile(gocode, ['set', 'propose-builtins', 'true'], { env }, (err, stdout, stderr) => {
-				cp.execFile(gocode, ['set', 'autobuild', autobuild], {}, (err, stdout, stderr) => {
+
+			cp.execFile(gocode, ['set'], { env }, (err, stdout, stderr) => {
+				const existingOptions = stdout.split(/\r\n|\n/);
+				const optionsToSet: string[][] = [];
+				const setOption = () => {
+					const [name, value] = optionsToSet.pop();
+					cp.execFile(gocode, ['set', name, value], { env }, (err, stdout, stderr) => {
+						if (optionsToSet.length) {
+							setOption();
+						} else {
+							resolve();
+						}
+					});
+				};
+
+				if (existingOptions.indexOf('propose-builtins true') === -1) {
+					optionsToSet.push(['propose-builtins', 'true']);
+				}
+				if (existingOptions.indexOf(`autobuild ${goConfig['gocodeAutoBuild']}`) === -1) {
+					optionsToSet.push(['autobuild', goConfig['gocodeAutoBuild']]);
+				}
+				if (existingOptions.indexOf(`package-lookup-mode ${goConfig['gocodePackageLookupMode']}`) === -1) {
+					optionsToSet.push(['package-lookup-mode', goConfig['gocodePackageLookupMode']]);
+				}
+				if (!optionsToSet.length) {
 					return resolve();
-				});
+				}
+
+				setOption();
 			});
 		});
-		// return setGocodeProps;
+
 		return Promise.all([setPkgsList, setGocodeProps]).then(() => {
 			return;
 		});

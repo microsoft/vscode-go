@@ -614,6 +614,16 @@
           "description": "Enable gocode's autobuild feature",
           "scope": "resource"
         },
+        "go.gocodePackageLookupMode": {
+          "type": "string",
+          "enum": [
+            "go",
+            "gb"
+          ],
+          "default": "go",
+          "description": "If go, use standard Go package lookup rules for completions. If gb, use gb-specific lookup rules for completions",
+          "scope": "resource"
+        },
         "go.useCodeSnippetsOnFunctionSuggest": {
           "type": "boolean",
           "default": false,
