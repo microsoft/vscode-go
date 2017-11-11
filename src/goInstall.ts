@@ -25,9 +25,10 @@ export function installCurrentPackage() {
 	const env = Object.assign({}, getToolsEnvVars());
 	const cwd = path.dirname(editor.document.uri.fsPath);
 	const goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
-	const args = ['install'];
+	const buildFlags = goConfig['buildFlags'] || [];
+	const args = ['install', ...buildFlags];
 
-	if (goConfig['buildTags']) {
+	if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 		args.push('-tags', '"' + goConfig['buildTags'] + '"');
 	}
 
