@@ -42,12 +42,27 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	let vetArgs = vetFlags.length ? ['tool', 'vet', ...vetFlags, '.'] : ['vet', './...'];
 	let currentWorkspace = getWorkspaceFolderPath(fileUri);
 
-	return runTool(
+	if (running) {
+		tokenSource.cancel();
+	}
+
+	running = true;
+	const vetPromise = runTool(
 		vetArgs,
 		(vetWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath),
 		'warning',
 		true,
 		null,
-		vetEnv
-	);
+		vetEnv,
+		false,
+		tokenSource.token
+	).then((result) => {
+		running = false;
+		return result;
+	});
+
+	return vetPromise;
 }
+
+let tokenSource = new vscode.CancellationTokenSource();
+let running = false;
