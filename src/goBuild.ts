@@ -47,7 +47,7 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 	const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
 	const isTestFile = fileUri.fsPath.endsWith('_test.go');
 
-	let buildFlags = isTestFile ? getTestFlags(goConfig, null) : (goConfig['buildFlags'] || []);
+	let buildFlags: string[] = isTestFile ? getTestFlags(goConfig, null) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
 	// Remove the -i flag as it will be added later anyway
 	if (buildFlags.indexOf('-i') > -1) {
 		buildFlags.splice(buildFlags.indexOf('-i'), 1);

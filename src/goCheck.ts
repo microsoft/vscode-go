@@ -48,7 +48,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 		let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
 
-		let args = buildFlags;
+		let args = [...buildFlags];
 		if (goConfig['coverOnSave']) {
 			tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
 			args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
