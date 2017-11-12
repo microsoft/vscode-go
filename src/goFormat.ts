@@ -20,7 +20,7 @@ export class Formatter {
 			let goConfig = vscode.workspace.getConfiguration('go', document.uri);
 			let formatTool = goConfig['formatTool'] || 'goreturns';
 			let formatCommandBinPath = getBinPath(formatTool);
-			let formatFlags = goConfig['formatFlags'] || [];
+			let formatFlags = goConfig['formatFlags'].slice() || [];
 			let canFormatToolUseDiff = goConfig['useDiffForFormatting'] && isDiffToolAvailable();
 			if (canFormatToolUseDiff && formatFlags.indexOf('-d') === -1) {
 				formatFlags.push('-d');
