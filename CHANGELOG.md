@@ -1,3 +1,35 @@
+## 0.6.68 - Coming Soon
+
+* New commands
+    * [Frederik Ring (@m90)](https://github.com/m90)
+        * `Go: Run on Go Playground` to run the current file (only if all its dependencies are from the std library) in the [Go Playground](https://play.golang.org/) using [goplay](https://github.com/haya14busa/goplay). [PR 1270](https://github.com/Microsoft/vscode-go/pull/1270). [Feature Request #1211](https://github.com/Microsoft/vscode-go/issues/1211)
+            * Use the setting `go.playground` to control whether to run and/or share a link to the playground and/or open the playground in the browser.
+    * [Robin Bartholdson @buyology](https://github.com/buyology)
+        * `Go: Benchmark Function At Cursor` and Codelens for running benchmarks in test files. [PR 1303](https://github.com/Microsoft/vscode-go/pull/1303). [Feature Request #972](https://github.com/Microsoft/vscode-go/issues/972)
+    * [Andrew Nee (@ndrewnee)](https://github.com/ndrewnee)
+        * `Go: Lint Current Package` and `Go: Lint Workpsace` to lint using the tool specified in the `go.lintTool` setting and the flags specified in the `go.lintFlags` setting. [PR 1258](https://github.com/Microsoft/vscode-go/pull/1258). [Feature Request #1041](https://github.com/Microsoft/vscode-go/issues/1041)
+    * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+        * `Go: Vet Current Package` and `Go: Vet Workpsace` to vet using the flags specified in the `go.vetFlags` setting. [Feature Request #1041](https://github.com/Microsoft/vscode-go/issues/1041)
+        * `Go: Build Current Package` and `Go: Build Workpsace` to build using the flags specified in the `go.buildFlags` setting and build tags specified in the setting `go.buildTags`. [Feature Request #287](https://github.com/Microsoft/vscode-go/issues/287)
+        * `Go: Install Current Package` to install the current package using the flags specified in the `go.buildFlags` setting and build tags specified in the setting `go.buildTags`. [Feature Request #287](https://github.com/Microsoft/vscode-go/issues/287)
+
+* Completion Improvements
+    * [wangkechun (@wangkechun)](https://github.com/wangkechun)
+        * Completions for standard packages are now shown before custom packages when providing completions for unimported packages. [PR 1309](https://github.com/Microsoft/vscode-go/pull/1309) 
+    * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+        * `gocode` can now use [gb](https://github.com/constabulary/gb) specific rules when providing completions. Set the new setting `go.gocodePackageLookupMode` to `gb` to use this feature. [Feature Request #547](https://github.com/Microsoft/vscode-go/issues/547)
+
+* Performance improvements
+    * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+        * The `autobuild` feature of `gocode` which is known to slow completions is now disabled by default. Fixes [Bug 1323](https://github.com/Microsoft/vscode-go/issues/1323)
+            * Since we use the `-i` flag when building, we do not rely on `autobuild` feature of `gocode` to ensure fresh results from dependencies.
+            * If you have disabled the `buildOnSave` setting, then use the new `Go: Build Current Package` command once in a while to ensure the dependencies are up to date or enable the `go.gocodeAutoBuild` setting.
+        * In Go 1.9 and higher, running the vet feature in the absence of vet flags will be faster due to the use of `go vet ./...` instead of `go tool vet -flags`. Fixes [Bug 1215](https://github.com/Microsoft/vscode-go/issues/1215)
+        * Performance issues caused by a large number of lingering processes for vet/lint/hover features are now solved. 
+            * Measures are now in place to kill older processes before starting new ones for vet/lint feature. Fixes [Bug 1265](https://github.com/Microsoft/vscode-go/issues/1265)
+            * For other features like hover/outline/definition etc. the cancellation token provided by the core is used to kill processes if the corresponding request from the core is cancelled. Fixes [Bug 667](https://github.com/Microsoft/vscode-go/issues/667)
+
+
 ## 0.6.67 - 4th November, 2017
 
 * [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
