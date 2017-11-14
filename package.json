@@ -149,6 +149,11 @@
         "description": "Add an import declaration"
       },
       {
+        "command": "go.expanderr.run",
+        "title": "Go: Run Expanderr",
+        "description": "Expand the expression under the curosor to check for errors"
+      },
+      {
         "command": "go.tools.install",
         "title": "Go: Install/Update Tools",
         "description": "install/update the required go packages"
@@ -876,6 +881,7 @@
             "generateTestForFile": false,
             "generateTestForPackage": false,
             "addImport": true,
+            "runExpanderr": true,
             "testCoverage": true,
             "playground": true
           },
@@ -948,6 +954,11 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.addImport && resourceLangId == go",
           "command": "go.import.add",
+          "group": "Go group 1"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.runExpanderr && resourceLangId == go",
+          "command": "go.expanderr.run",
           "group": "Go group 1"
         },
         {
