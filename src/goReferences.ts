@@ -41,7 +41,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
-						return reject('Cannot find tool "guru" to find references.')
+						return reject('Cannot find tool "guru" to find references.');
 					}
 
 					if (err && (<any>err).killed !== true) {

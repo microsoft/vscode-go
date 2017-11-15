@@ -67,7 +67,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 					return reject(missingToolMsg + 'godef');
 				}
 				if (err) {
-					return reject(err);
+					return reject(err.message || stderr);
 				};
 				let result = stdout.toString();
 				let lines = result.split('\n');
@@ -147,7 +147,7 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 					return definitionLocation_gogetdoc(document, position, offset, env, false, token);
 				}
 				if (err) {
-					return reject(err);
+					return reject(err.message || stderr);
 				};
 				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(goGetDocOutput.pos);
@@ -193,7 +193,7 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 					return reject(missingToolMsg + 'guru');
 				}
 				if (err) {
-					return reject(err);
+					return reject(err.message || stderr);
 				};
 				let guruOutput = <GuruDefinitionOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(guruOutput.objpos);
@@ -243,7 +243,7 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 				if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
 					promptForMissingTool(err.substr(missingToolMsg.length));
 				} else {
-					console.log(err);
+					return Promise.reject(err);
 				}
 			}
 			return Promise.resolve(null);
