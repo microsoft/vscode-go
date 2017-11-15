@@ -19,30 +19,33 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 	private doFindReferences(document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return new Promise<vscode.Location[]>((resolve, reject) => {
-			let filename = canonicalizeGOPATHPrefix(document.fileName);
-			let cwd = path.dirname(filename);
-
 			// get current word
 			let wordRange = document.getWordRangeAtPosition(position);
 			if (!wordRange) {
 				return resolve([]);
 			}
 
+			let goGuru = getBinPath('guru');
+			if (!path.isAbsolute(goGuru)) {
+				promptForMissingTool('guru');
+				return reject('Cannot find tool "guru" to find references.');
+			}
+
+			let filename = canonicalizeGOPATHPrefix(document.fileName);
+			let cwd = path.dirname(filename);
 			let offset = byteOffsetAt(document, position);
 			let env = getToolsEnvVars();
-			let goGuru = getBinPath('guru');
 			let buildTags = '"' + vscode.workspace.getConfiguration('go', document.uri)['buildTags'] + '"';
 
-			let process = cp.execFile(goGuru, ['-modified', '-tags', buildTags, 'referrers', `${filename}:#${offset.toString()}`], {env}, (err, stdout, stderr) => {
+			let process = cp.execFile(goGuru, ['-modified', '-tags', buildTags, 'referrers', `${filename}:#${offset.toString()}`], { env }, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
-						return resolve([]);
+						return reject('Cannot find tool "guru" to find references.')
 					}
 
 					if (err && (<any>err).killed !== true) {
-						console.log(err);
-						return resolve([]);
+						return reject(`Error running guru: ${err.message || stderr}`);
 					}
 
 					let lines = stdout.toString().split('\n');
