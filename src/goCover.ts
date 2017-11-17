@@ -123,17 +123,17 @@ function applyCoverage(remove: boolean = false) {
 	Object.keys(coverageFiles).forEach(filename => {
 		let file = coverageFiles[filename];
 		// Highlight lines in current editor.
-		let editor = vscode.window.visibleTextEditors.find((value, index, obj) => {
+		vscode.window.visibleTextEditors.forEach((value, index, obj) => {
 			let found = value.document.fileName.endsWith(filename);
 			// Check for file again if outside the $GOPATH.
 			if (!found && filename.startsWith('_')) {
 				found = value.document.fileName.endsWith(filename.slice(1));
 			}
+			if (found) {
+				highlightCoverage(value, file, remove);
+			}
 			return found;
 		});
-		if (editor) {
-			highlightCoverage(editor, file, remove);
-		}
 	});
 }
 
