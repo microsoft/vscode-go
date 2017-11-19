@@ -37,8 +37,8 @@ export class Formatter {
 						return reject(missingToolMsg + formatTool);
 					}
 					if (err) {
-						console.log(err);
-						return reject('Cannot format due to syntax errors.');
+						console.log(err.message || stderr);
+						return reject('Check the console in dev tools to find errors when formatting.');
 					};
 
 					let textEdits: vscode.TextEdit[] = [];
