@@ -58,7 +58,7 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 	buildArgs.push('-i', '-o', tmpPath, ...buildFlags);
 	if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 		buildArgs.push('-tags');
-		buildArgs.push('"' + goConfig['buildTags'] + '"');
+		buildArgs.push(goConfig['buildTags']);
 	}
 
 	if (buildWorkspace && currentWorkspace && !isTestFile) {

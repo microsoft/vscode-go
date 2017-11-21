@@ -29,7 +29,7 @@ export function installCurrentPackage() {
 	const args = ['install', ...buildFlags];
 
 	if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
-		args.push('-tags', '"' + goConfig['buildTags'] + '"');
+		args.push('-tags', goConfig['buildTags']);
 	}
 
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
