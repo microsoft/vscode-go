@@ -883,7 +883,7 @@ It returns the number of bytes written and any write error encountered.
 		});
 
 		const checkWithTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config1).then(diagnostics => {
-			assert.equal(1, diagnostics.length);
+			assert.equal(1, diagnostics.length, 'check with buildtag failed. Unexpected errors found');
 			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
 		});
 
@@ -895,7 +895,7 @@ It returns the number of bytes written and any write error encountered.
 		});
 
 		const checkWithMultipleTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config2).then(diagnostics => {
-			assert.equal(1, diagnostics.length);
+			assert.equal(1, diagnostics.length, 'check with multiple buildtags failed. Unexpected errors found');
 			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
 		});
 
@@ -907,8 +907,8 @@ It returns the number of bytes written and any write error encountered.
 		});
 
 		const checkWithoutTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config3).then(diagnostics => {
-			assert.equal(1, diagnostics.length);
-			assert.equal(diagnostics[0].msg.startsWith('can\'t load package: package test/testfixture/buildTags: build constraints exclude all Go files'), true);
+			assert.equal(1, diagnostics.length, 'check without buildtags failed. Unexpected errors found');
+			assert.equal(diagnostics[0].msg.indexOf('build constraints exclude all Go files') > -1, true, `check without buildtags failed. Go files not excluded. ${diagnostics[0].msg}`);
 		});
 
 		Promise.all([checkWithTags, checkWithMultipleTags, checkWithoutTags]).then(() => done(), done);
