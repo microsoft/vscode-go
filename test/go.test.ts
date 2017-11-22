@@ -908,7 +908,7 @@ It returns the number of bytes written and any write error encountered.
 
 		const checkWithoutTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config3).then(diagnostics => {
 			assert.equal(1, diagnostics.length, 'check without buildtags failed. Unexpected errors found');
-			assert.equal(diagnostics[0].msg.indexOf('build constraints exclude all Go files') > -1, true, `check without buildtags failed. Go files not excluded. ${diagnostics[0].msg}`);
+			assert.equal(diagnostics[0].msg.indexOf('can\'t load package: package test/testfixture/buildTags') > -1, true, `check without buildtags failed. Go files not excluded. ${diagnostics[0].msg}`);
 		});
 
 		Promise.all([checkWithTags, checkWithMultipleTags, checkWithoutTags]).then(() => done(), done);
