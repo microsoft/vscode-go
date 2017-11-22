@@ -35,9 +35,11 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			let cwd = path.dirname(filename);
 			let offset = byteOffsetAt(document, position);
 			let env = getToolsEnvVars();
-			let buildTags = '"' + vscode.workspace.getConfiguration('go', document.uri)['buildTags'] + '"';
+			let buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
+			let args = buildTags ? ['-tags', buildTags] : [];
+			args.push('-modified', 'referrers', `${filename}:#${offset.toString()}`);
 
-			let process = cp.execFile(goGuru, ['-modified', '-tags', buildTags, 'referrers', `${filename}:#${offset.toString()}`], { env }, (err, stdout, stderr) => {
+			let process = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');

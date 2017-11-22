@@ -27,8 +27,11 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			let offset = byteOffsetAt(document, pos);
 			let env = getToolsEnvVars();
 			let gorename = getBinPath('gorename');
-			let buildTags = '"' + vscode.workspace.getConfiguration('go', document.uri)['buildTags'] + '"';
-			let gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName, '-tags', buildTags];
+			const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'] ;
+			let gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName];
+			if (buildTags) {
+				gorenameArgs.push('-tags', buildTags);
+			}
 			let canRenameToolUseDiff = isDiffToolAvailable();
 			if (canRenameToolUseDiff) {
 				gorenameArgs.push('-d');

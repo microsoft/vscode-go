@@ -54,8 +54,9 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				let cwd = path.dirname(filename);
 				let offset = byteOffsetAt(document, position);
 				let goGuru = getBinPath('guru');
-				let buildTags = '"' + vscode.workspace.getConfiguration('go', document.uri)['buildTags'] + '"';
-				let args = ['-scope', `${scope}/...`, '-json', '-tags', buildTags, 'implements', `${filename}:#${offset.toString()}`];
+				const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
+				let args = buildTags ? ['-tags', buildTags] : [];
+				args.push('-scope', `${scope}/...`, '-json', 'implements', `${filename}:#${offset.toString()}`);
 
 				let guruProcess = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {

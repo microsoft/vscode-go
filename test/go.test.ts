@@ -56,6 +56,7 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(testPath, 'errorsTest', 'errors.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_1.go'), path.join(testPath, 'linterTest', 'linter_1.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'), path.join(testPath, 'linterTest', 'linter_2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'buildTags', 'hello.go'), path.join(fixturePath, 'buildTags', 'hello.go'));
 	});
 
 	suiteTeardown(() => {
@@ -871,5 +872,46 @@ It returns the number of bytes written and any write error encountered.
 				return Promise.resolve();
 			});
 		}).then(() => done(), done);
+	});
+
+	test('Build Tags checking', (done) => {
+		const config1 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'buildTags': { value: 'randomtag' }
+		});
+
+		const checkWithTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config1).then(diagnostics => {
+			assert.equal(1, diagnostics.length, 'check with buildtag failed. Unexpected errors found');
+			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
+		});
+
+		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'buildTags': { value: 'randomtag othertag' }
+		});
+
+		const checkWithMultipleTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config2).then(diagnostics => {
+			assert.equal(1, diagnostics.length, 'check with multiple buildtags failed. Unexpected errors found');
+			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
+		});
+
+		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'buildTags': { value: '' }
+		});
+
+		const checkWithoutTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config3).then(diagnostics => {
+			assert.equal(1, diagnostics.length, 'check without buildtags failed. Unexpected errors found');
+			assert.equal(diagnostics[0].msg.indexOf('can\'t load package: package test/testfixture/buildTags') > -1, true, `check without buildtags failed. Go files not excluded. ${diagnostics[0].msg}`);
+		});
+
+		Promise.all([checkWithTags, checkWithMultipleTags, checkWithoutTags]).then(() => done(), done);
+
 	});
 });
