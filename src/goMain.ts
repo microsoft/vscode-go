@@ -56,7 +56,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		  "data": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 	   }
 	 */
-	sendTelemetryEvent('beta-testing', { version: '0.6.68', date: '11/16/2017' });
+	sendTelemetryEvent('beta-testing', { version: '0.6.68', date: '11/21/2017' });
 
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
@@ -402,6 +402,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "inferGopath": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "toolsGopath": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "gocodeAutoBuild": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "gocodePackageLookupMode": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "useCodeSnippetsOnFunctionSuggest": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "useCodeSnippetsOnFunctionSuggestWithoutType": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "autocompleteUnimportedPackages": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
@@ -439,6 +440,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		inferGopath: goConfig['inferGopath'] + '',
 		toolsGopath: goConfig['toolsGopath'] ? 'set' : '',
 		gocodeAutoBuild: goConfig['gocodeAutoBuild'] + '',
+		gocodePackageLookupMode: goConfig['gocodePackageLookupMode'] + '',
 		useCodeSnippetsOnFunctionSuggest: goConfig['useCodeSnippetsOnFunctionSuggest'] + '',
 		useCodeSnippetsOnFunctionSuggestWithoutType: goConfig['useCodeSnippetsOnFunctionSuggestWithoutType'] + '',
 		autocompleteUnimportedPackages: goConfig['autocompleteUnimportedPackages'] + '',
