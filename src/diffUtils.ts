@@ -101,32 +101,21 @@ function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 			hunk.lines.forEach((line) => {
 				switch (line.substr(0, 1)) {
 					case '-':
-						if (edit == null) {
-							edit = new Edit(EditTypes.EDIT_DELETE, new Position(startLine - 1, 0));
-						}
+						edit = new Edit(EditTypes.EDIT_DELETE, new Position(startLine - 1, 0));
 						edit.end = new Position(startLine, 0);
+						edits.push(edit);
 						startLine++;
 						break;
 					case '+':
-						if (edit == null) {
-							edit = new Edit(EditTypes.EDIT_INSERT, new Position(startLine - 1, 0));
-						} else if (edit.action === EditTypes.EDIT_DELETE) {
-							edit.action = EditTypes.EDIT_REPLACE;
-						}
+						edit = new Edit(EditTypes.EDIT_INSERT, new Position(startLine - 1, 0));
 						edit.text += line.substr(1) + '\n';
+						edits.push(edit);
 						break;
 					case ' ':
 						startLine++;
-						if (edit != null) {
-							edits.push(edit);
-						}
-						edit = null;
 						break;
 				}
 			});
-			if (edit != null) {
-				edits.push(edit);
-			}
 		});
 
 		let fileName = uniDiff.oldFileName;
