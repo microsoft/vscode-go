@@ -327,10 +327,6 @@ class Delve {
 			this.debugProcess.stderr.on('data', chunk => {
 				let str = chunk.toString();
 				if (this.onstderr) { this.onstderr(str); }
-				if (!serverRunning) {
-					serverRunning = true;
-					connectClient(port, host);
-				}
 			});
 			this.debugProcess.stdout.on('data', chunk => {
 				let str = chunk.toString();
