@@ -50,10 +50,10 @@ install:
   - go get -u -v golang.org/x/tools/cmd/gorename
   - go get -u -v github.com/uudashr/gopkgs/cmd/gopkgs
   - go get -u -v github.com/acroca/go-symbols
-  - go get -u -v github.com/alecthomas/gometalinter
   - go get -u -v github.com/cweill/gotests/...
   - go get -u -v github.com/haya14busa/goplay/cmd/goplay
   - GO15VENDOREXPERIMENT=1
+  - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo skipping gometalinter; else go get -u -v github.com/alecthomas/gometalinter; fi
   - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo skipping gometalinter; else gometalinter --install; fi
 
 script:
