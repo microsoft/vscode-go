@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile } from './util';
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
@@ -75,7 +75,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let inputText = document.getText();
 				let includeUnimportedPkgs = autocompleteUnimportedPackages && !inString;
 
-				return this.runGoCode(filename, inputText, offset, inString, position, lineText, currentWord, includeUnimportedPkgs).then(suggestions => {
+				return this.runGoCode(document, filename, inputText, offset, inString, position, lineText, currentWord, includeUnimportedPkgs).then(suggestions => {
 					// gocode does not suggest keywords, so we have to do it
 					if (currentWord.length > 0) {
 						goKeywords.forEach(keyword => {
@@ -99,7 +99,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							offset += textToAdd.length;
 
 							// Now that we have the package imported in the inputText, run gocode again
-							return this.runGoCode(filename, inputText, offset, inString, position, lineText, currentWord, false).then(newsuggestions => {
+							return this.runGoCode(document, filename, inputText, offset, inString, position, lineText, currentWord, false).then(newsuggestions => {
 								// Since the new suggestions are due to the package that we imported,
 								// add additionalTextEdits to do the same in the actual document in the editor
 								// We use additionalTextEdits instead of command so that 'useCodeSnippetsOnFunctionSuggest' feature continues to work
@@ -116,7 +116,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		});
 	}
 
-	private runGoCode(filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean): Thenable<vscode.CompletionItem[]> {
+	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
 
@@ -146,6 +146,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 					let suggestions = [];
 					let suggestionSet = new Set<string>();
+
+					let wordAtPosition = document.getWordRangeAtPosition(position);
 
 					if (results[1]) {
 						for (let suggest of results[1]) {
@@ -181,6 +183,18 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 									}
 								}
 								item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
+							}
+
+							if (wordAtPosition && wordAtPosition.start.character === 0 &&
+								suggest.class === 'type' && !goBuiltinTypes.has(suggest.name)) {
+								let prefix = 'func (' + suggest.name[0].toLowerCase() + ' *' + suggest.name + ')';
+								let auxItem = new vscode.CompletionItem(suggest.name + ' method', vscode.CompletionItemKind.Snippet);
+								auxItem.label = suggest.name + ' (new method)';
+								auxItem.detail = prefix + '...';
+								auxItem.sortText = 'a';
+								let snippet = prefix + ' ${1:name}(${2:params}) ${3:retval} \{\n\t$0\n\}';
+								auxItem.insertText = new vscode.SnippetString(snippet);
+								suggestions.push(auxItem);
 							}
 
 							// Add same sortText to all suggestions from gocode so that they appear before the unimported packages
