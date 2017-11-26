@@ -18,6 +18,7 @@ import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
 import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction';
+import { createScratch, runScratch } from './goScratch';
 import { check, removeTestStatus } from './goCheck';
 import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
@@ -208,6 +209,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.coverage', () => {
 		toggleCoverageCurrentPackage();
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.newscratch', () => {
+		createScratch();
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.runscratch', () => {
+		runScratch();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.showOutput', () => {

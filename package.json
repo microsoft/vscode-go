@@ -60,6 +60,8 @@
   "activationEvents": [
     "onLanguage:go",
     "onCommand:go.gopath",
+    "onCommand:go.newscratch",
+    "onCommand:go.runscratch",
     "onCommand:go.tools.install",
     "onDebug"
   ],
@@ -172,6 +174,16 @@
         "command": "go.show.commands",
         "title": "Go: Show All Commands...",
         "description": "Shows all commands from the Go extension in the wuick pick"
+      },
+      {
+        "command": "go.newscratch",
+        "title": "Go: New Scratch Pad",
+        "description": "Create a dummy main in a new window"
+      },
+      {
+        "command": "go.runscratch",
+        "title": "Go: Run Scratch Pad",
+        "description": "Compile and run scratch pad"
       },
       {
         "command": "go.browse.packages",
