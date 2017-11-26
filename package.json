@@ -890,10 +890,23 @@
           "default": [],
           "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature",
           "scope": "resource"
+        },
+        "go.showTestButton": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show test button when editing go files"
         }
       }
     },
     "menus": {
+      "editor/title": [
+        {
+          "when": "config.go.showTestButton && resourceLangId == go",
+          "command": "go.test.package",
+          "alt": "go.test.file",
+          "group": "navigation"
+        }
+      ],
       "editor/context": [
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.toggleTestFile && resourceLangId == go",
