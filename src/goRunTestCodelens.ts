@@ -39,12 +39,12 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			this.getCodeLensForPackage(document, token),
 			this.getCodeLensForFunctions(config, document, token)
 		]).then(([pkg, fns]) => {
-			const res = [];
+			let res = [];
 			if (pkg && Array.isArray(pkg)) {
-				res.concat(pkg);
+				res = res.concat(pkg);
 			}
 			if (fns && Array.isArray(fns)) {
-				res.concat(fns);
+				res = res.concat(fns);
 			}
 			return res;
 		});
