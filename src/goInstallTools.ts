@@ -181,10 +181,10 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 	if (toolsGopath) {
 		envForTools['GOPATH'] = toolsGopath;
 	} else {
-		vscode.window.showInformationMessage('Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.', 'Open User settings', 'Open Workspace Settings').then(selected => {
-			if (selected === 'Open User settings') {
+		vscode.window.showInformationMessage('Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.', 'Open User Settings', 'Open Workspace Settings').then(selected => {
+			if (selected === 'Open User Settings') {
 				vscode.commands.executeCommand('workbench.action.openGlobalSettings');
-			} else if (selected === 'Open User settings') {
+			} else if (selected === 'Open Workspace Settings') {
 				vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
 			}
 		});
