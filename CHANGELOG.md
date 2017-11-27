@@ -1,4 +1,4 @@
-## 0.6.68 - Coming Soon
+## 0.6.68 - 27th November, 2017
 
 * New commands
     * [Frederik Ring (@m90)](https://github.com/m90)
@@ -32,6 +32,10 @@
 * Others
     * [Phil Kates (@philk)](https://github.com/philk)
         * Fix the formatting issue due to stricter rules in the VS Code apis around configuration objects. [PR 1334](https://github.com/Microsoft/vscode-go/pull/1334). Fixes [Bug 1333](https://github.com/Microsoft/vscode-go/issues/1333).
+    * [David Marby (@DMarby)](https://github.com/DMarby)
+        * Fix delve connection issues when verbose build flag is set. [PR 1354](https://github.com/Microsoft/vscode-go/pull/1354)
+    * [Jan Koehnlein @JanKoehnlein](https://github.com/JanKoehnlein)
+        * Fix `Open Workspace Settings` action in the prompt to set GOPATH. [PR 1375](https://github.com/Microsoft/vscode-go/pull/1375). Fixes [Bug 1374](https://github.com/Microsoft/vscode-go/issues/1374)
     * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
         * Apply/Clear coverage in active editors of all editor groups rather than just the first one. Fixes [Bug 1343](https://github.com/Microsoft/vscode-go/issues/1343)
         * Fix the issue of codelens for references showing "0 references" when `guru` fails to provide references. Fixes [Bug 1336](https://github.com/Microsoft/vscode-go/issues/1336)
