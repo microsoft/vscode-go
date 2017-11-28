@@ -21,7 +21,7 @@ export function lintCode(lintWorkspace?: boolean) {
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 	outputChannel.clear();
 	outputChannel.show();
-	outputChannel.appendLine('Litning in progress...');
+	outputChannel.appendLine('Linting in progress...');
 	goLint(documentUri, goConfig, lintWorkspace)
 		.then(warnings => handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning))
 		.catch(err => {
