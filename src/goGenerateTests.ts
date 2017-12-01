@@ -93,7 +93,7 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 		};
 		if (!currentFunction) {
 			vscode.window.showInformationMessage('No function found at cursor.');
-			return;
+			return Promise.resolve(false);
 		}
 		let funcName = currentFunction.name;
 		if (funcName.includes('.')) {
