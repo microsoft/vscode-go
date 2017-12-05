@@ -32,7 +32,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		let codeLensConfig = config.get('enableCodeLens');
 		let codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
 		if (!codelensEnabled || !document.fileName.endsWith('_test.go')) {
-			return;
+			return [];
 		}
 
 		return Promise.all([
