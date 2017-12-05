@@ -286,6 +286,22 @@
                 "${2:MyTestFunction}"
               ]
             }
+          },
+          {
+            "label": "Go: Connect to server",
+            "description": "Connect to a remote headless debug server",
+            "body": {
+              "name": "${3:Connect to server}",
+              "type": "go",
+              "request": "launch",
+              "mode": "remote",
+              "remotePath": "^\"\\${workspaceRoot}${1:}\"",
+              "port": 2345,
+              "host": "127.0.0.1",
+              "program": "^\"\\${workspaceRoot}${1:}\"",
+              "env": {},
+              "args": []
+            }
           }
         ],
         "configurationAttributes": {
