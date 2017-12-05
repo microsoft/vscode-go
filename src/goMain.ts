@@ -62,24 +62,36 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
 	updateGoPathGoRootFromConfig().then(() => {
-		getGoVersion().then(currentVersion => {
-			if (currentVersion) {
-				const prevVersion = ctx.globalState.get('goVersion');
-				const currVersionString = `${currentVersion.major}.${currentVersion.minor}`;
-
-				if (prevVersion !== currVersionString) {
-					if (prevVersion) {
-						const updateToolsCmdText = 'Update tools';
-						vscode.window.showInformationMessage('Your Go version is different than before, few Go tools may need re-compiling', updateToolsCmdText).then(selected => {
-							if (selected === updateToolsCmdText) {
-								vscode.commands.executeCommand('go.tools.install');
-							}
-						});
-					}
-					ctx.globalState.update('goVersion', currVersionString);
+		const updateToolsCmdText = 'Update tools';
+		const prevGoroot = ctx.globalState.get('goroot');
+		const currentGoroot = process.env['GOROOT'];
+		if (prevGoroot !== currentGoroot && prevGoroot) {
+			vscode.window.showInformationMessage('Your goroot is different than before, few Go tools may need re-compiling', updateToolsCmdText).then(selected => {
+				if (selected === updateToolsCmdText) {
+					vscode.commands.executeCommand('go.tools.install');
 				}
-			}
-		});
+			});
+		} else {
+			getGoVersion().then(currentVersion => {
+				if (currentVersion) {
+					const prevVersion = ctx.globalState.get('goVersion');
+					const currVersionString = `${currentVersion.major}.${currentVersion.minor}`;
+
+					if (prevVersion !== currVersionString) {
+						if (prevVersion) {
+							vscode.window.showInformationMessage('Your Go version is different than before, few Go tools may need re-compiling', updateToolsCmdText).then(selected => {
+								if (selected === updateToolsCmdText) {
+									vscode.commands.executeCommand('go.tools.install');
+								}
+							});
+						}
+						ctx.globalState.update('goVersion', currVersionString);
+					}
+				}
+			});
+		}
+		ctx.globalState.update('goroot', currentGoroot);
+
 		offerToInstallTools();
 		let langServerAvailable = checkLanguageServer();
 		if (langServerAvailable) {
