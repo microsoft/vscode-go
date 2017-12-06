@@ -611,11 +611,30 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 	});
 
 	diagnosticMap.forEach((diagMap, file) => {
+		const fileUri = vscode.Uri.parse(file);
 		if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Error) {
-			errorDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Error]);
+			const newErrors = diagMap[vscode.DiagnosticSeverity.Error];
+			let existingWarnings = warningDiagnosticCollection.get(fileUri);
+			errorDiagnosticCollection.set(fileUri, newErrors);
+
+			// If there are warnings on current file, remove the ones co-inciding with the new errors
+			if (newErrors && existingWarnings) {
+				const errorLines = newErrors.map(x => x.range.start.line);
+				existingWarnings = existingWarnings.filter(x => errorLines.indexOf(x.range.start.line) === -1);
+				warningDiagnosticCollection.set(fileUri, existingWarnings);
+			}
 		}
 		if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Warning) {
-			warningDiagnosticCollection.set(vscode.Uri.parse(file), diagMap[vscode.DiagnosticSeverity.Warning]);
+			const existingErrors = errorDiagnosticCollection.get(fileUri);
+			let newWarnings = diagMap[vscode.DiagnosticSeverity.Warning];
+
+			// If there are errors on current file, ignore the new warnings co-inciding with them
+			if (existingErrors && newWarnings) {
+				const errorLines = existingErrors.map(x => x.range.start.line);
+				newWarnings = newWarnings.filter(x => errorLines.indexOf(x.range.start.line) === -1);
+			}
+
+			warningDiagnosticCollection.set(fileUri, newWarnings);
 		}
 	});
 };
