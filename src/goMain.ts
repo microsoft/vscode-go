@@ -351,41 +351,12 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 }
 
 function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
-
-	// TODO: This is really ugly.  I'm not sure we can do better until
-	// Code supports a pre-save event where we can do the formatting before
-	// the file is written to disk.
-	let ignoreNextSave = new WeakSet<vscode.TextDocument>();
-
 	vscode.workspace.onDidSaveTextDocument(document => {
-		if (document.languageId !== 'go' || ignoreNextSave.has(document)) {
+		if (document.languageId !== 'go') {
 			return;
 		}
-		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
-		let textEditor = vscode.window.activeTextEditor;
-		let formatPromise: PromiseLike<void> = Promise.resolve();
-		if (goConfig['formatOnSave'] && textEditor.document === document) {
-			let formatter = new Formatter();
-			formatPromise = formatter.formatDocument(document).then(edits => {
-				let workspaceEdit = new vscode.WorkspaceEdit();
-				workspaceEdit.set(document.uri, edits);
-				return vscode.workspace.applyEdit(workspaceEdit);
-
-			}).then(applied => {
-				ignoreNextSave.add(document);
-				return document.save();
-			}).then(() => {
-				ignoreNextSave.delete(document);
-			}, () => {
-				// Catch any errors and ignore so that we still trigger
-				// the file save.
-			});
-		}
-		formatPromise.then(() => {
-			runBuilds(document, goConfig);
-		});
+		runBuilds(document, vscode.workspace.getConfiguration('go', document.uri));
 	}, null, subscriptions);
-
 }
 
 function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
@@ -394,7 +365,6 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "buildOnSave" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "buildFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "buildTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "formatOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "formatTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "formatFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "lintOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },

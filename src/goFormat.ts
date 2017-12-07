@@ -7,7 +7,6 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { isDiffToolAvailable, getEdits, getEditsFromUnifiedDiffStr } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 import { sendTelemetryEvent, getBinPath, getToolsEnvVars } from './util';
 
@@ -21,46 +20,41 @@ export class Formatter {
 			let formatTool = goConfig['formatTool'] || 'goreturns';
 			let formatCommandBinPath = getBinPath(formatTool);
 			let formatFlags = goConfig['formatFlags'].slice() || [];
-			let canFormatToolUseDiff = goConfig['useDiffForFormatting'] && isDiffToolAvailable();
-			if (canFormatToolUseDiff && formatFlags.indexOf('-d') === -1) {
-				formatFlags.push('-d');
-			}
+
 			// We ignore the -w flag that updates file on disk because that would break undo feature
 			if (formatFlags.indexOf('-w') > -1) {
 				formatFlags.splice(formatFlags.indexOf('-w'), 1);
 			}
+
+			// Fix for https://github.com/Microsoft/vscode-go/issues/613 and https://github.com/Microsoft/vscode-go/issues/630
+			if (formatTool === 'goimports') {
+				formatFlags.push('-srcdir', filename);
+			}
+
 			let t0 = Date.now();
 			let env = getToolsEnvVars();
-			cp.execFile(formatCommandBinPath, [...formatFlags, filename], { env }, (err, stdout, stderr) => {
-				try {
-					if (err && (<any>err).code === 'ENOENT') {
-						return reject(missingToolMsg + formatTool);
-					}
-					if (err) {
-						console.log(err.message || stderr);
-						return reject('Check the console in dev tools to find errors when formatting.');
-					};
-
-					let textEdits: vscode.TextEdit[] = [];
-					let filePatch = canFormatToolUseDiff ? getEditsFromUnifiedDiffStr(stdout)[0] : getEdits(filename, document.getText(), stdout);
-
-					filePatch.edits.forEach((edit) => {
-						textEdits.push(edit.apply());
-					});
-
-					let timeTaken = Date.now() - t0;
-					/* __GDPR__
-					   "format" : {
-						  "tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-						  "timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
-					   }
-					 */
-					sendTelemetryEvent('format', { tool: formatTool }, { timeTaken });
-					return resolve(textEdits);
-				} catch (e) {
-					reject('Internal issues while getting diff from formatted content');
+			const p = cp.execFile(formatCommandBinPath, formatFlags, { env }, (err, stdout, stderr) => {
+				if (err && (<any>err).code === 'ENOENT') {
+					return reject(missingToolMsg + formatTool);
 				}
+				if (err) {
+					console.log(err.message || stderr);
+					return reject('Check the console in dev tools to find errors when formatting.');
+				};
+				const fileStart = new vscode.Position(0, 0);
+				const fileEnd = document.lineAt(document.lineCount - 1).range.end;
+				const textEdits: vscode.TextEdit[] = [new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)];
+				let timeTaken = Date.now() - t0;
+				/* __GDPR__
+				   "format" : {
+					  "tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+					  "timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
+				   }
+				 */
+				sendTelemetryEvent('format', { tool: formatTool }, { timeTaken });
+				return resolve(textEdits);
 			});
+			p.stdin.end(document.getText());
 		});
 	}
 }
@@ -73,17 +67,15 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 	}
 
 	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
-		return document.save().then(() => {
-			return this.formatter.formatDocument(document).then(null, err => {
-				// Prompt for missing tool is located here so that the
-				// prompts dont show up when formatting is run on save
-				if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
-					promptForMissingTool(err.substr(missingToolMsg.length));
-				} else {
-					console.log(err);
-				}
-				return [];
-			});
+		return this.formatter.formatDocument(document).then(null, err => {
+			// Prompt for missing tool is located here so that the
+			// prompts dont show up when formatting is run on save
+			if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
+				promptForMissingTool(err.substr(missingToolMsg.length));
+			} else {
+				console.log(err);
+			}
+			return [];
 		});
 	}
 }

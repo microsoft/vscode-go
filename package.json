@@ -488,12 +488,6 @@
           "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])",
           "scope": "resource"
         },
-        "go.formatOnSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "Runs formatting tool on save.",
-          "scope": "resource"
-        },
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
