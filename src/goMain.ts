@@ -28,7 +28,7 @@ import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWo
 import { showTestOutput } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
-import { runExpanderr } from './goExpanderr';
+import { expanderrCommand } from './goExpanderr';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors } from './util';
@@ -220,7 +220,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.expanderr.run', () => {
-		runExpanderr();
+		expanderrCommand();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', () => {

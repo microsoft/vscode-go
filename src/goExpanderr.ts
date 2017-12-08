@@ -6,55 +6,69 @@ import { getEdits } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 import { getBinPath, getToolsEnvVars } from './util';
 
-export function runExpanderr(): Thenable<string> {
-	return new Promise<string>((resolve, reject) => {
-		try {
-			let editor = vscode.window.activeTextEditor;
+/**
+ * Runs expanderr and applies the changes on the file in the current editor
+ */
+export function expanderrCommand() {
+	let editor = vscode.window.activeTextEditor;
 
-			if (!editor) {
-				vscode.window.showInformationMessage('No editor selected.');
-				return reject('No editor selected.');
-			}
+	if (!editor) {
+		vscode.window.showInformationMessage('No editor selected.');
+		return;
+	}
 
-			if (!editor.document.fileName.endsWith('.go')) {
-				vscode.window.showInformationMessage('File in the editor is not a Go file.');
-				return reject('File in the editor is not a Go file.');
-			}
+	if (!editor.document.fileName.endsWith('.go')) {
+		vscode.window.showInformationMessage('File in the editor is not a Go file.');
+		return;
+	}
 
-			if (editor.document.isDirty) {
-				vscode.window.showInformationMessage('File has unsaved changes. Save and try again.');
-				return reject('File has unsaved changes. Save and try again.');
-			}
+	if (editor.document.isDirty) {
+		vscode.window.showInformationMessage('File has unsaved changes. Save and try again.');
+		return;
+	}
 
-			let filename = editor.document.uri.fsPath;
-			let offset = editor.document.offsetAt(editor.selection.start);
-
-			let binPath = getBinPath('expanderr');
-			let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
-			let env = getToolsEnvVars();
-
-			cp.execFile(binPath, [filename + ':#' + offset], {env}, (err, stdout, stderr) => {
-				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('expanderr');
-					return reject('Missing tool: expanderr');
-				}
-
-				if (err) {
-					console.log(err);
-					return reject('Cannot format due to syntax errors.');
-				};
-
-				let workspaceEdit = new vscode.WorkspaceEdit();
-				let filePatch = getEdits(filename, editor.document.getText(), stdout);
-				filePatch.edits.forEach((edit) => {
-					edit.applyUsingWorkspaceEdit(workspaceEdit, editor.document.uri);
-				});
-				vscode.workspace.applyEdit(workspaceEdit);
-
-				return resolve('Success');
-			});
-		} catch (e) {
-			reject(e);
+	return runExpanderr(editor).then(updatedText => {
+		let workspaceEdit = new vscode.WorkspaceEdit();
+		let filename = editor.document.uri.fsPath;
+		let filePatch = getEdits(filename, editor.document.getText(), updatedText);
+		filePatch.edits.forEach((edit) => {
+			edit.applyUsingWorkspaceEdit(workspaceEdit, editor.document.uri);
+		});
+		return vscode.workspace.applyEdit(workspaceEdit);
+	}, (err: string) => {
+		if (err) {
+			return vscode.window.showErrorMessage(err);
 		}
 	});
 }
+
+/**
+ * Runs expanderr on the file contents of current editor and returns updated file contents
+ * @param editor
+ */
+export function runExpanderr(editor: vscode.TextEditor): Thenable<string> {
+
+	return new Promise<string>((resolve, reject) => {
+		let filename = editor.document.uri.fsPath;
+		let offset = editor.document.offsetAt(editor.selection.start);
+
+		let binPath = getBinPath('expanderr');
+		let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
+		let env = getToolsEnvVars();
+
+		cp.execFile(binPath, [filename + ':#' + offset], { env }, (err, stdout, stderr) => {
+			if (err && (<any>err).code === 'ENOENT') {
+				promptForMissingTool('expanderr');
+				return reject();
+			}
+
+			if (stderr) {
+				return reject(stderr);
+			};
+
+			return resolve(stdout);
+		});
+	});
+}
+
+
