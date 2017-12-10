@@ -409,7 +409,7 @@ export function resolvePath(inputPath: string, workspaceRoot?: string): string {
 	}
 
 	if (workspaceRoot) {
-		inputPath = inputPath.replace(/\${workspaceRoot}/g, workspaceRoot);
+		inputPath = inputPath.replace(/\${workspaceRoot}/g, workspaceRoot).replace(/\${workspaceFolder}/g, workspaceRoot);
 	}
 	return resolveHomeDir(inputPath);
 }
