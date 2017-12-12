@@ -41,6 +41,25 @@ const allTools: { [key: string]: string } = {
 	'dlv': 'github.com/derekparker/delve/cmd/dlv'
 };
 
+// Tools used explicitly by the basic features of the extension
+const importantTools = [
+	'gocode',
+	'gopkgs',
+	'go-outline',
+	'go-symbols',
+	'guru',
+	'gorename',
+	'godef',
+	'godoc',
+	'gogetdoc',
+	'goreturns',
+	'goimports',
+	'golint',
+	'gometalinter',
+	'megacheck',
+	'dlv'
+];
+
 function getTools(goVersion: SemVersion): string[] {
 	let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	let tools: string[] = [
@@ -119,15 +138,25 @@ export function promptForMissingTool(tool: string) {
 			}
 		}
 
-		vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${allTools[tool]}" to install.`, 'Install', 'Install All').then(selected => {
-			if (selected === 'Install') {
-				installTools(goVersion, [tool]);
-			} else if (selected === 'Install All') {
-				getMissingTools(goVersion).then((missing) => installTools(goVersion, missing));
-				hideGoStatus();
-			} else {
-				installsDeclinedTools.push(tool);
+		const items = ['Install'];
+		getMissingTools(goVersion).then(missing => {
+			if (missing.indexOf(tool) === -1) {
+				return;
 			}
+			if (missing.length > 1) {
+				items.push('Install All');
+			}
+
+			vscode.window.showInformationMessage(`The "${tool}" command is not available.  Use "go get -v ${allTools[tool]}" to install.`, ...items).then(selected => {
+				if (selected === 'Install') {
+					installTools(goVersion, [tool]);
+				} else if (selected === 'Install All') {
+					installTools(goVersion, missing);
+					hideGoStatus();
+				} else {
+					installsDeclinedTools.push(tool);
+				}
+			});
 		});
 	});
 }
@@ -283,7 +312,6 @@ export function offerToInstallTools() {
 				showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
 				vscode.commands.registerCommand('go.promptforinstall', () => {
 					promptForInstall(goVersion, missing);
-					hideGoStatus();
 				});
 			}
 		});
@@ -291,15 +319,26 @@ export function offerToInstallTools() {
 
 
 	function promptForInstall(goVersion: SemVersion, missing: string[]) {
-		let item = {
+		let installItem = {
 			title: 'Install',
 			command() {
+				hideGoStatus();
 				installTools(goVersion, missing);
 			}
 		};
-		vscode.window.showInformationMessage('Some Go analysis tools are missing from your GOPATH.  Would you like to install them?', item).then(selection => {
+		let showItem = {
+			title: 'Show',
+			command() {
+				outputChannel.clear();
+				outputChannel.appendLine('Below tools are needed for the basic features of the Go extension.');
+				missing.forEach(x => outputChannel.appendLine(x));
+			}
+		};
+		vscode.window.showInformationMessage('Some Go analysis tools are missing from your GOPATH.  Would you like to install them?', installItem, showItem).then(selection => {
 			if (selection) {
 				selection.command();
+			} else {
+				hideGoStatus();
 			}
 		});
 	}
@@ -313,7 +352,7 @@ function getMissingTools(goVersion: SemVersion): Promise<string[]> {
 			resolve(exists ? null : tool);
 		});
 	}))).then(res => {
-		let missing = res.filter(x => x != null);
+		let missing = res.filter(x => x != null && importantTools.indexOf(x) > -1);
 		return missing;
 	});
 }
