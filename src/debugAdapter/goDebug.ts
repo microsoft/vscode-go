@@ -140,6 +140,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	/** Optional path to .env file. */
 	envFile?: string;
 	backend?: string;
+	custom?: string[]
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -271,46 +272,50 @@ class Delve {
 				return;
 			}
 
-			let dlv = getBinPathWithPreferredGopath('dlv', resolveHomeDir(env['GOPATH']), process.env['GOPATH']);
+			if (mode == 'custom') {
+				this.debugProcess = spawn(launchArgs.custom[0], launchArgs.custom.slice(1));
+			} else {
+				let dlv = getBinPathWithPreferredGopath('dlv', resolveHomeDir(env['GOPATH']), process.env['GOPATH']);
 
-			if (!existsSync(dlv)) {
-				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
-				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
-			}
+				if (!existsSync(dlv)) {
+					verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
+					return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
+				}
 
-			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
-			let dlvArgs = [mode || 'debug'];
-			if (mode === 'exec') {
-				dlvArgs = dlvArgs.concat([program]);
-			} else if (currentGOWorkspace) {
-				dlvArgs = dlvArgs.concat([dirname.substr(currentGOWorkspace.length + 1)]);
-			}
-			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
-			if (launchArgs.showLog) {
-				dlvArgs = dlvArgs.concat(['--log=' + launchArgs.showLog.toString()]);
-			}
-			if (launchArgs.cwd) {
-				dlvArgs = dlvArgs.concat(['--wd=' + launchArgs.cwd]);
-			}
-			if (launchArgs.buildFlags) {
-				dlvArgs = dlvArgs.concat(['--build-flags=' + launchArgs.buildFlags]);
-			}
-			if (launchArgs.init) {
-				dlvArgs = dlvArgs.concat(['--init=' + launchArgs.init]);
-			}
-			if (launchArgs.backend) {
-				dlvArgs = dlvArgs.concat(['--backend=' + launchArgs.backend]);
-			}
-			if (launchArgs.args) {
-				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
-			}
+				let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
+				let dlvArgs = [mode || 'debug'];
+				if (mode === 'exec') {
+					dlvArgs = dlvArgs.concat([program]);
+				} else if (currentGOWorkspace) {
+					dlvArgs = dlvArgs.concat([dirname.substr(currentGOWorkspace.length + 1)]);
+				}
+				dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
+				if (launchArgs.showLog) {
+					dlvArgs = dlvArgs.concat(['--log=' + launchArgs.showLog.toString()]);
+				}
+				if (launchArgs.cwd) {
+					dlvArgs = dlvArgs.concat(['--wd=' + launchArgs.cwd]);
+				}
+				if (launchArgs.buildFlags) {
+					dlvArgs = dlvArgs.concat(['--build-flags=' + launchArgs.buildFlags]);
+				}
+				if (launchArgs.init) {
+					dlvArgs = dlvArgs.concat(['--init=' + launchArgs.init]);
+				}
+				if (launchArgs.backend) {
+					dlvArgs = dlvArgs.concat(['--backend=' + launchArgs.backend]);
+				}
+				if (launchArgs.args) {
+					dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
+				}
 
-			verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
+				verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
 
-			this.debugProcess = spawn(dlv, dlvArgs, {
-				cwd: dlvCwd,
-				env,
-			});
+				this.debugProcess = spawn(dlv, dlvArgs, {
+					cwd: dlvCwd,
+					env,
+				});
+			}
 
 			function connectClient(port: number, host: string) {
 				// Add a slight delay to avoid issues on Linux with
