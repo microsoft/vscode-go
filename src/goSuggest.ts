@@ -187,12 +187,12 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 							if (wordAtPosition && wordAtPosition.start.character === 0 &&
 								suggest.class === 'type' && !goBuiltinTypes.has(suggest.name)) {
-								let prefix = 'func (' + suggest.name[0].toLowerCase() + ' *' + suggest.name + ')';
 								let auxItem = new vscode.CompletionItem(suggest.name + ' method', vscode.CompletionItemKind.Snippet);
-								auxItem.label = suggest.name + ' (new method)';
-								auxItem.detail = prefix + '...';
+								auxItem.label = suggest.name;
+								auxItem.detail = 'Method snippet';
 								auxItem.sortText = 'a';
-								let snippet = prefix + ' ${1:name}(${2:params}) ${3:retval} \{\n\t$0\n\}';
+								let prefix = 'func (' + suggest.name[0].toLowerCase() + ' *' + suggest.name + ')';
+								let snippet = prefix + ' ${1:methodName}(${2}) ${3} \{\n\t$0\n\}';
 								auxItem.insertText = new vscode.SnippetString(snippet);
 								suggestions.push(auxItem);
 							}
