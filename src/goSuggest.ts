@@ -191,7 +191,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								auxItem.label = 'func (*' + suggest.name + ')';
 								auxItem.filterText = suggest.name;
 								auxItem.detail = 'Method snippet';
-								auxItem.sortText = 'a';
+								auxItem.sortText = 'b';
 								let prefix = 'func (' + suggest.name[0].toLowerCase() + ' *' + suggest.name + ')';
 								let snippet = prefix + ' ${1:methodName}(${2}) ${3} \{\n\t$0\n\}';
 								auxItem.insertText = new vscode.SnippetString(snippet);
