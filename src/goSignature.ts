@@ -46,7 +46,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			let si: SignatureInformation;
 			if (res.toolUsed === 'godef') {
 				// declaration is of the form "Add func(a int, b int) int"
-				declarationText = res.declarationlines.join(' ');
+				declarationText = res.declarationlines.join(' ').trim();
 				let nameEnd = declarationText.indexOf(' ');
 				let sigStart = nameEnd + 5; // ' func'
 				let funcName = declarationText.substring(0, nameEnd);
