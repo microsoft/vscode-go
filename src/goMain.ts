@@ -338,11 +338,10 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 		return;
 	}
 
-	let uri = document.uri;
-	check(uri, goConfig)
+	errorDiagnosticCollection.clear();
+	warningDiagnosticCollection.clear();
+	check(document.uri, goConfig)
 		.then((errors) => {
-			errorDiagnosticCollection.clear();
-			warningDiagnosticCollection.clear();
 			handleDiagnosticErrors(document, errors);
 		})
 		.catch(err => {
