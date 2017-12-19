@@ -57,6 +57,7 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_1.go'), path.join(testPath, 'linterTest', 'linter_1.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'), path.join(testPath, 'linterTest', 'linter_2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'buildTags', 'hello.go'), path.join(fixturePath, 'buildTags', 'hello.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'completions', 'unimportedPkgs.go'), path.join(fixturePath, 'completions', 'unimportedPkgs.go'));
 	});
 
 	suiteTeardown(() => {
@@ -720,33 +721,23 @@ It returns the number of bytes written and any write error encountered.
 		});
 		let provider = new GoCompletionItemProvider();
 		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(11, 3), ['bytes']],
-			[new vscode.Position(12, 5), ['Abs', 'Acos', 'Asin']]
+			[new vscode.Position(10, 3), ['bytes']],
+			[new vscode.Position(11, 6), ['Abs', 'Acos', 'Asin']]
 		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'unimportedPkgs.go'));
 
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
-
-				return editor.edit(editbuilder => {
-					editbuilder.insert(new vscode.Position(12, 1), 'by\n');
-					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
-				}).then(() => {
-					let promises = testCases.map(([position, expected]) =>
-						provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
-							let labels = items.map(x => x.label);
-							for (let entry of expected) {
-								assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
-							}
-						})
-					);
-					return Promise.all(promises);
-				});
-			}).then(() => {
-				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-				return Promise.resolve();
+				let promises = testCases.map(([position, expected]) =>
+					provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+						let labels = items.map(x => x.label);
+						for (let entry of expected) {
+							assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
+						}
+					})
+				);
+				return Promise.all(promises).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
 			});
-
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
 		}).then(() => done(), done);
