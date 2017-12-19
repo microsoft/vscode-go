@@ -13,6 +13,7 @@
         - `go.testEnvFile`
     * The `Analysis Tools Missing` message has bee updated to only appear for the tools backing basic features of the extension
     * Skip showing linting/vetting errors on a line that has build errors. [Feature Request 600](https://github.com/Microsoft/vscode-go/issues/600)
+    * Fix the issue of slow linters resulting in stale problem markers in updated file. [Bug 1404](https://github.com/Microsoft/vscode-go/issues/1404)
     * Deprecate `go.formatOnSave` setting in favor of `editor.formatOnSave`. To disable formatting on save, add the below setting:
         ```
         "[go]": {
@@ -26,8 +27,6 @@
        - FormatOnSave re-saves file [Bug 1037](https://github.com/Microsoft/vscode-go/issues/1037)
        - Save All doesnt format all files [Bug 279](https://github.com/Microsoft/vscode-go/issues/279)
        - Slow format on save affects tests [Bug 786](https://github.com/Microsoft/vscode-go/issues/786)
-
-
 
 
 ## 0.6.69 - 27th November, 2017
