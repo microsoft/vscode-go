@@ -7,13 +7,14 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { promptForMissingTool } from './goInstallTools';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { sendTelemetryEvent, getBinPath, getToolsEnvVars } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 
 export class Formatter {
 	public formatDocument(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
+		let self = this;
 		return new Promise((resolve, reject) => {
 			let filename = document.fileName;
 			let goConfig = vscode.workspace.getConfiguration('go', document.uri);
@@ -27,32 +28,44 @@ export class Formatter {
 			}
 
 			// Fix for https://github.com/Microsoft/vscode-go/issues/613 and https://github.com/Microsoft/vscode-go/issues/630
-			if (formatTool === 'goimports') {
+			if (formatTool === 'goimports' || formatTool === 'goreturns') {
 				formatFlags.push('-srcdir', filename);
 			}
 
 			let t0 = Date.now();
 			let env = getToolsEnvVars();
-			const p = cp.execFile(formatCommandBinPath, formatFlags, { env }, (err, stdout, stderr) => {
-				if (err && (<any>err).code === 'ENOENT') {
-					return reject(missingToolMsg + formatTool);
+			let p: cp.ChildProcess;
+			p = cp.execFile(formatCommandBinPath, formatFlags, { env }, (err, stdout, stderr) => {
+				try {
+					if (err && (<any>err).code === 'ENOENT') {
+						return reject(missingToolMsg + formatTool);
+					}
+					if (err) {
+						console.log(err.message || stderr);
+						if (formatTool === 'goreturns' && stderr && stderr.startsWith('flag provided but not defined: -srcdir')) {
+							promptForUpdatingTool('goreturns');
+							p = null;
+							return self.formatDocument(document).then(results => {
+								return resolve(results);
+							});
+						}
+						return reject('Check the console in dev tools to find errors when formatting.');
+					};
+					const fileStart = new vscode.Position(0, 0);
+					const fileEnd = document.lineAt(document.lineCount - 1).range.end;
+					const textEdits: vscode.TextEdit[] = [new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)];
+					let timeTaken = Date.now() - t0;
+					/* __GDPR__
+					"format" : {
+						"tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+						"timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
+					}
+					*/
+					sendTelemetryEvent('format', { tool: formatTool }, { timeTaken });
+					return resolve(textEdits);
+				} catch (e) {
+					reject(e);
 				}
-				if (err) {
-					console.log(err.message || stderr);
-					return reject('Check the console in dev tools to find errors when formatting.');
-				};
-				const fileStart = new vscode.Position(0, 0);
-				const fileEnd = document.lineAt(document.lineCount - 1).range.end;
-				const textEdits: vscode.TextEdit[] = [new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)];
-				let timeTaken = Date.now() - t0;
-				/* __GDPR__
-				   "format" : {
-					  "tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					  "timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
-				   }
-				 */
-				sendTelemetryEvent('format', { tool: formatTool }, { timeTaken });
-				return resolve(textEdits);
 			});
 			p.stdin.end(document.getText());
 		});
