@@ -1,3 +1,35 @@
+## 0.6.70 - 19th December, 2017
+
+* [Avihay Kain (@grooveygr)](https://github.com/grooveygr)
+    * Snippets for methods on types during auto-completion. [Feature Request 168](https://github.com/Microsoft/vscode-go/issues/168). [PR 1368](https://github.com/Microsoft/vscode-go/pull/1368)
+* [Matt Brandt (@Matt007)](https://github.com/matt007)
+    * Debug configuration snippet for remote debugging. [PR 1365](https://github.com/Microsoft/vscode-go/pull/1365)
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Prompt to recompile dependent Go tools when GOROOT changes. [Feature Request 1286](https://github.com/Microsoft/vscode-go/issues/1286)
+    * Support for `${workspaceFolder}` in the below settings
+        - `go.gopath`
+        - `go.toolsGopath`
+        - `go.testEnvVars`
+        - `go.testEnvFile`
+    * The `Analysis Tools Missing` message has bee updated to only appear for the tools backing basic features of the extension
+    * Skip showing linting/vetting errors on a line that has build errors. [Feature Request 600](https://github.com/Microsoft/vscode-go/issues/600)
+    * Deprecate `go.formatOnSave` setting in favor of `editor.formatOnSave`. To disable formatting on save, add the below setting:
+        ```
+        "[go]": {
+            "editor.formatOnSave": false
+        }
+        ```
+        This fixes the below issues
+       - Cursor jumps unexpectedly when formatting on save. [Bug 1346](https://github.com/Microsoft/vscode-go/issues/1346)
+       - Adopting the format on save feature of VS Code. [Debt 540](https://github.com/Microsoft/vscode-go/issues/540)
+       - Format-on-save messes up undo/redo stack [Bug 678](https://github.com/Microsoft/vscode-go/issues/678)
+       - FormatOnSave re-saves file [Bug 1037](https://github.com/Microsoft/vscode-go/issues/1037)
+       - Save All doesnt format all files [Bug 279](https://github.com/Microsoft/vscode-go/issues/279)
+       - Slow format on save affects tests [Bug 786](https://github.com/Microsoft/vscode-go/issues/786)
+
+
+
+
 ## 0.6.69 - 27th November, 2017
 
 * New commands
