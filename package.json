@@ -82,6 +82,12 @@
         "path": "./snippets/go.json"
       }
     ],
+    "configurationDefaults": {
+      "[go]": {
+        "editor.insertSpaces": false,
+        "editor.formatOnSave": true
+      }
+    },
     "commands": [
       {
         "command": "go.gopath",
