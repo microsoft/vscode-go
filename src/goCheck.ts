@@ -34,7 +34,7 @@ export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
 	}
 
 	if (e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
-		vscode.window.showWarningMessage("This file seems to be generated. DO NOT EDIT.")
+		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.');
 	}
 }
 
