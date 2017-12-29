@@ -29,7 +29,7 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 }
 
 export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
-	if (e.document.isUntitled) {
+	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
 
