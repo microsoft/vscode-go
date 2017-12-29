@@ -348,17 +348,20 @@ export function getToolsEnvVars(): any {
 }
 
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
-	if (!workspaceUri && vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-		workspaceUri = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
+	let currentFilePath: string;
+	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+		workspaceUri = workspaceUri || vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
+		currentFilePath = vscode.window.activeTextEditor.document.uri.fsPath;
 	}
 	const config = vscode.workspace.getConfiguration('go', workspaceUri);
 	let currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
 	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
-	if (process.platform === 'win32' && currentRoot) {
-		currentRoot = currentRoot.substr(0, 1).toUpperCase() + currentRoot.substr(1);
+	if (process.platform === 'win32') {
+		currentRoot = currentRoot ? currentRoot.substr(0, 1).toUpperCase() + currentRoot.substr(1) : '';
+		currentFilePath = currentFilePath ? currentFilePath.substr(0, 1).toUpperCase() + currentFilePath.substr(1) : '';
 	}
 	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
-	const inferredGopath = config['inferGopath'] === true ? getInferredGopath(currentRoot) : '';
+	const inferredGopath = config['inferGopath'] === true ? (getInferredGopath(currentRoot) || getInferredGopath(currentFilePath)) : '';
 
 	return inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
 }
