@@ -355,14 +355,31 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	}
 	const config = vscode.workspace.getConfiguration('go', workspaceUri);
 	let currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
+
 	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
 	if (process.platform === 'win32') {
 		currentRoot = currentRoot ? currentRoot.substr(0, 1).toUpperCase() + currentRoot.substr(1) : '';
 		currentFilePath = currentFilePath ? currentFilePath.substr(0, 1).toUpperCase() + currentFilePath.substr(1) : '';
 	}
-	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
-	const inferredGopath = config['inferGopath'] === true ? (getInferredGopath(currentRoot) || getInferredGopath(currentFilePath)) : '';
 
+	// Infer the GOPATH from the current root or the path of the file opened in current editor
+	// Last resort: Check for the common case where GOPATH itself is opened directly in VS Code
+	let inferredGopath: string;
+	if (config['inferGopath'] === true) {
+		inferredGopath = getInferredGopath(currentRoot) || getInferredGopath(currentFilePath);
+		if (!inferredGopath) {
+			try {
+				if (fs.statSync(path.join(currentRoot, 'src')).isDirectory()) {
+					inferredGopath = currentRoot;
+				}
+			}
+			catch (e) {
+				// No op
+			}
+		}
+	}
+
+	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
 	return inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
 }
 
