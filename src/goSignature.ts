@@ -41,12 +41,15 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				// This must be a function definition
 				return null;
 			}
+			let declarationText: string = (res.declarationlines || []).join(' ').trim();
+			if (!declarationText) {
+				return null;
+			}
 			let result = new SignatureHelp();
-			let declarationText, sig: string;
+			let sig: string;
 			let si: SignatureInformation;
 			if (res.toolUsed === 'godef') {
 				// declaration is of the form "Add func(a int, b int) int"
-				declarationText = res.declarationlines.join(' ').trim();
 				let nameEnd = declarationText.indexOf(' ');
 				let sigStart = nameEnd + 5; // ' func'
 				let funcName = declarationText.substring(0, nameEnd);
@@ -54,7 +57,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				si = new SignatureInformation(funcName + sig, res.doc);
 			} else if (res.toolUsed === 'gogetdoc') {
 				// declaration is of the form "func Add(a int, b int) int"
-				declarationText = res.declarationlines[0].substring(5);
+				declarationText = declarationText.substring(5);
 				let funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it
 				if (funcNameStart > 0) {
 					declarationText = declarationText.substring(funcNameStart);
