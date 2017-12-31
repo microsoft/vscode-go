@@ -28,6 +28,16 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 	statusBarItem.text = '';
 }
 
+export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
+	if (e.document.isUntitled || e.document.languageId !== 'go') {
+		return;
+	}
+
+	if (e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
+		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.');
+	}
+}
+
 export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
 	outputChannel.clear();
 	let runningToolsPromises = [];
