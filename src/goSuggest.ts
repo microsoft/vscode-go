@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes } from './util';
+import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
@@ -71,7 +71,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					return resolve([]);
 				}
 
-				let offset = document.offsetAt(position);
+				let offset = byteOffsetAt(document, position);
 				let inputText = document.getText();
 				let includeUnimportedPkgs = autocompleteUnimportedPackages && !inString;
 
@@ -128,7 +128,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			let stderr = '';
 
 			// Spawn `gocode` process
-			let p = cp.spawn(gocode, ['-f=json', 'autocomplete', filename, 'c' + offset], { env });
+			let p = cp.spawn(gocode, ['-f=json', 'autocomplete', filename, '' + offset], { env });
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
 			p.on('error', err => {
