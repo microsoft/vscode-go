@@ -42,7 +42,7 @@
     "vscode-debug-logger": "^0.0.4",
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0",
-    "vscode-extension-telemetry": "0.0.5",
+    "vscode-extension-telemetry": "0.0.10",
     "vscode-languageclient": "^2.5.0"
   },
   "devDependencies": {

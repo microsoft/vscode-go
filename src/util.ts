@@ -276,6 +276,13 @@ export function sendTelemetryEvent(eventName: string, properties?: {
 	telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
 }
 
+export function disposeTelemetryReporter(): Promise<any> {
+	if (telemtryReporter) {
+		return telemtryReporter.dispose();
+	}
+	return Promise.resolve(null);
+}
+
 export function isPositionInString(document: vscode.TextDocument, position: vscode.Position): boolean {
 	let lineText = document.lineAt(position.line).text;
 	let lineTillCurrentPosition = lineText.substr(0, position.character);
