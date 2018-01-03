@@ -697,6 +697,11 @@
               "type": "boolean",
               "default": true,
               "description": "If true, enables code lens for running and debugging tests"
+            },
+            "complexity": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, enables a code lens showing cyclometric complexity. Uses gocyclo."
             }
           },
           "default": {
