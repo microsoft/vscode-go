@@ -10,7 +10,6 @@ import path = require('path');
 import { TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getBinPath, getCurrentGoPath, canonicalizeGOPATHPrefix } from './util';
-// import { , byteOffsetAt, canonicalizeGOPATHPrefix, getFileArchive, getToolsEnvVars } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 import { promptForMissingTool } from './goInstallTools';
 import cp = require('child_process');
@@ -75,9 +74,21 @@ export class GoComplexityCodeLensProvider extends GoBaseCodeLensProvider {
 
 				let lines = stdout.split('\n');
 				let res = lines.map((line) => {
-					let cols = line.split(' ');
-					return new ComplexityResult(+cols[0], cols[1], cols[2]);
-				});
+					// Output line example from gocyclo:
+					// 142 somepackage parseFrame path\to\file.go:2741:1
+
+					// Regex has 6 capturing groups, of which (currently) the first three are used:
+					// 1: cyclomatic complexity (142)
+					// 2: package name (somepackage)
+					// 3: function name (parseFrame)
+					// 4: file path (path\to\file.go)
+					// 5: line number (2741)
+					// 6: Col (1)
+					let match = /^([0-9]+)\s([a-z_]+)\s(.+)\s(.+):([0-9]+):([0-9]+)$/.exec(line);
+					if (!match) { return undefined; }
+					
+					return new ComplexityResult(+match[1], match[2], match[3]);
+				}).filter(a => { a !== undefined });
 
 				resolve(res);
 			});
@@ -88,7 +99,7 @@ export class GoComplexityCodeLensProvider extends GoBaseCodeLensProvider {
 		const codelens: CodeLens[] = [];
 
 		let documentSymbolProvider = new GoDocumentSymbolProvider();
-				
+
 		let functionResults = documentSymbolProvider.provideDocumentSymbols(document, token)
 			.then(symbols => {
 				return symbols.filter(sym => sym.kind === vscode.SymbolKind.Function
