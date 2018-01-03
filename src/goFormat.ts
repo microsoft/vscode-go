@@ -33,14 +33,25 @@ export class Formatter {
 
 			let t0 = Date.now();
 			let env = getToolsEnvVars();
-			const p = cp.execFile(formatCommandBinPath, formatFlags, { env }, (err, stdout, stderr) => {
-				if (err && (<any>err).code === 'ENOENT') {
+			let stdout = '';
+			let stderr = '';
+			const p = cp.spawn(formatCommandBinPath, formatFlags, { env });
+			p.stdout.on('data', data => stdout += data);
+			p.stderr.on('data', data => stderr += data);
+			p.on('error', err => {
+				if (!err) {
+					return reject();
+				}
+				if ((<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + formatTool);
 				}
-				if (err) {
-					console.log(err.message || stderr);
-					return reject('Check the console in dev tools to find errors when formatting.');
-				};
+				console.log(err.message || stderr);
+				return reject('Check the console in dev tools to find errors when formatting.');
+			});
+			p.on('close', code => {
+				if (code !== 0) {
+					return reject(stderr);
+				}
 				const fileStart = new vscode.Position(0, 0);
 				const fileEnd = document.lineAt(document.lineCount - 1).range.end;
 				const textEdits: vscode.TextEdit[] = [new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)];
