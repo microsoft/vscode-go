@@ -111,7 +111,7 @@ export class GoComplexityCodeLensProvider extends GoBaseCodeLensProvider {
 					const range = func.location.range;
 					codelens.push(new CodeLens(
 						range,
-						{ title: `Complexity is ${result.complexity}`, command: null}));
+						{ title: `Cyclomatic complexity: ${result.complexity}`, command: null}));
 				});
 			});
 
@@ -122,7 +122,7 @@ export class GoComplexityCodeLensProvider extends GoBaseCodeLensProvider {
 					let packageResults = toolResults.filter((val) => { return val.package === pkg.name });
 					let topComplexity = Math.max(...packageResults.map(o => o.complexity));
 					const range = pkg.location.range;
-					codelens.push(new CodeLens(range, { title: `Complexity is ${topComplexity}`, command: null }));
+					codelens.push(new CodeLens(range, { title: `Cyclomatic complexity: ${topComplexity}`, command: null }));
 				}
 			});
 		
