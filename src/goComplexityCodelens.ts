@@ -73,6 +73,7 @@ export class GoComplexityCodeLensProvider extends GoBaseCodeLensProvider {
 				}
 
 				let lines = stdout.split('\n');
+				const rex  = /^([0-9]+)\s([a-z_]+)\s(.+)\s(.+):([0-9]+):([0-9]+)$/;
 				let res = lines.map((line) => {
 					// Output line example from gocyclo:
 					// 142 somepackage parseFrame path\to\file.go:2741:1
@@ -84,7 +85,7 @@ export class GoComplexityCodeLensProvider extends GoBaseCodeLensProvider {
 					// 4: file path (path\to\file.go)
 					// 5: line number (2741)
 					// 6: Col (1)
-					let match = /^([0-9]+)\s([a-z_]+)\s(.+)\s(.+):([0-9]+):([0-9]+)$/.exec(line);
+					let match = rex.exec(line);
 					if (!match) { return undefined; }
 					
 					return new ComplexityResult(+match[1], match[2], match[3]);
@@ -102,8 +103,7 @@ export class GoComplexityCodeLensProvider extends GoBaseCodeLensProvider {
 
 		let functionResults = documentSymbolProvider.provideDocumentSymbols(document, token)
 			.then(symbols => {
-				return symbols.filter(sym => sym.kind === vscode.SymbolKind.Function
-					|| sym.kind == vscode.SymbolKind.Constructor)
+				return symbols.filter(sym => sym.kind === vscode.SymbolKind.Function)
 			})
 			.then(fns => {
 				fns.forEach(func => {
@@ -126,6 +126,6 @@ export class GoComplexityCodeLensProvider extends GoBaseCodeLensProvider {
 				}
 			});
 		
-		return Promise.all([functionResults, packageResult]).then(() => codelens);
+		return Promise.all([functionResults,packageResult]).then(() => codelens);
 	}
 }
