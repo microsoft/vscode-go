@@ -88,7 +88,7 @@ export class GoComplexityCodeLensProvider extends GoBaseCodeLensProvider {
 					if (!match) { return undefined; }
 					
 					return new ComplexityResult(+match[1], match[2], match[3]);
-				}).filter(a => { a !== undefined });
+				}).filter(a => { return a !== undefined });
 
 				resolve(res);
 			});
