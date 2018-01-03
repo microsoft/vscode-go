@@ -63,6 +63,9 @@ export class Formatter {
 				   }
 				 */
 				sendTelemetryEvent('format', { tool: formatTool }, { timeTaken });
+				if (timeTaken > 750) {
+					console.log(`Formatting took too long(${timeTaken}ms). Format On Save feature could be aborted.`);
+				}
 				return resolve(textEdits);
 			});
 			p.stdin.end(document.getText());
