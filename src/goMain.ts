@@ -11,7 +11,7 @@ import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoReferenceProvider } from './goReferences';
 import { GoImplementationProvider } from './goImplementations';
-import { GoDocumentFormattingEditProvider, Formatter } from './goFormat';
+import { GoDocumentFormattingEditProvider } from './goFormat';
 import { GoRenameProvider } from './goRename';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { GoRunTestCodeLensProvider } from './goRunTestCodelens';

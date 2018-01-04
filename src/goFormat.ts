@@ -7,34 +7,55 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { promptForMissingTool } from './goInstallTools';
+import path = require('path');
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { sendTelemetryEvent, getBinPath, getToolsEnvVars } from './util';
 
-const missingToolMsg = 'Missing tool: ';
+export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
-export class Formatter {
-	public formatDocument(document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
-		return new Promise((resolve, reject) => {
-			let filename = document.fileName;
-			let goConfig = vscode.workspace.getConfiguration('go', document.uri);
-			let formatTool = goConfig['formatTool'] || 'goreturns';
-			let formatCommandBinPath = getBinPath(formatTool);
-			let formatFlags = goConfig['formatFlags'].slice() || [];
+	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
+		let filename = document.fileName;
+		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
+		let formatTool = goConfig['formatTool'] || 'goreturns';
+		let formatFlags = goConfig['formatFlags'].slice() || [];
 
-			// We ignore the -w flag that updates file on disk because that would break undo feature
-			if (formatFlags.indexOf('-w') > -1) {
-				formatFlags.splice(formatFlags.indexOf('-w'), 1);
+		// We ignore the -w flag that updates file on disk because that would break undo feature
+		if (formatFlags.indexOf('-w') > -1) {
+			formatFlags.splice(formatFlags.indexOf('-w'), 1);
+		}
+
+		// Fix for https://github.com/Microsoft/vscode-go/issues/613 and https://github.com/Microsoft/vscode-go/issues/630
+		if (formatTool === 'goimports' || formatTool === 'goreturns') {
+			formatFlags.push('-srcdir', filename);
+		}
+
+		return this.runFormatter(formatTool, formatFlags, document).then(edits => edits, err => {
+			if (err && err.startsWith('flag provided but not defined: -srcdir')) {
+				promptForUpdatingTool(formatTool);
+				formatFlags.splice(formatFlags.indexOf('-srcdir'), 1);
+				return this.runFormatter(formatTool, formatFlags, document);
 			}
-
-			// Fix for https://github.com/Microsoft/vscode-go/issues/613 and https://github.com/Microsoft/vscode-go/issues/630
-			if (formatTool === 'goimports') {
-				formatFlags.push('-srcdir', filename);
+			if (err) {
+				console.log(err);
+				return Promise.reject('Check the console in dev tools to find errors when formatting.');
 			}
+		});
+	}
 
+	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
+		let formatCommandBinPath = getBinPath(formatTool);
+		if (!path.isAbsolute(formatCommandBinPath)) {
+			promptForMissingTool(formatTool);
+			return;
+		}
+
+		return new Promise<vscode.TextEdit[]>((resolve, reject) => {
 			let t0 = Date.now();
 			let env = getToolsEnvVars();
 			let stdout = '';
 			let stderr = '';
+
+			// Use spawn instead of exec to avoid maxBufferExceeded error
 			const p = cp.spawn(formatCommandBinPath, formatFlags, { env });
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
@@ -43,18 +64,22 @@ export class Formatter {
 					return reject();
 				}
 				if ((<any>err).code === 'ENOENT') {
-					return reject(missingToolMsg + formatTool);
+					promptForMissingTool(formatTool);
+					return reject();
 				}
-				console.log(err.message || stderr);
-				return reject('Check the console in dev tools to find errors when formatting.');
+				return reject(err.message || stderr);
 			});
 			p.on('close', code => {
 				if (code !== 0) {
 					return reject(stderr);
 				}
+
+				// Return the complete file content in the edit.
+				// VS Code will calculate minimal edits to be applied
 				const fileStart = new vscode.Position(0, 0);
 				const fileEnd = document.lineAt(document.lineCount - 1).range.end;
 				const textEdits: vscode.TextEdit[] = [new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)];
+
 				let timeTaken = Date.now() - t0;
 				/* __GDPR__
 				   "format" : {
@@ -69,27 +94,6 @@ export class Formatter {
 				return resolve(textEdits);
 			});
 			p.stdin.end(document.getText());
-		});
-	}
-}
-
-export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
-	private formatter: Formatter;
-
-	constructor() {
-		this.formatter = new Formatter();
-	}
-
-	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
-		return this.formatter.formatDocument(document).then(null, err => {
-			// Prompt for missing tool is located here so that the
-			// prompts dont show up when formatting is run on save
-			if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
-				promptForMissingTool(err.substr(missingToolMsg.length));
-			} else {
-				console.log(err);
-			}
-			return [];
 		});
 	}
 }
