@@ -56,7 +56,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		  "data": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 	   }
 	 */
-	sendTelemetryEvent('beta-testing', { version: '0.6.71', date: '01/01/2018' });
+	sendTelemetryEvent('beta-testing', { version: '0.6.71', date: '01/04/2018' });
 
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
@@ -165,6 +165,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		let root = vscode.workspace.rootPath;
 		if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
 			root = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+			// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+			if (process.platform === 'win32' && root) {
+				root = root.substr(0, 1).toUpperCase() + root.substr(1);
+			}
 		}
 
 		// not only if it was configured, but if it was successful.
