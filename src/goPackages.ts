@@ -99,7 +99,7 @@ export function getAllPackages(): Promise<Map<string, string>> {
 	}
 
 	return getAllPackagesNoCache().then((pkgs) => {
-		if (pkgs.size === 0) {
+		if (!pkgs || pkgs.size === 0) {
 			console.log('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
 		}
 		allPkgsLastHit = new Date().getTime();
