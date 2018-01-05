@@ -56,7 +56,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		  "data": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 	   }
 	 */
-	sendTelemetryEvent('beta-testing', { version: '0.6.71', date: '01/04/2018' });
+	// sendTelemetryEvent('beta-testing', { version: '0.6.71', date: '01/04/2018' });
 
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
@@ -383,7 +383,6 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "coverOnTestPackage": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "coverageDecorator": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "coverageOptions": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "useDiffForFormatting": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "gopath": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "goroot": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "inferGopath": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
@@ -421,7 +420,6 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		coverOnTestPackage: goConfig['coverOnTestPackage'] + '',
 		coverageDecorator: goConfig['coverageDecorator'],
 		coverageOptions: goConfig['coverageOptions'],
-		useDiffForFormatting: goConfig['useDiffForFormatting'] + '',
 		gopath: goConfig['gopath'] ? 'set' : '',
 		goroot: goConfig['goroot'] ? 'set' : '',
 		inferGopath: goConfig['inferGopath'] + '',

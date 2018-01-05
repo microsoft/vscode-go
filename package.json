@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.70",
+  "version": "0.6.71",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -512,12 +512,6 @@
           },
           "default": [],
           "description": "Flags to pass to format tool (e.g. ['-s'])",
-          "scope": "resource"
-        },
-        "go.useDiffForFormatting": {
-          "type": "boolean",
-          "default": true,
-          "description": "Run the formatting tools with the -d flag",
           "scope": "resource"
         },
         "go.inferGopath": {

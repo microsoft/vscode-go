@@ -1,3 +1,20 @@
+## 0.6.71 - 5th January, 2018
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Setting `go.inferGopath` will now infer the correct GOPATH even in the below 2 cases which wasnt supported before
+         - When a Go file is opened in VS Code directly without opening any workspace.
+         - When GOPATH itself is directly opened in VS Code. Fixes [Bug 1213](https://github.com/Microsoft/vscode-go/issues/1213)
+    * Use byte offset when calling `gocode` to fix issue with code completion when there are unicode characters in the file. Fixes [Bug 1431](https://github.com/Microsoft/vscode-go/issues/1431)
+    * Add descriptions to the contributed snippets. These descriptions will appear in auto-completion and when using the `Insert Snippet` command
+    * Fix "maxBufferExceeded" error by using `spawn` instead of `exec` when running formatters.
+    * Use the new `onDebugResolve` activation event instead of `onDebug` to avoid activating the Go extension when other type of debug sessions are started
+
+* [halfcrazy](https://github.com/halfcrazy)
+    * Fixed the upstream issue with `goreturns`: [PR sqs/goreturns#42](https://github.com/sqs/goreturns/pull/42). This in turn fixes [Bug 613](https://github.com/Microsoft/vscode-go/issues/613) and [Bug 630](https://github.com/Microsoft/vscode-go/issues/630)
+
+* [Nikhil Raman (@cheesedosa)](https://github.com/cheesedosa)
+    * Show a warning when user edits a generated file. [Feature Request 1295](https://github.com/Microsoft/vscode-go/issues/1295) via [PR 1425](https://github.com/Microsoft/vscode-go/pull/1425)
+
 ## 0.6.70 - 19th December, 2017
 
 * [Avihay Kain (@grooveygr)](https://github.com/grooveygr)
