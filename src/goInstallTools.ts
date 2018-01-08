@@ -12,7 +12,7 @@ import cp = require('child_process');
 import { showGoStatus, hideGoStatus } from './goStatus';
 import { getGoRuntimePath } from './goPath';
 import { outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath } from './util';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
@@ -280,7 +280,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 export function updateGoPathGoRootFromConfig(): Promise<void> {
 	let goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
 	if (goroot) {
-		process.env['GOROOT'] = goroot;
+		process.env['GOROOT'] = resolvePath(goroot);
 	}
 
 	if (process.env['GOPATH']) {
