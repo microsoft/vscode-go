@@ -85,7 +85,7 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
 }
 
 export interface Prelude {
-	imports: Array<{ kind: string; start: number; end: number;}>;
+	imports: Array<{ kind: string; start: number; end: number; }>;
 	pkg: { start: number; end: number; name: string };
 }
 

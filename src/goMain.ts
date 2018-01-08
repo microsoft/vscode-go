@@ -232,7 +232,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
-		return addImport(typeof arg === 'string' ? arg : null, vscode.workspace.getConfiguration('go'));
+		return addImport(typeof arg === 'string' ? arg : null);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', () => {
