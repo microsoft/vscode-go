@@ -19,7 +19,7 @@ import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
-import { listPackages } from '../src/goImport';
+import { listPackages, getTextEditForAddImport } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
@@ -58,6 +58,9 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'), path.join(testPath, 'linterTest', 'linter_2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'buildTags', 'hello.go'), path.join(fixturePath, 'buildTags', 'hello.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'completions', 'unimportedPkgs.go'), path.join(fixturePath, 'completions', 'unimportedPkgs.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'noimports.go'), path.join(fixturePath, 'importTest', 'noimports.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'groupImports.go'), path.join(fixturePath, 'importTest', 'groupImports.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'singleImports.go'), path.join(fixturePath, 'importTest', 'singleImports.go'));
 	});
 
 	suiteTeardown(() => {
@@ -905,4 +908,53 @@ It returns the number of bytes written and any write error encountered.
 		Promise.all([checkWithTags, checkWithMultipleTags, checkWithoutTags]).then(() => done(), done);
 
 	});
+
+	test('Add imports when no imports', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'noimports.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				const expectedText = document.getText() + '\n' + 'import (\n\t"bytes"\n)\n';
+				const edits = getTextEditForAddImport('bytes');
+				const edit = new vscode.WorkspaceEdit();
+				edit.set(document.uri, edits);
+				return vscode.workspace.applyEdit(edit).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Add imports to an import block', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'groupImports.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				const expectedText = document.getText().replace('\t"fmt"\n\t"math"', '\t"bytes"\n\t"fmt"\n\t"math"');
+				const edits = getTextEditForAddImport('bytes');
+				const edit = new vscode.WorkspaceEdit();
+				edit.set(document.uri, edits);
+				return vscode.workspace.applyEdit(edit).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Add imports and collapse single imports to an import block', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'singleImports.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				const expectedText = document.getText().replace('import "fmt"\nimport . "math" // comment', 'import (\n\t"bytes"\n\t"fmt"\n\t. "math" // comment\n)');
+				const edits = getTextEditForAddImport('bytes');
+				const edit = new vscode.WorkspaceEdit();
+				edit.set(document.uri, edits);
+				return vscode.workspace.applyEdit(edit).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
 });
