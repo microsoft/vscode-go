@@ -72,43 +72,16 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 		return [vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), '\t"' + arg + '"\n')];
 	} else if (imports.length > 0) {
 		// There are some number of single line imports, which can just be collapsed into a block import.
-		// NOTE: this most often happens when the go imports tool is run, adds a single import
-		// then later the user manually imports something via this command.
-
-		/* The import statement(s) probably look something like this right now:
-
-			import "apackage"
-			// A comment
-			import . "dotinclude"
-			import "apackage2" // A comment explaining the package
-
-			We want to convert this to:
-
-			import (
-				"apackage"
-				// A comment
-				. "dotinclude"
-				import "apackage2" // A comment explaining the package
-			)
-
-			The process to clean this up is to:
-			1. Add `import (\n` before the first single line import
-			2. Replace `import` with `\t` for every single line import
-			3. Insert the new import at the end of the imports
-			4. Add `)` to close the import block
-			5. The user then saves, and goimports will clean everything up
-			*/
-		let firstImport = imports[0];
-		let lastImport = imports[imports.length - 1];
-		const importLength = 'import'.length;
-
 		const edits = [];
-		edits.push(vscode.TextEdit.insert(new vscode.Position(firstImport.start, 0), 'import (\n'));
 
+		edits.push(vscode.TextEdit.insert(new vscode.Position(imports[0].start, 0), 'import (\n\t"' + arg + '"\n'));
 		imports.forEach(element => {
-			edits.push(vscode.TextEdit.replace(new vscode.Range(element.start, 0, element.start, importLength), '\t'));
+			const currentLine = vscode.window.activeTextEditor.document.lineAt(element.start).text;
+			const updatedLine = currentLine.replace(/^\s*import\s*/, '\t');
+			edits.push(vscode.TextEdit.replace(new vscode.Range(element.start, 0, element.start, currentLine.length), updatedLine));
 		});
-		edits.push(vscode.TextEdit.insert(new vscode.Position(lastImport.end + 1, 0), '\t"' + arg + '"\n)'));
+		edits.push(vscode.TextEdit.insert(new vscode.Position(imports[imports.length - 1].end + 1, 0), ')\n'));
+
 		return edits;
 
 	} else if (pkg && pkg.start >= 0) {
