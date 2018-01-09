@@ -1,3 +1,11 @@
+## 0.6.72 - 9th January, 2018
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix the issue that got introduced in the previous release, where formatter reverts changes unless `goreturns` is updated. Fixes [Bug 1447](https://github.com/Microsoft/vscode-go/issues/1447)
+    * `~`, `$workspaceRoot` and `$workspaceFolder` are now supported in the `go.goroot` setting
+* [Ben Wood @(benclarkwood)](benclarkwood)
+    * Collapse single line imports into an import block when auto-completing symbols from unimported packages or when using the `Go: Add Import` command. Fixes [Bug 374](https://github.com/Microsoft/vscode-go/issues/374) with [PR 500](https://github.com/Microsoft/vscode-go/pull/500)
+
 ## 0.6.71 - 5th January, 2018
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
