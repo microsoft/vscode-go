@@ -71,7 +71,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			});
 			p.on('close', code => {
 				if (code !== 0) {
-					return reject(stderr);
+					return;
 				}
 
 				// Return the complete file content in the edit.
