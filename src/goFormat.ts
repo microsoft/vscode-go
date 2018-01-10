@@ -32,8 +32,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		return this.runFormatter(formatTool, formatFlags, document).then(edits => edits, err => {
 			if (err && err.startsWith('flag provided but not defined: -srcdir')) {
 				promptForUpdatingTool(formatTool);
-				formatFlags.splice(formatFlags.indexOf('-srcdir'), 1);
-				return this.runFormatter(formatTool, formatFlags, document);
+				return Promise.resolve([]);
 			}
 			if (err) {
 				console.log(err);
@@ -44,12 +43,13 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
 		let formatCommandBinPath = getBinPath(formatTool);
-		if (!path.isAbsolute(formatCommandBinPath)) {
-			promptForMissingTool(formatTool);
-			return;
-		}
 
 		return new Promise<vscode.TextEdit[]>((resolve, reject) => {
+			if (!path.isAbsolute(formatCommandBinPath)) {
+				promptForMissingTool(formatTool);
+				return reject();
+			}
+
 			let t0 = Date.now();
 			let env = getToolsEnvVars();
 			let stdout = '';
@@ -60,18 +60,14 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
 			p.on('error', err => {
-				if (!err) {
-					return reject();
-				}
-				if ((<any>err).code === 'ENOENT') {
+				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool(formatTool);
 					return reject();
 				}
-				return reject(err.message || stderr);
 			});
 			p.on('close', code => {
 				if (code !== 0) {
-					return;
+					return reject(stderr);
 				}
 
 				// Return the complete file content in the edit.
