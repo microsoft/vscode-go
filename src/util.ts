@@ -343,12 +343,17 @@ export function getToolsEnvVars(): any {
 	const config = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const toolsEnvVars = config['toolsEnvVars'];
 
-	let gopath = getCurrentGoPath();
-
-	let envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
+	const gopath = getCurrentGoPath();
+	const envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
 
 	if (toolsEnvVars && typeof toolsEnvVars === 'object') {
 		Object.keys(toolsEnvVars).forEach(key => envVars[key] = resolvePath(toolsEnvVars[key]));
+	}
+
+	// cgo expects go to be in the path
+	const goroot: string = envVars['GOROOT'];
+	if (goroot && (<string>envVars['PATH'] || '').split(path.delimiter).indexOf(goroot) === -1) {
+		envVars['PATH'] += (envVars['PATH'] ? path.delimiter : '') + goroot;
 	}
 
 	return envVars;
