@@ -2,6 +2,7 @@ import path = require('path');
 import vscode = require('vscode');
 import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath } from './util';
 import { outputChannel } from './goStatus';
+import { diagnosticsStatusBarItem } from './goStatus';
 
 /**
  * Runs go vet in the current package or workspace.
@@ -19,13 +20,18 @@ export function vetCode(vetWorkspace?: boolean) {
 
 	let documentUri = editor ? editor.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
-	outputChannel.clear();
-	outputChannel.show();
-	outputChannel.appendLine('Vetting in progress...');
+
+	diagnosticsStatusBarItem.show();
+	diagnosticsStatusBarItem.text = 'Vetting...';
+
 	goVet(documentUri, goConfig, vetWorkspace)
-		.then(warnings => handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning))
+		.then(warnings => {
+			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
+			diagnosticsStatusBarItem.hide();
+		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
+			diagnosticsStatusBarItem.text = 'Vetting Failed';
 		});
 }
 
