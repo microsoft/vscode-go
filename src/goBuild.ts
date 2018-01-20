@@ -12,13 +12,15 @@ import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
  */
 export function buildCode(buildWorkspace?: boolean) {
 	let editor = vscode.window.activeTextEditor;
-	if (!editor && !buildWorkspace) {
-		vscode.window.showInformationMessage('No editor is active, cannot find current package to build');
-		return;
-	}
-	if (editor.document.languageId !== 'go' && !buildWorkspace) {
-		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to build');
-		return;
+	if (!buildWorkspace) {
+		if (!editor) {
+			vscode.window.showInformationMessage('No editor is active, cannot find current package to build');
+			return;
+		}
+		if (editor.document.languageId !== 'go') {
+			vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to build');
+			return;
+		}
 	}
 
 	let documentUri = editor ? editor.document.uri : null;
@@ -43,9 +45,9 @@ export function buildCode(buildWorkspace?: boolean) {
 export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
 	const buildEnv = Object.assign({}, getToolsEnvVars());
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
-	const cwd = path.dirname(fileUri.fsPath);
+	const cwd = buildWorkspace ? currentWorkspace : path.dirname(fileUri.fsPath);
 	const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
-	const isTestFile = fileUri.fsPath.endsWith('_test.go');
+	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
 
 	let buildFlags: string[] = isTestFile ? getTestFlags(goConfig, null) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
 	// Remove the -i flag as it will be added later anyway

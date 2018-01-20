@@ -123,7 +123,7 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 		getAllPackagesPromise = getAllPackages();
 	}
 
-  // Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
 	if (process.platform === 'win32' && filePath) {
 		filePath = filePath.substr(0, 1).toUpperCase() + filePath.substr(1);
 	}
@@ -209,6 +209,9 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 
 		childProcess.on('close', (status) => {
 			let pkgs = chunks.join('').toString().split('\n');
+			if (!pkgs[pkgs.length - 1]) {
+				pkgs.splice(pkgs.length - 1);
+			}
 			getGoVersion().then((ver: SemVersion) => {
 				if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
 					resolve(pkgs);
