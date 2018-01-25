@@ -37,12 +37,22 @@ export function lintCode(lintWorkspace?: boolean) {
  * @param lintWorkspace If true runs linter in all workspace.
  */
 export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?: boolean): Promise<ICheckResult[]> {
-	let lintTool = goConfig['lintTool'] || 'golint';
-	let lintFlags: string[] = goConfig['lintFlags'] || [];
-	let lintEnv = Object.assign({}, getToolsEnvVars());
-	let args = [];
-	let configFlag = '--config=';
-	let currentWorkspace = getWorkspaceFolderPath(fileUri);
+	if (running) {
+		tokenSource.cancel();
+	}
+
+	const currentWorkspace = getWorkspaceFolderPath(fileUri);
+	const cwd = (lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+	if (!path.isAbsolute(cwd)) {
+		return Promise.resolve([]);
+	}
+
+	const lintTool = goConfig['lintTool'] || 'golint';
+	const lintFlags: string[] = goConfig['lintFlags'] || [];
+	const lintEnv = Object.assign({}, getToolsEnvVars());
+	const args = [];
+	const configFlag = '--config=';
+
 	lintFlags.forEach(flag => {
 		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
 		if (flag === '--json') {
@@ -71,14 +81,10 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		args.push('./...');
 	}
 
-	if (running) {
-		tokenSource.cancel();
-	}
-
 	running = true;
 	const lintPromise = runTool(
 		args,
-		(lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath),
+		cwd,
 		'warning',
 		false,
 		lintTool,

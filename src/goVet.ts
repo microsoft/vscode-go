@@ -37,19 +37,24 @@ export function vetCode(vetWorkspace?: boolean) {
  * @param vetWorkspace If true vets code in all workspace.
  */
 export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace?: boolean): Promise<ICheckResult[]> {
-	let vetFlags = goConfig['vetFlags'] || [];
-	let vetEnv = Object.assign({}, getToolsEnvVars());
-	let vetArgs = vetFlags.length ? ['tool', 'vet', ...vetFlags, '.'] : ['vet', './...'];
-	let currentWorkspace = getWorkspaceFolderPath(fileUri);
-
 	if (running) {
 		tokenSource.cancel();
 	}
 
+	const currentWorkspace = getWorkspaceFolderPath(fileUri);
+	const cwd = (vetWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+	if (!path.isAbsolute(cwd)) {
+		return Promise.resolve([]);
+	}
+
+	const vetFlags = goConfig['vetFlags'] || [];
+	const vetEnv = Object.assign({}, getToolsEnvVars());
+	const vetArgs = vetFlags.length ? ['tool', 'vet', ...vetFlags, '.'] : ['vet', './...'];
+
 	running = true;
 	const vetPromise = runTool(
 		vetArgs,
-		(vetWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath),
+		cwd,
 		'warning',
 		true,
 		null,

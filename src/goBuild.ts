@@ -43,13 +43,17 @@ export function buildCode(buildWorkspace?: boolean) {
  * @param buildWorkspace If true builds code in all workspace.
  */
 export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
-	const buildEnv = Object.assign({}, getToolsEnvVars());
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
-	const cwd = buildWorkspace ? currentWorkspace : path.dirname(fileUri.fsPath);
+	const cwd = (buildWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+	if (!path.isAbsolute(cwd)) {
+		return Promise.resolve([]);
+	}
+
+	const buildEnv = Object.assign({}, getToolsEnvVars());
 	const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
 	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
 
-	let buildFlags: string[] = isTestFile ? getTestFlags(goConfig, null) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
+	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig, null) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
 	// Remove the -i flag as it will be added later anyway
 	if (buildFlags.indexOf('-i') > -1) {
 		buildFlags.splice(buildFlags.indexOf('-i'), 1);
