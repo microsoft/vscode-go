@@ -122,7 +122,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 		let cmd = getBinPath('gotests');
 		let args;
 		if (conf.func) {
-			args = ['-w', '-only', conf.func, conf.dir];
+			args = ['-w', '-only', `^${conf.func}$`, conf.dir];
 		} else {
 			args = ['-w', '-all', conf.dir];
 		}
