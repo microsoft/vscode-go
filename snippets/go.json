@@ -83,7 +83,7 @@
 		"if statement": {
 			"prefix": "if",
 			"body": "if ${1:condition} {\n\t$0\n}",
-			"description": "Snippet for if statment"
+			"description": "Snippet for if statement"
 		},
 		"else branch": {
 			"prefix": "el",
