@@ -28,10 +28,12 @@ export function buildCode(buildWorkspace?: boolean) {
 
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Building...';
+
 	goBuild(documentUri, goConfig, buildWorkspace)
 		.then(errors => {
 			handleDiagnosticErrors(editor ? editor.document : null, errors, vscode.DiagnosticSeverity.Error);
 			diagnosticsStatusBarItem.hide();
+			outputChannel.clear();
 		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);

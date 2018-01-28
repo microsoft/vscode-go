@@ -27,6 +27,7 @@ export function lintCode(lintWorkspace?: boolean) {
 		.then(warnings => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
 			diagnosticsStatusBarItem.hide();
+			outputChannel.clear();
 		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
