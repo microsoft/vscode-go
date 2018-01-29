@@ -6,7 +6,7 @@ import os = require('os');
 import { getNonVendorPackages } from './goPackages';
 import { getTestFlags } from './testUtils';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
-
+import { diagnosticsStatusBarItem } from './goStatus';
 /**
  * Builds current package or workspace.
  */
@@ -25,13 +25,19 @@ export function buildCode(buildWorkspace?: boolean) {
 
 	let documentUri = editor ? editor.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
-	outputChannel.clear();
-	outputChannel.show();
-	outputChannel.appendLine('Building in progress...');
+
+	outputChannel.clear(); // Ensures stale output from build on save is cleared
+	diagnosticsStatusBarItem.show();
+	diagnosticsStatusBarItem.text = 'Building...';
+
 	goBuild(documentUri, goConfig, buildWorkspace)
-		.then(errors => handleDiagnosticErrors(editor ? editor.document : null, errors, vscode.DiagnosticSeverity.Error))
+		.then(errors => {
+			handleDiagnosticErrors(editor ? editor.document : null, errors, vscode.DiagnosticSeverity.Error);
+			diagnosticsStatusBarItem.hide();
+		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
+			diagnosticsStatusBarItem.text = 'Build Failed';
 		});
 }
 
