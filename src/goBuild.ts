@@ -26,6 +26,7 @@ export function buildCode(buildWorkspace?: boolean) {
 	let documentUri = editor ? editor.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 
+	outputChannel.clear(); // Ensures stale output from build on save is cleared
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Building...';
 
@@ -33,7 +34,6 @@ export function buildCode(buildWorkspace?: boolean) {
 		.then(errors => {
 			handleDiagnosticErrors(editor ? editor.document : null, errors, vscode.DiagnosticSeverity.Error);
 			diagnosticsStatusBarItem.hide();
-			outputChannel.clear();
 		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);

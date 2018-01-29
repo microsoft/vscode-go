@@ -10,7 +10,7 @@ import path = require('path');
 import os = require('os');
 import { getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
-import { outputChannel } from './goStatus';
+import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest } from './testUtils';
 import { ICheckResult } from './util';
 import { goLint } from './goLint';
@@ -39,6 +39,7 @@ export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
 }
 
 export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+	diagnosticsStatusBarItem.hide();
 	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(fileUri.fsPath);

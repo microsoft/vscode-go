@@ -21,6 +21,7 @@ export function vetCode(vetWorkspace?: boolean) {
 	let documentUri = editor ? editor.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 
+	outputChannel.clear(); // Ensures stale output from vet on save is cleared
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Vetting...';
 
@@ -28,7 +29,6 @@ export function vetCode(vetWorkspace?: boolean) {
 		.then(warnings => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
 			diagnosticsStatusBarItem.hide();
-			outputChannel.clear();
 		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
