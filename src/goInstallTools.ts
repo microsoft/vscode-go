@@ -38,7 +38,8 @@ const allTools: { [key: string]: string } = {
 	'gometalinter': 'github.com/alecthomas/gometalinter',
 	'megacheck': 'honnef.co/go/tools/...',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
-	'dlv': 'github.com/derekparker/delve/cmd/dlv'
+	'dlv': 'github.com/derekparker/delve/cmd/dlv',
+	'go-find-references': 'github.com/lukehoban/go-find-references'
 };
 
 // Tools used explicitly by the basic features of the extension
@@ -57,7 +58,8 @@ const importantTools = [
 	'golint',
 	'gometalinter',
 	'megacheck',
-	'dlv'
+	'dlv',
+	'go-find-references'
 ];
 
 function getTools(goVersion: SemVersion): string[] {
@@ -71,7 +73,8 @@ function getTools(goVersion: SemVersion): string[] {
 		'gorename',
 		'gomodifytags',
 		'goplay',
-		'impl'
+		'impl',
+		'go-find-references'
 	];
 
 	if (goLiveErrorsEnabled()) {

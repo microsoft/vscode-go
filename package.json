@@ -417,6 +417,11 @@
       "type": "object",
       "title": "Go configuration",
       "properties": {
+        "go.legacyReference": {
+          "typ": "boolean",
+          "default": false,
+          "description": "Use legacy Find All References."
+        },
         "go.buildOnSave": {
           "type": "string",
           "enum": [
