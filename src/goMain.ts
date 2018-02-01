@@ -102,7 +102,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				'go-langserver',
 				{
 					command: getBinPath('go-langserver'),
-					args: ['-mode=stdio', ...langServerFlags],
+					args: ['-mode=stdio', '-addr=localhost:4389', ...langServerFlags],
 				},
 				{
 					documentSelector: ['go'],
