@@ -679,6 +679,11 @@
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature",
           "scope": "resource"
         },
+        "go.gotoSymbol.resolveSymlinks": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, symlinks will be resolved when using the Go to Symbol feature"
+        },
         "go.enableCodeLens": {
           "type": "object",
           "properties": {
