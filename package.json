@@ -382,6 +382,11 @@
                 "description": "The host name of the machine the delve debugger will be listening on.",
                 "default": "127.0.0.1"
               },
+              "sourceDirectories": {
+                "type": "array",
+                "description": "List of source directories to search when the debug symbols only have relative paths.",
+                "default": []
+              },
               "trace": {
                 "type": [
                   "boolean",
