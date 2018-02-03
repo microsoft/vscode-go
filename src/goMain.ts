@@ -26,6 +26,7 @@ import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } fro
 import { initGoCover } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
 import { showTestOutput } from './testUtils';
+import { resolveSymlinksMaybe } from './util';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
@@ -109,7 +110,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 					uriConverters: {
 						// Apply file:/// scheme to all file paths.
 						code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
-						protocol2Code: (uri: string) => vscode.Uri.parse(uri),
+						protocol2Code: (uri: string): vscode.Uri => {
+							let u = vscode.Uri.parse(uri);
+							return u.with({ path: resolveSymlinksMaybe(u.path) });
+						},
 					},
 				}
 			);

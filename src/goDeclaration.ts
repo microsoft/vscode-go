@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath } from './util';
+import { byteOffsetAt, getBinPath, resolveSymlinksMaybe } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 
@@ -78,6 +78,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 					return resolve(null);
 				}
 				let [_, file, line, col] = match;
+				file = resolveSymlinksMaybe(file);
 				let signature = lines[1];
 				let godoc = getBinPath('godoc');
 				let pkgPath = path.dirname(file);
@@ -164,9 +165,10 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 					return resolve(definitionInfo);
 				}
 				let [_, file, line, col] = match;
-				definitionInfo.file = match[1];
-				definitionInfo.line = +match[2] - 1;
-				definitionInfo.column = +match[3] - 1;
+				file = resolveSymlinksMaybe(file);
+				definitionInfo.file = file;
+				definitionInfo.line = +line - 1;
+				definitionInfo.column = +col - 1;
 				return resolve(definitionInfo);
 
 			} catch (e) {
@@ -210,9 +212,10 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 					return resolve(definitionInfo);
 				}
 				let [_, file, line, col] = match;
-				definitionInfo.file = match[1];
-				definitionInfo.line = +match[2] - 1;
-				definitionInfo.column = +match[3] - 1;
+				file = resolveSymlinksMaybe(file);
+				definitionInfo.file = file;
+				definitionInfo.line = +line - 1;
+				definitionInfo.column = +col - 1;
 				return resolve(definitionInfo);
 			} catch (e) {
 				reject(e);

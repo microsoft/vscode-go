@@ -470,6 +470,18 @@ export function resolvePath(inputPath: string, workspaceRoot?: string): string {
 }
 
 /**
+ * Resolves symlinks from a file path, if user has enabled that feature.
+ */
+export function resolveSymlinksMaybe(path: string): string {
+	let gotoSymbolConfig = vscode.workspace.getConfiguration('go')['gotoSymbol'];
+	if (gotoSymbolConfig && gotoSymbolConfig['resolveSymlinks']) {
+		return fs.realpathSync(path);
+	} else {
+		return path;
+	}
+}
+
+/**
  * Returns the import path in a passed in string.
  * @param text The string to search for an import path
  */
