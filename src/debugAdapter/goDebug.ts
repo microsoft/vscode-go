@@ -132,6 +132,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	env?: { [key: string]: string; };
 	mode?: string;
 	remotePath?: string;
+	sourceDirectories?: string[];
 	port?: number;
 	host?: string;
 	buildFlags?: string;
@@ -182,6 +183,7 @@ function normalizePath(filePath: string) {
 class Delve {
 	program: string;
 	remotePath: string;
+	sourceDirectories: string[];
 	debugProcess: ChildProcess;
 	connection: Promise<RPCConnection>;
 	onstdout: (str: string) => void;
@@ -192,6 +194,7 @@ class Delve {
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = normalizePath(program);
 		this.remotePath = remotePath;
+		this.sourceDirectories = launchArgs.sourceDirectories || [];
 		let mode = launchArgs.mode;
 		let dlvCwd = dirname(program);
 		let isProgramDirectory = false;
@@ -511,6 +514,13 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected toLocalPath(pathToConvert: string): string {
+		for (let dir of this.delve.sourceDirectories) {
+			let p = path.join(dir, pathToConvert);
+			if (existsSync(p)) {
+				pathToConvert = p;
+				break;
+			}
+		}
 		if (this.delve.remotePath.length === 0) {
 			return this.convertDebuggerPathToClient(pathToConvert);
 		}
@@ -540,13 +550,22 @@ class GoDebugSession extends DebugSession {
 		})).then(() => {
 			verbose('All cleared');
 			return Promise.all(args.lines.map(line => {
-				if (this.delve.remotePath.length === 0) {
-					verbose('Creating on: ' + file + ':' + line);
-				} else {
-					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
-				}
-				return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: remoteFile, line }]).then(null, err => {
-					verbose('Error on CreateBreakpoint: ' + err.toString());
+				// Try each entry from sourceDirectories as a prefix to the filename,
+				// skip through remaining promises when the first one succeeds.
+				// Inspired by https://gist.github.com/greggman/0b6eafb335de4bbb557c
+				let sourceDirs = this.delve.sourceDirectories.length === 0 ? [''] : this.delve.sourceDirectories;
+				let attempts = sourceDirs.map((dir, i) => {
+						let f = remoteFile.replace(dir, '');
+						return () => {
+							verbose('Creating on: ' + file + ' (' + f + ') :' + line);
+							return this.delve.callPromise<DebugBreakpoint>('CreateBreakpoint', [{ file: f, line }]);
+						};
+					}
+				);
+				return attempts.reduce(function(cur, next){
+					return cur.then(x => x, next);
+				}, Promise.reject('')).then(null, () => {
+					verbose('All attempts to set breakpoint for ' + file + ':' + line + ' failed');
 					return null;
 				});
 			}));
