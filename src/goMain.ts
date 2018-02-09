@@ -34,6 +34,7 @@ import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getG
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
+import { fillStruct } from './goFillStruct';
 import { parseLiveFile } from './goLiveErrors';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
@@ -186,6 +187,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.remove.tags', (args) => {
 		removeTags(args);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.fill.struct', () => {
+		fillStruct();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.impl.cursor', () => {
@@ -397,6 +402,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "includeImports": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "addTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "removeTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "fillStruct": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "editorContextMenuCommands": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "liveErrors": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
@@ -434,6 +440,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		includeImports: goConfig['gotoSymbol'] && goConfig['gotoSymbol']['includeImports'] + '',
 		addTags: JSON.stringify(goConfig['addTags']),
 		removeTags: JSON.stringify(goConfig['removeTags']),
+		fillStruct: JSON.stringify(goConfig['fillStruct']),
 		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands']),
 		liveErrors: JSON.stringify(goConfig['liveErrors']),
 		codeLens: JSON.stringify(goConfig['enableCodeLens'])

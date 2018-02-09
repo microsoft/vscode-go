@@ -25,6 +25,8 @@ import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
 import { goPlay } from '../src/goPlayground';
 import { goLint } from '../src/goLint';
+import { fillStruct, runFillStruct } from '../src/goFillStruct';
+import { print } from 'util';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -61,6 +63,8 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'noimports.go'), path.join(fixturePath, 'importTest', 'noimports.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'groupImports.go'), path.join(fixturePath, 'importTest', 'groupImports.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'singleImports.go'), path.join(fixturePath, 'importTest', 'singleImports.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input.go'), path.join(fixturePath, 'fillStruct', 'input.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'golden.go'), path.join(fixturePath, 'fillStruct', 'golden.go'));
 	});
 
 	suiteTeardown(() => {
@@ -956,5 +960,4 @@ It returns the number of bytes written and any write error encountered.
 			});
 		}).then(() => done(), done);
 	});
-
 });

@@ -38,7 +38,8 @@ const allTools: { [key: string]: string } = {
 	'gometalinter': 'github.com/alecthomas/gometalinter',
 	'megacheck': 'honnef.co/go/tools/...',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
-	'dlv': 'github.com/derekparker/delve/cmd/dlv'
+	'dlv': 'github.com/derekparker/delve/cmd/dlv',
+	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct'
 };
 
 // Tools used explicitly by the basic features of the extension
