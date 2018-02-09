@@ -10,6 +10,7 @@ let allPkgsCache: Map<string, string>;
 let allPkgsLastHit: number;
 let gopkgsRunning: boolean = false;
 let gopkgsSubscriptions: GopkgsDone[] = [];
+let cacheTimeout: number = 5000;
 
 function gopkgs(): Promise<Map<string, string>> {
 	let t0 = Date.now();
@@ -58,7 +59,7 @@ function gopkgs(): Promise<Map<string, string>> {
 				}
 			*/
 			sendTelemetryEvent('gopkgs', {}, { timeTaken });
-
+			cacheTimeout = timeTaken > 5000 ? timeTaken : 5000;
 			return resolve(pkgs);
 		});
 	});
@@ -92,7 +93,7 @@ function getAllPackagesNoCache(): Promise<Map<string, string>> {
  * @returns Map<string, string> mapping between package import path and package name
  */
 export function getAllPackages(): Promise<Map<string, string>> {
-	let useCache = allPkgsCache && allPkgsLastHit && (new Date().getTime() - allPkgsLastHit) < 5000;
+	let useCache = allPkgsCache && allPkgsLastHit && (new Date().getTime() - allPkgsLastHit) < cacheTimeout;
 	if (useCache) {
 		allPkgsLastHit = new Date().getTime();
 		return Promise.resolve(allPkgsCache);
