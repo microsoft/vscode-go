@@ -352,8 +352,8 @@ export function getToolsEnvVars(): any {
 
 	// cgo expects go to be in the path
 	const goroot: string = envVars['GOROOT'];
-	if (goroot && (<string>envVars['PATH'] || '').split(path.delimiter).indexOf(goroot) === -1) {
-		envVars['PATH'] += (envVars['PATH'] ? path.delimiter : '') + goroot;
+	if (goroot && (<string>envVars['Path'] || '').split(path.delimiter).indexOf(goroot) === -1) {
+		envVars['Path'] += (envVars['Path'] ? path.delimiter : '') + goroot;
 	}
 
 	return envVars;
