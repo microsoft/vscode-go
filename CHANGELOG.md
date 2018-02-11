@@ -1,5 +1,8 @@
 ## 0.6.75 - 10th February, 2018
 
+* [Bug 1449](https://github.com/Microsoft/vscode-go/issues/1449): Rename fails due to cgo not being able to find the go executable.  
+* [Bug 1508](https://github.com/Microsoft/vscode-go/issues/1508): Broken Path in Windows when running Go tools
+   
 ## 0.6.74 - 8th February, 2018
 
 * [Nikhil Raman (@cheesedosa)](https://github.com/cheesedosa)
