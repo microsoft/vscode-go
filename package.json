@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.75",
+  "version": "0.6.76",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {

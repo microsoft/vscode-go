@@ -352,8 +352,13 @@ export function getToolsEnvVars(): any {
 
 	// cgo expects go to be in the path
 	const goroot: string = envVars['GOROOT'];
-	const pathEnvVar = process.env['PATH'] ? 'PATH' : ((process.platform === 'win32' && process.env['Path']) ? 'Path' : null);
-	if (goroot && pathEnvVar && (<string>envVars[pathEnvVar]).split(path.delimiter).indexOf(goroot) === -1) {
+	let pathEnvVar: string;
+	if (envVars.hasOwnProperty('PATH')) {
+		pathEnvVar = 'PATH'
+	} else if (process.platform === 'win32' && envVars.hasOwnProperty('Path')) {
+		pathEnvVar = 'Path';
+	}
+	if (goroot && pathEnvVar && envVars[pathEnvVar] && (<string>envVars[pathEnvVar]).split(path.delimiter).indexOf(goroot) === -1) {
 		envVars[pathEnvVar] += path.delimiter + path.join(goroot, 'bin');
 	}
 
