@@ -79,7 +79,7 @@ Some of the very useful linter tools:
 If you want to run only specific linters (some linters are slow), you can modify your configuration to specify them:
 
 ```javascript
-  "go.lintFlags": ["--disable-all", "--enable=errcheck"],
+  "go.lintFlags": ["--disable=all", "--enable=errcheck"],
 ```
 
 Alternatively, you can use [megacheck](https://github.com/dominikh/go-tools/tree/master/cmd/megacheck) which 
