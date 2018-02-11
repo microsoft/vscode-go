@@ -1,3 +1,5 @@
+## 0.6.75 - 10th February, 2018
+
 ## 0.6.74 - 8th February, 2018
 
 * [Nikhil Raman (@cheesedosa)](https://github.com/cheesedosa)
