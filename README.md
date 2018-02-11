@@ -123,6 +123,25 @@ For more read [Debugging Go Code Using VS Code](https://github.com/Microsoft/vsc
 
 To remote debug using VS Code, read [Remote Debugging](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code#remote-debugging)
 
+## Install or update all dependencies
+
+To quickly get all dependencies installed (or updated) simply run the commands below
+
+```
+go get -u github.com/nsf/gocode
+go get -u github.com/zmb3/gogetdoc
+go get -u github.com/lukehoban/go-outline
+go get -u github.com/newhook/go-symbols
+go get -u github.com/golang/lint/golint
+go get -u github.com/sqs/goreturns
+go get -u github.com/cweill/gotests
+go get -u github.com/uudashr/gopkgs/cmd/gopkgs
+go get -u github.com/fatih/gomodifytags
+go get -u github.com/tylerb/gotype-live
+go get -u github.com/josharian/impl
+go get -u github.com/derekparker/delve/cmd/dlv
+```
+
 ## Building and Debugging the Extension
 
 You can set up a development environment for debugging the extension during extension development.
