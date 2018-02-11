@@ -14,6 +14,7 @@ import os = require('os');
 
 let binPathCache: { [bin: string]: string; } = {};
 let runtimePathCache: string = '';
+export const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
 
 export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appendBinToPath: boolean): string {
 	toolName = correctBinname(toolName);
@@ -44,7 +45,7 @@ export function getBinPathWithPreferredGopath(binname: string, ...preferredGopat
 	}
 
 	// Then search PATH parts
-	let pathFromPath = getBinPathFromEnvVar(binname, process.env['PATH'], false);
+	let pathFromPath = getBinPathFromEnvVar(binname, envPath, false);
 	if (pathFromPath) {
 		return pathFromPath;
 	}
@@ -82,8 +83,8 @@ export function getGoRuntimePath(): string {
 		}
 	}
 
-	if (process.env['PATH']) {
-		let pathparts = (<string>process.env.PATH).split(path.delimiter);
+	if (envPath) {
+		let pathparts = (<string>envPath).split(path.delimiter);
 		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinNameGo)).filter(candidate => fileExists(candidate))[0];
 	}
 	if (!runtimePathCache) {

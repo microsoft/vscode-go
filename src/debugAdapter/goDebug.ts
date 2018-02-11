@@ -11,7 +11,7 @@ import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 
 require('console-stamp')(console);
@@ -274,7 +274,7 @@ class Delve {
 			let dlv = getBinPathWithPreferredGopath('dlv', resolveHomeDir(env['GOPATH']), process.env['GOPATH']);
 
 			if (!existsSync(dlv)) {
-				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
+				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
 				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
 			}
 

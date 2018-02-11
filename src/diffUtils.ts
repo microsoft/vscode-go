@@ -11,7 +11,8 @@ let diffToolAvailable: boolean = null;
 
 export function isDiffToolAvailable(): boolean {
 	if (diffToolAvailable == null) {
-		diffToolAvailable = getBinPathFromEnvVar('diff', process.env['PATH'], false) != null;
+		const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
+		diffToolAvailable = getBinPathFromEnvVar('diff', envPath, false) != null;
 	}
 	return diffToolAvailable;
 }
