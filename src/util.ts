@@ -354,7 +354,7 @@ export function getToolsEnvVars(): any {
 	const goroot: string = envVars['GOROOT'];
 	let pathEnvVar: string;
 	if (envVars.hasOwnProperty('PATH')) {
-		pathEnvVar = 'PATH'
+		pathEnvVar = 'PATH';
 	} else if (process.platform === 'win32' && envVars.hasOwnProperty('Path')) {
 		pathEnvVar = 'Path';
 	}

@@ -9,7 +9,6 @@
     * [Feature Request 1456](https://github.com/Microsoft/vscode-go/issues/1456): Show build/vet/lint status in status bar instead of opening output pane when run manually
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
-    * [Bug 1449](https://github.com/Microsoft/vscode-go/issues/1449): Rename fails due to cgo not being able to find the go executable.  
     * [Bug 1470](https://github.com/Microsoft/vscode-go/issues/1470): `Go: Build Workspace` command or the setting `"go.buildOnSave": "workspace"` results in persistent error from trying to build the root directory with no Go files.
     * [Bug 1469](https://github.com/Microsoft/vscode-go/issues/1469): Formatting adds �� in Chinese files some times.
     * [Bug 1481](https://github.com/Microsoft/vscode-go/issues/1481): Untitled files in empty workspace results in build errors
