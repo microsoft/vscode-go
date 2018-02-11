@@ -125,22 +125,7 @@ To remote debug using VS Code, read [Remote Debugging](https://github.com/Micros
 
 ## Install or update all dependencies
 
-To quickly get all dependencies installed (or updated) simply run the commands below
-
-```
-go get -u github.com/nsf/gocode
-go get -u github.com/zmb3/gogetdoc
-go get -u github.com/lukehoban/go-outline
-go get -u github.com/newhook/go-symbols
-go get -u github.com/golang/lint/golint
-go get -u github.com/sqs/goreturns
-go get -u github.com/cweill/gotests
-go get -u github.com/uudashr/gopkgs/cmd/gopkgs
-go get -u github.com/fatih/gomodifytags
-go get -u github.com/tylerb/gotype-live
-go get -u github.com/josharian/impl
-go get -u github.com/derekparker/delve/cmd/dlv
-```
+To quickly get all dependencies installed (or updated) see the [Go Tools wiki page](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on)
 
 ## Building and Debugging the Extension
 
