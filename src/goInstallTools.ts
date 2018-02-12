@@ -75,16 +75,12 @@ function getTools(goVersion: SemVersion): string[] {
 		'impl',
 		'fillstruct',
 		'gogetdoc',
-		'godoc'
+		'godoc',
+		'godef'
 	];
 
 	if (goLiveErrorsEnabled()) {
 		tools.push('gotype-live');
-	}
-
-	// Install the doc/def tool that was chosen by the user
-	if (goConfig['docsTool'] === 'godoc') {
-		tools.push('godef');
 	}
 
 	// Install the formattool that was chosen by the user
