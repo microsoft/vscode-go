@@ -693,7 +693,9 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(1, 0), []],
 			[new vscode.Position(4, 1), ['main', 'print', 'fmt']],
 			[new vscode.Position(7, 4), ['fmt']],
-			[new vscode.Position(8, 0), ['main', 'print', 'fmt', 'txt']]
+			[new vscode.Position(8, 0), ['main', 'print', 'fmt', 'txt']],
+			[new vscode.Position(13, 1), [' Hello ']],
+			[new vscode.Position(18, 1), [' Cat ']],
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
