@@ -58,7 +58,7 @@ export function toggleTestFile(): void {
 	for (let doc of vscode.window.visibleTextEditors) {
 		if (doc.document.fileName === targetFilePath) {
 			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath), doc.viewColumn);
-			return
+			return;
 		}
 	}
 	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath));
