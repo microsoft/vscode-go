@@ -123,6 +123,10 @@ For more read [Debugging Go Code Using VS Code](https://github.com/Microsoft/vsc
 
 To remote debug using VS Code, read [Remote Debugging](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code#remote-debugging).
 
+## Install or update all dependencies
+
+To quickly get all dependencies installed (or updated) see the [Go Tools wiki page](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on)
+
 ## Building and Debugging the Extension
 
 You can set up a development environment for debugging the extension during extension development.
