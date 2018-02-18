@@ -41,14 +41,10 @@ function getCommonArgs(editor: vscode.TextEditor): string[] {
 		let offset = byteOffsetAt(editor.document, editor.selection.start);
 		args.push('-offset');
 		args.push(offset.toString());
-	} else if (editor.selection.start.line === editor.selection.end.line) {
+	} else {
 		args.push('-line');
 		args.push(`${editor.selection.start.line + 1}`);
-	} else {
-		vscode.window.showInformationMessage('Only a single line or single cursor position over a struct is valid');
-		return;
 	}
-
 	return args;
 }
 
