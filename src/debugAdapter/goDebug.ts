@@ -715,7 +715,7 @@ class GoDebugSession extends DebugSession {
 		verbose('VariablesRequest');
 		let vari = this._variableHandles.get(args.variablesReference);
 		let variables;
-		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice || vari.kind === GoReflectKind.Map) {
+		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
 				return {
@@ -724,6 +724,20 @@ class GoDebugSession extends DebugSession {
 					variablesReference
 				};
 			});
+		} else if (vari.kind === GoReflectKind.Map) {
+			variables = [];
+			for (let i = 0; i < vari.children.length; i += 2) {
+				if (i + 1 >= vari.children.length) {
+					break;
+				}
+				let mapKey = this.convertDebugVariableToProtocolVariable(vari.children[i], i);
+				let mapValue = this.convertDebugVariableToProtocolVariable(vari.children[i + 1], i + 1);
+				variables.push({
+					name: mapKey.result,
+					value: mapValue.result,
+					variablesReference: mapValue.variablesReference
+				});
+			}
 		} else {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
