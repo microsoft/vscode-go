@@ -143,6 +143,7 @@ export function promptForMissingTool(tool: string) {
 			if (missing.indexOf(tool) === -1) {
 				return;
 			}
+			missing = missing.filter(x => x === tool || importantTools.indexOf(x) > -1);
 			if (missing.length > 1) {
 				items.push('Install All');
 			}
@@ -308,6 +309,7 @@ export function offerToInstallTools() {
 
 	getGoVersion().then(goVersion => {
 		getMissingTools(goVersion).then(missing => {
+			missing = missing.filter(x => importantTools.indexOf(x) > -1);
 			if (missing.length > 0) {
 				showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
 				vscode.commands.registerCommand('go.promptforinstall', () => {
@@ -352,8 +354,7 @@ function getMissingTools(goVersion: SemVersion): Promise<string[]> {
 			resolve(exists ? null : tool);
 		});
 	}))).then(res => {
-		let missing = res.filter(x => x != null && importantTools.indexOf(x) > -1);
-		return missing;
+		return res.filter(x => x != null);
 	});
 }
 
