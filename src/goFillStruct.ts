@@ -8,8 +8,6 @@ import vscode = require('vscode');
 import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars } from './util';
 import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
-import { outputChannel } from './goStatus';
-import { TextEdit } from 'vscode-languageclient/lib/main';
 
 // Interface for the output from fillstruct
 interface GoFillStructOutput {
@@ -79,8 +77,7 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 				}
 
 				let indent = '\t'.repeat(tabsCount);
-				let edits: vscode.TextEdit[] = [];
-
+				
 				editor.edit(editBuilder => {
 					output.forEach((structToFill) => {
 						const out = structToFill.code.replace(/\n/g, '\n' + indent);

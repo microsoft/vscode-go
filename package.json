@@ -85,8 +85,7 @@
     "configurationDefaults": {
       "[go]": {
         "editor.insertSpaces": false,
-        "editor.formatOnSave": true,
-        "editor.formatOnSaveTimeout": 1000
+        "editor.formatOnSave": true
       }
     },
     "commands": [

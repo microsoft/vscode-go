@@ -402,7 +402,6 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "includeImports": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "addTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "removeTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "fillStruct": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "editorContextMenuCommands": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "liveErrors": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
