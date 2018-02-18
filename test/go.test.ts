@@ -27,6 +27,7 @@ import { goPlay } from '../src/goPlayground';
 import { goLint } from '../src/goLint';
 import { runFillStruct } from '../src/goFillStruct';
 import { print } from 'util';
+import { TextDocument } from 'vscode-languageserver-types/lib/main';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -63,8 +64,11 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'noimports.go'), path.join(fixturePath, 'importTest', 'noimports.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'groupImports.go'), path.join(fixturePath, 'importTest', 'groupImports.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'singleImports.go'), path.join(fixturePath, 'importTest', 'singleImports.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input.go'), path.join(fixturePath, 'fillStruct', 'input.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'golden.go'), path.join(fixturePath, 'fillStruct', 'golden.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_1.go'), path.join(fixturePath, 'fillStruct', 'input_1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'golden_1.go'), path.join(fixturePath, 'fillStruct', 'golden_1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'golden_2.go'), path.join(fixturePath, 'fillStruct', 'golden_2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_3.go'));
 	});
 
 	suiteTeardown(() => {
@@ -955,6 +959,55 @@ It returns the number of bytes written and any write error encountered.
 				edit.set(document.uri, edits);
 				return vscode.workspace.applyEdit(edit).then(() => {
 					assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Fill struct', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_1.go'));
+		let golden = fs.readFileSync(path.join(fixturePath, 'fillStruct', 'golden_1.go'), 'utf-8');
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				let selection = new vscode.Selection(12, 15, 12, 15);
+				editor.selection = selection;
+				return runFillStruct(editor).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Fill struct - select line', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_2.go'));
+		let golden = fs.readFileSync(path.join(fixturePath, 'fillStruct', 'golden_2.go'), 'utf-8');
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				let selection = new vscode.Selection(7, 0, 7, 10);
+				editor.selection = selection;
+				return runFillStruct(editor).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Fill struct – select non-struct line', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_3.go'));
+		// Should return same output as input.
+		let golden = fs.readFileSync(path.join(fixturePath, 'fillStruct', 'input_3.go'), 'utf-8');
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				let selection = new vscode.Selection(0, 0, 0, 0);
+				editor.selection = selection;
+				return runFillStruct(editor).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
 					return Promise.resolve();
 				});
 			});
