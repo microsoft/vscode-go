@@ -55,6 +55,12 @@ export function toggleTestFile(): void {
 	} else {
 		targetFilePath = currentFilePath.substr(0, currentFilePath.lastIndexOf('.go')) + '_test.go';
 	}
+	for (let doc of vscode.window.visibleTextEditors) {
+		if (doc.document.fileName === targetFilePath) {
+			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath), doc.viewColumn);
+			return;
+		}
+	}
 	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath));
 }
 
