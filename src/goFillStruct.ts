@@ -18,28 +18,13 @@ interface GoFillStructOutput {
 	code: string;
 }
 
-export function fillStruct() {
-	let editor = vscode.window.activeTextEditor;
-	return runFillStruct(editor);
-}
-
 export function runFillStruct(editor: vscode.TextEditor) {
 	let args = getCommonArgs(editor);
 	if (!args) {
 		return;
 	}
 
-	let tabsCount = getTabsCount(editor);
-
-	return execFillStruct(editor, args, tabsCount).then((edits) => {
-		editor.edit(editBuilder => {
-			edits.forEach(edit => {
-				editBuilder.replace(edit.range, edit.newText);
-			});
-		});
-	}).catch(e => {
-		vscode.window.showInformationMessage(`Could not fill struct: ${e}.`);
-	});
+	return execFillStruct(editor, args);
 }
 
 function getCommonArgs(editor: vscode.TextEditor): string[] {
@@ -52,7 +37,7 @@ function getCommonArgs(editor: vscode.TextEditor): string[] {
 		return;
 	}
 	let args = ['-modified', '-file', editor.document.fileName];
-	if (editor.selection.start.line === editor.selection.end.line && editor.selection.start.character === editor.selection.end.character) {
+	if (editor.selection.isEmpty) {
 		let offset = byteOffsetAt(editor.document, editor.selection.start);
 		args.push('-offset');
 		args.push(offset.toString());
@@ -70,18 +55,18 @@ function getTabsCount(editor: vscode.TextEditor): number {
 	return tabs.length;
 }
 
-function execFillStruct(editor: vscode.TextEditor, args: string[], tabsCount: number): Promise<vscode.TextEdit[]> {
+function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void> {
 	let fillstruct = getBinPath('fillstruct');
 	let input = getFileArchive(editor.document);
+	let tabsCount = getTabsCount(editor);
 
-	return new Promise<vscode.TextEdit[]>((resolve, reject) => {
-		let p = cp.execFile(fillstruct, args, {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+	return new Promise<void>((resolve, reject) => {
+		let p = cp.execFile(fillstruct, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('fillstruct');
 					return reject();
 				}
-
 				if (err) {
 					vscode.window.showInformationMessage(`Cannot fill struct: ${stderr}`);
 					return reject();
@@ -97,13 +82,15 @@ function execFillStruct(editor: vscode.TextEditor, args: string[], tabsCount: nu
 				let indent = '\t'.repeat(tabsCount);
 				let edits: vscode.TextEdit[] = [];
 
-				output.forEach((structToFill) => {
-					let out = structToFill.code.replace(/\n/g, '\n' + indent);
-					edits.push(vscode.TextEdit.replace(new vscode.Range(editor.document.positionAt(structToFill.start),
-						editor.document.positionAt(structToFill.end)), out));
+				return editor.edit(editBuilder => {
+					output.forEach((structToFill) => {
+						const out = structToFill.code.replace(/\n/g, '\n' + indent);
+						const rangeToReplace = new vscode.Range(editor.document.positionAt(structToFill.start),
+							editor.document.positionAt(structToFill.end));
+						editBuilder.replace(rangeToReplace, out);
+					});
+					resolve();
 				});
-
-				return resolve(edits);
 			} catch (e) {
 				reject(e);
 			}

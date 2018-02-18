@@ -25,7 +25,7 @@ import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
 import { goPlay } from '../src/goPlayground';
 import { goLint } from '../src/goLint';
-import { fillStruct, runFillStruct } from '../src/goFillStruct';
+import { runFillStruct } from '../src/goFillStruct';
 import { print } from 'util';
 
 suite('Go Extension Tests', () => {

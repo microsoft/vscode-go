@@ -34,7 +34,7 @@ import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getG
 import { LanguageClient } from 'vscode-languageclient';
 import { clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
-import { fillStruct } from './goFillStruct';
+import { runFillStruct } from './goFillStruct';
 import { parseLiveFile } from './goLiveErrors';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
@@ -190,7 +190,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.fill.struct', () => {
-		fillStruct();
+		runFillStruct(vscode.window.activeTextEditor);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.impl.cursor', () => {

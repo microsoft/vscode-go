@@ -72,7 +72,8 @@ function getTools(goVersion: SemVersion): string[] {
 		'gorename',
 		'gomodifytags',
 		'goplay',
-		'impl'
+		'impl',
+		'fillstruct'
 	];
 
 	if (goLiveErrorsEnabled()) {
