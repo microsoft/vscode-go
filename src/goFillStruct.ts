@@ -16,10 +16,10 @@ interface GoFillStructOutput {
 	code: string;
 }
 
-export function runFillStruct(editor: vscode.TextEditor) {
+export function runFillStruct(editor: vscode.TextEditor): Promise<void> {
 	let args = getCommonArgs(editor);
 	if (!args) {
-		return;
+		return Promise.reject('No args');
 	}
 
 	return execFillStruct(editor, args);
