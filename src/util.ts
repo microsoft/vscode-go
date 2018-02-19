@@ -197,7 +197,7 @@ export function getGoVersion(): Promise<SemVersion> {
 	}
 	return new Promise<SemVersion>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
-			let matches = /go version go(\d).(\d).*/.exec(stdout);
+			let matches = /go version go(\d).(\d+).*/.exec(stdout);
 			if (matches) {
 				goVersion = {
 					major: parseInt(matches[1]),
