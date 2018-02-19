@@ -851,7 +851,7 @@ It returns the number of bytes written and any write error encountered.
 			});
 			let linterTestPath = path.join(fixturePath, 'linterTest');
 			let expected = [
-				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck, errcheck)' },
+				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck)' },
 				{ file: path.join(linterTestPath, 'linter_2.go'), line: 5, severity: 'warning', msg: 'error return value not checked (missing return) (errcheck)' },
 				{ file: path.join(linterTestPath, 'linter_1.go'), line: 5, severity: 'warning', msg: 'exported function ExportedFunc should have comment or be unexported (golint)' },
 			];
