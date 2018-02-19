@@ -77,7 +77,7 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 				}
 
 				let indent = '\t'.repeat(tabsCount);
-				
+
 				editor.edit(editBuilder => {
 					output.forEach((structToFill) => {
 						const out = structToFill.code.replace(/\n/g, '\n' + indent);
