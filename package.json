@@ -175,6 +175,11 @@
         "description": "Remove tags configured in go.removeTags setting from selected struct using gomodifytags"
       },
       {
+        "command": "go.fill.struct",
+        "title": "Go: Fill struct",
+        "description": "Fill a struct literal with default values"
+      },
+      {
         "command": "go.show.commands",
         "title": "Go: Show All Commands...",
         "description": "Shows all commands from the Go extension in the quick pick"
@@ -829,6 +834,11 @@
               "default": true,
               "description": "If true, adds command to remove configured tags from struct fields to the editor context menu"
             },
+            "fillStruct": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to fill struct literal with default values to the editor context menu"
+            },
             "testAtCursor": {
               "type": "boolean",
               "default": true,
@@ -918,6 +928,11 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.removeTags && resourceLangId == go",
           "command": "go.remove.tags",
+          "group": "Go group 1"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.fillStruct && resourceLangId == go",
+          "command": "go.fill.struct",
           "group": "Go group 1"
         },
         {

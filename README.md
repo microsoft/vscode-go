@@ -27,6 +27,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Run Tests under the cursor, in current file, in current package, in the whole workspace (using `go test`)
 - Show code coverage
 - Generate method stubs for interfaces (using `impl`)
+- Fill struct literals with default values (using `fillstruct`)
 - [_partially implemented_] Debugging (using `delve`)
 - Upload to the Go Playground (using `goplay`)
 
@@ -106,6 +107,7 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Add Tags` Adds configured tags to selected struct fields.
 * `Go: Remove Tags` Removes configured tags from selected struct fields.
 * `Go: Generate Interface Stubs` Generates method stubs for given interface
+* `Go: Fill Struct` Fills struct literal with default values
 * `Go: Run on Go Playground` Upload the current selection or file to the Go Playground
 
 You can access all of the above commands from the command pallet (`Cmd+Shift+P` or `Ctrl+Shift+P`).
