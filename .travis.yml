@@ -13,11 +13,17 @@ os:
   - osx
   - linux
 
-# Exclude linux for tip as go get fails there for some reason
 matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+  # Exclude linux for tip as go get fails there for some reason
   exclude:
-    - go: '1.10'
-      os: linux
     - go: tip
       os: linux 
 
