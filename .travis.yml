@@ -16,6 +16,8 @@ os:
 # Exclude linux for tip as go get fails there for some reason
 matrix:
   exclude:
+    - go: '1.10'
+      os: linux
     - go: tip
       os: linux 
 
