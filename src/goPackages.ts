@@ -8,9 +8,9 @@ import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 type GopkgsDone = (res: Map<string, string>) => void;
 let allPkgsCache: Map<string, string>;
 let allPkgsLastHit: number;
+let gopkgsNotified: boolean = false;
 let gopkgsRunning: boolean = false;
 let gopkgsSubscriptions: GopkgsDone[] = [];
-let cacheTimeout: number = 5000;
 
 function gopkgs(): Promise<Map<string, string>> {
 	let t0 = Date.now();
@@ -59,7 +59,7 @@ function gopkgs(): Promise<Map<string, string>> {
 				}
 			*/
 			sendTelemetryEvent('gopkgs', {}, { timeTaken });
-			cacheTimeout = timeTaken > 5000 ? timeTaken : 5000;
+
 			return resolve(pkgs);
 		});
 	});
@@ -93,7 +93,7 @@ function getAllPackagesNoCache(): Promise<Map<string, string>> {
  * @returns Map<string, string> mapping between package import path and package name
  */
 export function getAllPackages(): Promise<Map<string, string>> {
-	let useCache = allPkgsCache && allPkgsLastHit && (new Date().getTime() - allPkgsLastHit) < cacheTimeout;
+	let useCache = allPkgsCache && allPkgsLastHit && (new Date().getTime() - allPkgsLastHit) < 5000;
 	if (useCache) {
 		allPkgsLastHit = new Date().getTime();
 		return Promise.resolve(allPkgsCache);
@@ -102,6 +102,10 @@ export function getAllPackages(): Promise<Map<string, string>> {
 	return getAllPackagesNoCache().then((pkgs) => {
 		if (!pkgs || pkgs.size === 0) {
 			console.log('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
+			if (!gopkgsNotified) {
+				vscode.window.showInformationMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
+				gopkgsNotified = true;
+			}
 		}
 		allPkgsLastHit = new Date().getTime();
 		return allPkgsCache = pkgs;
