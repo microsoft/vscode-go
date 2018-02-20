@@ -851,7 +851,7 @@ It returns the number of bytes written and any write error encountered.
 			});
 			let linterTestPath = path.join(fixturePath, 'linterTest');
 			let expected = [
-				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck, errcheck)' },
+				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck' },
 				{ file: path.join(linterTestPath, 'linter_2.go'), line: 5, severity: 'warning', msg: 'error return value not checked (missing return) (errcheck)' },
 				{ file: path.join(linterTestPath, 'linter_1.go'), line: 5, severity: 'warning', msg: 'exported function ExportedFunc should have comment or be unexported (golint)' },
 			];
@@ -865,7 +865,7 @@ It returns the number of bytes written and any write error encountered.
 				});
 				for (let i in expected) {
 					let errorMsg = `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`;
-					assert.equal(sortedDiagnostics[i].msg, expected[i].msg, errorMsg);
+					assert(sortedDiagnostics[i].msg.startsWith(expected[i].msg), errorMsg);
 					assert.equal(sortedDiagnostics[i].file.toLowerCase(), expected[i].file.toLowerCase(), errorMsg);
 					assert.equal(sortedDiagnostics[i].line, expected[i].line, errorMsg);
 					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, errorMsg);
