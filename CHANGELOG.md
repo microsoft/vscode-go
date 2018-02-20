@@ -1,3 +1,23 @@
+## 0.6.77 - 20th February, 2018
+
+* [Robin Bartholdson @buyology](https://github.com/buyology)
+    * New command `Go: Fill Struct` integrates the `fillstruct` tool that lets you fill struct fields with default values. [PR 1506](https://github.com/Microsoft/vscode-go/pull/1506)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Show key value pairs of map variables correctly in the variable pane when debugging. Fixes [Bug 1384](https://github.com/Microsoft/vscode-go/issues/1384)
+
+* [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
+    * Fix the issue of various features not working with Go 1.10 due to regex failure on fetching the version. [PR 1523](https://github.com/Microsoft/vscode-go/pull/1523)
+
+* [Kevin Wiesmüller @kwiesmueller](https://github.com/kwiesmueller)
+    * Generating Unit Tests will not open a new editor for generated/updated test file if the file is already open and visible in another editor group. [PR 1517](https://github.com/Microsoft/vscode-go/pull/1517)
+
+* [Murad Korejo (@mkorejo)](https://github.com/mkorejo)
+    * Notify user when `gopkgs` fails to get packages that are needed to provide the completions for unimported packages. [PR 1528](https://github.com/Microsoft/vscode-go/pull/1528)
+
+* [Anatoly Milkov (@anatolym)](https://github.com/anatolym) and [Christian Winther (@jippi)](https://github.com/jippi)
+    * Documentation Updates
+
 ## 0.6.76 - 10th February, 2018
 
 * [Bug 1449](https://github.com/Microsoft/vscode-go/issues/1449): Rename fails due to cgo not being able to find the go executable.  
