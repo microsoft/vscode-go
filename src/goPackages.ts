@@ -9,6 +9,7 @@ type GopkgsDone = (res: Map<string, string>) => void;
 let allPkgsCache: Map<string, string>;
 let allPkgsLastHit: number;
 let gopkgsRunning: boolean = false;
+let gopkgsNotified: boolean = false;
 let gopkgsSubscriptions: GopkgsDone[] = [];
 let cacheTimeout: number = 5000;
 
@@ -102,6 +103,10 @@ export function getAllPackages(): Promise<Map<string, string>> {
 	return getAllPackagesNoCache().then((pkgs) => {
 		if (!pkgs || pkgs.size === 0) {
 			console.log('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
+			if (!gopkgsNotified) {
+				vscode.window.showInformationMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
+				gopkgsNotified = true;
+			}
 		}
 		allPkgsLastHit = new Date().getTime();
 		return allPkgsCache = pkgs;
