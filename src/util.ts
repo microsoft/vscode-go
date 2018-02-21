@@ -735,8 +735,8 @@ export function killProcess(p: cp.ChildProcess) {
 				if (matches) {
 					/* __GDPR__
 					   "errorKillingProcess" : {
-						  "message" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-						  "stack": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
+						  "message" : { "classification": "CallstackOrException", "purpose": "PerformanceAndHealth" },
+						  "stack": { "classification": "CallstackOrException", "purpose": "PerformanceAndHealth" }
 					   }
 					 */
 					sendTelemetryEvent('errorKillingProcess', { message: e.message, stack: matches });
