@@ -20,3 +20,8 @@ func Hello(txt string) {
 type Cat struct {
 	Name string
 }
+
+// Meow the cat say
+func (c *Cat) Meow() {
+	fmt.Println('Meow, meow')
+}

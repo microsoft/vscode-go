@@ -52,19 +52,22 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 				if (lineText.match(/\//)) {  // complete exported item`s comment
 					if (!lineText.match(/^\/\//)) {
-						return resolve([]);
+						return resolve([]);  // skip single slash
 					}
 					let nextLineText = document.lineAt(position.line + 1).text;
 					if (nextLineText) {
-						let tokens = nextLineText.split(' ');
-						if (tokens.length < 2 || ['type', 'func'].indexOf(tokens[0]) < 0 || tokens[1].match(/^[a-z]/)) {
-							return resolve([]);
+						let patterns = [/^\s*(type)\s+([A-Z]\S*)/,
+							/^\s*(func)\s+\(\s*\w+\s+\*?\w+\s*\)\s+([A-Z]\S*)\(/,
+							/^\s*(func)\s+([A-Z]\S*)\(/];
+						for (let p of patterns) {
+							let matchers = nextLineText.match(p);
+							if (matchers) {
+								let suggestItem = new vscode.CompletionItem(` ${matchers[2]} `, vscodeKindFromGoCodeClass(matchers[1]));
+								suggestItem.detail = 'Exported item`s comment snippet';
+								return resolve([suggestItem]);
+							}
 						}
-						let kind = tokens[0];
-						let symbol = tokens[1].split('(')[0];
-						let suggestItem = new vscode.CompletionItem(` ${symbol} `, vscodeKindFromGoCodeClass(kind));
-						suggestItem.detail = 'Exported item`s comment snippet';
-						return resolve([suggestItem]);
+						return resolve([]);
 					}
 				}
 
