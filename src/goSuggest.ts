@@ -50,8 +50,25 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let lineTillCurrentPosition = lineText.substr(0, position.character);
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
-				if (lineText.match(/^\s*\/\//)) {
-					return resolve([]);
+				if (lineText.match(/\//)) {  // complete exported item`s comment
+					if (!lineText.match(/^\/\//)) {
+						return resolve([]);  // skip single slash
+					}
+					let nextLineText = document.lineAt(position.line + 1).text;
+					if (nextLineText) {
+						let patterns = [/^\s*(type)\s+([A-Z]\S*)/,
+							/^\s*(func)\s+\(\s*\w+\s+\*?\w+\s*\)\s+([A-Z]\S*)\(/,
+							/^\s*(func)\s+([A-Z]\S*)\(/];
+						for (let p of patterns) {
+							let matchers = nextLineText.match(p);
+							if (matchers) {
+								let suggestItem = new vscode.CompletionItem(` ${matchers[2]} `, vscodeKindFromGoCodeClass(matchers[1]));
+								suggestItem.detail = 'Exported item`s comment snippet';
+								return resolve([suggestItem]);
+							}
+						}
+						return resolve([]);
+					}
 				}
 
 				let inString = isPositionInString(document, position);
