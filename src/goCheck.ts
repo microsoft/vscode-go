@@ -19,7 +19,7 @@ import { goBuild } from './goBuild';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
-const neverAgain = { title: "Don't Show Again" };
+const neverAgain = { title: 'Don\'t Show Again' };
 
 export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 	if (e.document.isUntitled) {
