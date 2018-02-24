@@ -380,7 +380,8 @@ It returns the number of bytes written and any write error encountered.
 				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
 				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
-			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
+			let errorsTestPath = path.join(fixtureSourcePath, 'errorsTest', 'errors.go') || '';
+			return check(vscode.Uri.file(errorsTestPath), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
 					if (a.msg < b.msg)
 						return -1;
@@ -388,6 +389,9 @@ It returns the number of bytes written and any write error encountered.
 						return 1;
 					return 0;
 				});
+
+				assert.equal(sortedDiagnostics.length, expected.length, 'Actual error count does not match the expected one');
+
 				for (let i in expected) {
 					assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
 					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
@@ -849,13 +853,14 @@ It returns the number of bytes written and any write error encountered.
 				'lintTool': { value: 'gometalinter' },
 				'lintFlags': { value: ['--json', '--disable-all', '--enable=golint', '--enable=errcheck'] },
 			});
-			let linterTestPath = path.join(fixturePath, 'linterTest');
+			let linterTestPath = path.join(fixtureSourcePath, 'linterTest');
 			let expected = [
 				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck' },
 				{ file: path.join(linterTestPath, 'linter_2.go'), line: 5, severity: 'warning', msg: 'error return value not checked (missing return) (errcheck)' },
 				{ file: path.join(linterTestPath, 'linter_1.go'), line: 5, severity: 'warning', msg: 'exported function ExportedFunc should have comment or be unexported (golint)' },
 			];
-			return goLint(vscode.Uri.file(path.join(linterTestPath, 'linter_1.go')), config).then(diagnostics => {
+			let linterFilePath = path.join(linterTestPath, 'linter_1.go');
+			return goLint(vscode.Uri.file(linterFilePath), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
 					if (a.msg < b.msg)
 						return -1;
@@ -863,6 +868,9 @@ It returns the number of bytes written and any write error encountered.
 						return 1;
 					return 0;
 				});
+
+				assert.equal(sortedDiagnostics.length, expected.length, 'Actual error count does not match the expected one');
+
 				for (let i in expected) {
 					let errorMsg = `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`;
 					assert(sortedDiagnostics[i].msg.startsWith(expected[i].msg), errorMsg);
