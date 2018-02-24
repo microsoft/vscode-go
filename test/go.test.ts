@@ -390,7 +390,7 @@ It returns the number of bytes written and any write error encountered.
 					return 0;
 				});
 
-				assert.equal(sortedDiagnostics.length, expected.length, 'Actual error count does not match the expected one');
+				assert.equal(sortedDiagnostics.length, expected.length, 'Actual diagnostics count does not match the expected one');
 
 				for (let i in expected) {
 					assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
@@ -869,7 +869,7 @@ It returns the number of bytes written and any write error encountered.
 					return 0;
 				});
 
-				assert.equal(sortedDiagnostics.length, expected.length, 'Actual error count does not match the expected one');
+				assert.equal(sortedDiagnostics.length, expected.length, 'Actual diagnostics count does not match the expected one');
 
 				for (let i in expected) {
 					let errorMsg = `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`;
