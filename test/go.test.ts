@@ -380,7 +380,7 @@ It returns the number of bytes written and any write error encountered.
 				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
 				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
-			let errorsTestPath = path.join(fixtureSourcePath, 'errorsTest', 'errors.go');
+			let errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
 			return check(vscode.Uri.file(errorsTestPath), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
 					if (a.msg < b.msg)
@@ -390,14 +390,14 @@ It returns the number of bytes written and any write error encountered.
 					return 0;
 				});
 
-				assert.equal(sortedDiagnostics.length, expected.length, 'Actual diagnostics count does not match the expected one');
+				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
 
 				for (let i in expected) {
 					assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
 					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
 					assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
 				}
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+
 				return Promise.resolve();
 			});
 		}).then(() => done(), done);
@@ -869,7 +869,7 @@ It returns the number of bytes written and any write error encountered.
 					return 0;
 				});
 
-				assert.equal(sortedDiagnostics.length, expected.length, 'Actual diagnostics count does not match the expected one');
+				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
 
 				for (let i in expected) {
 					let errorMsg = `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`;
@@ -878,7 +878,7 @@ It returns the number of bytes written and any write error encountered.
 					assert.equal(sortedDiagnostics[i].line, expected[i].line, errorMsg);
 					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, errorMsg);
 				}
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+
 				return Promise.resolve();
 			});
 		}).then(() => done(), done);
