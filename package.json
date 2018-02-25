@@ -456,7 +456,7 @@
             "off"
           ],
           "default": "package",
-          "description": "Lints code on file save using the configured Lint tool. Options are 'workspace', 'package or 'off'.",
+          "description": "Lints code on file save using the configured Lint tool. Options are 'workspace', 'package' or 'off'.",
           "scope": "resource"
         },
         "go.lintTool": {
