@@ -853,7 +853,7 @@ It returns the number of bytes written and any write error encountered.
 				'lintTool': { value: 'gometalinter' },
 				'lintFlags': { value: ['--json', '--disable-all', '--enable=golint', '--enable=errcheck'] },
 			});
-			let linterTestPath = path.join(fixtureSourcePath, 'linterTest');
+			let linterTestPath = path.join(fixturePath, 'linterTest');
 			let expected = [
 				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck' },
 				{ file: path.join(linterTestPath, 'linter_2.go'), line: 5, severity: 'warning', msg: 'error return value not checked (missing return) (errcheck)' },
