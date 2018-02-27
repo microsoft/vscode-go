@@ -562,7 +562,16 @@ export interface ICheckResult {
  */
 export function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput: boolean, token?: vscode.CancellationToken): Promise<ICheckResult[]> {
 	let goRuntimePath = getGoRuntimePath();
-	let cmd = toolName ? getBinPath(toolName) : goRuntimePath;
+	let cmd;
+	if (toolName) {
+		cmd = getBinPath(toolName);
+	} else {
+		if (!goRuntimePath) {
+			return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
+		}
+		cmd = goRuntimePath;
+	}
+		
 	let p: cp.ChildProcess;
 	if (token) {
 		token.onCancellationRequested(() => {
