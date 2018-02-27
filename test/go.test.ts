@@ -380,7 +380,7 @@ It returns the number of bytes written and any write error encountered.
 				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
 				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
-			let errorsTestPath = path.join(fixtureSourcePath, 'errorsTest', 'errors.go');
+			let errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
 			return check(vscode.Uri.file(errorsTestPath), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
 					if (a.msg < b.msg)
@@ -1015,6 +1015,9 @@ It returns the number of bytes written and any write error encountered.
 				let selection = new vscode.Selection(0, 0, 0, 0);
 				editor.selection = selection;
 				return runFillStruct(editor).then(() => {
+					assert.fail(null, null, 'Run fill struct should have returned rejected promise');
+					return Promise.resolve();
+				}, () => {
 					assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
 					return Promise.resolve();
 				});
