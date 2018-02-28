@@ -155,7 +155,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
-	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
 
 	startBuildOnSaveWatcher(ctx.subscriptions);
 

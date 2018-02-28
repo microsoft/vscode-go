@@ -30,6 +30,7 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 }
 
 export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
+	let ctx = this;
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
@@ -37,10 +38,10 @@ export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
 	let documentUri = e ? e.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
 
-	if ((goConfig.get('ignoreGeneratedCodeWarning') !== true) && e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
+	if ((ctx.globalState.get('ignoreGeneratedCodeWarning') !== true) && e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
 		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then(result => {
 			if (result === neverAgain) {
-				goConfig.update('ignoreGeneratedCodeWarning', true, false);
+				ctx.globalState.update('ignoreGeneratedCodeWarning', true);
 			}
 		});
 	}
