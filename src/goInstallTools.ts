@@ -292,6 +292,9 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 
 	// If GOPATH is still not set, then use the one from `go env`
 	let goRuntimePath = getGoRuntimePath();
+	if (!goRuntimePath) {
+		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
+	}
 	return new Promise<void>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['env', 'GOPATH'], (err, stdout, stderr) => {
 			if (err) {
