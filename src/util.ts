@@ -571,7 +571,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 		}
 		cmd = goRuntimePath;
 	}
-		
+
 	let p: cp.ChildProcess;
 	if (token) {
 		token.onCancellationRequested(() => {
