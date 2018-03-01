@@ -12,20 +12,36 @@ import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
 
-function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
-	switch (kind) {
-		case 'const':
-		case 'package':
-		case 'type':
-			return vscode.CompletionItemKind.Keyword;
-		case 'func':
-			return vscode.CompletionItemKind.Function;
-		case 'var':
-			return vscode.CompletionItemKind.Field;
-		case 'import':
-			return vscode.CompletionItemKind.Module;
+function vscodeKindFromGoCodeClass(kind: GoCodeSuggestion): vscode.CompletionItemKind {
+	if (kind.class === 'const') {
+		return vscode.CompletionItemKind.Constant;
 	}
-	return vscode.CompletionItemKind.Property; // TODO@EG additional mappings needed?
+	else if (kind.class === 'type' && kind.type === 'interface') {
+		return vscode.CompletionItemKind.Interface;
+	}
+	else if (kind.class === 'package') {
+		return vscode.CompletionItemKind.Module;
+	}
+	else if (kind.class === 'type' && kind.type === 'built-in') {
+		return vscode.CompletionItemKind.Keyword;
+	}
+	else if (kind.class === 'type') {
+		// for typedefs
+		return vscode.CompletionItemKind.Struct;
+	}
+	else if (kind.class === 'func') {
+		return vscode.CompletionItemKind.Function;
+	}
+	else if (kind.class === 'type' && kind.type === 'struct') {
+		return vscode.CompletionItemKind.Struct;
+	}
+	else if (kind.class === 'import') {
+		return vscode.CompletionItemKind.Module;
+	}
+	else if (kind.class == 'var') {
+		return vscode.CompletionItemKind.Field;
+	}
+	return vscode.CompletionItemKind.Text;
 }
 
 interface GoCodeSuggestion {
@@ -153,7 +169,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						for (let suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
 							let item = new vscode.CompletionItem(suggest.name);
-							item.kind = vscodeKindFromGoCodeClass(suggest.class);
+							item.kind = vscodeKindFromGoCodeClass(suggest);
 							item.detail = suggest.type;
 							if (inString && suggest.class === 'import') {
 								item.textEdit = new vscode.TextEdit(
@@ -284,7 +300,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
 			if (pkgName.startsWith(word) && !suggestionSet.has(pkgName)) {
 
-				let item = new vscode.CompletionItem(pkgName, vscode.CompletionItemKind.Keyword);
+				let item = new vscode.CompletionItem(pkgName, vscode.CompletionItemKind.Module);
 				item.detail = pkgPath;
 				item.documentation = 'Imports the package';
 				item.insertText = pkgName;
