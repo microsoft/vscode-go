@@ -24,6 +24,7 @@ interface GuruImplementsOutput {
 	to: GuruImplementsRef[];
 	to_method: GuruImplementsRef[];
 	from: GuruImplementsRef[];
+	fromptr: GuruImplementsRef[];
 }
 
 export class GoImplementationProvider implements vscode.ImplementationProvider {
@@ -88,6 +89,10 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 						addResults(guruOutput.to_method);
 					} else if (guruOutput.to) {
 						addResults(guruOutput.to);
+					} else if (guruOutput.from) {
+						addResults(guruOutput.from);
+					} else if (guruOutput.fromptr) {
+						addResults(guruOutput.fromptr);
 					}
 
 					return resolve(results);

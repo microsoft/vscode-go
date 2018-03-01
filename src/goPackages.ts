@@ -238,7 +238,7 @@ export function isAllowToImportPackage(toDirPath: string, currentWorkspace: stri
 	let internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
 	if (internalPkgFound) {
 		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));
-		return toDirPath.startsWith(rootProjectForInternalPkg);
+		return toDirPath.startsWith(rootProjectForInternalPkg + path.sep) || toDirPath === rootProjectForInternalPkg;
 	}
 	return true;
 }
