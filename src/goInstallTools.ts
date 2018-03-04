@@ -32,7 +32,7 @@ const allTools: { [key: string]: string } = {
 	'godoc': 'golang.org/x/tools/cmd/godoc',
 	'gogetdoc': 'github.com/zmb3/gogetdoc',
 	'goimports': 'golang.org/x/tools/cmd/goimports',
-	'goreturns': 'sourcegraph.com/sqs/goreturns',
+	'goreturns': 'github.com/sqs/goreturns',
 	'golint': 'github.com/golang/lint/golint',
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
