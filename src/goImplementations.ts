@@ -37,7 +37,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 			vscode.window.showInformationMessage('Cannot find implementations when there is no workspace open.');
 			return;
 		}
-		
+
 		return new Promise<vscode.Definition>((resolve, reject) => {
 			if (token.isCancellationRequested) {
 				return resolve(null);
