@@ -11,7 +11,8 @@
 			"stopOnEntry": false,
 			"sourceMaps": true,
 			"outFiles": ["${workspaceRoot}/out/**/*.js"],
-			"preLaunchTask": "npm"
+			"preLaunchTask": "npm",
+			"trace": "verbose"
 		},
 		{
 			"name": "Launch as server",
