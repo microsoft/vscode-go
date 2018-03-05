@@ -569,7 +569,7 @@ class GoDebugSession extends DebugSession {
 		let remoteFile = this.toDebuggerPath(file);
 		Promise.all(this.breakpoints.get(file).map(existingBP => {
 			verbose('Clearing: ' + existingBP.id);
-			return this.delve.callPromise<ClearBreakpointOut>('ClearBreakpoint', [existingBP.id]);
+			return this.delve.callPromise<ClearBreakpointOut>('ClearBreakpoint', [{id: existingBP.id, name: file}]);
 		})).then(() => {
 			verbose('All cleared');
 			return Promise.all(args.lines.map(line => {
@@ -578,7 +578,10 @@ class GoDebugSession extends DebugSession {
 				} else {
 					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
 				}
-				return this.delve.callPromise<CreateBreakpointOut>('CreateBreakpoint', [{ file: remoteFile, line }]).then(null, err => {
+				let breakpointIn = <DebugBreakpoint>{};
+				breakpointIn.file = remoteFile;
+				breakpointIn.line = line;
+				return this.delve.callPromise<CreateBreakpointOut>('CreateBreakpoint', [breakpointIn]).then(null, err => {
 					verbose('Error on CreateBreakpoint: ' + err.toString());
 					return null;
 				});
@@ -633,7 +636,7 @@ class GoDebugSession extends DebugSession {
 
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
 		verbose('Stacktrace');
-		this.delve.call<StacktraceOut>('StacktraceGoroutine', [{ id: args.threadId, depth: args.levels }], (err, stackTrace) => {
+		this.delve.call<StacktraceOut>('Stacktrace', [{ id: args.threadId, depth: args.levels, full: false, cfg: this.getDefaultLoadConfig() }], (err, stackTrace) => {
 			if (err) {
 				logError('Failed to produce stack trace!');
 				return this.sendErrorResponse(response, 2004, 'Unable to produce stack trace: "{e}"', { e: err.toString() });
@@ -666,7 +669,7 @@ class GoDebugSession extends DebugSession {
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
 			verbose('locals', locals);
-			this.delve.call<ListFunctionArgsOut>('ListFunctionArgs', [{ goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }], (err, argsList) => {
+			this.delve.call<ListFunctionArgsOut>('ListFunctionArgs', [{scope: { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }, cfg: this.getDefaultLoadConfig()}], (err, argsList) => {
 				if (err) {
 					logError('Failed to list function args.');
 					return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', { e: err.toString() });
@@ -899,7 +902,8 @@ class GoDebugSession extends DebugSession {
 			scope: {
 				goroutineID: this.debugState.currentGoroutine.id,
 				frame: args.frameId
-			}
+			},
+			cfg: this.getDefaultLoadConfig()
 		};
 		this.delve.call<EvalOut>('Eval', [evalSymbolArgs], (err, out) => {
 			if (err) {
