@@ -268,15 +268,19 @@ It returns the number of bytes written and any write error encountered.
 			}
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+				let matchCount = 0;
 				for (let i in expected) {
-					if (expected[i].line) {
-						assert(sortedDiagnostics[i]);
-						assert.equal(sortedDiagnostics[i].line, expected[i].line);
-					};
-					assert.equal(sortedDiagnostics[i].severity, expected[i].severity);
-					assert.equal(sortedDiagnostics[i].msg, expected[i].msg);
+					for (let j in sortedDiagnostics) {
+						if (expected[i].line
+						&& (expected[i].line === sortedDiagnostics[j].line)
+						&& (expected[i].severity === sortedDiagnostics[j].severity)
+						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							matchCount++;
+						}
+					}
 				}
+				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
 			});
 		}).then(() => done(), done);
 	});
@@ -390,13 +394,18 @@ It returns the number of bytes written and any write error encountered.
 					return 0;
 				});
 
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
-
+				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+				let matchCount = 0;
 				for (let i in expected) {
-					assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-					assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+					for (let j in sortedDiagnostics) {
+						if ((expected[i].line === sortedDiagnostics[j].line)
+						&& (expected[i].severity === sortedDiagnostics[j].severity)
+						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							matchCount++;
+						}
+					}
 				}
+				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
 
 				return Promise.resolve();
 			});
