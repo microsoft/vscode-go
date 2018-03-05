@@ -434,6 +434,11 @@ class GoDebugSession extends DebugSession {
 		logger.init(e => this.sendEvent(e), logPath, isServer);
 	}
 
+	// Get default LoadConfig values according to delve API
+	protected getDefaultLoadConfig(): any {
+		return {followPointers: true, maxVariableRecurse: 1, maxStringLen: 64, maxArrayValues: 64, maxStructFields: -1};
+	}
+
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
 		verbose('InitializeRequest');
 		// This debug adapter implements the configurationDoneRequest.
@@ -654,8 +659,7 @@ class GoDebugSession extends DebugSession {
 
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
 		verbose('ScopesRequest');
-		let loadConfig = {followPointers: true, maxVariableRecurse: 1, maxStringLen: 100, maxArrayValues: 100, maxStructFields: -1};
-		let listLocalVarsIn = [{scope: { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }, cfg: loadConfig}];
+		let listLocalVarsIn = [{scope: { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }, cfg: this.getDefaultLoadConfig()}];
 		this.delve.call<ListLocalVarsOut>('ListLocalVars', listLocalVarsIn, (err, locals) => {
 			if (err) {
 				logError('Failed to list local variables.');
