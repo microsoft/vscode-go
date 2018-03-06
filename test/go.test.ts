@@ -31,6 +31,11 @@ import { TextDocument } from 'vscode-languageserver-types/lib/main';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
+	if (!gopath) {
+		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
+		return;
+	}
+
 	let repoPath = path.join(gopath, 'src', 'test');
 	let fixturePath = path.join(repoPath, 'testfixture');
 	let fixtureSourcePath = path.join(__dirname, '..', '..', 'test', 'fixtures');
@@ -40,7 +45,7 @@ suite('Go Extension Tests', () => {
 	let testPath = path.join(__dirname, 'tests');
 
 	suiteSetup(() => {
-		assert.ok(gopath !== null, 'GOPATH is not defined');
+
 		fs.removeSync(repoPath);
 		fs.removeSync(testPath);
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
