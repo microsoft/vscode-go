@@ -82,7 +82,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 					arguments: [{ functionName: func.name }]
 				};
 
-				const args = ['-test.run', func.name];
+				const args = ['-test.run', '^' + func.name + '$'];
 				const program = path.dirname(document.fileName);
 				const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
 				const envFile = vsConfig['testEnvFile'];
