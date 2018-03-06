@@ -184,6 +184,23 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								}
 								item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
 							}
+							if (conf.get('useCodeSnippetsOnFunctionSuggest') && suggest.class === 'type' && suggest.type.startsWith('func(')) {
+								let params = parameters(suggest.type.substring(4));
+								let paramSnippets = [];
+								for (let i = 0; i < params.length; i++) {
+									let param = params[i].trim();
+									if (param) {
+										param = param.replace('${', '\\${').replace('}', '\\}');
+										if (!param.includes(' ')) {
+											// If we don't have an argument name, we need to create one
+											param = 'arg' + (i + 1) + ' ' + param;
+										}
+										let arg = param.substr(0, param.indexOf(' '));
+										paramSnippets.push('${' + (i + 1) + ':' + arg + '}' + param.substr(param.indexOf(' '), param.length));
+									}
+								}
+								item.insertText = new vscode.SnippetString(suggest.name + '(func(' + paramSnippets.join(', ') + ') {\n	$' + (params.length + 1) + '\n})');
+							}
 
 							if (wordAtPosition && wordAtPosition.start.character === 0 &&
 								suggest.class === 'type' && !goBuiltinTypes.has(suggest.name)) {
