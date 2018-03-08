@@ -113,8 +113,28 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				};
 
 				codelens.push(new CodeLens(func.location.range, runBenchmarkCmd));
-			});
 
+				const args = [
+					'-test.bench', func.name,
+					'-test.run', 'a^' // Don't match any test
+				]; 
+				const program = path.dirname(document.fileName);
+				const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
+				const envFile = vsConfig['testEnvFile'];
+				let buildFlags = getTestFlags(vsConfig, null);
+				if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
+					buildFlags.push('-tags');
+					buildFlags.push(`${vsConfig['buildTags']}`);
+				}
+				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
+				let debugTestCmd = {
+					title: 'debug benchmark',
+					command: 'go.debug.startSession',
+					arguments: [config]
+				};
+				codelens.push(new CodeLens(func.location.range, debugTestCmd));
+			});
+			
 		});
 
 		return Promise.all([testPromise, benchmarkPromise]).then(() => codelens);
