@@ -547,6 +547,7 @@ export function guessPackageNameFromFile(filePath): Promise<string[]> {
 export interface ICheckResult {
 	file: string;
 	line: number;
+	col: number;
 	msg: string;
 	severity: string;
 }
@@ -611,8 +612,9 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 						continue;
 					}
 					atleastSingleMatch = true;
-					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
+					let [_, __, file, ___, lineStr, ____, colStr, msg] = match;
 					let line = +lineStr;
+					let col = +colStr;
 
 					// Building skips vendor folders,
 					// But vet and lint take in directories and not import paths, so no way to skip them
@@ -622,7 +624,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 					}
 
 					file = path.resolve(cwd, file);
-					ret.push({ file, line, msg, severity });
+					ret.push({ file, line, col, msg, severity });
 					outputChannel.appendLine(`${file}:${line}: ${msg}`);
 				}
 				if (!atleastSingleMatch && unexpectedOutput && vscode.window.activeTextEditor) {
@@ -631,6 +633,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 						ret.push({
 							file: vscode.window.activeTextEditor.document.fileName,
 							line: 1,
+							col: 1,
 							msg: stderr,
 							severity: 'error'
 						});
@@ -663,7 +666,11 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 			let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1);
 			let text = document.getText(range);
 			let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
-			startColumn = leading.length;
+			if (error.col === 0) {
+				startColumn = leading.length;
+			} else {
+				startColumn = error.col - 1; // range is 0-indexed
+			}
 			endColumn = text.length - trailing.length;
 		}
 		let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
