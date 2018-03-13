@@ -100,9 +100,9 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Test File` to run all tests in the current active document
 * `Go: Test Previous` to run the previously run test command
 * `Go: Test All Packages in Workspace` to run all tests in the current workspace
-* `Go: Generates unit tests for package` Generates unit tests for the current package
-* `Go: Generates unit tests for file` Generates unit tests for the current file
-* `Go: Generates unit tests for function` Generates unit tests for the selected function in the current file
+* `Go: Generate Unit Tests For Package` Generates unit tests for the current package
+* `Go: Generate Unit Tests For File` Generates unit tests for the current file
+* `Go: Generate Unit Tests For Function` Generates unit tests for the selected function in the current file
 * `Go: Install Tools` Installs/updates all the Go tools that the extension depends on
 * `Go: Add Tags` Adds configured tags to selected struct fields.
 * `Go: Remove Tags` Removes configured tags from selected struct fields.
