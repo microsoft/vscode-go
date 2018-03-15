@@ -666,7 +666,7 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 			let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1);
 			let text = document.getText(range);
 			let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
-			if (error.col === 0) {
+			if (!error.col) {
 				startColumn = leading.length;
 			} else {
 				startColumn = error.col - 1; // range is 0-indexed
