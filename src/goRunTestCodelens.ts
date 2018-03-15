@@ -74,6 +74,26 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		const codelens: CodeLens[] = [];
 
+		// Helper function to generate the debug command
+		function getDebugCmd(title:string, debugConfig:any, args:any[]) : vscode.Command {
+			const program = path.dirname(document.fileName);
+			const env = Object.assign({}, debugConfig.env, vsConfig['testEnvVars']);
+			const envFile = vsConfig['testEnvFile'];
+			let buildFlags = getTestFlags(vsConfig, null);
+			if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
+				buildFlags.push('-tags');
+				buildFlags.push(`${vsConfig['buildTags']}`);
+			}
+
+			let config = Object.assign({}, debugConfig, { args, program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
+			let debugTestCmd: Command = {
+				title: title,
+				command: 'go.debug.startSession',
+				arguments: [config]
+			};
+			return debugTestCmd
+		}
+
 		const testPromise = getTestFunctions(document, token).then(testFunctions => {
 			testFunctions.forEach(func => {
 				let runTestCmd: Command = {
@@ -82,25 +102,13 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 					arguments: [{ functionName: func.name }]
 				};
 
-				const args = ['-test.run', '^' + func.name + '$'];
-				const program = path.dirname(document.fileName);
-				const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
-				const envFile = vsConfig['testEnvFile'];
-				let buildFlags = getTestFlags(vsConfig, null);
-				if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
-					buildFlags.push('-tags');
-					buildFlags.push(`${vsConfig['buildTags']}`);
-				}
-
-				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
-				let debugTestCmd: Command = {
-					title: 'debug test',
-					command: 'go.debug.startSession',
-					arguments: [config]
-				};
-
 				codelens.push(new CodeLens(func.location.range, runTestCmd));
-				codelens.push(new CodeLens(func.location.range, debugTestCmd));
+
+				const debugArgs = [
+					'-test.run', '^' + func.name + '$'
+				];
+				
+				codelens.push(new CodeLens(func.location.range, getDebugCmd("debug test", this.debugConfig, debugArgs)));
 			});
 		});
 
@@ -114,25 +122,12 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 				codelens.push(new CodeLens(func.location.range, runBenchmarkCmd));
 
-				const args = [
-					'-test.bench', func.name,
+				const debugArgs = [
+					'-test.bench', '^' + func.name + '$',
 					'-test.run', 'a^' // Don't match any test
 				]; 
-				const program = path.dirname(document.fileName);
-				const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
-				const envFile = vsConfig['testEnvFile'];
-				let buildFlags = getTestFlags(vsConfig, null);
-				if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
-					buildFlags.push('-tags');
-					buildFlags.push(`${vsConfig['buildTags']}`);
-				}
-				let config = Object.assign({}, this.debugConfig, { args, program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
-				let debugTestCmd = {
-					title: 'debug benchmark',
-					command: 'go.debug.startSession',
-					arguments: [config]
-				};
-				codelens.push(new CodeLens(func.location.range, debugTestCmd));
+
+				codelens.push(new CodeLens(func.location.range, getDebugCmd('debug benchmark', this.debugConfig, debugArgs)));
 			});
 			
 		});
