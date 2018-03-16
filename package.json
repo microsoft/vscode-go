@@ -412,6 +412,11 @@
                   "lldb"
                 ],
                 "description": "Backend used by delve. Only available in delve version 0.12.2 and above."
+              },
+              "output": {
+                "type": "string",
+                "description": "Output path for the bynary of delve",
+                "default": "debug"
               }
             }
           }
