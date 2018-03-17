@@ -57,7 +57,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		  "data": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 	   }
 	 */
-	sendTelemetryEvent('beta-testing', { version: '0.6.78', date: '03/03/2018' });
+	sendTelemetryEvent('beta-testing', { version: '0.6.78', date: '03/17/2018' });
 
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
