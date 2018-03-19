@@ -976,24 +976,4 @@ It returns the number of bytes written and any write error encountered.
 			});
 		}).then(() => done(), done);
 	});
-
-	test('Fill struct – select non-struct line', (done) => {
-		let uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_3.go'));
-		// Should return same output as input.
-		let golden = fs.readFileSync(path.join(fixturePath, 'fillStruct', 'input_3.go'), 'utf-8');
-
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			return vscode.window.showTextDocument(textDocument).then(editor => {
-				let selection = new vscode.Selection(0, 0, 0, 0);
-				editor.selection = selection;
-				return runFillStruct(editor).then(() => {
-					assert.fail(null, null, 'Run fill struct should have returned rejected promise');
-					return Promise.resolve();
-				}, () => {
-					assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
-					return Promise.resolve();
-				});
-			});
-		}).then(() => done(), done);
-	});
 });

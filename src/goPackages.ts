@@ -130,7 +130,7 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 	}
 
 	filePath = fixDriveCasingInWindows(filePath);
-	
+
 	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {
 		let pkgMap = new Map<string, string>();
 		if (!pkgs) {
