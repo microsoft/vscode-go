@@ -581,6 +581,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 			}
 		});
 	}
+	cwd = fixDriveCasingInWindows(cwd);
 	return new Promise((resolve, reject) => {
 		p = cp.execFile(cmd, args, { env: env, cwd: cwd }, (err, stdout, stderr) => {
 			try {
@@ -596,7 +597,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 					return resolve([]);
 				}
 				let lines = (useStdErr ? stderr : stdout).toString().split('\n');
-				outputChannel.appendLine(['Finished running tool:', cmd, ...args].join(' '));
+				outputChannel.appendLine([cwd + '>Finished running tool:', cmd, ...args].join(' '));
 
 				let ret: ICheckResult[] = [];
 				let unexpectedOutput = false;
