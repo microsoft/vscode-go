@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath } from './goPath';
+import { getGoRuntimePath, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -376,8 +376,8 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 
 	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
 	if (process.platform === 'win32') {
-		currentRoot = currentRoot ? currentRoot.substr(0, 1).toUpperCase() + currentRoot.substr(1) : '';
-		currentFilePath = currentFilePath ? currentFilePath.substr(0, 1).toUpperCase() + currentFilePath.substr(1) : '';
+		currentRoot = fixDriveCasingInWindows(currentRoot) || '';
+		currentFilePath = fixDriveCasingInWindows(currentFilePath) || '';
 	}
 
 	// Infer the GOPATH from the current root or the path of the file opened in current editor

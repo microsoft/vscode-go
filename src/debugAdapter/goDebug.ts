@@ -11,7 +11,7 @@ import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 
 require('console-stamp')(console);
@@ -172,10 +172,7 @@ function logError(...args: any[]) {
 function normalizePath(filePath: string) {
 	if (process.platform === 'win32') {
 		filePath = path.normalize(filePath);
-		let i = filePath.indexOf(':');
-		if (i >= 0) {
-			return filePath.slice(0, i).toUpperCase() + filePath.slice(i);
-		}
+		return fixDriveCasingInWindows(filePath);
 	}
 	return filePath;
 }

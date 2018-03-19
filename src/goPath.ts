@@ -173,11 +173,7 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 	}
 	let workspaces: string[] = gopath.split(path.delimiter);
 	let currentWorkspace = '';
-
-	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
-	if (process.platform === 'win32') {
-		currentFileDirPath = currentFileDirPath.substr(0, 1).toUpperCase() + currentFileDirPath.substr(1);
-	}
+	currentFileDirPath = fixDriveCasingInWindows(currentFileDirPath);
 
 	// Find current workspace by checking if current file is
 	// under any of the workspaces in $GOPATH
@@ -193,4 +189,9 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 		}
 	}
 	return currentWorkspace;
+}
+
+// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+export function fixDriveCasingInWindows(pathToFix: string): string {
+	return (process.platform === 'win32' && pathToFix) ? pathToFix.substr(0, 1).toUpperCase() + pathToFix.substr(1) : pathToFix;
 }
