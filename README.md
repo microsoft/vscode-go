@@ -54,6 +54,9 @@ The Go extension is ready to use on the get go. If you want to customize the fea
 
 
 ### Go Language Server (Experimental)
+
+The Go extension uses a host of Go tools to provide the various language features. An alternative is to use a single language server that provides the same feature.  
+
 Set `go.useLanguageServer` to `true` to use the Go language server from [Sourcegraph](https://github.com/sourcegraph/go-langserver) for features like Hover, Definition, Find All References, Signature Help, Go to Symbol in File and Workspace.
 * This is an experimental feature and is not available in Windows yet.
 * If set to true, you will be prompted to install the Go language server. Once installed, you will have to reload VS Code window. The language server will then be run by the Go extension in the background to provide services needed for the above mentioned features.
