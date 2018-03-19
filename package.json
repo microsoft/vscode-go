@@ -415,7 +415,7 @@
               },
               "output": {
                 "type": "string",
-                "description": "Output path for the bynary of delve",
+                "description": "Output path for the binary of delve",
                 "default": "debug"
               }
             }
