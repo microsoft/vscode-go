@@ -68,12 +68,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	updateGoPathGoRootFromConfig().then(() => {
 		const updateToolsCmdText = 'Update tools';
-		interface goInfo {
+		interface GoInfo {
 			goroot: string;
 			version: string;
 		}
 		const toolsGopath = getToolsGopath() || getCurrentGoPath();
-		let toolsGoInfo: { [id: string]: goInfo; } = ctx.globalState.get('toolsGoInfo') || {};
+		let toolsGoInfo: { [id: string]: GoInfo; } = ctx.globalState.get('toolsGoInfo') || {};
 		if (!toolsGoInfo[toolsGopath]) toolsGoInfo[toolsGopath] = { goroot: null, version: null };
 		const prevGoroot = toolsGoInfo[toolsGopath].goroot;
 		const currentGoroot: string = process.env['GOROOT'];
