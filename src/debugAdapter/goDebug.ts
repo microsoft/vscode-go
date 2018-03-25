@@ -11,7 +11,7 @@ import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 
 require('console-stamp')(console);
@@ -140,6 +140,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	/** Optional path to .env file. */
 	envFile?: string;
 	backend?: string;
+	output?: string;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -171,10 +172,7 @@ function logError(...args: any[]) {
 function normalizePath(filePath: string) {
 	if (process.platform === 'win32') {
 		filePath = path.normalize(filePath);
-		let i = filePath.indexOf(':');
-		if (i >= 0) {
-			return filePath.slice(0, i).toUpperCase() + filePath.slice(i);
-		}
+		return fixDriveCasingInWindows(filePath);
 	}
 	return filePath;
 }
@@ -300,6 +298,9 @@ class Delve {
 			}
 			if (launchArgs.backend) {
 				dlvArgs = dlvArgs.concat(['--backend=' + launchArgs.backend]);
+			}
+			if (launchArgs.output && mode === 'debug') {
+				dlvArgs = dlvArgs.concat(['--output=' + launchArgs.output]);
 			}
 			if (launchArgs.args) {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
@@ -445,7 +446,7 @@ class GoDebugSession extends DebugSession {
 			let llist = localPath.split(/\/|\\/).reverse();
 			let rlist = remotePath.split(/\/|\\/).reverse();
 			let i = 0;
-			for (; i < llist.length; i++) if (llist[i] !== rlist[i]) break;
+			for (; i < llist.length; i++) if (llist[i] !== rlist[i] || llist[i] === 'src') break;
 
 			if (i) {
 				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
