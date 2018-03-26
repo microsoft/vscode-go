@@ -12,6 +12,7 @@ import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, get
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
+let sendSignal = "SIGKILL"
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.cancel';
@@ -198,12 +199,10 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				outBuf.done();
 				errBuf.done();
 
-				statusBarItem.hide();
-
 				if (code) {
 					outputChannel.appendLine('Error: Tests failed.');
-				} else if (signal === 'SIGKILL') {
-					outputChannel.appendLine('Tests killed.');
+				} else if (signal === sendSignal) {
+					outputChannel.appendLine('Error: Tests terminated by user.');
 				} else {
 					outputChannel.appendLine('Success: Tests passed.');
 				}
@@ -251,7 +250,7 @@ export function cancelRunningTests(): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		let tp: cp.ChildProcess;
 		testProcesses.forEach(function(tp){
-			process.kill(-tp.pid, 'SIGKILL');
+			tp.kill(sendSignal);
 		});
 		// All processes are now dead. Empty the array to prepare for the next run.
 		testProcesses.splice(0, testProcesses.length);
