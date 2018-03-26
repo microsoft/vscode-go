@@ -220,6 +220,10 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 					testProcesses.splice(index, 1);
 				}
 
+				if (testProcesses.length == 0) {
+					statusBarItem.hide();
+				}
+
 				resolve(code === 0);
 			});
 
