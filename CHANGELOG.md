@@ -1,6 +1,9 @@
-## 0.6.78 - Coming Soon
+## 0.6.78 - 3rd April, 2018
 
-### New Features or Enhancements
+### New Features and Enhancements
+
+* [Teruo Kunihiro @1984weed](https://github.com/1984weed)
+    * Configure the `output` option of delve in debug configuration.The location provided here is where delve will output the binary it then uses for debugging. [PR 1564](https://github.com/Microsoft/vscode-go/pull/1564)
 
 * [Harry Kalogirou @harkal](https://github.com/harkal)
     * Codelens to debug benchmarks. [PR 1566](https://github.com/Microsoft/vscode-go/pull/1566)
