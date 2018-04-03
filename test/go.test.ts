@@ -279,9 +279,9 @@ It returns the number of bytes written and any write error encountered.
 				for (let i in expected) {
 					for (let j in sortedDiagnostics) {
 						if (expected[i].line
-						&& (expected[i].line === sortedDiagnostics[j].line)
-						&& (expected[i].severity === sortedDiagnostics[j].severity)
-						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							&& (expected[i].line === sortedDiagnostics[j].line)
+							&& (expected[i].severity === sortedDiagnostics[j].severity)
+							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
 							matchCount++;
 						}
 					}
@@ -405,8 +405,8 @@ It returns the number of bytes written and any write error encountered.
 				for (let i in expected) {
 					for (let j in sortedDiagnostics) {
 						if ((expected[i].line === sortedDiagnostics[j].line)
-						&& (expected[i].severity === sortedDiagnostics[j].severity)
-						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							&& (expected[i].severity === sortedDiagnostics[j].severity)
+							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
 							matchCount++;
 						}
 					}
@@ -520,11 +520,11 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test("Test '-args' are correctly passed to tests", (done) => {
+	test('Test "-args" are correctly passed to tests', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'testFlags': { value: ["-v", "-args", "-foo", "testval"]}
+			'testFlags': { value: ['-v', '-args', '-foo', 'testval'] }
 		});
-		
+
 
 		let uri = vscode.Uri.file(path.join(fixturePath, 'testArgsTest', 'args_test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
