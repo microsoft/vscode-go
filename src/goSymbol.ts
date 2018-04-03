@@ -62,10 +62,10 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 		let workspaceSymbols = getSymbols(root, query, token, goConfig);
 		let gorootSymbols = goConfig.gotoSymbol.includeGoroot && process.env.GOROOT
 			? getSymbols(process.env.GOROOT, query, token, goConfig)
-			: [];
+			: <GoSymbolDeclaration[]>[];
 
 		return Promise.all([workspaceSymbols, gorootSymbols])
-			.then(([...results]) => [].concat(...results))
+			.then(([...results]) => <GoSymbolDeclaration[]>[].concat(...results))
 			.then(results => {
 				let symbols: vscode.SymbolInformation[] = [];
 				convertToCodeSymbols(results, symbols);
