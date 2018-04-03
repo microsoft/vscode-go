@@ -51,27 +51,37 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 		if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
 			root = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
 		}
-		if (!root) {
+
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+
+		if (!root && !goConfig.gotoSymbol.includeGoroot) {
 			vscode.window.showInformationMessage('No workspace is open to find symbols.');
 			return;
 		}
 
-		return getWorkspaceSymbols(root, query, token).then(results => {
-			let symbols: vscode.SymbolInformation[] = [];
-			convertToCodeSymbols(results, symbols);
-			return symbols;
-		});
+		let workspaceSymbols = getSymbols(root, query, token, goConfig);
+		let gorootSymbols = goConfig.gotoSymbol.includeGoroot && process.env.GOROOT
+			? getSymbols(process.env.GOROOT, query, token, goConfig)
+			: [];
+
+		return Promise.all([workspaceSymbols, gorootSymbols])
+			.then(([...results]) => [].concat(...results))
+			.then(results => {
+				let symbols: vscode.SymbolInformation[] = [];
+				convertToCodeSymbols(results, symbols);
+				return symbols;
+			});
 	}
 }
 
-export function getWorkspaceSymbols(workspacePath: string, query: string, token: vscode.CancellationToken, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
+export function getSymbols(lookupPath: string, query: string, token: vscode.CancellationToken, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
 	if (!goConfig) {
 		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	}
 	let gotoSymbolConfig = goConfig['gotoSymbol'];
 	let ignoreFolders: string[] = gotoSymbolConfig ? gotoSymbolConfig['ignoreFolders'] : [];
 	let args = (ignoreFolderFeatureOn && ignoreFolders && ignoreFolders.length > 0) ? ['-ignore', ignoreFolders.join(',')] : [];
-	args.push(workspacePath);
+	args.push(lookupPath);
 	args.push(query);
 	let gosyms = getBinPath('go-symbols');
 	let env = getToolsEnvVars();
@@ -89,7 +99,7 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, token:
 				if (err && stderr && stderr.startsWith('flag provided but not defined: -ignore')) {
 					promptForUpdatingTool('go-symbols');
 					p = null;
-					return getWorkspaceSymbols(workspacePath, query, token, goConfig, false).then(results => {
+					return getSymbols(lookupPath, query, token, goConfig, false).then(results => {
 						return resolve(results);
 					});
 				}

@@ -11,7 +11,7 @@ import { GoHoverProvider } from '../src/goExtraInfo';
 import { GoCompletionItemProvider } from '../src/goSuggest';
 import { GoSignatureHelpProvider } from '../src/goSignature';
 import { GoDefinitionProvider } from '../src/goDeclaration';
-import { getWorkspaceSymbols } from '../src/goSymbol';
+import { getSymbols } from '../src/goSymbol';
 import { check } from '../src/goCheck';
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
@@ -703,11 +703,11 @@ It returns the number of bytes written and any write error encountered.
 				}
 			}
 		});
-		let withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithoutIgnoringFolders).then(results => {
+		let withoutIgnoringFolders = getSymbols(workspacePath, 'WinInfo', null, configWithoutIgnoringFolders).then(results => {
 			assert.equal(results[0].name, 'WinInfo');
 			assert.equal(results[0].path, path.join(workspacePath, 'vendor/9fans.net/go/acme/acme.go'));
 		});
-		let withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithIgnoringFolders).then(results => {
+		let withIgnoringFolders = getSymbols(workspacePath, 'WinInfo', null, configWithIgnoringFolders).then(results => {
 			assert.equal(results.length, 0);
 		});
 		Promise.all([withIgnoringFolders, withoutIgnoringFolders]).then(() => done(), done);
