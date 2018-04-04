@@ -7,6 +7,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath, getToolsEnvVars, killProcess } from './util';
+import { getGoRuntimePath } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with github.com/acroca/go-symbols'
@@ -60,8 +61,8 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 		}
 
 		let workspaceSymbols = getSymbols(root, query, token, goConfig);
-		let gorootSymbols = goConfig.gotoSymbol.includeGoroot && process.env.GOROOT
-			? getSymbols(process.env.GOROOT, query, token, goConfig)
+		let gorootSymbols = goConfig.gotoSymbol.includeGoroot
+			? getGoroot().then(goroot => getSymbols(goroot, query, token, goConfig))
 			: <GoSymbolDeclaration[]>[];
 
 		return Promise.all([workspaceSymbols, gorootSymbols])
@@ -72,6 +73,23 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 				return symbols;
 			});
 	}
+}
+
+function getGoroot(): Promise<string> {
+	let goExecutable = getGoRuntimePath();
+	if (!goExecutable) {
+		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
+	}
+	return new Promise((resolve, reject) => {
+		cp.execFile(goExecutable, ['env', 'GOROOT'], (err, stdout) => {
+			if (err) {
+				reject(err);
+				return;
+			}
+			let [goRoot] = stdout.split('\n');
+			resolve(goRoot.trim());
+		});
+	});
 }
 
 export function getSymbols(lookupPath: string, query: string, token: vscode.CancellationToken, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
