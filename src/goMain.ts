@@ -96,7 +96,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				'go-langserver',
 				{
 					command: getBinPath('go-langserver'),
-					args: ['-mode=stdio', ...langServerFlags],
+					args: ['-mode=stdio', '-gocodecompletion', ...langServerFlags],
 				},
 				{
 					documentSelector: ['go'],
@@ -110,6 +110,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 			ctx.subscriptions.push(c.start());
 		} else {
+			ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
 			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 			ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
 			ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
@@ -130,7 +131,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	let testCodeLensProvider = new GoRunTestCodeLensProvider();
 	let referencesCodeLensProvider = new GoReferencesCodeLensProvider();
 
-	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
 	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
