@@ -689,6 +689,12 @@
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature",
           "scope": "resource"
         },
+        "go.gotoSymbol.includeGoroot": {
+          "type": "boolean",
+          "default": false,
+          "description": "If false, the standard library located at $GOROOT will be excluded while using the Go to Symbol in File feature",
+          "scope": "resource"
+        },
         "go.enableCodeLens": {
           "type": "object",
           "properties": {

@@ -681,7 +681,7 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Workspace Symbols', (done) => {
+	test('Workspace Symbols', () => {
 		// This test needs a go project that has vendor folder and vendor packages
 		// Since the Go extension takes a dependency on the godef tool at github.com/rogpeppe/godef
 		// which has vendor packages, we are using it here to test the "replace vendor packages with relative path" feature.
@@ -703,6 +703,21 @@ It returns the number of bytes written and any write error encountered.
 				}
 			}
 		});
+		let configWithIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
+			'gotoSymbol': {
+				value: {
+					'includeGoroot': true
+				}
+			}
+		});
+		let configWithoutIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
+			'gotoSymbol': {
+				value: {
+					'includeGoroot': false
+				}
+			}
+		});
+
 		let withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithoutIgnoringFolders).then(results => {
 			assert.equal(results[0].name, 'WinInfo');
 			assert.equal(results[0].path, path.join(workspacePath, 'vendor/9fans.net/go/acme/acme.go'));
@@ -710,7 +725,14 @@ It returns the number of bytes written and any write error encountered.
 		let withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithIgnoringFolders).then(results => {
 			assert.equal(results.length, 0);
 		});
-		Promise.all([withIgnoringFolders, withoutIgnoringFolders]).then(() => done(), done);
+		let withoutIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithoutIncludeGoroot).then(results => {
+			assert.equal(results.length, 0);
+		});
+		let withIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithIncludeGoroot).then(results => {
+			assert(results.some(result => result.name === 'Mutex'));
+		});
+
+		return Promise.all([withIgnoringFolders, withoutIgnoringFolders, withIncludingGoroot, withoutIncludingGoroot]);
 	});
 
 	test('Test Completion', (done) => {
