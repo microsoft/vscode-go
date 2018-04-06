@@ -264,7 +264,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 		outputChannel.appendLine(''); // Blank line for spacing
 		let failures = res.filter(x => x != null);
 		if (failures.length === 0) {
-			if (missing.indexOf('langserver-go') > -1) {
+			if (missing.indexOf('go-langserver') > -1) {
 				outputChannel.appendLine('Reload VS Code window to use the Go language server');
 			}
 			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
@@ -388,13 +388,13 @@ export function checkLanguageServer(): boolean {
 
 	// we execute the languageserver using -help so that it will fail and
 	// print all the available flags
-	let langserverSupportsCompletion = true;
+	let helpText = '';
 	try {
-		cp.execFileSync(getBinPath('go-langserver'), ['-help']);
+		helpText = cp.execFileSync(getBinPath('go-langserver'), ['-help']).toString();
 	} catch (err) {
-		let stderr: string = err.stderr.toString();
-		langserverSupportsCompletion = stderr.includes('-gocodecompletion');
+		helpText = (<cp.SpawnSyncReturns<Buffer>>err).stderr.toString();
 	}
+	let langserverSupportsCompletion = helpText.includes('-gocodecompletion');
 
 	if (!langserverSupportsCompletion) {
 		promptForUpdatingTool('go-langserver');
@@ -412,8 +412,3 @@ function allFoldersHaveSameGopath(): boolean {
 	let tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
 	return vscode.workspace.workspaceFolders.find(x => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
 }
-
-
-
-
-
