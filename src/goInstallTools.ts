@@ -383,8 +383,25 @@ export function checkLanguageServer(): boolean {
 	if (!langServerAvailable) {
 		promptForMissingTool('go-langserver');
 		vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
+		return langServerAvailable;
 	}
-	return langServerAvailable;
+
+	// we execute the languageserver using -help so that it will fail and
+	// print all the available flags
+	let langserverSupportsCompletion = true;
+	try {
+		cp.execFileSync(getBinPath('go-langserver'), ['-help']);
+	} catch (err) {
+		let stderr: string = err.stderr.toString();
+		langserverSupportsCompletion = stderr.includes('-gocodecompletion');
+	}
+
+	if (!langserverSupportsCompletion) {
+		promptForUpdatingTool('go-langserver');
+		vscode.window.showInformationMessage('Reload VS Code window after updating the Go language server');
+	}
+
+	return langserverSupportsCompletion;
 }
 
 function allFoldersHaveSameGopath(): boolean {
