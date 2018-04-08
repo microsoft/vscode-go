@@ -505,7 +505,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Env Variables are passed to Tests', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue', 'dummyNonString': 1 } }
 		});
 
 		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
