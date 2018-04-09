@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.78",
+  "version": "0.6.79-beta.1",
   "publisher": "lukehoban",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -55,7 +55,7 @@
     "vscode": "^1.1.4"
   },
   "engines": {
-    "vscode": "^1.17.0"
+    "vscode": "^1.22.0"
   },
   "activationEvents": [
     "onLanguage:go",

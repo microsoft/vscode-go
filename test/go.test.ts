@@ -27,7 +27,6 @@ import { goPlay } from '../src/goPlayground';
 import { goLint } from '../src/goLint';
 import { runFillStruct } from '../src/goFillStruct';
 import { print } from 'util';
-import { TextDocument } from 'vscode-languageserver-types/lib/main';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
