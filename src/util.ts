@@ -104,7 +104,7 @@ export function parseFilePrelude(text: string): Prelude {
 		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
 			ret.imports.push({ kind: 'single', start: i, end: i });
 		}
-		if (line.match(/^(\s)*\)/)) {
+		if (line.match(/^(\s)*(\/\*.*\*\/)*\s*\)/)) {
 			if (ret.imports[ret.imports.length - 1].end === -1) {
 				ret.imports[ret.imports.length - 1].end = i;
 			}
