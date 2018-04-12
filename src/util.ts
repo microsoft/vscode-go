@@ -109,7 +109,7 @@ export function parseFilePrelude(text: string): Prelude {
 				ret.imports[ret.imports.length - 1].end = i;
 			}
 		}
-		if (line.match(/^(\s)*(func|const|type|var)/)) {
+		if (line.match(/^(\s)*(func|const|type|var)\s/)) {
 			break;
 		}
 	}
