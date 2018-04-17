@@ -531,14 +531,15 @@ export function guessPackageNameFromFile(filePath): Promise<string[]> {
 
 		const proposedPkgName = segments[segments.length - 1];
 
-		if (goFilename.endsWith('_test.go')) {
-			return resolve([proposedPkgName, proposedPkgName + '_test']);
-		}
-
 		fs.stat(path.join(directoryPath, 'main.go'), (err, stats) => {
 			if (stats && stats.isFile()) {
 				return resolve(['main']);
 			}
+
+			if (goFilename.endsWith('_test.go')) {
+				return resolve([proposedPkgName, proposedPkgName + '_test']);
+			}
+
 			return resolve([proposedPkgName]);
 		});
 	});
