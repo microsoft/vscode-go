@@ -27,10 +27,14 @@ import { goPlay } from '../src/goPlayground';
 import { goLint } from '../src/goLint';
 import { runFillStruct } from '../src/goFillStruct';
 import { print } from 'util';
-import { TextDocument } from 'vscode-languageserver-types/lib/main';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
+	if (!gopath) {
+		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
+		return;
+	}
+
 	let repoPath = path.join(gopath, 'src', 'test');
 	let fixturePath = path.join(repoPath, 'testfixture');
 	let fixtureSourcePath = path.join(__dirname, '..', '..', 'test', 'fixtures');
@@ -40,7 +44,7 @@ suite('Go Extension Tests', () => {
 	let testPath = path.join(__dirname, 'tests');
 
 	suiteSetup(() => {
-		assert.ok(gopath !== null, 'GOPATH is not defined');
+
 		fs.removeSync(repoPath);
 		fs.removeSync(testPath);
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
@@ -268,15 +272,19 @@ It returns the number of bytes written and any write error encountered.
 			}
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+				let matchCount = 0;
 				for (let i in expected) {
-					if (expected[i].line) {
-						assert(sortedDiagnostics[i]);
-						assert.equal(sortedDiagnostics[i].line, expected[i].line);
-					};
-					assert.equal(sortedDiagnostics[i].severity, expected[i].severity);
-					assert.equal(sortedDiagnostics[i].msg, expected[i].msg);
+					for (let j in sortedDiagnostics) {
+						if (expected[i].line
+						&& (expected[i].line === sortedDiagnostics[j].line)
+						&& (expected[i].severity === sortedDiagnostics[j].severity)
+						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							matchCount++;
+						}
+					}
 				}
+				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
 			});
 		}).then(() => done(), done);
 	});
@@ -390,13 +398,18 @@ It returns the number of bytes written and any write error encountered.
 					return 0;
 				});
 
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
-
+				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+				let matchCount = 0;
 				for (let i in expected) {
-					assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-					assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+					for (let j in sortedDiagnostics) {
+						if ((expected[i].line === sortedDiagnostics[j].line)
+						&& (expected[i].severity === sortedDiagnostics[j].severity)
+						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							matchCount++;
+						}
+					}
 				}
+				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
 
 				return Promise.resolve();
 			});
@@ -491,7 +504,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Env Variables are passed to Tests', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue', 'dummyNonString': 1 } }
 		});
 
 		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
@@ -667,7 +680,7 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Workspace Symbols', (done) => {
+	test('Workspace Symbols', () => {
 		// This test needs a go project that has vendor folder and vendor packages
 		// Since the Go extension takes a dependency on the godef tool at github.com/rogpeppe/godef
 		// which has vendor packages, we are using it here to test the "replace vendor packages with relative path" feature.
@@ -689,6 +702,21 @@ It returns the number of bytes written and any write error encountered.
 				}
 			}
 		});
+		let configWithIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
+			'gotoSymbol': {
+				value: {
+					'includeGoroot': true
+				}
+			}
+		});
+		let configWithoutIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
+			'gotoSymbol': {
+				value: {
+					'includeGoroot': false
+				}
+			}
+		});
+
 		let withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithoutIgnoringFolders).then(results => {
 			assert.equal(results[0].name, 'WinInfo');
 			assert.equal(results[0].path, path.join(workspacePath, 'vendor/9fans.net/go/acme/acme.go'));
@@ -696,7 +724,14 @@ It returns the number of bytes written and any write error encountered.
 		let withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithIgnoringFolders).then(results => {
 			assert.equal(results.length, 0);
 		});
-		Promise.all([withIgnoringFolders, withoutIgnoringFolders]).then(() => done(), done);
+		let withoutIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithoutIncludeGoroot).then(results => {
+			assert.equal(results.length, 0);
+		});
+		let withIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithIncludeGoroot).then(results => {
+			assert(results.some(result => result.name === 'Mutex'));
+		});
+
+		return Promise.all([withIgnoringFolders, withoutIgnoringFolders, withIncludingGoroot, withoutIncludingGoroot]);
 	});
 
 	test('Test Completion', (done) => {
@@ -842,48 +877,6 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Test Linter for Package', (done) => {
-		getGoVersion().then(version => {
-			if (!version || (version.major === 1 && version.minor < 6)) {
-				// golint in gometalinter is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
-			let config = Object.create(vscode.workspace.getConfiguration('go'), {
-				'lintTool': { value: 'gometalinter' },
-				'lintFlags': { value: ['--json', '--disable-all', '--enable=golint', '--enable=errcheck'] },
-			});
-			let linterTestPath = path.join(fixturePath, 'linterTest');
-			let expected = [
-				{ file: path.join(linterTestPath, 'linter_1.go'), line: 8, severity: 'warning', msg: 'error return value not checked (a declared but not used) (errcheck' },
-				{ file: path.join(linterTestPath, 'linter_2.go'), line: 5, severity: 'warning', msg: 'error return value not checked (missing return) (errcheck)' },
-				{ file: path.join(linterTestPath, 'linter_1.go'), line: 5, severity: 'warning', msg: 'exported function ExportedFunc should have comment or be unexported (golint)' },
-			];
-			let linterFilePath = path.join(linterTestPath, 'linter_1.go');
-			return goLint(vscode.Uri.file(linterFilePath), config).then(diagnostics => {
-				let sortedDiagnostics = diagnostics.sort((a, b) => {
-					if (a.msg < b.msg)
-						return -1;
-					if (a.msg > b.msg)
-						return 1;
-					return 0;
-				});
-
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
-
-				for (let i in expected) {
-					let errorMsg = `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`;
-					assert(sortedDiagnostics[i].msg.startsWith(expected[i].msg), errorMsg);
-					assert.equal(sortedDiagnostics[i].file.toLowerCase(), expected[i].file.toLowerCase(), errorMsg);
-					assert.equal(sortedDiagnostics[i].line, expected[i].line, errorMsg);
-					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, errorMsg);
-				}
-
-				return Promise.resolve();
-			});
-		}).then(() => done(), done);
-	});
-
 	test('Build Tags checking', (done) => {
 		const config1 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
@@ -998,26 +991,6 @@ It returns the number of bytes written and any write error encountered.
 				let selection = new vscode.Selection(7, 0, 7, 10);
 				editor.selection = selection;
 				return runFillStruct(editor).then(() => {
-					assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
-					return Promise.resolve();
-				});
-			});
-		}).then(() => done(), done);
-	});
-
-	test('Fill struct – select non-struct line', (done) => {
-		let uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_3.go'));
-		// Should return same output as input.
-		let golden = fs.readFileSync(path.join(fixturePath, 'fillStruct', 'input_3.go'), 'utf-8');
-
-		vscode.workspace.openTextDocument(uri).then((textDocument) => {
-			return vscode.window.showTextDocument(textDocument).then(editor => {
-				let selection = new vscode.Selection(0, 0, 0, 0);
-				editor.selection = selection;
-				return runFillStruct(editor).then(() => {
-					assert.fail(null, null, 'Run fill struct should have returned rejected promise');
-					return Promise.resolve();
-				}, () => {
 					assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
 					return Promise.resolve();
 				});

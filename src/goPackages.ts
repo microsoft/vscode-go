@@ -1,7 +1,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
@@ -129,10 +129,7 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 		getAllPackagesPromise = getAllPackages();
 	}
 
-	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
-	if (process.platform === 'win32' && filePath) {
-		filePath = filePath.substr(0, 1).toUpperCase() + filePath.substr(1);
-	}
+	filePath = fixDriveCasingInWindows(filePath);
 
 	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {
 		let pkgMap = new Map<string, string>();

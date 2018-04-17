@@ -64,8 +64,8 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 		}
 	}
 
-	Object.keys(testEnvConfig).forEach(key => envVars[key] = resolvePath(testEnvConfig[key]));
-	Object.keys(fileEnv).forEach(key => envVars[key] = resolvePath(fileEnv[key]));
+	Object.keys(testEnvConfig).forEach(key => envVars[key] = typeof testEnvConfig[key] === 'string' ? resolvePath(testEnvConfig[key]) : testEnvConfig[key]);
+	Object.keys(fileEnv).forEach(key => envVars[key] = typeof fileEnv[key] === 'string' ? resolvePath(fileEnv[key]) : fileEnv[key]);
 
 	return envVars;
 }
@@ -169,8 +169,8 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			outBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
 			outBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
 
-			errBuf.onLine(line => outputChannel.appendLine(line));
-			errBuf.onDone(last => last && outputChannel.appendLine(last));
+			errBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
+			errBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
 
 			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
 			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
@@ -204,8 +204,8 @@ export function showTestOutput() {
 function expandFilePathInOutput(output: string, cwd: string): string {
 	let lines = output.split('\n');
 	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\s+(\S+_test.go):(\d+):/);
-		if (matches) {
+		let matches = lines[i].match(/^\s*(.+.go):(\d+):/);
+		if (matches && matches[1] && !path.isAbsolute(matches[1])) {
 			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
 		}
 	}

@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath } from './goPath';
+import { getGoRuntimePath, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -104,12 +104,12 @@ export function parseFilePrelude(text: string): Prelude {
 		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
 			ret.imports.push({ kind: 'single', start: i, end: i });
 		}
-		if (line.match(/^(\s)*\)/)) {
+		if (line.match(/^(\s)*(\/\*.*\*\/)*\s*\)/)) {
 			if (ret.imports[ret.imports.length - 1].end === -1) {
 				ret.imports[ret.imports.length - 1].end = i;
 			}
 		}
-		if (line.match(/^(\s)*(func|const|type|var)/)) {
+		if (line.match(/^(\s)*(func|const|type|var)\s/)) {
 			break;
 		}
 	}
@@ -347,7 +347,7 @@ export function getToolsEnvVars(): any {
 	const envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
 
 	if (toolsEnvVars && typeof toolsEnvVars === 'object') {
-		Object.keys(toolsEnvVars).forEach(key => envVars[key] = resolvePath(toolsEnvVars[key]));
+		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof envVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : envVars[key]);
 	}
 
 	// cgo expects go to be in the path
@@ -376,8 +376,8 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 
 	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
 	if (process.platform === 'win32') {
-		currentRoot = currentRoot ? currentRoot.substr(0, 1).toUpperCase() + currentRoot.substr(1) : '';
-		currentFilePath = currentFilePath ? currentFilePath.substr(0, 1).toUpperCase() + currentFilePath.substr(1) : '';
+		currentRoot = fixDriveCasingInWindows(currentRoot) || '';
+		currentFilePath = fixDriveCasingInWindows(currentFilePath) || '';
 	}
 
 	// Infer the GOPATH from the current root or the path of the file opened in current editor
@@ -547,6 +547,7 @@ export function guessPackageNameFromFile(filePath): Promise<string[]> {
 export interface ICheckResult {
 	file: string;
 	line: number;
+	col: number;
 	msg: string;
 	severity: string;
 }
@@ -580,6 +581,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 			}
 		});
 	}
+	cwd = fixDriveCasingInWindows(cwd);
 	return new Promise((resolve, reject) => {
 		p = cp.execFile(cmd, args, { env: env, cwd: cwd }, (err, stdout, stderr) => {
 			try {
@@ -595,7 +597,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 					return resolve([]);
 				}
 				let lines = (useStdErr ? stderr : stdout).toString().split('\n');
-				outputChannel.appendLine(['Finished running tool:', cmd, ...args].join(' '));
+				outputChannel.appendLine([cwd + '>Finished running tool:', cmd, ...args].join(' '));
 
 				let ret: ICheckResult[] = [];
 				let unexpectedOutput = false;
@@ -611,8 +613,9 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 						continue;
 					}
 					atleastSingleMatch = true;
-					let [_, __, file, ___, lineStr, ____, charStr, msg] = match;
+					let [_, __, file, ___, lineStr, ____, colStr, msg] = match;
 					let line = +lineStr;
+					let col = +colStr;
 
 					// Building skips vendor folders,
 					// But vet and lint take in directories and not import paths, so no way to skip them
@@ -622,7 +625,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 					}
 
 					file = path.resolve(cwd, file);
-					ret.push({ file, line, msg, severity });
+					ret.push({ file, line, col, msg, severity });
 					outputChannel.appendLine(`${file}:${line}: ${msg}`);
 				}
 				if (!atleastSingleMatch && unexpectedOutput && vscode.window.activeTextEditor) {
@@ -631,6 +634,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 						ret.push({
 							file: vscode.window.activeTextEditor.document.fileName,
 							line: 1,
+							col: 1,
 							msg: stderr,
 							severity: 'error'
 						});
@@ -663,7 +667,11 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 			let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1);
 			let text = document.getText(range);
 			let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
-			startColumn = leading.length;
+			if (!error.col) {
+				startColumn = leading.length;
+			} else {
+				startColumn = error.col - 1; // range is 0-indexed
+			}
 			endColumn = text.length - trailing.length;
 		}
 		let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);

@@ -3,7 +3,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix } from './util';
+import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getToolsEnvVars } from './util';
 import { getGoRuntimePath } from './goPath';
@@ -11,6 +11,7 @@ import { getGoRuntimePath } from './goPath';
 interface GoListOutput {
 	Dir: string;
 	ImportPath: string;
+	Root: string;
 }
 
 interface GuruImplementsRef {
@@ -31,10 +32,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 	public provideImplementation(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Definition> {
 		// To keep `guru implements` fast we want to restrict the scope of the search to current workpsace
 		// If no workpsace is open, then no-op
-		let root = vscode.workspace.rootPath;
-		if (vscode.workspace.getWorkspaceFolder(document.uri)) {
-			root = vscode.workspace.getWorkspaceFolder(document.uri).uri.fsPath;
-		}
+		const root = getWorkspaceFolderPath(document.uri);
 		if (!root) {
 			vscode.window.showInformationMessage('Cannot find implementations when there is no workspace open.');
 			return;
@@ -50,14 +48,16 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 					return reject(err);
 				}
 				let listOutput = <GoListOutput>JSON.parse(stdout.toString());
-				let scope = listOutput.ImportPath;
 				let filename = canonicalizeGOPATHPrefix(document.fileName);
 				let cwd = path.dirname(filename);
 				let offset = byteOffsetAt(document, position);
 				let goGuru = getBinPath('guru');
 				const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
 				let args = buildTags ? ['-tags', buildTags] : [];
-				args.push('-scope', `${scope}/...`, '-json', 'implements', `${filename}:#${offset.toString()}`);
+				if (listOutput.Root && listOutput.ImportPath) {
+					args.push('-scope', `${listOutput.ImportPath}/...`);
+				}
+				args.push('-json', 'implements', `${filename}:#${offset.toString()}`);
 
 				let guruProcess = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {

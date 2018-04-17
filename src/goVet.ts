@@ -1,6 +1,6 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
 
@@ -56,21 +56,26 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	const vetFlags = goConfig['vetFlags'] || [];
 	const vetEnv = Object.assign({}, getToolsEnvVars());
-	const vetArgs = vetFlags.length ? ['tool', 'vet', ...vetFlags, '.'] : ['vet', './...'];
+	const vetPromise = getGoVersion().then((version: SemVersion) => {
+		let vetArgs = ['vet', ...vetFlags, './...'];
+		if (version && version.major === 1 && version.minor <= 9 && vetFlags.length) {
+			vetArgs = ['tool', 'vet', ...vetFlags, '.'];
+		}
 
-	running = true;
-	const vetPromise = runTool(
-		vetArgs,
-		cwd,
-		'warning',
-		true,
-		null,
-		vetEnv,
-		false,
-		tokenSource.token
-	).then((result) => {
-		running = false;
-		return result;
+		running = true;
+		return runTool(
+			vetArgs,
+			cwd,
+			'warning',
+			true,
+			null,
+			vetEnv,
+			false,
+			tokenSource.token
+		).then((result) => {
+			running = false;
+			return result;
+		});
 	});
 
 	return vetPromise;

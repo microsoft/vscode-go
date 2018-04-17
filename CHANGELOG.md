@@ -1,3 +1,45 @@
+## 0.6.78 - 3rd April, 2018
+
+### New Features and Enhancements
+
+* [Teruo Kunihiro @1984weed](https://github.com/1984weed)
+    * Configure the `output` option of delve in debug configuration.The location provided here is where delve will output the binary it then uses for debugging. [PR 1564](https://github.com/Microsoft/vscode-go/pull/1564)
+
+* [Harry Kalogirou @harkal](https://github.com/harkal)
+    * Codelens to debug benchmarks. [PR 1566](https://github.com/Microsoft/vscode-go/pull/1566)
+
+* [David Howden @dhowden](https://github.com/dhowden)
+    * Show build errors at the right column in a line instead of showing them at the start of the line by using columns numbers returned from `go build`. [PR 1573](https://github.com/Microsoft/vscode-go/pull/1573)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Make links in test output clickable when it fails due to build errors. [Feature Request 1562](https://github.com/Microsoft/vscode-go/issues/1562)
+    * Enable `Go to Implementation` to work both ways. [Feature Request 1536](https://github.com/Microsoft/vscode-go/issues/1536)
+
+* [Dan Mick @dmick](https://github.com/dmick)
+    * Include comments from struct definitions when showing the definitions on hover. [PR 1559](https://github.com/Microsoft/vscode-go/pull/1559)
+
+* [KataKonst @KataKonst](https://github.com/KataKonst)
+    * Use `go vet` instead of `go tool vet` from Go 1.10 onwards as the latter now supports all vet flags. [PR 1576](https://github.com/Microsoft/vscode-go/pull/1576)
+
+* [Luis GG @lggomez](https://github.com/lggomez)
+    * Add option to never show the warning on editing generated files. [PR 1537](https://github.com/Microsoft/vscode-go/pull/1537)
+
+* [Jan Koehnlein @JanKoehnlein](https://github.com/JanKoehnlein)
+    * Show warning when go binary is not found during build. [PR 1543](https://github.com/Microsoft/vscode-go/pull/1543)
+
+### Bug Fixes
+
+* [Kegsay @Kegsay](https://github.com/Kegsay)
+    * Fix bug where debug codelens would debug all tests that match the current test name. [PR 1561](https://github.com/Microsoft/vscode-go/pull/1561)
+
+* [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
+    * Fix bug where internal packages are allowed to be imported when their path is substring of current package. [PR 1535](https://github.com/Microsoft/vscode-go/pull/1535)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix `Go to Implementation` feature when GOPATH is directly opened in VS Code. [Bug 1545](https://github.com/Microsoft/vscode-go/issues/1545) and [Bug 1554](https://github.com/Microsoft/vscode-go/issues/1554)
+    * Fix issue with debugging into std lib when remote debugging and remote path is a complete substring of the local path.
+
+
 ## 0.6.77 - 20th February, 2018
 
 * [Robin Bartholdson @buyology](https://github.com/buyology)
