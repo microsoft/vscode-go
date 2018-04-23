@@ -582,7 +582,7 @@ class GoDebugSession extends DebugSession {
 				let breakpointIn = <DebugBreakpoint>{};
 				breakpointIn.file = remoteFile;
 				breakpointIn.line = line;
-				return this.delve.callPromise<CreateBreakpointOut>('CreateBreakpoint', [breakpointIn]).then(null, err => {
+				return this.delve.callPromise<CreateBreakpointOut>('CreateBreakpoint', [{breakpoint: breakpointIn}]).then(null, err => {
 					verbose('Error on CreateBreakpoint: ' + err.toString());
 					return null;
 				});
