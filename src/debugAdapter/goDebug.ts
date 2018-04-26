@@ -916,7 +916,7 @@ class GoDebugSession extends DebugSession {
 		};
 		this.delve.call<EvalOut>('Eval', [evalSymbolArgs], (err, out) => {
 			if (err) {
-				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '));
+				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
 				return this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', { e: err.toString() });
 			}
 			response.body = this.convertDebugVariableToProtocolVariable(out.variable, 0);
