@@ -51,6 +51,10 @@ enum GoReflectKind {
 // These types should stay in sync with:
 // https://github.com/derekparker/delve/blob/master/service/api/types.go
 
+interface CommandOut {
+	State: DebuggerState;
+}
+
 interface DebuggerState {
 	exited: boolean;
 	exitStatus: number;
@@ -89,7 +93,7 @@ interface DebugThread {
 };
 
 interface StacktraceOut {
-	locations: DebugLocation[];
+	Locations: DebugLocation[];
 }
 
 interface DebugLocation {
@@ -109,11 +113,11 @@ interface DebugFunction {
 }
 
 interface ListLocalVarsOut {
-	variables: DebugVariable[];
+	Variables: DebugVariable[];
 }
 
 interface ListFunctionArgsOut {
-	args: DebugVariable[];
+	Args: DebugVariable[];
 }
 
 interface EvalOut {
@@ -134,7 +138,7 @@ interface DebugVariable {
 }
 
 interface ListGoroutinesOut {
-	goroutines: DebugGoroutine[];
+	Goroutines: DebugGoroutine[];
 }
 
 interface DebugGoroutine {
@@ -399,7 +403,7 @@ class Delve {
 
 	close() {
 		if (!this.debugProcess) {
-			this.call<DebuggerState>('Command', [{ name: 'halt' }], (err, state) => {
+			this.call<CommandOut>('Command', [{ name: 'halt' }], (err, commandOut) => {
 				if (err) return logError('Failed to halt.');
 				this.call<DebuggerState>('Restart', [], (err, state) => {
 					if (err) return logError('Failed to restart.');
@@ -588,15 +592,19 @@ class GoDebugSession extends DebugSession {
 				});
 			}));
 		}).then(newBreakpoints => {
-			verbose('All set:' + JSON.stringify(newBreakpoints));
-			let breakpoints = newBreakpoints.map((bp, i) => {
+			// Unwrap breakpoints from v2 apicall
+			let adaptedBreakpoints = newBreakpoints.map((bp, i) => {
+				return bp.Breakpoint;
+			});
+			let breakpoints = adaptedBreakpoints.map((bp, i) => {
 				if (bp) {
 					return { verified: true, line: bp.line };
 				} else {
 					return { verified: false, line: args.lines[i] };
 				}
 			});
-			this.breakpoints.set(file, newBreakpoints.filter(x => !!x));
+			verbose('All set:' + JSON.stringify(adaptedBreakpoints));
+			this.breakpoints.set(file, adaptedBreakpoints.filter(x => !!x));
 			return breakpoints;
 		}).then(breakpoints => {
 			response.body = { breakpoints };
@@ -622,8 +630,8 @@ class GoDebugSession extends DebugSession {
 				logError('Failed to get threads.');
 				return this.sendErrorResponse(response, 2003, 'Unable to display threads: "{e}"', { e: err.toString() });
 			}
-			verbose('goroutines', goroutinesList);
-			let threads = goroutinesList.goroutines.map(goroutine =>
+			verbose('goroutines', goroutinesList.Goroutines);
+			let threads = goroutinesList.Goroutines.map(goroutine =>
 				new Thread(
 					goroutine.id,
 					goroutine.userCurrentLoc.function ? goroutine.userCurrentLoc.function.name : (goroutine.userCurrentLoc.file + '@' + goroutine.userCurrentLoc.line)
@@ -642,8 +650,8 @@ class GoDebugSession extends DebugSession {
 				logError('Failed to produce stack trace!');
 				return this.sendErrorResponse(response, 2004, 'Unable to produce stack trace: "{e}"', { e: err.toString() });
 			}
-			verbose('locations', stackTrace);
-			let stackFrames = stackTrace.locations.map((location, i) =>
+			verbose('locations', stackTrace.Locations);
+			let stackFrames = stackTrace.Locations.map((location, i) =>
 				new StackFrame(
 					i,
 					location.function ? location.function.name : '<unknown>',
@@ -669,14 +677,14 @@ class GoDebugSession extends DebugSession {
 				logError('Failed to list local variables.');
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
-			verbose('locals', locals);
+			verbose('locals', locals.Variables);
 			this.delve.call<ListFunctionArgsOut>('ListFunctionArgs', [{scope: { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }, cfg: this.getDefaultLoadConfig()}], (err, argsList) => {
 				if (err) {
 					logError('Failed to list function args.');
 					return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', { e: err.toString() });
 				}
 				verbose('functionArgs', args);
-				let vars = argsList.args.concat(locals.variables);
+				let vars = argsList.Args.concat(locals.Variables);
 
 				let scopes = new Array<Scope>();
 				let localVariables = {
@@ -804,7 +812,7 @@ class GoDebugSession extends DebugSession {
 				// Assume we need to stop all the threads we saw before...
 				let needsToBeStopped = new Set<number>();
 				this.threads.forEach(id => needsToBeStopped.add(id));
-				for (let goroutine of out.goroutines) {
+				for (let goroutine of out.Goroutines) {
 					// ...but delete from list of threads to stop if we still see it
 					needsToBeStopped.delete(goroutine.id);
 					if (!this.threads.has(goroutine.id)) {
@@ -829,12 +837,12 @@ class GoDebugSession extends DebugSession {
 
 	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
 		verbose('ContinueRequest');
-		this.delve.call<DebuggerState>('Command', [{ name: 'continue' }], (err, state) => {
+		this.delve.call<CommandOut>('Command', [{ name: 'continue' }], (err, commandOut) => {
 			if (err) {
 				logError('Failed to continue.');
 			}
-			verbose('continue state', state);
-			this.debugState = state;
+			verbose('continue state', commandOut.State);
+			this.debugState = commandOut.State;
 			this.handleReenterDebug('breakpoint');
 		});
 		this.sendResponse(response);
@@ -843,12 +851,12 @@ class GoDebugSession extends DebugSession {
 
 	protected nextRequest(response: DebugProtocol.NextResponse): void {
 		verbose('NextRequest');
-		this.delve.call<DebuggerState>('Command', [{ name: 'next' }], (err, state) => {
+		this.delve.call<CommandOut>('Command', [{ name: 'next' }], (err, commandOut) => {
 			if (err) {
 				logError('Failed to next.');
 			}
-			verbose('next state', state);
-			this.debugState = state;
+			verbose('next state', commandOut.State);
+			this.debugState = commandOut.State;
 			this.handleReenterDebug('step');
 		});
 		this.sendResponse(response);
@@ -857,12 +865,12 @@ class GoDebugSession extends DebugSession {
 
 	protected stepInRequest(response: DebugProtocol.StepInResponse): void {
 		verbose('StepInRequest');
-		this.delve.call<DebuggerState>('Command', [{ name: 'step' }], (err, state) => {
+		this.delve.call<CommandOut>('Command', [{ name: 'step' }], (err, commandOut) => {
 			if (err) {
 				logError('Failed to step.');
 			}
-			verbose('stop state', state);
-			this.debugState = state;
+			verbose('stop state', commandOut.State);
+			this.debugState = commandOut.State;
 			this.handleReenterDebug('step');
 		});
 		this.sendResponse(response);
@@ -871,12 +879,12 @@ class GoDebugSession extends DebugSession {
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse): void {
 		verbose('StepOutRequest');
-		this.delve.call<DebuggerState>('Command', [{ name: 'stepOut' }], (err, state) => {
+		this.delve.call<CommandOut>('Command', [{ name: 'stepOut' }], (err, commandOut) => {
 			if (err) {
 				logError('Failed to stepout.');
 			}
-			verbose('stepout state', state);
-			this.debugState = state;
+			verbose('stepout state', commandOut.State);
+			this.debugState = commandOut.State;
 			this.handleReenterDebug('step');
 		});
 		this.sendResponse(response);
@@ -885,12 +893,12 @@ class GoDebugSession extends DebugSession {
 
 	protected pauseRequest(response: DebugProtocol.PauseResponse): void {
 		verbose('PauseRequest');
-		this.delve.call<DebuggerState>('Command', [{ name: 'halt' }], (err, state) => {
+		this.delve.call<CommandOut>('Command', [{ name: 'halt' }], (err, commandOut) => {
 			if (err) {
 				logError('Failed to halt.');
 				return this.sendErrorResponse(response, 2010, 'Unable to halt execution: "{e}"', { e: err.toString() });
 			}
-			verbose('pause state', state);
+			verbose('pause state', commandOut.State);
 			this.sendResponse(response);
 			verbose('PauseResponse');
 		});
