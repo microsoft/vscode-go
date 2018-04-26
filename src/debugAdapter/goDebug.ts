@@ -121,7 +121,7 @@ interface ListFunctionArgsOut {
 }
 
 interface EvalOut {
-	variable: DebugVariable;
+	Variable: DebugVariable;
 }
 
 interface DebugVariable {
@@ -441,7 +441,7 @@ class GoDebugSession extends DebugSession {
 
 	// Get default LoadConfig values according to delve API
 	protected getDefaultLoadConfig(): any {
-		return {followPointers: true, maxVariableRecurse: 1, maxStringLen: 64, maxArrayValues: 64, maxStructFields: -1};
+		return {FollowPointers: true, MaxVariableRecurse: 1, MaxStringLen: 64, MaxArrayValues: 64, MaxStructFields: -1};
 	}
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -907,19 +907,19 @@ class GoDebugSession extends DebugSession {
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
 		verbose('EvaluateRequest');
 		let evalSymbolArgs = {
-			symbol: args.expression,
-			scope: {
+			Expr: args.expression,
+			Scope: {
 				goroutineID: this.debugState.currentGoroutine.id,
 				frame: args.frameId
 			},
-			cfg: this.getDefaultLoadConfig()
+			Cfg: this.getDefaultLoadConfig()
 		};
 		this.delve.call<EvalOut>('Eval', [evalSymbolArgs], (err, out) => {
 			if (err) {
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
 				return this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', { e: err.toString() });
 			}
-			response.body = this.convertDebugVariableToProtocolVariable(out.variable, 0);
+			response.body = this.convertDebugVariableToProtocolVariable(out.Variable, 0);
 			this.sendResponse(response);
 			verbose('EvaluateResponse');
 		});
