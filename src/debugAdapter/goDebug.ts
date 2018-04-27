@@ -79,10 +79,26 @@ interface DebugBreakpoint {
 	functionName?: string;
 	goroutine: boolean;
 	id: number;
+	name: string;
 	line: number;
 	stacktrace: number;
 	variables?: DebugVariable[];
+	loadArgs?: LoadConfig;
+	loadLocals?: LoadConfig;
 }
+
+interface LoadConfig {
+	// FollowPointers requests pointers to be automatically dereferenced.
+	followPointers: boolean;
+	// MaxVariableRecurse is how far to recurse when evaluating nested types.
+	maxVariableRecurse: number;
+	// MaxStringLen is the maximum number of bytes read from a string
+	maxStringLen: number;
+	// MaxArrayValues is the maximum number of elements read from an array, a slice or a map.
+	maxArrayValues: number;
+	// MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields.
+	maxStructFields: number;
+};
 
 interface DebugThread {
 	file: string;
@@ -439,9 +455,11 @@ class GoDebugSession extends DebugSession {
 		logger.init(e => this.sendEvent(e), logPath, isServer);
 	}
 
-	// Get default LoadConfig values according to delve API
-	protected getDefaultLoadConfig(): any {
-		return {FollowPointers: true, MaxVariableRecurse: 1, MaxStringLen: 64, MaxArrayValues: 64, MaxStructFields: -1};
+	// Get default LoadConfig values according to delve API:
+	// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
+	// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
+	protected getDefaultLoadConfig(): LoadConfig {
+		return {followPointers: true, maxVariableRecurse: 1, maxStringLen: 64, maxArrayValues: 64, maxStructFields: -1};
 	}
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -572,9 +590,19 @@ class GoDebugSession extends DebugSession {
 			this.breakpoints.set(file, []);
 		}
 		let remoteFile = this.toDebuggerPath(file);
+		/* TODO: Change this flow (applies for both v1 and v2 apicalls)
+			The current approach does the following, upon setting a breakpoint:
+			1- Traverse all breakpoints and clear them via ClearBreakpoint
+			2- Restore existing (active) breakpoints from DebugProtocol args and re-create them via CreateBreakpoint
+			3- Send debug protocol response
+
+			We might be able to optimize this so we only update modified breakpoints via AmendBreakpoint:
+			https://godoc.org/github.com/derekparker/delve/service/rpc2#RPCServer.AmendBreakpoint
+		*/
 		Promise.all(this.breakpoints.get(file).map(existingBP => {
 			verbose('Clearing: ' + existingBP.id);
-			return this.delve.callPromise<ClearBreakpointOut>('ClearBreakpoint', [{id: existingBP.id, name: file}]);
+			// Breakpoint objects also support names as IDs. We choose to use a numbered ID
+			return this.delve.callPromise<ClearBreakpointOut>('ClearBreakpoint', [{Id: existingBP.id}]);
 		})).then(() => {
 			verbose('All cleared');
 			return Promise.all(args.lines.map(line => {
@@ -586,7 +614,9 @@ class GoDebugSession extends DebugSession {
 				let breakpointIn = <DebugBreakpoint>{};
 				breakpointIn.file = remoteFile;
 				breakpointIn.line = line;
-				return this.delve.callPromise<CreateBreakpointOut>('CreateBreakpoint', [{breakpoint: breakpointIn}]).then(null, err => {
+				breakpointIn.loadArgs = this.getDefaultLoadConfig();
+				breakpointIn.loadLocals = this.getDefaultLoadConfig();
+				return this.delve.callPromise<CreateBreakpointOut>('CreateBreakpoint', [{Breakpoint: breakpointIn}]).then(null, err => {
 					verbose('Error on CreateBreakpoint: ' + err.toString());
 					return null;
 				});
