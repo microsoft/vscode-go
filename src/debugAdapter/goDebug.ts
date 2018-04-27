@@ -198,6 +198,12 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	envFile?: string;
 	backend?: string;
 	output?: string;
+	/** Delve LoadConfig parameters **/
+	followPointers: boolean;
+	maxVariableRecurse: number;
+	maxStringLen: number;
+	maxArrayValues: number;
+	maxStructFields: number;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -238,6 +244,7 @@ class Delve {
 	program: string;
 	remotePath: string;
 	debugProcess: ChildProcess;
+	loadConfig: LoadConfig;
 	connection: Promise<RPCConnection>;
 	onstdout: (str: string) => void;
 	onstderr: (str: string) => void;
@@ -252,6 +259,10 @@ class Delve {
 		let isProgramDirectory = false;
 		let launchArgsEnv = launchArgs.env || {};
 		this.connection = new Promise((resolve, reject) => {
+			let argsGetter = function (val: any, def: any) {
+				return ((val === null) || (val === undefined)) ? def : val;
+			};
+
 			// Validations on the program
 			if (!program) {
 				return reject('The program attribute is missing in the debug configuration in launch.json');
@@ -362,6 +373,16 @@ class Delve {
 			if (launchArgs.args) {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
+			// Get default LoadConfig values according to delve API:
+			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
+			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
+			this.loadConfig = {
+				followPointers: argsGetter(launchArgs.followPointers, true),
+				maxVariableRecurse: argsGetter(launchArgs.maxVariableRecurse, 1),
+				maxStringLen: argsGetter(launchArgs.maxStringLen, 64),
+				maxArrayValues: argsGetter(launchArgs.maxArrayValues, 64),
+				maxStructFields:  argsGetter(launchArgs.maxStructFields, -1)
+			};
 
 			verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
 
@@ -462,13 +483,6 @@ class GoDebugSession extends DebugSession {
 
 		const logPath = path.join(os.tmpdir(), 'vscode-go-debug.txt');
 		logger.init(e => this.sendEvent(e), logPath, isServer);
-	}
-
-	// Get default LoadConfig values according to delve API:
-	// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
-	// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
-	protected getDefaultLoadConfig(): LoadConfig {
-		return {followPointers: true, maxVariableRecurse: 1, maxStringLen: 64, maxArrayValues: 64, maxStructFields: -1};
 	}
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -623,8 +637,8 @@ class GoDebugSession extends DebugSession {
 				let breakpointIn = <DebugBreakpoint>{};
 				breakpointIn.file = remoteFile;
 				breakpointIn.line = line;
-				breakpointIn.loadArgs = this.getDefaultLoadConfig();
-				breakpointIn.loadLocals = this.getDefaultLoadConfig();
+				breakpointIn.loadArgs = this.delve.loadConfig;
+				breakpointIn.loadLocals = this.delve.loadConfig;
 				return this.delve.callPromise<CreateBreakpointOut>('CreateBreakpoint', [{Breakpoint: breakpointIn}]).then(null, err => {
 					verbose('Error on CreateBreakpoint: ' + err.toString());
 					return null;
@@ -684,7 +698,7 @@ class GoDebugSession extends DebugSession {
 
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
 		verbose('Stacktrace');
-		this.delve.call<StacktraceOut>('Stacktrace', [{ id: args.threadId, depth: args.levels, full: false, cfg: this.getDefaultLoadConfig() }], (err, stackTrace) => {
+		this.delve.call<StacktraceOut>('Stacktrace', [{ id: args.threadId, depth: args.levels, full: false, cfg: this.delve.loadConfig }], (err, stackTrace) => {
 			if (err) {
 				logError('Failed to produce stack trace!');
 				return this.sendErrorResponse(response, 2004, 'Unable to produce stack trace: "{e}"', { e: err.toString() });
@@ -710,14 +724,14 @@ class GoDebugSession extends DebugSession {
 
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
 		verbose('ScopesRequest');
-		let listLocalVarsIn = [{scope: { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }, cfg: this.getDefaultLoadConfig()}];
+		let listLocalVarsIn = [{scope: { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }, cfg: this.delve.loadConfig}];
 		this.delve.call<ListLocalVarsOut>('ListLocalVars', listLocalVarsIn, (err, locals) => {
 			if (err) {
 				logError('Failed to list local variables.');
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
 			verbose('locals', locals.Variables);
-			this.delve.call<ListFunctionArgsOut>('ListFunctionArgs', [{scope: { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }, cfg: this.getDefaultLoadConfig()}], (err, argsList) => {
+			this.delve.call<ListFunctionArgsOut>('ListFunctionArgs', [{scope: { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId }, cfg: this.delve.loadConfig}], (err, argsList) => {
 				if (err) {
 					logError('Failed to list function args.');
 					return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', { e: err.toString() });
@@ -951,7 +965,7 @@ class GoDebugSession extends DebugSession {
 				goroutineID: this.debugState.currentGoroutine.id,
 				frame: args.frameId
 			},
-			Cfg: this.getDefaultLoadConfig()
+			Cfg: this.delve.loadConfig
 		};
 		this.delve.call<EvalOut>('Eval', [evalSymbolArgs], (err, out) => {
 			if (err) {
