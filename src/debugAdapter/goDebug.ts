@@ -170,6 +170,15 @@ interface DebuggerCommand {
 	goroutineID?: number;
 }
 
+interface RestartOut  {
+	DiscardedBreakpoints: DiscardedBreakpoint[];
+}
+
+interface DiscardedBreakpoint {
+	breakpoint: DebugBreakpoint;
+	reason:     string;
+}
+
 // This interface should always match the schema found in `package.json`.
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	program: string;
@@ -421,8 +430,8 @@ class Delve {
 		if (!this.debugProcess) {
 			this.call<CommandOut>('Command', [{ name: 'halt' }], (err, commandOut) => {
 				if (err) return logError('Failed to halt.');
-				this.call<DebuggerState>('Restart', [], (err, state) => {
-					if (err) return logError('Failed to restart.');
+				this.call<RestartOut>('Restart', [{position: '', resetArgs: false, newArgs: []}], (err, out) => {
+					if (err) return logError('Failed to restart');
 				});
 			});
 		} else {
