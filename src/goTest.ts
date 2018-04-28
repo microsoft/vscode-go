@@ -34,7 +34,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, args)
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, args);
 
 	editor.document.save().then(() => {
 		return getFunctions(editor.document, null).then(testFunctions => {
@@ -94,7 +94,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 		return;
 	}
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, args)
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, args);
 
 	const testConfig = {
 		goConfig: goConfig,
@@ -203,5 +203,5 @@ function makeCoverData(goConfig: vscode.WorkspaceConfiguration, args: any): { tm
 		testFlags.push('-coverprofile=' + tmpCoverPath);
 	}
 
-	return {tmpCoverPath, testFlags}
+	return {tmpCoverPath, testFlags};
 }
