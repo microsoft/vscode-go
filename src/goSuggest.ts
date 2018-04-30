@@ -15,13 +15,15 @@ import { getImportablePackages } from './goPackages';
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
 		case 'const':
+			return vscode.CompletionItemKind.Constant;
 		case 'package':
+			return vscode.CompletionItemKind.Module;
 		case 'type':
-			return vscode.CompletionItemKind.Keyword;
+			return vscode.CompletionItemKind.Class;
 		case 'func':
 			return vscode.CompletionItemKind.Function;
 		case 'var':
-			return vscode.CompletionItemKind.Field;
+			return vscode.CompletionItemKind.Variable;
 		case 'import':
 			return vscode.CompletionItemKind.Module;
 	}
@@ -293,6 +295,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					command: 'go.import.add',
 					arguments: [pkgPath]
 				};
+				item.kind = vscode.CompletionItemKind.Module;
 				// Add same sortText to the unimported packages so that they appear after the suggestions from gocode
 				const isStandardPackage = !item.detail.includes('.');
 				item.sortText = isStandardPackage ? 'za' : 'zb';
