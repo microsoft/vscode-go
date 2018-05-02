@@ -34,7 +34,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, args);
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestFunction', args);
 
 	editor.document.save().then(() => {
 		return getFunctions(editor.document, null).then(testFunctions => {
@@ -94,7 +94,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 		return;
 	}
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, args);
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
 
 	const testConfig = {
 		goConfig: goConfig,
@@ -195,10 +195,10 @@ export function testPrevious() {
  *
  * @param goConfig Configuration for the Go extension.
  */
-function makeCoverData(goConfig: vscode.WorkspaceConfiguration, args: any): { tmpCoverPath: string, testFlags: string[] } {
+function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
 	let tmpCoverPath = '';
 	let testFlags = getTestFlags(goConfig, args) || [];
-	if (goConfig['coverOnTestPackage'] === true) {
+	if (goConfig[confFlag] === true) {
 		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
 		testFlags.push('-coverprofile=' + tmpCoverPath);
 	}
