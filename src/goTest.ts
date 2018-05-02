@@ -34,7 +34,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestFunction', args);
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
 
 	editor.document.save().then(() => {
 		return getFunctions(editor.document, null).then(testFunctions => {
