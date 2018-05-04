@@ -1,4 +1,4 @@
-## 0.6.79 - Coming Soon
+## 0.6.79 - 4th May, 2018
 
 * [Frederik Ring (@m90)](https://github.com/m90)
     * New setting `gotoSymbol.includeGoroot`. If enabled, the symbols from the standard library are included when doing a workspace symbol search using the `Go to Symbol in Workspace` command. [Feature Request 1567](https://github.com/Microsoft/vscode-go/issues/1567) and [PR 1604](https://github.com/Microsoft/vscode-go/pull/1604)
