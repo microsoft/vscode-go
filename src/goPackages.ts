@@ -2,21 +2,33 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent, getWorkspaceFolderPath } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 type GopkgsDone = (res: Map<string, string>) => void;
-let allPkgsCache: Map<string, string>;
-let allPkgsLastHit: number;
-let gopkgsRunning: boolean = false;
+interface Cache<V> {
+	entry: V;
+	lastHit: number;
+}
+
 let gopkgsNotified: boolean = false;
-let gopkgsSubscriptions: GopkgsDone[] = [];
 let cacheTimeout: number = 5000;
 
-function gopkgs(): Promise<Map<string, string>> {
+let gopkgsRunning: Set<string> = new Set<string>();
+let gopkgsSubscriptions: Map<string, GopkgsDone[]> = new Map<string, GopkgsDone[]>();
+
+let allPkgsCache: Map<string, Cache<Map<string, string>>> = new Map<string, Cache<Map<string, string>>>();
+let allPkgsLastHit: number;
+
+function gopkgs(workDir?: string): Promise<Map<string, string>> {
 	let t0 = Date.now();
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.Name}};{{.ImportPath}}'], { env: getToolsEnvVars() });
+		const args = ['-format', '{{.Name}};{{.ImportPath}}'];
+		if (workDir) {
+			args.push('-workDir', workDir);
+		}
+
+		const cmd = cp.spawn(getBinPath('gopkgs'), args, { env: getToolsEnvVars() });
 		const chunks = [];
 		const errchunks = [];
 		let err: any;
@@ -66,23 +78,27 @@ function gopkgs(): Promise<Map<string, string>> {
 	});
 }
 
-function getAllPackagesNoCache(): Promise<Map<string, string>> {
+function getAllPackagesNoCache(workDir?: string): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
 		let callback = function (pkgMap: Map<string, string>) {
 			resolve(pkgMap);
 		};
-		gopkgsSubscriptions.push(callback);
+
+		let subs = gopkgsSubscriptions.get(workDir);
+		if (!subs) {
+			subs = [];
+		}
+		subs.push(callback);
 
 		// Ensure only single gokpgs running
-		if (!gopkgsRunning) {
-			gopkgsRunning = true;
+		if (!gopkgsRunning.has(workDir)) {
+			gopkgsRunning.add(workDir);
+
 			gopkgs().then((pkgMap) => {
-				gopkgsRunning = false;
+				gopkgsRunning.delete(workDir);
 
-				let subs = gopkgsSubscriptions;
-				gopkgsSubscriptions = [];
-
+				gopkgsSubscriptions.delete(workDir);
 				subs.forEach((callback) => callback(pkgMap));
 			});
 		}
@@ -91,13 +107,15 @@ function getAllPackagesNoCache(): Promise<Map<string, string>> {
 
 /**
  * Runs gopkgs
+ * @argument workDir?: string is the working directory of the golang project.
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function getAllPackages(): Promise<Map<string, string>> {
-	let useCache = allPkgsCache && allPkgsLastHit && (new Date().getTime() - allPkgsLastHit) < cacheTimeout;
+export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
+	let cache = allPkgsCache.get(workDir);
+	let useCache = cache && (new Date().getTime() - cache.lastHit) < cacheTimeout;
 	if (useCache) {
-		allPkgsLastHit = new Date().getTime();
-		return Promise.resolve(allPkgsCache);
+		cache.lastHit = new Date().getTime();
+		return Promise.resolve(cache.entry);
 	}
 
 	return getAllPackagesNoCache().then((pkgs) => {
@@ -108,8 +126,12 @@ export function getAllPackages(): Promise<Map<string, string>> {
 				gopkgsNotified = true;
 			}
 		}
-		allPkgsLastHit = new Date().getTime();
-		return allPkgsCache = pkgs;
+
+		allPkgsCache.set(workDir, {
+			lastHit: new Date().getTime(),
+			entry: pkgs
+		});
+		return pkgs;
 	});
 }
 
@@ -121,12 +143,14 @@ export function getAllPackages(): Promise<Map<string, string>> {
  * @returns Map<string, string> mapping between package import path and package name
  */
 export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, string>> {
+	let projectDir = getWorkspaceFolderPath(vscode.Uri.file(filePath));
 	let getAllPackagesPromise: Promise<Map<string, string>>;
 	if (useCache) {
 		// forced to use cache
-		getAllPackagesPromise = Promise.race([getAllPackages(), allPkgsCache]);
+		let cache = allPkgsCache.get(projectDir);
+		getAllPackagesPromise = Promise.race([getAllPackages(projectDir), (cache && cache.entry) || null]);
 	} else {
-		getAllPackagesPromise = getAllPackages();
+		getAllPackagesPromise = getAllPackages(projectDir);
 	}
 
 	filePath = fixDriveCasingInWindows(filePath);
