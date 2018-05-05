@@ -147,7 +147,7 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 	let getAllPackagesPromise: Promise<Map<string, string>>;
 	if (useCache) {
 		// forced to use cache
-		let cache = allPkgsCache.get(projectDir);
+		let cache = allPkgsCache.get(projectDir) || allPkgsCache.get(undefined);
 		getAllPackagesPromise = Promise.race([getAllPackages(projectDir), (cache && cache.entry) || null]);
 	} else {
 		getAllPackagesPromise = getAllPackages(projectDir);
