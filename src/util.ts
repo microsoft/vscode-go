@@ -13,7 +13,7 @@ import os = require('os');
 import { outputChannel } from './goStatus';
 import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
 
-const extensionId: string = 'lukehoban.Go';
+const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
 const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
 
@@ -531,14 +531,15 @@ export function guessPackageNameFromFile(filePath): Promise<string[]> {
 
 		const proposedPkgName = segments[segments.length - 1];
 
-		if (goFilename.endsWith('_test.go')) {
-			return resolve([proposedPkgName, proposedPkgName + '_test']);
-		}
-
 		fs.stat(path.join(directoryPath, 'main.go'), (err, stats) => {
 			if (stats && stats.isFile()) {
 				return resolve(['main']);
 			}
+
+			if (goFilename.endsWith('_test.go')) {
+				return resolve([proposedPkgName, proposedPkgName + '_test']);
+			}
+
 			return resolve([proposedPkgName]);
 		});
 	});

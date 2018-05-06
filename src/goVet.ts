@@ -57,9 +57,15 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	const vetFlags = goConfig['vetFlags'] || [];
 	const vetEnv = Object.assign({}, getToolsEnvVars());
 	const vetPromise = getGoVersion().then((version: SemVersion) => {
-		let vetArgs = ['vet', ...vetFlags, './...'];
+		const tagsArg = [];
+		if (goConfig['buildTags'] && vetFlags.indexOf('-tags') === -1) {
+			tagsArg.push('-tags');
+			tagsArg.push(goConfig['buildTags']);
+		}
+
+		let vetArgs = ['vet', ...vetFlags, ...tagsArg, './...'];
 		if (version && version.major === 1 && version.minor <= 9 && vetFlags.length) {
-			vetArgs = ['tool', 'vet', ...vetFlags, '.'];
+			vetArgs = ['tool', 'vet', ...vetFlags, ...tagsArg, '.'];
 		}
 
 		running = true;
