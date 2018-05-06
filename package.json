@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.79",
+  "version": "0.6.80-beta.1",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -451,6 +451,12 @@
           "type": "string",
           "default": "",
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument",
+          "scope": "resource"
+        },
+        "go.installDependenciesWhenBuilding": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, then `-i` flag will be passed to `go build` everytime the code is compiled.",
           "scope": "resource"
         },
         "go.lintOnSave": {
