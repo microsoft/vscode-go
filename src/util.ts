@@ -347,7 +347,7 @@ export function getToolsEnvVars(): any {
 	const envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
 
 	if (toolsEnvVars && typeof toolsEnvVars === 'object') {
-		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof envVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : envVars[key]);
+		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof toolsEnvVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : toolsEnvVars[key]);
 	}
 
 	// cgo expects go to be in the path
