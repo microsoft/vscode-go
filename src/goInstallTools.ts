@@ -286,7 +286,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
 
-	if (process.env['GOPATH']) {
+	if (process.env['GOPATH'] && process.env['GOROOT']) {
 		return Promise.resolve();
 	}
 
@@ -296,13 +296,16 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
 	return new Promise<void>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['env', 'GOPATH'], (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
 			if (err) {
 				return reject();
 			}
 			let envOutput = stdout.split('\n');
 			if (!process.env['GOPATH'] && envOutput[0].trim()) {
 				process.env['GOPATH'] = envOutput[0].trim();
+			}
+			if (!process.env['GOROOT'] && envOutput[1] && envOutput[1].trim()) {
+				process.env['GOROOT'] = envOutput[1].trim();
 			}
 			return resolve();
 		});
