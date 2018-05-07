@@ -613,15 +613,7 @@ class GoDebugSession extends DebugSession {
 			this.breakpoints.set(file, []);
 		}
 		let remoteFile = this.toDebuggerPath(file);
-		/* TODO: Change this flow (applies for both v1 and v2 apicalls)
-			The current approach does the following, upon setting a breakpoint:
-			1- Traverse all breakpoints and clear them via ClearBreakpoint
-			2- Restore existing (active) breakpoints from DebugProtocol args and re-create them via CreateBreakpoint
-			3- Send debug protocol response
 
-			We might be able to optimize this so we only update modified breakpoints via AmendBreakpoint:
-			https://godoc.org/github.com/derekparker/delve/service/rpc2#RPCServer.AmendBreakpoint
-		*/
 		Promise.all(this.breakpoints.get(file).map(existingBP => {
 			verbose('Clearing: ' + existingBP.id);
 			// Breakpoint objects also support names as IDs. We choose to use a numbered ID
