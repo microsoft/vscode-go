@@ -18,7 +18,7 @@ import { goLiveErrorsEnabled } from './goLiveErrors';
 let updatesDeclinedTools: string[] = [];
 let installsDeclinedTools: string[] = [];
 const allTools: { [key: string]: string } = {
-	'gocode': 'github.com/nsf/gocode',
+	'gocode': 'github.com/mdempsky/gocode',
 	'gopkgs': 'github.com/uudashr/gopkgs/cmd/gopkgs',
 	'go-outline': 'github.com/ramya-rao-a/go-outline',
 	'go-symbols': 'github.com/acroca/go-symbols',
