@@ -9,7 +9,7 @@
 * [lixiaohui (@leaxoy)](https://github.com/leaxoy)
     * Use the right icons for completion items of type `const`, `package`, `type` and `var`. [PR 1624](https://github.com/Microsoft/vscode-go/pull/1624)
 
-* [Michael Novak @novak](https://github.com/novak)
+* [Michael Novak (@novak)](https://github.com/novak)
     * Use the `go.buildTags` setting when running `go vet`. [Bug 1591](https://github.com/Microsoft/vscode-go/issues/1591) and [PR 1625](https://github.com/Microsoft/vscode-go/pull/1625)
 
 * [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
@@ -18,7 +18,7 @@
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Non string values for environment variables are now allowed in settings like `go.testEnvVars` and `go.toolsEnvVars`. [Bug 1608](https://github.com/Microsoft/vscode-go/issues/1608)
     * Support the `Go to Implementation` and `Peek Implmentation` commands when using the Go Language Server. [Feature Request 1611](https://github.com/Microsoft/vscode-go/issues/1611)
-    * Fix automatic imports of packages when there is a comment in the end of the import block. [Bug 1606](https://github.com/Microsoft/vscode-go/issues/1608)
+    * Fix automatic imports of packages when there is a comment in the end of the import block. [Bug 1606](https://github.com/Microsoft/vscode-go/issues/1606)
     * Fix automatic imports of packages when package alias starts with any keyword in the import block. [Bug 1618](https://github.com/Microsoft/vscode-go/issues/1618)
     
 ## 0.6.78 - 3rd April, 2018
