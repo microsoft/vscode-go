@@ -10,6 +10,7 @@ import cp = require('child_process');
 import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess } from './util';
 import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
+import { outputChannel } from './goStatus';
 
 export class GoRenameProvider implements vscode.RenameProvider {
 
@@ -51,7 +52,9 @@ export class GoRenameProvider implements vscode.RenameProvider {
 					if (err) {
 						let errMsg = stderr ? 'Rename failed: ' + stderr.replace(/\n/g, ' ') : 'Rename failed';
 						console.log(errMsg);
-						return reject(errMsg);
+						outputChannel.appendLine(errMsg);
+						outputChannel.show();
+						return reject();
 					}
 
 					let result = new vscode.WorkspaceEdit();
