@@ -117,7 +117,7 @@ export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
 		return Promise.resolve(cache.entry);
 	}
 
-	return getAllPackagesNoCache().then((pkgs) => {
+	return getAllPackagesNoCache(workDir).then((pkgs) => {
 		if (!pkgs || pkgs.size === 0) {
 			console.log('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
 			if (!gopkgsNotified) {
