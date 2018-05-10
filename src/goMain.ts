@@ -31,7 +31,7 @@ import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getWorkspaceFolderPath } from './util';
-import { LanguageClient } from 'vscode-languageclient';
+import { LanguageClient, RevealOutputChannelOn } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { addTags, removeTags } from './goModifytags';
 import { runFillStruct } from './goFillStruct';
@@ -105,6 +105,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 						code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
 						protocol2Code: (uri: string) => vscode.Uri.parse(uri),
 					},
+					revealOutputChannelOn: RevealOutputChannelOn.Never
 				}
 			);
 
