@@ -576,6 +576,7 @@ It returns the number of bytes written and any write error encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		let vendorSupportPromise = isVendorSupported();
+		let workDir = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef');
 		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
 		let vendorPkgsFullPath = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
@@ -589,7 +590,7 @@ It returns the number of bytes written and any write error encountered.
 		];
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
-			let gopkgsPromise = getAllPackages().then(pkgMap => {
+			let gopkgsPromise = getAllPackages(workDir).then(pkgMap => {
 				let pkgs = Array.from(pkgMap.keys());
 				pkgs = pkgs.filter(p => pkgMap.get(p) !== 'main');
 				if (vendorSupport) {
@@ -605,7 +606,7 @@ It returns the number of bytes written and any write error encountered.
 
 			let listPkgPromise: Thenable<string[]> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
-					return listPackages().then(pkgs => {
+					return listPackages(false, workDir).then(pkgs => {
 						if (vendorSupport) {
 							vendorPkgsRelativePath.forEach(pkg => {
 								assert.equal(pkgs.indexOf(pkg) > -1, true, `Relative path for vendor package ${pkg} not found`);
@@ -640,6 +641,7 @@ It returns the number of bytes written and any write error encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		let vendorSupportPromise = isVendorSupported();
+		let workDir = path.join(process.env['GOPATH'], 'src', 'github.com', 'ramya-rao-a', 'go-outline');
 		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'ramya-rao-a', 'go-outline', 'main.go');
 		let vendorPkgs = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
@@ -665,7 +667,7 @@ It returns the number of bytes written and any write error encountered.
 
 			let listPkgPromise: Thenable<void> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
-					return listPackages().then(pkgs => {
+					return listPackages(false, workDir).then(pkgs => {
 						if (vendorSupport) {
 							vendorPkgs.forEach(pkg => {
 								assert.equal(pkgs.indexOf(pkg), -1, `Vendor package ${pkg} should not be shown by listPackages method`);

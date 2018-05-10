@@ -146,9 +146,11 @@ export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
  * @param useCache. Force to use cache
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, string>> {
+export function getImportablePackages(filePath: string, useCache: boolean = false, workDir?: string): Promise<Map<string, string>> {
 	let getAllPackagesPromise: Promise<Map<string, string>>;
-	let workDir = getWorkspaceFolderPath(vscode.Uri.file(filePath));
+	if (!workDir) {
+		workDir = getWorkspaceFolderPath(vscode.Uri.file(filePath));
+	}
 
 	if (useCache) {
 		// forced to use cache
