@@ -40,6 +40,11 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 				return promptForMissingTool('gopkgs');
 			}
 
+			if (errchunks && errchunks.join('').startsWith('flag provided but not defined: -workDir')) {
+				promptForUpdatingTool('gopkgs');
+				return Promise.resolve(pkgs);
+			}
+
 			if (err || errchunks.length > 0) return resolve(pkgs);
 
 			const output = chunks.join('');
