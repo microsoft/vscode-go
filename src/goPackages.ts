@@ -95,7 +95,7 @@ function getAllPackagesNoCache(workDir?: string): Promise<Map<string, string>> {
 		if (!gopkgsRunning.has(workDir)) {
 			gopkgsRunning.add(workDir);
 
-			gopkgs().then((pkgMap) => {
+			gopkgs(workDir).then((pkgMap) => {
 				gopkgsRunning.delete(workDir);
 				gopkgsSubscriptions.delete(workDir);
 				subs.forEach((callback) => callback(pkgMap));
