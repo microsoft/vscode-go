@@ -30,7 +30,7 @@ import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getWorkspaceFolderPath } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter} from './util';
 import { LanguageClient, RevealOutputChannelOn } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -121,8 +121,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 
 		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'go' && isGoPathSet()) {
-			// preload packages so the cache are ready to use
-			loadPackages();
 			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri));
 		}
 	});
@@ -444,8 +442,4 @@ function didLangServerConfigChange(useLangServer: boolean, langServerFlags: stri
 		}
 	}
 	return false;
-}
-
-function loadPackages() {
-	getAllPackages(getWorkspaceFolderPath());
 }
