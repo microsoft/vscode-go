@@ -174,9 +174,9 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			const processTestResultLine = (line: string) => {
 				testResultLines.push(line);
 				const result = line.match(packageResultLineRE);
-				if (result) {
+				if (result && currentGoWorkspace) {
 					const packageNameArr = result[2].split('/');
-					const baseDir = path.join(workspaceRoot, ...packageNameArr.slice(1));
+					const baseDir = path.join(currentGoWorkspace, ...packageNameArr);
 					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
 					testResultLines.splice(0);
 				}
@@ -184,7 +184,14 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 			// go test emits test results on stdout, which contain file names relative to the package under test
 			outBuf.onLine(line => processTestResultLine(line));
-			outBuf.onDone(last => last && processTestResultLine(last));
+			outBuf.onDone(last => {
+				if (last) processTestResultLine(last);
+
+				// If there are any remaining test result lines, emit them to the output channel.
+				if (testResultLines.length > 0) {
+					testResultLines.forEach(line => outputChannel.appendLine(line));
+				}
+			});
 
 			// go test emits build errors on stderr, which contain paths relative to the cwd
 			errBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
