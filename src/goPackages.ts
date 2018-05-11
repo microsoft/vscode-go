@@ -2,7 +2,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent, getWorkspaceFolderPath } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 type GopkgsDone = (res: Map<string, string>) => void;
@@ -260,7 +260,7 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 // Internal package only allowed if the package doing the import is within the tree rooted at the parent of "internal" directory
 // see: https://golang.org/doc/go1.4#internalpackages
 // see: https://golang.org/s/go14internal
-export function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkgPath: string) {
+function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkgPath: string) {
 	let internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
 	if (internalPkgFound) {
 		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));

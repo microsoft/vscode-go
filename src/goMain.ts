@@ -28,7 +28,6 @@ import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWo
 import { showTestOutput } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
-import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter} from './util';
 import { LanguageClient, RevealOutputChannelOn } from 'vscode-languageclient';
