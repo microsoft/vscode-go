@@ -42,7 +42,8 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 
 			if (errchunks && errchunks.join('').startsWith('flag provided but not defined: -workDir')) {
 				promptForUpdatingTool('gopkgs');
-				return Promise.resolve(pkgs);
+				// fallback to gopkgs without -workDir
+				return gopkgs().then(result => resolve(result));
 			}
 
 			if (err || errchunks.length > 0) return resolve(pkgs);
