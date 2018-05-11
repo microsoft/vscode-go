@@ -13,9 +13,9 @@ import { getImportablePackages } from './goPackages';
 
 const missingToolMsg = 'Missing tool: ';
 
-export function listPackages(excludeImportedPkgs: boolean = false, workDir?: string): Thenable<string[]> {
+export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
-	let pkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName, false, workDir);
+	let pkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName);
 
 	return Promise.all([pkgsPromise, importsPromise]).then(([pkgMap, importedPkgs]) => {
 		importedPkgs.forEach(pkg => {
