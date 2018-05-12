@@ -19,6 +19,8 @@ let gopkgsRunning: Set<string> = new Set<string>();
 
 let allPkgsCache: Map<string, Cache> = new Map<string, Cache>();
 
+let pkgRootDirs = new Map<string, string>();
+
 function gopkgs(workDir?: string): Promise<Map<string, string>> {
 	let t0 = Date.now();
 	return new Promise<Map<string, string>>((resolve, reject) => {
@@ -149,7 +151,10 @@ export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
  */
 export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, string>> {
 	let getAllPackagesPromise: Promise<Map<string, string>>;
-	let workDir = path.dirname(filePath);
+	let fileDirPath = path.dirname(filePath);
+
+	let foundPkgRootDir = pkgRootDirs.get(fileDirPath);
+	let workDir = foundPkgRootDir || fileDirPath;
 	let cache = allPkgsCache.get(workDir);
 
 	if (useCache && cache) {
@@ -166,8 +171,7 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 			return pkgMap;
 		}
 
-		let currentFileDirPath = path.dirname(filePath);
-		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), currentFileDirPath);
+		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
 		pkgs.forEach((pkgName, pkgPath) => {
 			if (pkgName === 'main') {
 				return;
@@ -178,12 +182,21 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 				return;
 			}
 
-			let relativePkgPath = getRelativePackagePath(currentFileDirPath, currentWorkspace, pkgPath);
+			if (!foundPkgRootDir) {
+				// try to guess package root dir
+				let vendorIndex = pkgPath.indexOf('/vendor/');
+				if (vendorIndex !== -1 ) {
+					foundPkgRootDir = path.join(currentWorkspace, pkgPath.substring(0, vendorIndex));
+					pkgRootDirs.set(fileDirPath, foundPkgRootDir);
+				}
+			}
+
+			let relativePkgPath = getRelativePackagePath(fileDirPath, currentWorkspace, pkgPath);
 			if (!relativePkgPath) {
 				return;
 			}
 
-			let allowToImport = isAllowToImportPackage(currentFileDirPath, currentWorkspace, relativePkgPath);
+			let allowToImport = isAllowToImportPackage(fileDirPath, currentWorkspace, relativePkgPath);
 			if (allowToImport) {
 				pkgMap.set(relativePkgPath, pkgName);
 			}
