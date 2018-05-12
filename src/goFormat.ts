@@ -29,6 +29,11 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			formatFlags.push('-srcdir', filename);
 		}
 
+		// Since goformat supports the style flag, set tabsize if user has not passed any flags
+		if (formatTool === 'goformat' && formatFlags.length === 0 && options.insertSpaces) {
+			formatFlags.push('-style=indent=' + options.tabSize);
+		}
+
 		return this.runFormatter(formatTool, formatFlags, document).then(edits => edits, err => {
 			if (err && err.startsWith('flag provided but not defined: -srcdir')) {
 				promptForUpdatingTool(formatTool);
