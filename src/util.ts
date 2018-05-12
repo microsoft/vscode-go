@@ -287,12 +287,17 @@ export function isPositionInString(document: vscode.TextDocument, position: vsco
 	let lineText = document.lineAt(position.line).text;
 	let lineTillCurrentPosition = lineText.substr(0, position.character);
 
-	// Count the number of double quotes in the line till current position. Ignore escaped double quotes
-	let doubleQuotesCnt = (lineTillCurrentPosition.match(/\"/g) || []).length;
-	let escapedDoubleQuotesCnt = (lineTillCurrentPosition.match(/\\\"/g) || []).length;
+	// find double-quoted or backtick strings
+	const stringRE = /`.*?`|"(?:[^\\]|\\")*?"/g;
 
-	doubleQuotesCnt -= escapedDoubleQuotesCnt;
-	return doubleQuotesCnt % 2 === 1;
+	let match;
+	while ((match = stringRE.exec(lineText)) !== null) {
+		if (position.character > match.index && position.character < match.index + match[0].length) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 export function getToolsGopath(useCache: boolean = true): string {
