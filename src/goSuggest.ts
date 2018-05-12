@@ -52,7 +52,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let lineTillCurrentPosition = lineText.substr(0, position.character);
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
-				if (lineText.match(/^\s*\/\//)) {
+				// prevent completion when typing in a line comment
+				const commentMatch = lineText.match(/\/\/.*$/);
+				if (commentMatch && position.character > commentMatch.index) {
 					return resolve([]);
 				}
 
@@ -327,4 +329,3 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		}
 	}
 }
-
