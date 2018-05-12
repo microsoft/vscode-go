@@ -29,9 +29,8 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			formatFlags.push('-srcdir', filename);
 		}
 
-		// If the user has not provided any formatFlags, use editor.insertSpaces.
-		// Only do this for goformat because the other formatters do not support '-style'.
-		if (formatTool === 'goformat' && formatFlags.length == 0 && options.insertSpaces) {
+		// Since goformat supports the style flag, set tabsize if user has not passed any flags
+		if (formatTool === 'goformat' && formatFlags.length === 0 && options.insertSpaces) {
 			formatFlags.push('-style=indent=' + options.tabSize);
 		}
 
