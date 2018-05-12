@@ -56,7 +56,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					let nextLine = document.lineAt(position.line + 1).text;
 					let memberName = nextLine.replace(/\s+/g, ' ').trim().split(" ");
 					if (!nextLine.startsWith("\t")) {
-						// check for exported qmembers declared in block
+						// check for exported members declared in block
 						memberName.shift()
 					}
 					if (!memberName[0].match(/^[A-Z]/)) {
