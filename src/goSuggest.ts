@@ -168,7 +168,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								);
 							}
 							let conf = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-							if ((conf.get('useCodeSnippetsOnFunctionSuggest') || conf.get('useCodeSnippetsOnFunctionSuggestWithoutType')) && suggest.class === 'func') {
+							if ((conf.get('useCodeSnippetsOnFunctionSuggest') || conf.get('useCodeSnippetsOnFunctionSuggestWithoutType'))
+									&& (suggest.class === 'func' || suggest.class === 'var' && suggest.type.startsWith('func('))) {
 								let params = parameters(suggest.type.substring(4));
 								let paramSnippets = [];
 								for (let i = 0; i < params.length; i++) {
@@ -327,4 +328,3 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		}
 	}
 }
-
