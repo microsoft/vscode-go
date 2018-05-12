@@ -801,6 +801,7 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(9, 8), ['GreetingStatus']],
 			[new vscode.Position(13, 4), ['SayHello']],
 			[new vscode.Position(18, 5), ['HelloParams']],
+			[new vscode.Position(25, 8), ['Point']]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
 

@@ -20,3 +20,8 @@ func SayHello() {
 type HelloParams struct {
 	language string
 }
+
+type (
+	// 
+	Point struct{ x, y float64 }
+)
