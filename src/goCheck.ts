@@ -51,17 +51,20 @@ export function checksOnFileEdit(e: vscode.TextDocumentChangeEvent) {
 	const openSettings = {title: 'Open settings'};
 
 	for (let i = 0; i < e.document.lineCount; i++) {
-		if (e.document.lineAt(i).text.match(/^\/\/ \+build [\w\s]+$/)) {
-			fileBuildTags.push(...e.document.lineAt(i).text.split(' '));
+		if (e.document.lineAt(i).isEmptyOrWhitespace) {
+			break;
+		}
+		let foundBuildTags = e.document.lineAt(i).text.match(/^\/\/\s*\+build\s+(.+)$/)[1].split(' ');
+		if (foundBuildTags) {
+			foundBuildTags = foundBuildTags.filter(item => item !== '');
+			fileBuildTags.push(...foundBuildTags);
 		}
 	}
-
-	fileBuildTags = fileBuildTags.filter(tag => tag !== '+build' && tag !== '//' && tag !== '' && tag !== '//+build');
 
 	if (fileBuildTags) {
 		for (let i = 0; i < fileBuildTags.length; i++) {
 			if (settingsBuildTags === null || settingsBuildTags.indexOf(fileBuildTags[i]) === -1) {
-				vscode.window.showInformationMessage('Build tags mentioned in the file don not match with "go.buildTags"', neverAgain, openSettings).then(result => {
+				vscode.window.showInformationMessage('Build tags mentioned in the file don not match with "go.buildTags"'+fileBuildTags, neverAgain, openSettings).then(result => {
 					if (result === neverAgain) {
 						ctx.globalState.update('ignoreGeneratedCodeWarning', true);
 					}
