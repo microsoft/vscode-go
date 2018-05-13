@@ -53,8 +53,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
 				// prevent completion when typing in a line comment
-				const commentMatch = lineText.match(/\/\/.*$/);
-				if (commentMatch && position.character > commentMatch.index) {
+				const commentIndex = lineText.indexOf('//');
+				if (commentIndex > 0 && position.character > commentIndex) {
 					return resolve([]);
 				}
 
