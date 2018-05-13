@@ -54,7 +54,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 				// prevent completion when typing in a line comment
 				const commentIndex = lineText.indexOf('//');
-				if (commentIndex > 0 && position.character > commentIndex) {
+				if (commentIndex >= 0 && position.character > commentIndex) {
 					return resolve([]);
 				}
 
