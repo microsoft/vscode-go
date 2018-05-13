@@ -170,7 +170,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								);
 							}
 							if ((config['useCodeSnippetsOnFunctionSuggest'] || config['useCodeSnippetsOnFunctionSuggestWithoutType'])
-									&& (suggest.class === 'func' || suggest.class === 'var' && suggest.type.startsWith('func('))) {
+								&& (suggest.class === 'func' || suggest.class === 'var' && suggest.type.startsWith('func('))) {
 								let params = parameters(suggest.type.substring(4));
 								let paramSnippets = [];
 								for (let i = 0; i < params.length; i++) {

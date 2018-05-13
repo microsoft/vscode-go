@@ -7,6 +7,13 @@ import (
 //
 var Language = "english"
 
+var (
+	//
+	Greeting = "Hello"
+	// 
+	GreetingText = "Hello World!"
+)
+
 const (
 	//
 	HelloStatus = 0
