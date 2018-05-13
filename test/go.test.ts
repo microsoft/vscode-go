@@ -797,11 +797,12 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Completion on Comments for Exported Members', (done) => {
 		let provider = new GoCompletionItemProvider();
 		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(7, 8), ['HelloStatus']],
-			[new vscode.Position(9, 8), ['GreetingStatus']],
-			[new vscode.Position(13, 4), ['SayHello']],
-			[new vscode.Position(18, 5), ['HelloParams']],
-			[new vscode.Position(25, 8), ['Point']]
+			[new vscode.Position(6, 3), ['Language']],
+			[new vscode.Position(10, 8), ['HelloStatus']],
+			[new vscode.Position(12, 8), ['GreetingStatus']],
+			[new vscode.Position(16, 4), ['SayHello']],
+			[new vscode.Position(21, 5), ['HelloParams']],
+			[new vscode.Position(28, 8), ['Point']],
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
 

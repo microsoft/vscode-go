@@ -4,6 +4,9 @@ import (
 	"fmt"
 )
 
+//
+var Language = "english"
+
 const (
 	//
 	HelloStatus = 0
@@ -22,6 +25,6 @@ type HelloParams struct {
 }
 
 type (
-	// 
+	//
 	Point struct{ x, y float64 }
 )

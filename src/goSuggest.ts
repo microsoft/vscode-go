@@ -53,13 +53,18 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
 				if (lineText.match(/^\s*\/\//)) {
-					let nextLine = document.lineAt(position.line + 1).text;
-					let memberName = nextLine.replace(/\s+/g, ' ').trim().split(' ');
-					if (!nextLine.startsWith('\t')) {
-						// check for exported members declared in block
-						memberName.shift();
+					if (position.line + 1 < document.lineCount) {
+						let nextLine = document.lineAt(position.line + 1).text;
+						let memberName = nextLine.replace(/\s+/g, ' ').trim().split(' ');
+						if ((!nextLine.startsWith('\t'))) {
+							// check for exported members declared in block
+							memberName.shift();
+						}
+						if (!memberName[0].match(/^[A-Z]/)) {
+							return resolve([]);
+						}
 					}
-					if (!memberName[0].match(/^[A-Z]/)) {
+					else {
 						return resolve([]);
 					}
 				}
