@@ -1,4 +1,4 @@
-## 0.6.80 - Coming Soon
+## 0.6.80 - 14th May, 2018
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * New setting `go.installDependenciesWhenBuilding` to control whether the `-i` flag is passed to `go build`/`go test` when compiling. [Feature Request 1464](https://github.com/Microsoft/vscode-go/issues/1464)
@@ -7,15 +7,15 @@
     * Show rename errors in the output channel. Fixes [Bug 1663](https://github.com/Microsoft/vscode-go/issues/1663)
 
 * [@tanguylebarzic](https://github.com/tanguylebarzic)
-    * Fixed bug where environment variables set in `go.toolsEnvVars` arent being used. [PR 1665](https://github.com/Microsoft/vscode-go/pull/1665)
+    * Fixed regression bug where environment variables set in `go.toolsEnvVars` arent being used. [PR 1665](https://github.com/Microsoft/vscode-go/pull/1665)
 
 * [Gordon Tyler @doxxx](https://github.com/doxxx)
-    * Fix broken links in test output when `Go: Test All Packages In Workspace`. [Bug 1626](https://github.com/Microsoft/vscode-go/issues/1626) [PR 1651](https://github.com/Microsoft/vscode-go/pull/1651)
-    * Expand function snippet for inline functions in auto-completions. [Feature Request 1287](https://github.com/Microsoft/vscode-go/issues/1287) [PR 1673](https://github.com/Microsoft/vscode-go/pull/1673)
-    * Avoid completions in line comments. [Bug 1659](https://github.com/Microsoft/vscode-go/issues/1659) [PR 1671](https://github.com/Microsoft/vscode-go/pull/1671)
+    * Fix broken links in test output when `Go: Test All Packages In Workspace` command is run. [Bug 1626](https://github.com/Microsoft/vscode-go/issues/1626) and [PR 1651](https://github.com/Microsoft/vscode-go/pull/1651)
+    * Expand function snippet for inline functions in auto-completions. [Feature Request 1287](https://github.com/Microsoft/vscode-go/issues/1287) and [PR 1673](https://github.com/Microsoft/vscode-go/pull/1673)
+    * Avoid completions in line comments. [Bug 1659](https://github.com/Microsoft/vscode-go/issues/1659) and [PR 1671](https://github.com/Microsoft/vscode-go/pull/1671)
 
 * [Jon Calhoun @joncalhoun](https://github.com/joncalhoun)
-    * Expand function snippet for function types in auto-completions. [Feature Request 1553](https://github.com/Microsoft/vscode-go/issues/1553) [PR 1560](https://github.com/Microsoft/vscode-go/pull/1560)
+    * Expand function snippet for function types in auto-completions. [Feature Request 1553](https://github.com/Microsoft/vscode-go/issues/1553) and [PR 1560](https://github.com/Microsoft/vscode-go/pull/1560)
 
 ## 0.6.79 - 4th May, 2018
 
