@@ -777,45 +777,45 @@ It returns the number of bytes written and any write error encountered.
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 
-			let noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: false }})).then(items => {
+				let noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
 					let item = items.find(x => x.label === 'Print');
 					assert.equal(!item.insertText, true);
 				});
 
-			let withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: true }})).then(items => {
+				let withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
 					let item = items.find(x => x.label === 'Print');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a ...interface{\\}})');
 
 				});
 
-			let withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true }})).then(items => {
+				let withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
 					let item = items.find(x => x.label === 'Print');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a})');
 				});
 
-			let noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: false }})).then(items => {
+				let noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal(!item.insertText, true);
 				});
 
-			let withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: true }})).then(items => {
+				let withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k string})');
 				});
 
-			let withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true }})).then(items => {
+				let withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k})');
 				});
 
-			let noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: false }})).then(items => {
+				let noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
 					let item1 = items.find(x => x.label === 'HandlerFunc');
 					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
 					assert.equal(!item1.insertText, true);
 					assert.equal(!item2.insertText, true);
 				});
 
-			let withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: true }})).then(items => {
+				let withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
 					let item1 = items.find(x => x.label === 'HandlerFunc');
 					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
 					assert.equal((<vscode.SnippetString>item1.insertText).value, 'HandlerFunc(func(${1:arg1} http.ResponseWriter, ${2:arg2} *http.Request) {\n\t$3\n})');
@@ -863,15 +863,14 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Completion on Comments for Exported Members', (done) => {
 		let provider = new GoCompletionItemProvider();
 		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(6, 3), ['Language']],
-			[new vscode.Position(7, 29), []],
-			[new vscode.Position(10, 9), ['Greeting']],
-			[new vscode.Position(12, 8), ['GreetingText']],
-			[new vscode.Position(17, 8), ['HelloStatus']],
-			[new vscode.Position(19, 8), ['GreetingStatus']],
-			[new vscode.Position(23, 4), ['SayHello']],
-			[new vscode.Position(28, 5), ['HelloParams']],
-			[new vscode.Position(34, 8), ['Point']],
+			[new vscode.Position(6, 4), ['Language']],
+			[new vscode.Position(9, 4), ['GreetingText']],
+			// checking for comment completions with begining of comment without space
+			[new vscode.Position(12, 2), []],
+			// cursor between /$/ this should not trigger any completion
+			[new vscode.Position(12, 1), []],
+			[new vscode.Position(12, 4), ['SayHello']],
+			[new vscode.Position(17, 5), ['HelloParams']],
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
 
@@ -880,9 +879,11 @@ It returns the number of bytes written and any write error encountered.
 				let promises = testCases.map(([position, expected]) =>
 					provider.provideCompletionItems(editor.document, position, null).then(items => {
 						let labels = items.map(x => x.label);
-						for (let entry of expected) {
-							assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
-						}
+						assert.equal(expected.length, labels.length, `expected number of completions: ${expected.length} Actual: ${labels.length} at position(${position.line},${position.character}) ${labels}`);
+						expected.forEach((entry, index) => {
+							assert.equal(entry, labels[index], `mismatch in comment completion list Expected: ${entry} Actual: ${labels[index]}`);
+						});
+
 					})
 				);
 				return Promise.all(promises).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));

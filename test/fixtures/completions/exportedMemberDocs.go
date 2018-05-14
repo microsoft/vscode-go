@@ -4,24 +4,13 @@ import (
 	"fmt"
 )
 
-//
+// L
 var Language = "english" // should not invoke completion since this is line comment
 
-var (
-	//
-	Greeting = "Hello"
-	//
-	GreetingText = "Hello World!"
-)
+// G
+const GreetingText = "Hello"
 
-const (
-	//
-	HelloStatus = 0
-	//
-	GreetingStatus = 1
-)
-
-//
+// S
 func SayHello() {
 	fmt.Println("Says hello!")
 }
@@ -30,8 +19,3 @@ func SayHello() {
 type HelloParams struct {
 	language string
 }
-
-type (
-	//
-	Point struct{ x, y float64 }
-)
