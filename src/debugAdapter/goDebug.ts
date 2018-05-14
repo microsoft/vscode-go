@@ -639,7 +639,7 @@ class GoDebugSession extends DebugSession {
 		}).then(newBreakpoints => {
 			// Unwrap breakpoints from v2 apicall
 			let adaptedBreakpoints = newBreakpoints.map((bp, i) => {
-				return bp.Breakpoint;
+				return  bp ? bp.Breakpoint : null;
 			});
 			let breakpoints = adaptedBreakpoints.map((bp, i) => {
 				if (bp) {
