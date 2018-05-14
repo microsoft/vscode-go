@@ -9,12 +9,12 @@
 * [@tanguylebarzic](https://github.com/tanguylebarzic)
     * Fixed regression bug where environment variables set in `go.toolsEnvVars` arent being used. [PR 1665](https://github.com/Microsoft/vscode-go/pull/1665)
 
-* [Gordon Tyler @doxxx](https://github.com/doxxx)
+* [Gordon Tyler (@doxxx)](https://github.com/doxxx)
     * Fix broken links in test output when `Go: Test All Packages In Workspace` command is run. [Bug 1626](https://github.com/Microsoft/vscode-go/issues/1626) and [PR 1651](https://github.com/Microsoft/vscode-go/pull/1651)
     * Expand function snippet for inline functions in auto-completions. [Feature Request 1287](https://github.com/Microsoft/vscode-go/issues/1287) and [PR 1673](https://github.com/Microsoft/vscode-go/pull/1673)
     * Avoid completions in line comments. [Bug 1659](https://github.com/Microsoft/vscode-go/issues/1659) and [PR 1671](https://github.com/Microsoft/vscode-go/pull/1671)
 
-* [Jon Calhoun @joncalhoun](https://github.com/joncalhoun)
+* [Jon Calhoun (@joncalhoun)](https://github.com/joncalhoun)
     * Expand function snippet for function types in auto-completions. [Feature Request 1553](https://github.com/Microsoft/vscode-go/issues/1553) and [PR 1560](https://github.com/Microsoft/vscode-go/pull/1560)
 
 ## 0.6.79 - 4th May, 2018
