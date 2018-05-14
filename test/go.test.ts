@@ -864,7 +864,8 @@ It returns the number of bytes written and any write error encountered.
 		let provider = new GoCompletionItemProvider();
 		let testCases: [vscode.Position, string[]][] = [
 			[new vscode.Position(6, 3), ['Language']],
-			[new vscode.Position(10, 8), ['Greeting']],
+			[new vscode.Position(7, 29), []],
+			[new vscode.Position(10, 9), ['Greeting']],
 			[new vscode.Position(12, 8), ['GreetingText']],
 			[new vscode.Position(17, 8), ['HelloStatus']],
 			[new vscode.Position(19, 8), ['GreetingStatus']],

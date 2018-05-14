@@ -5,12 +5,12 @@ import (
 )
 
 //
-var Language = "english"
+var Language = "english" // should not invoke completion since this is line comment
 
 var (
 	//
 	Greeting = "Hello"
-	// 
+	//
 	GreetingText = "Hello World!"
 )
 

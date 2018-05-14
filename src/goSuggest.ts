@@ -55,7 +55,23 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				// prevent completion when typing in a line comment
 				const commentIndex = lineText.indexOf('//');
 				if (commentIndex >= 0 && position.character > commentIndex) {
-					return resolve([]);
+					if (!lineText.trim().startsWith('//')) {
+						return resolve([]);
+					}
+					// triggering completions in comments on exported members
+					if (position.line + 1 < document.lineCount) {
+						let nextLine = document.lineAt(position.line + 1).text.trim();
+						let memberType = nextLine.match(/(const|func|type|var)\s*(\w+)/);
+						if (memberType && memberType.length === 3) {
+							if (!memberType[2].match(/^[A-Z]/)) {
+								return resolve([]);
+							}
+							let suggestionItem = new vscode.CompletionItem(memberType[2]);
+							suggestionItem.kind = vscodeKindFromGoCodeClass(memberType[1]);
+							return resolve([suggestionItem]);
+						}
+					}
+
 				}
 
 				let inString = isPositionInString(document, position);
