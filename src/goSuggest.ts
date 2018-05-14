@@ -71,7 +71,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							return resolve([suggestionItem]);
 						}
 					}
-
 				}
 
 				let inString = isPositionInString(document, position);
