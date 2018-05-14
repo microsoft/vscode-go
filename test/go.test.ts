@@ -777,45 +777,45 @@ It returns the number of bytes written and any write error encountered.
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 
-				let noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+			let noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: false }})).then(items => {
 					let item = items.find(x => x.label === 'Print');
 					assert.equal(!item.insertText, true);
 				});
 
-				let withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+			let withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: true }})).then(items => {
 					let item = items.find(x => x.label === 'Print');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a ...interface{\\}})');
 
 				});
 
-				let withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
+			let withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true }})).then(items => {
 					let item = items.find(x => x.label === 'Print');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a})');
 				});
 
-				let noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+			let noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: false }})).then(items => {
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal(!item.insertText, true);
 				});
 
-				let withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+			let withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: true }})).then(items => {
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k string})');
 				});
 
-				let withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
+			let withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true }})).then(items => {
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k})');
 				});
 
-				let noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+			let noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: false }})).then(items => {
 					let item1 = items.find(x => x.label === 'HandlerFunc');
 					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
 					assert.equal(!item1.insertText, true);
 					assert.equal(!item2.insertText, true);
 				});
 
-				let withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+			let withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: true }})).then(items => {
 					let item1 = items.find(x => x.label === 'HandlerFunc');
 					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
 					assert.equal((<vscode.SnippetString>item1.insertText).value, 'HandlerFunc(func(${1:arg1} http.ResponseWriter, ${2:arg2} *http.Request) {\n\t$3\n})');
