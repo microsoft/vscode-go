@@ -27,7 +27,6 @@ import { goPlay } from '../src/goPlayground';
 import { goLint } from '../src/goLint';
 import { runFillStruct } from '../src/goFillStruct';
 import { print } from 'util';
-import { TextDocument } from 'vscode-languageserver-types/lib/main';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -66,6 +65,8 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'), path.join(testPath, 'linterTest', 'linter_2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'buildTags', 'hello.go'), path.join(fixturePath, 'buildTags', 'hello.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'completions', 'unimportedPkgs.go'), path.join(fixturePath, 'completions', 'unimportedPkgs.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'completions', 'snippets.go'), path.join(fixturePath, 'completions', 'snippets.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'completions', 'exportedMemberDocs.go'), path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'noimports.go'), path.join(fixturePath, 'importTest', 'noimports.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'groupImports.go'), path.join(fixturePath, 'importTest', 'groupImports.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'singleImports.go'), path.join(fixturePath, 'importTest', 'singleImports.go'));
@@ -278,9 +279,9 @@ It returns the number of bytes written and any write error encountered.
 				for (let i in expected) {
 					for (let j in sortedDiagnostics) {
 						if (expected[i].line
-						&& (expected[i].line === sortedDiagnostics[j].line)
-						&& (expected[i].severity === sortedDiagnostics[j].severity)
-						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							&& (expected[i].line === sortedDiagnostics[j].line)
+							&& (expected[i].severity === sortedDiagnostics[j].severity)
+							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
 							matchCount++;
 						}
 					}
@@ -404,8 +405,8 @@ It returns the number of bytes written and any write error encountered.
 				for (let i in expected) {
 					for (let j in sortedDiagnostics) {
 						if ((expected[i].line === sortedDiagnostics[j].line)
-						&& (expected[i].severity === sortedDiagnostics[j].severity)
-						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							&& (expected[i].severity === sortedDiagnostics[j].severity)
+							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
 							matchCount++;
 						}
 					}
@@ -505,7 +506,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Env Variables are passed to Tests', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue', 'dummyNonString': 1 } }
 		});
 
 		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
@@ -766,6 +767,75 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
+	test('Test Completion Snippets For Functions', (done) => {
+		let provider = new GoCompletionItemProvider();
+		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'snippets.go'));
+		let testCases: [vscode.Position, string[]][] = [
+			[new vscode.Position(5, 6), ['Print']]
+		];
+		let baseConfig = vscode.workspace.getConfiguration('go');
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+
+				let noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+					let item = items.find(x => x.label === 'Print');
+					assert.equal(!item.insertText, true);
+				});
+
+				let withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'Print');
+					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a ...interface{\\}})');
+
+				});
+
+				let withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'Print');
+					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a})');
+				});
+
+				let noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal(!item.insertText, true);
+				});
+
+				let withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k string})');
+				});
+
+				let withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k})');
+				});
+
+			let noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: false }})).then(items => {
+				let item1 = items.find(x => x.label === 'HandlerFunc');
+				let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
+				let item3 = items.find(x => x.label === 'HandlerFuncNoReturnType');
+				assert.equal(!item1.insertText, true);
+				assert.equal(!item2.insertText, true);
+				assert.equal(!item3.insertText, true);
+			});
+
+			let withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: true }})).then(items => {
+				let item1 = items.find(x => x.label === 'HandlerFunc');
+				let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
+				let item3 = items.find(x => x.label === 'HandlerFuncNoReturnType');
+				assert.equal((<vscode.SnippetString>item1.insertText).value, 'HandlerFunc(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n}) (string, string)');
+				assert.equal((<vscode.SnippetString>item2.insertText).value, 'HandlerFuncWithArgNames(func(${1:w} string, ${2:r} string) {\n\t$3\n}) int');
+				assert.equal((<vscode.SnippetString>item3.insertText).value, 'HandlerFuncNoReturnType(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n})');
+			});
+
+				return Promise.all([
+					noFunctionSnippet, withFunctionSnippet, withFunctionSnippetNotype,
+					noFunctionAsVarSnippet, withFunctionAsVarSnippet, withFunctionAsVarSnippetNoType,
+					noFunctionAsTypeSnippet, withFunctionAsTypeSnippet]).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
+			});
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+	});
+
 	test('Test Completion on unimported packages', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'autocompleteUnimportedPackages': { value: true }
@@ -785,6 +855,39 @@ It returns the number of bytes written and any write error encountered.
 						for (let entry of expected) {
 							assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
 						}
+					})
+				);
+				return Promise.all(promises).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
+			});
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+	});
+
+	test('Test Completion on Comments for Exported Members', (done) => {
+		let provider = new GoCompletionItemProvider();
+		let testCases: [vscode.Position, string[]][] = [
+			[new vscode.Position(6, 4), ['Language']],
+			[new vscode.Position(9, 4), ['GreetingText']],
+			// checking for comment completions with begining of comment without space
+			[new vscode.Position(12, 2), []],
+			// cursor between /$/ this should not trigger any completion
+			[new vscode.Position(12, 1), []],
+			[new vscode.Position(12, 4), ['SayHello']],
+			[new vscode.Position(17, 5), ['HelloParams']],
+		];
+		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				let promises = testCases.map(([position, expected]) =>
+					provider.provideCompletionItems(editor.document, position, null).then(items => {
+						let labels = items.map(x => x.label);
+						assert.equal(expected.length, labels.length, `expected number of completions: ${expected.length} Actual: ${labels.length} at position(${position.line},${position.character}) ${labels}`);
+						expected.forEach((entry, index) => {
+							assert.equal(entry, labels[index], `mismatch in comment completion list Expected: ${entry} Actual: ${labels[index]}`);
+						});
+
 					})
 				);
 				return Promise.all(promises).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));

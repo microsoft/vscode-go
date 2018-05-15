@@ -1,7 +1,7 @@
 {
   "name": "Go",
-  "version": "0.6.78",
-  "publisher": "lukehoban",
+  "version": "0.6.80",
+  "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
     "name": "Microsoft Corporation - Development Labs"
@@ -43,7 +43,7 @@
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0",
     "vscode-extension-telemetry": "^0.0.15",
-    "vscode-languageclient": "^2.5.0"
+    "vscode-languageclient": "^4.1.3"
   },
   "devDependencies": {
     "@types/fs-extra": "0.0.35",
@@ -55,7 +55,7 @@
     "vscode": "^1.1.4"
   },
   "engines": {
-    "vscode": "^1.17.0"
+    "vscode": "^1.22.0"
   },
   "activationEvents": [
     "onLanguage:go",
@@ -453,6 +453,12 @@
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument",
           "scope": "resource"
         },
+        "go.installDependenciesWhenBuilding": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, then `-i` flag will be passed to `go build` everytime the code is compiled.",
+          "scope": "resource"
+        },
         "go.lintOnSave": {
           "type": "string",
           "enum": [
@@ -507,12 +513,13 @@
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format.",
+          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format.",
           "scope": "resource",
           "enum": [
             "gofmt",
             "goimports",
-            "goreturns"
+            "goreturns",
+            "goformat"
           ]
         },
         "go.formatFlags": {
@@ -570,6 +577,11 @@
           "type": "boolean",
           "default": true,
           "description": "If true, shows test coverage when Go: Test Package command is run."
+        },
+        "go.coverOnSingleTest": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, shows test coverage when Go: Test Function at cursor command is run."
         },
         "go.coverageOptions": {
           "type": "string",

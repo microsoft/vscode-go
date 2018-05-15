@@ -33,6 +33,7 @@ const allTools: { [key: string]: string } = {
 	'gogetdoc': 'github.com/zmb3/gogetdoc',
 	'goimports': 'golang.org/x/tools/cmd/goimports',
 	'goreturns': 'github.com/sqs/goreturns',
+	'goformat': 'winterdrache.de/goformat/goformat',
 	'golint': 'github.com/golang/lint/golint',
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
@@ -91,6 +92,8 @@ function getTools(goVersion: SemVersion): string[] {
 	// Install the formattool that was chosen by the user
 	if (goConfig['formatTool'] === 'goimports') {
 		tools.push('goimports');
+	} else if (goConfig['formatTool'] === 'goformat') {
+		tools.push('goformat');
 	} else if (goConfig['formatTool'] === 'goreturns') {
 		tools.push('goreturns');
 	}
@@ -286,7 +289,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
 
-	if (process.env['GOPATH']) {
+	if (process.env['GOPATH'] && process.env['GOROOT']) {
 		return Promise.resolve();
 	}
 
@@ -296,13 +299,16 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
 	return new Promise<void>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['env', 'GOPATH'], (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
 			if (err) {
 				return reject();
 			}
 			let envOutput = stdout.split('\n');
 			if (!process.env['GOPATH'] && envOutput[0].trim()) {
 				process.env['GOPATH'] = envOutput[0].trim();
+			}
+			if (!process.env['GOROOT'] && envOutput[1] && envOutput[1].trim()) {
+				process.env['GOROOT'] = envOutput[1].trim();
 			}
 			return resolve();
 		});
