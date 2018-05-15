@@ -36,6 +36,9 @@ interface GoCodeSuggestion {
 	type: string;
 }
 
+const lineCommentRegex = /^\s*\/\/\s+/;
+const exportedMemberRegex = /(const|func|type|var)\s+([A-Z]\w*)/;
+
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	private pkgsList = new Map<string, string>();
@@ -52,7 +55,17 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let lineTillCurrentPosition = lineText.substr(0, position.character);
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
-				// prevent completion when typing in a line comment
+				// triggering completions in comments on exported members
+				if (lineCommentRegex.test(lineTillCurrentPosition) && position.line + 1 < document.lineCount) {
+					let nextLine = document.lineAt(position.line + 1).text.trim();
+					let memberType = nextLine.match(exportedMemberRegex);
+					let suggestionItem: vscode.CompletionItem;
+					if (memberType && memberType.length === 3) {
+						suggestionItem = new vscode.CompletionItem(memberType[2], vscodeKindFromGoCodeClass(memberType[1]));
+					}
+					return resolve(suggestionItem ? [suggestionItem] : []);
+				}
+				// prevent completion when typing in a line comment that doesnt start from the beginning of the line
 				const commentIndex = lineText.indexOf('//');
 				if (commentIndex >= 0 && position.character > commentIndex) {
 					return resolve([]);
