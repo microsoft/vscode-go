@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
@@ -170,8 +170,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								);
 							}
 							if ((config['useCodeSnippetsOnFunctionSuggest'] || config['useCodeSnippetsOnFunctionSuggestWithoutType'])
-									&& (suggest.class === 'func' || suggest.class === 'var' && suggest.type.startsWith('func('))) {
-								let params = parameters(suggest.type.substring(4));
+								&& (suggest.class === 'func' || suggest.class === 'var' && suggest.type.startsWith('func('))) {
+								let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));
 								let paramSnippets = [];
 								for (let i = 0; i < params.length; i++) {
 									let param = params[i].trim();
@@ -189,7 +189,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
 							}
 							if (config['useCodeSnippetsOnFunctionSuggest'] && suggest.class === 'type' && suggest.type.startsWith('func(')) {
-								let params = parameters(suggest.type.substring(4));
+								let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));
 								let paramSnippets = [];
 								for (let i = 0; i < params.length; i++) {
 									let param = params[i].trim();
@@ -203,7 +203,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 										paramSnippets.push('${' + (i + 1) + ':' + arg + '}' + param.substr(param.indexOf(' '), param.length));
 									}
 								}
-								item.insertText = new vscode.SnippetString(suggest.name + '(func(' + paramSnippets.join(', ') + ') {\n	$' + (params.length + 1) + '\n})');
+								item.insertText = new vscode.SnippetString(suggest.name + '(func(' + paramSnippets.join(', ') + ') {\n	$' + (params.length + 1) + '\n})' + returnType);
 							}
 
 							if (wordAtPosition && wordAtPosition.start.character === 0 &&

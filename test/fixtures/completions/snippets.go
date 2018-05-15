@@ -1,10 +1,10 @@
 package main
 
 import "fmt"
-import "net/http"
 
-type HandlerFunc func(http.ResponseWriter, *http.Request)
-type HandlerFuncWithArgNames func(w http.ResponseWriter, r *http.Request)
+type HandlerFunc func(string, string) (string, string)
+type HandlerFuncWithArgNames func(w string, r string) int
+type HandlerFuncNoReturnType func(string, string)
 
 func main(){
 	fmt.Println("hello")
