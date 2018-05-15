@@ -87,17 +87,24 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		ctx.globalState.update('goroot', currentGoroot);
 
 		offerToInstallTools();
-		let langServerAvailable = checkLanguageServer();
-		if (langServerAvailable) {
-			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
-			if (vscode.workspace.getConfiguration('go')['useCodeSnippetsOnFunctionSuggest']) {
-				langServerFlags = [...langServerFlags, '-func-snippet-enabled'];
-			}
+		let supportedLangServerFlags = checkLanguageServer();
+		if (supportedLangServerFlags) {
+			let configuredLangServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
+			configuredLangServerFlags = [
+				...configuredLangServerFlags,
+				'-gocodecompletion',
+				`-func-snippet-enabled=${vscode.workspace.getConfiguration('go')['useCodeSnippetsOnFunctionSuggest']}`
+			];
+
+			let applicableFlags = configuredLangServerFlags.filter(f => {
+				return supportedLangServerFlags.some(supported => f.startsWith(supported));
+			});
+
 			const c = new LanguageClient(
 				'go-langserver',
 				{
 					command: getBinPath('go-langserver'),
-					args: ['-mode=stdio', '-gocodecompletion', ...langServerFlags],
+					args: ['-mode=stdio', ...applicableFlags],
 					options: {
 						env: getToolsEnvVars()
 					}
