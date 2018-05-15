@@ -30,7 +30,7 @@ import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars } from './util';
 import { LanguageClient, RevealOutputChannelOn } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -90,13 +90,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		let langServerAvailable = checkLanguageServer();
 		if (langServerAvailable) {
 			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
-			// Language Server needs GOPATH to be in process.env
-			process.env['GOPATH'] = getCurrentGoPath();
 			const c = new LanguageClient(
 				'go-langserver',
 				{
 					command: getBinPath('go-langserver'),
 					args: ['-mode=stdio', ...langServerFlags],
+					options: {
+						env: getToolsEnvVars()
+					}
 				},
 				{
 					documentSelector: ['go'],

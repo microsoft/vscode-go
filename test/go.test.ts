@@ -808,19 +808,23 @@ It returns the number of bytes written and any write error encountered.
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k})');
 				});
 
-				let noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
-					let item1 = items.find(x => x.label === 'HandlerFunc');
-					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
-					assert.equal(!item1.insertText, true);
-					assert.equal(!item2.insertText, true);
-				});
+			let noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: false }})).then(items => {
+				let item1 = items.find(x => x.label === 'HandlerFunc');
+				let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
+				let item3 = items.find(x => x.label === 'HandlerFuncNoReturnType');
+				assert.equal(!item1.insertText, true);
+				assert.equal(!item2.insertText, true);
+				assert.equal(!item3.insertText, true);
+			});
 
-				let withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
-					let item1 = items.find(x => x.label === 'HandlerFunc');
-					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
-					assert.equal((<vscode.SnippetString>item1.insertText).value, 'HandlerFunc(func(${1:arg1} http.ResponseWriter, ${2:arg2} *http.Request) {\n\t$3\n})');
-					assert.equal((<vscode.SnippetString>item2.insertText).value, 'HandlerFuncWithArgNames(func(${1:w} http.ResponseWriter, ${2:r} *http.Request) {\n\t$3\n})');
-				});
+			let withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, {'useCodeSnippetsOnFunctionSuggest': { value: true }})).then(items => {
+				let item1 = items.find(x => x.label === 'HandlerFunc');
+				let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
+				let item3 = items.find(x => x.label === 'HandlerFuncNoReturnType');
+				assert.equal((<vscode.SnippetString>item1.insertText).value, 'HandlerFunc(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n}) (string, string)');
+				assert.equal((<vscode.SnippetString>item2.insertText).value, 'HandlerFuncWithArgNames(func(${1:w} string, ${2:r} string) {\n\t$3\n}) int');
+				assert.equal((<vscode.SnippetString>item3.insertText).value, 'HandlerFuncNoReturnType(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n})');
+			});
 
 				return Promise.all([
 					noFunctionSnippet, withFunctionSnippet, withFunctionSnippetNotype,

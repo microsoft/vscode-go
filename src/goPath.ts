@@ -178,13 +178,14 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 	// Find current workspace by checking if current file is
 	// under any of the workspaces in $GOPATH
 	for (let i = 0; i < workspaces.length; i++) {
-		let possibleCurrentWorkspace = path.join(workspaces[i], 'src');
-		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)) {
+		const possibleCurrentWorkspace = path.join(workspaces[i], 'src');
+		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)
+			|| (process.platform === 'win32' && currentFileDirPath.toLowerCase().startsWith(possibleCurrentWorkspace.toLowerCase()))) {
 			// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)
 			// both parent & child workspace in the nested workspaces pair can make it inside the above if block
 			// Therefore, the below check will take longer (more specific to current file) of the two
 			if (possibleCurrentWorkspace.length > currentWorkspace.length) {
-				currentWorkspace = possibleCurrentWorkspace;
+				currentWorkspace =  currentFileDirPath.substr(0, possibleCurrentWorkspace.length);
 			}
 		}
 	}

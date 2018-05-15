@@ -8,7 +8,7 @@ import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
 import { parseEnvFile, getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath, getWorkspaceFolderPath } from './util';
+import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
@@ -149,8 +149,6 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		if (currentGoWorkspace && !testconfig.includeSubDirectories) {
 			args.push(testconfig.dir.substr(currentGoWorkspace.length + 1));
 		}
-
-		const workspaceRoot = getWorkspaceFolderPath(vscode.Uri.file(testconfig.dir));
 
 		targetArgs(testconfig).then(targets => {
 			let outTargets = args.slice(0);
