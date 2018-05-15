@@ -72,6 +72,11 @@ interface CreateBreakpointOut {
 	breakpoint: DebugBreakpoint;
 }
 
+interface GetVersionOut {
+	DelveVersion: string;
+	APIVersion: number;
+}
+
 interface DebugBreakpoint {
 	addr: number;
 	continue: boolean;
@@ -552,6 +557,20 @@ class GoDebugSession extends DebugSession {
 		};
 
 		this.delve.connection.then(() => {
+			this.delve.call<GetVersionOut>('GetVersion', [], (err, out) => {
+				if (err) {
+					logError(err);
+					return this.sendErrorResponse(response, 2001, 'Failed to get remote server version: "{e}"', { e: err.toString() });
+				}
+				let clientVersion = this.delve.isApiV1 ? 1 : 2;
+				if (out.APIVersion !== clientVersion) {
+					logError(`Failed to get version: The remote server is running on delve v${out.APIVersion} API and the client is running v${clientVersion} API`);
+					return  this.sendErrorResponse(response,
+						3000,
+						'Failed to get version: The remote server is running on delve v{cli} API and the client is running v{ser} API',
+						{ ser: out.APIVersion.toString(), cli: clientVersion });
+				}
+			});
 			if (!this.delve.noDebug) {
 				this.sendEvent(new InitializedEvent());
 				verbose('InitializeEvent');
