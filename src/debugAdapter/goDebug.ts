@@ -259,10 +259,6 @@ class Delve {
 		let isProgramDirectory = false;
 		let launchArgsEnv = launchArgs.env || {};
 		this.connection = new Promise((resolve, reject) => {
-			let argsGetter = function (val: any, def: any) {
-				return ((val === null) || (val === undefined)) ? def : val;
-			};
-
 			// Validations on the program
 			if (!program) {
 				return reject('The program attribute is missing in the debug configuration in launch.json');
@@ -386,7 +382,7 @@ class Delve {
 				maxStringLen: 64,
 				maxArrayValues: 64,
 				maxStructFields: -1
-			}
+			};
 
 			verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
 
