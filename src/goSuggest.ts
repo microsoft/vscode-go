@@ -36,6 +36,9 @@ interface GoCodeSuggestion {
 	type: string;
 }
 
+const lineCommentRegex = /^\s*\/\/\s+/;
+const exportedMemberRegex = /(const|func|type|var)\s+([A-Z]\w*)/;
+
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	private pkgsList = new Map<string, string>();
@@ -53,20 +56,17 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
 				// triggering completions in comments on exported members
-				if (lineText.trim().startsWith('//') && (position.line + 1 < document.lineCount) && (lineTillCurrentPosition.match(/\/\/\s+/))) {
+				if (lineCommentRegex.test(lineTillCurrentPosition) && position.line + 1 < document.lineCount) {
 					let nextLine = document.lineAt(position.line + 1).text.trim();
-					let memberType = nextLine.match(/(const|func|type|var)\s+(\w+)/);
+					let memberType = nextLine.match(exportedMemberRegex);
 					if (memberType && memberType.length === 3) {
-						if (!memberType[2].match(/^[A-Z]/)) {
-							return resolve([]);
-						}
 						let suggestionItem = new vscode.CompletionItem(memberType[2]);
 						suggestionItem.kind = vscodeKindFromGoCodeClass(memberType[1]);
 						return resolve([suggestionItem]);
 					}
 					return resolve([]);
 				}
-				// prevent completion when typing in a line comment
+				// prevent completion when typing in a line comment that doesnt start from the beginning of the line
 				const commentIndex = lineText.indexOf('//');
 				if (commentIndex >= 0 && position.character > commentIndex) {
 					return resolve([]);
