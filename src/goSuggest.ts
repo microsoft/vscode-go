@@ -59,12 +59,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				if (lineCommentRegex.test(lineTillCurrentPosition) && position.line + 1 < document.lineCount) {
 					let nextLine = document.lineAt(position.line + 1).text.trim();
 					let memberType = nextLine.match(exportedMemberRegex);
+					let suggestionItem: vscode.CompletionItem;
 					if (memberType && memberType.length === 3) {
-						let suggestionItem = new vscode.CompletionItem(memberType[2]);
-						suggestionItem.kind = vscodeKindFromGoCodeClass(memberType[1]);
-						return resolve([suggestionItem]);
+						suggestionItem = new vscode.CompletionItem(memberType[2], vscodeKindFromGoCodeClass(memberType[1]));
 					}
-					return resolve([]);
+					return resolve(suggestionItem ? [suggestionItem] : []);
 				}
 				// prevent completion when typing in a line comment that doesnt start from the beginning of the line
 				const commentIndex = lineText.indexOf('//');
