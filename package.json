@@ -442,6 +442,11 @@
                 "type": "number",
                 "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
                 "default": -1
+              },
+              "useApiV1": {
+                "type": "boolean",
+                "description": "If true, the v1 of delve apis will be used, else v2 will be used",
+                "default": true
               }
             }
           }
