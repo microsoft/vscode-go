@@ -90,6 +90,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		let langServerAvailable = checkLanguageServer();
 		if (langServerAvailable) {
 			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
+			if (vscode.workspace.getConfiguration('go')['useCodeSnippetsOnFunctionSuggest']) {
+				langServerFlags = [...langServerFlags, '-func-snippet-enabled'];
+			}
 			const c = new LanguageClient(
 				'go-langserver',
 				{
@@ -109,6 +112,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 					revealOutputChannelOn: RevealOutputChannelOn.Never
 				}
 			);
+
+			c.onReady().then(() => {
+				if (c.initializeResult && c.initializeResult.capabilities && !c.initializeResult.capabilities.completionProvider) {
+					ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
+				}
+			});
 
 			ctx.subscriptions.push(c.start());
 		} else {
