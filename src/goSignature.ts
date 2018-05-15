@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { parameters } from './util';
+import { getParametersAndReturnType } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	private goConfig = null;
@@ -66,7 +66,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				sig = declarationText.substring(res.name.length);
 			}
 
-			si.parameters = parameters(sig).map(paramText =>
+			si.parameters = getParametersAndReturnType(sig).params.map(paramText =>
 				new ParameterInformation(paramText)
 			);
 			result.signatures = [si];

@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.80-beta.3",
+  "version": "0.6.80",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -513,12 +513,13 @@
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format.",
+          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format.",
           "scope": "resource",
           "enum": [
             "gofmt",
             "goimports",
-            "goreturns"
+            "goreturns",
+            "goformat"
           ]
         },
         "go.formatFlags": {

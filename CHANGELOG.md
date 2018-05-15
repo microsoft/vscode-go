@@ -1,7 +1,26 @@
+## 0.6.80 - 14th May, 2018
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * New setting `go.installDependenciesWhenBuilding` to control whether the `-i` flag is passed to `go build`/`go test` when compiling. [Feature Request 1464](https://github.com/Microsoft/vscode-go/issues/1464)
+    * Use GOROOT from `go env` if not set as environment variable explicitly.
+    * Fix bug where the output pane keeps showing up when using language server. [Bug 1662](https://github.com/Microsoft/vscode-go/issues/1662)
+    * Show rename errors in the output channel. Fixes [Bug 1663](https://github.com/Microsoft/vscode-go/issues/1663)
+
+* [@tanguylebarzic](https://github.com/tanguylebarzic)
+    * Fixed regression bug where environment variables set in `go.toolsEnvVars` arent being used. [PR 1665](https://github.com/Microsoft/vscode-go/pull/1665)
+
+* [Gordon Tyler (@doxxx)](https://github.com/doxxx)
+    * Fix broken links in test output when `Go: Test All Packages In Workspace` command is run. [Bug 1626](https://github.com/Microsoft/vscode-go/issues/1626) and [PR 1651](https://github.com/Microsoft/vscode-go/pull/1651)
+    * Expand function snippet for inline functions in auto-completions. [Feature Request 1287](https://github.com/Microsoft/vscode-go/issues/1287) and [PR 1673](https://github.com/Microsoft/vscode-go/pull/1673)
+    * Avoid completions in line comments. [Bug 1659](https://github.com/Microsoft/vscode-go/issues/1659) and [PR 1671](https://github.com/Microsoft/vscode-go/pull/1671)
+
+* [Jon Calhoun (@joncalhoun)](https://github.com/joncalhoun)
+    * Expand function snippet for function types in auto-completions. [Feature Request 1553](https://github.com/Microsoft/vscode-go/issues/1553) and [PR 1560](https://github.com/Microsoft/vscode-go/pull/1560)
+
 ## 0.6.79 - 4th May, 2018
 
 * [Frederik Ring (@m90)](https://github.com/m90)
-    * New setting `gotoSymbol.includeGoroot`. If enabled, the symbols from the standard library are included when doing a workspace symbol search using the `Go to Symbol in Workspace` command. [Feature Request 1567](https://github.com/Microsoft/vscode-go/issues/1567) and [PR 1604](https://github.com/Microsoft/vscode-go/pull/1604)
+    * New setting `go.gotoSymbol.includeGoroot`. If enabled, the symbols from the standard library are included when doing a workspace symbol search using the `Go to Symbol in Workspace` command. [Feature Request 1567](https://github.com/Microsoft/vscode-go/issues/1567) and [PR 1604](https://github.com/Microsoft/vscode-go/pull/1604)
 
 * [Antoine @primalmotion](https://github.com/primalmotion)
     * New setting `go.coverOnSingleTest`. If enabled, code coverage will be shown in the editor when running individual tests. [Feature Request 1637](https://github.com/Microsoft/vscode-go/issues/1637) and [PR 1638](https://github.com/Microsoft/vscode-go/pull/1638)
