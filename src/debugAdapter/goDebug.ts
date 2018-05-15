@@ -199,11 +199,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	backend?: string;
 	output?: string;
 	/** Delve LoadConfig parameters **/
-	followPointers: boolean;
-	maxVariableRecurse: number;
-	maxStringLen: number;
-	maxArrayValues: number;
-	maxStructFields: number;
+	dlvLoadConfig?: LoadConfig;
 	/** Delve Version */
 	useApiV1: boolean;
 }
@@ -384,13 +380,13 @@ class Delve {
 			// Get default LoadConfig values according to delve API:
 			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
 			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
-			this.loadConfig = {
-				followPointers: argsGetter(launchArgs.followPointers, true),
-				maxVariableRecurse: argsGetter(launchArgs.maxVariableRecurse, 1),
-				maxStringLen: argsGetter(launchArgs.maxStringLen, 64),
-				maxArrayValues: argsGetter(launchArgs.maxArrayValues, 64),
-				maxStructFields: argsGetter(launchArgs.maxStructFields, -1)
-			};
+			this.loadConfig = launchArgs.dlvLoadConfig || {
+				followPointers: true,
+				maxVariableRecurse: 1,
+				maxStringLen: 64,
+				maxArrayValues: 64,
+				maxStructFields: -1
+			}
 
 			verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
 
