@@ -291,7 +291,7 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Test Generate unit tests squeleton for file', (done) => {
+	test('Test Generate unit tests skeleton for file', (done) => {
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -317,7 +317,7 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Test Generate unit tests squeleton for a function', (done) => {
+	test('Test Generate unit tests skeleton for a function', (done) => {
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -346,7 +346,7 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Test Generate unit tests squeleton for package', (done) => {
+	test('Test Generate unit tests skeleton for package', (done) => {
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
