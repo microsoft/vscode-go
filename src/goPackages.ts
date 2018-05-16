@@ -150,8 +150,9 @@ export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
  * @returns Map<string, string> mapping between package import path and package name
  */
 export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, string>> {
+	filePath = fixDriveCasingInWindows(filePath);
 	let getAllPackagesPromise: Promise<Map<string, string>>;
-	let fileDirPath = fixDriveCasingInWindows(path.dirname(filePath));
+	let fileDirPath = path.dirname(filePath);
 
 	let foundPkgRootDir = pkgRootDirs.get(fileDirPath);
 	let workDir = foundPkgRootDir || fileDirPath;
@@ -163,7 +164,6 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 		getAllPackagesPromise = getAllPackages(workDir);
 	}
 
-	filePath = fixDriveCasingInWindows(filePath);
 
 	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {
 		let pkgMap = new Map<string, string>();
