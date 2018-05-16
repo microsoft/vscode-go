@@ -42,13 +42,17 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 				return promptForMissingTool('gopkgs');
 			}
 
-			if (errchunks && errchunks.join('').startsWith('flag provided but not defined: -workDir')) {
+			const errorMsg = errchunks.join('').trim() || err.message;
+			if (errorMsg.startsWith('flag provided but not defined: -workDir')) {
 				promptForUpdatingTool('gopkgs');
 				// fallback to gopkgs without -workDir
 				return gopkgs().then(result => resolve(result));
 			}
 
-			if (err || errchunks.length > 0) return resolve(pkgs);
+			if (errorMsg) {
+				console.log(`Running gopkgs failed with "${errorMsg}"\nCheck if you can run \`gopkgs -format {{.Name}};{{.ImportPath}}\` in a terminal successfully.`);
+				return resolve(pkgs);
+			}
 
 			const output = chunks.join('');
 			if (output.indexOf(';') === -1) {
@@ -127,7 +131,6 @@ export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
 
 	return getAllPackagesNoCache(workDir).then((pkgs) => {
 		if (!pkgs || pkgs.size === 0) {
-			console.log('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
 			if (!gopkgsNotified) {
 				vscode.window.showInformationMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
 				gopkgsNotified = true;
