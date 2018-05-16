@@ -42,14 +42,14 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 				return promptForMissingTool('gopkgs');
 			}
 
-			const errorMsg = errchunks.join('').trim() || err.message;
-			if (errorMsg.startsWith('flag provided but not defined: -workDir')) {
-				promptForUpdatingTool('gopkgs');
-				// fallback to gopkgs without -workDir
-				return gopkgs().then(result => resolve(result));
-			}
-
+			const errorMsg = errchunks.join('').trim() || (err && err.message);
 			if (errorMsg) {
+				if (errorMsg.startsWith('flag provided but not defined: -workDir')) {
+					promptForUpdatingTool('gopkgs');
+					// fallback to gopkgs without -workDir
+					return gopkgs().then(result => resolve(result));
+				}
+
 				console.log(`Running gopkgs failed with "${errorMsg}"\nCheck if you can run \`gopkgs -format {{.Name}};{{.ImportPath}}\` in a terminal successfully.`);
 				return resolve(pkgs);
 			}

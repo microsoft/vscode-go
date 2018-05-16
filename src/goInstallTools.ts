@@ -237,7 +237,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
+			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + allTools[tool] + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
@@ -261,6 +261,18 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 						resolve([...sofar, null]);
 					}
 				}
+			};
+
+			cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
+				if (stderr.indexOf('unexpected directory layout:') > -1) {
+					cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
+						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
+						callback(err, stdout, stderr);
+					});
+				} else {
+					callback(err, stdout, stderr);
+				}
+
 			});
 		}));
 	}, Promise.resolve([])).then(res => {
