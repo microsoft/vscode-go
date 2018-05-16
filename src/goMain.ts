@@ -31,7 +31,7 @@ import { addImport } from './goImport';
 import { getAllPackages } from './goPackages';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars } from './util';
-import { LanguageClient, RevealOutputChannelOn } from 'vscode-languageclient';
+import { LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { addTags, removeTags } from './goModifytags';
 import { runFillStruct } from './goFillStruct';
@@ -56,6 +56,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
 	updateGoPathGoRootFromConfig().then(() => {
+		const languageServerExperimentalFeatures = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
 		const updateToolsCmdText = 'Update tools';
 		const prevGoroot = ctx.globalState.get('goroot');
 		const currentGoroot = process.env['GOROOT'];
@@ -106,9 +107,21 @@ export function activate(ctx: vscode.ExtensionContext): void {
 						code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
 						protocol2Code: (uri: string) => vscode.Uri.parse(uri),
 					},
-					revealOutputChannelOn: RevealOutputChannelOn.Never
+					revealOutputChannelOn: RevealOutputChannelOn.Never,
+					middleware: {
+						provideDocumentFormattingEdits: (document: vscode.TextDocument, options: FormattingOptions, token: vscode.CancellationToken, next: ProvideDocumentFormattingEditsSignature) => {
+							if (languageServerExperimentalFeatures['format'] === true) {
+								return Promise.resolve(next(document, options, token));
+							}
+							return [];
+						}
+					}
 				}
 			);
+
+			if (!languageServerExperimentalFeatures['format']) {
+				ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
+			}
 
 			ctx.subscriptions.push(c.start());
 		} else {
@@ -119,6 +132,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
 			ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
 			ctx.subscriptions.push(vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider()));
+			ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 		}
 
 		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'go' && isGoPathSet()) {
@@ -134,7 +148,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	let referencesCodeLensProvider = new GoReferencesCodeLensProvider();
 
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
-	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
@@ -240,14 +253,17 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		browsePackages();
 	}));
 
-	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
+	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
+		if (!e.affectsConfiguration('go')) {
+			return;
+		}
 		let updatedGoConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		sendTelemetryEventForConfig(updatedGoConfig);
 		updateGoPathGoRootFromConfig();
 
 		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
 		if (process.platform !== 'win32'
-			&& didLangServerConfigChange(useLangServer, langServerFlags, updatedGoConfig)
+			&& didLangServerConfigChange(e)
 			&& (!updatedGoConfig['useLanguageServer'] || checkLanguageServer())) {
 			vscode.window.showInformationMessage('Reload VS Code window for the change in usage of language server to take effect', 'Reload').then(selected => {
 				if (selected === 'Reload') {
@@ -424,6 +440,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		autocompleteUnimportedPackages: goConfig['autocompleteUnimportedPackages'] + '',
 		docsTool: goConfig['docsTool'],
 		useLanguageServer: goConfig['useLanguageServer'] + '',
+		languageServerExperimentalFeatures: JSON.stringify(goConfig['languageServerExperimentalFeatures']),
 		includeImports: goConfig['gotoSymbol'] && goConfig['gotoSymbol']['includeImports'] + '',
 		addTags: JSON.stringify(goConfig['addTags']),
 		removeTags: JSON.stringify(goConfig['removeTags']),
@@ -433,18 +450,8 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 	});
 }
 
-function didLangServerConfigChange(useLangServer: boolean, langServerFlags: string[], newconfig: vscode.WorkspaceConfiguration) {
-	let newLangServerFlags = newconfig['languageServerFlags'] || [];
-	if (useLangServer !== newconfig['useLanguageServer'] || langServerFlags.length !== newLangServerFlags.length) {
-		return true;
-	}
-
-	for (let i = 0; i < langServerFlags.length; i++) {
-		if (newLangServerFlags[i] !== langServerFlags[i]) {
-			return true;
-		}
-	}
-	return false;
+function didLangServerConfigChange(e: vscode.ConfigurationChangeEvent): boolean {
+	return e.affectsConfiguration('go.useLanguageServer') || e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures');
 }
 
 function loadPackages() {
