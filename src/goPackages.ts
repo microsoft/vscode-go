@@ -151,7 +151,7 @@ export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
  */
 export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, string>> {
 	let getAllPackagesPromise: Promise<Map<string, string>>;
-	let fileDirPath = path.dirname(filePath);
+	let fileDirPath = fixDriveCasingInWindows(path.dirname(filePath));
 
 	let foundPkgRootDir = pkgRootDirs.get(fileDirPath);
 	let workDir = foundPkgRootDir || fileDirPath;
