@@ -265,10 +265,8 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 			cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
 				if (stderr.indexOf('unexpected directory layout:') > -1) {
-					cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
-						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-						callback(err, stdout, stderr);
-					});
+					outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
+					cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, callback);
 				} else {
 					callback(err, stdout, stderr);
 				}
