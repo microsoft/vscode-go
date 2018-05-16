@@ -111,7 +111,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 					middleware: {
 						provideDocumentFormattingEdits: (document: vscode.TextDocument, options: FormattingOptions, token: vscode.CancellationToken, next: ProvideDocumentFormattingEditsSignature) => {
 							if (languageServerExperimentalFeatures['format'] === true) {
-								return Promise.resolve(next(document, options, token));
+								return next(document, options, token);
 							}
 							return [];
 						}
@@ -126,7 +126,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 					!(c.initializeResult && c.initializeResult.capabilities && c.initializeResult.capabilities.documentFormattingProvider)) {
 					ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 				}
-			})
+			});
 		} else {
 			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 			ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
