@@ -579,6 +579,7 @@ It returns the number of bytes written and any write error encountered.
 
 		let vendorSupportPromise = isVendorSupported();
 		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
+		let workDir = path.dirname(filePath);
 		let vendorPkgsFullPath = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9',
@@ -591,7 +592,7 @@ It returns the number of bytes written and any write error encountered.
 		];
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
-			let gopkgsPromise = getAllPackages().then(pkgMap => {
+			let gopkgsPromise = getAllPackages(workDir).then(pkgMap => {
 				let pkgs = Array.from(pkgMap.keys());
 				pkgs = pkgs.filter(p => pkgMap.get(p) !== 'main');
 				if (vendorSupport) {
