@@ -119,11 +119,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				}
 			);
 
-			if (!languageServerExperimentalFeatures['format']) {
-				ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
-			}
-
 			ctx.subscriptions.push(c.start());
+
+			c.onReady().then(() => {
+				if (!languageServerExperimentalFeatures['format'] ||
+					!(c.initializeResult && c.initializeResult.capabilities && c.initializeResult.capabilities.documentFormattingProvider)) {
+					ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
+				}
+			})
 		} else {
 			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 			ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
