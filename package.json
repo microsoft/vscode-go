@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.81-beta.1",
+  "version": "0.6.81-beta.2",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -698,7 +698,7 @@
         "go.languageServerExperimentalFeatures": {
           "type": "object",
           "properties": {
-            "format":{
+            "format": {
               "type": "boolean",
               "default": false,
               "description": "If true, gofmt is used by the language server to format files."
