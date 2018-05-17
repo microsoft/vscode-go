@@ -7,13 +7,12 @@ import * as path from 'path';
 import * as os from 'os';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
-import { readFileSync, existsSync, lstatSync } from 'fs';
+import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, stripBOM, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 import * as logger from 'vscode-debug-logger';
-import * as FS from 'fs';
 
 require('console-stamp')(console);
 
@@ -141,6 +140,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	/** Optional path to .env file. */
 	envFile?: string;
 	backend?: string;
+	output?: string;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -172,10 +172,7 @@ function logError(...args: any[]) {
 function normalizePath(filePath: string) {
 	if (process.platform === 'win32') {
 		filePath = path.normalize(filePath);
-		let i = filePath.indexOf(':');
-		if (i >= 0) {
-			return filePath.slice(0, i).toUpperCase() + filePath.slice(i);
-		}
+		return fixDriveCasingInWindows(filePath);
 	}
 	return filePath;
 }
@@ -275,7 +272,7 @@ class Delve {
 			let dlv = getBinPathWithPreferredGopath('dlv', resolveHomeDir(env['GOPATH']), process.env['GOPATH']);
 
 			if (!existsSync(dlv)) {
-				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${process.env['PATH']}`);
+				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
 				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
 			}
 
@@ -301,6 +298,9 @@ class Delve {
 			}
 			if (launchArgs.backend) {
 				dlvArgs = dlvArgs.concat(['--backend=' + launchArgs.backend]);
+			}
+			if (launchArgs.output && mode === 'debug') {
+				dlvArgs = dlvArgs.concat(['--output=' + launchArgs.output]);
 			}
 			if (launchArgs.args) {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
@@ -328,10 +328,6 @@ class Delve {
 			this.debugProcess.stderr.on('data', chunk => {
 				let str = chunk.toString();
 				if (this.onstderr) { this.onstderr(str); }
-				if (!serverRunning) {
-					serverRunning = true;
-					connectClient(port, host);
-				}
 			});
 			this.debugProcess.stdout.on('data', chunk => {
 				let str = chunk.toString();
@@ -450,7 +446,7 @@ class GoDebugSession extends DebugSession {
 			let llist = localPath.split(/\/|\\/).reverse();
 			let rlist = remotePath.split(/\/|\\/).reverse();
 			let i = 0;
-			for (; i < llist.length; i++) if (llist[i] !== rlist[i]) break;
+			for (; i < llist.length; i++) if (llist[i] !== rlist[i] || llist[i] === 'src') break;
 
 			if (i) {
 				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
@@ -720,7 +716,7 @@ class GoDebugSession extends DebugSession {
 		verbose('VariablesRequest');
 		let vari = this._variableHandles.get(args.variablesReference);
 		let variables;
-		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice || vari.kind === GoReflectKind.Map) {
+		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
 				return {
@@ -729,6 +725,20 @@ class GoDebugSession extends DebugSession {
 					variablesReference
 				};
 			});
+		} else if (vari.kind === GoReflectKind.Map) {
+			variables = [];
+			for (let i = 0; i < vari.children.length; i += 2) {
+				if (i + 1 >= vari.children.length) {
+					break;
+				}
+				let mapKey = this.convertDebugVariableToProtocolVariable(vari.children[i], i);
+				let mapValue = this.convertDebugVariableToProtocolVariable(vari.children[i + 1], i + 1);
+				variables.push({
+					name: mapKey.result,
+					value: mapValue.result,
+					variablesReference: mapValue.variablesReference
+				});
+			}
 		} else {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);

@@ -3,14 +3,15 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix } from './util';
+import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { goKeywords, isPositionInString, getToolsEnvVars } from './util';
+import { getToolsEnvVars } from './util';
 import { getGoRuntimePath } from './goPath';
 
 interface GoListOutput {
 	Dir: string;
 	ImportPath: string;
+	Root: string;
 }
 
 interface GuruImplementsRef {
@@ -24,16 +25,14 @@ interface GuruImplementsOutput {
 	to: GuruImplementsRef[];
 	to_method: GuruImplementsRef[];
 	from: GuruImplementsRef[];
+	fromptr: GuruImplementsRef[];
 }
 
 export class GoImplementationProvider implements vscode.ImplementationProvider {
 	public provideImplementation(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Definition> {
 		// To keep `guru implements` fast we want to restrict the scope of the search to current workpsace
 		// If no workpsace is open, then no-op
-		let root = vscode.workspace.rootPath;
-		if (vscode.workspace.getWorkspaceFolder(document.uri)) {
-			root = vscode.workspace.getWorkspaceFolder(document.uri).uri.fsPath;
-		}
+		const root = getWorkspaceFolderPath(document.uri);
 		if (!root) {
 			vscode.window.showInformationMessage('Cannot find implementations when there is no workspace open.');
 			return;
@@ -49,13 +48,16 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 					return reject(err);
 				}
 				let listOutput = <GoListOutput>JSON.parse(stdout.toString());
-				let scope = listOutput.ImportPath;
 				let filename = canonicalizeGOPATHPrefix(document.fileName);
 				let cwd = path.dirname(filename);
 				let offset = byteOffsetAt(document, position);
 				let goGuru = getBinPath('guru');
-				let buildTags = '"' + vscode.workspace.getConfiguration('go', document.uri)['buildTags'] + '"';
-				let args = ['-scope', `${scope}/...`, '-json', '-tags', buildTags, 'implements', `${filename}:#${offset.toString()}`];
+				const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
+				let args = buildTags ? ['-tags', buildTags] : [];
+				if (listOutput.Root && listOutput.ImportPath) {
+					args.push('-scope', `${listOutput.ImportPath}/...`);
+				}
+				args.push('-json', 'implements', `${filename}:#${offset.toString()}`);
 
 				let guruProcess = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {
@@ -87,6 +89,10 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 						addResults(guruOutput.to_method);
 					} else if (guruOutput.to) {
 						addResults(guruOutput.to);
+					} else if (guruOutput.from) {
+						addResults(guruOutput.from);
+					} else if (guruOutput.fromptr) {
+						addResults(guruOutput.fromptr);
 					}
 
 					return resolve(results);

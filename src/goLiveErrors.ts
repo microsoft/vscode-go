@@ -1,7 +1,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getToolsEnvVars } from './util';
+import { getBinPath, getToolsEnvVars } from './util';
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
@@ -54,7 +54,11 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 
 // processFile does the actual work once the timeout has fired
 function processFile(e: vscode.TextDocumentChangeEvent) {
-	let gotypeLive = getBinPath('gotype-live');
+	const gotypeLive = getBinPath('gotype-live');
+	if (!path.isAbsolute(gotypeLive)) {
+		return promptForMissingTool('gotype-live');
+	}
+
 	let fileContents = e.document.getText();
 	let fileName = e.document.fileName;
 	let args = ['-e', '-a', '-lf=' + fileName, path.dirname(fileName)];

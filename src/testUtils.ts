@@ -43,6 +43,10 @@ export interface TestConfig {
 	 * Run all tests from all sub directories under `dir`
 	 */
 	includeSubDirectories?: boolean;
+	/**
+	 * Whether this is a benchmark.
+	 */
+	isBenchmark?: boolean;
 }
 
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
@@ -60,8 +64,8 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 		}
 	}
 
-	Object.keys(testEnvConfig).forEach(key => envVars[key] = resolvePath(testEnvConfig[key]));
-	Object.keys(fileEnv).forEach(key => envVars[key] = resolvePath(fileEnv[key]));
+	Object.keys(testEnvConfig).forEach(key => envVars[key] = typeof testEnvConfig[key] === 'string' ? resolvePath(testEnvConfig[key]) : testEnvConfig[key]);
+	Object.keys(fileEnv).forEach(key => envVars[key] = typeof fileEnv[key] === 'string' ? resolvePath(fileEnv[key]) : fileEnv[key]);
 
 	return envVars;
 }
@@ -78,26 +82,32 @@ export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any)
  * @param the URI of a Go source file.
  * @return test function symbols for the source file.
  */
-export function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
+export function getTestFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
 	let documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
-		.provideDocumentSymbols(doc, null)
+		.provideDocumentSymbols(doc, token)
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& hasTestFunctionPrefix(sym.name))
+				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example')))
 		);
 }
 
 /**
- * Returns whether a given function name has a test prefix.
- * Test functions have "Test" or "Example" as a prefix.
+ * Returns all Benchmark functions in the given source file.
  *
- * @param the function name.
- * @return whether the name has a test function prefix.
+ * @param the URI of a Go source file.
+ * @return benchmark function symbols for the source file.
  */
-function hasTestFunctionPrefix(name: string): boolean {
-	return name.startsWith('Test') || name.startsWith('Example');
+export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
+	let documentSymbolProvider = new GoDocumentSymbolProvider();
+	return documentSymbolProvider
+		.provideDocumentSymbols(doc, token)
+		.then(symbols =>
+			symbols.filter(sym =>
+				sym.kind === vscode.SymbolKind.Function
+				&& sym.name.startsWith('Benchmark'))
+		);
 }
 
 /**
@@ -114,11 +124,18 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
-		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
-		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
-			args.push('-tags');
-			args.push(buildTags);
+		let args: Array<string> = ['test', ...testconfig.flags];
+		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
+
+		if (testconfig.isBenchmark) {
+			args.push('-benchmem', '-run=^$');
+		} else {
+			args.push('-timeout', testconfig.goConfig['testTimeout']);
 		}
+		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
+			args.push('-tags', buildTags);
+		}
+
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
 		let goRuntimePath = getGoRuntimePath();
 
@@ -149,11 +166,34 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
-			outBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
-			outBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
+			const packageResultLineRE = /^(ok|FAIL)[ \t]+(.+?)[ \t]+([0-9\.]+s|\(cached\))/; // 1=ok/FAIL, 2=package, 3=time/(cached)
+			const testResultLines: string[] = [];
 
-			errBuf.onLine(line => outputChannel.appendLine(line));
-			errBuf.onDone(last => last && outputChannel.appendLine(last));
+			const processTestResultLine = (line: string) => {
+				testResultLines.push(line);
+				const result = line.match(packageResultLineRE);
+				if (result && currentGoWorkspace) {
+					const packageNameArr = result[2].split('/');
+					const baseDir = path.join(currentGoWorkspace, ...packageNameArr);
+					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
+					testResultLines.splice(0);
+				}
+			};
+
+			// go test emits test results on stdout, which contain file names relative to the package under test
+			outBuf.onLine(line => processTestResultLine(line));
+			outBuf.onDone(last => {
+				if (last) processTestResultLine(last);
+
+				// If there are any remaining test result lines, emit them to the output channel.
+				if (testResultLines.length > 0) {
+					testResultLines.forEach(line => outputChannel.appendLine(line));
+				}
+			});
+
+			// go test emits build errors on stderr, which contain paths relative to the cwd
+			errBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
+			errBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
 
 			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
 			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
@@ -163,14 +203,14 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				errBuf.done();
 
 				if (code) {
-					outputChannel.appendLine('Error: Tests failed.');
+					outputChannel.appendLine(`Error: ${testType} failed.`);
 				} else {
-					outputChannel.appendLine('Success: Tests passed.');
+					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
 				resolve(code === 0);
 			});
 		}, err => {
-			outputChannel.appendLine('Error: Tests failed.');
+			outputChannel.appendLine(`Error: ${testType} failed.`);
 			outputChannel.appendLine(err);
 			resolve(false);
 		});
@@ -187,8 +227,8 @@ export function showTestOutput() {
 function expandFilePathInOutput(output: string, cwd: string): string {
 	let lines = output.split('\n');
 	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\s+(\S+_test.go):(\d+):/);
-		if (matches) {
+		let matches = lines[i].match(/^\s*(.+.go):(\d+):/);
+		if (matches && matches[1] && !path.isAbsolute(matches[1])) {
 			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
 		}
 	}
@@ -202,8 +242,8 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  */
 function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
-		return Promise.resolve(['-run', util.format('^%s$', testconfig.functions.join('|'))]);
-	} else if (testconfig.includeSubDirectories) {
+		return Promise.resolve([testconfig.isBenchmark ? '-bench' : '-run', util.format('^%s$', testconfig.functions.join('|'))]);
+	} else if (testconfig.includeSubDirectories && !testconfig.isBenchmark) {
 		return getGoVersion().then((ver: SemVersion) => {
 			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
 				return ['./...'];

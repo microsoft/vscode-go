@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestEnvVars, getTestFlags, getTestFunctions } from './testUtils';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
 import { getCoverage } from './goCover';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -21,7 +21,7 @@ let lastTestConfig: TestConfig;
 *
 * @param goConfig Configuration for the Go extension.
 */
-export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any) {
+export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -31,41 +31,53 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
+
+	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
+
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
+
 	editor.document.save().then(() => {
-		return getTestFunctions(editor.document).then(testFunctions => {
-		let testFunctionName: string;
+		return getFunctions(editor.document, null).then(testFunctions => {
+			let testFunctionName: string;
 
-		// We use functionName if it was provided as argument
-		// Otherwise find any test function containing the cursor.
-		if (args && args.functionName) {
-			testFunctionName = args.functionName;
-		} else {
-			for (let func of testFunctions) {
-				let selection = editor.selection;
-				if (selection && func.location.range.contains(selection.start)) {
-					testFunctionName = func.name;
-					break;
-				}
+			// We use functionName if it was provided as argument
+			// Otherwise find any test function containing the cursor.
+			if (args && args.functionName) {
+				testFunctionName = args.functionName;
+			} else {
+				for (let func of testFunctions) {
+					let selection = editor.selection;
+					if (selection && func.location.range.contains(selection.start)) {
+						testFunctionName = func.name;
+						break;
+					}
+				};
+			}
+
+			if (!testFunctionName) {
+				vscode.window.showInformationMessage('No test function found at cursor.');
+				return;
+			}
+
+			const testConfig = {
+				goConfig: goConfig,
+				dir: path.dirname(editor.document.fileName),
+				flags: testFlags,
+				functions: [testFunctionName],
+				isBenchmark: isBenchmark,
+				showTestCoverage: true
 			};
-		}
 
-		if (!testFunctionName) {
-			vscode.window.showInformationMessage('No test function found at cursor.');
-			return;
-		}
+			// Remember this config as the last executed test.
+			lastTestConfig = testConfig;
 
-		const testConfig = {
-			goConfig: goConfig,
-			dir: path.dirname(editor.document.fileName),
-			flags: getTestFlags(goConfig, args),
-			functions: [testFunctionName]
-		};
-		// Remember this config as the last executed test.
-		lastTestConfig = testConfig;
-
-		return goTest(testConfig);
+			return goTest(testConfig);
 		});
-	}).then(null, err => {
+	}).then(success => {
+		if (success && tmpCoverPath) {
+			return getCoverage(tmpCoverPath);
+		}
+	}, err => {
 		console.error(err);
 	});
 }
@@ -82,12 +94,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 		return;
 	}
 
-	let tmpCoverPath = '';
-	let testFlags = getTestFlags(goConfig, args) || [];
-	if (goConfig['coverOnTestPackage'] === true) {
-		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
-		testFlags.push('-coverprofile=' + tmpCoverPath);
-	}
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
 
 	const testConfig = {
 		goConfig: goConfig,
@@ -152,7 +159,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 	}
 
 	return editor.document.save().then(() => {
-		return getTestFunctions(editor.document).then(testFunctions => {
+		return getTestFunctions(editor.document, null).then(testFunctions => {
 			const testConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
@@ -174,7 +181,6 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
  * Runs the previously executed test.
  */
 export function testPrevious() {
-	let editor = vscode.window.activeTextEditor;
 	if (!lastTestConfig) {
 		vscode.window.showInformationMessage('No test has been recently executed.');
 		return;
@@ -184,6 +190,18 @@ export function testPrevious() {
 	});
 }
 
+/**
+ * Computes the tmp coverage path and needed flags.
+ *
+ * @param goConfig Configuration for the Go extension.
+ */
+function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
+	let tmpCoverPath = '';
+	let testFlags = getTestFlags(goConfig, args) || [];
+	if (goConfig[confFlag] === true) {
+		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
+		testFlags.push('-coverprofile=' + tmpCoverPath);
+	}
 
-
-
+	return {tmpCoverPath, testFlags};
+}

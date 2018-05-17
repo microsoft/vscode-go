@@ -10,6 +10,8 @@ import vscode = require('vscode');
 
 export let outputChannel = vscode.window.createOutputChannel('Go');
 
+export let diagnosticsStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+
 let statusBarEntry: vscode.StatusBarItem;
 
 export function showHideStatus() {

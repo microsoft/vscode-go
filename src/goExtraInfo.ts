@@ -6,7 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken, WorkspaceConfiguration, workspace } from 'vscode';
+import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
@@ -26,10 +26,10 @@ export class GoHoverProvider implements HoverProvider {
 		if (goConfig['docsTool'] === 'guru') {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
-		return definitionLocation(document, position, goConfig, true).then(definitionInfo => {
+		return definitionLocation(document, position, goConfig, true, token).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let lines = definitionInfo.declarationlines
-				.filter(line => !line.startsWith('\t//') && line !== '')
+				.filter(line => line !== '')
 				.map(line => line.replace(/\t/g, '    '));
 			let text;
 			text = lines.join('\n').replace(/\n+$/, '');

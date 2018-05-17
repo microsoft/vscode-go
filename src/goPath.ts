@@ -15,6 +15,7 @@ import vscode = require('vscode');
 
 let binPathCache: { [bin: string]: string; } = {};
 let runtimePathCache: string = '';
+export const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
 
 export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appendBinToPath: boolean): string {
 	let binname = correctBinname(toolName);
@@ -55,7 +56,7 @@ export function getBinPathWithPreferredGopath(toolName: string, ...preferredGopa
 	}
 
 	// Then search PATH parts
-	let pathFromPath = getBinPathFromEnvVar(binname, process.env['PATH'], false);
+	let pathFromPath = getBinPathFromEnvVar(binname, envPath, false);
 	if (pathFromPath) {
 		return pathFromPath;
 	}
@@ -121,8 +122,8 @@ export function getGoRuntimePath(): string {
 		}
 	}
 
-	if (process.env['PATH']) {
-		let pathparts = (<string>process.env.PATH).split(path.delimiter);
+	if (envPath) {
+		let pathparts = (<string>envPath).split(path.delimiter);
 		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinNameGo)).filter(candidate => fileExists(candidate))[0];
 	}
 	if (!runtimePathCache) {
@@ -211,24 +212,26 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 	}
 	let workspaces: string[] = gopath.split(path.delimiter);
 	let currentWorkspace = '';
-
-	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
-	if (process.platform === 'win32') {
-		currentFileDirPath = currentFileDirPath.substr(0, 1).toUpperCase() + currentFileDirPath.substr(1);
-	}
+	currentFileDirPath = fixDriveCasingInWindows(currentFileDirPath);
 
 	// Find current workspace by checking if current file is
 	// under any of the workspaces in $GOPATH
 	for (let i = 0; i < workspaces.length; i++) {
-		let possibleCurrentWorkspace = path.join(workspaces[i], 'src');
-		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)) {
+		const possibleCurrentWorkspace = path.join(workspaces[i], 'src');
+		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)
+			|| (process.platform === 'win32' && currentFileDirPath.toLowerCase().startsWith(possibleCurrentWorkspace.toLowerCase()))) {
 			// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)
 			// both parent & child workspace in the nested workspaces pair can make it inside the above if block
 			// Therefore, the below check will take longer (more specific to current file) of the two
 			if (possibleCurrentWorkspace.length > currentWorkspace.length) {
-				currentWorkspace = possibleCurrentWorkspace;
+				currentWorkspace =  currentFileDirPath.substr(0, possibleCurrentWorkspace.length);
 			}
 		}
 	}
 	return currentWorkspace;
+}
+
+// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
+export function fixDriveCasingInWindows(pathToFix: string): string {
+	return (process.platform === 'win32' && pathToFix) ? pathToFix.substr(0, 1).toUpperCase() + pathToFix.substr(1) : pathToFix;
 }

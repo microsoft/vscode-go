@@ -76,7 +76,7 @@ function showPackageList() {
 	getAllPackages().then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (pkgs.length === 0) {
-			return vscode.window.showErrorMessage('Could not find packages. Ensure `go list all` runs successfully.');
+			return vscode.window.showErrorMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
 		}
 
 		vscode

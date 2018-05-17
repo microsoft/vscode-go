@@ -1,8 +1,8 @@
 'use strict';
 
 import vscode = require('vscode');
-import { CodeLensProvider, SymbolInformation, SymbolKind, TextDocument, CancellationToken, CodeLens, Range, Command, Location, commands } from 'vscode';
-import { documentSymbols, GoDocumentSymbolProvider } from './goOutline';
+import { SymbolInformation, TextDocument, CancellationToken, CodeLens, Range, Command, Location, commands } from 'vscode';
+import { GoDocumentSymbolProvider } from './goOutline';
 import { GoReferenceProvider } from './goReferences';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 
@@ -56,20 +56,20 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		};
 		let referenceProvider = new GoReferenceProvider();
 		return referenceProvider.provideReferences(codeLens.document, codeLens.range.start, options, token).then(references => {
-			if (references) {
-				codeLens.command = {
-					title: references.length === 1
-						? '1 reference'
-						: references.length + ' references',
-					command: 'editor.action.showReferences',
-					arguments: [codeLens.document.uri, codeLens.range.start, references]
-				};
-			} else {
-				codeLens.command = {
-					title: 'No references found',
-					command: ''
-				};
-			}
+			codeLens.command = {
+				title: references.length === 1
+					? '1 reference'
+					: references.length + ' references',
+				command: 'editor.action.showReferences',
+				arguments: [codeLens.document.uri, codeLens.range.start, references]
+			};
+			return codeLens;
+		}, err => {
+			console.log(err);
+			codeLens.command = {
+				title: 'Error finding references',
+				command: ''
+			};
 			return codeLens;
 		});
 	}

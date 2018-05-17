@@ -48,7 +48,6 @@ export function implCursor() {
 
 function runGoImpl(input: GoImplInput, insertPos: vscode.Position) {
 	let goimpl = getBinPath('impl');
-	let editor = vscode.window.activeTextEditor;
 	let p = cp.execFile(goimpl, [input.receiver, input.interface], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('impl');
@@ -56,11 +55,10 @@ function runGoImpl(input: GoImplInput, insertPos: vscode.Position) {
 		}
 
 		if (err) {
-			vscode.window.showInformationMessage(`Cannot stub inteface: ${stderr}`);
+			vscode.window.showInformationMessage(`Cannot stub interface: ${stderr}`);
 			return;
 		}
 
-		let output = stdout;
 		vscode.window.activeTextEditor.edit(editBuilder => {
 			editBuilder.insert(insertPos, stdout);
 		});
