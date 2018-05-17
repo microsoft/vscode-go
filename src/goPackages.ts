@@ -279,8 +279,12 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkgPath: string) {
 	let internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
 	if (internalPkgFound) {
+		internalPkgFound = pkgPath.match(/^internal\b/);
+	}
+
+	if (internalPkgFound) {
 		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));
-		return toDirPath.startsWith(rootProjectForInternalPkg + path.sep) || toDirPath === rootProjectForInternalPkg;
+		return (rootProjectForInternalPkg !== currentWorkspace && toDirPath.startsWith(rootProjectForInternalPkg + path.sep)) || toDirPath === rootProjectForInternalPkg;
 	}
 	return true;
 }
