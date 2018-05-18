@@ -1,8 +1,8 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, getCurrentGoPath } from './util';
+import { getToolsEnvVars, getCurrentGoPath, getGoRuntimePath } from './util';
 import { outputChannel } from './goStatus';
-import { getCurrentGoWorkspaceFromGOPATH, getGoRuntimePath } from './goPath';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import cp = require('child_process');
 
 export function installCurrentPackage() {

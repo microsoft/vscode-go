@@ -11,7 +11,7 @@ import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePathInternal, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 
 require('console-stamp')(console);
@@ -239,7 +239,7 @@ class Delve {
 			if (!!launchArgs.noDebug) {
 				if (mode === 'debug' && !isProgramDirectory) {
 					this.noDebug = true;
-					this.debugProcess = spawn(getGoRuntimePath(), ['run', program], { env });
+					this.debugProcess = spawn(getGoRuntimePathInternal('go'), ['run', program], { env });
 					this.debugProcess.stderr.on('data', chunk => {
 						let str = chunk.toString();
 						if (this.onstderr) { this.onstderr(str); }
@@ -269,7 +269,7 @@ class Delve {
 				return;
 			}
 
-			let dlv = getBinPathWithPreferredGopath('dlv', resolveHomeDir(env['GOPATH']), process.env['GOPATH']);
+			let dlv = getBinPathWithPreferredGopath('dlv', [resolveHomeDir(env['GOPATH']), process.env['GOPATH']]);
 
 			if (!existsSync(dlv)) {
 				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);

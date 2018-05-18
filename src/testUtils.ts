@@ -7,8 +7,8 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
-import { parseEnvFile, getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath } from './util';
+import { parseEnvFile, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath, getGoRuntimePath } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 

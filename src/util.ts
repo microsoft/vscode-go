@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePath, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows } from './goPath';
+import { getGoRuntimePathInternal, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -334,7 +334,12 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, getToolsGopath(), getCurrentGoPath());
+	return getBinPathWithPreferredGopath(tool, [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('toolCommands'));
+}
+
+export function getGoRuntimePath(): string {
+	const toolCommands =  vscode.workspace.getConfiguration('go', null).get('toolCommands') || {};
+	return getGoRuntimePathInternal(toolCommands['go'] || 'go');
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {

@@ -8,11 +8,10 @@
 import vscode = require('vscode');
 import path = require('path');
 import os = require('os');
-import { getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest } from './testUtils';
-import { ICheckResult } from './util';
+import { ICheckResult, getGoRuntimePath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';

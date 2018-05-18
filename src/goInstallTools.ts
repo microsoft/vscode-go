@@ -9,10 +9,8 @@ import vscode = require('vscode');
 import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
-import { showGoStatus, hideGoStatus } from './goStatus';
-import { getGoRuntimePath } from './goPath';
-import { outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
+import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, getGoRuntimePath } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];

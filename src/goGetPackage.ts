@@ -2,8 +2,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getGoRuntimePath } from './goPath';
-import { getImportPath, getCurrentGoPath } from './util';
+import { getImportPath, getCurrentGoPath, getGoRuntimePath } from './util';
 import { outputChannel } from './goStatus';
 
 export function goGetPackage() {

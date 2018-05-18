@@ -7,10 +7,9 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getGoRuntimePath } from './goPath';
 import path = require('path');
 import { getAllPackages } from './goPackages';
-import { getImportPath, getCurrentGoPath } from './util';
+import { getImportPath, getCurrentGoPath, getGoRuntimePath } from './util';
 
 export function browsePackages() {
 	let selectedText = '';
