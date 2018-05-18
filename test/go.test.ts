@@ -75,6 +75,7 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'golden_2.go'), path.join(fixturePath, 'fillStruct', 'golden_2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_3.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'testArgsTest', 'args_test.go'), path.join(fixturePath, 'testArgsTest', 'args_test.go'));
 	});
 
 	suiteTeardown(() => {
@@ -518,6 +519,25 @@ It returns the number of bytes written and any write error encountered.
 				});
 			});
 		}).then(() => done(), done);
+	});
+
+	test('Test "-args" are correctly passed to tests', (done) => {
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'testFlags': { value: ['-v', '-args', '-foo', 'testval'] }
+		});
+
+
+		let uri = vscode.Uri.file(path.join(fixturePath, 'testArgsTest', 'args_test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				return testCurrentFile(config, []).then((result: boolean) => {
+					assert.equal(result, true);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+
+
 	});
 
 	test('Test Outline', (done) => {

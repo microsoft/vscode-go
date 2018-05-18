@@ -125,6 +125,13 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
 		let args: Array<string> = ['test', ...testconfig.flags];
+
+		// command-line arguments after '-args' are for the test being run, not for 'go test'
+		let testArgsIx = args.indexOf('-args');
+		let testArgs = [];
+		if (testArgsIx > 0) {
+			testArgs = args.splice(testArgsIx);
+		}
 		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
 
 		if (testconfig.isBenchmark) {
@@ -160,7 +167,8 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
 			outputChannel.appendLine('');
 
-			args.push(...targets);
+			// args given after '-args' terminate argument processing for 'go test' and thus need to go last
+			args.push(...targets, ...testArgs);
 
 			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
