@@ -730,7 +730,7 @@ function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {
 	}
 }
 
-export function getWorkspaceFolderPath(fileUri: vscode.Uri): string {
+export function getWorkspaceFolderPath(fileUri?: vscode.Uri): string {
 	if (fileUri) {
 		let workspace = vscode.workspace.getWorkspaceFolder(fileUri);
 		if (workspace) {

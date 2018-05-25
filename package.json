@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.80",
+  "version": "0.6.81-beta.2",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -694,6 +694,20 @@
           "type": "array",
           "default": [],
           "description": "Flags like -trace and -logfile to be used while running the language server."
+        },
+        "go.languageServerExperimentalFeatures": {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, gofmt is used by the language server to format files."
+            }
+          },
+          "default": {
+            "format": false
+          },
+          "description": "Use this setting to enable/disable experimental features from the language server."
         },
         "go.gotoSymbol.includeImports": {
           "type": "boolean",
