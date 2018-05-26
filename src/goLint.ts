@@ -82,6 +82,11 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 			lintEnv['GOPATH'] += path.delimiter + goConfig['toolsGopath'];
 		}
 	}
+	if (lintTool === 'golangci-lint') {
+		if (args.indexOf('run') === -1) {
+			args.unshift('run');
+		}
+	}
 
 	if (lintWorkspace && currentWorkspace) {
 		args.push('./...');
