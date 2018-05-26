@@ -60,6 +60,7 @@ const importantTools = [
 	'golint',
 	'gometalinter',
 	'megacheck',
+	'golangci-lint',
 	'dlv'
 ];
 
@@ -111,6 +112,10 @@ function getTools(goVersion: SemVersion): string[] {
 
 	if (goConfig['lintTool'] === 'megacheck') {
 		tools.push('megacheck');
+	}
+
+	if (goConfig['lintTool'] === 'golangci-lint') {
+		tools.push('golangci-lint');
 	}
 
 	if (goConfig['useLanguageServer'] && process.platform !== 'win32') {

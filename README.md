@@ -18,7 +18,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Workspace symbol search (using `go-symbols`)
 - Rename (using `gorename`. Note: For Undo after rename to work in Windows you need to have `diff` tool in your path)
 - Build-on-save (using `go build` and `go test`)
-- Lint-on-save (using `golint` or `gometalinter`)
+- Lint-on-save (using `golint` or `gometalinter` or `megacheck` or `golangci-lint`)
 - Format on save as well as format manually (using `goreturns` or `goimports` or `gofmt`)
 - Generate unit tests skeleton (using `gotests`)
 - Add Imports (using `gopkgs`)
@@ -92,6 +92,11 @@ may have significantly better performance than `gometalinter`, while only suppor
 
 Another alternative is [golangci-lint](https://github.com/golangci/golangci-lint) which shares some of the performance
 characteristics of megacheck, but supports a broader range of tools.
+You can configure golangci-lint with `go.lintFlags`, for example to show issues only in new code and to enable all linters:
+
+```javascript
+  "go.lintFlags": ["--enable-all", "--new"],
+```
 
 Finally, the result of those linters will show right in the code (locations with suggestions will be underlined),
 as well as in the output pane.

@@ -86,6 +86,10 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		if (args.indexOf('run') === -1) {
 			args.unshift('run');
 		}
+		if (args.indexOf('--print-issued-lines=false') === -1) {
+			// print only file:number:column
+			args.push('--print-issued-lines=false');
+		}
 	}
 
 	if (lintWorkspace && currentWorkspace) {
