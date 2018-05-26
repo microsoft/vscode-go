@@ -702,10 +702,16 @@
               "type": "boolean",
               "default": false,
               "description": "If true, gofmt is used by the language server to format files."
+            },
+            "autoComplete": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will provide code completion results."
             }
           },
           "default": {
-            "format": false
+            "format": false,
+            "autoComplete": false
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },

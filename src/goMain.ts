@@ -55,7 +55,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
 	updateGoPathGoRootFromConfig().then(() => {
-		const languageServerExperimentalFeatures = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
 		const updateToolsCmdText = 'Update tools';
 		const prevGoroot = ctx.globalState.get('goroot');
 		const currentGoroot = process.env['GOROOT'];
@@ -89,13 +88,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		offerToInstallTools();
 		let supportedLangServerFlags = checkLanguageServer();
 		if (supportedLangServerFlags) {
+			const languageServerExperimentalFeatures = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
 			let configuredLangServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
-			configuredLangServerFlags = [
-				...configuredLangServerFlags,
-				'-gocodecompletion',
-				`-func-snippet-enabled=${vscode.workspace.getConfiguration('go')['useCodeSnippetsOnFunctionSuggest']}`
-			];
-
 			let applicableFlags = configuredLangServerFlags.filter(f => {
 				return supportedLangServerFlags.some(supported => f.startsWith(supported));
 			});
@@ -107,9 +101,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
 					args: ['-mode=stdio', ...applicableFlags],
 					options: {
 						env: getToolsEnvVars()
-					}
+					},
 				},
 				{
+					initializationOptions: {
+						funcSnippetEnabled: vscode.workspace.getConfiguration('go')['useCodeSnippetsOnFunctionSuggest'],
+						gocodeCompletionEnabled: languageServerExperimentalFeatures['autoComplete']
+					},
 					documentSelector: ['go'],
 					uriConverters: {
 						// Apply file:/// scheme to all file paths.
@@ -119,7 +117,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 					revealOutputChannelOn: RevealOutputChannelOn.Never,
 					middleware: {
 						provideDocumentFormattingEdits: (document: vscode.TextDocument, options: FormattingOptions, token: vscode.CancellationToken, next: ProvideDocumentFormattingEditsSignature) => {
-							if (languageServerExperimentalFeatures['format'] === true) {
+							if (languageServerExperimentalFeatures['format']) {
 								return next(document, options, token);
 							}
 							return [];
