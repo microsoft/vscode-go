@@ -478,7 +478,8 @@
           "enum": [
             "golint",
             "gometalinter",
-            "megacheck"
+            "megacheck",
+            "golangci-lint"
           ]
         },
         "go.lintFlags": {
