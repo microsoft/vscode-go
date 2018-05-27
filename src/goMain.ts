@@ -135,14 +135,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 				const outdatedMsg = `Your installed version of "go-langserver" is out of date and does not support {0}. Falling back to default behavior.`;
 
-				if (!languageServerExperimentalFeatures['autoComplete'] || !capabilities.completionProvider) {
+				if (languageServerExperimentalFeatures['autoComplete'] !== true || !capabilities.completionProvider) {
 					ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
 					if (languageServerExperimentalFeatures['autoComplete'] === true) {
 						vscode.window.showInformationMessage(outdatedMsg.replace('{0}', 'code completion'));
 					}
 				}
 
-				if (!languageServerExperimentalFeatures['format'] || !capabilities.documentFormattingProvider) {
+				if (languageServerExperimentalFeatures['format'] !== true || !capabilities.documentFormattingProvider) {
 					ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 					if (languageServerExperimentalFeatures['format'] === true) {
 						vscode.window.showInformationMessage(outdatedMsg.replace('{0}', 'code formatting'));
