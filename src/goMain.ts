@@ -30,7 +30,7 @@ import * as goGenerateTests from './goGenerateTests';
 import { addImport } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars } from './util';
-import { LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature } from 'vscode-languageclient';
+import { LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature, ProvideCompletionItemsSignature } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { addTags, removeTags } from './goModifytags';
 import { runFillStruct } from './goFillStruct';
@@ -52,7 +52,6 @@ export let warningDiagnosticCollection: vscode.DiagnosticCollection;
 export function activate(ctx: vscode.ExtensionContext): void {
 
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
-	let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
 	updateGoPathGoRootFromConfig().then(() => {
 		const updateToolsCmdText = 'Update tools';
@@ -117,22 +116,37 @@ export function activate(ctx: vscode.ExtensionContext): void {
 								return next(document, options, token);
 							}
 							return [];
+						},
+						provideCompletionItem: (document: vscode.TextDocument, position: vscode.Position, context: vscode.CompletionContext, token: vscode.CancellationToken, next: ProvideCompletionItemsSignature) => {
+							if (languageServerExperimentalFeatures['autoComplete'] === true) {
+								return next(document, position, context, token);
+							}
+							return [];
 						}
 					}
 				}
 			);
 
 			c.onReady().then(() => {
-				let capabilities = c.initializeResult && c.initializeResult.capabilities;
-				if (capabilities && !capabilities.completionProvider) {
-					ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
-					vscode.window.showInformationMessage('Your installed version of `go-langserver` is out of date and does not support code completion. Falling back to default behavior.');
+				const capabilities = c.initializeResult && c.initializeResult.capabilities;
+				if (!capabilities) {
+					return vscode.window.showErrorMessage('The language server is not able to serve any features at the moment.');
 				}
 
-				if (!languageServerExperimentalFeatures['format'] ||
-					!(capabilities && capabilities.documentFormattingProvider)) {
+				const outdatedMsg = `Your installed version of "go-langserver" is out of date and does not support {0}. Falling back to default behavior.`;
+
+				if (!languageServerExperimentalFeatures['autoComplete'] || !capabilities.completionProvider) {
+					ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
+					if (languageServerExperimentalFeatures['autoComplete'] === true) {
+						vscode.window.showInformationMessage(outdatedMsg.replace('{0}', 'code completion'));
+					}
+				}
+
+				if (!languageServerExperimentalFeatures['format'] || !capabilities.documentFormattingProvider) {
 					ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
-					vscode.window.showInformationMessage('Your installed version of `go-langserver` is out of date and does not support code formatting. Falling back to default behavior.');
+					if (languageServerExperimentalFeatures['format'] === true) {
+						vscode.window.showInformationMessage(outdatedMsg.replace('{0}', 'code formatting'));
+					}
 				}
 			});
 
