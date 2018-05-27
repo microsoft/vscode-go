@@ -86,22 +86,18 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		ctx.globalState.update('goroot', currentGoroot);
 
 		offerToInstallTools();
-		let supportedLangServerFlags = checkLanguageServer();
-		if (supportedLangServerFlags) {
+		if (checkLanguageServer()) {
 			const languageServerExperimentalFeatures = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
-			let configuredLangServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
-			let applicableFlags = configuredLangServerFlags.filter(f => {
-				return supportedLangServerFlags.some(supported => f.startsWith(supported));
-			});
+			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
 			const c = new LanguageClient(
 				'go-langserver',
 				{
 					command: getBinPath('go-langserver'),
-					args: ['-mode=stdio', ...applicableFlags],
+					args: ['-mode=stdio', ...langServerFlags],
 					options: {
 						env: getToolsEnvVars()
-					},
+					}
 				},
 				{
 					initializationOptions: {
@@ -117,7 +113,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 					revealOutputChannelOn: RevealOutputChannelOn.Never,
 					middleware: {
 						provideDocumentFormattingEdits: (document: vscode.TextDocument, options: FormattingOptions, token: vscode.CancellationToken, next: ProvideDocumentFormattingEditsSignature) => {
-							if (languageServerExperimentalFeatures['format']) {
+							if (languageServerExperimentalFeatures['format'] === true) {
 								return next(document, options, token);
 							}
 							return [];
@@ -127,19 +123,20 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			);
 
 			c.onReady().then(() => {
-				if (c.initializeResult && c.initializeResult.capabilities && !c.initializeResult.capabilities.completionProvider) {
+				let capabilities = c.initializeResult && c.initializeResult.capabilities;
+				if (capabilities && !capabilities.completionProvider) {
 					ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
+					vscode.window.showInformationMessage('Your installed version of `go-langserver` is out of date and does not support code completion. Falling back to default behavior.');
+				}
+
+				if (!languageServerExperimentalFeatures['format'] ||
+					!(capabilities && capabilities.documentFormattingProvider)) {
+					ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
+					vscode.window.showInformationMessage('Your installed version of `go-langserver` is out of date and does not support code formatting. Falling back to default behavior.');
 				}
 			});
 
 			ctx.subscriptions.push(c.start());
-
-			c.onReady().then(() => {
-				if (!languageServerExperimentalFeatures['format'] ||
-					!(c.initializeResult && c.initializeResult.capabilities && c.initializeResult.capabilities.documentFormattingProvider)) {
-					ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
-				}
-			});
 		} else {
 			ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
 			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));

@@ -380,42 +380,27 @@ function getMissingTools(goVersion: SemVersion): Promise<string[]> {
 }
 
 // If langserver needs to be used, but is not installed, this will prompt user to install and Reload
-// If langserver needs to be used, and is installed, this will return the list of supported flags
-// Returns null in all other cases
-export function checkLanguageServer(): string[] {
+// If langserver needs to be used, and is installed, this will return true
+// Returns false in all other cases
+export function checkLanguageServer(): boolean {
 	let latestGoConfig = vscode.workspace.getConfiguration('go');
-	if (!latestGoConfig['useLanguageServer']) return null;
+	if (!latestGoConfig['useLanguageServer']) return false;
 
 	if (process.platform === 'win32') {
 		vscode.window.showInformationMessage('The Go language server is not supported on Windows yet.');
-		return null;
+		return false;
 	}
 	if (!allFoldersHaveSameGopath()) {
 		vscode.window.showInformationMessage('The Go language server is not supported in a multi root set up with different GOPATHs.');
-		return null;
+		return false;
 	}
 
 	let langServerAvailable = getBinPath('go-langserver') !== 'go-langserver';
 	if (!langServerAvailable) {
 		promptForMissingTool('go-langserver');
 		vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
-		return null;
 	}
-
-	// we execute the languageserver using -help so that it will fail and
-	// print all the available flags
-	let helpText = '';
-	try {
-		helpText = cp.execFileSync(getBinPath('go-langserver'), ['-help']).toString();
-	} catch (err) {
-		helpText = (<cp.SpawnSyncReturns<Buffer>>err).stderr.toString();
-	}
-
-	// return the list of supported flags so consumers know what features
-	// can be supported
-	return helpText.split('\n')
-		.filter(line => line.trim().startsWith('-'))
-		.map(flag => flag.split(' ')[0]);
+	return langServerAvailable;
 }
 
 function allFoldersHaveSameGopath(): boolean {
