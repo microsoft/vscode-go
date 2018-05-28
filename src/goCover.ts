@@ -173,7 +173,7 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 
 			lines.on('line', function (data: string) {
 				// go test coverageprofile generates output:
-				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits IsCovered
+				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits CoverCount
 				// The first line will be "mode: set" which will be ignored
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
@@ -189,8 +189,8 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 					// End Column converted to zero based
 					parseInt(fileRange[5]) - 1
 				);
-				// If is Covered
-				if (parseInt(fileRange[7]) === 1) {
+				// If is Covered (CoverCount > 0)
+				if (parseInt(fileRange[7]) > 0) {
 					coverage.coveredRange.push({ range });
 				}
 				// Not Covered

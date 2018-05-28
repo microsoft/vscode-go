@@ -122,8 +122,8 @@ export function parseFilePrelude(text: string): Prelude {
 //     ["foo", "bar string", "baz string"]
 // Takes care of balancing parens so to not get confused by signatures like:
 //     (pattern string, handler func(ResponseWriter, *Request)) {
-export function parameters(signature: string): string[] {
-	let ret: string[] = [];
+export function getParametersAndReturnType(signature: string): { params: string[], returnType: string } {
+	let params: string[] = [];
 	let parenCount = 0;
 	let lastStart = 1;
 	for (let i = 1; i < signature.length; i++) {
@@ -135,20 +135,23 @@ export function parameters(signature: string): string[] {
 				parenCount--;
 				if (parenCount < 0) {
 					if (i > lastStart) {
-						ret.push(signature.substring(lastStart, i));
+						params.push(signature.substring(lastStart, i));
 					}
-					return ret;
+					return {
+						params,
+						returnType: i < signature.length - 1 ? signature.substr(i + 1) : ''
+					};
 				}
 				break;
 			case ',':
 				if (parenCount === 0) {
-					ret.push(signature.substring(lastStart, i));
+					params.push(signature.substring(lastStart, i));
 					lastStart = i + 2;
 				}
 				break;
 		}
 	}
-	return null;
+	return { params: [], returnType: '' };
 }
 
 export function canonicalizeGOPATHPrefix(filename: string): string {
@@ -347,7 +350,7 @@ export function getToolsEnvVars(): any {
 	const envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
 
 	if (toolsEnvVars && typeof toolsEnvVars === 'object') {
-		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof envVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : envVars[key]);
+		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof toolsEnvVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : toolsEnvVars[key]);
 	}
 
 	// cgo expects go to be in the path
@@ -727,7 +730,7 @@ function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {
 	}
 }
 
-export function getWorkspaceFolderPath(fileUri: vscode.Uri): string {
+export function getWorkspaceFolderPath(fileUri?: vscode.Uri): string {
 	if (fileUri) {
 		let workspace = vscode.workspace.getWorkspaceFolder(fileUri);
 		if (workspace) {

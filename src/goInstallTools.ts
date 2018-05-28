@@ -33,6 +33,7 @@ const allTools: { [key: string]: string } = {
 	'gogetdoc': 'github.com/zmb3/gogetdoc',
 	'goimports': 'golang.org/x/tools/cmd/goimports',
 	'goreturns': 'github.com/sqs/goreturns',
+	'goformat': 'winterdrache.de/goformat/goformat',
 	'golint': 'github.com/golang/lint/golint',
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
@@ -91,6 +92,8 @@ function getTools(goVersion: SemVersion): string[] {
 	// Install the formattool that was chosen by the user
 	if (goConfig['formatTool'] === 'goimports') {
 		tools.push('goimports');
+	} else if (goConfig['formatTool'] === 'goformat') {
+		tools.push('goformat');
 	} else if (goConfig['formatTool'] === 'goreturns') {
 		tools.push('goreturns');
 	}
@@ -234,7 +237,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 	missing.reduce((res: Promise<string[]>, tool: string) => {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
+			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + allTools[tool] + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
@@ -258,13 +261,23 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 						resolve([...sofar, null]);
 					}
 				}
+			};
+
+			cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
+				if (stderr.indexOf('unexpected directory layout:') > -1) {
+					outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
+					cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, callback);
+				} else {
+					callback(err, stdout, stderr);
+				}
+
 			});
 		}));
 	}, Promise.resolve([])).then(res => {
 		outputChannel.appendLine(''); // Blank line for spacing
 		let failures = res.filter(x => x != null);
 		if (failures.length === 0) {
-			if (missing.indexOf('langserver-go') > -1) {
+			if (missing.indexOf('go-langserver') > -1) {
 				outputChannel.appendLine('Reload VS Code window to use the Go language server');
 			}
 			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
@@ -286,7 +299,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
 
-	if (process.env['GOPATH']) {
+	if (process.env['GOPATH'] && process.env['GOROOT']) {
 		return Promise.resolve();
 	}
 
@@ -296,13 +309,16 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
 	return new Promise<void>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['env', 'GOPATH'], (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
 			if (err) {
 				return reject();
 			}
 			let envOutput = stdout.split('\n');
 			if (!process.env['GOPATH'] && envOutput[0].trim()) {
 				process.env['GOPATH'] = envOutput[0].trim();
+			}
+			if (!process.env['GOROOT'] && envOutput[1] && envOutput[1].trim()) {
+				process.env['GOROOT'] = envOutput[1].trim();
 			}
 			return resolve();
 		});
@@ -395,8 +411,3 @@ function allFoldersHaveSameGopath(): boolean {
 	let tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
 	return vscode.workspace.workspaceFolders.find(x => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
 }
-
-
-
-
-
