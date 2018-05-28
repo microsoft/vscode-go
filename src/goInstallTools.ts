@@ -38,6 +38,7 @@ const allTools: { [key: string]: string } = {
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
 	'megacheck': 'honnef.co/go/tools/...',
+	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
 	'dlv': 'github.com/derekparker/delve/cmd/dlv',
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct'
@@ -59,6 +60,7 @@ const importantTools = [
 	'golint',
 	'gometalinter',
 	'megacheck',
+	'golangci-lint',
 	'dlv'
 ];
 
@@ -110,6 +112,10 @@ function getTools(goVersion: SemVersion): string[] {
 
 	if (goConfig['lintTool'] === 'megacheck') {
 		tools.push('megacheck');
+	}
+
+	if (goConfig['lintTool'] === 'golangci-lint') {
+		tools.push('golangci-lint');
 	}
 
 	if (goConfig['useLanguageServer'] && process.platform !== 'win32') {
