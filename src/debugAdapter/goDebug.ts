@@ -331,6 +331,17 @@ class Delve {
 			this.noDebug = false;
 			let serverRunning = false;
 
+			// Get default LoadConfig values according to delve API:
+			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
+			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
+			this.loadConfig = launchArgs.dlvLoadConfig || {
+				followPointers: true,
+				maxVariableRecurse: 1,
+				maxStringLen: 64,
+				maxArrayValues: 64,
+				maxStructFields: -1
+			};
+
 			if (mode === 'remote') {
 				this.debugProcess = null;
 				serverRunning = true;  // assume server is running when in remote mode
@@ -378,16 +389,6 @@ class Delve {
 			if (launchArgs.args) {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
-			// Get default LoadConfig values according to delve API:
-			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
-			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
-			this.loadConfig = launchArgs.dlvLoadConfig || {
-				followPointers: true,
-				maxVariableRecurse: 1,
-				maxStringLen: 64,
-				maxArrayValues: 64,
-				maxStructFields: -1
-			};
 
 			verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
 
