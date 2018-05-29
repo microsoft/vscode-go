@@ -40,7 +40,7 @@ export function initGoCover(ctx: vscode.ExtensionContext) {
 		vertgreen: ctx.asAbsolutePath('images/gutter-vertgreen.svg'),
 		vertblue: ctx.asAbsolutePath('images/gutter-vertblue.svg'),
 		vertyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
-	}
+	};
 }
 
 export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
