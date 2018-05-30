@@ -136,6 +136,7 @@ function applyCoverage(remove: boolean = false) {
 // setting; historical values may be simply the string 'highlight' or
 // 'gutter' so we want to have sensible defaults for those (and if it's a
 // string but not one of those strings we just return the highlight default)
+//
 // However, modern versions should have an object with appropriate fields,
 // so if it's not a string we just make sure we have all the fields we need.
 function getCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
