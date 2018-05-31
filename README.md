@@ -18,7 +18,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Workspace symbol search (using `go-symbols`)
 - Rename (using `gorename`. Note: For Undo after rename to work in Windows you need to have `diff` tool in your path)
 - Build-on-save (using `go build` and `go test`)
-- Lint-on-save (using `golint` or `gometalinter` or `megacheck` or `golangci-lint`)
+- Lint-on-save (using `golint` or `gometalinter` or `megacheck` or `golangci-lint` or `revive`)
 - Format on save as well as format manually (using `goreturns` or `goimports` or `gofmt`)
 - Generate unit tests skeleton (using `gotests`)
 - Add Imports (using `gopkgs`)
@@ -96,6 +96,14 @@ You can configure golangci-lint with `go.lintFlags`, for example to show issues 
 
 ```javascript
   "go.lintFlags": ["--enable-all", "--new"],
+```
+
+An alternative of golint is [revive](https://github.com/mgechev/revive). It extensible, configurable, provides superset of the rules of golint rules, and has significantly better performance.
+
+To configure revive, use:
+
+```javascript
+  "go.lintFlags": ["-exclude vendor/...", "-config config.toml"]
 ```
 
 Finally, the result of those linters will show right in the code (locations with suggestions will be underlined),
