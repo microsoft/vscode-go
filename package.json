@@ -448,13 +448,13 @@
                   }
                 },
                 "description": "LoadConfig describes to delve, how to load values from target's memory",
-                  "default": {
-                    "followPointers": true,
-                    "maxVariableRecurse": 1,
-                    "maxStringLen": 64,
-                    "maxArrayValues": 64,
-                    "maxStructFields": -1
-                  }
+                "default": {
+                  "followPointers": true,
+                  "maxVariableRecurse": 1,
+                  "maxStringLen": 64,
+                  "maxArrayValues": 64,
+                  "maxStructFields": -1
+                }
               },
               "useApiV1": {
                 "type": "boolean",
@@ -522,7 +522,8 @@
             "golint",
             "gometalinter",
             "megacheck",
-            "golangci-lint"
+            "golangci-lint",
+            "revive"
           ]
         },
         "go.lintFlags": {
