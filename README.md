@@ -103,7 +103,7 @@ An alternative of golint is [revive](https://github.com/mgechev/revive). It exte
 To configure revive, use:
 
 ```javascript
-  "go.lintFlags": ["-exclude vendor/...", "-config config.toml"]
+  "go.lintFlags": ["--exclude vendor/...", "--config=${workspaceRoot}/config.toml"]
 ```
 
 Finally, the result of those linters will show right in the code (locations with suggestions will be underlined),
