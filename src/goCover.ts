@@ -11,8 +11,7 @@ import fs = require('fs');
 import { showTestOutput, goTest } from './testUtils';
 import rl = require('readline');
 
-export let gutters;
-
+let gutters;
 let coverageFiles = {};
 
 interface CoverageFile {
@@ -36,11 +35,20 @@ export function initGoCover(ctx: vscode.ExtensionContext) {
 		slashgreen: ctx.asAbsolutePath('images/gutter-slashgreen.svg'),
 		slashblue: ctx.asAbsolutePath('images/gutter-slashblue.svg'),
 		slashyellow: ctx.asAbsolutePath('images/gutter-slashyellow.svg'),
-		vertred: ctx.asAbsolutePath('images/gutter-vertred.svg'),
-		vertgreen: ctx.asAbsolutePath('images/gutter-vertgreen.svg'),
-		vertblue: ctx.asAbsolutePath('images/gutter-vertblue.svg'),
-		vertyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
+		verticalred: ctx.asAbsolutePath('images/gutter-vertred.svg'),
+		verticalgreen: ctx.asAbsolutePath('images/gutter-vertgreen.svg'),
+		verticalblue: ctx.asAbsolutePath('images/gutter-vertblue.svg'),
+		verticalyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
 	};
+
+	const goConfig = vscode.workspace.getConfiguration('go');
+	const inspectResult = goConfig.inspect('coverageDecorator');
+	if (typeof inspectResult.globalValue === 'string') {
+		goConfig.update('coverageDecorator', { type: inspectResult.globalValue }, vscode.ConfigurationTarget.Global);
+	}
+	if (typeof inspectResult.workspaceValue === 'string') {
+		goConfig.update('coverageDecorator', { type: inspectResult.workspaceValue }, vscode.ConfigurationTarget.Workspace);
+	}
 }
 
 export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
@@ -147,8 +155,8 @@ function getCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
 	// find a choice that pleases them.
 	let defaults = {
 		type: 'highlight',
-		coveredColor: 'rgba(64,128,128,0.5)',
-		uncoveredColor: 'rgba(128,64,64,0.25)',
+		coveredHighlightColor: 'rgba(64,128,128,0.5)',
+		uncoveredHighlightColor: 'rgba(128,64,64,0.25)',
 		coveredGutterStyle: 'blockblue',
 		uncoveredGutterStyle: 'slashyellow'
 	};
@@ -173,10 +181,10 @@ function getCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
 		gutterIconPath: gutters[defaults.uncoveredGutterStyle]
 	});
 	defaults['coveredHighLight'] = vscode.window.createTextEditorDecorationType({
-		backgroundColor: defaults.coveredColor
+		backgroundColor: defaults.coveredHighlightColor
 	});
 	defaults['uncoveredHighLight'] = vscode.window.createTextEditorDecorationType({
-		backgroundColor: defaults.uncoveredColor
+		backgroundColor: defaults.uncoveredHighlightColor
 	});
 
 	return defaults;
