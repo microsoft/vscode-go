@@ -19,7 +19,7 @@ import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction';
 import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
-import { updateGoPathGoRootFromConfig, offerToInstallTools } from './goInstallTools';
+import { updateGoPathGoRootFromConfig, offerToInstallTools, promptForMissingTool } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
@@ -308,6 +308,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			referencesCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['references']);
 		}
 
+		if (e.affectsConfiguration('go.formatTool')) {
+			checkToolExists(updatedGoConfig['formatTool']);
+		}
+		if (e.affectsConfiguration('go.lintTool')) {
+			checkToolExists(updatedGoConfig['lintTool']);
+		}
+		if (e.affectsConfiguration('go.docsTool')) {
+			checkToolExists(updatedGoConfig['docsTool']);
+		}
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.package', () => {
@@ -477,4 +486,10 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 
 function didLangServerConfigChange(e: vscode.ConfigurationChangeEvent): boolean {
 	return e.affectsConfiguration('go.useLanguageServer') || e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures');
+}
+
+function checkToolExists(tool: string) {
+	if (tool === getBinPath(tool)) {
+		promptForMissingTool(tool);
+	}
 }
