@@ -147,7 +147,6 @@ function getCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
 	// find a choice that pleases them.
 	let defaults = {
 		type: 'highlight',
-		isWholeLine: false,
 		coveredColor: 'rgba(64,128,128,0.5)',
 		uncoveredColor: 'rgba(128,64,64,0.25)',
 		coveredGutterStyle: 'blockblue',
@@ -174,12 +173,10 @@ function getCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
 		gutterIconPath: gutters[defaults.uncoveredGutterStyle]
 	});
 	defaults['coveredHighLight'] = vscode.window.createTextEditorDecorationType({
-		backgroundColor: defaults.coveredColor,
-		isWholeLine: defaults.isWholeLine
+		backgroundColor: defaults.coveredColor
 	});
 	defaults['uncoveredHighLight'] = vscode.window.createTextEditorDecorationType({
-		backgroundColor: defaults.uncoveredColor,
-		isWholeLine: defaults.isWholeLine
+		backgroundColor: defaults.uncoveredColor
 	});
 
 	return defaults;
