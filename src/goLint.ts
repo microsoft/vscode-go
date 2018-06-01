@@ -57,17 +57,19 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	const lintFlags: string[] = goConfig['lintFlags'] || [];
 	const lintEnv = Object.assign({}, getToolsEnvVars());
 	const args = [];
-	const configFlag = '--config=';
 
 	lintFlags.forEach(flag => {
 		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
 		if (flag === '--json') {
 			return;
 		}
-		if (flag.startsWith(configFlag)) {
-			let configFilePath = flag.substr(configFlag.length);
+		if (flag.startsWith('--config=') || flag.startsWith('-config=')) {
+			let configFilePath = flag.substr(flag.indexOf('=') + 1).trim();
+			if (!configFilePath) {
+				return;
+			}
 			configFilePath = resolvePath(configFilePath);
-			args.push(`${configFlag}${configFilePath}`);
+			args.push(`${flag.substr(0, flag.indexOf('=') + 1)}${configFilePath}`);
 			return;
 		}
 		args.push(flag);
