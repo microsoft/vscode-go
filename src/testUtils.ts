@@ -72,7 +72,7 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 
 export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
 	let testFlags: string[] = goConfig['testFlags'] ? goConfig['testFlags'] : goConfig['buildFlags'];
-	testFlags = [...testFlags]; // Use copy of the flags, dont pass the actual object from config
+	testFlags = testFlags.map(x => resolvePath(x)); // Use copy of the flags, dont pass the actual object from config
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
 }
 
