@@ -45,6 +45,7 @@ export function lintCode(lintWorkspace?: boolean) {
 export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?: boolean): Promise<ICheckResult[]> {
 	if (running) {
 		tokenSource.cancel();
+		tokenSource = new vscode.CancellationTokenSource();
 	}
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
