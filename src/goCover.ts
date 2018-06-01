@@ -11,19 +11,7 @@ import fs = require('fs');
 import { showTestOutput, goTest } from './testUtils';
 import rl = require('readline');
 
-export let coveredGutter;
-export let uncoveredGutter;
-
-let coveredHighLight = vscode.window.createTextEditorDecorationType({
-	// Green
-	backgroundColor: 'rgba(64,128,64,0.5)',
-	isWholeLine: false
-});
-let uncoveredHighLight = vscode.window.createTextEditorDecorationType({
-	// Red
-	backgroundColor: 'rgba(128,64,64,0.5)',
-	isWholeLine: false
-});
+let gutters;
 let coverageFiles = {};
 
 interface CoverageFile {
@@ -38,14 +26,29 @@ function clearCoverage() {
 }
 
 export function initGoCover(ctx: vscode.ExtensionContext) {
-	coveredGutter = vscode.window.createTextEditorDecorationType({
-		// Gutter green
-		gutterIconPath: ctx.asAbsolutePath('images/gutter-green.svg')
-	});
-	uncoveredGutter = vscode.window.createTextEditorDecorationType({
-		// Gutter red
-		gutterIconPath: ctx.asAbsolutePath('images/gutter-red.svg')
-	});
+	gutters = {
+		blockred: ctx.asAbsolutePath('images/gutter-blockred.svg'),
+		blockgreen: ctx.asAbsolutePath('images/gutter-blockgreen.svg'),
+		blockblue: ctx.asAbsolutePath('images/gutter-blockblue.svg'),
+		blockyellow: ctx.asAbsolutePath('images/gutter-blockyellow.svg'),
+		slashred: ctx.asAbsolutePath('images/gutter-slashred.svg'),
+		slashgreen: ctx.asAbsolutePath('images/gutter-slashgreen.svg'),
+		slashblue: ctx.asAbsolutePath('images/gutter-slashblue.svg'),
+		slashyellow: ctx.asAbsolutePath('images/gutter-slashyellow.svg'),
+		verticalred: ctx.asAbsolutePath('images/gutter-vertred.svg'),
+		verticalgreen: ctx.asAbsolutePath('images/gutter-vertgreen.svg'),
+		verticalblue: ctx.asAbsolutePath('images/gutter-vertblue.svg'),
+		verticalyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
+	};
+
+	const goConfig = vscode.workspace.getConfiguration('go');
+	const inspectResult = goConfig.inspect('coverageDecorator');
+	if (typeof inspectResult.globalValue === 'string') {
+		goConfig.update('coverageDecorator', { type: inspectResult.globalValue }, vscode.ConfigurationTarget.Global);
+	}
+	if (typeof inspectResult.workspaceValue === 'string') {
+		goConfig.update('coverageDecorator', { type: inspectResult.workspaceValue }, vscode.ConfigurationTarget.Workspace);
+	}
 }
 
 export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
@@ -137,26 +140,76 @@ function applyCoverage(remove: boolean = false) {
 	});
 }
 
+// getCoverageDecorator fetches the value of the go.coverageDecorator
+// setting; historical values may be simply the string 'highlight' or
+// 'gutter' so we want to have sensible defaults for those (and if it's a
+// string but not one of those strings we just return the highlight default)
+//
+// However, modern versions should have an object with appropriate fields,
+// so if it's not a string we just make sure we have all the fields we need.
+function getCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
+	// These defaults are chosen to be distinguishable
+	// in nearly any color scheme (even Red) as well as by people
+	// who have difficulties with color perception. There are also
+	// enough options that everyone (we hope) should be able to
+	// find a choice that pleases them.
+	let defaults = {
+		type: 'highlight',
+		coveredHighlightColor: 'rgba(64,128,128,0.5)',
+		uncoveredHighlightColor: 'rgba(128,64,64,0.25)',
+		coveredGutterStyle: 'blockblue',
+		uncoveredGutterStyle: 'slashyellow'
+	};
+
+	let coverageDecorator = cfg['coverageDecorator'];
+	if (typeof (coverageDecorator) === 'string') {
+		defaults.type = coverageDecorator;
+	} else {
+		// look at all the values in coverageDecorator and overwrite the
+		// equivalent in defaults (this way coverageDecorator overrides
+		// every default but the result will still have all required fields).
+		for (let k in coverageDecorator) {
+			defaults[k] = coverageDecorator[k];
+		}
+	}
+
+	// before we're done, we need to turn these names into actual decorations
+	defaults['coveredGutter'] = vscode.window.createTextEditorDecorationType({
+		gutterIconPath: gutters[defaults.coveredGutterStyle]
+	});
+	defaults['uncoveredGutter'] = vscode.window.createTextEditorDecorationType({
+		gutterIconPath: gutters[defaults.uncoveredGutterStyle]
+	});
+	defaults['coveredHighLight'] = vscode.window.createTextEditorDecorationType({
+		backgroundColor: defaults.coveredHighlightColor
+	});
+	defaults['uncoveredHighLight'] = vscode.window.createTextEditorDecorationType({
+		backgroundColor: defaults.uncoveredHighlightColor
+	});
+
+	return defaults;
+}
+
 function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
 	let cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let coverageOptions = cfg['coverageOptions'];
-	let coverageDecorator = cfg['coverageDecorator'];
+	let coverageDecorator = getCoverageDecorator(cfg);
 
-	editor.setDecorations(coveredGutter, []);
-	editor.setDecorations(coveredHighLight, []);
-	editor.setDecorations(uncoveredGutter, []);
-	editor.setDecorations(uncoveredHighLight, []);
+	editor.setDecorations(coverageDecorator['coveredGutter'], []);
+	editor.setDecorations(coverageDecorator['coveredHighLight'], []);
+	editor.setDecorations(coverageDecorator['uncoveredGutter'], []);
+	editor.setDecorations(coverageDecorator['uncoveredHighLight'], []);
 
 	if (remove) {
 		return;
 	}
 
 	if (coverageOptions === 'showCoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-		editor.setDecorations(coverageDecorator === 'gutter' ? coveredGutter : coveredHighLight, file.coveredRange);
+		editor.setDecorations(coverageDecorator.type === 'gutter' ? coverageDecorator['coveredGutter'] : coverageDecorator['coveredHighLight'], file.coveredRange);
 	}
 
 	if (coverageOptions === 'showUncoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-		editor.setDecorations(coverageDecorator === 'gutter' ? uncoveredGutter : uncoveredHighLight, file.uncoveredRange);
+		editor.setDecorations(coverageDecorator.type === 'gutter' ? coverageDecorator['uncoveredGutter'] : coverageDecorator['uncoveredHighLight'], file.uncoveredRange);
 	}
 }
 
