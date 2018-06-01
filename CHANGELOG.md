@@ -20,6 +20,13 @@
 * [Kent Quirk (@kentquirk)](https://github.com/kentquirk)
     * Customize the colors used in highlighting covered/uncovered code or the gutter styles used to indicated covered/uncovered code using the setting `go.coverageDecorator`. [Feature Request 1302](https://github.com/Microsoft/vscode-go/issues/1302)
 
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Resolve `~`, `${workspaceRoot}`, `${workspaceFolder}` in the `go.testFlags` setting. [Feature Request 928](https://github.com/Microsoft/vscode-go/issues/928)
+    * New setting `go.languageServerExperimentalFeatures` to opt-in to try new features form the language server that might not be feature complete or stable yet.
+    * Ensure `Go: Add Import` shows up the list of imports ASAP. Fixes [Feature Request 1450](https://github.com/Microsoft/vscode-go/issues/1450)
+    * Prompt user to install missing tool when they change either of `go.formatTool`, `go.lintTool` or `go.docsTool` setting to a tool that they dont have installed yet.
+    * Pass the environment variables in the `go.toolsEnvVars` setting to the process that runs the language server.
+
 ### Bug Fixes
 
 * [Kent Quirk (@kentquirk)](https://github.com/kentquirk)
@@ -27,6 +34,9 @@
 
 * [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
     * Fix perf issues when using `gopkgs`. [Bug 1490](https://github.com/Microsoft/vscode-go/issues/1490)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Support `Go to Definition` feature when the entire symbol is selected with cursor at the end. Fixes [Bug 891](https://github.com/Microsoft/vscode-go/issues/891)
 
 ## 0.6.80 - 14th May, 2018
 
