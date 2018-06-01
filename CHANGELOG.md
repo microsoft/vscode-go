@@ -1,5 +1,33 @@
 ## 0.6.81 - Coming Soon...
 
+### Features
+
+* [Shreyas Karnik (@shreyu86)](https://github.com/shreyu86)
+    * Include exported member name in completions when starting a comment above it. Use Ctrl+Space to trigger completions inside comments. [Feature Request 1005](https://github.com/Microsoft/vscode-go/issues/1005)
+
+* [Frederik Ring (@m90)](https://github.com/m90)
+    * Get code completion feature when using language server. Enable this in the new setting `go.languageServerExperimentalFeatures`. [Feature Request 1593](https://github.com/Microsoft/vscode-go/issues/1593)
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+    * Use debug configuration to choose to use version 2 of delve apis. [Feature Request 1555](https://github.com/Microsoft/vscode-go/issues/1555). Enables to set configuration to increase the size of arrays and strings that are watchable during debugging which fixes [Bug 868](https://github.com/Microsoft/vscode-go/issues/868)
+
+* [@golangci](https://github.com/golangci)
+    * Support the use of `golangci-lint` as a linter. [Feature Request 1693](https://github.com/Microsoft/vscode-go/issues/1693)
+
+* [Minko Gechev (@mgechev)](https://github.com/mgechev) and [Mark Wolfe (@wolfeidau)](https://github.com/wolfeidau)
+    * Support the use of `revive` as a linter. [Feature Request 1697](https://github.com/Microsoft/vscode-go/issues/1697)
+
+* [Kent Quirk (@kentquirk)](https://github.com/kentquirk)
+    * Customize the colors used in highlighting covered/uncovered code or the gutter styles used to indicated covered/uncovered code using the setting `go.coverageDecorator`. [Feature Request 1302](https://github.com/Microsoft/vscode-go/issues/1302)
+
+### Bug Fixes
+
+* [Kent Quirk (@kentquirk)](https://github.com/kentquirk)
+    * Fix code coverage when code is covered by multiple tests. [Bug 1683](https://github.com/Microsoft/vscode-go/issues/1683)
+
+* [Nuruddin Ashr (@uudashr)](https://github.com/uudashr)
+    * Fix perf issues when using `gopkgs`. [Bug 1490](https://github.com/Microsoft/vscode-go/issues/1490)
+
 ## 0.6.80 - 14th May, 2018
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
