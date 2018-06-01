@@ -522,7 +522,8 @@
             "golint",
             "gometalinter",
             "megacheck",
-            "golangci-lint"
+            "golangci-lint",
+            "revive"
           ]
         },
         "go.lintFlags": {
