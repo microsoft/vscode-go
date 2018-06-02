@@ -19,3 +19,12 @@ func SayHello() {
 type HelloParams struct {
 	language string
 }
+
+type Vertex struct {
+	X, Y float64
+}
+
+// A
+func (v Vertex) Abs() float64 {
+	return (v.X*v.X + v.Y*v.Y)
+}
