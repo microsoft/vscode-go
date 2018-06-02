@@ -46,6 +46,8 @@ export function vetCode(vetWorkspace?: boolean) {
 export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace?: boolean): Promise<ICheckResult[]> {
 	if (running) {
 		tokenSource.cancel();
+		tokenSource.dispose();
+		tokenSource = new vscode.CancellationTokenSource();
 	}
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
