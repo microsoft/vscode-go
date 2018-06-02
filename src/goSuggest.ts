@@ -37,7 +37,7 @@ interface GoCodeSuggestion {
 }
 
 const lineCommentRegex = /^\s*\/\/\s+/;
-const exportedMemberRegex = /(const|func|type|var)\s+([A-Z]\w*)/;
+const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
@@ -60,8 +60,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					let nextLine = document.lineAt(position.line + 1).text.trim();
 					let memberType = nextLine.match(exportedMemberRegex);
 					let suggestionItem: vscode.CompletionItem;
-					if (memberType && memberType.length === 3) {
-						suggestionItem = new vscode.CompletionItem(memberType[2], vscodeKindFromGoCodeClass(memberType[1]));
+					if (memberType && memberType.length === 4) {
+						suggestionItem = new vscode.CompletionItem(memberType[3], vscodeKindFromGoCodeClass(memberType[1]));
 					}
 					return resolve(suggestionItem ? [suggestionItem] : []);
 				}
