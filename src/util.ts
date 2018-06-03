@@ -398,6 +398,9 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 				// No op
 			}
 		}
+		if (inferredGopath && process.env['GOPATH']) {
+			inferredGopath += path.delimiter + process.env['GOPATH'];
+		}
 	}
 
 	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
