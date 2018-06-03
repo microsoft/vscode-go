@@ -14,6 +14,7 @@ import { getNonVendorPackages } from './goPackages';
 
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
 
+const testSuiteMethodRe = /^\([^)]+\)\.Test/;
 
 /**
  * Input to goTest.
@@ -89,8 +90,34 @@ export function getTestFunctions(doc: vscode.TextDocument, token: vscode.Cancell
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example')))
+				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example') || isInstanceTestMethod(sym))
+			)
 		);
+}
+
+/**
+ * Checks whether given symbol is a test method of a test suite instance.
+ *
+ * @param symbol Symbol to check.
+ */
+export function isInstanceTestMethod(symbol: vscode.SymbolInformation | string): boolean {
+	let symbolName = typeof symbol === 'string' ? symbol : symbol.name;
+	return testSuiteMethodRe.test(symbolName);
+}
+
+/**
+ * Extracts test method name of a suite test function.
+ * For example a symbol with name "(*testSuite).TestMethod" will return "TestMethod".
+ *
+ * @param symbol Symbol to extract method name from.
+ */
+export function extractInstanceTestName(symbol: vscode.SymbolInformation | string): string {
+	let symbolName = typeof symbol === 'string' ? symbol : symbol.name;
+	const match = symbolName.match(/\.(Test.*)$/);
+	if (!match) {
+		return null;
+	}
+	return match[1];
 }
 
 /**
@@ -242,7 +269,26 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  */
 function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
-		return Promise.resolve([testconfig.isBenchmark ? '-bench' : '-run', util.format('^%s$', testconfig.functions.join('|'))]);
+		let params: string[] = [];
+		if (testconfig.isBenchmark) {
+			params = ['-bench', util.format('^%s$', testconfig.functions.join('|'))];
+		} else {
+			let testFunctions = testconfig.functions;
+			let testifyMethods = testFunctions.filter(isInstanceTestMethod);
+			if (testifyMethods.length > 0) {
+				// filter out testify methods
+				testFunctions = testFunctions.filter(fn => !isInstanceTestMethod(fn));
+				testifyMethods = testifyMethods.map(extractInstanceTestName);
+			}
+
+			if (testFunctions.length > 0) {
+				params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
+			}
+			if (testifyMethods.length > 0) {
+				params = params.concat(['-testify.m', util.format('^%s$', testifyMethods.join('|'))]);
+			}
+		}
+		return Promise.resolve(params);
 	} else if (testconfig.includeSubDirectories && !testconfig.isBenchmark) {
 		return getGoVersion().then((ver: SemVersion) => {
 			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {

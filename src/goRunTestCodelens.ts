@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import path = require('path');
 import { TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
-import { getTestFunctions, getBenchmarkFunctions, getTestFlags } from './testUtils';
+import { getTestFunctions, getBenchmarkFunctions, getTestFlags, extractInstanceTestName } from './testUtils';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getCurrentGoPath } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
@@ -94,10 +94,13 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 				codelens.push(new CodeLens(func.location.range, runTestCmd));
 
+				let instanceMethod = extractInstanceTestName(func.name);
+				let args = !instanceMethod ? ['-test.run', `^${func.name}$`] : ['-testify.m', `^${instanceMethod}$`];
+
 				let debugTestCmd: Command = {
 					title: 'debug test',
 					command: 'go.debug.startSession',
-					arguments: [Object.assign({}, currentDebugConfig, { args: ['-test.run', '^' + func.name + '$'] })]
+					arguments: [Object.assign({}, currentDebugConfig, { args: args })]
 				};
 
 				codelens.push(new CodeLens(func.location.range, debugTestCmd));
