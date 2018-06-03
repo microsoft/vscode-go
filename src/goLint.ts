@@ -43,11 +43,13 @@ export function lintCode(lintWorkspace?: boolean) {
  * @param lintWorkspace If true runs linter in all workspace.
  */
 export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?: boolean): Promise<ICheckResult[]> {
-	if (running) {
-		tokenSource.cancel();
+	if (tokenSource) {
+		if (running) {
+			tokenSource.cancel();
+		}
 		tokenSource.dispose();
-		tokenSource = new vscode.CancellationTokenSource();
 	}
+	tokenSource = new vscode.CancellationTokenSource();
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
 	const cwd = (lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
@@ -107,5 +109,5 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	return lintPromise;
 }
 
-let tokenSource = new vscode.CancellationTokenSource();
+let tokenSource: vscode.CancellationTokenSource;
 let running = false;
