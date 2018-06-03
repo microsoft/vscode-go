@@ -199,12 +199,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 										paramSnippets.push('${' + (i + 1) + ':' + param + '}');
 									}
 								}
-								let currentWordIndex = lineText.toLowerCase().lastIndexOf(currentWord.toLowerCase());
-								let nextSymbolIndex = currentWordIndex + currentWord.length;
 								let newSnippetString = null;
 								// Avoid adding snippet for function suggest when cursor is followed by ()
 								// i.e: met() -> method()()
-								if ((nextSymbolIndex < lineText.length) && (lineText.charAt(nextSymbolIndex) === '(')) {
+								if (lineText.substr(position.character, 2) === '()') {
 									newSnippetString = new vscode.SnippetString(suggest.name);
 								} else {
 									newSnippetString = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
