@@ -277,6 +277,10 @@ export function getNonVendorPackages(folderPath: string): Promise<string[]> {
 // see: https://golang.org/doc/go1.4#internalpackages
 // see: https://golang.org/s/go14internal
 function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkgPath: string) {
+	if (pkgPath.startsWith('internal/')) {
+		return false;
+	}
+
 	let internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
 	if (internalPkgFound) {
 		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));
