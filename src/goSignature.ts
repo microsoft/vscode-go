@@ -93,6 +93,8 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		let parenBalance = 0;
 		let commas = [];
 		let maxLookupLines = 30;
+		let singleQuotesCount = 0;
+		let doubleQuotesCount = 0;
 
 		for (let line = position.line; line >= 0 && maxLookupLines >= 0; line--, maxLookupLines--) {
 			let currentLine = document.lineAt(line).text;
@@ -117,10 +119,26 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 					case ')':
 						parenBalance++;
 						break;
+					case '\'':
+						// Ignore escaped single quotes, only count string literal boundaries
+						if ((char < (characterPosition - 1)) && (currentLine[char + 1] !== '\\')) {
+							singleQuotesCount++;
+						}
+						break;
+					case '"':
+						// Ignore escaped double quotes, only count string literal boundaries
+						if ((char < (characterPosition - 1)) && (currentLine[char + 1] !== '\\')) {
+							doubleQuotesCount++;
+						}
+						break;
 					case ',':
-						if (parenBalance === 0) {
+						let doubleQuotesBalanced = (doubleQuotesCount % 2) === 0;
+						let singleQuotesBalanced = (singleQuotesCount % 2) === 0;
+						console.error("***currentLine:"+currentLine);
+						if ((parenBalance === 0) && doubleQuotesBalanced && singleQuotesBalanced) {
 							commas.push(new Position(line, char));
 						}
+						break;
 				}
 			}
 		}
