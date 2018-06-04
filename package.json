@@ -233,6 +233,16 @@
         "command": "go.install.package",
         "title": "Go: Install Current Package",
         "description": "Install the current package."
+      },
+      {
+        "command": "go.doc",
+        "title": "Go: Doc",
+        "description": "Get go documentation."
+      },
+      {
+        "command": "go.get.doc",
+        "title": "Go: Get Documentation",
+        "description": "Get docuemtnation for package using godoc."
       }
     ],
     "debuggers": [
@@ -1031,6 +1041,11 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to upload the current file or selection to the Go Playground"
+            },
+            "goDoc": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to get go documentation to the editor context menu"
             }
           },
           "default": {
@@ -1045,7 +1060,8 @@
             "generateTestForPackage": false,
             "addImport": true,
             "testCoverage": true,
-            "playground": true
+            "playground": true,
+            "goDoc": true
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor.",
           "scope": "resource"
@@ -1058,6 +1074,11 @@
           "default": [],
           "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature",
           "scope": "resource"
+        },
+        "go.docsHtml": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show rendered HTML godoc instead of plain text"
         }
       }
     },
@@ -1129,11 +1150,23 @@
           "group": "Go group 1"
         },
         {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.goDoc && resourceLangId == go",
+          "command": "go.get.doc",
+          "group": "Go group 1"
+        },
+        {
           "when": "editorTextFocus && resourceLangId == go",
           "command": "go.show.commands",
           "group": "Go group 2"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "go.get.doc",
+        "key": "ctrl+alt+d",
+        "when": "editorTextFocus && resourceLangId == go"
+      }
+    ]
   }
 }

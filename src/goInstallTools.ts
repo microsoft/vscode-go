@@ -78,19 +78,14 @@ function getTools(goVersion: SemVersion): string[] {
 		'gomodifytags',
 		'goplay',
 		'impl',
-		'fillstruct'
+		'fillstruct',
+		'gogetdoc',
+		'godoc',
+		'godef'
 	];
 
 	if (goLiveErrorsEnabled()) {
 		tools.push('gotype-live');
-	}
-
-	// Install the doc/def tool that was chosen by the user
-	if (goConfig['docsTool'] === 'godoc') {
-		tools.push('godef');
-		tools.push('godoc');
-	} else if (goConfig['docsTool'] === 'gogetdoc') {
-		tools.push('gogetdoc');
 	}
 
 	// Install the formattool that was chosen by the user
