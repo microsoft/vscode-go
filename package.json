@@ -745,6 +745,12 @@
           "description": "Environment variables that will passed to the processes that run the Go tools (e.g. CGO_CFLAGS)",
           "scope": "resource"
         },
+        "go.hideTestCommandArguments": {
+          "type": "boolean",
+          "default": false,
+          "description": "Hide `go test` command arguments when running tests.",
+          "scope": "resource"
+        },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": false,

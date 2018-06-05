@@ -157,7 +157,14 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			} else {
 				outTargets.push(...targets);
 			}
-			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
+
+			// Hide or show test command arguments; useful for user when there are many argumentsC
+			if (testconfig.goConfig['hideTestCommandArguments']) {
+				outputChannel.appendLine(['Running tool:', goRuntimePath, '[arguments hidden]'].join(' '));
+			} else {
+				outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
+			}
+
 			outputChannel.appendLine('');
 
 			args.push(...targets);
