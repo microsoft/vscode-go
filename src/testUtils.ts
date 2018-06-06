@@ -12,16 +12,16 @@ import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, get
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
-let sendSignal = 'SIGKILL';
-let outputChannel = vscode.window.createOutputChannel('Go Tests');
-let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+const sendSignal = 'SIGKILL';
+const outputChannel = vscode.window.createOutputChannel('Go Tests');
+const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.cancel';
 statusBarItem.text = 'Cancel Running Tests';
 
 /**
  *  testProcesses holds a list of currently running test processes.
  */
-let runningTestProcesses: cp.ChildProcess[] = [];
+const runningTestProcesses: cp.ChildProcess[] = [];
 
 
 /**
