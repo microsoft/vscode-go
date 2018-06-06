@@ -135,32 +135,29 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		if (!testconfig.background) {
-			let buildTags: string = testconfig.goConfig['buildTags'];
-			let args: Array<string> = ['test', ...testconfig.flags];
-			let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
-
-			if (testconfig.isBenchmark) {
-				args.push('-benchmem', '-run=^$');
-			} else {
-				args.push('-timeout', testconfig.goConfig['testTimeout']);
-			}
-			if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
-				args.push('-tags', buildTags);
-			}
-
-			let testEnvVars = getTestEnvVars(testconfig.goConfig);
-			let goRuntimePath = getGoRuntimePath();
 			outputChannel.show(true);
 		}
 
 		let buildTags: string = testconfig.goConfig['buildTags'];
-		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
-		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
-			args.push('-tags');
-			args.push(buildTags);
+		let args: Array<string> = ['test', ...testconfig.flags];
+		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
+
+		if (testconfig.isBenchmark) {
+			args.push('-benchmem', '-run=^$');
+		} else {
+			args.push('-timeout', testconfig.goConfig['testTimeout']);
 		}
+		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
+			args.push('-tags', buildTags);
+		}
+
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
 		let goRuntimePath = getGoRuntimePath();
+
+		if (!goRuntimePath) {
+			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+			return Promise.resolve();
+		}
 
 		// Append the package name to args to enable running tests in symlinked directories
 		let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
@@ -180,7 +177,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 			args.push(...targets);
 
-			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir, detached: true });
+			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
@@ -223,11 +220,11 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				errBuf.done();
 
 				if (code) {
-					outputChannel.appendLine('Error: Tests failed.');
+					outputChannel.appendLine(`Error: ${testType} failed.`);
 				} else if (signal === sendSignal) {
-					outputChannel.appendLine('Error: Tests terminated by user.');
+					outputChannel.appendLine(`Error: ${testType} terminated by user.`);
 				} else {
-					outputChannel.appendLine('Success: Tests passed.');
+					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
 
 				// We need to remove this particular test process from the array of test
@@ -271,7 +268,6 @@ export function showTestOutput() {
  */
 export function cancelRunningTests(): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		let tp: cp.ChildProcess;
 		testProcesses.forEach(function(tp){
 			tp.kill(sendSignal);
 		});
