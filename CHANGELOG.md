@@ -1,3 +1,14 @@
+## 0.6.82 - 6th June, 2018
+
+* [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
+    * Status bar item to cancel running tests. [Feature Request 1047](https://github.com/Microsoft/vscode-go/issues/1047) implemented with [PR 1218](https://github.com/Microsoft/vscode-go/pull/1218)
+
+* [Frederik Ring (@m90)](https://github.com/m90)
+    * Use `mdempsky/gocode` instead of `nsf/gocode` for auto-completion feature as the latter fails in Go 1.10 onwards.  Fixes [Bug 1645](https://github.com/Microsoft/vscode-go/issues/1645) with [PR 1710](https://github.com/Microsoft/vscode-go/pull/1710)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix the regression in the code coverage where the coverage doesnt get applied/removed as expected. Fixes [Bug 1716](https://github.com/Microsoft/vscode-go/issues/1716) and [Bug 1717](https://github.com/Microsoft/vscode-go/issues/1717) with [commit abe97240](https://github.com/Microsoft/vscode-go/commit/abe97240e573e9d2c11cea00bfd8c1e77c41398e)
+
 ## 0.6.81 - 4th June, 2018
 
 ### Features
