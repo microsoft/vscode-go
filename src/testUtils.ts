@@ -73,15 +73,15 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 		}
 	}
 
-	Object.keys(testEnvConfig).forEach(key => envVars[key] = resolvePath(testEnvConfig[key]));
-	Object.keys(fileEnv).forEach(key => envVars[key] = resolvePath(fileEnv[key]));
+	Object.keys(testEnvConfig).forEach(key => envVars[key] = typeof testEnvConfig[key] === 'string' ? resolvePath(testEnvConfig[key]) : testEnvConfig[key]);
+	Object.keys(fileEnv).forEach(key => envVars[key] = typeof fileEnv[key] === 'string' ? resolvePath(fileEnv[key]) : fileEnv[key]);
 
 	return envVars;
 }
 
 export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
 	let testFlags: string[] = goConfig['testFlags'] ? goConfig['testFlags'] : goConfig['buildFlags'];
-	testFlags = [...testFlags]; // Use copy of the flags, dont pass the actual object from config
+	testFlags = testFlags.map(x => resolvePath(x)); // Use copy of the flags, dont pass the actual object from config
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
 }
 
@@ -184,11 +184,34 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
-			outBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
-			outBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
+			const packageResultLineRE = /^(ok|FAIL)[ \t]+(.+?)[ \t]+([0-9\.]+s|\(cached\))/; // 1=ok/FAIL, 2=package, 3=time/(cached)
+			const testResultLines: string[] = [];
 
-			errBuf.onLine(line => outputChannel.appendLine(line));
-			errBuf.onDone(last => last && outputChannel.appendLine(last));
+			const processTestResultLine = (line: string) => {
+				testResultLines.push(line);
+				const result = line.match(packageResultLineRE);
+				if (result && currentGoWorkspace) {
+					const packageNameArr = result[2].split('/');
+					const baseDir = path.join(currentGoWorkspace, ...packageNameArr);
+					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
+					testResultLines.splice(0);
+				}
+			};
+
+			// go test emits test results on stdout, which contain file names relative to the package under test
+			outBuf.onLine(line => processTestResultLine(line));
+			outBuf.onDone(last => {
+				if (last) processTestResultLine(last);
+
+				// If there are any remaining test result lines, emit them to the output channel.
+				if (testResultLines.length > 0) {
+					testResultLines.forEach(line => outputChannel.appendLine(line));
+				}
+			});
+
+			// go test emits build errors on stderr, which contain paths relative to the cwd
+			errBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
+			errBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
 
 			tp.stdout.on('data', chunk => outBuf.append(chunk.toString()));
 			tp.stderr.on('data', chunk => errBuf.append(chunk.toString()));
@@ -287,4 +310,3 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	}
 	return Promise.resolve([]);
 }
-

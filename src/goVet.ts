@@ -44,9 +44,13 @@ export function vetCode(vetWorkspace?: boolean) {
  * @param vetWorkspace If true vets code in all workspace.
  */
 export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace?: boolean): Promise<ICheckResult[]> {
-	if (running) {
-		tokenSource.cancel();
+	if (tokenSource) {
+		if (running) {
+			tokenSource.cancel();
+		}
+		tokenSource.dispose();
 	}
+	tokenSource = new vscode.CancellationTokenSource();
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
 	const cwd = (vetWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
@@ -57,9 +61,15 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	const vetFlags = goConfig['vetFlags'] || [];
 	const vetEnv = Object.assign({}, getToolsEnvVars());
 	const vetPromise = getGoVersion().then((version: SemVersion) => {
-		let vetArgs = ['vet', ...vetFlags, './...'];
+		const tagsArg = [];
+		if (goConfig['buildTags'] && vetFlags.indexOf('-tags') === -1) {
+			tagsArg.push('-tags');
+			tagsArg.push(goConfig['buildTags']);
+		}
+
+		let vetArgs = ['vet', ...vetFlags, ...tagsArg, './...'];
 		if (version && version.major === 1 && version.minor <= 9 && vetFlags.length) {
-			vetArgs = ['tool', 'vet', ...vetFlags, '.'];
+			vetArgs = ['tool', 'vet', ...vetFlags, ...tagsArg, '.'];
 		}
 
 		running = true;
@@ -81,5 +91,5 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	return vetPromise;
 }
 
-let tokenSource = new vscode.CancellationTokenSource();
+let tokenSource: vscode.CancellationTokenSource;
 let running = false;

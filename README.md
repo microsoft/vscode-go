@@ -18,7 +18,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 - Workspace symbol search (using `go-symbols`)
 - Rename (using `gorename`. Note: For Undo after rename to work in Windows you need to have `diff` tool in your path)
 - Build-on-save (using `go build` and `go test`)
-- Lint-on-save (using `golint` or `gometalinter`)
+- Lint-on-save (using `golint`, `gometalinter`, `megacheck`,`golangci-lint` or `revive`)
 - Format on save as well as format manually (using `goreturns` or `goimports` or `gofmt`)
 - Generate unit tests skeleton (using `gotests`)
 - Add Imports (using `gopkgs`)
@@ -36,7 +36,7 @@ This extension adds rich language support for the Go language to VS Code, includ
 
 ## How to use this extension?
 
-Install and open [Visual Studio Code](https://code.visualstudio.com). Press `Ctrl+Shift+X` or `Cmd+Shift+X` to open the Extensions pane. Find and install the Go extension. You can also install the extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=lukehoban.Go). Open any `.go` file in VS Code. The extension is now activated.
+Install and open [Visual Studio Code](https://code.visualstudio.com). Press `Ctrl+Shift+X` or `Cmd+Shift+X` to open the Extensions pane. Find and install the Go extension. You can also install the extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go). Open any `.go` file in VS Code. The extension is now activated.
 
 This extension uses a set of Go tools to provide the various rich features. These tools are installed in your GOPATH by default. If you wish to have these tools in a separate location, provide the desired location in the setting `go.toolsGopath`. Read more about this and the tools at [Go tools that the Go extension depends on](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on).
 
@@ -59,11 +59,12 @@ The Go extension uses a host of Go tools to provide the various language feature
 
 Set `go.useLanguageServer` to `true` to use the Go language server from [Sourcegraph](https://github.com/sourcegraph/go-langserver) for features like Hover, Definition, Find All References, Signature Help, Go to Symbol in File and Workspace.
 * This is an experimental feature and is not available in Windows yet.
+* Since only a single language server is spun up for given VS Code instance, having multi-root setup where the folders have different GOPATH is not supported.
 * If set to true, you will be prompted to install the Go language server. Once installed, you will have to reload VS Code window. The language server will then be run by the Go extension in the background to provide services needed for the above mentioned features.
 * Everytime you change the value of the setting `go.useLanguageServer`, you need to reload the VS Code window for it to take effect.
 * To collect traces, set `"go.languageServerFlags": ["-trace"]`
 * To collect errors from language server in a logfile, set `"go.languageServerFlags": ["-trace", "-logfile", "path to a text file that exists"]`
-
+* Use the new setting `go.languageServerExperimentalFeatures` to opt-in to try new features like Code Completion and Formatting from the language server that might not be feature complete yet. 
 
 ### Linter
 
@@ -88,6 +89,22 @@ If you want to run only specific linters (some linters are slow), you can modify
 
 Alternatively, you can use [megacheck](https://github.com/dominikh/go-tools/tree/master/cmd/megacheck) which 
 may have significantly better performance than `gometalinter`, while only supporting a subset of the tools.
+
+Another alternative is [golangci-lint](https://github.com/golangci/golangci-lint) which shares some of the performance
+characteristics of megacheck, but supports a broader range of tools.
+You can configure golangci-lint with `go.lintFlags`, for example to show issues only in new code and to enable all linters:
+
+```javascript
+  "go.lintFlags": ["--enable-all", "--new"],
+```
+
+An alternative of golint is [revive](https://github.com/mgechev/revive). It is extensible, configurable, provides superset of the rules of golint, and has significantly better performance.
+
+To configure revive, use:
+
+```javascript
+  "go.lintFlags": ["-exclude=vendor/...", "-config=${workspaceRoot}/config.toml"]
+```
 
 Finally, the result of those linters will show right in the code (locations with suggestions will be underlined),
 as well as in the output pane.

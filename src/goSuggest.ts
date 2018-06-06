@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, parameters, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
@@ -15,13 +15,15 @@ import { getImportablePackages } from './goPackages';
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
 		case 'const':
+			return vscode.CompletionItemKind.Constant;
 		case 'package':
+			return vscode.CompletionItemKind.Module;
 		case 'type':
-			return vscode.CompletionItemKind.Keyword;
+			return vscode.CompletionItemKind.Class;
 		case 'func':
 			return vscode.CompletionItemKind.Function;
 		case 'var':
-			return vscode.CompletionItemKind.Field;
+			return vscode.CompletionItemKind.Variable;
 		case 'import':
 			return vscode.CompletionItemKind.Module;
 	}
@@ -33,6 +35,9 @@ interface GoCodeSuggestion {
 	name: string;
 	type: string;
 }
+
+const lineCommentRegex = /^\s*\/\/\s+/;
+const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
@@ -50,7 +55,19 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let lineTillCurrentPosition = lineText.substr(0, position.character);
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
-				if (lineText.match(/^\s*\/\//)) {
+				// triggering completions in comments on exported members
+				if (lineCommentRegex.test(lineTillCurrentPosition) && position.line + 1 < document.lineCount) {
+					let nextLine = document.lineAt(position.line + 1).text.trim();
+					let memberType = nextLine.match(exportedMemberRegex);
+					let suggestionItem: vscode.CompletionItem;
+					if (memberType && memberType.length === 4) {
+						suggestionItem = new vscode.CompletionItem(memberType[3], vscodeKindFromGoCodeClass(memberType[1]));
+					}
+					return resolve(suggestionItem ? [suggestionItem] : []);
+				}
+				// prevent completion when typing in a line comment that doesnt start from the beginning of the line
+				const commentIndex = lineText.indexOf('//');
+				if (commentIndex >= 0 && position.character > commentIndex) {
 					return resolve([]);
 				}
 
@@ -75,7 +92,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let inputText = document.getText();
 				let includeUnimportedPkgs = autocompleteUnimportedPackages && !inString;
 
-				return this.runGoCode(document, filename, inputText, offset, inString, position, lineText, currentWord, includeUnimportedPkgs).then(suggestions => {
+				return this.runGoCode(document, filename, inputText, offset, inString, position, lineText, currentWord, includeUnimportedPkgs, config).then(suggestions => {
 					// gocode does not suggest keywords, so we have to do it
 					if (currentWord.length > 0) {
 						goKeywords.forEach(keyword => {
@@ -99,7 +116,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							offset += textToAdd.length;
 
 							// Now that we have the package imported in the inputText, run gocode again
-							return this.runGoCode(document, filename, inputText, offset, inString, position, lineText, currentWord, false).then(newsuggestions => {
+							return this.runGoCode(document, filename, inputText, offset, inString, position, lineText, currentWord, false, config).then(newsuggestions => {
 								// Since the new suggestions are due to the package that we imported,
 								// add additionalTextEdits to do the same in the actual document in the editor
 								// We use additionalTextEdits instead of command so that 'useCodeSnippetsOnFunctionSuggest' feature continues to work
@@ -107,16 +124,16 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 									item.additionalTextEdits = getTextEditForAddImport(pkgPath);
 								});
 								resolve(newsuggestions);
-							});
+							}, reject);
 						}
 					}
 					resolve(suggestions);
-				});
+				}, reject);
 			});
 		});
 	}
 
-	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean): Thenable<vscode.CompletionItem[]> {
+	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
 
@@ -149,7 +166,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 					let wordAtPosition = document.getWordRangeAtPosition(position);
 
-					if (results[1]) {
+					if (results && results[1]) {
 						for (let suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
 							let item = new vscode.CompletionItem(suggest.name);
@@ -165,15 +182,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 									suggest.name
 								);
 							}
-							let conf = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-							if ((conf.get('useCodeSnippetsOnFunctionSuggest') || conf.get('useCodeSnippetsOnFunctionSuggestWithoutType')) && suggest.class === 'func') {
-								let params = parameters(suggest.type.substring(4));
+							if ((config['useCodeSnippetsOnFunctionSuggest'] || config['useCodeSnippetsOnFunctionSuggestWithoutType'])
+								&& (suggest.class === 'func' || suggest.class === 'var' && suggest.type.startsWith('func('))) {
+								let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));
 								let paramSnippets = [];
 								for (let i = 0; i < params.length; i++) {
 									let param = params[i].trim();
 									if (param) {
 										param = param.replace('${', '\\${').replace('}', '\\}');
-										if (conf.get('useCodeSnippetsOnFunctionSuggestWithoutType')) {
+										if (config['useCodeSnippetsOnFunctionSuggestWithoutType']) {
 											if (param.includes(' ')) {
 												// Separate the variable name from the type
 												param = param.substr(0, param.indexOf(' '));
@@ -182,7 +199,28 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 										paramSnippets.push('${' + (i + 1) + ':' + param + '}');
 									}
 								}
-								item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
+								// Avoid adding snippet for function suggest when cursor is followed by ()
+								// i.e: met() -> method()()
+								if (lineText.substr(position.character, 2) !== '()') {
+									item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
+								}
+							}
+							if (config['useCodeSnippetsOnFunctionSuggest'] && suggest.class === 'type' && suggest.type.startsWith('func(')) {
+								let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));
+								let paramSnippets = [];
+								for (let i = 0; i < params.length; i++) {
+									let param = params[i].trim();
+									if (param) {
+										param = param.replace('${', '\\${').replace('}', '\\}');
+										if (!param.includes(' ')) {
+											// If we don't have an argument name, we need to create one
+											param = 'arg' + (i + 1) + ' ' + param;
+										}
+										let arg = param.substr(0, param.indexOf(' '));
+										paramSnippets.push('${' + (i + 1) + ':' + arg + '}' + param.substr(param.indexOf(' '), param.length));
+									}
+								}
+								item.insertText = new vscode.SnippetString(suggest.name + '(func(' + paramSnippets.join(', ') + ') {\n	$' + (params.length + 1) + '\n})' + returnType);
 							}
 
 							if (wordAtPosition && wordAtPosition.start.character === 0 &&
@@ -293,6 +331,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					command: 'go.import.add',
 					arguments: [pkgPath]
 				};
+				item.kind = vscode.CompletionItemKind.Module;
 				// Add same sortText to the unimported packages so that they appear after the suggestions from gocode
 				const isStandardPackage = !item.detail.includes('.');
 				item.sortText = isStandardPackage ? 'za' : 'zb';
@@ -324,4 +363,3 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		}
 	}
 }
-

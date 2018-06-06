@@ -1,14 +1,14 @@
 {
   "name": "Go",
-  "version": "0.6.78-beta-2",
-  "publisher": "lukehoban",
+  "version": "0.6.81",
+  "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
     "name": "Microsoft Corporation - Development Labs"
   },
   "icon": "images/goIcon.png",
   "categories": [
-    "Languages",
+    "Programming Languages",
     "Snippets",
     "Linters",
     "Debuggers",
@@ -43,7 +43,7 @@
     "vscode-debugadapter": "^1.11.0",
     "vscode-debugprotocol": "^1.11.0",
     "vscode-extension-telemetry": "^0.0.15",
-    "vscode-languageclient": "^2.5.0"
+    "vscode-languageclient": "^4.1.3"
   },
   "devDependencies": {
     "@types/fs-extra": "0.0.35",
@@ -55,7 +55,7 @@
     "vscode": "^1.1.4"
   },
   "engines": {
-    "vscode": "^1.17.0"
+    "vscode": "^1.22.0"
   },
   "activationEvents": [
     "onLanguage:go",
@@ -417,6 +417,49 @@
                 "type": "string",
                 "description": "Output path for the binary of delve",
                 "default": "debug"
+              },
+              "dlvLoadConfig": {
+                "type": "object",
+                "properties": {
+                  "followPointers": {
+                    "type": "boolean",
+                    "description": "FollowPointers requests pointers to be automatically dereferenced",
+                    "default": true
+                  },
+                  "maxVariableRecurse": {
+                    "type": "number",
+                    "description": "MaxVariableRecurse is how far to recurse when evaluating nested types",
+                    "default": 1
+                  },
+                  "maxStringLen": {
+                    "type": "number",
+                    "description": "MaxStringLen is the maximum number of bytes read from a string",
+                    "default": 64
+                  },
+                  "maxArrayValues": {
+                    "type": "number",
+                    "description": "MaxArrayValues is the maximum number of elements read from an array, a slice or a map",
+                    "default": 64
+                  },
+                  "maxStructFields": {
+                    "type": "number",
+                    "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
+                    "default": -1
+                  }
+                },
+                "description": "LoadConfig describes to delve, how to load values from target's memory",
+                  "default": {
+                    "followPointers": true,
+                    "maxVariableRecurse": 1,
+                    "maxStringLen": 64,
+                    "maxArrayValues": 64,
+                    "maxStructFields": -1
+                  }
+              },
+              "useApiV1": {
+                "type": "boolean",
+                "description": "If true, the v1 of delve apis will be used, else v2 will be used",
+                "default": true
               }
             }
           }
@@ -453,6 +496,12 @@
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument",
           "scope": "resource"
         },
+        "go.installDependenciesWhenBuilding": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, then `-i` flag will be passed to `go build` everytime the code is compiled.",
+          "scope": "resource"
+        },
         "go.lintOnSave": {
           "type": "string",
           "enum": [
@@ -472,7 +521,9 @@
           "enum": [
             "golint",
             "gometalinter",
-            "megacheck"
+            "megacheck",
+            "golangci-lint",
+            "revive"
           ]
         },
         "go.lintFlags": {
@@ -507,12 +558,13 @@
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format.",
+          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format.",
           "scope": "resource",
           "enum": [
             "gofmt",
             "goimports",
-            "goreturns"
+            "goreturns",
+            "goformat"
           ]
         },
         "go.formatFlags": {
@@ -571,6 +623,11 @@
           "default": true,
           "description": "If true, shows test coverage when Go: Test Package command is run."
         },
+        "go.coverOnSingleTest": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, shows test coverage when Go: Test Function at cursor command is run."
+        },
         "go.coverageOptions": {
           "type": "string",
           "enum": [
@@ -583,13 +640,73 @@
           "scope": "resource"
         },
         "go.coverageDecorator": {
-          "type": "string",
-          "enum": [
-            "highlight",
-            "gutter"
-          ],
-          "default": "highlight",
-          "description": "This option lets you choose the way to display code coverage. Highlight, as its name states, highlights the line in red or green, gutter shows the colors in the gutter of the editor.",
+           "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "default": "highlight",
+                "enum": [
+                  "highlight",
+                  "gutter"
+                ]
+              },
+              "coveredHighlightColor": {
+                "type": "string",
+                "default": "rgba(64,128,128,0.5)",
+                "description": "Color in the rgba format to use to highlight covered code."
+              },
+              "uncoveredHighlightColor": {
+                "type": "string",
+                "default": "rgba(128,64,64,0.25)",
+                "description": "Color in the rgba format to use to highlight uncovered code."
+              },
+              "coveredGutterStyle": {
+                "type": "string",
+                "default": "blockblue",
+                "enum": [
+                  "blockblue",
+                  "blockred",
+                  "blockgreen",
+                  "blockyellow",
+                  "slashred",
+                  "slashgreen",
+                  "slashblue",
+                  "slashyellow",
+                  "verticalred",
+                  "verticalgreen",
+                  "verticalblue",
+                  "verticalyellow"
+                ],
+                "description": "Gutter style to indicate covered code."
+              },
+              "uncoveredGutterStyle": {
+                "type": "string",
+                "default": "blockblue",
+                "enum": [
+                  "blockblue",
+                  "blockred",
+                  "blockgreen",
+                  "blockyellow",
+                  "slashred",
+                  "slashgreen",
+                  "slashblue",
+                  "slashyellow",
+                  "verticalred",
+                  "verticalgreen",
+                  "verticalblue",
+                  "verticalyellow"
+                ],
+                "description": "Gutter style to indicate covered code."
+              }
+            },
+          "default": {
+            "type": "highlight",
+            "coveredHighlightColor": "rgba(64,128,128,0.5)",
+            "uncoveredHighlightColor": "rgba(128,64,64,0.25)",
+            "coveredGutterStyle": "blockblue",
+		        "uncoveredGutterStyle": "slashyellow"
+          },
+          "description": "This option lets you choose the way to display code coverage. Choose either to highlight the complete line or to show a decorator in the gutter. You can customize the color for the former and the style for the latter.",
           "scope": "resource"
         },
         "go.testTimeout": {
@@ -683,10 +800,36 @@
           "default": [],
           "description": "Flags like -trace and -logfile to be used while running the language server."
         },
+        "go.languageServerExperimentalFeatures": {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, gofmt is used by the language server to format files."
+            },
+            "autoComplete": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will provide code completion results."
+            }
+          },
+          "default": {
+            "format": false,
+            "autoComplete": false
+          },
+          "description": "Use this setting to enable/disable experimental features from the language server."
+        },
         "go.gotoSymbol.includeImports": {
           "type": "boolean",
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature",
+          "scope": "resource"
+        },
+        "go.gotoSymbol.includeGoroot": {
+          "type": "boolean",
+          "default": false,
+          "description": "If false, the standard library located at $GOROOT will be excluded while using the Go to Symbol in File feature",
           "scope": "resource"
         },
         "go.enableCodeLens": {

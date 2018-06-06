@@ -13,7 +13,7 @@ import os = require('os');
 import { outputChannel } from './goStatus';
 import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
 
-const extensionId: string = 'lukehoban.Go';
+const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
 const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
 
@@ -104,12 +104,12 @@ export function parseFilePrelude(text: string): Prelude {
 		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
 			ret.imports.push({ kind: 'single', start: i, end: i });
 		}
-		if (line.match(/^(\s)*\)/)) {
+		if (line.match(/^(\s)*(\/\*.*\*\/)*\s*\)/)) {
 			if (ret.imports[ret.imports.length - 1].end === -1) {
 				ret.imports[ret.imports.length - 1].end = i;
 			}
 		}
-		if (line.match(/^(\s)*(func|const|type|var)/)) {
+		if (line.match(/^(\s)*(func|const|type|var)\s/)) {
 			break;
 		}
 	}
@@ -122,8 +122,8 @@ export function parseFilePrelude(text: string): Prelude {
 //     ["foo", "bar string", "baz string"]
 // Takes care of balancing parens so to not get confused by signatures like:
 //     (pattern string, handler func(ResponseWriter, *Request)) {
-export function parameters(signature: string): string[] {
-	let ret: string[] = [];
+export function getParametersAndReturnType(signature: string): { params: string[], returnType: string } {
+	let params: string[] = [];
 	let parenCount = 0;
 	let lastStart = 1;
 	for (let i = 1; i < signature.length; i++) {
@@ -135,20 +135,23 @@ export function parameters(signature: string): string[] {
 				parenCount--;
 				if (parenCount < 0) {
 					if (i > lastStart) {
-						ret.push(signature.substring(lastStart, i));
+						params.push(signature.substring(lastStart, i));
 					}
-					return ret;
+					return {
+						params,
+						returnType: i < signature.length - 1 ? signature.substr(i + 1) : ''
+					};
 				}
 				break;
 			case ',':
 				if (parenCount === 0) {
-					ret.push(signature.substring(lastStart, i));
+					params.push(signature.substring(lastStart, i));
 					lastStart = i + 2;
 				}
 				break;
 		}
 	}
-	return null;
+	return { params: [], returnType: '' };
 }
 
 export function canonicalizeGOPATHPrefix(filename: string): string {
@@ -347,7 +350,7 @@ export function getToolsEnvVars(): any {
 	const envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
 
 	if (toolsEnvVars && typeof toolsEnvVars === 'object') {
-		Object.keys(toolsEnvVars).forEach(key => envVars[key] = resolvePath(toolsEnvVars[key]));
+		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof toolsEnvVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : toolsEnvVars[key]);
 	}
 
 	// cgo expects go to be in the path
@@ -394,6 +397,9 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 			catch (e) {
 				// No op
 			}
+		}
+		if (inferredGopath && process.env['GOPATH']) {
+			inferredGopath += path.delimiter + process.env['GOPATH'];
 		}
 	}
 
@@ -531,14 +537,15 @@ export function guessPackageNameFromFile(filePath): Promise<string[]> {
 
 		const proposedPkgName = segments[segments.length - 1];
 
-		if (goFilename.endsWith('_test.go')) {
-			return resolve([proposedPkgName, proposedPkgName + '_test']);
-		}
-
 		fs.stat(path.join(directoryPath, 'main.go'), (err, stats) => {
 			if (stats && stats.isFile()) {
 				return resolve(['main']);
 			}
+
+			if (goFilename.endsWith('_test.go')) {
+				return resolve([proposedPkgName, proposedPkgName + '_test']);
+			}
+
 			return resolve([proposedPkgName]);
 		});
 	});
@@ -726,7 +733,7 @@ function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {
 	}
 }
 
-export function getWorkspaceFolderPath(fileUri: vscode.Uri): string {
+export function getWorkspaceFolderPath(fileUri?: vscode.Uri): string {
 	if (fileUri) {
 		let workspace = vscode.workspace.getWorkspaceFolder(fileUri);
 		if (workspace) {

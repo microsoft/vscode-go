@@ -7,6 +7,10 @@ go:
   - 1.10.x
   - tip
 
+matrix:
+  allow_failures:
+    - go: tip
+
 sudo: false
 
 os:
@@ -34,7 +38,7 @@ install:
   -  nvm install $TRAVIS_NODE_VERSION;
   - npm install
   - npm run vscode:prepublish
-  - go get -u -v github.com/nsf/gocode
+  - go get -u -v github.com/mdempsky/gocode
   - go get -u -v github.com/rogpeppe/godef
   - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo hello; else go get -u -v github.com/zmb3/gogetdoc; fi
   - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo cannot get golint; else go get -u -v github.com/golang/lint/golint; fi

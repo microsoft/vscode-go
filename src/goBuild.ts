@@ -58,16 +58,17 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 	const buildEnv = Object.assign({}, getToolsEnvVars());
 	const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check'));
 	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
-
 	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig, null) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
-	// Remove the -i flag as it will be added later anyway
-	if (buildFlags.indexOf('-i') > -1) {
-		buildFlags.splice(buildFlags.indexOf('-i'), 1);
-	}
+	const buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
 
-	// If current file is a test file, then use `go test -c` instead of `go build` to find build errors
-	let buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
-	buildArgs.push('-i', '-o', tmpPath, ...buildFlags);
+	if (goConfig['installDependenciesWhenBuilding'] === true) {
+		buildArgs.push('-i');
+		// Remove the -i flag from user as we add it anyway
+		if (buildFlags.indexOf('-i') > -1) {
+			buildFlags.splice(buildFlags.indexOf('-i'), 1);
+		}
+	}
+	buildArgs.push('-o', tmpPath, ...buildFlags);
 	if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 		buildArgs.push('-tags');
 		buildArgs.push(goConfig['buildTags']);

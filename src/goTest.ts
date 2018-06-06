@@ -34,6 +34,8 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
+
 	editor.document.save().then(() => {
 		return getFunctions(editor.document, null).then(testFunctions => {
 			let testFunctionName: string;
@@ -60,9 +62,10 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 			const testConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
-				flags: getTestFlags(goConfig, args),
+				flags: testFlags,
 				functions: [testFunctionName],
-				isBenchmark: isBenchmark
+				isBenchmark: isBenchmark,
+				showTestCoverage: true
 			};
 
 			// Remember this config as the last executed test.
@@ -70,7 +73,11 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 
 			return goTest(testConfig);
 		});
-	}).then(null, err => {
+	}).then(success => {
+		if (success && tmpCoverPath) {
+			return getCoverage(tmpCoverPath);
+		}
+	}, err => {
 		console.error(err);
 	});
 }
@@ -87,12 +94,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 		return;
 	}
 
-	let tmpCoverPath = '';
-	let testFlags = getTestFlags(goConfig, args) || [];
-	if (goConfig['coverOnTestPackage'] === true) {
-		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
-		testFlags.push('-coverprofile=' + tmpCoverPath);
-	}
+	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
 
 	const testConfig = {
 		goConfig: goConfig,
@@ -188,6 +190,18 @@ export function testPrevious() {
 	});
 }
 
+/**
+ * Computes the tmp coverage path and needed flags.
+ *
+ * @param goConfig Configuration for the Go extension.
+ */
+function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
+	let tmpCoverPath = '';
+	let testFlags = getTestFlags(goConfig, args) || [];
+	if (goConfig[confFlag] === true) {
+		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
+		testFlags.push('-coverprofile=' + tmpCoverPath);
+	}
 
-
-
+	return {tmpCoverPath, testFlags};
+}
