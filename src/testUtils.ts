@@ -21,7 +21,7 @@ statusBarItem.text = 'Cancel Running Tests';
 /**
  *  testProcesses holds a list of currently running test processes.
  */
-let testProcesses = [];
+let runningTestProcesses: cp.ChildProcess[] = [];
 
 
 /**
@@ -127,10 +127,9 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
 export function goTest(testconfig: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 
-		// We only want to clear the outputChannel if there are no tests in flight.
 		// We do not want to clear it if tests are already running, as that could
 		// lose valuable output.
-		if (testProcesses.length < 1) {
+		if (runningTestProcesses.length < 1) {
 			outputChannel.clear();
 		}
 
@@ -227,29 +226,22 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
 
-				// We need to remove this particular test process from the array of test
-				// processes so that a subsequent cancel does not attempt to kill a
-				// process that no longer exists. This is only an issue if we have
-				// multiple test processes running in parallel.
-				//
-				// If this test process was killed by calling cancelRunningTests, the
-				// array will be empty and this entry will not be found or removed.
-				let index = testProcesses.indexOf(tp, 0);
+				let index = runningTestProcesses.indexOf(tp, 0);
 				if (index > -1) {
-					testProcesses.splice(index, 1);
+					runningTestProcesses.splice(index, 1);
 				}
 
-				if (!testProcesses.length) {
+				if (!runningTestProcesses.length) {
 					statusBarItem.hide();
 				}
 
 				resolve(code === 0);
 			});
 
-			testProcesses.push(tp);
+			runningTestProcesses.push(tp);
 
 		}, err => {
-			outputChannel.appendLine('Error: Tests failed.');
+			outputChannel.appendLine(`Error: ${testType} failed.`);
 			outputChannel.appendLine(err);
 			resolve(false);
 		});
@@ -268,11 +260,11 @@ export function showTestOutput() {
  */
 export function cancelRunningTests(): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		testProcesses.forEach(function(tp){
+		runningTestProcesses.forEach(tp => {
 			tp.kill(sendSignal);
 		});
 		// All processes are now dead. Empty the array to prepare for the next run.
-		testProcesses.splice(0, testProcesses.length);
+		runningTestProcesses.splice(0, runningTestProcesses.length);
 		resolve(true);
 	});
 }
