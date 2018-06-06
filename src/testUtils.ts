@@ -12,7 +12,16 @@ import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, get
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
-let outputChannel = vscode.window.createOutputChannel('Go Tests');
+const sendSignal = 'SIGKILL';
+const outputChannel = vscode.window.createOutputChannel('Go Tests');
+const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+statusBarItem.command = 'go.test.cancel';
+statusBarItem.text = 'Cancel Running Tests';
+
+/**
+ *  testProcesses holds a list of currently running test processes.
+ */
+const runningTestProcesses: cp.ChildProcess[] = [];
 
 
 /**
@@ -117,9 +126,14 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
  */
 export function goTest(testconfig: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		outputChannel.clear();
-		if (!testconfig.background) {
 
+		// We do not want to clear it if tests are already running, as that could
+		// lose valuable output.
+		if (runningTestProcesses.length < 1) {
+			outputChannel.clear();
+		}
+
+		if (!testconfig.background) {
 			outputChannel.show(true);
 		}
 
@@ -162,7 +176,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 			args.push(...targets);
 
-			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
+			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
@@ -195,20 +209,37 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			errBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
 			errBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
 
-			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
-			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
+			tp.stdout.on('data', chunk => outBuf.append(chunk.toString()));
+			tp.stderr.on('data', chunk => errBuf.append(chunk.toString()));
 
-			proc.on('close', code => {
+			statusBarItem.show();
+
+			tp.on('close', (code, signal) => {
 				outBuf.done();
 				errBuf.done();
 
 				if (code) {
 					outputChannel.appendLine(`Error: ${testType} failed.`);
+				} else if (signal === sendSignal) {
+					outputChannel.appendLine(`Error: ${testType} terminated by user.`);
 				} else {
 					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
+
+				let index = runningTestProcesses.indexOf(tp, 0);
+				if (index > -1) {
+					runningTestProcesses.splice(index, 1);
+				}
+
+				if (!runningTestProcesses.length) {
+					statusBarItem.hide();
+				}
+
 				resolve(code === 0);
 			});
+
+			runningTestProcesses.push(tp);
+
 		}, err => {
 			outputChannel.appendLine(`Error: ${testType} failed.`);
 			outputChannel.appendLine(err);
@@ -222,6 +253,20 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
  */
 export function showTestOutput() {
 	outputChannel.show(true);
+}
+
+/**
+ * Iterates the list of currently running test processes and kills them all.
+ */
+export function cancelRunningTests(): Thenable<boolean> {
+	return new Promise<boolean>((resolve, reject) => {
+		runningTestProcesses.forEach(tp => {
+			tp.kill(sendSignal);
+		});
+		// All processes are now dead. Empty the array to prepare for the next run.
+		runningTestProcesses.splice(0, runningTestProcesses.length);
+		resolve(true);
+	});
 }
 
 function expandFilePathInOutput(output: string, cwd: string): string {

@@ -233,6 +233,11 @@
         "command": "go.install.package",
         "title": "Go: Install Current Package",
         "description": "Install the current package."
+      },
+      {
+        "command": "go.test.cancel",
+        "title": "Go: Cancel Running Tests",
+        "description": "Cancels running tests."
       }
     ],
     "debuggers": [
