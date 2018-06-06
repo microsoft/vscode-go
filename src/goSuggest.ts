@@ -113,7 +113,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						}
 					}
 					resolve(suggestions);
-				});
+				}, reject);
 			});
 		});
 	}
@@ -151,7 +151,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 					let wordAtPosition = document.getWordRangeAtPosition(position);
 
-					if (results[1]) {
+					if (results && results[1]) {
 						for (let suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
 							let item = new vscode.CompletionItem(suggest.name);
