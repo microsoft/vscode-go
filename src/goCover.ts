@@ -140,14 +140,22 @@ function applyCoverage(remove: boolean = false) {
 	});
 }
 
-// getCoverageDecorator fetches the value of the go.coverageDecorator
+let decorators: {
+	type: string;
+	coveredGutterDecorator: vscode.TextEditorDecorationType;
+	uncoveredGutterDecorator: vscode.TextEditorDecorationType;
+	coveredHighlightDecorator: vscode.TextEditorDecorationType;
+	uncoveredHighlightDecorator: vscode.TextEditorDecorationType;
+};
+
+// updateCoverageDecorator fetches the value of the go.coverageDecorator
 // setting; historical values may be simply the string 'highlight' or
 // 'gutter' so we want to have sensible defaults for those (and if it's a
 // string but not one of those strings we just return the highlight default)
 //
 // However, modern versions should have an object with appropriate fields,
 // so if it's not a string we just make sure we have all the fields we need.
-function getCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
+function updateCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
 	// These defaults are chosen to be distinguishable
 	// in nearly any color scheme (even Red) as well as by people
 	// who have difficulties with color perception. There are also
@@ -173,43 +181,38 @@ function getCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
 		}
 	}
 
-	// before we're done, we need to turn these names into actual decorations
-	defaults['coveredGutter'] = vscode.window.createTextEditorDecorationType({
-		gutterIconPath: gutters[defaults.coveredGutterStyle]
-	});
-	defaults['uncoveredGutter'] = vscode.window.createTextEditorDecorationType({
-		gutterIconPath: gutters[defaults.uncoveredGutterStyle]
-	});
-	defaults['coveredHighLight'] = vscode.window.createTextEditorDecorationType({
-		backgroundColor: defaults.coveredHighlightColor
-	});
-	defaults['uncoveredHighLight'] = vscode.window.createTextEditorDecorationType({
-		backgroundColor: defaults.uncoveredHighlightColor
-	});
+	if (decorators) {
+		decorators.coveredGutterDecorator.dispose();
+		decorators.uncoveredGutterDecorator.dispose();
+		decorators.coveredHighlightDecorator.dispose();
+		decorators.uncoveredHighlightDecorator.dispose();
+	}
 
-	return defaults;
+	// before we're done, we need to turn these names into actual decorations
+	decorators = {
+		type: defaults.type,
+		coveredGutterDecorator:  vscode.window.createTextEditorDecorationType({gutterIconPath: gutters[defaults.coveredGutterStyle]}),
+		uncoveredGutterDecorator:  vscode.window.createTextEditorDecorationType({gutterIconPath: gutters[defaults.uncoveredGutterStyle]}),
+		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({backgroundColor: defaults.coveredHighlightColor}),
+		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({backgroundColor: defaults.uncoveredHighlightColor})
+	};
 }
 
 function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
 	let cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let coverageOptions = cfg['coverageOptions'];
-	let coverageDecorator = getCoverageDecorator(cfg);
-
-	editor.setDecorations(coverageDecorator['coveredGutter'], []);
-	editor.setDecorations(coverageDecorator['coveredHighLight'], []);
-	editor.setDecorations(coverageDecorator['uncoveredGutter'], []);
-	editor.setDecorations(coverageDecorator['uncoveredHighLight'], []);
+	updateCoverageDecorator(cfg);
 
 	if (remove) {
 		return;
 	}
 
 	if (coverageOptions === 'showCoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-		editor.setDecorations(coverageDecorator.type === 'gutter' ? coverageDecorator['coveredGutter'] : coverageDecorator['coveredHighLight'], file.coveredRange);
+		editor.setDecorations(decorators.type === 'gutter' ? decorators.coveredGutterDecorator : decorators.coveredHighlightDecorator, file.coveredRange);
 	}
 
 	if (coverageOptions === 'showUncoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-		editor.setDecorations(coverageDecorator.type === 'gutter' ? coverageDecorator['uncoveredGutter'] : coverageDecorator['uncoveredHighLight'], file.uncoveredRange);
+		editor.setDecorations(decorators.type === 'gutter' ? decorators.uncoveredGutterDecorator : decorators.uncoveredHighlightDecorator, file.uncoveredRange);
 	}
 }
 
