@@ -6,7 +6,7 @@
 import * as path from 'path';
 import * as os from 'os';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
+import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles, Breakpoint } from 'vscode-debugadapter';
 import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
@@ -90,6 +90,7 @@ interface DebugBreakpoint {
 	variables?: DebugVariable[];
 	loadArgs?: LoadConfig;
 	loadLocals?: LoadConfig;
+	cond?: string;
 }
 
 interface LoadConfig {
@@ -639,17 +640,18 @@ class GoDebugSession extends DebugSession {
 			return this.delve.callPromise('ClearBreakpoint', [this.delve.isApiV1 ? existingBP.id : { Id: existingBP.id }]);
 		})).then(() => {
 			verbose('All cleared');
-			return Promise.all(args.lines.map(line => {
+			return Promise.all(args.breakpoints.map(breakpoint => {
 				if (this.delve.remotePath.length === 0) {
-					verbose('Creating on: ' + file + ':' + line);
+					verbose('Creating on: ' + file + ':' + breakpoint.line);
 				} else {
-					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
+					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + breakpoint.line);
 				}
 				let breakpointIn = <DebugBreakpoint>{};
 				breakpointIn.file = remoteFile;
-				breakpointIn.line = line;
+				breakpointIn.line = breakpoint.line;
 				breakpointIn.loadArgs = this.delve.loadConfig;
 				breakpointIn.loadLocals = this.delve.loadConfig;
+				breakpointIn.cond = breakpoint.condition;
 				return this.delve.callPromise('CreateBreakpoint', [this.delve.isApiV1 ? breakpointIn : { Breakpoint: breakpointIn }]).then(null, err => {
 					verbose('Error on CreateBreakpoint: ' + err.toString());
 					return null;
