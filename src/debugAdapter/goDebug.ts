@@ -1001,7 +1001,7 @@ class GoDebugSession extends DebugSession {
 				Scope: scope,
 				Cfg: this.delve.loadConfig
 			};
-		this.delve.call<EvalOut | DebugVariable>('Eval', [evalSymbolArgs], (err, out) => {
+		this.delve.call<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs], (err, out) => {
 			if (err) {
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
 				return this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', { e: err.toString() });
