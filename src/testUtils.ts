@@ -16,7 +16,7 @@ const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.cancel';
-statusBarItem.text = 'Cancel Running Tests';
+statusBarItem.text = '$(x) Cancel Running Tests';
 
 /**
  *  testProcesses holds a list of currently running test processes.
