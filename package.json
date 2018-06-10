@@ -1067,7 +1067,7 @@
         "go.alternateTools": {
           "type": "object",
           "default": {},
-          "description": "Alternate paths for tools. Use when you want to use wrapper script for commands. They can be file names in GOROOT/bin or absolute paths.",
+          "description": "Alternate tools or alternate paths for the same tools used by the Go extension. Provide either absolute path or the name of the binary in GOPATH/bin, GOROOT/bin or PATH. Useful when you want to use wrapper script for the Go tools or versioned tools from https://gopkg.in.",
           "scope": "resource"
         }
       }
