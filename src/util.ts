@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getGoRuntimePathInternal, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows } from './goPath';
+import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -182,7 +182,7 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
  * Returns null if go is being used from source/tip in which case `go version` will not return release tag like go1.6.3
  */
 export function getGoVersion(): Promise<SemVersion> {
-	let goRuntimePath = getGoRuntimePath();
+	let goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -334,12 +334,7 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
-}
-
-export function getGoRuntimePath(): string {
-	const alternateTools =  vscode.workspace.getConfiguration('go', null).get('alternateTools') || {};
-	return getGoRuntimePathInternal(alternateTools['go'] || 'go');
+	return getBinPathWithPreferredGopath(tool, tool === 'go' ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {
@@ -574,7 +569,7 @@ export interface ICheckResult {
  * @param printUnexpectedOutput If true, then output that doesnt match expected format is printed to the output channel
  */
 export function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput: boolean, token?: vscode.CancellationToken): Promise<ICheckResult[]> {
-	let goRuntimePath = getGoRuntimePath();
+	let goRuntimePath = getBinPath('go');
 	let cmd;
 	if (toolName) {
 		cmd = getBinPath(toolName);

@@ -11,7 +11,7 @@ import os = require('os');
 import { getCoverage } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest } from './testUtils';
-import { ICheckResult, getGoRuntimePath } from './util';
+import { ICheckResult, getBinPath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
@@ -51,7 +51,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(fileUri.fsPath);
-	let goRuntimePath = getGoRuntimePath();
+	let goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');

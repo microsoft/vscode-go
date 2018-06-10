@@ -10,7 +10,7 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, getGoRuntimePath } from './util';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
@@ -199,7 +199,7 @@ export function promptForUpdatingTool(tool: string) {
  * @param string[] array of tool names to be installed
  */
 function installTools(goVersion: SemVersion, missing?: string[]) {
-	let goRuntimePath = getGoRuntimePath();
+	let goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return;
@@ -314,7 +314,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	}
 
 	// If GOPATH is still not set, then use the one from `go env`
-	let goRuntimePath = getGoRuntimePath();
+	let goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}

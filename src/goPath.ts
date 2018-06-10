@@ -64,6 +64,16 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 		return pathFromGoRoot;
 	}
 
+	// Check default path for go
+	if (toolName === 'go') {
+		let defaultPathForGo = process.platform === 'win32' ? 'C:\\Go\\bin\\go.exe' : '/usr/local/go/bin/go';
+		if (fileExists(defaultPathForGo)) {
+			binPathCache[toolName] = defaultPathForGo;
+			return defaultPathForGo;
+		}
+		return;
+	}
+
 	// Else return the binary name directly (this will likely always fail downstream)
 	return toolName;
 }
@@ -73,41 +83,6 @@ function correctBinname(toolName: string) {
 		return toolName + '.exe';
 	else
 		return toolName;
-}
-
-/**
- * Returns Go runtime binary path.
- *
- * @return the path to the Go binary.
- */
-export function getGoRuntimePathInternal(goTool: string): string {
-	if (runtimePathCache) return runtimePathCache;
-
-	if (path.isAbsolute(goTool) && fileExists(goTool)) {
-		runtimePathCache = goTool;
-		return runtimePathCache;
-	}
-
-	let correctBinNameGo = correctBinname(goTool);
-	if (process.env['GOROOT']) {
-		let runtimePathFromGoRoot = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);
-		if (fileExists(runtimePathFromGoRoot)) {
-			runtimePathCache = runtimePathFromGoRoot;
-			return runtimePathCache;
-		}
-	}
-
-	if (envPath) {
-		let pathparts = (<string>envPath).split(path.delimiter);
-		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinNameGo)).filter(candidate => fileExists(candidate))[0];
-	}
-	if (!runtimePathCache && goTool === 'go') {
-		let defaultPathForGo = process.platform === 'win32' ? 'C:\\Go\\bin\\go.exe' : '/usr/local/go/bin/go';
-		if (fileExists(defaultPathForGo)) {
-			runtimePathCache = defaultPathForGo;
-		}
-	}
-	return runtimePathCache;
 }
 
 function fileExists(filePath: string): boolean {

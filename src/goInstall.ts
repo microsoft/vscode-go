@@ -1,6 +1,6 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, getCurrentGoPath, getGoRuntimePath } from './util';
+import { getToolsEnvVars, getCurrentGoPath, getBinPath } from './util';
 import { outputChannel } from './goStatus';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import cp = require('child_process');
@@ -16,7 +16,7 @@ export function installCurrentPackage() {
 		return;
 	}
 
-	let goRuntimePath = getGoRuntimePath();
+	let goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return;

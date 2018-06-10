@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getAllPackages } from './goPackages';
-import { getImportPath, getCurrentGoPath, getGoRuntimePath } from './util';
+import { getImportPath, getCurrentGoPath, getBinPath } from './util';
 
 export function browsePackages() {
 	let selectedText = '';
@@ -30,7 +30,7 @@ export function browsePackages() {
 }
 
 function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean) {
-	const goRuntimePath = getGoRuntimePath();
+	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
 	}
