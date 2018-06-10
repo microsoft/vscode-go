@@ -334,12 +334,12 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('toolCommands'));
+	return getBinPathWithPreferredGopath(tool, [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
 }
 
 export function getGoRuntimePath(): string {
-	const toolCommands =  vscode.workspace.getConfiguration('go', null).get('toolCommands') || {};
-	return getGoRuntimePathInternal(toolCommands['go'] || 'go');
+	const alternateTools =  vscode.workspace.getConfiguration('go', null).get('alternateTools') || {};
+	return getGoRuntimePathInternal(alternateTools['go'] || 'go');
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {

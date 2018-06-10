@@ -30,15 +30,15 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 	return null;
 }
 
-export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths: string[], toolCommands?: { [key: string]: string; }) {
+export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths: string[], alternateTools?: { [key: string]: string; }) {
 	if (binPathCache[toolName]) return binPathCache[toolName];
 
-	if (toolCommands && toolCommands[toolName] && path.isAbsolute(toolCommands[toolName]) && fileExists(toolCommands[toolName])) {
-		binPathCache[toolName] = toolCommands[toolName];
-		return toolCommands[toolName];
+	if (alternateTools && alternateTools[toolName] && path.isAbsolute(alternateTools[toolName]) && fileExists(alternateTools[toolName])) {
+		binPathCache[toolName] = alternateTools[toolName];
+		return alternateTools[toolName];
 	}
 
-	const binname = (toolCommands && toolCommands[toolName]) ? toolCommands[toolName] : toolName;
+	const binname = (alternateTools && alternateTools[toolName]) ? alternateTools[toolName] : toolName;
 	for (let i = 0; i < preferredGopaths.length; i++) {
 		if (typeof preferredGopaths[i] === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder

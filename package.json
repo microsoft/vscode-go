@@ -1064,7 +1064,7 @@
           "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature",
           "scope": "resource"
         },
-        "go.toolCommands": {
+        "go.alternateTools": {
           "type": "object",
           "default": {},
           "description": "Alternate paths for tools. Use when you want to use wrapper script for commands. They can be file names in GOROOT/bin or absolute paths.",
