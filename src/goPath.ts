@@ -13,7 +13,7 @@ import path = require('path');
 import os = require('os');
 
 let binPathCache: { [bin: string]: string; } = {};
-let runtimePathCache: string = '';
+
 export const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
 
 export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appendBinToPath: boolean): string {
@@ -38,7 +38,7 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 		return alternateTools[toolName];
 	}
 
-	const binname = (alternateTools && alternateTools[toolName]) ? alternateTools[toolName] : toolName;
+	const binname = (alternateTools && alternateTools[toolName] && !path.isAbsolute(alternateTools[toolName])) ? alternateTools[toolName] : toolName;
 	for (let i = 0; i < preferredGopaths.length; i++) {
 		if (typeof preferredGopaths[i] === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder
