@@ -37,7 +37,7 @@ interface GoCodeSuggestion {
 }
 
 const lineCommentRegex = /^\s*\/\/\s+/;
-const exportedMemberRegex = /(const|func|type|var)\s+([A-Z]\w*)/;
+const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
@@ -60,8 +60,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					let nextLine = document.lineAt(position.line + 1).text.trim();
 					let memberType = nextLine.match(exportedMemberRegex);
 					let suggestionItem: vscode.CompletionItem;
-					if (memberType && memberType.length === 3) {
-						suggestionItem = new vscode.CompletionItem(memberType[2], vscodeKindFromGoCodeClass(memberType[1]));
+					if (memberType && memberType.length === 4) {
+						suggestionItem = new vscode.CompletionItem(memberType[3], vscodeKindFromGoCodeClass(memberType[1]));
 					}
 					return resolve(suggestionItem ? [suggestionItem] : []);
 				}
@@ -124,11 +124,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 									item.additionalTextEdits = getTextEditForAddImport(pkgPath);
 								});
 								resolve(newsuggestions);
-							});
+							}, reject);
 						}
 					}
 					resolve(suggestions);
-				});
+				}, reject);
 			});
 		});
 	}
@@ -166,7 +166,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 					let wordAtPosition = document.getWordRangeAtPosition(position);
 
-					if (results[1]) {
+					if (results && results[1]) {
 						for (let suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
 							let item = new vscode.CompletionItem(suggest.name);
@@ -199,7 +199,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 										paramSnippets.push('${' + (i + 1) + ':' + param + '}');
 									}
 								}
-								item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
+								// Avoid adding snippet for function suggest when cursor is followed by ()
+								// i.e: met() -> method()()
+								if (lineText.substr(position.character, 2) !== '()') {
+									item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
+								}
 							}
 							if (config['useCodeSnippetsOnFunctionSuggest'] && suggest.class === 'type' && suggest.type.startsWith('func(')) {
 								let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));

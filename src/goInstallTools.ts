@@ -16,7 +16,7 @@ import { goLiveErrorsEnabled } from './goLiveErrors';
 let updatesDeclinedTools: string[] = [];
 let installsDeclinedTools: string[] = [];
 const allTools: { [key: string]: string } = {
-	'gocode': 'github.com/nsf/gocode',
+	'gocode': 'github.com/mdempsky/gocode',
 	'gopkgs': 'github.com/uudashr/gopkgs/cmd/gopkgs',
 	'go-outline': 'github.com/ramya-rao-a/go-outline',
 	'go-symbols': 'github.com/acroca/go-symbols',
@@ -36,6 +36,8 @@ const allTools: { [key: string]: string } = {
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
 	'megacheck': 'honnef.co/go/tools/...',
+	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
+	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
 	'dlv': 'github.com/derekparker/delve/cmd/dlv',
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct'
@@ -57,6 +59,8 @@ const importantTools = [
 	'golint',
 	'gometalinter',
 	'megacheck',
+	'golangci-lint',
+	'revive',
 	'dlv'
 ];
 
@@ -108,6 +112,14 @@ function getTools(goVersion: SemVersion): string[] {
 
 	if (goConfig['lintTool'] === 'megacheck') {
 		tools.push('megacheck');
+	}
+
+	if (goConfig['lintTool'] === 'golangci-lint') {
+		tools.push('golangci-lint');
+	}
+
+	if (goConfig['lintTool'] === 'revive') {
+		tools.push('revive');
 	}
 
 	if (goConfig['useLanguageServer'] && process.platform !== 'win32') {
@@ -275,7 +287,7 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 		outputChannel.appendLine(''); // Blank line for spacing
 		let failures = res.filter(x => x != null);
 		if (failures.length === 0) {
-			if (missing.indexOf('langserver-go') > -1) {
+			if (missing.indexOf('go-langserver') > -1) {
 				outputChannel.appendLine('Reload VS Code window to use the Go language server');
 			}
 			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
@@ -409,8 +421,3 @@ function allFoldersHaveSameGopath(): boolean {
 	let tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
 	return vscode.workspace.workspaceFolders.find(x => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
 }
-
-
-
-
-

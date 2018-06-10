@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.81-beta.2",
+  "version": "0.6.82",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -233,6 +233,11 @@
         "command": "go.install.package",
         "title": "Go: Install Current Package",
         "description": "Install the current package."
+      },
+      {
+        "command": "go.test.cancel",
+        "title": "Go: Cancel Running Tests",
+        "description": "Cancels running tests."
       }
     ],
     "debuggers": [
@@ -417,6 +422,49 @@
                 "type": "string",
                 "description": "Output path for the binary of delve",
                 "default": "debug"
+              },
+              "dlvLoadConfig": {
+                "type": "object",
+                "properties": {
+                  "followPointers": {
+                    "type": "boolean",
+                    "description": "FollowPointers requests pointers to be automatically dereferenced",
+                    "default": true
+                  },
+                  "maxVariableRecurse": {
+                    "type": "number",
+                    "description": "MaxVariableRecurse is how far to recurse when evaluating nested types",
+                    "default": 1
+                  },
+                  "maxStringLen": {
+                    "type": "number",
+                    "description": "MaxStringLen is the maximum number of bytes read from a string",
+                    "default": 64
+                  },
+                  "maxArrayValues": {
+                    "type": "number",
+                    "description": "MaxArrayValues is the maximum number of elements read from an array, a slice or a map",
+                    "default": 64
+                  },
+                  "maxStructFields": {
+                    "type": "number",
+                    "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
+                    "default": -1
+                  }
+                },
+                "description": "LoadConfig describes to delve, how to load values from target's memory",
+                  "default": {
+                    "followPointers": true,
+                    "maxVariableRecurse": 1,
+                    "maxStringLen": 64,
+                    "maxArrayValues": 64,
+                    "maxStructFields": -1
+                  }
+              },
+              "useApiV1": {
+                "type": "boolean",
+                "description": "If true, the v1 of delve apis will be used, else v2 will be used",
+                "default": true
               }
             }
           }
@@ -478,7 +526,9 @@
           "enum": [
             "golint",
             "gometalinter",
-            "megacheck"
+            "megacheck",
+            "golangci-lint",
+            "revive"
           ]
         },
         "go.lintFlags": {
@@ -595,13 +645,73 @@
           "scope": "resource"
         },
         "go.coverageDecorator": {
-          "type": "string",
-          "enum": [
-            "highlight",
-            "gutter"
-          ],
-          "default": "highlight",
-          "description": "This option lets you choose the way to display code coverage. Highlight, as its name states, highlights the line in red or green, gutter shows the colors in the gutter of the editor.",
+           "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "default": "highlight",
+                "enum": [
+                  "highlight",
+                  "gutter"
+                ]
+              },
+              "coveredHighlightColor": {
+                "type": "string",
+                "default": "rgba(64,128,128,0.5)",
+                "description": "Color in the rgba format to use to highlight covered code."
+              },
+              "uncoveredHighlightColor": {
+                "type": "string",
+                "default": "rgba(128,64,64,0.25)",
+                "description": "Color in the rgba format to use to highlight uncovered code."
+              },
+              "coveredGutterStyle": {
+                "type": "string",
+                "default": "blockblue",
+                "enum": [
+                  "blockblue",
+                  "blockred",
+                  "blockgreen",
+                  "blockyellow",
+                  "slashred",
+                  "slashgreen",
+                  "slashblue",
+                  "slashyellow",
+                  "verticalred",
+                  "verticalgreen",
+                  "verticalblue",
+                  "verticalyellow"
+                ],
+                "description": "Gutter style to indicate covered code."
+              },
+              "uncoveredGutterStyle": {
+                "type": "string",
+                "default": "blockblue",
+                "enum": [
+                  "blockblue",
+                  "blockred",
+                  "blockgreen",
+                  "blockyellow",
+                  "slashred",
+                  "slashgreen",
+                  "slashblue",
+                  "slashyellow",
+                  "verticalred",
+                  "verticalgreen",
+                  "verticalblue",
+                  "verticalyellow"
+                ],
+                "description": "Gutter style to indicate covered code."
+              }
+            },
+          "default": {
+            "type": "highlight",
+            "coveredHighlightColor": "rgba(64,128,128,0.5)",
+            "uncoveredHighlightColor": "rgba(128,64,64,0.25)",
+            "coveredGutterStyle": "blockblue",
+		        "uncoveredGutterStyle": "slashyellow"
+          },
+          "description": "This option lets you choose the way to display code coverage. Choose either to highlight the complete line or to show a decorator in the gutter. You can customize the color for the former and the style for the latter.",
           "scope": "resource"
         },
         "go.testTimeout": {
@@ -702,10 +812,16 @@
               "type": "boolean",
               "default": false,
               "description": "If true, gofmt is used by the language server to format files."
+            },
+            "autoComplete": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will provide code completion results."
             }
           },
           "default": {
-            "format": false
+            "format": false,
+            "autoComplete": false
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },

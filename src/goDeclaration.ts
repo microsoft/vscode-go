@@ -31,6 +31,9 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	if (!wordRange || lineText.startsWith('//') || isPositionInString(document, position) || word.match(/^\d+.?\d+$/) || goKeywords.indexOf(word) > 0) {
 		return Promise.resolve(null);
 	}
+	if (position.isEqual(wordRange.end) && position.isAfter(wordRange.start)) {
+		position = position.translate(0, -1);
+	}
 	if (!goConfig) {
 		goConfig = vscode.workspace.getConfiguration('go', document.uri);
 	}
