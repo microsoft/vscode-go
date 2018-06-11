@@ -1,7 +1,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
+import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
@@ -242,7 +242,7 @@ function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: st
  * Returns import paths for all packages under given folder (vendor will be excluded)
  */
 export function getNonVendorPackages(folderPath: string): Promise<string[]> {
-	let goRuntimePath = getGoRuntimePath();
+	let goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');

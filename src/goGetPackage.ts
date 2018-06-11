@@ -2,8 +2,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getGoRuntimePath } from './goPath';
-import { getImportPath, getCurrentGoPath } from './util';
+import { getImportPath, getCurrentGoPath, getBinPath } from './util';
 import { outputChannel } from './goStatus';
 
 export function goGetPackage() {
@@ -17,7 +16,7 @@ export function goGetPackage() {
 		return;
 	}
 
-	const goRuntimePath = getGoRuntimePath();
+	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		return vscode.window.showErrorMessage('Could not locate Go binaries. Make sure you have Go installed');
 	}

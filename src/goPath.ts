@@ -13,7 +13,7 @@ import path = require('path');
 import os = require('os');
 
 let binPathCache: { [bin: string]: string; } = {};
-let runtimePathCache: string = '';
+
 export const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
 
 export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appendBinToPath: boolean): string {
@@ -23,7 +23,6 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 		for (let i = 0; i < paths.length; i++) {
 			let binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', toolName);
 			if (fileExists(binpath)) {
-				binPathCache[toolName] = binpath;
 				return binpath;
 			}
 		}
@@ -31,14 +30,21 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 	return null;
 }
 
-export function getBinPathWithPreferredGopath(binname: string, ...preferredGopaths) {
-	if (binPathCache[correctBinname(binname)]) return binPathCache[correctBinname(binname)];
+export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths: string[], alternateTools?: { [key: string]: string; }) {
+	if (binPathCache[toolName]) return binPathCache[toolName];
 
+	if (alternateTools && alternateTools[toolName] && path.isAbsolute(alternateTools[toolName]) && fileExists(alternateTools[toolName])) {
+		binPathCache[toolName] = alternateTools[toolName];
+		return alternateTools[toolName];
+	}
+
+	const binname = (alternateTools && alternateTools[toolName] && !path.isAbsolute(alternateTools[toolName])) ? alternateTools[toolName] : toolName;
 	for (let i = 0; i < preferredGopaths.length; i++) {
 		if (typeof preferredGopaths[i] === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder
 			let pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferredGopaths[i], true);
 			if (pathFrompreferredGoPath) {
+				binPathCache[toolName] = pathFrompreferredGoPath;
 				return pathFrompreferredGoPath;
 			}
 		}
@@ -47,53 +53,36 @@ export function getBinPathWithPreferredGopath(binname: string, ...preferredGopat
 	// Then search PATH parts
 	let pathFromPath = getBinPathFromEnvVar(binname, envPath, false);
 	if (pathFromPath) {
+		binPathCache[toolName] = pathFromPath;
 		return pathFromPath;
 	}
 
 	// Finally check GOROOT just in case
 	let pathFromGoRoot = getBinPathFromEnvVar(binname, process.env['GOROOT'], true);
 	if (pathFromGoRoot) {
+		binPathCache[toolName] = pathFromGoRoot;
 		return pathFromGoRoot;
 	}
 
-	// Else return the binary name directly (this will likely always fail downstream)
-	return binname;
-}
-
-function correctBinname(binname: string) {
-	if (process.platform === 'win32')
-		return binname + '.exe';
-	else
-		return binname;
-}
-
-/**
- * Returns Go runtime binary path.
- *
- * @return the path to the Go binary.
- */
-export function getGoRuntimePath(): string {
-	if (runtimePathCache) return runtimePathCache;
-	let correctBinNameGo = correctBinname('go');
-	if (process.env['GOROOT']) {
-		let runtimePathFromGoRoot = path.join(process.env['GOROOT'], 'bin', correctBinNameGo);
-		if (fileExists(runtimePathFromGoRoot)) {
-			runtimePathCache = runtimePathFromGoRoot;
-			return runtimePathCache;
-		}
-	}
-
-	if (envPath) {
-		let pathparts = (<string>envPath).split(path.delimiter);
-		runtimePathCache = pathparts.map(dir => path.join(dir, correctBinNameGo)).filter(candidate => fileExists(candidate))[0];
-	}
-	if (!runtimePathCache) {
+	// Check default path for go
+	if (toolName === 'go') {
 		let defaultPathForGo = process.platform === 'win32' ? 'C:\\Go\\bin\\go.exe' : '/usr/local/go/bin/go';
 		if (fileExists(defaultPathForGo)) {
-			runtimePathCache = defaultPathForGo;
+			binPathCache[toolName] = defaultPathForGo;
+			return defaultPathForGo;
 		}
+		return;
 	}
-	return runtimePathCache;
+
+	// Else return the binary name directly (this will likely always fail downstream)
+	return toolName;
+}
+
+function correctBinname(toolName: string) {
+	if (process.platform === 'win32')
+		return toolName + '.exe';
+	else
+		return toolName;
 }
 
 function fileExists(filePath: string): boolean {
@@ -185,7 +174,7 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 			// both parent & child workspace in the nested workspaces pair can make it inside the above if block
 			// Therefore, the below check will take longer (more specific to current file) of the two
 			if (possibleCurrentWorkspace.length > currentWorkspace.length) {
-				currentWorkspace =  currentFileDirPath.substr(0, possibleCurrentWorkspace.length);
+				currentWorkspace = currentFileDirPath.substr(0, possibleCurrentWorkspace.length);
 			}
 		}
 	}
