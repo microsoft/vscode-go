@@ -136,7 +136,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				const outdatedMsg = `Your installed version of "go-langserver" is out of date and does not support {0}. Falling back to default behavior.`;
 
 				if (languageServerExperimentalFeatures['autoComplete'] !== true || !capabilities.completionProvider) {
-					ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
+					registerCompletionProvider(ctx);
 					if (languageServerExperimentalFeatures['autoComplete'] === true) {
 						vscode.window.showInformationMessage(outdatedMsg.replace('{0}', 'code completion'));
 					}
@@ -152,7 +152,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 			ctx.subscriptions.push(c.start());
 		} else {
-			ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(), '.', '\"'));
+			registerCompletionProvider(ctx);
 			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 			ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
 			ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
@@ -496,4 +496,8 @@ function checkToolExists(tool: string) {
 	if (tool === getBinPath(tool)) {
 		promptForMissingTool(tool);
 	}
+}
+
+function registerCompletionProvider(ctx: vscode.ExtensionContext) {
+	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(ctx.globalState), '.', '\"'));
 }

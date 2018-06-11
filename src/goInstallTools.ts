@@ -275,15 +275,33 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 				}
 			};
 
-			cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
-				if (stderr.indexOf('unexpected directory layout:') > -1) {
-					outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-					cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, callback);
-				} else {
-					callback(err, stdout, stderr);
-				}
+			let closeToolPromise = Promise.resolve(true);
+			if (tool === 'gocode') {
+				closeToolPromise = new Promise<boolean>((innerResolve) => {
+					cp.execFile(getBinPath('gocode'), ['close'], {}, (err, stdout, stderr) => {
+						if (stderr && stderr.indexOf('rpc: can\'t find service Server.')) {
+							outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
+							return innerResolve(false);
+						}
+						innerResolve(true);
+					});
+				});
+			}
 
+			closeToolPromise.then((success) => {
+				if (!success) {
+					resolve();
+				}
+				cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
+					if (stderr.indexOf('unexpected directory layout:') > -1) {
+						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
+						cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, callback);
+					} else {
+						callback(err, stdout, stderr);
+					}
+				});
 			});
+
 		}));
 	}, Promise.resolve([])).then(res => {
 		outputChannel.appendLine(''); // Blank line for spacing

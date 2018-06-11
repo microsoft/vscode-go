@@ -38,10 +38,18 @@ interface GoCodeSuggestion {
 
 const lineCommentRegex = /^\s*\/\/\s+/;
 const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
+const gocodeNoSupportForgbMsgKey = 'dontshowNoSupportForgb';
 
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	private pkgsList = new Map<string, string>();
+	private killMsgShown: boolean = false;
+	private setGocodeOptions: boolean = true;
+	private globalState: vscode.Memento;
+
+	constructor(globalState?: vscode.Memento) {
+		this.globalState = globalState;
+	}
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
 		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go', document.uri));
@@ -158,7 +166,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			p.on('close', code => {
 				try {
 					if (code !== 0) {
-						return reject(stderr);
+						if (stderr.indexOf('rpc: can\'t find service Server.AutoComplete') > -1 && !this.killMsgShown) {
+							vscode.window.showErrorMessage('Auto-completion feature failed as an older gocode process is still running. Please kill the running process for gocode and try again.');
+							this.killMsgShown = true;
+						}
+						return reject();
 					}
 					let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 					let suggestions = [];
@@ -271,7 +283,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
-		let setPkgsList = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true).then(pkgMap => this.pkgsList = pkgMap);
+		let setPkgsList = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true).then(pkgMap => { this.pkgsList = pkgMap; });
+
+		if (!this.setGocodeOptions) {
+			return setPkgsList;
+		}
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
@@ -279,6 +295,18 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			let env = getToolsEnvVars();
 
 			cp.execFile(gocode, ['set'], { env }, (err, stdout, stderr) => {
+				if (err && stdout.startsWith('gocode: unknown subcommand:')) {
+					if (goConfig['gocodePackageLookupMode'] === 'gb' && this.globalState && !this.globalState.get(gocodeNoSupportForgbMsgKey)) {
+						vscode.window.showInformationMessage('The go.gocodePackageLookupMode setting for gb will not be honored as github.com/mdempskey/gocode doesnt support it yet.', 'Don\'t show again').then(selected => {
+							if (selected === 'Don\'t show again') {
+								this.globalState.update(gocodeNoSupportForgbMsgKey, true);
+							}
+						});
+					}
+					this.setGocodeOptions = false;
+					return resolve();
+				}
+
 				const existingOptions = stdout.split(/\r\n|\n/);
 				const optionsToSet: string[][] = [];
 				const setOption = () => {
