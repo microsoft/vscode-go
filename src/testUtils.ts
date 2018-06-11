@@ -270,7 +270,12 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 				testifyMethods = testifyMethods.map(extractInstanceTestName);
 			}
 
-			params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
+			// we'll skip the '-run' param when running only testify methods, which will result
+			// in running all the test methods, but that is necessary, cause one of them should
+			// call testify's `suite.Run(...)`
+			if (testFunctions.length > 0) {
+				params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
+			}
 			if (testifyMethods.length > 0) {
 				params = params.concat(['-testify.m', util.format('^%s$', testifyMethods.join('|'))]);
 			}
