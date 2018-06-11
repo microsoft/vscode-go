@@ -1,3 +1,17 @@
+## 0.6.83 - Coming Soon...
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+    Conditional Breakpoints. [Feature Request 1720](https://github.com/Microsoft/vscode-go/issues/1720) implemented with [PR 1721](https://github.com/Microsoft/vscode-go/pull/1721)
+    Fix the watch feature in the debug panel. Fixes [Bug 1714](https://github.com/Microsoft/vscode-go/issues/1714) with [PR 1718](https://github.com/Microsoft/vscode-go/pull/1718)
+
+* [@ikedam](https://github.com/ikedam)
+    Alternate Tools [PR 1297](https://github.com/Microsoft/vscode-go/pull/1297)
+
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    Support the new outline feature which is in preview. [Bug 1725](https://github.com/Microsoft/vscode-go/issues/1725)
+    Close `gocode` before updating and show appropriate message when failed to do so.  
+
 ## 0.6.82 - 6th June, 2018
 
 * [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
