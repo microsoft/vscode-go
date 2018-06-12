@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findTestFnForInstanceTest } from './testUtils';
 import { getCoverage } from './goCover';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -59,11 +59,21 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 				return;
 			}
 
+			const testConfigFns = [testFunctionName];
+
+			if (!isBenchmark && extractInstanceTestName(testFunctionName)) {
+				// find test function with corresponding suite.Run
+				const t = findTestFnForInstanceTest(testFunctionName, editor.document, testFunctions);
+				if (t) {
+					testConfigFns.push(t.name);
+				}
+			}
+
 			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
 				flags: testFlags,
-				functions: [testFunctionName],
+				functions: testConfigFns,
 				isBenchmark: isBenchmark,
 			};
 

@@ -14,7 +14,7 @@ import { getNonVendorPackages } from './goPackages';
 
 let outputChannel = vscode.window.createOutputChannel('Go Tests');
 
-const testSuiteMethodRegex = /^\([^)]+\)\.(Test.*)$/;
+const testSuiteMethodRegex = /^\(([^)]+)\)\.(Test.*)$/;
 
 /**
  * Input to goTest.
@@ -103,10 +103,49 @@ export function getTestFunctions(doc: vscode.TextDocument, token: vscode.Cancell
  */
 export function extractInstanceTestName(symbolName: string): string {
 	const match = symbolName.match(testSuiteMethodRegex);
-	if (!match || match.length !== 2) {
+	if (!match || match.length !== 3) {
 		return null;
 	}
-	return match[1];
+	return match[2];
+}
+
+/**
+ * Finds test method containing suite.Run() call for the given instance test name.
+ *
+ * @param symbolName Instance test function name (including the type name)
+ * @param doc Editor document
+ * @param allTests All test functions
+ */
+export function findTestFnForInstanceTest(symbolName: string, doc: vscode.TextDocument, allTests: vscode.SymbolInformation[]): vscode.SymbolInformation {
+	// get non-instance test functions
+	const testFunctions = allTests.filter(t => !testSuiteMethodRegex.test(t.name));
+	// filter further to ones containing suite.Run()
+	const candidates = testFunctions.filter(t => {
+		const text = doc.getText(t.location.range);
+		return /suite\.Run\(/.test(text);
+	});
+
+	switch (candidates.length) {
+		case 0: return null;
+		case 1: return candidates[0];
+	}
+
+	// we have multiple matches, filter even more
+	const match = symbolName.match(testSuiteMethodRegex);
+	if (!match || match.length !== 3) {
+		return candidates[0];
+	}
+	// drop pointers, lowercase for more lenient matching
+	const instanceType = match[1].replace(/[*]/g, '').toLowerCase();
+	const filtered = candidates.filter(t => {
+		const text = doc.getText(t.location.range).toLowerCase();
+		if (text.includes(instanceType)) {
+			return true;
+		}
+		// try the test name as well
+		return t.name.substring(4).includes(instanceType);
+	});
+	return filtered.length > 0 ? filtered[0] : candidates[0];
 }
 
 /**
