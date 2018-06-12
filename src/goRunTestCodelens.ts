@@ -97,9 +97,9 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				let args: string[] = [];
 				let instanceMethod = extractInstanceTestName(func.name);
 				if (instanceMethod) {
-					const testFn = findTestFnForInstanceTest(func.name, document, testFunctions);
-					if (testFn) {
-						args = args.concat('-test.run', `^${testFn.name}$`);
+					const testFns = findTestFnForInstanceTest(func.name, document, testFunctions);
+					if (testFns && testFns.length > 0) {
+						args = args.concat('-test.run', `^${testFns.map(t => t.name).join('|')}$`);
 					}
 					args = args.concat('-testify.m', `^${instanceMethod}$`);
 				} else {

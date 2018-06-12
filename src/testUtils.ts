@@ -111,29 +111,26 @@ export function extractInstanceTestName(symbolName: string): string {
 
 /**
  * Finds test method containing suite.Run() call for the given instance test name.
+ * Uses a few heuristics, we're not analyzing the code to be 100% sure.
  *
  * @param symbolName Instance test function name (including the type name)
  * @param doc Editor document
  * @param allTests All test functions
  */
-export function findTestFnForInstanceTest(symbolName: string, doc: vscode.TextDocument, allTests: vscode.SymbolInformation[]): vscode.SymbolInformation {
+export function findTestFnForInstanceTest(symbolName: string, doc: vscode.TextDocument, allTests: vscode.SymbolInformation[]): vscode.SymbolInformation[] {
 	// get non-instance test functions
 	const testFunctions = allTests.filter(t => !testSuiteMethodRegex.test(t.name));
 	// filter further to ones containing suite.Run()
-	const candidates = testFunctions.filter(t => {
-		const text = doc.getText(t.location.range);
-		return /suite\.Run\(/.test(text);
-	});
-
+	const candidates = testFunctions.filter(t => doc.getText(t.location.range).includes('suite.Run('));
 	switch (candidates.length) {
 		case 0: return null;
-		case 1: return candidates[0];
+		case 1: return candidates;
 	}
 
 	// we have multiple matches, filter even more
 	const match = symbolName.match(testSuiteMethodRegex);
 	if (!match || match.length !== 3) {
-		return candidates[0];
+		return null;
 	}
 	// drop pointers, lowercase for more lenient matching
 	const instanceType = match[1].replace(/[*]/g, '').toLowerCase();
@@ -142,10 +139,10 @@ export function findTestFnForInstanceTest(symbolName: string, doc: vscode.TextDo
 		if (text.includes(instanceType)) {
 			return true;
 		}
-		// try the test name as well
+		// try the test name as well (minus the "Test" part)
 		return t.name.substring(4).includes(instanceType);
 	});
-	return filtered.length > 0 ? filtered[0] : candidates[0];
+	return filtered.length > 0 ? filtered : candidates;
 }
 
 /**
@@ -309,9 +306,9 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 				testifyMethods = testifyMethods.map(extractInstanceTestName);
 			}
 
-			// we'll skip the '-run' param when running only testify methods, which will result
-			// in running all the test methods, but that is necessary, cause one of them should
-			// call testify's `suite.Run(...)`
+			// we might skip the '-run' param when running only testify methods, which will result
+			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
+			// which will result in the correct thing to happen
 			if (testFunctions.length > 0) {
 				params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
 			}

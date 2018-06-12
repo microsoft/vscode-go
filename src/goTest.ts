@@ -59,13 +59,13 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 				return;
 			}
 
-			const testConfigFns = [testFunctionName];
+			let testConfigFns = [testFunctionName];
 
 			if (!isBenchmark && extractInstanceTestName(testFunctionName)) {
 				// find test function with corresponding suite.Run
-				const t = findTestFnForInstanceTest(testFunctionName, editor.document, testFunctions);
-				if (t) {
-					testConfigFns.push(t.name);
+				const testFns = findTestFnForInstanceTest(testFunctionName, editor.document, testFunctions);
+				if (testFns) {
+					testConfigFns = testConfigFns.concat(testFns.map(t => t.name));
 				}
 			}
 
