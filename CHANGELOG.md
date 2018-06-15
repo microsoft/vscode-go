@@ -1,16 +1,18 @@
-## 0.6.83 - Coming Soon...
+## 0.6.83 - 15th Jun, 2018
 
 * [Luis GG (@lggomez)](https://github.com/lggomez)
-    Conditional Breakpoints. [Feature Request 1720](https://github.com/Microsoft/vscode-go/issues/1720) implemented with [PR 1721](https://github.com/Microsoft/vscode-go/pull/1721)
-    Fix the watch feature in the debug panel. Fixes [Bug 1714](https://github.com/Microsoft/vscode-go/issues/1714) with [PR 1718](https://github.com/Microsoft/vscode-go/pull/1718)
+    * Support for Conditional Breakpoints when debugging. [Feature Request 1720](https://github.com/Microsoft/vscode-go/issues/1720) implemented with [PR 1721](https://github.com/Microsoft/vscode-go/pull/1721)
+    * Fix the watch feature in the debug panel that got introduced in the previous update. Fixes [Bug 1714](https://github.com/Microsoft/vscode-go/issues/1714) with [PR 1718](https://github.com/Microsoft/vscode-go/pull/1718)
 
 * [@ikedam](https://github.com/ikedam)
-    Alternate Tools [PR 1297](https://github.com/Microsoft/vscode-go/pull/1297)
-
+    * New setting `go.alternateTools` to provide alternate tools or alternate paths for the same tools used by the Go extension. Provide either absolute path or the name of the binary in GOPATH/bin, GOROOT/bin or PATH. 
+    Useful when you want to use wrapper script for the Go tools or versioned tools from https://gopkg.in. [PR 1297](https://github.com/Microsoft/vscode-go/pull/1297). Some scenarios:
+        * Map `go` to `goapp` when using App Engine Go
+        * Map `gometalinter` to `gometalinter.v2` if you want to use the stable version of the tool
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
-    Support the new outline feature which is in preview. [Bug 1725](https://github.com/Microsoft/vscode-go/issues/1725)
-    Close `gocode` before updating and show appropriate message when failed to do so.  
+    * Support the new outline feature which is in preview. [Bug 1725](https://github.com/Microsoft/vscode-go/issues/1725)
+    * Close `gocode` before updating and show appropriate message when failed to do so.  
 
 ## 0.6.82 - 6th June, 2018
 
