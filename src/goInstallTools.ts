@@ -288,7 +288,8 @@ function installTools(goVersion: SemVersion, missing?: string[]) {
 
 			closeToolPromise.then((success) => {
 				if (!success) {
-					resolve();
+					resolve([...sofar, null]);
+					return;
 				}
 				cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
