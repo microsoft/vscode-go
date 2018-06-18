@@ -105,7 +105,29 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				currentLine = currentLine.substring(0, position.character);
 			}
 
-			for (let char = characterPosition; char >= 0; char--) {
+			// Walk foward to index quote positions
+			// This is needed to detect string literals and ignore commas within them
+			let doubleQuoteIndexes = new IndexRangeArray();
+			let singleQuoteIndexes = new IndexRangeArray();
+			let specialQuoteIndexes = new IndexRangeArray();
+			for (let i = 0; i < currentLine.length; i++) {
+				// Ignore escaped quotes, only count string literal boundaries
+				if ((i > 0) && (currentLine[i - 1] !== '\\')) {
+					switch (currentLine[i]) {
+						case '\'':
+							singleQuoteIndexes.PushIndex(i);
+							break;
+						case '"':
+							doubleQuoteIndexes.PushIndex(i);
+							break;
+						case '`':
+							specialQuoteIndexes.PushIndex(i);
+							break;
+					}
+				}
+			}
+
+			for (let char = characterPosition - 1; char >= 0; char--) {
 				switch (currentLine[char]) {
 					case '(':
 						parenBalance--;
@@ -119,23 +141,11 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 					case ')':
 						parenBalance++;
 						break;
-					case '\'':
-						// Ignore escaped single quotes, only count string literal boundaries
-						if ((char < (characterPosition - 1)) && (currentLine[char + 1] !== '\\')) {
-							singleQuotesCount++;
-						}
-						break;
-					case '"':
-						// Ignore escaped double quotes, only count string literal boundaries
-						if ((char < (characterPosition - 1)) && (currentLine[char + 1] !== '\\')) {
-							doubleQuotesCount++;
-						}
-						break;
 					case ',':
-						let doubleQuotesBalanced = (doubleQuotesCount % 2) === 0;
-						let singleQuotesBalanced = (singleQuotesCount % 2) === 0;
-						console.error("***currentLine:"+currentLine);
-						if ((parenBalance === 0) && doubleQuotesBalanced && singleQuotesBalanced) {
+						if ((parenBalance === 0)
+							&& !doubleQuoteIndexes.IsWithinPairRange(char)
+							&& !singleQuoteIndexes.IsWithinPairRange(char)
+							&& !specialQuoteIndexes.IsWithinPairRange(char)) {
 							commas.push(new Position(line, char));
 						}
 						break;
@@ -145,4 +155,33 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		return null;
 	}
 
+}
+
+class IndexRangeArray {
+	LastIndex: number;
+	Array: Array<number>;
+
+	public constructor() {
+		this.Array = new Array<number>();
+		this.LastIndex = 0;
+	}
+
+	public PushIndex(index: number): void {
+		this.Array.push(index);
+		this.LastIndex = index;
+	}
+
+	public IsWithinPairRange(index: number): boolean {
+		let isEven = (this.Array.length % 2) === 0;
+		if (index > this.LastIndex) return !isEven;
+		let limit = this.Array.length - (isEven ? 1 : 2);
+		for (let i = 0; i < limit; i++) {
+			if (i <= limit - 1) {
+				if ((index > this.Array[i]) && (index < this.Array[i + 1])) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }
