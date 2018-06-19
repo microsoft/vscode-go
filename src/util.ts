@@ -369,9 +369,9 @@ export function getToolsEnvVars(): any {
 }
 
 export function substituteEnv(input: string): string {
-    return input.replace(/\${env:([^}]+)}/mg, function (match, capture) {
-        return process.env[capture.trim()] || '';
-    }); 
+	return input.replace(/\${env:([^}]+)}/mg, function (match, capture) {
+		return process.env[capture.trim()] || '';
+	});
 }
 
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
