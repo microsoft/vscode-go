@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import path = require('path');
 import { TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
-import { getTestFunctions, getBenchmarkFunctions, getTestFlags, extractInstanceTestName, findTestFnForInstanceTest } from './testUtils';
+import { getTestFunctions, getBenchmarkFunctions, getTestFlags, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getCurrentGoPath } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
@@ -97,7 +97,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				let args: string[] = [];
 				let instanceMethod = extractInstanceTestName(func.name);
 				if (instanceMethod) {
-					const testFns = findTestFnForInstanceTest(func.name, document, testFunctions);
+					const testFns = findAllTestSuiteRuns(document, testFunctions);
 					if (testFns && testFns.length > 0) {
 						args = args.concat('-test.run', `^${testFns.map(t => t.name).join('|')}$`);
 					}
