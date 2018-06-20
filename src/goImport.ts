@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import path = require('path');
 import fs = require('fs');
-import { parseFilePrelude, getCurrentGoPath, getImportPath, getWorkspaceFolderPath } from './util';
+import { parseFilePrelude, getCurrentGoPath, getImportPath, getRootWorkspaceFolder } from './util';
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
@@ -55,17 +55,6 @@ function askUserForImport(): Thenable<string> {
 		}
 	});
 }
-
-function askUserWhichImport(): Thenable<string | void> {
-	return getImports(vscode.window.activeTextEditor.document).then(packages => {
-		return vscode.window.showQuickPick(packages);
-	}, err => {
-		if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
-			promptForMissingTool(err.substr(missingToolMsg.length));
-		}
-	});
-}
-
 
 export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	// Import name wasn't provided
@@ -120,16 +109,50 @@ export function addImport(arg: string) {
 }
 
 export function addImportToWorkspace(arg: string) {
-	let p = arg ? Promise.resolve(arg) : askUserWhichImport();
-	p.then(imp => {
-		if (typeof imp === 'string') {
-			let filePath = fixDriveCasingInWindows(vscode.window.activeTextEditor.document.fileName);
-			let fileDirPath = path.dirname(filePath);
-			let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
-			let globalPackagePath = path.join(currentWorkspace, imp);
-			if (fs.existsSync(globalPackagePath)) {
-				vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, { uri: vscode.Uri.file(globalPackagePath) });
+	const editor = vscode.window.activeTextEditor;
+	const selection = editor.selection;
+
+	let importPath = '';
+	if (selection.isSingleLine) {
+		// Attempt to load a partial import path based on currently selected text
+		let selectedText = editor.document.getText(selection);
+		if (selectedText.length > 0) {
+			if (!selectedText.startsWith('"')) {
+				selectedText = '"' + selectedText;
 			}
+			if (!selectedText.endsWith('"')) {
+				selectedText = selectedText + '"';
+			}
+			importPath = getImportPath(selectedText);
 		}
-	});
+	}
+
+	if (importPath === '') {
+		// Failing that use the current line
+		let selectedText = editor.document.lineAt(selection.active.line).text;
+		importPath = getImportPath(selectedText);
+	}
+
+	if (importPath === '') {
+		vscode.window.showErrorMessage('No import path to add');
+		return;
+	}
+
+	let filePath = fixDriveCasingInWindows(editor.document.fileName);
+	let fileDirPath = path.dirname(filePath);
+	let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
+	let globalPackagePath = path.join(currentWorkspace, importPath);
+	if (!fs.existsSync(globalPackagePath)) {
+		vscode.window.showErrorMessage('Import path not found on disk');
+		return;
+	}
+
+	const importPathUri = vscode.Uri.file(globalPackagePath);
+	const existingWorkspaceFolder = getRootWorkspaceFolder(importPathUri);
+	if (existingWorkspaceFolder !== undefined) {
+		vscode.window.showInformationMessage('Already available under ' + existingWorkspaceFolder.name);
+		return;
+	}
+
+	vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, { uri: importPathUri });
 }
