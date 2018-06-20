@@ -27,7 +27,7 @@ import { initGoCover } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
 import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
-import { addImport } from './goImport';
+import { addImport, addImportToWorkspace } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
 import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars } from './util';
 import { LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature, ProvideCompletionItemsSignature } from 'vscode-languageclient';
@@ -272,6 +272,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
 		return addImport(typeof arg === 'string' ? arg : null);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.workspace', (arg: string) => {
+		return addImportToWorkspace(typeof arg === 'string' ? arg : null);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', () => {

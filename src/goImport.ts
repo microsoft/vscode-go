@@ -6,10 +6,13 @@
 'use strict';
 
 import vscode = require('vscode');
-import { parseFilePrelude } from './util';
+import path = require('path');
+import fs = require('fs');
+import { parseFilePrelude, getCurrentGoPath, getImportPath, getWorkspaceFolderPath } from './util';
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
+import { fixDriveCasingInWindows, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -52,6 +55,17 @@ function askUserForImport(): Thenable<string> {
 		}
 	});
 }
+
+function askUserWhichImport(): Thenable<string | void> {
+	return getImports(vscode.window.activeTextEditor.document).then(packages => {
+		return vscode.window.showQuickPick(packages);
+	}, err => {
+		if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
+			promptForMissingTool(err.substr(missingToolMsg.length));
+		}
+	});
+}
+
 
 export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	// Import name wasn't provided
@@ -101,6 +115,21 @@ export function addImport(arg: string) {
 			const edit = new vscode.WorkspaceEdit();
 			edit.set(vscode.window.activeTextEditor.document.uri, edits);
 			vscode.workspace.applyEdit(edit);
+		}
+	});
+}
+
+export function addImportToWorkspace(arg: string) {
+	let p = arg ? Promise.resolve(arg) : askUserWhichImport();
+	p.then(imp => {
+		if (typeof imp === 'string') {
+			let filePath = fixDriveCasingInWindows(vscode.window.activeTextEditor.document.fileName);
+			let fileDirPath = path.dirname(filePath);
+			let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
+			let globalPackagePath = path.join(currentWorkspace, imp);
+			if (fs.existsSync(globalPackagePath)) {
+				vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, { uri: vscode.Uri.file(globalPackagePath) });
+			}
 		}
 	});
 }

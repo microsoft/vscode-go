@@ -155,6 +155,10 @@
         "description": "Add an import declaration"
       },
       {
+        "command": "go.import.workspace",
+        "title": "Go: Add import to workspace"
+      },
+      {
         "command": "go.tools.install",
         "title": "Go: Install/Update Tools",
         "description": "install/update the required go packages"
