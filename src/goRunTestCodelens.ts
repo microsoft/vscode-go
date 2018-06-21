@@ -26,15 +26,22 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 	private getDebugConfig(vsConfig: vscode.WorkspaceConfiguration): any {
 		let debugConfig: any = this.defaultDebugConfig;
-		let launchConfig = vsConfig.get('launch')['configurations'];
+		let launchConfig = vsConfig.get('enableCodeLens')['runtest.debugConfig'];
+
 		if (launchConfig !== undefined) {
-			let goLaunchConfigs = launchConfig.filter(cfg => cfg.type === 'go');
-			if (goLaunchConfigs.length > 1) {
-				debugConfig = launchConfig[0];
+			if (launchConfig.useApiV1 !== undefined) {
+				debugConfig.useApiV1 = launchConfig.useApiV1;
+			}
+			if (launchConfig.dlvLoadConfig !== undefined) {
+				debugConfig.dlvLoadConfig = {
+					followPointers: launchConfig.dlvLoadConfig.followPointers,
+					maxVariableRecurse: launchConfig.dlvLoadConfig.maxVariableRecurse,
+					maxStringLen: launchConfig.dlvLoadConfig.maxStringLen,
+					maxArrayValues: launchConfig.dlvLoadConfig.maxArrayValues,
+					maxStructFields: launchConfig.dlvLoadConfig.maxStructFields
+				};
 			}
 		}
-
-		debugConfig.env.GOPATH = getCurrentGoPath();
 
 		return debugConfig;
 	}
