@@ -24,28 +24,6 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		}
 	};
 
-	private getDebugConfig(vsConfig: vscode.WorkspaceConfiguration): any {
-		let debugConfig: any = this.defaultDebugConfig;
-		let launchConfig = vsConfig.get('enableCodeLens')['runtest.debugConfig'];
-
-		if (launchConfig !== undefined) {
-			if (launchConfig.useApiV1 !== undefined) {
-				debugConfig.useApiV1 = launchConfig.useApiV1;
-			}
-			if (launchConfig.dlvLoadConfig !== undefined) {
-				debugConfig.dlvLoadConfig = {
-					followPointers: launchConfig.dlvLoadConfig.followPointers,
-					maxVariableRecurse: launchConfig.dlvLoadConfig.maxVariableRecurse,
-					maxStringLen: launchConfig.dlvLoadConfig.maxStringLen,
-					maxArrayValues: launchConfig.dlvLoadConfig.maxArrayValues,
-					maxStructFields: launchConfig.dlvLoadConfig.maxStructFields
-				};
-			}
-		}
-
-		return debugConfig;
-	}
-
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
 		if (!this.enabled) {
 			return [];
@@ -149,5 +127,27 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		});
 
 		return Promise.all([testPromise, benchmarkPromise]).then(() => codelens);
+	}
+
+	private getDebugConfig(vsConfig: vscode.WorkspaceConfiguration): any {
+		let debugConfig: any = this.defaultDebugConfig;
+		let delveConfig: any = vsConfig.get('delveConfig');
+
+		if (delveConfig !== undefined) {
+			if (delveConfig.useApiV1 !== undefined) {
+				debugConfig.useApiV1 = delveConfig.useApiV1;
+			}
+			if (delveConfig.dlvLoadConfig !== undefined) {
+				debugConfig.dlvLoadConfig = {
+					followPointers: delveConfig.dlvLoadConfig.followPointers,
+					maxVariableRecurse: delveConfig.dlvLoadConfig.maxVariableRecurse,
+					maxStringLen: delveConfig.dlvLoadConfig.maxStringLen,
+					maxArrayValues: delveConfig.dlvLoadConfig.maxArrayValues,
+					maxStructFields: delveConfig.dlvLoadConfig.maxStructFields
+				};
+			}
+		}
+
+		return debugConfig;
 	}
 }

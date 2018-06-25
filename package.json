@@ -849,54 +849,6 @@
               "type": "boolean",
               "default": true,
               "description": "If true, enables code lens for running and debugging tests"
-            },
-            "runtest.debugConfig": {
-              "type": "object",
-              "properties": {
-                "dlvLoadConfig": {
-                  "type": "object",
-                  "properties": {
-                    "followPointers": {
-                      "type": "boolean",
-                      "description": "FollowPointers requests pointers to be automatically dereferenced",
-                      "default": true
-                    },
-                    "maxVariableRecurse": {
-                      "type": "number",
-                      "description": "MaxVariableRecurse is how far to recurse when evaluating nested types",
-                      "default": 1
-                    },
-                    "maxStringLen": {
-                      "type": "number",
-                      "description": "MaxStringLen is the maximum number of bytes read from a string",
-                      "default": 64
-                    },
-                    "maxArrayValues": {
-                      "type": "number",
-                      "description": "MaxArrayValues is the maximum number of elements read from an array, a slice or a map",
-                      "default": 64
-                    },
-                    "maxStructFields": {
-                      "type": "number",
-                      "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
-                      "default": -1
-                    }
-                  },
-                  "description": "LoadConfig describes to delve, how to load values from target's memory",
-                  "default": {
-                    "followPointers": true,
-                    "maxVariableRecurse": 1,
-                    "maxStringLen": 64,
-                    "maxArrayValues": 64,
-                    "maxStructFields": -1
-                  }
-                },
-                "useApiV1": {
-                  "type": "boolean",
-                  "description": "If true, the v1 of delve apis will be used, else v2 will be used",
-                  "default": true
-                }
-              }
             }
           },
           "default": {
@@ -1110,6 +1062,55 @@
           },
           "default": [],
           "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature",
+          "scope": "resource"
+        },
+        "go.delveConfig": {
+          "type": "object",
+          "properties": {
+            "dlvLoadConfig": {
+              "type": "object",
+              "properties": {
+                "followPointers": {
+                  "type": "boolean",
+                  "description": "FollowPointers requests pointers to be automatically dereferenced",
+                  "default": true
+                },
+                "maxVariableRecurse": {
+                  "type": "number",
+                  "description": "MaxVariableRecurse is how far to recurse when evaluating nested types",
+                  "default": 1
+                },
+                "maxStringLen": {
+                  "type": "number",
+                  "description": "MaxStringLen is the maximum number of bytes read from a string",
+                  "default": 64
+                },
+                "maxArrayValues": {
+                  "type": "number",
+                  "description": "MaxArrayValues is the maximum number of elements read from an array, a slice or a map",
+                  "default": 64
+                },
+                "maxStructFields": {
+                  "type": "number",
+                  "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
+                  "default": -1
+                }
+              },
+              "description": "LoadConfig describes to delve, how to load values from target's memory",
+              "default": {
+                "followPointers": true,
+                "maxVariableRecurse": 1,
+                "maxStringLen": 64,
+                "maxArrayValues": 64,
+                "maxStructFields": -1
+              }
+            },
+            "useApiV1": {
+              "type": "boolean",
+              "description": "If true, the v1 of delve apis will be used, else v2 will be used",
+              "default": true
+            }
+          },
           "scope": "resource"
         }
       }
