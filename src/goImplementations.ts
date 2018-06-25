@@ -6,7 +6,6 @@ import path = require('path');
 import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getToolsEnvVars } from './util';
-import { getGoRuntimePath } from './goPath';
 
 interface GoListOutput {
 	Dir: string;
@@ -43,7 +42,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				return resolve(null);
 			}
 			let env = getToolsEnvVars();
-			let listProcess = cp.execFile(getGoRuntimePath(), ['list', '-e', '-json'], { cwd: root, env }, (err, stdout, stderr) => {
+			let listProcess = cp.execFile(getBinPath('go'), ['list', '-e', '-json'], { cwd: root, env }, (err, stdout, stderr) => {
 				if (err) {
 					return reject(err);
 				}

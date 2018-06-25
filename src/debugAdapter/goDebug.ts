@@ -11,7 +11,7 @@ import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getGoRuntimePath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 
 require('console-stamp')(console);
@@ -90,6 +90,7 @@ interface DebugBreakpoint {
 	variables?: DebugVariable[];
 	loadArgs?: LoadConfig;
 	loadLocals?: LoadConfig;
+	cond?: string;
 }
 
 interface LoadConfig {
@@ -308,7 +309,7 @@ class Delve {
 			if (!!launchArgs.noDebug) {
 				if (mode === 'debug' && !isProgramDirectory) {
 					this.noDebug = true;
-					this.debugProcess = spawn(getGoRuntimePath(), ['run', program], { env });
+					this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), ['run', program], { env });
 					this.debugProcess.stderr.on('data', chunk => {
 						let str = chunk.toString();
 						if (this.onstderr) { this.onstderr(str); }
@@ -349,7 +350,7 @@ class Delve {
 				return;
 			}
 
-			let dlv = getBinPathWithPreferredGopath('dlv', resolveHomeDir(env['GOPATH']), process.env['GOPATH']);
+			let dlv = getBinPathWithPreferredGopath('dlv', [resolveHomeDir(env['GOPATH']), process.env['GOPATH']]);
 
 			if (!existsSync(dlv)) {
 				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
@@ -639,17 +640,18 @@ class GoDebugSession extends DebugSession {
 			return this.delve.callPromise('ClearBreakpoint', [this.delve.isApiV1 ? existingBP.id : { Id: existingBP.id }]);
 		})).then(() => {
 			verbose('All cleared');
-			return Promise.all(args.lines.map(line => {
+			return Promise.all(args.breakpoints.map(breakpoint => {
 				if (this.delve.remotePath.length === 0) {
-					verbose('Creating on: ' + file + ':' + line);
+					verbose('Creating on: ' + file + ':' + breakpoint.line);
 				} else {
-					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + line);
+					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + breakpoint.line);
 				}
 				let breakpointIn = <DebugBreakpoint>{};
 				breakpointIn.file = remoteFile;
-				breakpointIn.line = line;
+				breakpointIn.line = breakpoint.line;
 				breakpointIn.loadArgs = this.delve.loadConfig;
 				breakpointIn.loadLocals = this.delve.loadConfig;
+				breakpointIn.cond = breakpoint.condition;
 				return this.delve.callPromise('CreateBreakpoint', [this.delve.isApiV1 ? breakpointIn : { Breakpoint: breakpointIn }]).then(null, err => {
 					verbose('Error on CreateBreakpoint: ' + err.toString());
 					return null;
@@ -999,7 +1001,7 @@ class GoDebugSession extends DebugSession {
 				Scope: scope,
 				Cfg: this.delve.loadConfig
 			};
-		this.delve.call<EvalOut | DebugVariable>('Eval', [evalSymbolArgs], (err, out) => {
+		this.delve.call<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs], (err, out) => {
 			if (err) {
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
 				return this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', { e: err.toString() });

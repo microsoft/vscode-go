@@ -7,8 +7,8 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
-import { parseEnvFile, getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath } from './util';
+import { parseEnvFile, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath, getBinPath } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
@@ -16,13 +16,14 @@ const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.cancel';
-statusBarItem.text = 'Cancel Running Tests';
+statusBarItem.text = '$(x) Cancel Running Tests';
 
 /**
  *  testProcesses holds a list of currently running test processes.
  */
 const runningTestProcesses: cp.ChildProcess[] = [];
 
+const testSuiteMethodRegex = /^\(([^)]+)\)\.(Test.*)$/;
 
 /**
  * Input to goTest.
@@ -98,8 +99,36 @@ export function getTestFunctions(doc: vscode.TextDocument, token: vscode.Cancell
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example')))
+				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example') || testSuiteMethodRegex.test(sym.name))
+			)
 		);
+}
+
+/**
+ * Extracts test method name of a suite test function.
+ * For example a symbol with name "(*testSuite).TestMethod" will return "TestMethod".
+ *
+ * @param symbolName Symbol Name to extract method name from.
+ */
+export function extractInstanceTestName(symbolName: string): string {
+	const match = symbolName.match(testSuiteMethodRegex);
+	if (!match || match.length !== 3) {
+		return null;
+	}
+	return match[2];
+}
+
+/**
+ * Finds test methods containing "suite.Run()" call.
+ *
+ * @param doc Editor document
+ * @param allTests All test functions
+ */
+export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.SymbolInformation[]): vscode.SymbolInformation[] {
+	// get non-instance test functions
+	const testFunctions = allTests.filter(t => !testSuiteMethodRegex.test(t.name));
+	// filter further to ones containing suite.Run()
+	return testFunctions.filter(t => doc.getText(t.location.range).includes('suite.Run('));
 }
 
 /**
@@ -151,7 +180,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
-		let goRuntimePath = getGoRuntimePath();
+		let goRuntimePath = getBinPath('go');
 
 		if (!goRuntimePath) {
 			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -166,7 +195,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		targetArgs(testconfig).then(targets => {
 			let outTargets = args.slice(0);
-			if (targets.length > 2) {
+			if (targets.length > 4) {
 				outTargets.push('<long arguments omitted>');
 			} else {
 				outTargets.push(...targets);
@@ -287,7 +316,29 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  */
 function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
-		return Promise.resolve([testconfig.isBenchmark ? '-bench' : '-run', util.format('^%s$', testconfig.functions.join('|'))]);
+		let params: string[] = [];
+		if (testconfig.isBenchmark) {
+			params = ['-bench', util.format('^%s$', testconfig.functions.join('|'))];
+		} else {
+			let testFunctions = testconfig.functions;
+			let testifyMethods = testFunctions.filter(fn => testSuiteMethodRegex.test(fn));
+			if (testifyMethods.length > 0) {
+				// filter out testify methods
+				testFunctions = testFunctions.filter(fn => !testSuiteMethodRegex.test(fn));
+				testifyMethods = testifyMethods.map(extractInstanceTestName);
+			}
+
+			// we might skip the '-run' param when running only testify methods, which will result
+			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
+			// which will result in the correct thing to happen
+			if (testFunctions.length > 0) {
+				params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
+			}
+			if (testifyMethods.length > 0) {
+				params = params.concat(['-testify.m', util.format('^%s$', testifyMethods.join('|'))]);
+			}
+		}
+		return Promise.resolve(params);
 	} else if (testconfig.includeSubDirectories && !testconfig.isBenchmark) {
 		return getGoVersion().then((ver: SemVersion) => {
 			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {

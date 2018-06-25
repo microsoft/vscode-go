@@ -7,7 +7,6 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath, getToolsEnvVars, killProcess } from './util';
-import { getGoRuntimePath } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with github.com/acroca/go-symbols'
@@ -123,7 +122,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 }
 
 function getGoroot(): Promise<string> {
-	let goExecutable = getGoRuntimePath();
+	let goExecutable = getBinPath('go');
 	if (!goExecutable) {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}

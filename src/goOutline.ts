@@ -122,7 +122,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 				label,
 				this.goKindToCodeKind[decl.type],
 				new vscode.Range(document.positionAt(start), document.positionAt(end)),
-				undefined,
+				document.uri,
 				containerName);
 			symbols.push(symbolInfo);
 			if (decl.children) {

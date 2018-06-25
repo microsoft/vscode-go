@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.82",
+"version": "0.6.83",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -1112,8 +1112,50 @@
             }
           },
           "scope": "resource"
+        },
+        "go.alternateTools": {
+          "type": "object",
+          "default": {},
+          "description": "Alternate tools or alternate paths for the same tools used by the Go extension. Provide either absolute path or the name of the binary in GOPATH/bin, GOROOT/bin or PATH. Useful when you want to use wrapper script for the Go tools or versioned tools from https://gopkg.in.",
+          "scope": "resource",
+          "properties": {
+            "go": {
+              "type": "string",
+              "default": "go",
+              "description": "Alternate tool to use instead of the go binary or alternate path to use for the go binary."
+            },
+            "gometalinter": {
+              "type": "string",
+              "default": "gometalinter",
+              "description": "Alternate tool to use instead of the gometalinter binary or alternate path to use for the gometalinter binary."
+            },
+            "gocode": {
+              "type": "string",
+              "default": "gocode",
+              "description": "Alternate tool to use instead of the gocode binary or alternate path to use for the gocode binary."
+            },
+            "gopkgs": {
+              "type": "string",
+              "default": "gopkgs",
+              "description": "Alternate tool to use instead of the gopkgs binary or alternate path to use for the gopkgs binary."
+            },
+            "godoc": {
+              "type": "string",
+              "default": "godoc",
+              "description": "Alternate tool to use instead of the godoc binary or alternate path to use for the godoc binary."
+            },
+            "go-outline": {
+              "type": "string",
+              "default": "go-outline",
+              "description": "Alternate tool to use instead of the go-outline binary or alternate path to use for the go-outline binary."
+            },
+            "guru": {
+              "type": "string",
+              "default": "guru",
+              "description": "Alternate tool to use instead of the guru binary or alternate path to use for the guru binary."
+            }
+          }
         }
-      }
     },
     "menus": {
       "editor/context": [

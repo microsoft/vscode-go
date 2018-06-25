@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { getCoverage } from './goCover';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -34,7 +34,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
 
 	editor.document.save().then(() => {
 		return getFunctions(editor.document, null).then(testFunctions => {
@@ -59,13 +59,22 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 				return;
 			}
 
-			const testConfig = {
+			let testConfigFns = [testFunctionName];
+
+			if (!isBenchmark && extractInstanceTestName(testFunctionName)) {
+				// find test function with corresponding suite.Run
+				const testFns = findAllTestSuiteRuns(editor.document, testFunctions);
+				if (testFns) {
+					testConfigFns = testConfigFns.concat(testFns.map(t => t.name));
+				}
+			}
+
+			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
 				flags: testFlags,
-				functions: [testFunctionName],
+				functions: testConfigFns,
 				isBenchmark: isBenchmark,
-				showTestCoverage: true
 			};
 
 			// Remember this config as the last executed test.
@@ -94,13 +103,12 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 		return;
 	}
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
 
-	const testConfig = {
+	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: path.dirname(editor.document.fileName),
 		flags: testFlags,
-		showTestCoverage: true
 	};
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
@@ -160,11 +168,11 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 
 	return editor.document.save().then(() => {
 		return getTestFunctions(editor.document, null).then(testFunctions => {
-			const testConfig = {
+			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
 				flags: getTestFlags(goConfig, args),
-				functions: testFunctions.map(func => { return func.name; })
+				functions: testFunctions.map(sym => sym.name),
 			};
 			// Remember this config as the last executed test.
 			lastTestConfig = testConfig;
@@ -203,5 +211,5 @@ function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string
 		testFlags.push('-coverprofile=' + tmpCoverPath);
 	}
 
-	return {tmpCoverPath, testFlags};
+	return { tmpCoverPath, testFlags };
 }
