@@ -1156,6 +1156,7 @@
             }
           }
         }
+      }
     },
     "menus": {
       "editor/context": [
