@@ -170,6 +170,11 @@
 			"body": "func $1(${2:w} http.ResponseWriter, ${3:r} *http.Request) {\n\t$0\n}",
 			"description": "Snippet for http handler declaration"
 		},
+		"http Middleware declaration": {
+			"prefix": "md",
+			"body": "func $1(${2:nextMiddleware} http.Handler) http.Handler {\n\treturn http.HandlerFunc(func(${3:w} http.ResponseWriter, ${4:r} *http.Request) {\n\t $5\n\t nextMiddleware.ServeHTTP(${3:w}, ${4:r})\n\t $6\n\t})\n}",
+			"description": "Snippet for http middleware declaration"
+		},
 		"http.Redirect": {
 			"prefix": "rd",
 			"body": "http.Redirect(${1:w}, ${2:r}, \"${3:/}\", ${4:http.StatusFound})",
