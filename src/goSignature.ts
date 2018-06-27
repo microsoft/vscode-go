@@ -107,7 +107,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			// This is needed to detect string literals and ignore commas within them
 			let doubleQuoteIndexes = new IndexRangeArray();
 			let singleQuoteIndexes = new IndexRangeArray();
-			let specialQuoteIndexes = new IndexRangeArray();
+			let backtickQuoteIndexes = new IndexRangeArray();
 			for (let i = 0; i < currentLine.length; i++) {
 				// Ignore escaped quotes, only count string literal boundaries
 				if ((i > 0) && (currentLine[i - 1] !== '\\')) {
@@ -119,7 +119,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 							doubleQuoteIndexes.PushIndex(i);
 							break;
 						case '`':
-							specialQuoteIndexes.PushIndex(i);
+							backtickQuoteIndexes.PushIndex(i);
 							break;
 					}
 				}
@@ -143,7 +143,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 						let pushComma = (parenBalance === 0)
 							&& !doubleQuoteIndexes.IsWithinPairRange(char)
 							&& !singleQuoteIndexes.IsWithinPairRange(char)
-							&& !specialQuoteIndexes.IsWithinPairRange(char);
+							&& !backtickQuoteIndexes.IsWithinPairRange(char);
 						if (pushComma) {
 							commas.push(new Position(line, char));
 						}
@@ -153,7 +153,6 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		}
 		return null;
 	}
-
 }
 
 class IndexRangeArray {
