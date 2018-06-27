@@ -140,10 +140,11 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 						parenBalance++;
 						break;
 					case ',':
-						if ((parenBalance === 0)
+						let pushComma = (parenBalance === 0)
 							&& !doubleQuoteIndexes.IsWithinPairRange(char)
 							&& !singleQuoteIndexes.IsWithinPairRange(char)
-							&& !specialQuoteIndexes.IsWithinPairRange(char)) {
+							&& !specialQuoteIndexes.IsWithinPairRange(char);
+						if (pushComma) {
 							commas.push(new Position(line, char));
 						}
 						break;
@@ -173,7 +174,7 @@ class IndexRangeArray {
 		let isEven = (this.Array.length % 2) === 0;
 		if (index > this.LastIndex) return !isEven;
 		let limit = this.Array.length - (isEven ? 1 : 2);
-		for (let i = 0; i < limit; i++) {
+		for (let i = 0; i < limit; i = i + 2) {
 			if (i <= limit - 1) {
 				if ((index > this.Array[i]) && (index < this.Array[i + 1])) {
 					return true;
