@@ -10,15 +10,24 @@ import path = require('path');
 import { TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
 import { getTestFunctions, getBenchmarkFunctions, getTestFlags, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { GoDocumentSymbolProvider } from './goOutline';
-import { getDefaultDebugConfiguration } from './util';
+import { getCurrentGoPath } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
+	private readonly debugConfig: any = {
+		'name': 'Launch',
+		'type': 'go',
+		'request': 'launch',
+		'mode': 'test',
+		'env': {
+			'GOPATH': getCurrentGoPath() // Passing current GOPATH to Delve as it runs in another process
+		}
+	};
+
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
 		if (!this.enabled) {
 			return [];
 		}
-
 		let config = vscode.workspace.getConfiguration('go', document.uri);
 		let codeLensConfig = config.get('enableCodeLens');
 		let codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
@@ -64,16 +73,16 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		const codelens: CodeLens[] = [];
-		const debugConfig = getDefaultDebugConfiguration(vsConfig);
+
 		const program = path.dirname(document.fileName);
-		const env = Object.assign({}, debugConfig.env, vsConfig['testEnvVars']);
+		const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
 		const envFile = vsConfig['testEnvFile'];
 		const buildFlags = getTestFlags(vsConfig, null);
 		if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 			buildFlags.push('-tags');
 			buildFlags.push(`${vsConfig['buildTags']}`);
 		}
-		const currentDebugConfig = Object.assign({}, debugConfig, { program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
+		const currentDebugConfig = Object.assign({}, this.debugConfig, { program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
 
 		const testPromise = getTestFunctions(document, token).then(testFunctions => {
 			testFunctions.forEach(func => {

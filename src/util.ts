@@ -17,30 +17,6 @@ const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
 const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
 
-export const defaultDebugConfig: any = {
-	'name': 'Launch',
-	'type': 'go',
-	'request': 'launch',
-	'mode': 'debug',
-	'remotePath': '',
-	'port': 2345,
-	'host': '127.0.0.1',
-	'program': '${fileDirname}',
-	'args': [],
-	'showLog': true,
-	'env': {
-		'GOPATH': getCurrentGoPath() // Passing current GOPATH to Delve as it runs in another process
-	},
-	'useApiV1': true,
-	'dlvLoadConfig': {
-		'followPointers': true,
-		'maxVariableRecurse': 1,
-		'maxStringLen': 128,
-		'maxArrayValues': 128,
-		'maxStructFields': -1
-	}
-};
-
 export const goKeywords: string[] = [
 	'break',
 	'case',
@@ -813,27 +789,4 @@ export function killTree(processId: number): void {
 		} catch (err) {
 		}
 	}
-}
-
-export function getDefaultDebugConfiguration(vsConfig: vscode.WorkspaceConfiguration): any {
-	let debugConfig: any = defaultDebugConfig;
-	let delveConfig: any = vsConfig.get('delveConfig');
-
-	// Default Delve config is overridable by workspace settings
-	if (delveConfig !== undefined) {
-		if (delveConfig.useApiV1 !== undefined) {
-			debugConfig.useApiV1 = delveConfig.useApiV1;
-		}
-		if (delveConfig.dlvLoadConfig !== undefined) {
-			debugConfig.dlvLoadConfig = {
-				followPointers: delveConfig.dlvLoadConfig.followPointers,
-				maxVariableRecurse: delveConfig.dlvLoadConfig.maxVariableRecurse,
-				maxStringLen: delveConfig.dlvLoadConfig.maxStringLen,
-				maxArrayValues: delveConfig.dlvLoadConfig.maxArrayValues,
-				maxStructFields: delveConfig.dlvLoadConfig.maxStructFields
-			};
-		}
-	}
-
-	return debugConfig;
 }
