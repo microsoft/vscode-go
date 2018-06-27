@@ -10,20 +10,10 @@ import path = require('path');
 import { TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
 import { getTestFunctions, getBenchmarkFunctions, getTestFlags, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { GoDocumentSymbolProvider } from './goOutline';
-import { getCurrentGoPath } from './util';
+import { getDefaultDebugConfiguration } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
-	private readonly defaultDebugConfig: any = {
-		'name': 'Launch',
-		'type': 'go',
-		'request': 'launch',
-		'mode': 'test',
-		'env': {
-			'GOPATH': getCurrentGoPath() // Passing current GOPATH to Delve as it runs in another process
-		}
-	};
-
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
 		if (!this.enabled) {
 			return [];
@@ -74,7 +64,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		const codelens: CodeLens[] = [];
-		const debugConfig = this.getDebugConfig(vsConfig);
+		const debugConfig = getDefaultDebugConfiguration(vsConfig);
 		const program = path.dirname(document.fileName);
 		const env = Object.assign({}, debugConfig.env, vsConfig['testEnvVars']);
 		const envFile = vsConfig['testEnvFile'];
@@ -139,27 +129,5 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		});
 
 		return Promise.all([testPromise, benchmarkPromise]).then(() => codelens);
-	}
-
-	private getDebugConfig(vsConfig: vscode.WorkspaceConfiguration): any {
-		let debugConfig: any = this.defaultDebugConfig;
-		let delveConfig: any = vsConfig.get('delveConfig');
-
-		if (delveConfig !== undefined) {
-			if (delveConfig.useApiV1 !== undefined) {
-				debugConfig.useApiV1 = delveConfig.useApiV1;
-			}
-			if (delveConfig.dlvLoadConfig !== undefined) {
-				debugConfig.dlvLoadConfig = {
-					followPointers: delveConfig.dlvLoadConfig.followPointers,
-					maxVariableRecurse: delveConfig.dlvLoadConfig.maxVariableRecurse,
-					maxStringLen: delveConfig.dlvLoadConfig.maxStringLen,
-					maxArrayValues: delveConfig.dlvLoadConfig.maxArrayValues,
-					maxStructFields: delveConfig.dlvLoadConfig.maxStructFields
-				};
-			}
-		}
-
-		return debugConfig;
 	}
 }
