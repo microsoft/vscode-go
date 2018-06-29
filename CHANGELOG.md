@@ -1,3 +1,15 @@
+## 0.6.84 - 29th June, 2018
+
+* [Michal Hruby (@mhr3)](https://github.com/mhr3)
+    * Support to run tests that use the test suites from [stretchr/testify](https://github.com/stretchr/testify) suite using codelens. [PR 1707](https://github.com/Microsoft/vscode-go/pull/1707)
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+    * New setting `go.delveConfig` to configure the use of v2 apis from delve to be used when debugging tests as well normal code. [Feature Request 1735](https://github.com/Microsoft/vscode-go/issues/1735) implemented with [PR 1749](https://github.com/Microsoft/vscode-go/pull/1749)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Option to install/update selected tools required by the Go extension. [Feature Request 1731](https://github.com/Microsoft/vscode-go/issues/1731)
+
+
 ## 0.6.83 - 15th Jun, 2018
 
 * [Luis GG (@lggomez)](https://github.com/lggomez)

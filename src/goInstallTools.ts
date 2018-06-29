@@ -318,7 +318,7 @@ function installTools(missing: string[]) {
 			if (tool === 'gocode') {
 				closeToolPromise = new Promise<boolean>((innerResolve) => {
 					cp.execFile(getBinPath('gocode'), ['close'], {}, (err, stdout, stderr) => {
-						if (stderr && stderr.indexOf('rpc: can\'t find service Server.')) {
+						if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
 							outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
 							return innerResolve(false);
 						}
