@@ -33,12 +33,13 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths: string[], alternateTools?: { [key: string]: string; }) {
 	if (binPathCache[toolName]) return binPathCache[toolName];
 
-	if (alternateTools && alternateTools[toolName] && path.isAbsolute(alternateTools[toolName]) && fileExists(alternateTools[toolName])) {
-		binPathCache[toolName] = alternateTools[toolName];
-		return alternateTools[toolName];
+	const alternateTool = (alternateTools && alternateTools[toolName]) ? resolveHomeDir(alternateTools[toolName]) : null;
+	if (alternateTool && path.isAbsolute(alternateTool) && fileExists(alternateTool)) {
+		binPathCache[toolName] = alternateTool;
+		return alternateTool;
 	}
 
-	const binname = (alternateTools && alternateTools[toolName] && !path.isAbsolute(alternateTools[toolName])) ? alternateTools[toolName] : toolName;
+	const binname = (alternateTool && !path.isAbsolute(alternateTool)) ? alternateTool : toolName;
 	for (let i = 0; i < preferredGopaths.length; i++) {
 		if (typeof preferredGopaths[i] === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder
@@ -50,18 +51,18 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 		}
 	}
 
-	// Then search PATH parts
-	let pathFromPath = getBinPathFromEnvVar(binname, envPath, false);
-	if (pathFromPath) {
-		binPathCache[toolName] = pathFromPath;
-		return pathFromPath;
-	}
-
-	// Finally check GOROOT just in case
+	// Check GOROOT (go, gofmt, godoc would be found here)
 	let pathFromGoRoot = getBinPathFromEnvVar(binname, process.env['GOROOT'], true);
 	if (pathFromGoRoot) {
 		binPathCache[toolName] = pathFromGoRoot;
 		return pathFromGoRoot;
+	}
+
+	// Finally search PATH parts
+	let pathFromPath = getBinPathFromEnvVar(binname, envPath, false);
+	if (pathFromPath) {
+		binPathCache[toolName] = pathFromPath;
+		return pathFromPath;
 	}
 
 	// Check default path for go
