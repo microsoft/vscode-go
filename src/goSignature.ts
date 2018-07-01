@@ -103,27 +103,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				currentLine = currentLine.substring(0, position.character);
 			}
 
-			// Walk foward to index quote positions
-			// This is needed to detect string literals and ignore commas within them
-			let doubleQuoteIndexes = new IndexRangeArray();
-			let singleQuoteIndexes = new IndexRangeArray();
-			let backtickQuoteIndexes = new IndexRangeArray();
-			for (let i = 0; i < currentLine.length; i++) {
-				// Ignore escaped quotes, only count string literal boundaries
-				if ((i > 0) && (currentLine[i - 1] !== '\\')) {
-					switch (currentLine[i]) {
-						case '\'':
-							singleQuoteIndexes.PushIndex(i);
-							break;
-						case '"':
-							doubleQuoteIndexes.PushIndex(i);
-							break;
-						case '`':
-							backtickQuoteIndexes.PushIndex(i);
-							break;
-					}
-				}
-			}
+			let stringLiteralBoundaries = this.getStringLiteralIndexes(currentLine);
 
 			for (let char = characterPosition - 1; char >= 0; char--) {
 				switch (currentLine[char]) {
@@ -140,11 +120,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 						parenBalance++;
 						break;
 					case ',':
-						let pushComma = (parenBalance === 0)
-							&& !doubleQuoteIndexes.IsWithinPairRange(char)
-							&& !singleQuoteIndexes.IsWithinPairRange(char)
-							&& !backtickQuoteIndexes.IsWithinPairRange(char);
-						if (pushComma) {
+						if ((parenBalance === 0) && !stringLiteralBoundaries.IsWithinPairRange(char)) {
 							commas.push(new Position(line, char));
 						}
 						break;
@@ -152,6 +128,29 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			}
 		}
 		return null;
+	}
+
+	private getStringLiteralIndexes(currentLine: string): IndexRangeArray {
+		// Index string literal boundaries
+		// This is needed to detect string literals and ignore commas within them
+		let stringLiteralBoundaries = new IndexRangeArray();
+		let stringLiteralRegex = RegExp('([\`\'\"])(?:(?!(?:\\\\|\\1)).|\\\\.)*\\1', 'giu');
+		let m: RegExpExecArray | null = null;
+		do {
+			m = stringLiteralRegex.exec(currentLine);
+			if (m) {
+				stringLiteralBoundaries.PushIndex(m.index);
+				stringLiteralBoundaries.PushIndex(stringLiteralRegex.lastIndex - 1);
+			}
+		} while (m);
+
+		// Check against incomplete string literals as line endings
+		m = RegExp('(?:.(?![\'`\"]))+$', 'giu').exec(currentLine);
+		if (m) {
+			stringLiteralBoundaries.PushIndex(m.index + 1);
+		}
+
+		return stringLiteralBoundaries;
 	}
 }
 
