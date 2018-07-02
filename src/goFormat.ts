@@ -47,8 +47,6 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 	}
 
 	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
-		console.log(`Formatting started.`);
-
 		let formatCommandBinPath = getBinPath(formatTool);
 
 		return new Promise<vscode.TextEdit[]>((resolve, reject) => {
@@ -105,4 +103,3 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 // package main; import \"fmt\"; func main() {fmt.Print(\"Hello\")}
 // package main; import \"fmt\"; import \"math\"; func main() {fmt.Print(\"Hello\")}
 // package main; import \"fmt\"; import \"gopkg.in/Shopify/sarama.v1\"; func main() {fmt.Print(sarama.V0_10_0_0)}
-;
