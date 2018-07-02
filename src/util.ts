@@ -792,7 +792,7 @@ export function killTree(processId: number): void {
 	}
 }
 
-export function makeMemoizedOffsetBuffer(buffer: Buffer): (offset: number) => number {
+export function makeMemoizedOffsetConverter(buffer: Buffer): (offset: number) => number {
 	let memo = new NearestNeighborDict(new Node<number, number>(0, 0), (a, b) => a < b ? b - a : a - b);
 	return (offset: number) => {
 		let nearest = memo.get(offset);
