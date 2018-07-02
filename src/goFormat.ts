@@ -92,7 +92,9 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 				   }
 				 */
 				sendTelemetryEvent('format', { tool: formatTool }, { timeTaken });
-				console.log(`Formatting took (${timeTaken}ms).`);
+				if (timeTaken > 750) {
+					console.log(`Formatting took too long(${timeTaken}ms). Format On Save feature could be aborted.`);
+				}
 				return resolve(textEdits);
 			});
 			p.stdin.end(document.getText());
