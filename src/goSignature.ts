@@ -132,7 +132,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 	private getStringLiteralIndexes(currentLine: string): IndexRangeArray {
 		// Index string literal boundaries
-		// This is needed to detect string literals and ignore commas within them
+		// This is needed to detect string literals and avoid pushing commas within them
 		let stringLiteralBoundaries = new IndexRangeArray();
 		let stringLiteralRegex = RegExp('([\`\'\"])(?:(?!(?:\\\\|\\1)).|\\\\.)*\\1', 'giu');
 		let m: RegExpExecArray | null = null;
@@ -140,20 +140,29 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			m = stringLiteralRegex.exec(currentLine);
 			if (m) {
 				stringLiteralBoundaries.PushIndex(m.index);
-				stringLiteralBoundaries.PushIndex(stringLiteralRegex.lastIndex - 1);
+				stringLiteralBoundaries.PushIndex(stringLiteralRegex.lastIndex);
 			}
 		} while (m);
 
-		// Check against incomplete string literals as line endings
-		m = RegExp('(?:.(?![\'`\"]))+$', 'giu').exec(currentLine);
-		if (m) {
-			stringLiteralBoundaries.PushIndex(m.index + 1);
+		// Check for incomplete literals as current line terminators
+		for (let char = stringLiteralBoundaries.LastIndex; char < currentLine.length; char++) {
+			if ((currentLine[char] === '`')
+				|| (currentLine[char] === '\'')
+				|| (currentLine[char] === '"')) {
+				stringLiteralBoundaries.PushIndex(char);
+				break;
+			}
 		}
 
 		return stringLiteralBoundaries;
 	}
 }
 
+/*
+* Array wrapper that contains indexes treated as pairs
+* An odd number of elements will consider the last
+* element as the start of a new (incomplete) range
+*/
 class IndexRangeArray {
 	LastIndex: number;
 	Array: Array<number>;
@@ -168,6 +177,8 @@ class IndexRangeArray {
 		this.LastIndex = index;
 	}
 
+	// Traverse the index pairs contained in the array
+	// This assumes a forward (increasing) order
 	public IsWithinPairRange(index: number): boolean {
 		let isEven = (this.Array.length % 2) === 0;
 		if (index > this.LastIndex) return !isEven;
