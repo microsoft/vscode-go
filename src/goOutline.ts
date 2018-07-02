@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getFileArchive, getToolsEnvVars, killProcess } from './util';
+import { getBinPath, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedOffsetBuffer } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with https://github.com/ramya-rao-a/go-outline
@@ -104,7 +104,14 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 		'function': vscode.SymbolKind.Function
 	};
 
-	private convertToCodeSymbols(document: vscode.TextDocument, decls: GoOutlineDeclaration[], symbols: vscode.SymbolInformation[], containerName: string): void {
+	private convertToCodeSymbols(
+		document: vscode.TextDocument,
+		decls: GoOutlineDeclaration[],
+		symbols: vscode.SymbolInformation[],
+		containerName: string,
+		documentTextBuffer: Buffer,
+		byteOffsetToDocumentOffset: (offset: number) => number): void {
+
 		let gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
 		let includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
 		(decls || []).forEach(decl => {
@@ -114,9 +121,15 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 				label = '(' + decl.receiverType + ').' + label;
 			}
 
-			let codeBuf = new Buffer(document.getText());
-			let start = codeBuf.slice(0, decl.start - 1).toString().length;
-			let end = codeBuf.slice(0, decl.end - 1).toString().length;
+			let start = byteOffsetToDocumentOffset(decl.start - 1);
+			let end = byteOffsetToDocumentOffset(decl.end - 1);
+
+			// let documentTextBuffer = new Buffer(document.getText());
+			// let _start = documentTextBuffer.toString('utf8', 0, decl.start - 1).length;
+			// let _end = documentTextBuffer.toString('utf8', 0, decl.end - 1).length;
+			// if (_start !== start || _end !== end) {
+			// 	console.log('bad');
+			// }
 
 			let symbolInfo = new vscode.SymbolInformation(
 				label,
@@ -126,16 +139,24 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 				containerName);
 			symbols.push(symbolInfo);
 			if (decl.children) {
-				this.convertToCodeSymbols(document, decl.children, symbols, decl.label);
+				this.convertToCodeSymbols(document, decl.children, symbols, decl.label, documentTextBuffer, byteOffsetToDocumentOffset);
 			}
 		});
 	}
 
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
+		let t0 = Date.now();
+		console.log(`provideDocumentSymbols starting`);
 		let options = { fileName: document.fileName, document: document };
 		return documentSymbols(options, token).then(decls => {
 			let symbols: vscode.SymbolInformation[] = [];
-			this.convertToCodeSymbols(document, decls, symbols, '');
+			console.log(`documentSymbols took ${Date.now() - t0}ms`);
+
+			let textBuffer = new Buffer(document.getText());
+			let byteOffsetToDocumentOffset = makeMemoizedOffsetBuffer(textBuffer);
+			this.convertToCodeSymbols(document, decls, symbols, '', textBuffer, byteOffsetToDocumentOffset);
+
+			console.log(`provideDocumentSymbols took ${Date.now() - t0}ms`);
 			return symbols;
 		});
 	}

@@ -12,6 +12,7 @@ import fs = require('fs');
 import os = require('os');
 import { outputChannel } from './goStatus';
 import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
+import { NearestNeighborDict, Node } from './avlTree';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -789,4 +790,24 @@ export function killTree(processId: number): void {
 		} catch (err) {
 		}
 	}
+}
+
+export function makeMemoizedOffsetBuffer(buffer: Buffer): (offset: number) => number {
+	let memo = new NearestNeighborDict(new Node<number, number>(0, 0), (a, b) => a < b ? b - a : a - b);
+	return (offset: number) => {
+		let nearest = memo.get(offset);
+		let byteDelta = offset - nearest.key;
+
+		if (byteDelta === 0)
+			return nearest.value;
+
+		let charDelta: number;
+		if (byteDelta > 0)
+			charDelta = buffer.toString('utf8', nearest.key, offset).length;
+		else
+			charDelta = -buffer.toString('utf8', offset, nearest.key).length;
+
+		memo.insert(offset, nearest.value + charDelta);
+		return nearest.value + charDelta;
+	};
 }
