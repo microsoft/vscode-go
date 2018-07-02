@@ -6,13 +6,11 @@
 'use strict';
 
 import vscode = require('vscode');
-import path = require('path');
-import fs = require('fs');
-import { parseFilePrelude, getCurrentGoPath, getImportPath, getRootWorkspaceFolder } from './util';
+import cp = require('child_process');
+import { parseFilePrelude, getCurrentGoPath, getImportPath, getRootWorkspaceFolder, getBinPath } from './util';
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
-import { fixDriveCasingInWindows, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -108,7 +106,7 @@ export function addImport(arg: string) {
 	});
 }
 
-export function addImportToWorkspace(arg: string) {
+export function addImportToWorkspace() {
 	const editor = vscode.window.activeTextEditor;
 	const selection = editor.selection;
 
@@ -138,21 +136,27 @@ export function addImportToWorkspace(arg: string) {
 		return;
 	}
 
-	let filePath = fixDriveCasingInWindows(editor.document.fileName);
-	let fileDirPath = path.dirname(filePath);
-	let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
-	let globalPackagePath = path.join(currentWorkspace, importPath);
-	if (!fs.existsSync(globalPackagePath)) {
-		vscode.window.showErrorMessage('Import path not found on disk');
-		return;
-	}
+	const goRuntimePath = getBinPath('go');
+	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
 
-	const importPathUri = vscode.Uri.file(globalPackagePath);
-	const existingWorkspaceFolder = getRootWorkspaceFolder(importPathUri);
-	if (existingWorkspaceFolder !== undefined) {
-		vscode.window.showInformationMessage('Already available under ' + existingWorkspaceFolder.name);
-		return;
-	}
+	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
+		if (!stdout) {
+			return;
+		}
 
-	vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, { uri: importPathUri });
+		let dirs = stdout.split('\n');
+		if (dirs.length === 0) {
+			return;
+		}
+
+		const importPathUri = vscode.Uri.file(dirs[0]);
+
+		const existingWorkspaceFolder = getRootWorkspaceFolder(importPathUri);
+		if (existingWorkspaceFolder !== undefined) {
+			vscode.window.showInformationMessage('Already available under ' + existingWorkspaceFolder.name);
+			return;
+		}
+
+		vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, { uri: importPathUri });
+	});
 }
