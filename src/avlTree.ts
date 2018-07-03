@@ -109,6 +109,7 @@ export class Node<K, V> {
 }
 
 export type DistanceFunction<K> = (a: K, b: K) => number;
+export type CompareFunction<K> = (a: K, b: K) => number;
 
 /**
  * Represents how balanced a node's left and right children are.
@@ -127,6 +128,10 @@ const enum BalanceState {
 }
 
 export class NearestNeighborDict<K, V> {
+
+	public static NUMERIC_DISTANCE_FUNCTION = (a: number, b: number) => a > b ? a - b : b - a;
+	public static DEFAULT_COMPARE_FUNCTION = (a: any, b: any) => a > b ? 1 : a < b ? -1 : 0;
+
 	protected _root: Node<K, V> = null;
 
 	/**
@@ -134,9 +139,14 @@ export class NearestNeighborDict<K, V> {
 	 */
 	constructor(
 		start: Node<K, V>,
-		private _distance: DistanceFunction<K>
+		private _distance: DistanceFunction<K>,
+		private _compare: CompareFunction<K> = NearestNeighborDict.DEFAULT_COMPARE_FUNCTION
 	) {
 		this.insert(start.key, start.value);
+	}
+
+	public height() {
+		return this._root.height;
 	}
 
 	/**
@@ -160,9 +170,9 @@ export class NearestNeighborDict<K, V> {
 			return new Node(key, value);
 		}
 
-		if (this._distance(key, root.key) < 0) {
+		if (this._compare(key, root.key) < 0) {
 			root.left = this._insert(key, value, root.left);
-		} else if (this._distance(key, root.key) > 0) {
+		} else if (this._compare(key, root.key) > 0) {
 			root.right = this._insert(key, value, root.right);
 		} else {
 			return root;
@@ -173,7 +183,7 @@ export class NearestNeighborDict<K, V> {
 		const balanceState = this._getBalanceState(root);
 
 		if (balanceState === BalanceState.UNBALANCED_LEFT) {
-			if (this._distance(key, root.left.key) < 0) {
+			if (this._compare(key, root.left.key) < 0) {
 				// Left left case
 				root = root.rotateRight();
 			} else {
@@ -184,7 +194,7 @@ export class NearestNeighborDict<K, V> {
 		}
 
 		if (balanceState === BalanceState.UNBALANCED_RIGHT) {
-			if (this._distance(key, root.right.key) > 0) {
+			if (this._compare(key, root.right.key) > 0) {
 				// Right right case
 				root = root.rotateLeft();
 			} else {
@@ -213,7 +223,7 @@ export class NearestNeighborDict<K, V> {
 	 * @return The value of the node or null if it doesn't exist.
 	 */
 	private _get(key: K, root: Node<K, V>, closest: Node<K, V>): Node<K, V> {
-		const result = this._distance(key, root.key);
+		const result = this._compare(key, root.key);
 		if (result === 0) {
 			return root;
 		}

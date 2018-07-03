@@ -2,6 +2,21 @@
 	"version": "0.1.0",
 	"configurations": [
 		{
+			"type": "node",
+			"request": "launch",
+			"name": "Mocha Tests",
+			"program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+			"args": [
+				"-u",
+				"tdd",
+				"--timeout",
+				"5000",
+				"--colors",
+				"${workspaceRoot}/out/test/unit"
+			],
+			"internalConsoleOptions": "openOnSessionStart"
+		},
+		{
 			"name": "Launch Extension",
 			"type": "extensionHost",
 			"request": "launch",
