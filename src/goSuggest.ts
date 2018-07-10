@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
@@ -354,6 +354,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private getMatchingPackages(word: string, suggestionSet: Set<string>): vscode.CompletionItem[] {
 		if (!word) return [];
 		let completionItems = [];
+		const rootPath = vscode.workspace.rootPath.slice(getCurrentGoPath().length + 5);
 
 		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
 			if (pkgName.startsWith(word) && !suggestionSet.has(pkgName)) {
@@ -371,9 +372,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				// Add same sortText to the unimported packages so that they appear after the suggestions from gocode
 				const isStandardPackage = !item.detail.includes('.');
 				item.sortText = isStandardPackage ? 'za' : 'zb';
-				completionItems.push(item);
+				if (pkgPath.startsWith(rootPath)) {
+					item.sortText = 'a';
+					completionItems.unshift(item);
+				} else {
+					completionItems.push(item);
+				}
 			}
 		});
+
 		return completionItems;
 	}
 

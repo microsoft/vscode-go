@@ -188,7 +188,7 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 			if (!foundPkgRootDir) {
 				// try to guess package root dir
 				let vendorIndex = pkgPath.indexOf('/vendor/');
-				if (vendorIndex !== -1 ) {
+				if (vendorIndex !== -1) {
 					foundPkgRootDir = path.join(currentWorkspace, pkgPath.substring(0, vendorIndex).replace('/', path.sep));
 					pkgRootDirs.set(fileDirPath, foundPkgRootDir);
 				}
