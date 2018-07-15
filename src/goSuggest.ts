@@ -213,7 +213,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								}
 								// Avoid adding snippet for function suggest when cursor is followed by ()
 								// i.e: met() -> method()()
-								if (lineText.substr(position.character, 2) !== '()') {
+								if (lineText.substr(position.character, 2) !== '()' && lineText.substr(position.character, 1) !== ')' && lineText.substr(position.character, 1) !== ',') {
 									item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
 								}
 							}
