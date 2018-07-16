@@ -109,7 +109,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 		decls: GoOutlineDeclaration[],
 		symbols: vscode.SymbolInformation[],
 		containerName: string,
-		byteOffsetToDocumentOffset: (offset: number) => number): void {
+		byteOffsetToDocumentOffset: (byteOffset: number) => number): void {
 
 		let gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
 		let includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
@@ -137,7 +137,6 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 	}
 
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-		let t0 = Date.now();
 		let options = { fileName: document.fileName, document: document };
 		return documentSymbols(options, token).then(decls => {
 			let symbols: vscode.SymbolInformation[] = [];

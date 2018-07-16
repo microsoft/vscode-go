@@ -208,7 +208,7 @@ export class NearestNeighborDict<K, V> {
 	}
 
 	/**
-	 * Gets the value of a node within the tree with a specific key.
+	 * Gets a node within the tree with a specific key, or the nearest neighbor to that node if it does not exist.
 	 * @param key The key being searched for.
 	 * @return The (key, value) pair of the node with key nearset the given key in value.
 	 */
@@ -217,10 +217,11 @@ export class NearestNeighborDict<K, V> {
 	}
 
 	/**
-	 * Gets the value of a node within the tree with a specific key.
+	 * Gets a node within the tree with a specific key, or the node closest (as measured by this._distance) to that node if the key is not present
 	 * @param key The key being searched for.
 	 * @param root The root of the tree to search in.
-	 * @return The value of the node or null if it doesn't exist.
+	 * @param closest The current best estimate of the node closest to the node being searched for, as measured by this._distance
+	 * @return The (key, value) pair of the node with key nearset the given key in value.
 	 */
 	private _get(key: K, root: Node<K, V>, closest: Node<K, V>): Node<K, V> {
 		const result = this._compare(key, root.key);
@@ -251,7 +252,12 @@ export class NearestNeighborDict<K, V> {
 			case -1: return BalanceState.SLIGHTLY_UNBALANCED_RIGHT;
 			case 1: return BalanceState.SLIGHTLY_UNBALANCED_LEFT;
 			case 2: return BalanceState.UNBALANCED_LEFT;
-			default: return BalanceState.BALANCED;
+			case 0: return BalanceState.BALANCED;
+			default: {
+				console.error('Internal error: Avl tree should never be more than two levels unbalanced');
+				if (heightDifference > 0) return BalanceState.UNBALANCED_LEFT;
+				if (heightDifference < 0) return BalanceState.UNBALANCED_RIGHT;
+			}
 		}
 	}
 }
