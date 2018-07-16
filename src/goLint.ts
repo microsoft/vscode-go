@@ -43,6 +43,8 @@ export function lintCode(lintWorkspace?: boolean) {
  * @param lintWorkspace If true runs linter in all workspace.
  */
 export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?: boolean): Promise<ICheckResult[]> {
+	epoch++;
+	let closureEpoch = epoch;
 	if (tokenSource) {
 		if (running) {
 			tokenSource.cancel();
@@ -113,12 +115,14 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		false,
 		tokenSource.token
 	).then((result) => {
-		running = false;
+		if (closureEpoch === epoch)
+			running = false;
 		return result;
 	});
 
 	return lintPromise;
 }
 
+let epoch = 0;
 let tokenSource: vscode.CancellationTokenSource;
 let running = false;
