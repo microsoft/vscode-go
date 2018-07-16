@@ -14,12 +14,12 @@ suite('NearestNeighborDict Tests', () => {
 		assert(dict.height() < 4);
 
 		entries.forEach(x => {
-			assert.equal(dict.get(x + 0.1).key, x);
-			assert.equal(dict.get(x - 0.1).key, x);
+			assert.equal(dict.getNearest(x + 0.1).key, x);
+			assert.equal(dict.getNearest(x - 0.1).key, x);
 		});
 
-		assert.equal(dict.get(23 + 10).key, 23);
-		assert.equal(dict.get(23 - 4).key, 23);
+		assert.equal(dict.getNearest(23 + 10).key, 23);
+		assert.equal(dict.getNearest(23 - 4).key, 23);
 	});
 
 	test('basic insert/get: increasing', () => {
@@ -29,12 +29,12 @@ suite('NearestNeighborDict Tests', () => {
 		assert(dict.height() < 4);
 
 		entries.forEach(x => {
-			assert.equal(dict.get(x + 0.1).key, x);
-			assert.equal(dict.get(x - 0.1).key, x);
+			assert.equal(dict.getNearest(x + 0.1).key, x);
+			assert.equal(dict.getNearest(x - 0.1).key, x);
 		});
 
-		assert.equal(dict.get(23 + 10).key, 23);
-		assert.equal(dict.get(23 - 4).key, 23);
+		assert.equal(dict.getNearest(23 + 10).key, 23);
+		assert.equal(dict.getNearest(23 - 4).key, 23);
 	});
 
 	test('basic insert/get: decreasing', () => {
@@ -44,11 +44,11 @@ suite('NearestNeighborDict Tests', () => {
 		assert(dict.height() < 4);
 
 		entries.forEach(x => {
-			assert.equal(dict.get(x + 0.1).key, x);
-			assert.equal(dict.get(x - 0.1).key, x);
+			assert.equal(dict.getNearest(x + 0.1).key, x);
+			assert.equal(dict.getNearest(x - 0.1).key, x);
 		});
 
-		assert.equal(dict.get(23 + 10).key, 23);
-		assert.equal(dict.get(23 - 4).key, 23);
+		assert.equal(dict.getNearest(23 + 10).key, 23);
+		assert.equal(dict.getNearest(23 - 4).key, 23);
 	});
 });

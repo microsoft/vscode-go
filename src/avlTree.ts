@@ -212,8 +212,8 @@ export class NearestNeighborDict<K, V> {
 	 * @param key The key being searched for.
 	 * @return The (key, value) pair of the node with key nearset the given key in value.
 	 */
-	public get(key: K): Node<K, V> {
-		return this._get(key, this._root, this._root);
+	public getNearest(key: K): Node<K, V> {
+		return this._getNearest(key, this._root, this._root);
 	}
 
 	/**
@@ -223,7 +223,7 @@ export class NearestNeighborDict<K, V> {
 	 * @param closest The current best estimate of the node closest to the node being searched for, as measured by this._distance
 	 * @return The (key, value) pair of the node with key nearset the given key in value.
 	 */
-	private _get(key: K, root: Node<K, V>, closest: Node<K, V>): Node<K, V> {
+	private _getNearest(key: K, root: Node<K, V>, closest: Node<K, V>): Node<K, V> {
 		const result = this._compare(key, root.key);
 		if (result === 0) {
 			return root;
@@ -232,10 +232,10 @@ export class NearestNeighborDict<K, V> {
 		closest = this._distance(key, root.key) < this._distance(key, closest.key) ? root : closest;
 
 		if (result < 0) {
-			return root.left ? this._get(key, root.left, closest) : closest;
+			return root.left ? this._getNearest(key, root.left, closest) : closest;
 		}
 		else {
-			return root.right ? this._get(key, root.right, closest) : closest;
+			return root.right ? this._getNearest(key, root.right, closest) : closest;
 		}
 	}
 
