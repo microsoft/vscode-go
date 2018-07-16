@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedOffsetConverter } from './util';
+import { getBinPath, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedByteOffsetConverter } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with https://github.com/ramya-rao-a/go-outline
@@ -140,7 +140,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 		let options = { fileName: document.fileName, document: document };
 		return documentSymbols(options, token).then(decls => {
 			let symbols: vscode.SymbolInformation[] = [];
-			this.convertToCodeSymbols(document, decls, symbols, '', makeMemoizedOffsetConverter(new Buffer(document.getText())));
+			this.convertToCodeSymbols(document, decls, symbols, '', makeMemoizedByteOffsetConverter(new Buffer(document.getText())));
 			return symbols;
 		});
 	}

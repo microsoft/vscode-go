@@ -792,7 +792,7 @@ export function killTree(processId: number): void {
 	}
 }
 
-export function makeMemoizedOffsetConverter(buffer: Buffer): (byteOffset: number) => number {
+export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: number) => number {
 	let defaultValue = new Node<number, number>(0, 0); // 0 bytes will always be 0 characters
 	let memo = new NearestNeighborDict(defaultValue, NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
 	return (byteOffset: number) => {
