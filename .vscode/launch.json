@@ -2,9 +2,55 @@
 	"version": "0.1.0",
 	"configurations": [
 		{
+			"name": "Launch Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			// path to VSCode executable
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}"
+			],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceRoot}/out/**/*.js"
+			],
+			"preLaunchTask": "npm"
+		},
+		{
+			"name": "Launch as server",
+			"type": "node2",
+			"request": "launch",
+			"program": "${workspaceRoot}/out/src/debugAdapter/goDebug.js",
+			"args": [
+				"--server=4712"
+			],
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceRoot}/out/**/*.js"
+			]
+		},
+		{
+			"name": "Launch Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			// the workspace path should be GOPATH
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}",
+				"--extensionTestsPath=${workspaceRoot}/out/test"
+			],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceRoot}/out/**/*.js"
+			],
+			"preLaunchTask": "npm"
+		},
+		{
 			"type": "node",
 			"request": "launch",
-			"name": "Mocha Tests",
+			"name": "Unit Tests",
 			"program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
 			"args": [
 				"-u",
@@ -15,45 +61,15 @@
 				"${workspaceRoot}/out/test/unit"
 			],
 			"internalConsoleOptions": "openOnSessionStart"
-		},
-		{
-			"name": "Launch Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			// path to VSCode executable
-			"runtimeExecutable": "${execPath}",
-			"args": [ "--extensionDevelopmentPath=${workspaceRoot}" ],
-			"stopOnEntry": false,
-			"sourceMaps": true,
-			"outFiles": ["${workspaceRoot}/out/**/*.js"],
-			"preLaunchTask": "npm"
-		},
-		{
-			"name": "Launch as server",
-			"type": "node2",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/src/debugAdapter/goDebug.js",
-			"args": [ "--server=4712" ],
-			"sourceMaps": true,
-			"outFiles": ["${workspaceRoot}/out/**/*.js"]
-		},
-		{
-			"name": "Launch Tests",
-			"type": "extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			// the workspace path should be GOPATH
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}", "--extensionTestsPath=${workspaceRoot}/out/test"],
-			"stopOnEntry": false,
-			"sourceMaps": true,
-			"outFiles": ["${workspaceRoot}/out/**/*.js"],
-			"preLaunchTask": "npm"
 		}
 	],
 	"compounds": [
 		{
 			"name": "Extension + Debug server",
-			"configurations": ["Launch Extension", "Launch as server"]
+			"configurations": [
+				"Launch Extension",
+				"Launch as server"
+			]
 		}
 	]
 }
