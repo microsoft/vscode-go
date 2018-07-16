@@ -567,7 +567,7 @@ class GoDebugSession extends DebugSession {
 				let clientVersion = this.delve.isApiV1 ? 1 : 2;
 				if (out.APIVersion !== clientVersion) {
 					logError(`Failed to get version: The remote server is running on delve v${out.APIVersion} API and the client is running v${clientVersion} API`);
-					return  this.sendErrorResponse(response,
+					return this.sendErrorResponse(response,
 						3000,
 						'Failed to get version: The remote server is running on delve v{cli} API and the client is running v{ser} API',
 						{ ser: out.APIVersion.toString(), cli: clientVersion });
@@ -819,8 +819,9 @@ class GoDebugSession extends DebugSession {
 			};
 		} else if (v.kind === GoReflectKind.String) {
 			let val = v.value;
-			if (v.value && v.value.length < v.len) {
-				val += `...+${v.len - v.value.length} more`;
+			let byteLength = Buffer.byteLength(val || '');
+			if (v.value && byteLength < v.len) {
+				val += `...+${v.len - byteLength} more`;
 			}
 			return {
 				result: v.unreadable ? ('<' + v.unreadable + '>') : ('"' + val + '"'),
