@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
-import { promptForMissingTool } from './goInstallTools';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
 
@@ -152,8 +152,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			let stdout = '';
 			let stderr = '';
 
+			let goCodeFlags = ['-f=json'];
+			if (!this.setGocodeOptions) {
+				goCodeFlags.push('-builtin');
+			}
+
 			// Spawn `gocode` process
-			let p = cp.spawn(gocode, ['-f=json', 'autocomplete', filename, '' + offset], { env });
+			let p = cp.spawn(gocode, [...goCodeFlags, 'autocomplete', filename, '' + offset], { env });
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
 			p.on('error', err => {
@@ -169,6 +174,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						if (stderr.indexOf('rpc: can\'t find service Server.AutoComplete') > -1 && !this.killMsgShown) {
 							vscode.window.showErrorMessage('Auto-completion feature failed as an older gocode process is still running. Please kill the running process for gocode and try again.');
 							this.killMsgShown = true;
+						}
+						if (stderr.startsWith('flag provided but not defined:')) {
+							promptForUpdatingTool('gocode');
 						}
 						return reject();
 					}
