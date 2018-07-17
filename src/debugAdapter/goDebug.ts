@@ -587,7 +587,7 @@ class GoDebugSession extends DebugSession {
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		verbose('DisconnectRequest');
 		this.delve.close();
-		
+
 		// Timeout to ensure detach is complete.
 		setTimeout(() => {
 			if (this.delve.debugProcess) {
