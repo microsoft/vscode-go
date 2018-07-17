@@ -350,7 +350,7 @@ function installTools(missing: string[]) {
 			if (missing.indexOf('go-langserver') > -1) {
 				outputChannel.appendLine('Reload VS Code window to use the Go language server');
 			}
-			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
+			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go.');
 			return;
 		}
 
