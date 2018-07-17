@@ -203,7 +203,14 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								);
 							}
 							if ((config['useCodeSnippetsOnFunctionSuggest'] || config['useCodeSnippetsOnFunctionSuggestWithoutType'])
-								&& (suggest.class === 'func' || suggest.class === 'var' && suggest.type.startsWith('func(') && lineText.substr(position.character, 1) !== ')' && lineText.substr(position.character, 1) !== ',')) {
+								&& (
+									(suggest.class === 'func' && lineText.substr(position.character, 2) !== '()') // Avoids met() -> method()()
+									|| (
+										suggest.class === 'var'
+										&& suggest.type.startsWith('func(')
+										&& lineText.substr(position.character, 1) !== ')' // Avoids snippets when typing params in a func call
+										&& lineText.substr(position.character, 1) !== ',' // Avoids snippets when typing params in a func call
+									))) {
 								let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));
 								let paramSnippets = [];
 								for (let i = 0; i < params.length; i++) {
@@ -219,11 +226,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 										paramSnippets.push('${' + (i + 1) + ':' + param + '}');
 									}
 								}
-								// Avoid adding snippet for function suggest when cursor is followed by ()
-								// i.e: met() -> method()()
-								if (lineText.substr(position.character, 2) !== '()') {
-									item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
-								}
+								item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
 							}
 							if (config['useCodeSnippetsOnFunctionSuggest'] && suggest.class === 'type' && suggest.type.startsWith('func(')) {
 								let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));

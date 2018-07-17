@@ -66,6 +66,7 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'buildTags', 'hello.go'), path.join(fixturePath, 'buildTags', 'hello.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'completions', 'unimportedPkgs.go'), path.join(fixturePath, 'completions', 'unimportedPkgs.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'completions', 'snippets.go'), path.join(fixturePath, 'completions', 'snippets.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'completions', 'nosnippets.go'), path.join(fixturePath, 'completions', 'nosnippets.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'completions', 'exportedMemberDocs.go'), path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'noimports.go'), path.join(fixturePath, 'importTest', 'noimports.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'groupImports.go'), path.join(fixturePath, 'importTest', 'groupImports.go'));
@@ -831,6 +832,36 @@ It returns the number of bytes written and any write error encountered.
 					noFunctionSnippet, withFunctionSnippet, withFunctionSnippetNotype,
 					noFunctionAsVarSnippet, withFunctionAsVarSnippet, withFunctionAsVarSnippetNoType,
 					noFunctionAsTypeSnippet, withFunctionAsTypeSnippet]).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
+			});
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+	});
+
+	test('Test No Completion Snippets For Functions', (done) => {
+		let provider = new GoCompletionItemProvider();
+		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'nosnippets.go'));
+		let baseConfig = vscode.workspace.getConfiguration('go');
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+
+				let symbolFollowedByBrackets = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(5, 10), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'Print');
+					assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is followed by ().');
+				});
+
+				let symbolAsLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(7, 13), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is a parameter inside func call');
+				});
+
+				let symbolsAsNonLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(8, 11), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is one of the parameters inside func call.');
+				});
+
+				return Promise.all([
+					symbolFollowedByBrackets, symbolAsLastParameter, symbolsAsNonLastParameter]).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
 			});
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
