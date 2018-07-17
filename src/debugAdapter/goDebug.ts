@@ -463,7 +463,8 @@ class Delve {
 				});
 			});
 		} else {
-			killTree(this.debugProcess.pid);
+			this.call('Detach', [{ kill: true }], null);
+			
 		}
 	}
 }
@@ -587,8 +588,14 @@ class GoDebugSession extends DebugSession {
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		verbose('DisconnectRequest');
 		this.delve.close();
-		super.disconnectRequest(response, args);
-		verbose('DisconnectResponse');
+		
+		setTimeout(() => {
+			if (this.delve.debugProcess) {
+				killTree(this.delve.debugProcess.pid);
+			}
+			super.disconnectRequest(response, args);
+			verbose('DisconnectResponse');
+		}, 1000);
 	}
 
 	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
