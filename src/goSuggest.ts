@@ -5,9 +5,11 @@
 
 'use strict';
 
+import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
@@ -354,7 +356,14 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private getMatchingPackages(word: string, suggestionSet: Set<string>): vscode.CompletionItem[] {
 		if (!word) return [];
 		let completionItems = [];
-		const rootPath = vscode.workspace.rootPath.slice(getCurrentGoPath().length + 5);
+		const editor = vscode.window.activeTextEditor;
+		const documentUri = editor ? editor.document.uri : null;
+		const cwd = path.dirname(documentUri ? documentUri.path : "");
+		const workSpaceFolder = vscode.workspace.getWorkspaceFolder(documentUri);
+		const goPath = getCurrentGoPath();
+		const goWorkSpace = getCurrentGoWorkspaceFromGOPATH(goPath, cwd);
+		const workspaceRootPath = workSpaceFolder ? workSpaceFolder.uri.path : cwd;
+		const rootPath = workspaceRootPath.slice(goWorkSpace.length + 1);
 
 		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
 			if (pkgName.startsWith(word) && !suggestionSet.has(pkgName)) {
