@@ -11,7 +11,6 @@ const methodRegex = /^func\s+\(\s*\w+\s+\*?\w+\s*\)\s+/;
 class ReferencesCodeLens extends CodeLens {
 	constructor(
 		public document: TextDocument,
-		public symbol: SymbolInformation,
 		range: Range
 	) {
 		super(range);
@@ -31,7 +30,7 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 
 		return this.provideDocumentSymbols(document, token).then(symbols => {
 			return symbols.map(symbol => {
-				let position = symbol.location.range.start;
+				let position = symbol.range.start;
 
 				// Add offset for functions as go-outline returns position at the keyword func instead of func name
 				if (symbol.kind === vscode.SymbolKind.Function) {
@@ -39,7 +38,7 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 					let match = methodRegex.exec(funcDecl);
 					position = position.translate(0, match ? match[0].length : 5);
 				}
-				return new ReferencesCodeLens(document, symbol, new vscode.Range(position, position));
+				return new ReferencesCodeLens(document, new vscode.Range(position, position));
 			});
 		});
 	}
@@ -74,26 +73,28 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		});
 	}
 
-	private provideDocumentSymbols(document: TextDocument, token: CancellationToken): Thenable<vscode.SymbolInformation[]> {
+	private provideDocumentSymbols(document: TextDocument, token: CancellationToken): Thenable<vscode.DocumentSymbol[]> {
 		let symbolProvider = new GoDocumentSymbolProvider();
 		let isTestFile = document.fileName.endsWith('_test.go');
-		return symbolProvider.provideDocumentSymbols(document, token).then(symbols => {
-			return symbols.filter(symbol => {
+		return symbolProvider.provideDocumentSymbols(document, token)
+			.then(symbols => symbols[0].children)
+			.then(symbols => {
+				return symbols.filter(symbol => {
 
-				if (symbol.kind === vscode.SymbolKind.Interface) {
-					return true;
-				}
-
-				if (symbol.kind === vscode.SymbolKind.Function) {
-					if (isTestFile && (symbol.name.startsWith('Test') || symbol.name.startsWith('Example') || symbol.name.startsWith('Benchmark'))) {
-						return false;
+					if (symbol.kind === vscode.SymbolKind.Interface) {
+						return true;
 					}
-					return true;
-				}
 
-				return false;
-			}
-			);
-		});
+					if (symbol.kind === vscode.SymbolKind.Function) {
+						if (isTestFile && (symbol.name.startsWith('Test') || symbol.name.startsWith('Example') || symbol.name.startsWith('Benchmark'))) {
+							return false;
+						}
+						return true;
+					}
+
+					return false;
+				}
+				);
+			});
 	}
 }

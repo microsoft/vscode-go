@@ -54,12 +54,13 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private getCodeLensForPackage(document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
 		let documentSymbolProvider = new GoDocumentSymbolProvider();
 		return documentSymbolProvider.provideDocumentSymbols(document, token)
+			.then(symbols => symbols[0].children)
 			.then(symbols => {
 				const pkg = symbols.find(sym => sym.kind === vscode.SymbolKind.Package && !!sym.name);
 				if (!pkg) {
 					return;
 				}
-				const range = pkg.location.range;
+				const range = pkg.range;
 				const packageCodeLens = [
 					new CodeLens(range, {
 						title: 'run package tests',
@@ -106,7 +107,8 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 					command: 'go.test.cursor',
 					arguments: [{ functionName: func.name }]
 				};
-				codelens.push(new CodeLens(func.location.range, runTestCmd));
+
+				codelens.push(new CodeLens(func.range, runTestCmd));
 
 				const args = getTestFunctionDebugArgs(document, func.name, testFunctions);
 				const debugTestCmd: Command = {
@@ -114,7 +116,8 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 					command: 'go.debug.startSession',
 					arguments: [Object.assign({}, currentDebugConfig, { args })]
 				};
-				codelens.push(new CodeLens(func.location.range, debugTestCmd));
+
+				codelens.push(new CodeLens(func.range, debugTestCmd));
 			});
 		});
 
@@ -126,7 +129,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 					arguments: [{ functionName: func.name }]
 				};
 
-				codelens.push(new CodeLens(func.location.range, runBenchmarkCmd));
+				codelens.push(new CodeLens(func.range, runBenchmarkCmd));
 
 				const debugTestCmd: Command = {
 					title: 'debug benchmark',
@@ -134,7 +137,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 					arguments: [Object.assign({}, currentDebugConfig, { args: ['-test.bench', '^' + func.name + '$', '-test.run', 'a^'] })]
 				};
 
-				codelens.push(new CodeLens(func.location.range, debugTestCmd));
+				codelens.push(new CodeLens(func.range, debugTestCmd));
 			});
 
 		});

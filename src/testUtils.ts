@@ -100,10 +100,11 @@ export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args?: any
  * @param the URI of a Go source file.
  * @return test function symbols for the source file.
  */
-export function getTestFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
+export function getTestFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
 	let documentSymbolProvider = new GoDocumentSymbolProvider(true);
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
+		.then(symbols => symbols[0].children)
 		.then(symbols => {
 			const testify = symbols.some(sym => sym.kind === vscode.SymbolKind.Namespace && sym.name === '"github.com/stretchr/testify/suite"');
 			return symbols.filter(sym =>
@@ -133,7 +134,7 @@ export function extractInstanceTestName(symbolName: string): string {
  * @param testFunctionName The test function to get the debug args
  * @param testFunctions The test functions found in the document
  */
-export function getTestFunctionDebugArgs(document: vscode.TextDocument, testFunctionName: string, testFunctions: vscode.SymbolInformation[]): string[] {
+export function getTestFunctionDebugArgs(document: vscode.TextDocument, testFunctionName: string, testFunctions: vscode.DocumentSymbol[]): string[] {
 	const instanceMethod = extractInstanceTestName(testFunctionName);
 	if (instanceMethod) {
 		const testFns = findAllTestSuiteRuns(document, testFunctions);
@@ -150,11 +151,11 @@ export function getTestFunctionDebugArgs(document: vscode.TextDocument, testFunc
  * @param doc Editor document
  * @param allTests All test functions
  */
-export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.SymbolInformation[]): vscode.SymbolInformation[] {
+export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.DocumentSymbol[]): vscode.DocumentSymbol[] {
 	// get non-instance test functions
 	const testFunctions = allTests.filter(t => !testMethodRegex.test(t.name));
 	// filter further to ones containing suite.Run()
-	return testFunctions.filter(t => doc.getText(t.location.range).includes('suite.Run('));
+	return testFunctions.filter(t => doc.getText(t.range).includes('suite.Run('));
 }
 
 /**
@@ -163,10 +164,11 @@ export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.
  * @param the URI of a Go source file.
  * @return benchmark function symbols for the source file.
  */
-export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
+export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
 	let documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
+		.then(symbols => symbols[0].children)
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function

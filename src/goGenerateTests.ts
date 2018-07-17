@@ -90,10 +90,10 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 	}
 
 	return getFunctions(editor.document).then(functions => {
-		let currentFunction: vscode.SymbolInformation;
+		let currentFunction: vscode.DocumentSymbol;
 		for (let func of functions) {
 			let selection = editor.selection;
-			if (selection && func.location.range.contains(selection.start)) {
+			if (selection && func.range.contains(selection.start)) {
 				currentFunction = func;
 				break;
 			}
@@ -193,10 +193,11 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): T
 	});
 }
 
-function getFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
+function getFunctions(doc: vscode.TextDocument): Thenable<vscode.DocumentSymbol[]> {
 	let documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, null)
+		.then(symbols => symbols[0].children)
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function)
