@@ -44,6 +44,8 @@ export function vetCode(vetWorkspace?: boolean) {
  * @param vetWorkspace If true vets code in all workspace.
  */
 export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace?: boolean): Promise<ICheckResult[]> {
+	epoch++;
+	let closureEpoch = epoch;
 	if (tokenSource) {
 		if (running) {
 			tokenSource.cancel();
@@ -83,7 +85,8 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			false,
 			tokenSource.token
 		).then((result) => {
-			running = false;
+			if (closureEpoch === epoch)
+				running = false;
 			return result;
 		});
 	});
@@ -91,5 +94,6 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	return vetPromise;
 }
 
+let epoch = 0;
 let tokenSource: vscode.CancellationTokenSource;
 let running = false;
