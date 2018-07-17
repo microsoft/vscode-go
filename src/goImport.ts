@@ -6,7 +6,8 @@
 'use strict';
 
 import vscode = require('vscode');
-import { parseFilePrelude } from './util';
+import cp = require('child_process');
+import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars } from './util';
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
@@ -102,5 +103,60 @@ export function addImport(arg: string) {
 			edit.set(vscode.window.activeTextEditor.document.uri, edits);
 			vscode.workspace.applyEdit(edit);
 		}
+	});
+}
+
+export function addImportToWorkspace() {
+	const editor = vscode.window.activeTextEditor;
+	const selection = editor.selection;
+
+	let importPath = '';
+	if (!selection.isEmpty) {
+		// Attempt to load a partial import path based on currently selected text
+		let selectedText = editor.document.getText(selection).trim();
+		if (selectedText.length > 0) {
+			if (!selectedText.startsWith('"')) {
+				selectedText = '"' + selectedText;
+			}
+			if (!selectedText.endsWith('"')) {
+				selectedText = selectedText + '"';
+			}
+			importPath = getImportPath(selectedText);
+		}
+	}
+
+	if (importPath === '') {
+		// Failing that use the current line
+		let selectedText = editor.document.lineAt(selection.active.line).text;
+		importPath = getImportPath(selectedText);
+	}
+
+	if (importPath === '') {
+		vscode.window.showErrorMessage('No import path to add');
+		return;
+	}
+
+	const goRuntimePath = getBinPath('go');
+	const env = getToolsEnvVars();
+
+	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
+		if (!stdout) {
+			return;
+		}
+
+		let dirs = stdout.split('\n');
+		if (dirs.length === 0) {
+			return;
+		}
+
+		const importPathUri = vscode.Uri.file(dirs[0]);
+
+		const existingWorkspaceFolder = vscode.workspace.getWorkspaceFolder(importPathUri);
+		if (existingWorkspaceFolder !== undefined) {
+			vscode.window.showInformationMessage('Already available under ' + existingWorkspaceFolder.name);
+			return;
+		}
+
+		vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, { uri: importPathUri });
 	});
 }
