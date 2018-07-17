@@ -464,7 +464,6 @@ class Delve {
 			});
 		} else {
 			this.call('Detach', [{ kill: true }], null);
-			
 		}
 	}
 }
@@ -589,6 +588,7 @@ class GoDebugSession extends DebugSession {
 		verbose('DisconnectRequest');
 		this.delve.close();
 		
+		// Timeout to ensure detach is complete.
 		setTimeout(() => {
 			if (this.delve.debugProcess) {
 				killTree(this.delve.debugProcess.pid);
