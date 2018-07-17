@@ -812,3 +812,4 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 		return nearest.value + charDelta;
 	};
 }
+

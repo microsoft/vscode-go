@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { parseFilePrelude, getCurrentGoPath, getImportPath, getRootWorkspaceFolder, getBinPath } from './util';
+import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars } from './util';
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
@@ -111,9 +111,9 @@ export function addImportToWorkspace() {
 	const selection = editor.selection;
 
 	let importPath = '';
-	if (selection.isSingleLine) {
+	if (!selection.isEmpty) {
 		// Attempt to load a partial import path based on currently selected text
-		let selectedText = editor.document.getText(selection);
+		let selectedText = editor.document.getText(selection).trim();
 		if (selectedText.length > 0) {
 			if (!selectedText.startsWith('"')) {
 				selectedText = '"' + selectedText;
@@ -137,7 +137,7 @@ export function addImportToWorkspace() {
 	}
 
 	const goRuntimePath = getBinPath('go');
-	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
+	const env = getToolsEnvVars();
 
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
 		if (!stdout) {
@@ -151,7 +151,7 @@ export function addImportToWorkspace() {
 
 		const importPathUri = vscode.Uri.file(dirs[0]);
 
-		const existingWorkspaceFolder = getRootWorkspaceFolder(importPathUri);
+		const existingWorkspaceFolder = vscode.workspace.getWorkspaceFolder(importPathUri);
 		if (existingWorkspaceFolder !== undefined) {
 			vscode.window.showInformationMessage('Already available under ' + existingWorkspaceFolder.name);
 			return;
