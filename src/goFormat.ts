@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { sendTelemetryEvent, getBinPath, getToolsEnvVars } from './util';
+import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
@@ -34,7 +34,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			formatFlags.push('-style=indent=' + options.tabSize);
 		}
 
-		return this.runFormatter(formatTool, formatFlags, document).then(edits => edits, err => {
+		return this.runFormatter(formatTool, formatFlags, document, token).then(edits => edits, err => {
 			if (err && err.startsWith('flag provided but not defined: -srcdir')) {
 				promptForUpdatingTool(formatTool);
 				return Promise.resolve([]);
@@ -46,10 +46,26 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		});
 	}
 
-	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
+	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
+		epoch++;
+		let closureEpoch = epoch;
+		if (tokenSource) {
+			if (running) {
+				tokenSource.cancel();
+			}
+			tokenSource.dispose();
+		}
+		tokenSource = new vscode.CancellationTokenSource();
+		let updateRunning = () => {
+			if (closureEpoch === epoch)
+				running = false;
+		};
+
 		let formatCommandBinPath = getBinPath(formatTool);
 
-		return new Promise<vscode.TextEdit[]>((resolve, reject) => {
+		return new Promise<vscode.TextEdit[]>((_resolve, _reject) => {
+			const resolve = (...args) => { updateRunning(); _resolve(...args); };
+			const reject = (...args) => { updateRunning(); _reject(...args); };
 			if (!path.isAbsolute(formatCommandBinPath)) {
 				promptForMissingTool(formatTool);
 				return reject();
@@ -62,6 +78,9 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 			// Use spawn instead of exec to avoid maxBufferExceeded error
 			const p = cp.spawn(formatCommandBinPath, formatFlags, { env });
+			running = true;
+			token.onCancellationRequested(() => !p.killed && killTree(p.pid));
+			tokenSource.token.onCancellationRequested(() => { !p.killed && killTree(p.pid); console.log(epoch + ' killed preexisting process ' + closureEpoch); });
 			p.stdout.setEncoding('utf8');
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
@@ -99,3 +118,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		});
 	}
 }
+
+let epoch = 0;
+let tokenSource: vscode.CancellationTokenSource;
+let running = false;

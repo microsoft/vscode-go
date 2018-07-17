@@ -49,6 +49,20 @@ export function buildCode(buildWorkspace?: boolean) {
  * @param buildWorkspace If true builds code in all workspace.
  */
 export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
+	epoch++;
+	let closureEpoch = epoch;
+	if (tokenSource) {
+		if (running) {
+			tokenSource.cancel();
+		}
+		tokenSource.dispose();
+	}
+	tokenSource = new vscode.CancellationTokenSource();
+	let updateRunning = () => {
+		if (closureEpoch === epoch)
+			running = false;
+	};
+
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
 	const cwd = (buildWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
 	if (!path.isAbsolute(cwd)) {
@@ -78,6 +92,7 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 		return getNonVendorPackages(currentWorkspace).then(pkgs => {
 			let buildPromises = [];
 			buildPromises = pkgs.map(pkgPath => {
+				running = true;
 				return runTool(
 					buildArgs.concat(pkgPath),
 					currentWorkspace,
@@ -85,7 +100,8 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 					true,
 					null,
 					buildEnv,
-					true
+					true,
+					tokenSource.token
 				);
 			});
 			return Promise.all(buildPromises).then((resultSets) => {
@@ -95,6 +111,9 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 					self.findIndex((t) => {
 						return t.file === results.file && t.line === results.line && t.msg === results.msg && t.severity === results.severity;
 					}) === index);
+			}).then(v => {
+				updateRunning();
+				return v;
 			});
 		});
 	}
@@ -102,7 +121,7 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
 	let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
 	let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
-
+	running = true;
 	return runTool(
 		buildArgs.concat(importPath),
 		cwd,
@@ -110,11 +129,14 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 		true,
 		null,
 		buildEnv,
-		true
-	);
-
-
-
-
-
+		true,
+		tokenSource.token
+	).then(v => {
+		updateRunning();
+		return v;
+	});
 }
+
+let epoch = 0;
+let tokenSource: vscode.CancellationTokenSource;
+let running = false;
