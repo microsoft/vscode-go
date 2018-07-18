@@ -355,7 +355,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	// Return importable packages that match given word as Completion Items
 	private getMatchingPackages(document: vscode.TextDocument, word: string, suggestionSet: Set<string>): vscode.CompletionItem[] {
 		if (!word) return [];
-	
+
 		const cwd = path.dirname(document.fileName);
 		const goWorkSpace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
 		const workSpaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -375,7 +375,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					arguments: [pkgPath]
 				};
 				item.kind = vscode.CompletionItemKind.Module;
-				
+
 				// Unimported packages should appear after the suggestions from gocode
 				const isStandardPackage = !item.detail.includes('.');
 				item.sortText = isStandardPackage ? 'za' : pkgPath.startsWith(currentPkgRootPath) ? 'zb' : 'zc';
