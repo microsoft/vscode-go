@@ -363,6 +363,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		const goPath = getCurrentGoPath();
 		const goWorkSpace = getCurrentGoWorkspaceFromGOPATH(goPath, cwd);
 		const workspaceRootPath = workSpaceFolder ? workSpaceFolder.uri.path : cwd;
+		// deduce rootPath so that unimported packages are prioritized in 
+		// import suggestions.
 		const rootPath = workspaceRootPath.slice(goWorkSpace.length + 1);
 
 		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
@@ -380,13 +382,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				item.kind = vscode.CompletionItemKind.Module;
 				// Add same sortText to the unimported packages so that they appear after the suggestions from gocode
 				const isStandardPackage = !item.detail.includes('.');
-				item.sortText = isStandardPackage ? 'za' : 'zb';
-				if (pkgPath.startsWith(rootPath)) {
-					item.sortText = 'a';
-					completionItems.unshift(item);
-				} else {
-					completionItems.push(item);
-				}
+				item.sortText = isStandardPackage ? 'za' : pkgPath.startsWith(rootPath) ? 'zb' : 'zc';
+				completionItems.push(item);
 			}
 		});
 
