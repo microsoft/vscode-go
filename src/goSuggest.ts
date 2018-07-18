@@ -5,9 +5,11 @@
 
 'use strict';
 
+import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
@@ -267,7 +269,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					}
 
 					// Add importable packages matching currentword to suggestions
-					let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(currentWord, suggestionSet) : [];
+					let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(document, currentWord, suggestionSet) : [];
 					suggestions = suggestions.concat(importablePkgs);
 
 					// 'Smart Snippet' for package clause
@@ -354,10 +356,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	// Return importable packages that match given word as Completion Items
-	private getMatchingPackages(word: string, suggestionSet: Set<string>): vscode.CompletionItem[] {
+	private getMatchingPackages(document: vscode.TextDocument, word: string, suggestionSet: Set<string>): vscode.CompletionItem[] {
 		if (!word) return [];
-		let completionItems = [];
 
+		const cwd = path.dirname(document.fileName);
+		const goWorkSpace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
+		const workSpaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+		const currentPkgRootPath = (workSpaceFolder ? workSpaceFolder.uri.path : cwd).slice(goWorkSpace.length + 1);
+
+		let completionItems = [];
 		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
 			if (pkgName.startsWith(word) && !suggestionSet.has(pkgName)) {
 
@@ -371,12 +378,14 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					arguments: [pkgPath]
 				};
 				item.kind = vscode.CompletionItemKind.Module;
-				// Add same sortText to the unimported packages so that they appear after the suggestions from gocode
+
+				// Unimported packages should appear after the suggestions from gocode
 				const isStandardPackage = !item.detail.includes('.');
-				item.sortText = isStandardPackage ? 'za' : 'zb';
+				item.sortText = isStandardPackage ? 'za' : pkgPath.startsWith(currentPkgRootPath) ? 'zb' : 'zc';
 				completionItems.push(item);
 			}
 		});
+
 		return completionItems;
 	}
 
