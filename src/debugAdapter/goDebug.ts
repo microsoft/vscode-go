@@ -463,7 +463,7 @@ class Delve {
 				});
 			});
 		} else {
-			this.call('Detach', [{ kill: true }], null);
+			this.call('Detach', [this.isApiV1 ? true : { Kill: true }], null);
 		}
 	}
 }
