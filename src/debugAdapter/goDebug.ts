@@ -454,17 +454,22 @@ class Delve {
 		});
 	}
 
-	close() {
-		if (!this.debugProcess) {
-			this.call('Command', [{ name: 'halt' }], (err, out) => {
-				if (err) return logError('Failed to halt.');
-				this.call('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }], (err, out) => {
+	close(): Thenable<void> {
+		return this.callPromise('Command', [{ name: 'halt' }]).then(out => {
+			if (!this.debugProcess) {
+				return this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }]).then(null, err => {
 					if (err) return logError('Failed to restart');
 				});
-			});
-		} else {
-			this.call('Detach', [this.isApiV1 ? true : { Kill: true }], null);
-		}
+			}
+		}, err => {
+			if (!this.debugProcess && err) {
+				return logError('Failed to halt.');
+			}
+		}).then(() => {
+			if (this.debugProcess) {
+				return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
+			}
+		});
 	}
 }
 
@@ -586,16 +591,10 @@ class GoDebugSession extends DebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		verbose('DisconnectRequest');
-		this.delve.close();
-
-		// Timeout to ensure detach is complete.
-		setTimeout(() => {
-			if (this.delve.debugProcess) {
-				killTree(this.delve.debugProcess.pid);
-			}
+		this.delve.close().then(() => {
 			super.disconnectRequest(response, args);
 			verbose('DisconnectResponse');
-		}, 1000);
+		});
 	}
 
 	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
@@ -1024,26 +1023,6 @@ class GoDebugSession extends DebugSession {
 
 function random(low: number, high: number): number {
 	return Math.floor(Math.random() * (high - low) + low);
-}
-
-function killTree(processId: number): void {
-	if (process.platform === 'win32') {
-		const TASK_KILL = 'C:\\Windows\\System32\\taskkill.exe';
-
-		// when killing a process in Windows its child processes are *not* killed but become root processes.
-		// Therefore we use TASKKILL.EXE
-		try {
-			execSync(`${TASK_KILL} /F /T /PID ${processId}`);
-		} catch (err) {
-		}
-	} else {
-		// on linux and OS X we kill all direct and indirect child processes as well
-		try {
-			const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
-			spawnSync(cmd, [processId.toString()]);
-		} catch (err) {
-		}
-	}
 }
 
 DebugSession.run(GoDebugSession);
