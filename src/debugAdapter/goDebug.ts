@@ -454,17 +454,22 @@ class Delve {
 		});
 	}
 
-	close() {
-		if (!this.debugProcess) {
-			this.call('Command', [{ name: 'halt' }], (err, out) => {
-				if (err) return logError('Failed to halt.');
-				this.call('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }], (err, out) => {
+	close(): Thenable<void> {
+		return this.callPromise('Command', [{ name: 'halt' }]).then(out => {
+			if (!this.debugProcess) {
+				return this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }]).then(null, err => {
 					if (err) return logError('Failed to restart');
 				});
-			});
-		} else {
-			this.call('Detach', [this.isApiV1 ? true : { Kill: true }], null);
-		}
+			}
+		}, err => {
+			if (!this.debugProcess && err) {
+				return logError('Failed to halt.');
+			}
+		}).then(() => {
+			if (this.debugProcess) {
+				return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
+			}
+		});
 	}
 }
 
@@ -586,16 +591,13 @@ class GoDebugSession extends DebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		verbose('DisconnectRequest');
-		this.delve.close();
-
-		// Timeout to ensure detach is complete.
-		setTimeout(() => {
+		this.delve.close().then(() => {
 			if (this.delve.debugProcess) {
 				killTree(this.delve.debugProcess.pid);
 			}
 			super.disconnectRequest(response, args);
 			verbose('DisconnectResponse');
-		}, 1000);
+		});
 	}
 
 	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
