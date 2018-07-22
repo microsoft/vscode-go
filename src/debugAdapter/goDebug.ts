@@ -216,6 +216,11 @@ process.on('uncaughtException', (err: any) => {
 	throw err;
 });
 
+function convertToHex(v) {
+    let s = '0x' + parseInt(v).toString(16) + ' (' + v + ')';
+    return s;
+}
+
 function logArgsToString(args: any[]): string {
 	return args.map(arg => {
 		return typeof arg === 'string' ?
@@ -835,7 +840,7 @@ class GoDebugSession extends DebugSession {
 			};
 		} else {
 			return {
-				result: v.value || ('<' + v.type + '>'),
+				result: convertToHex(v.value) || ('<' + v.type + '>'),
 				variablesReference: v.children.length > 0 ? this._variableHandles.create(v) : 0
 			};
 		}
