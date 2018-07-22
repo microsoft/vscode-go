@@ -217,8 +217,8 @@ process.on('uncaughtException', (err: any) => {
 });
 
 function convertToHex(v) {
-    let s = '0x' + parseInt(v).toString(16) + ' (' + v + ')';
-    return s;
+	let s = '0x' + parseInt(v).toString(16) + ' (' + v + ')';
+	return s;
 }
 
 function logArgsToString(args: any[]): string {
