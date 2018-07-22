@@ -29,16 +29,22 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			if (!activeEditor || activeEditor.document.languageId !== 'go') {
 				return;
 			}
+			let debugMode;
+			let testFileRegExp = RegExp('.*_test\.go$','g');
+			if (testFileRegExp.test(activeEditor.document.fileName) == true) {
+				debugMode = 'test';
+			} else {
+				debugMode = 'debug';
+			}
 
 			debugConfiguration = {
 				'name': 'Launch',
 				'type': 'go',
 				'request': 'launch',
-				'mode': 'debug',
+				'mode': debugMode,
 				'program': activeEditor.document.fileName
 			};
 		}
-
 		const gopath = getCurrentGoPath(folder ? folder.uri : null);
 		if (!debugConfiguration['env']) {
 			debugConfiguration['env'] = { 'GOPATH': gopath };
