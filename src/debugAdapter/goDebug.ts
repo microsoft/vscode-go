@@ -480,7 +480,7 @@ class GoDebugSession extends DebugSession {
 	private delve: Delve;
 	private localPathSeparator: string;
 	private remotePathSeparator: string;
-
+	private numAsHex: string;
 	private launchArgs: LaunchRequestArguments;
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
