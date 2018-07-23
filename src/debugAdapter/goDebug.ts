@@ -317,8 +317,6 @@ class GoDebugSession extends vscode_debugadapter_1.DebugSession {
 
     convertToHex(v) {
         let s = v;
-        verbose("DBG_BLA: " + this.numAsHex)
-        verbose("v: " + v)
                 
         if (this.numAsHex === 'hex') {
             s = '0x' + parseInt(v).toString(16);
@@ -838,4 +836,4 @@ function killTree(processId) {
     }
 }
 vscode_debugadapter_1.DebugSession.run(GoDebugSession);
-//# sourceMappingURL=goDebug.js.map
+
