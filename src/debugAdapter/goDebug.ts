@@ -507,7 +507,6 @@ class GoDebugSession extends DebugSession {
 		if (/^(\w:[\\/]|\\\\)/.test(path)) return '\\';
 		return path.includes('/') ? '/' : '\\';
 	}
-	
 	protected convertToHex(v) {
 		let s = v;
 		if (this.numAsHex === 'hex') {
