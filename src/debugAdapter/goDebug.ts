@@ -507,8 +507,8 @@ class GoDebugSession extends DebugSession {
 		if (/^(\w:[\\/]|\\\\)/.test(path)) return '\\';
 		return path.includes('/') ? '/' : '\\';
 	}
-
-    protected convertToHex(v) {
+	
+	protected convertToHex(v) {
 		let s = v;
 		if (this.numAsHex === 'hex') {
 			s = '0x' + parseInt(v).toString(16);
@@ -518,7 +518,7 @@ class GoDebugSession extends DebugSession {
 		}
 		return s;
 	}
-        	
+
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		this.launchArgs = args;
 		const logLevel = args.trace === 'verbose' ?
@@ -531,7 +531,7 @@ class GoDebugSession extends DebugSession {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
 			return;
 		}
-		
+
 		// controls numbers display while debugging
 		// "hex" (shows hex only) "hexdec" ( shows hex (dec) )
 		// default: shows dec only
@@ -850,7 +850,7 @@ class GoDebugSession extends DebugSession {
 			};
 		} else {
 			return {
-				result: this.convertToHex(v.value) || ('<' + v.type + '>'),				
+				result: this.convertToHex(v.value) || ('<' + v.type + '>'),
 				variablesReference: v.children.length > 0 ? this._variableHandles.create(v) : 0
 			};
 		}
