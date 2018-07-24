@@ -1038,3 +1038,5 @@ class GoDebugSession extends DebugSession {
 function random(low: number, high: number): number {
 	return Math.floor(Math.random() * (high - low) + low);
 }
+
+DebugSession.run(GoDebugSession);
