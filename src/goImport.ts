@@ -140,12 +140,9 @@ export function addImportToWorkspace() {
 	const env = getToolsEnvVars();
 
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
-		if (!stdout) {
-			return;
-		}
-
-		let dirs = stdout.split('\n');
+		let dirs = (stdout || '').split('\n');
 		if (dirs.length === 0) {
+			vscode.window.showErrorMessage(`Could not find ${importPath}`);
 			return;
 		}
 
