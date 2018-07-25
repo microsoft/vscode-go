@@ -112,14 +112,16 @@ export function addImportToWorkspace() {
 
 	let importPath = '';
 	if (!selection.isEmpty) {
-		// Attempt to load a partial import path based on currently selected text
 		let selectedText = editor.document.getText(selection).trim();
 		if (selectedText.length > 0) {
-			if (!selectedText.startsWith('"')) {
-				selectedText = '"' + selectedText;
-			}
-			if (!selectedText.endsWith('"')) {
-				selectedText = selectedText + '"';
+			if (selectedText.indexOf(' ') === -1) {
+				// Attempt to load a partial import path based on currently selected text
+				if (!selectedText.startsWith('"')) {
+					selectedText = '"' + selectedText;
+				}
+				if (!selectedText.endsWith('"')) {
+					selectedText = selectedText + '"';
+				}
 			}
 			importPath = getImportPath(selectedText);
 		}
@@ -140,12 +142,9 @@ export function addImportToWorkspace() {
 	const env = getToolsEnvVars();
 
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
-		if (!stdout) {
-			return;
-		}
-
-		let dirs = stdout.split('\n');
-		if (dirs.length === 0) {
+		let dirs = (stdout || '').split('\n');
+		if (!dirs.length || !dirs[0].trim()) {
+			vscode.window.showErrorMessage(`Could not find package ${importPath}`);
 			return;
 		}
 
