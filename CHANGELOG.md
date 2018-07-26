@@ -1,10 +1,4 @@
-## 0.6.85 - Coming Soon...
-
-* [Marwan Sulaiman (@marwan-at-work)](https://github.com/marwan-at-work)
-    * When suggesting unimported custom packages, show the ones form current workspace before the others. [PR 1782](https://github.com/Microsoft/vscode-go/pull/1782)
-
-* [Halil Kaskavalci (@kaskavalci)](https://github.com/kaskavalci)
-    * Fix bug with function snippets such that they are not inserted when functions are being filling in as parameters of another function call. [Bug 1779](https://github.com/Microsoft/vscode-go/issues/1779) fixed with [PR 1788](https://github.com/Microsoft/vscode-go/pull/1788)
+## 0.6.85 - 26th July, 2018
 
 * [Shannon Wynter @freman](https://github.com/freman)
     * New command `Go: Add Package to Workspace` that will add selected imported package to the current workspace. [Feature Request 1733](https://github.com/Microsoft/vscode-go/issues/1733) implemented with [PR 1745](https://github.com/Microsoft/vscode-go/pull/1745)
@@ -12,6 +6,12 @@
 * [Jackson Kearl (@JacksonKearl)](https://github.com/JacksonKearl)
     * Fix perf issues when using linters. [Bug 1775](https://github.com/Microsoft/vscode-go/issues/1775) fixed with [PR 1791](https://github.com/Microsoft/vscode-go/pull/1791)
     * Improve performance of the Outline view. [PR 1766](https://github.com/Microsoft/vscode-go/pull/1766)
+
+* [Marwan Sulaiman (@marwan-at-work)](https://github.com/marwan-at-work)
+    * When suggesting unimported custom packages, show the ones form current workspace before the others. [PR 1782](https://github.com/Microsoft/vscode-go/pull/1782)
+
+* [Halil Kaskavalci (@kaskavalci)](https://github.com/kaskavalci)
+    * Fix bug with function snippets such that they are not inserted when functions are being filling in as parameters of another function call. [Bug 1779](https://github.com/Microsoft/vscode-go/issues/1779) fixed with [PR 1788](https://github.com/Microsoft/vscode-go/pull/1788)
 
 * [Matt Strong (@xmattstrongx)](https://github.com/xmattstrongx)
     * Fix bug in debug variable and hover when using multi byte characters. [Bug 1777](https://github.com/Microsoft/vscode-go/issues/1777) fixed with [PR 1790](https://github.com/Microsoft/vscode-go/pull/1790)
