@@ -130,10 +130,10 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		return null;
 	}
 
-	private getStringLiteralIndexes(currentLine: string): IndexRangeArray {
+	private getStringLiteralIndexes(currentLine: string): PairedIndexWrapper {
 		// Index string literal boundaries
 		// This is needed to detect string literals and avoid pushing commas within them
-		let stringLiteralBoundaries = new IndexRangeArray();
+		let stringLiteralBoundaries = new PairedIndexWrapper();
 		let stringLiteralRegex = RegExp('([\`\'\"])(?:(?!(?:\\\\|\\1)).|\\\\.)*\\1', 'giu');
 		let m: RegExpExecArray | null = null;
 		do {
@@ -159,13 +159,14 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 }
 
 /*
-* Array wrapper that contains indexes treated as pairs
+* Array wrapper that contains indexes treated as pairs,
+* assuming an increasing order (going foward)
 * An odd number of elements will consider the last
 * element as the start of a new (incomplete) range
 */
-class IndexRangeArray {
+class PairedIndexWrapper {
 	LastIndex: number;
-	Array: Array<number>;
+	private Array: Array<number>;
 
 	public constructor() {
 		this.Array = new Array<number>();
@@ -178,7 +179,7 @@ class IndexRangeArray {
 	}
 
 	// Traverse the index pairs contained in the array
-	// This assumes a forward (increasing) order
+	// and check whether an index is inside a pair or not
 	public IsWithinPairRange(index: number): boolean {
 		let isEven = (this.Array.length % 2) === 0;
 		if (index > this.LastIndex) return !isEven;
