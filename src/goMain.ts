@@ -209,6 +209,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 
 		vscode.window.showInformationMessage(msg);
+		return gopath;
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.add.tags', (args) => {
