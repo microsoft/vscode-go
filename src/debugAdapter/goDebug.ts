@@ -467,7 +467,8 @@ class Delve {
 			}
 		}).then(() => {
 			if (this.debugProcess) {
-				return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
+				verbose('DetachRequest');
+				return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]).then(() => verbose('DetachResponse'));
 			}
 		});
 	}
@@ -592,6 +593,7 @@ class GoDebugSession extends DebugSession {
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		verbose('DisconnectRequest');
 		this.delve.close().then(() => {
+			verbose('DisconnectRequest to parent');
 			super.disconnectRequest(response, args);
 			verbose('DisconnectResponse');
 		});
