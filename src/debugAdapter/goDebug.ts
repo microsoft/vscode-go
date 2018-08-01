@@ -455,13 +455,18 @@ class Delve {
 	}
 
 	close(): Thenable<void> {
+		verbose('HaltRequest');
 		return this.callPromise('Command', [{ name: 'halt' }]).then(out => {
+			verbose('HaltResponse');
 			if (!this.debugProcess) {
+				verbose('RestartRequest');
 				return this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }]).then(null, err => {
+					verbose('RestartResponse');
 					if (err) return logError('Failed to restart');
 				});
 			}
 		}, err => {
+			verbose('HaltResponse');
 			if (!this.debugProcess && err) {
 				return logError('Failed to halt - ' + err.toString());
 			}
