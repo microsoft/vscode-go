@@ -191,6 +191,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	stopOnEntry?: boolean;
 	args?: string[];
 	showLog?: boolean;
+	logOutput?: string;
 	cwd?: string;
 	env?: { [key: string]: string; };
 	mode?: string;
@@ -371,6 +372,9 @@ class Delve {
 
 			if (launchArgs.showLog) {
 				dlvArgs = dlvArgs.concat(['--log=' + launchArgs.showLog.toString()]);
+			}
+			if (launchArgs.logOutput) {
+				dlvArgs = dlvArgs.concat(['--log-output=' + launchArgs.logOutput]);
 			}
 			if (launchArgs.cwd) {
 				dlvArgs = dlvArgs.concat(['--wd=' + launchArgs.cwd]);
