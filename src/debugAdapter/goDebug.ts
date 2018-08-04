@@ -861,6 +861,11 @@ class GoDebugSession extends DebugSession {
 				result: v.unreadable ? ('<' + v.unreadable + '>') : ('"' + val + '"'),
 				variablesReference: 0
 			};
+		} else if (v.kind === GoReflectKind.Bool) {            
+			return {
+				result: v.value || ('<' + v.type + '>'),
+				variablesReference: this._variableHandles.create(v)
+			}	
 		} else {
 			return {
 				result: this.convertToHex(v.value) || ('<' + v.type + '>'),
