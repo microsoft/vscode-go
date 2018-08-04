@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.85",
+  "version": "0.6.86-beta.3",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -427,6 +427,18 @@
                 "type": "string",
                 "description": "Output path for the binary of delve",
                 "default": "debug"
+              },
+              "logOutput": {
+                "type": "string",
+                "enum": [
+                  "debugger",
+                  "gdbwire",
+                  "lldbout",
+                  "debuglineerr",
+                  "rpc"
+                ],
+                "description": "Comma separated list of components that should produce debug output.",
+                "default": "debugger"
               },
               "dlvLoadConfig": {
                 "type": "object",
