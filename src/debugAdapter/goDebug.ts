@@ -526,8 +526,8 @@ class GoDebugSession extends DebugSession {
 			s = '0x' + parseInt(v).toString(16) + ' (' + v + ')';
 		}
 		else if (this.numAsHex === 'hexascii') {
-            s = '0x' + parseInt(v).toString(16) + ' (' + String.fromCharCode(v) + ')';
-        }
+			s = '0x' + parseInt(v).toString(16) + ' (' + String.fromCharCode(v) + ')';
+		}
 		return s;
 	}
 
