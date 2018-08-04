@@ -525,6 +525,9 @@ class GoDebugSession extends DebugSession {
 		else if (this.numAsHex === 'hexdec') {
 			s = '0x' + parseInt(v).toString(16) + ' (' + v + ')';
 		}
+		else if (this.numAsHex === 'hexascii') {
+            s = '0x' + parseInt(v).toString(16) + ' (' + String.fromCharCode(v) + ')';
+        }
 		return s;
 	}
 
@@ -542,7 +545,7 @@ class GoDebugSession extends DebugSession {
 		}
 
 		// controls numbers display while debugging
-		// "hex" (shows hex only) "hexdec" ( shows hex (dec) )
+        // "hex" (shows hex only), "hexdec" ( shows hex (dec) ), "hexascii" ( shows hex (ascii) )
 		// default: shows dec only
 		// "DBG_SHOW_NUMBERS_HEX": "hex"
 		this.numAsHex = args.env['DBG_SHOW_NUMBERS_HEX'];
