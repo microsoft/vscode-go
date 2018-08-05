@@ -1,5 +1,5 @@
 {
-  "name": "Go",
+  "name": "go",
   "version": "0.6.86-beta.3",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
