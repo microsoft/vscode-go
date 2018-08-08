@@ -461,38 +461,41 @@ class Delve {
 	close(): Thenable<void> {
 		verbose('HaltRequest');
 
-		const haltPromise = new Promise((resolve, reject) => {
+		return new Promise(resolve => {
+			let timeoutToken: NodeJS.Timer;
 			if (this.debugProcess) {
-				setTimeout(() => {
-					verbose('Killing debug process manually as we didnt hear back from delve in time');
+				timeoutToken = setTimeout(() => {
+					verbose('Killing debug process manually as we could not halt and detach delve in time');
 					killTree(this.debugProcess.pid);
-					reject();
+					resolve();
 				}, 1000);
 			}
 
 			this.callPromise('Command', [{ name: 'halt' }]).then(() => {
+				if (timeoutToken) {
+					clearTimeout(timeoutToken);
+				}
 				verbose('HaltResponse');
 				if (!this.debugProcess) {
 					verbose('RestartRequest');
-					return this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }]).then(null, err => {
-						verbose('RestartResponse');
-						if (err) return logError('Failed to restart');
-					});
+					return this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }])
+						.then(null, err => {
+							verbose('RestartResponse');
+							logError(`Failed to restart - ${(err || '').toString()}`);
+						})
+						.then(() => resolve());
+				} else {
+					verbose('DetachRequest');
+					return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }])
+						.then(null, err => {
+							verbose('DetachResponse');
+							logError(`Killing debug process manually as we failed to detach - ${(err || '').toString()}`);
+							killTree(this.debugProcess.pid);
+						})
+						.then(() => resolve());
 				}
-			}, err => {
-				verbose('HaltResponse');
-				if (!this.debugProcess && err) {
-					return logError('Failed to halt - ' + err.toString());
-				}
-			}).then(() => resolve(), reject);
+			}, err => logError('Failed to halt - ' + err.toString()));
 		});
-
-		return haltPromise.then(() => {
-			if (this.debugProcess) {
-				verbose('DetachRequest');
-				return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]).then(() => verbose('DetachResponse'));
-			}
-		}, null);
 	}
 }
 
