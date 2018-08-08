@@ -566,11 +566,9 @@ class GoDebugSession extends DebugSession {
 		this.delve.onclose = (code) => {
 			if (code !== 0) {
 				this.sendErrorResponse(response, 3000, 'Failed to continue: Check the debug console for details.');
-			} else {
-				this.sendEvent(new TerminatedEvent());
-				verbose('TerminatedEvent');
 			}
-			verbose('Delve is closed');
+			verbose('Sending TerminatedEvent as delve is closed');
+			this.sendEvent(new TerminatedEvent());
 		};
 
 		this.delve.connection.then(() => {
