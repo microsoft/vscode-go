@@ -725,6 +725,11 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
+		if (this.continueRequestRunning) {
+			// Thread request to delve is syncronous and will block if a previous async continue request didnt return
+			response.body = { threads: [] };
+			return this.sendResponse(response);
+		}
 		verbose('ThreadsRequest');
 		this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [], (err, out) => {
 			if (this.debugState.exited) {
@@ -953,10 +958,17 @@ class GoDebugSession extends DebugSession {
 			});
 		}
 	}
-
+	private continueEpoch = 0;
+	private continueRequestRunning = false;
 	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
 		verbose('ContinueRequest');
+		this.continueEpoch++;
+		let closureEpoch = this.continueEpoch;
+		this.continueRequestRunning = true;
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'continue' }], (err, out) => {
+			if (closureEpoch === this.continueEpoch) {
+				this.continueRequestRunning = false;
+			}
 			if (err) {
 				logError('Failed to continue - ' + err.toString());
 			}
