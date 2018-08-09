@@ -5,6 +5,7 @@ import { outputChannel } from './goStatus';
 import os = require('os');
 import { getNonVendorPackages } from './goPackages';
 import { getTestFlags } from './testUtils';
+import { getUsernameHash } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { diagnosticsStatusBarItem } from './goStatus';
 /**
@@ -56,7 +57,7 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 	}
 
 	const buildEnv = Object.assign({}, getToolsEnvVars());
-	const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check.' + os.userInfo().username));
+	const tmpPath = path.normalize(path.join(os.tmpdir(), 'go-code-check.' + getUsernameHash()));
 	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
 	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig, null) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
 	const buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
