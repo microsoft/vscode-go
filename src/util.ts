@@ -183,18 +183,18 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
  * Returns a number between 0 and 4294967295.
  */
 export function getUsernameHash(): number {
-	const user: string = os.userInfo().username
-  let hash = 5381,
-      i    = user.length;
+	const user: string = os.userInfo().username;
+	let hash = 5381,
+			i    = user.length;
 
-  while(i) {
-    hash = (hash * 33) ^ user.charCodeAt(--i);
-  }
+	while (i) {
+		hash = (hash * 33) ^ user.charCodeAt(--i);
+	}
 
-  /* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
-   * integers. Since we want the results to be always positive, convert the
-   * signed int to an unsigned by doing an unsigned bitshift. */
-  return hash >>> 0;
+	/* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+		* integers. Since we want the results to be always positive, convert the
+		* signed int to an unsigned by doing an unsigned bitshift. */
+	return hash >>> 0;
 }
 
 /**
