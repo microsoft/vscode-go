@@ -24,8 +24,8 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 	}
 
 	public resolveDebugConfiguration?(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.DebugConfiguration {
+		const activeEditor = vscode.window.activeTextEditor;
 		if (!debugConfiguration || !debugConfiguration.request) { // if 'request' is missing interpret this as a missing launch.json
-			let activeEditor = vscode.window.activeTextEditor;
 			if (!activeEditor || activeEditor.document.languageId !== 'go') {
 				return;
 			}
@@ -52,6 +52,10 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 		if (!debugConfiguration.hasOwnProperty('dlvLoadConfig') && dlvConfig.hasOwnProperty('dlvLoadConfig')) {
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
+		}
+
+		if (activeEditor && activeEditor.document.fileName.endsWith('_test.go')) {
+			debugConfiguration['mode'] = 'test';
 		}
 
 		return debugConfiguration;
