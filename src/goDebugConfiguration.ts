@@ -54,10 +54,8 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
 		}
 
-		if (activeEditor.document.fileName.endsWith('_test.go')) {
+		if (activeEditor && activeEditor.document.fileName.endsWith('_test.go')) {
 			debugConfiguration['mode'] = 'test';
-		} else {
-			debugConfiguration['mode'] = 'debug';
 		}
 
 		return debugConfiguration;
