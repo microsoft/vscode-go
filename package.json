@@ -761,6 +761,15 @@
           "description": "Flags to pass to `go test`. If null, then buildFlags will be used.",
           "scope": "resource"
         },
+        "go.genTestsFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional command line flags to pass to `gotests`.",
+          "scope": "resource"
+        },
         "go.toolsEnvVars": {
           "type": "object",
           "default": {},

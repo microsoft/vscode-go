@@ -329,15 +329,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.package', () => {
-		goGenerateTests.generateTestCurrentPackage();
+		goGenerateTests.GenerateTests(goGenerateTests.PACKAGE_TYPE);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.file', () => {
-		goGenerateTests.generateTestCurrentFile();
+		goGenerateTests.GenerateTests(goGenerateTests.FILE_TYPE);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.function', () => {
-		goGenerateTests.generateTestCurrentFunction();
+		goGenerateTests.GenerateTests(goGenerateTests.FUNCTION_TYPE);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.toggle.test.file', () => {
@@ -424,6 +424,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "buildTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "formatTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "formatFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "genTestsFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "lintOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "lintFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "lintTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
@@ -465,6 +466,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		lintOnSave: goConfig['lintOnSave'] + '',
 		lintFlags: goConfig['lintFlags'],
 		lintTool: goConfig['lintTool'],
+		genTestsFlags: goConfig['genTestsFlags'],
 		vetOnSave: goConfig['vetOnSave'] + '',
 		vetFlags: goConfig['vetFlags'],
 		testOnSave: goConfig['testOnSave'] + '',

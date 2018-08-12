@@ -20,7 +20,7 @@ import { testCurrentFile } from '../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols } from '../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../src/goImport';
-import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
+import { GenerateTests, FUNCTION_TYPE, PACKAGE_TYPE, FILE_TYPE } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
 import { goPlay } from '../src/goPlayground';
@@ -302,7 +302,7 @@ It returns the number of bytes written and any write error encountered.
 			let uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
-					return generateTestCurrentFile().then((result: boolean) => {
+					return GenerateTests(FILE_TYPE).then((result: boolean) => {
 						assert.equal(result, true);
 						return Promise.resolve();
 					});
@@ -331,7 +331,7 @@ It returns the number of bytes written and any write error encountered.
 					assert(vscode.window.activeTextEditor, 'No active editor');
 					let selection = new vscode.Selection(5, 0, 6, 0);
 					editor.selection = selection;
-					return generateTestCurrentFunction().then((result: boolean) => {
+					return GenerateTests(FUNCTION_TYPE).then((result: boolean) => {
 						assert.equal(result, true);
 						return Promise.resolve();
 					});
@@ -357,7 +357,7 @@ It returns the number of bytes written and any write error encountered.
 			let uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
-					return generateTestCurrentPackage().then((result: boolean) => {
+					return GenerateTests(PACKAGE_TYPE).then((result: boolean) => {
 						assert.equal(result, true);
 						return Promise.resolve();
 					});

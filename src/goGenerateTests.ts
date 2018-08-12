@@ -12,8 +12,12 @@ import vscode = require('vscode');
 import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
+import { outputChannel } from './goStatus';
 
 const generatedWord = 'Generated ';
+export const FUNCTION_TYPE = 'function';
+export const FILE_TYPE = 'file';
+export const PACKAGE_TYPE = 'package';
 
 /**
  * If current active editor has a Go file, returns the editor.
@@ -64,30 +68,54 @@ export function toggleTestFile(): void {
 	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath));
 }
 
-export function generateTestCurrentPackage(): Thenable<boolean> {
+function getGoConfigObject(editor: vscode.TextEditor): vscode.WorkspaceConfiguration {
+	let documentUri = editor ? editor.document.uri : null;
+	return vscode.workspace.getConfiguration('go', documentUri);
+}
+
+/**
+ *
+ * @param type The type of tests to generate. In this case a simple string to indicate what
+ * type of tests we need to create, function, file, or package
+ */
+export function GenerateTests(type: string): Thenable<boolean> {
 	let editor = checkActiveEditor();
 	if (!editor) {
 		return;
 	}
+
+	let goConfig = getGoConfigObject(editor);
+
+	switch (type) {
+		case PACKAGE_TYPE:
+			return generateTestCurrentPackage(editor, goConfig);
+		case FILE_TYPE:
+			return generateTestCurrentFile(editor, goConfig);
+		case FUNCTION_TYPE:
+			return generateTestCurrentFunction(editor, goConfig);
+		default:
+			vscode.window.showErrorMessage('unknown type passed to generate tests: ' + type);
+			return Promise.resolve(false);
+	}
+}
+
+function generateTestCurrentPackage(editor: vscode.TextEditor, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
 	let dir = path.dirname(editor.document.uri.fsPath);
-	return generateTests({ dir: dir });
+	const goGenerateTestsFlags: string[] = goConfig['genTestsFlags'] || [];
+	return generateTests({ dir: dir, genFlags: goGenerateTestsFlags });
 }
 
-export function generateTestCurrentFile(): Thenable<boolean> {
-	let editor = checkActiveEditor();
-	if (!editor) {
-		return;
-	}
+function generateTestCurrentFile(editor: vscode.TextEditor, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
 	let file = editor.document.uri.fsPath;
-	return generateTests({ dir: file });
+	const goGenerateTestsFlags: string[] = goConfig['genTestsFlags'] || [];
+	return generateTests({ dir: file, genFlags: goGenerateTestsFlags });
 }
 
-export function generateTestCurrentFunction(): Thenable<boolean> {
-	let editor = checkActiveEditor();
-	if (!editor) {
-		return;
-	}
+function generateTestCurrentFunction(editor: vscode.TextEditor, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
 	let file = editor.document.uri.fsPath;
+
+	const goGenerateTestsFlags: string[] = goConfig['genTestsFlags'] || [];
+
 	return getFunctions(editor.document).then(functions => {
 		let currentFunction: vscode.SymbolInformation;
 		for (let func of functions) {
@@ -105,7 +133,7 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 		if (funcName.includes('.')) {
 			funcName = funcName.split('.')[1];
 		}
-		return generateTests({ dir: file, func: funcName });
+		return generateTests({ dir: file, func: funcName , genFlags: goGenerateTestsFlags  });
 	});
 }
 
@@ -118,6 +146,10 @@ interface Config {
 	 */
 	dir: string;
 	/**
+	 * Optional Template dir for any custom templates for `gotests`.
+	 */
+	genFlags: string[];
+	/**
 	 * Specific function names to generate tests squeleton.
 	 */
 	func?: string;
@@ -126,13 +158,21 @@ interface Config {
 function generateTests(conf: Config): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		let cmd = getBinPath('gotests');
-		let args;
+		let args = ['-w'];
+
+		conf.genFlags.forEach(flag => {
+			args.push(flag);
+		});
+
 		if (conf.func) {
-			args = ['-w', '-only', `^${conf.func}$`, conf.dir];
+			args = args.concat(['-only', `^${conf.func}$`, conf.dir]);
 		} else {
-			args = ['-w', '-all', conf.dir];
+			args = args.concat(['-all', conf.dir]);
 		}
+
 		cp.execFile(cmd, args, {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+			outputChannel.appendLine('Generating Tests: ' + cmd + ' ' + args.join(' '));
+
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('gotests');
@@ -140,6 +180,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 				}
 				if (err) {
 					console.log(err);
+					outputChannel.appendLine(err.message);
 					return reject('Cannot generate test due to errors');
 				}
 
@@ -158,6 +199,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 				}
 
 				vscode.window.showInformationMessage(message);
+				outputChannel.append(message);
 				if (testsGenerated) {
 					toggleTestFile();
 				}
@@ -165,6 +207,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 				return resolve(true);
 			} catch (e) {
 				vscode.window.showInformationMessage(e.msg);
+				outputChannel.append(e.msg);
 				reject(e);
 			}
 		});
