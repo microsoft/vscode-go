@@ -1,7 +1,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { getCurrentGoPath } from './util';
+import { getCurrentGoPath, getToolsEnvVars } from './util';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -47,7 +47,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 
 		const goConfig = vscode.workspace.getConfiguration('go', folder ? folder.uri : null);
-		const goToolsEnvVars = goConfig.get('toolsEnvVars') || {};
+		const goToolsEnvVars = getToolsEnvVars();
 		Object.keys(goToolsEnvVars).forEach(key => {
 			if (!debugConfiguration['env'].hasOwnProperty(key)) {
 				debugConfiguration['env'][key] = goToolsEnvVars[key];
