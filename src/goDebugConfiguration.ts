@@ -46,7 +46,15 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			debugConfiguration['env']['GOPATH'] = gopath;
 		}
 
-		const dlvConfig = vscode.workspace.getConfiguration('go', folder ? folder.uri : null).get('delveConfig');
+		const goConfig = vscode.workspace.getConfiguration('go', folder ? folder.uri : null);
+		const goToolsEnvVars = goConfig.get('toolsEnvVars') || {};
+		Object.keys(goToolsEnvVars).forEach(key => {
+			if (!debugConfiguration['env'].hasOwnProperty(key)) {
+				debugConfiguration['env'][key] = goToolsEnvVars[key];
+			}
+		});
+
+		const dlvConfig = goConfig.get('delveConfig');
 		if (!debugConfiguration.hasOwnProperty('useApiV1') && dlvConfig.hasOwnProperty('useApiV1')) {
 			debugConfiguration['useApiV1'] = dlvConfig['useApiV1'];
 		}
