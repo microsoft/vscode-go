@@ -179,6 +179,25 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 }
 
 /**
+ * Gets a numeric hash based on the current users username.
+ * Returns a number between 0 and 4294967295.
+ */
+export function getUsernameHash(): number {
+	const user: string = os.userInfo().username;
+	let hash = 5381,
+			i    = user.length;
+
+	while (i) {
+		hash = (hash * 33) ^ user.charCodeAt(--i);
+	}
+
+	/* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+		* integers. Since we want the results to be always positive, convert the
+		* signed int to an unsigned by doing an unsigned bitshift. */
+	return hash >>> 0;
+}
+
+/**
  * Gets version of Go based on the output of the command `go version`.
  * Returns null if go is being used from source/tip in which case `go version` will not return release tag like go1.6.3
  */
