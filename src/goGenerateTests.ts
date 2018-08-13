@@ -15,9 +15,15 @@ import { GoDocumentSymbolProvider } from './goOutline';
 import { outputChannel } from './goStatus';
 
 const generatedWord = 'Generated ';
-export const FUNCTION_TYPE = 'function';
-export const FILE_TYPE = 'file';
-export const PACKAGE_TYPE = 'package';
+
+/**
+ * This enum is the types of generation supported via the gotests tooling
+ */
+export enum GenerationType {
+	Function,
+	File,
+	Package,
+}
 
 /**
  * If current active editor has a Go file, returns the editor.
@@ -75,10 +81,10 @@ function getGoConfigObject(editor: vscode.TextEditor): vscode.WorkspaceConfigura
 
 /**
  *
- * @param type The type of tests to generate. In this case a simple string to indicate what
- * type of tests we need to create, function, file, or package
+ * @param genType the type of generation we want to use gotests to make us. The GenerationType
+ * enum has the supported types.
  */
-export function GenerateTests(type: string): Thenable<boolean> {
+export function GenerateTests(genType: GenerationType): Thenable<boolean> {
 	let editor = checkActiveEditor();
 	if (!editor) {
 		return;
@@ -86,15 +92,15 @@ export function GenerateTests(type: string): Thenable<boolean> {
 
 	let goConfig = getGoConfigObject(editor);
 
-	switch (type) {
-		case PACKAGE_TYPE:
+	switch (genType) {
+		case GenerationType.Package:
 			return generateTestCurrentPackage(editor, goConfig);
-		case FILE_TYPE:
+		case GenerationType.File:
 			return generateTestCurrentFile(editor, goConfig);
-		case FUNCTION_TYPE:
+		case GenerationType.Function:
 			return generateTestCurrentFunction(editor, goConfig);
 		default:
-			vscode.window.showErrorMessage('unknown type passed to generate tests: ' + type);
+			vscode.window.showErrorMessage('unknown type passed to generate tests: ' + genType);
 			return Promise.resolve(false);
 	}
 }

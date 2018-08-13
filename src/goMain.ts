@@ -329,15 +329,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.package', () => {
-		goGenerateTests.GenerateTests(goGenerateTests.PACKAGE_TYPE);
+		goGenerateTests.GenerateTests(goGenerateTests.GenerationType.Package);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.file', () => {
-		goGenerateTests.GenerateTests(goGenerateTests.FILE_TYPE);
+		goGenerateTests.GenerateTests(goGenerateTests.GenerationType.File);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.function', () => {
-		goGenerateTests.GenerateTests(goGenerateTests.FUNCTION_TYPE);
+		goGenerateTests.GenerateTests(goGenerateTests.GenerationType.Function);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.toggle.test.file', () => {
