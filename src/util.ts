@@ -179,16 +179,15 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 }
 
 /**
- * Gets a numeric hash based on the current users username.
+ * Gets a numeric hash based on given string.
  * Returns a number between 0 and 4294967295.
  */
-export function getUsernameHash(): number {
-	const user: string = os.userInfo().username;
+export function getStringHash(value: string): number {
 	let hash = 5381,
-			i    = user.length;
+			i    = value.length;
 
 	while (i) {
-		hash = (hash * 33) ^ user.charCodeAt(--i);
+		hash = (hash * 33) ^ value.charCodeAt(--i);
 	}
 
 	/* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
