@@ -1,3 +1,29 @@
+## 0.6.86 - 13th August, 2018
+
+### Debugging improvements
+
+* [Zyck (@qzyse2017)](https://github.com/qzyse2017)
+   * Introducing a new mode for debugging called `auto`. In this mode, the debugging sessions will run in `test` mode automatically if the current active file is a test file. Otherwise this defaults to the usual `debug` mode. [Feature Request 1780](https://github.com/Microsoft/vscode-go/issues/1780)
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+   * Errors from delve api calls are now shown in the debug console when `"showLog": true` is added to the debug configuration. [PR 1815](https://github.com/Microsoft/vscode-go/pull/1815).
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+   * Fix bug when debugging a program that runs in a loop forever is not stopped when the stop button is clicked. [Bug 1814](https://github.com/Microsoft/vscode-go/issues/1829)
+   * Fix bug when a previous failed debugging session due to compile errors results in failure of future sessions after fixing the compile error. [Bug 1840](https://github.com/Microsoft/vscode-go/issues/1840)
+   * The environment variables in `go.toolsEnvVars` setting which gets used by all Go tools in this extension will now be passed to `dlv` as well during debugging sessions. With this change you dont need to repeat the variables in the debug configuration if you have already added it in the settings.
+
+### Others
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+   * The `go.gopath` command when run programatically by other extensions now returns the GOPATH as determined by this extension. Useful for other extensions that want to provide additional features but do not want to repeat the work done by this extension to determine the GOPATH.
+
+* [Darrian @(rikkuness)](https://github.com/rikkuness)
+   * Fix bug with permission issues when there are mutliple user accounts on the same machine by using separate tmp files. [Bug 1829](https://github.com/Microsoft/vscode-go/issues/1829) fixed with [PR 1835](https://github.com/Microsoft/vscode-go/pull/1835)
+
+* [Filip Stanis @(fstanis)](https://github.com/fstanis)
+   * Fix error handling when the error returned by the process that runs formatting is not a string. [PR 1828](https://github.com/Microsoft/vscode-go/pull/1828)
+
 ## 0.6.85 - 26th July, 2018
 
 * [Shannon Wynter @freman](https://github.com/freman)
