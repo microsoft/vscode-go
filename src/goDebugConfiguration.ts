@@ -11,7 +11,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				'name': 'Launch',
 				'type': 'go',
 				'request': 'launch',
-				'mode': 'debug',
+				'mode': 'auto',
 				'remotePath': '',
 				'port': 2345,
 				'host': '127.0.0.1',
@@ -34,7 +34,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				'name': 'Launch',
 				'type': 'go',
 				'request': 'launch',
-				'mode': 'debug',
+				'mode': 'auto',
 				'program': activeEditor.document.fileName
 			};
 		}
@@ -62,8 +62,8 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
 		}
 
-		if (activeEditor && activeEditor.document.fileName.endsWith('_test.go')) {
-			debugConfiguration['mode'] = 'test';
+		if (debugConfiguration['mode'] === 'auto') {
+			debugConfiguration['mode'] = (activeEditor && activeEditor.document.fileName.endsWith('_test.go')) ? 'test' : 'debug';
 		}
 
 		return debugConfiguration;
