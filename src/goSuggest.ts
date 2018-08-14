@@ -146,6 +146,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
+			if (!path.isAbsolute(gocode)) {
+				promptForMissingTool(gocode);
+				return reject();
+			}
 
 			// Unset GOOS and GOARCH for the `gocode` process to ensure that GOHOSTOS and GOHOSTARCH
 			// are used as the target operating system and architecture. `gocode` is unable to provide
