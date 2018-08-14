@@ -191,6 +191,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	stopOnEntry?: boolean;
 	args?: string[];
 	showLog?: boolean;
+	logOutput?: string;
 	cwd?: string;
 	env?: { [key: string]: string; };
 	mode?: string;
@@ -372,6 +373,9 @@ class Delve {
 			if (launchArgs.showLog) {
 				dlvArgs = dlvArgs.concat(['--log=' + launchArgs.showLog.toString()]);
 			}
+			if (launchArgs.logOutput) {
+				dlvArgs = dlvArgs.concat(['--log-output=' + launchArgs.logOutput]);
+			}
 			if (launchArgs.cwd) {
 				dlvArgs = dlvArgs.concat(['--wd=' + launchArgs.cwd]);
 			}
@@ -454,17 +458,53 @@ class Delve {
 		});
 	}
 
-	close() {
-		if (!this.debugProcess) {
-			this.call('Command', [{ name: 'halt' }], (err, out) => {
-				if (err) return logError('Failed to halt.');
-				this.call('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }], (err, out) => {
-					if (err) return logError('Failed to restart');
-				});
+	close(): Thenable<void> {
+		verbose('HaltRequest');
+
+		return new Promise(resolve => {
+			let timeoutToken: NodeJS.Timer;
+			if (this.debugProcess) {
+				timeoutToken = setTimeout(() => {
+					verbose('Killing debug process manually as we could not halt and detach delve in time');
+					killTree(this.debugProcess.pid);
+					resolve();
+				}, 1000);
+			}
+
+			this.callPromise('Command', [{ name: 'halt' }]).then(() => {
+				if (timeoutToken) {
+					clearTimeout(timeoutToken);
+				}
+				verbose('HaltResponse');
+				if (!this.debugProcess) {
+					verbose('RestartRequest');
+					return this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }])
+						.then(null, err => {
+							verbose('RestartResponse');
+							logError(`Failed to restart - ${(err || '').toString()}`);
+						})
+						.then(() => resolve());
+				} else {
+					verbose('DetachRequest');
+					return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }])
+						.then(null, err => {
+							verbose('DetachResponse');
+							logError(`Killing debug process manually as we failed to detach - ${(err || '').toString()}`);
+							killTree(this.debugProcess.pid);
+						})
+						.then(() => resolve());
+				}
+			}, err => {
+				const errMsg = err ? err.toString() : '';
+				if (errMsg.endsWith('has exited with status 0')) {
+					if (timeoutToken) {
+						clearTimeout(timeoutToken);
+					}
+					return resolve();
+				}
+				logError('Failed to halt - ' + errMsg.toString());
 			});
-		} else {
-			killTree(this.debugProcess.pid);
-		}
+		});
 	}
 }
 
@@ -551,11 +591,9 @@ class GoDebugSession extends DebugSession {
 		this.delve.onclose = (code) => {
 			if (code !== 0) {
 				this.sendErrorResponse(response, 3000, 'Failed to continue: Check the debug console for details.');
-			} else {
-				this.sendEvent(new TerminatedEvent());
-				verbose('TerminatedEvent');
 			}
-			verbose('Delve is closed');
+			verbose('Sending TerminatedEvent as delve is closed');
+			this.sendEvent(new TerminatedEvent());
 		};
 
 		this.delve.connection.then(() => {
@@ -586,9 +624,11 @@ class GoDebugSession extends DebugSession {
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		verbose('DisconnectRequest');
-		this.delve.close();
-		super.disconnectRequest(response, args);
-		verbose('DisconnectResponse');
+		this.delve.close().then(() => {
+			verbose('DisconnectRequest to parent');
+			super.disconnectRequest(response, args);
+			verbose('DisconnectResponse');
+		});
 	}
 
 	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
@@ -685,6 +725,11 @@ class GoDebugSession extends DebugSession {
 	}
 
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
+		if (this.continueRequestRunning) {
+			// Thread request to delve is syncronous and will block if a previous async continue request didnt return
+			response.body = { threads: [] };
+			return this.sendResponse(response);
+		}
 		verbose('ThreadsRequest');
 		this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [], (err, out) => {
 			if (this.debugState.exited) {
@@ -695,7 +740,7 @@ class GoDebugSession extends DebugSession {
 			}
 
 			if (err) {
-				logError('Failed to get threads.');
+				logError('Failed to get threads - ' + err.toString());
 				return this.sendErrorResponse(response, 2003, 'Unable to display threads: "{e}"', { e: err.toString() });
 			}
 			const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
@@ -748,7 +793,7 @@ class GoDebugSession extends DebugSession {
 		const listLocalVarsIn = { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId };
 		this.delve.call<DebugVariable[] | ListLocalVarsOut>('ListLocalVars', this.delve.isApiV1 ? [listLocalVarsIn] : [{ scope: listLocalVarsIn, cfg: this.delve.loadConfig }], (err, out) => {
 			if (err) {
-				logError('Failed to list local variables.');
+				logError('Failed to list local variables - ' + err.toString());
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
 			const locals = this.delve.isApiV1 ? <DebugVariable[]>out : (<ListLocalVarsOut>out).Variables;
@@ -756,7 +801,7 @@ class GoDebugSession extends DebugSession {
 			let listLocalFunctionArgsIn = { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId };
 			this.delve.call<DebugVariable[] | ListFunctionArgsOut>('ListFunctionArgs', this.delve.isApiV1 ? [listLocalFunctionArgsIn] : [{ scope: listLocalFunctionArgsIn, cfg: this.delve.loadConfig }], (err, outArgs) => {
 				if (err) {
-					logError('Failed to list function args.');
+					logError('Failed to list function args - ' + err.toString());
 					return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', { e: err.toString() });
 				}
 				const args = this.delve.isApiV1 ? <DebugVariable[]>outArgs : (<ListFunctionArgsOut>outArgs).Args;
@@ -885,7 +930,7 @@ class GoDebugSession extends DebugSession {
 			// [TODO] Can we avoid doing this? https://github.com/Microsoft/vscode/issues/40#issuecomment-161999881
 			this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [], (err, out) => {
 				if (err) {
-					logError('Failed to get threads.');
+					logError('Failed to get threads - ' + err.toString());
 				}
 				const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
 				// Assume we need to stop all the threads we saw before...
@@ -913,12 +958,19 @@ class GoDebugSession extends DebugSession {
 			});
 		}
 	}
-
+	private continueEpoch = 0;
+	private continueRequestRunning = false;
 	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
 		verbose('ContinueRequest');
+		this.continueEpoch++;
+		let closureEpoch = this.continueEpoch;
+		this.continueRequestRunning = true;
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'continue' }], (err, out) => {
+			if (closureEpoch === this.continueEpoch) {
+				this.continueRequestRunning = false;
+			}
 			if (err) {
-				logError('Failed to continue.');
+				logError('Failed to continue - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			verbose('continue state', state);
@@ -933,7 +985,7 @@ class GoDebugSession extends DebugSession {
 		verbose('NextRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'next' }], (err, out) => {
 			if (err) {
-				logError('Failed to next.');
+				logError('Failed to next - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			verbose('next state', state);
@@ -948,7 +1000,7 @@ class GoDebugSession extends DebugSession {
 		verbose('StepInRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'step' }], (err, out) => {
 			if (err) {
-				logError('Failed to step.');
+				logError('Failed to step - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			verbose('stop state', state);
@@ -963,7 +1015,7 @@ class GoDebugSession extends DebugSession {
 		verbose('StepOutRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'stepOut' }], (err, out) => {
 			if (err) {
-				logError('Failed to stepout.');
+				logError('Failed to stepout - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			verbose('stepout state', state);
@@ -978,7 +1030,7 @@ class GoDebugSession extends DebugSession {
 		verbose('PauseRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'halt' }], (err, out) => {
 			if (err) {
-				logError('Failed to halt.');
+				logError('Failed to halt - ' + err.toString());
 				return this.sendErrorResponse(response, 2010, 'Unable to halt execution: "{e}"', { e: err.toString() });
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;

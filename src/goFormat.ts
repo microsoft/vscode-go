@@ -34,8 +34,8 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			formatFlags.push('-style=indent=' + options.tabSize);
 		}
 
-		return this.runFormatter(formatTool, formatFlags, document, token).then(edits => edits, err => {
-			if (err && err.startsWith('flag provided but not defined: -srcdir')) {
+		return this.runFormatter(formatTool, formatFlags, document, token).then(edits => edits, err => {		
+			if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
 				promptForUpdatingTool(formatTool);
 				return Promise.resolve([]);
 			}

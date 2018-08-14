@@ -9,11 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
-
-interface GoImplInput {
-	receiver: string;
-	interface: string;
-}
+import { dirname } from 'path';
 
 // Supports only passing interface, see TODO in implCursor to finish
 const inputRegex = /^(\w+\ \*?\w+\ )?([\w./]+)$/;
@@ -37,18 +33,13 @@ export function implCursor() {
 		// if matches[1] is undefined then detect receiver type
 		// take first character and use as receiver name
 
-		let input: GoImplInput = {
-			receiver: matches[1],
-			interface: matches[2]
-		};
-
-		runGoImpl(input, cursor.start);
+		runGoImpl([matches[1], matches[2]], cursor.start);
 	});
 }
 
-function runGoImpl(input: GoImplInput, insertPos: vscode.Position) {
+function runGoImpl(args: string[], insertPos: vscode.Position) {
 	let goimpl = getBinPath('impl');
-	let p = cp.execFile(goimpl, [input.receiver, input.interface], {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+	let p = cp.execFile(goimpl, args, { env: getToolsEnvVars(), cwd: dirname(vscode.window.activeTextEditor.document.fileName) }, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('impl');
 			return;
