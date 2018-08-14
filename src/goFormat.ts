@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { sendTelemetryEvent, getBinPath, getToolsEnvVars } from './util';
+import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
@@ -34,7 +34,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			formatFlags.push('-style=indent=' + options.tabSize);
 		}
 
-		return this.runFormatter(formatTool, formatFlags, document).then(edits => edits, err => {
+		return this.runFormatter(formatTool, formatFlags, document, token).then(edits => edits, err => {
 			if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
 				promptForUpdatingTool(formatTool);
 				return Promise.resolve([]);
@@ -46,7 +46,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		});
 	}
 
-	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument): Thenable<vscode.TextEdit[]> {
+	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
 		let formatCommandBinPath = getBinPath(formatTool);
 
 		return new Promise<vscode.TextEdit[]>((resolve, reject) => {
@@ -62,6 +62,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 			// Use spawn instead of exec to avoid maxBufferExceeded error
 			const p = cp.spawn(formatCommandBinPath, formatFlags, { env });
+			token.onCancellationRequested(() => !p.killed && killTree(p.pid));
 			p.stdout.setEncoding('utf8');
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
