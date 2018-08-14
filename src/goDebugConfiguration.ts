@@ -18,7 +18,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				'program': '${fileDirname}',
 				'env': {},
 				'args': [],
-				'showLog': true
+				'showLog': false
 			}
 		];
 	}
