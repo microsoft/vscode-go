@@ -17,15 +17,6 @@ import { outputChannel } from './goStatus';
 const generatedWord = 'Generated ';
 
 /**
- * This enum is the types of generation supported via the gotests tooling
- */
-export enum GenerationType {
-	Function,
-	File,
-	Package,
-}
-
-/**
  * If current active editor has a Go file, returns the editor.
  */
 function checkActiveEditor(): vscode.TextEditor {
@@ -79,48 +70,19 @@ function getGoConfigObject(editor: vscode.TextEditor): vscode.WorkspaceConfigura
 	return vscode.workspace.getConfiguration('go', documentUri);
 }
 
-/**
- *
- * @param genType the type of generation we want to use gotests to make us. The GenerationType
- * enum has the supported types.
- */
-export function GenerateTests(genType: GenerationType): Thenable<boolean> {
+export function generateTestCurrentPackage(uri: vscode.Uri): Thenable<boolean> {
+	return generateTests({ dir: path.dirname(uri.fsPath) });
+}
+
+export function generateTestCurrentFile(uri: vscode.Uri): Thenable<boolean> {
+	return generateTests({ dir: uri.fsPath });
+}
+
+export function generateTestCurrentFunction(uri: vscode.Uri): Thenable<boolean> {
 	let editor = checkActiveEditor();
 	if (!editor) {
 		return;
 	}
-
-	let goConfig = getGoConfigObject(editor);
-
-	switch (genType) {
-		case GenerationType.Package:
-			return generateTestCurrentPackage(editor, goConfig);
-		case GenerationType.File:
-			return generateTestCurrentFile(editor, goConfig);
-		case GenerationType.Function:
-			return generateTestCurrentFunction(editor, goConfig);
-		default:
-			vscode.window.showErrorMessage('unknown type passed to generate tests: ' + genType);
-			return Promise.resolve(false);
-	}
-}
-
-function generateTestCurrentPackage(editor: vscode.TextEditor, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
-	let dir = path.dirname(editor.document.uri.fsPath);
-	const goGenerateTestsFlags: string[] = goConfig['genTestsFlags'] || [];
-	return generateTests({ dir: dir, genFlags: goGenerateTestsFlags });
-}
-
-function generateTestCurrentFile(editor: vscode.TextEditor, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
-	let file = editor.document.uri.fsPath;
-	const goGenerateTestsFlags: string[] = goConfig['genTestsFlags'] || [];
-	return generateTests({ dir: file, genFlags: goGenerateTestsFlags });
-}
-
-function generateTestCurrentFunction(editor: vscode.TextEditor, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
-	let file = editor.document.uri.fsPath;
-
-	const goGenerateTestsFlags: string[] = goConfig['genTestsFlags'] || [];
 
 	return getFunctions(editor.document).then(functions => {
 		let currentFunction: vscode.SymbolInformation;
@@ -139,7 +101,7 @@ function generateTestCurrentFunction(editor: vscode.TextEditor, goConfig: vscode
 		if (funcName.includes('.')) {
 			funcName = funcName.split('.')[1];
 		}
-		return generateTests({ dir: file, func: funcName , genFlags: goGenerateTestsFlags  });
+		return generateTests({ dir: uri.fsPath, func: funcName });
 	});
 }
 
@@ -152,21 +114,25 @@ interface Config {
 	 */
 	dir: string;
 	/**
-	 * Optional Template dir for any custom templates for `gotests`.
-	 */
-	genFlags: string[];
-	/**
 	 * Specific function names to generate tests squeleton.
 	 */
 	func?: string;
 }
 
 function generateTests(conf: Config): Thenable<boolean> {
+	let editor = checkActiveEditor();
+	if (!editor) {
+		return;
+	}
+
+	let goConfig = getGoConfigObject(editor);
+
 	return new Promise<boolean>((resolve, reject) => {
 		let cmd = getBinPath('gotests');
 		let args = ['-w'];
+		let goGenerateTestsFlags: string[] = goConfig['genTestsFlags'] || [];
 
-		conf.genFlags.forEach(flag => {
+		goGenerateTestsFlags.forEach(flag => {
 			args.push(flag);
 		});
 
