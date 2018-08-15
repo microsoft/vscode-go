@@ -22,6 +22,12 @@ let allPkgsCache: Map<string, Cache> = new Map<string, Cache>();
 let pkgRootDirs = new Map<string, string>();
 
 function gopkgs(workDir?: string): Promise<Map<string, string>> {
+	const gopkgsBinPath = getBinPath('gopkgs');
+	if (!path.isAbsolute(gopkgsBinPath)) {
+		promptForMissingTool('gopkgs');
+		return Promise.resolve(new Map<string, string>());
+	}
+	
 	let t0 = Date.now();
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const args = ['-format', '{{.Name}};{{.ImportPath}}'];
@@ -29,7 +35,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 			args.push('-workDir', workDir);
 		}
 
-		const cmd = cp.spawn(getBinPath('gopkgs'), args, { env: getToolsEnvVars() });
+		const cmd = cp.spawn(gopkgsBinPath, args, { env: getToolsEnvVars() });
 		const chunks = [];
 		const errchunks = [];
 		let err: any;
