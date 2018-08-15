@@ -89,7 +89,7 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 		buildArgs.push(goConfig['buildTags']);
 	}
 
-	if (buildWorkspace && currentWorkspace && !isTestFile) {
+	if (buildWorkspace && currentWorkspace) {
 		return getNonVendorPackages(currentWorkspace).then(pkgs => {
 			let buildPromises = [];
 			buildPromises = pkgs.map(pkgPath => {
