@@ -27,7 +27,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 		promptForMissingTool('gopkgs');
 		return Promise.resolve(new Map<string, string>());
 	}
-	
+
 	let t0 = Date.now();
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const args = ['-format', '{{.Name}};{{.ImportPath}}'];
