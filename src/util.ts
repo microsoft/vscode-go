@@ -17,6 +17,7 @@ import { NearestNeighborDict, Node } from './avlTree';
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
 const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
+let userNameHash: number = 0;
 
 export const goKeywords: string[] = [
 	'break',
@@ -184,7 +185,7 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
  */
 export function getStringHash(value: string): number {
 	let hash = 5381,
-			i    = value.length;
+		i = value.length;
 
 	while (i) {
 		hash = (hash * 33) ^ value.charCodeAt(--i);
@@ -194,6 +195,18 @@ export function getStringHash(value: string): number {
 		* integers. Since we want the results to be always positive, convert the
 		* signed int to an unsigned by doing an unsigned bitshift. */
 	return hash >>> 0;
+}
+
+export function getUserNameHash() {
+	if (userNameHash) {
+		return userNameHash;
+	}
+	try {
+		userNameHash = getStringHash(os.userInfo().username);
+	} catch (error) {
+		userNameHash = 1;
+	}
+	return userNameHash;
 }
 
 /**
