@@ -1,7 +1,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { getCurrentGoPath, getToolsEnvVars } from './util';
+import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent } from './util';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -24,6 +24,23 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 	}
 
 	public resolveDebugConfiguration?(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.DebugConfiguration {
+		if (debugConfiguration) {
+			/* __GDPR__
+				"debugConfiguration" : {
+					"request" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+					"mode" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+					"useApiV1": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+					"stopOnEntry": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+				}
+			*/
+			sendTelemetryEvent('debugConfiguration', {
+				request: debugConfiguration.request,
+				mode: debugConfiguration.mode,
+				useApiV1: debugConfiguration.useApiV1,
+				stopOnEntry: debugConfiguration.stopOnEntry
+			});
+		}
+
 		const activeEditor = vscode.window.activeTextEditor;
 		if (!debugConfiguration || !debugConfiguration.request) { // if 'request' is missing interpret this as a missing launch.json
 			if (!activeEditor || activeEditor.document.languageId !== 'go') {
