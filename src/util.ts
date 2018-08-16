@@ -430,7 +430,7 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 				// No op
 			}
 		}
-		if (inferredGopath && process.env['GOPATH']) {
+		if (inferredGopath && process.env['GOPATH'] && inferredGopath !== process.env['GOPATH']) {
 			inferredGopath += path.delimiter + process.env['GOPATH'];
 		}
 	}
