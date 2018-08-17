@@ -90,6 +90,8 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 				reject(e);
 			}
 		});
-		p.stdin.end(input);
+		if (p.pid) {
+			p.stdin.end(input);
+		}
 	});
 }

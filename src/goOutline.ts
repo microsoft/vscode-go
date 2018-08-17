@@ -88,7 +88,7 @@ export function documentSymbols(options: GoOutlineOptions, token: vscode.Cancell
 				reject(e);
 			}
 		});
-		if (options.document) {
+		if (options.document && p.pid) {
 			p.stdin.end(getFileArchive(options.document));
 		}
 	});

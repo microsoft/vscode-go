@@ -295,7 +295,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					reject(e);
 				}
 			});
-			p.stdin.end(inputText);
+			if (p.pid) {
+				p.stdin.end(inputText);
+			}
 		});
 	}
 	// TODO: Shouldn't lib-path also be set?

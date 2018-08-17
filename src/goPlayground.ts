@@ -41,7 +41,7 @@ export function goPlay(code: string, goConfig: vscode.WorkspaceConfiguration): T
 	const binaryLocation = getBinPath(TOOL_CMD_NAME);
 
 	return new Promise<string>((resolve, reject) => {
-		execFile(binaryLocation, [...cliArgs, '-'], (err, stdout, stderr) => {
+		const p = execFile(binaryLocation, [...cliArgs, '-'], (err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
 				promptForMissingTool(TOOL_CMD_NAME);
 				return reject();
@@ -54,6 +54,9 @@ export function goPlay(code: string, goConfig: vscode.WorkspaceConfiguration): T
 ${stdout || stderr}
 Finished running tool: ${binaryLocation} ${cliArgs.join(' ')} -\n`
 			);
-		}).stdin.end(code);
+		});
+		if (p.pid) {
+			p.stdin.end(code);
+		}
 	});
 }

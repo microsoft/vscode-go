@@ -24,7 +24,7 @@ export function goLiveErrorsEnabled() {
 	let autoSave = files['autoSave'];
 	let autoSaveDelay = files['autoSaveDelay'];
 	if (autoSave !== null && autoSave !== undefined &&
-			autoSave === 'afterDelay' && autoSaveDelay < goConfig.delay * 1.5) {
+		autoSave === 'afterDelay' && autoSaveDelay < goConfig.delay * 1.5) {
 		return false;
 	}
 	return goConfig.enabled;
@@ -46,7 +46,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	if (runner != null) {
 		clearTimeout(runner);
 	}
-	runner = setTimeout(function(){
+	runner = setTimeout(function () {
 		processFile(e);
 		runner = null;
 	}, vscode.workspace.getConfiguration('go', e.document.uri)['liveErrors']['delay']);
@@ -63,7 +63,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 	let fileName = e.document.fileName;
 	let args = ['-e', '-a', '-lf=' + fileName, path.dirname(fileName)];
 	let env = getToolsEnvVars();
-	let p = cp.execFile(gotypeLive, args, {env}, (err, stdout, stderr) => {
+	let p = cp.execFile(gotypeLive, args, { env }, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gotype-live');
 			return;
@@ -100,5 +100,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			});
 		}
 	});
-	p.stdin.end(fileContents);
+	if (p.pid) {
+		p.stdin.end(fileContents);
+	}
 }

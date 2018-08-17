@@ -96,7 +96,9 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 				}
 				return resolve(textEdits);
 			});
-			p.stdin.end(document.getText());
+			if (p.pid) {
+				p.stdin.end(document.getText());
+			}
 		});
 	}
 }

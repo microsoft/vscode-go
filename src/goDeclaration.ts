@@ -122,7 +122,9 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 				reject(e);
 			}
 		});
-		p.stdin.end(document.getText());
+		if (p.pid) {
+			p.stdin.end(document.getText());
+		}
 	});
 }
 
@@ -176,7 +178,9 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 				reject(e);
 			}
 		});
-		p.stdin.end(getFileArchive(document));
+		if (p.pid) {
+			p.stdin.end(getFileArchive(document));
+		}
 	});
 }
 
@@ -221,7 +225,9 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 				reject(e);
 			}
 		});
-		p.stdin.end(getFileArchive(document));
+		if (p.pid) {
+			p.stdin.end(getFileArchive(document));
+		}
 	});
 }
 

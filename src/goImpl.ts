@@ -54,5 +54,7 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 			editBuilder.insert(insertPos, stdout);
 		});
 	});
-	p.stdin.end();
+	if (p.pid) {
+		p.stdin.end();
+	}
 }
