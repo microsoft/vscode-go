@@ -1040,6 +1040,11 @@
               "default": true,
               "description": "If true, adds command to generate unit tests for currnt package to the editor context menu"
             },
+            "generateMethodStubWithImpl": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to generate method stub for implementing the provided interface to the editor context menu"
+           },
             "addImport": {
               "type": "boolean",
               "default": true,
@@ -1066,6 +1071,7 @@
             "generateTestForFunction": true,
             "generateTestForFile": false,
             "generateTestForPackage": false,
+            "generateMethodStubWithImpl": true,
             "addImport": true,
             "testCoverage": true,
             "playground": true
@@ -1231,6 +1237,11 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.generateTestForPackage && resourceLangId == go",
           "command": "go.test.generate.package",
+          "group": "Go group 1"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.generateMethodStubWithImpl && resourceLangId == go",
+          "command": "go.impl.cursor",
           "group": "Go group 1"
         },
         {

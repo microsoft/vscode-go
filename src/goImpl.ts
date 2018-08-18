@@ -15,9 +15,18 @@ import { dirname } from 'path';
 const inputRegex = /^(\w+\ \*?\w+\ )?([\w./]+)$/;
 
 export function implCursor() {
-	let cursor = vscode.window.activeTextEditor.selection;
+	let editor = vscode.window.activeTextEditor;
+	let cursor = editor.selection;
+	let typeName = '';
+	let placeHolder = 'f *File io.Closer';
+	if (!cursor.isEmpty) {
+		typeName = editor.document.getText(cursor).trim();
+		if  (typeName.length > 0) {
+			placeHolder = '"' + typeName[0] + '*' + typeName + 'interface("$" for search manually)';
+		}
+	}
 	return vscode.window.showInputBox({
-		placeHolder: 'f *File io.Closer',
+		placeHolder: placeHolder,
 		prompt: 'Enter receiver and interface to implement.'
 	}).then(implInput => {
 		if (typeof implInput === 'undefined') {
