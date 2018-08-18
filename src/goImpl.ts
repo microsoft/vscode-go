@@ -17,11 +17,13 @@ export function implCursor() {
 	let editor = vscode.window.activeTextEditor;
 	let cursor = editor.selection;
 	let typeName = '';
+	let typeArg = '';
 	let placeHolder = 'f *File io.Closer';
 	if (!cursor.isEmpty) {
 		typeName = editor.document.getText(cursor).trim();
 		if  (typeName.length > 0) {
-			placeHolder = '"' + typeName[0] + '*' + typeName + 'interface("$" for search manually)';
+			typeArg = '\'' + typeName[0] + ' *' + typeName + '\'';
+			placeHolder = typeArg + 'interface("$" for search manually)';
 		}
 	}
 	return vscode.window.showInputBox({
@@ -36,9 +38,10 @@ export function implCursor() {
 			vscode.window.showInformationMessage(`Not parsable input: ${implInput}`);
 			return;
 		}
-
-
-		runGoImpl([matches[1], matches[2]], cursor.start);
+		if (typeArg.length === 0) {
+			typeArg = '\'' + matches[1] + '\'';
+		}
+		runGoImpl([typeArg, matches[2]], cursor.start);
 	});
 }
 
