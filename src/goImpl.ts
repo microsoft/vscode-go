@@ -11,7 +11,6 @@ import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { dirname } from 'path';
 
-// Supports only passing interface, see TODO in implCursor to finish
 const inputRegex = /^(\w+\ \*?\w+\ )?([\w./]+)$/;
 
 export function implCursor() {
@@ -38,9 +37,6 @@ export function implCursor() {
 			return;
 		}
 
-		// TODO: automatically detect type name at cursor
-		// if matches[1] is undefined then detect receiver type
-		// take first character and use as receiver name
 
 		runGoImpl([matches[1], matches[2]], cursor.start);
 	});
