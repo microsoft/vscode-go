@@ -10,38 +10,77 @@ import cp = require('child_process');
 import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { dirname } from 'path';
-
-const inputRegex = /^(\w+\ \*?\w+\ )?([\w./]+)$/;
+import { browsePackages } from './goBrowsePackage';
 
 export function implCursor() {
 	let editor = vscode.window.activeTextEditor;
 	let cursor = editor.selection;
 	let typeName = '';
-	let typeArg = '';
-	let placeHolder = 'f *File io.Closer';
+	let inputValue = '';
 	if (!cursor.isEmpty) {
 		typeName = editor.document.getText(cursor).trim();
 		if  (typeName.length > 0) {
-			typeArg = '\'' + typeName[0] + ' *' + typeName + '\'';
-			placeHolder = typeArg + 'interface("$" for search manually)';
+			inputValue = typeName[0] + ' *' + typeName;
 		}
 	}
 	return vscode.window.showInputBox({
-		placeHolder: placeHolder,
-		prompt: 'Enter receiver and interface to implement.'
+		ignoreFocusOut: true,
+		value: inputValue,
+		placeHolder: 'f *File io.Closer',
+		prompt: 'Enter receiver type name and interface(blank for manual search) to implement.You may choose the position of insretion before "Enter"'
 	}).then(implInput => {
 		if (typeof implInput === 'undefined') {
 			return;
 		}
-		const matches = implInput.match(inputRegex);
-		if (!matches) {
+		let inputArgs = implInput.split(' ');
+		if (!inputArgs) {
 			vscode.window.showInformationMessage(`Not parsable input: ${implInput}`);
 			return;
 		}
-		if (typeArg.length === 0) {
-			typeArg = '\'' + matches[1] + '\'';
+		let typeArg = '';
+		let interfaceArg = '';
+		if (inputArgs.length === 1) {
+			// assume the only arg here be the type name,
+			// use it's first character as reciever variable
+			// and let user search the interface arg
+			typeArg = inputArgs[0][0].toLowerCase() + ' ' + ((inputArgs[0].startsWith('*')) ? inputArgs[0] : ('*' + inputArgs[0]));
+		} else if (inputArgs.length === 2 ) {
+			if (inputArgs[0].startsWith('*')) {
+				// if the first arg starts with "*",
+				// assume it as type name and the second one as interface name
+				typeArg = inputArgs[0][0].toLowerCase() + ' *' + inputArgs[0] ;
+
+			} else if (inputArgs[1].startsWith('*')) {
+				// if the second arg starts with "*"
+				// assume it as type name and the first one as reciever name,
+				// let user search manually for interface name
+				typeArg = inputArgs[0] + ' *' + inputArgs[1];
+			} else {
+				vscode.window.showInformationMessage('Cannot stub interface: wrong input arguments');
+				return;
+			}
+
+		} else if (inputArgs.length === 3) {
+			// all three args for impl is provided
+			typeArg = '\'' + inputArgs[0] + ' ' + inputArgs[1] + '\'';
+			interfaceArg = inputArgs[2];
+		} else {
+			vscode.window.showInformationMessage('Cannot stub interface: too many input arguments');
+			return;
 		}
-		runGoImpl([typeArg, matches[2]], cursor.start);
+		if (interfaceArg.length === 0) {
+			// let user search manually for interface name
+			interfaceArg = getSelectedInterface();
+			if (interfaceArg.length === 0) {
+				vscode.window.showInformationMessage('Cannot stub interface: no interface selected');
+				return;
+			}
+		} else {
+			interfaceArg = getFullPathForInterface(interfaceArg);
+		}
+
+		typeArg = '\'' + typeArg + '\'';
+		runGoImpl([typeArg, interfaceArg], cursor.start);
 	});
 }
 
@@ -65,4 +104,13 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 	if (p.pid) {
 		p.stdin.end();
 	}
+}
+
+function getSelectedInterface(): string {
+	browsePackages();
+	return '';
+}
+
+function getFullPathForInterface(inputPath: string): string {
+	return '';
 }
