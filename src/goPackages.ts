@@ -4,7 +4,6 @@ import path = require('path');
 import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { GoDocumentSymbolProvider } from './goOutline';
 
 type GopkgsDone = (res: Map<string, string>) => void;
 interface Cache {
@@ -294,57 +293,5 @@ function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkg
 		return toDirPath.startsWith(rootProjectForInternalPkg + path.sep) || toDirPath === rootProjectForInternalPkg;
 	}
 	return true;
-}
 
-/**
- * Returns interface from a package passed in
- * @param pkg. Used to verify from which package to get interface
- * @returns interface name list in the package
- */
-export function getInterfaceFromPackages(pkg: string): string {
-	const goRuntimePath = getBinPath('go');
-	if (!goRuntimePath) {
-		vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
-		return '';
-	}
-	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
-	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], { env }, (err, stdout, stderr) => {
-		if (!stdout || stdout.indexOf(':') === -1) {
-			return;
-		}
-		let matches = stdout && stdout.match(/(.*)(:\[(.*)\]){3}/);
-		if (matches) {
-			let dir = matches[1];
-			let files = matches[2] ? matches[2].split(' ') : [];
-			let testfiles = matches[3] ? matches[3].split(' ') : [];
-			let xtestfiles = matches[4] ? matches[4].split(' ') : [];
-			files = files.concat(testfiles);
-			files = files.concat(xtestfiles);
-			// get Interfaces from files
-			let interfaceNames = [];
-			files.forEach(file =>
-				vscode.workspace.openTextDocument(path.join(dir, file)).then(document => {
-					getInterface(document).then(syms => {
-						interfaceNames =  interfaceNames.concat(syms.map(interfaceSymbol =>	interfaceSymbol.name));
-					});
-				})
-			);
-			return vscode.window.showQuickPick(interfaceNames,
-				{ placeHolder: `Below are interfaces from ${pkg}` }
-			).then( seleted => {
-				return seleted;
-			}
-			);
-		}
-	});
-}
-
-function getInterface(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
-	let documentSymbolProvider = new GoDocumentSymbolProvider();
-	return documentSymbolProvider
-		.provideDocumentSymbols(doc, null)
-		.then(symbols =>
-			symbols.filter(sym =>
-				sym.kind === vscode.SymbolKind.Interface)
-		);
 }

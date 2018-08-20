@@ -44,7 +44,7 @@ function getImports(document: vscode.TextDocument): Promise<string[]> {
 	});
 }
 
-function askUserForImport(): Thenable<string> {
+export function askUserForImport(): Thenable<string> {
 	return listPackages(true).then(packages => {
 		return vscode.window.showQuickPick(packages);
 	}, err => {
