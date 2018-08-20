@@ -10,7 +10,7 @@ import cp = require('child_process');
 import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { dirname } from 'path';
-import { browsePackages } from './goBrowsePackage';
+import { getAllPackages, getInterfaceFromPackages } from './goPackages';
 
 export function implCursor() {
 	let editor = vscode.window.activeTextEditor;
@@ -19,7 +19,7 @@ export function implCursor() {
 	let inputValue = '';
 	if (!cursor.isEmpty) {
 		typeName = editor.document.getText(cursor).trim();
-		if  (typeName.length > 0) {
+		if (typeName.length > 0) {
 			inputValue = typeName[0] + ' *' + typeName;
 		}
 	}
@@ -107,8 +107,23 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 }
 
 function getSelectedInterface(): string {
-	browsePackages();
-	return '';
+	//  show package list
+	let selectedInterface = '';
+	getAllPackages().then(pkgMap => {
+		const pkgs: string[] = Array.from(pkgMap.keys());
+		if (pkgs.length === 0) {
+			return vscode.window.showErrorMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
+		}
+
+		vscode
+			.window
+			.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
+			.then(pkgFromDropdown => {
+				if (!pkgFromDropdown) return;
+				selectedInterface = getInterfaceFromPackages(pkgFromDropdown);
+			});
+	});
+	return selectedInterface;
 }
 
 function getFullPathForInterface(inputPath: string): string {
