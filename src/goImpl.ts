@@ -241,7 +241,7 @@ function autoCompletePath(shortPkgName: string): string {
 			.split(/\s+/g).map(ImportPkg => ImportPkg.slice(1, -1));
 		} else {
 			const importStart = matches[0].indexOf('"');
-			const importEnd = matches[0].indexOf('"');
+			const importEnd = matches[0].indexOf('"', importStart + 1);
 			importList.push(matches[0].slice(importStart + 1, importEnd));
 		}
 		importList.forEach(ImportPkg => {

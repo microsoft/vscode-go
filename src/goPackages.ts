@@ -293,5 +293,4 @@ function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkg
 		return toDirPath.startsWith(rootProjectForInternalPkg + path.sep) || toDirPath === rootProjectForInternalPkg;
 	}
 	return true;
-
 }
