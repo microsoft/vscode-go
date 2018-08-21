@@ -10,7 +10,6 @@ import cp = require('child_process');
 import { dirname, join } from 'path';
 import { getBinPath, getToolsEnvVars, getCurrentGoPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { askUserForImport } from './goImport';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getAllPackages } from './goPackages';
 
@@ -91,15 +90,12 @@ export function implCursor() {
 			let pkgInterface = interfaceArg.split('.');
 			let autoPath = autoCompletePath(pkgInterface[0]);
 			if (!autoPath.length) {
-				askUserForImport().then(selected => {
-					interfaceArg = selected + '.' + pkgInterface[1];
-					runGoImpl([typeArg, interfaceArg], cursor.start);
-				});
+				vscode.window.showInformationMessage('no autocomplete, use your input ad the args');
 			} else {
 				interfaceArg = autoPath + '.' + pkgInterface[1];
-				cursor = vscode.window.activeTextEditor.selection;
-				runGoImpl([typeArg, interfaceArg], cursor.start);
 			}
+			cursor = vscode.window.activeTextEditor.selection;
+			runGoImpl([typeArg, interfaceArg], cursor.start);
 		}
 	});
 }
