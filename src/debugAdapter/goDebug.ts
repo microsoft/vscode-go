@@ -521,6 +521,8 @@ class GoDebugSession extends DebugSession {
 	private packageInfo = new Map<string, string>();
 	private launchArgs: LaunchRequestArguments;
 
+	private readonly initdone = 'initdone·';
+
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
 		this._variableHandles = new Handles<DebugVariable>();
@@ -839,9 +841,16 @@ class GoDebugSession extends DebugSession {
 							return this.sendErrorResponse(response, 2007, 'Unable to list global vars: "{e}"', { e: err.toString() });
 						}
 						const globals = this.delve.isApiV1 ? <DebugVariable[]>out : (<ListVarsOut>out).Variables;
-						globals.forEach(v => {
-							v.name = v.name.substr(packageName.length + 1);
-						});
+						let initdoneIndex = -1;
+						for (let i = 0; i < globals.length; i++) {
+							globals[i].name = globals[i].name.substr(packageName.length + 1);
+							if (initdoneIndex === -1 && globals[i].name  === this.initdone) {
+								initdoneIndex = i;
+							}
+						}
+						if (initdoneIndex > -1) {
+							globals.splice(initdoneIndex, 1);
+						}
 						verbose('global vars', globals);
 
 						const globalVariables = {
@@ -866,10 +875,10 @@ class GoDebugSession extends DebugSession {
 	}
 
 	private getPackageInfo(debugState: DebuggerState): Thenable<string> {
-		if (this.delve.remotePath.length !== 0 || !debugState.currentThread || !debugState.currentThread.file) {
+		if (!debugState.currentThread || !debugState.currentThread.file) {
 			return Promise.resolve(null);
 		}
-		const dir = path.dirname(debugState.currentThread.file);
+		const dir = path.dirname(this.delve.remotePath.length ? this.toLocalPath(debugState.currentThread.file) : debugState.currentThread.file);
 		if (this.packageInfo.has(dir)) {
 			return Promise.resolve(this.packageInfo.get(dir));
 		}
