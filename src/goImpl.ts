@@ -84,17 +84,14 @@ export function implCursor() {
 				}
 				// in case the user relocate the cursor
 				cursor = vscode.window.activeTextEditor.selection;
+				// suround the typeArg with single quotes to prevent shell globbing
+				// SEE https://github.com/josharian/impl/blob/master/impl.go#L33
+				typeArg = '\'' + typeArg + '\'';
 				runGoImpl([typeArg, interfaceArg], cursor.start);
 			});
 		} else {
-			let pkgInterface = interfaceArg.split('.');
-			let autoPath = autoCompletePath(pkgInterface[0]);
-			if (!autoPath.length) {
-				vscode.window.showInformationMessage('no autocomplete, use your input ad the args');
-			} else {
-				interfaceArg = autoPath + '.' + pkgInterface[1];
-			}
 			cursor = vscode.window.activeTextEditor.selection;
+			typeArg = '\'' + typeArg + '\'';
 			runGoImpl([typeArg, interfaceArg], cursor.start);
 		}
 	});
@@ -219,31 +216,4 @@ function getInterfaceFromDoc(doc: vscode.TextDocument): Thenable<vscode.SymbolIn
 			symbols.filter(sym => {
 				return sym.kind === vscode.SymbolKind.Interface;
 			}));
-}
-
-function autoCompletePath(shortPkgName: string): string {
-		// search 'import' in the file first, use regex
-		let currentDocument = vscode.window.activeTextEditor.document;
-		let importList: string[] = [];
-		let completePath = '';
-		const importRegexp = /(import\s*\(\s*(\"[\w./]+\"\s*)+\))|(import\s*\"[\w./]+\")/;
-		let matches = importRegexp.exec(currentDocument.getText());
-		if (!matches) {
-			return '';
-		} else if (matches[0].indexOf('(') !== -1) {
-			const importStart = matches[0].indexOf('(');
-			const importEnd = matches[0].indexOf(')');
-			importList = matches[0].slice(importStart + 1, importEnd).trim()
-			.split(/\s+/g).map(ImportPkg => ImportPkg.slice(1, -1));
-		} else {
-			const importStart = matches[0].indexOf('"');
-			const importEnd = matches[0].indexOf('"', importStart + 1);
-			importList.push(matches[0].slice(importStart + 1, importEnd));
-		}
-		importList.forEach(ImportPkg => {
-			if (ImportPkg.endsWith(shortPkgName)) {
-				completePath = ImportPkg;
-			}
-		});
-		return completePath;
 }
