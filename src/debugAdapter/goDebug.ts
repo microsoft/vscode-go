@@ -9,7 +9,7 @@ import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
 import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
-import { spawn, ChildProcess, execSync, spawnSync } from 'child_process';
+import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 import * as logger from 'vscode-debug-logger';
@@ -134,7 +134,7 @@ interface DebugFunction {
 	locals: DebugVariable[];
 }
 
-interface ListLocalVarsOut {
+interface ListVarsOut {
 	Variables: DebugVariable[];
 }
 
@@ -256,6 +256,7 @@ class Delve {
 	onclose: (code: number) => void;
 	noDebug: boolean;
 	isApiV1: boolean;
+	dlvEnv: any;
 
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = normalizePath(program);
@@ -304,7 +305,7 @@ class Delve {
 				// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
 				env['GOPATH'] = getInferredGopath(dirname) || env['GOPATH'];
 			}
-
+			this.dlvEnv = env;
 			verbose(`Using GOPATH: ${env['GOPATH']}`);
 
 			if (!!launchArgs.noDebug) {
@@ -517,8 +518,10 @@ class GoDebugSession extends DebugSession {
 	private delve: Delve;
 	private localPathSeparator: string;
 	private remotePathSeparator: string;
-
+	private packageInfo = new Map<string, string>();
 	private launchArgs: LaunchRequestArguments;
+
+	private readonly initdone = 'initdone·';
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super(debuggerLinesStartAt1, isServer);
@@ -792,12 +795,12 @@ class GoDebugSession extends DebugSession {
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
 		verbose('ScopesRequest');
 		const listLocalVarsIn = { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId };
-		this.delve.call<DebugVariable[] | ListLocalVarsOut>('ListLocalVars', this.delve.isApiV1 ? [listLocalVarsIn] : [{ scope: listLocalVarsIn, cfg: this.delve.loadConfig }], (err, out) => {
+		this.delve.call<DebugVariable[] | ListVarsOut>('ListLocalVars', this.delve.isApiV1 ? [listLocalVarsIn] : [{ scope: listLocalVarsIn, cfg: this.delve.loadConfig }], (err, out) => {
 			if (err) {
 				logError('Failed to list local variables - ' + err.toString());
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
-			const locals = this.delve.isApiV1 ? <DebugVariable[]>out : (<ListLocalVarsOut>out).Variables;
+			const locals = this.delve.isApiV1 ? <DebugVariable[]>out : (<ListVarsOut>out).Variables;
 			verbose('locals', locals);
 			let listLocalFunctionArgsIn = { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId };
 			this.delve.call<DebugVariable[] | ListFunctionArgsOut>('ListFunctionArgs', this.delve.isApiV1 ? [listLocalFunctionArgsIn] : [{ scope: listLocalFunctionArgsIn, cfg: this.delve.loadConfig }], (err, outArgs) => {
@@ -824,8 +827,73 @@ class GoDebugSession extends DebugSession {
 				};
 				scopes.push(new Scope('Local', this._variableHandles.create(localVariables), false));
 				response.body = { scopes };
-				this.sendResponse(response);
-				verbose('ScopesResponse');
+
+				this.getPackageInfo(this.debugState).then(packageName => {
+					if (!packageName) {
+						this.sendResponse(response);
+						verbose('ScopesResponse');
+						return;
+					}
+					const filter = `^${packageName}\\.`;
+					this.delve.call<DebugVariable[] | ListVarsOut>('ListPackageVars', this.delve.isApiV1 ? [filter] : [{ filter, cfg: this.delve.loadConfig }], (err, out) => {
+						if (err) {
+							logError('Failed to list global vars - ' + err.toString());
+							return this.sendErrorResponse(response, 2007, 'Unable to list global vars: "{e}"', { e: err.toString() });
+						}
+						const globals = this.delve.isApiV1 ? <DebugVariable[]>out : (<ListVarsOut>out).Variables;
+						let initdoneIndex = -1;
+						for (let i = 0; i < globals.length; i++) {
+							globals[i].name = globals[i].name.substr(packageName.length + 1);
+							if (initdoneIndex === -1 && globals[i].name  === this.initdone) {
+								initdoneIndex = i;
+							}
+						}
+						if (initdoneIndex > -1) {
+							globals.splice(initdoneIndex, 1);
+						}
+						verbose('global vars', globals);
+
+						const globalVariables = {
+							name: 'Global',
+							addr: 0,
+							type: '',
+							realType: '',
+							kind: 0,
+							value: '',
+							len: 0,
+							cap: 0,
+							children: globals,
+							unreadable: ''
+						};
+						scopes.push(new Scope('Global', this._variableHandles.create(globalVariables), false));
+						this.sendResponse(response);
+						verbose('ScopesResponse');
+					});
+				});
+			});
+		});
+	}
+
+	private getPackageInfo(debugState: DebuggerState): Thenable<string> {
+		if (!debugState.currentThread || !debugState.currentThread.file) {
+			return Promise.resolve(null);
+		}
+		const dir = path.dirname(this.delve.remotePath.length ? this.toLocalPath(debugState.currentThread.file) : debugState.currentThread.file);
+		if (this.packageInfo.has(dir)) {
+			return Promise.resolve(this.packageInfo.get(dir));
+		}
+		return new Promise(resolve => {
+			execFile(getBinPathWithPreferredGopath('go', []), ['list', '-f', '{{.Name}} {{.ImportPath}}'], { cwd: dir, env: this.delve.dlvEnv }, (err, stdout, stderr) => {
+				if (err || stderr || !stdout) {
+					logError(`go list failed on ${dir}: ${stderr || err}`);
+					return resolve();
+				}
+				if (stdout.split('\n').length !== 2) {
+					logError(`Cannot determine package for ${dir}`);
+					return resolve();
+				}
+				const spaceIndex = stdout.indexOf(' ');
+				resolve(stdout.substr(0, spaceIndex) === 'main' ? 'main' : stdout.substr(spaceIndex).trim());
 			});
 		});
 	}
