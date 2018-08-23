@@ -82,19 +82,20 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 			buildFlags.splice(buildFlags.indexOf('-i'), 1);
 		}
 	}
-	buildArgs.push('-o', tmpPath, ...buildFlags);
+	buildArgs.push(...buildFlags);
 	if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 		buildArgs.push('-tags');
 		buildArgs.push(goConfig['buildTags']);
 	}
 
 	if (buildWorkspace && currentWorkspace && !isTestFile) {
+		let count = 1;
 		return getNonVendorPackages(currentWorkspace).then(pkgs => {
 			let buildPromises = [];
 			buildPromises = pkgs.map(pkgPath => {
 				running = true;
 				return runTool(
-					buildArgs.concat(pkgPath),
+					buildArgs.concat('-o', `${tmpPath}-${count++}`, pkgPath),
 					currentWorkspace,
 					'error',
 					true,
@@ -123,7 +124,7 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 	let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
 	running = true;
 	return runTool(
-		buildArgs.concat(importPath),
+		buildArgs.concat('-o', tmpPath, importPath),
 		cwd,
 		'error',
 		true,
