@@ -29,7 +29,7 @@ export class GoHoverProvider implements HoverProvider {
 		return definitionLocation(document, position, goConfig, true, token).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let lines = definitionInfo.declarationlines
-				.filter(line => !line.startsWith('\t//') && line !== '')
+				.filter(line => line !== '')
 				.map(line => line.replace(/\t/g, '    '));
 			let text;
 			text = lines.join('\n').replace(/\n+$/, '');

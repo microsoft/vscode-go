@@ -1,14 +1,14 @@
 {
   "name": "Go",
-  "version": "0.6.67",
-  "publisher": "lukehoban",
+  "version": "0.6.89-beta.2",
+  "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
     "name": "Microsoft Corporation - Development Labs"
   },
   "icon": "images/goIcon.png",
   "categories": [
-    "Languages",
+    "Programming Languages",
     "Snippets",
     "Linters",
     "Debuggers",
@@ -40,10 +40,10 @@
     "json-rpc2": "^1.0.2",
     "vscode": "^1.1.4",
     "vscode-debug-logger": "^0.0.4",
-    "vscode-debugadapter": "^1.11.0",
+    "vscode-debugadapter": "^1.30.0",
     "vscode-debugprotocol": "^1.11.0",
-    "vscode-extension-telemetry": "0.0.5",
-    "vscode-languageclient": "^2.5.0"
+    "vscode-extension-telemetry": "^0.0.15",
+    "vscode-languageclient": "~4.3.0"
   },
   "devDependencies": {
     "@types/fs-extra": "0.0.35",
@@ -55,13 +55,13 @@
     "vscode": "^1.1.4"
   },
   "engines": {
-    "vscode": "^1.17.0"
+    "vscode": "^1.22.0"
   },
   "activationEvents": [
     "onLanguage:go",
     "onCommand:go.gopath",
     "onCommand:go.tools.install",
-    "onDebug"
+    "onDebugResolve:go"
   ],
   "main": "./out/src/goMain",
   "contributes": {
@@ -82,6 +82,12 @@
         "path": "./snippets/go.json"
       }
     ],
+    "configurationDefaults": {
+      "[go]": {
+        "editor.insertSpaces": false,
+        "editor.formatOnSave": true
+      }
+    },
     "commands": [
       {
         "command": "go.gopath",
@@ -149,9 +155,14 @@
         "description": "Add an import declaration"
       },
       {
+        "command": "go.add.package.workspace",
+        "title": "Go: Add Package to Workspace",
+        "description": "Add a package from the imports list to the workspace."
+      },
+      {
         "command": "go.expanderr.run",
         "title": "Go: Run Expanderr",
-        "description": "Expand the expression under the curosor to check for errors"
+        "description": "Expand the expression under the cursor to check for errors"
       },
       {
         "command": "go.tools.install",
@@ -174,9 +185,14 @@
         "description": "Remove tags configured in go.removeTags setting from selected struct using gomodifytags"
       },
       {
+        "command": "go.fill.struct",
+        "title": "Go: Fill struct",
+        "description": "Fill a struct literal with default values"
+      },
+      {
         "command": "go.show.commands",
         "title": "Go: Show All Commands...",
-        "description": "Shows all commands from the Go extension in the wuick pick"
+        "description": "Shows all commands from the Go extension in the quick pick"
       },
       {
         "command": "go.browse.packages",
@@ -227,6 +243,11 @@
         "command": "go.install.package",
         "title": "Go: Install Current Package",
         "description": "Install the current package."
+      },
+      {
+        "command": "go.test.cancel",
+        "title": "Go: Cancel Running Tests",
+        "description": "Cancels running tests."
       }
     ],
     "debuggers": [
@@ -291,6 +312,22 @@
                 "${2:MyTestFunction}"
               ]
             }
+          },
+          {
+            "label": "Go: Connect to server",
+            "description": "Connect to a remote headless debug server",
+            "body": {
+              "name": "${3:Connect to server}",
+              "type": "go",
+              "request": "launch",
+              "mode": "remote",
+              "remotePath": "^\"\\${workspaceRoot}${1:}\"",
+              "port": 2345,
+              "host": "127.0.0.1",
+              "program": "^\"\\${workspaceRoot}${1:}\"",
+              "env": {},
+              "args": []
+            }
           }
         ],
         "configurationAttributes": {
@@ -304,13 +341,14 @@
               },
               "mode": {
                 "enum": [
+                  "auto",
                   "debug",
                   "remote",
                   "test",
                   "exec"
                 ],
-                "description": "One of 'debug', 'remote', 'test', 'exec'.",
-                "default": "debug"
+                "description": "One of 'auto', 'debug', 'remote', 'test', 'exec'.",
+                "default": "auto"
               },
               "stopOnEntry": {
                 "type": "boolean",
@@ -390,6 +428,66 @@
                   "lldb"
                 ],
                 "description": "Backend used by delve. Only available in delve version 0.12.2 and above."
+              },
+              "output": {
+                "type": "string",
+                "description": "Output path for the binary of delve",
+                "default": "debug"
+              },
+              "logOutput": {
+                "type": "string",
+                "enum": [
+                  "debugger",
+                  "gdbwire",
+                  "lldbout",
+                  "debuglineerr",
+                  "rpc"
+                ],
+                "description": "Comma separated list of components that should produce debug output.",
+                "default": "debugger"
+              },
+              "dlvLoadConfig": {
+                "type": "object",
+                "properties": {
+                  "followPointers": {
+                    "type": "boolean",
+                    "description": "FollowPointers requests pointers to be automatically dereferenced",
+                    "default": true
+                  },
+                  "maxVariableRecurse": {
+                    "type": "number",
+                    "description": "MaxVariableRecurse is how far to recurse when evaluating nested types",
+                    "default": 1
+                  },
+                  "maxStringLen": {
+                    "type": "number",
+                    "description": "MaxStringLen is the maximum number of bytes read from a string",
+                    "default": 64
+                  },
+                  "maxArrayValues": {
+                    "type": "number",
+                    "description": "MaxArrayValues is the maximum number of elements read from an array, a slice or a map",
+                    "default": 64
+                  },
+                  "maxStructFields": {
+                    "type": "number",
+                    "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
+                    "default": -1
+                  }
+                },
+                "description": "LoadConfig describes to delve, how to load values from target's memory",
+                "default": {
+                  "followPointers": true,
+                  "maxVariableRecurse": 1,
+                  "maxStringLen": 64,
+                  "maxArrayValues": 64,
+                  "maxStructFields": -1
+                }
+              },
+              "useApiV1": {
+                "type": "boolean",
+                "description": "If true, the v1 of delve apis will be used, else v2 will be used",
+                "default": true
               }
             }
           }
@@ -426,6 +524,12 @@
           "description": "The Go build tags to use for all commands that support a `-tags '...'` argument",
           "scope": "resource"
         },
+        "go.installDependenciesWhenBuilding": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, then `-i` flag will be passed to `go build` everytime the code is compiled.",
+          "scope": "resource"
+        },
         "go.lintOnSave": {
           "type": "string",
           "enum": [
@@ -434,7 +538,7 @@
             "off"
           ],
           "default": "package",
-          "description": "Lints code on file save using the configured Lint tool. Options are 'workspace', 'package or 'off'.",
+          "description": "Lints code on file save using the configured Lint tool. Options are 'workspace', 'package' or 'off'.",
           "scope": "resource"
         },
         "go.lintTool": {
@@ -445,7 +549,9 @@
           "enum": [
             "golint",
             "gometalinter",
-            "megacheck"
+            "megacheck",
+            "golangci-lint",
+            "revive"
           ]
         },
         "go.lintFlags": {
@@ -477,21 +583,16 @@
           "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])",
           "scope": "resource"
         },
-        "go.formatOnSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "Runs formatting tool on save.",
-          "scope": "resource"
-        },
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports' or 'goreturns' to run on format.",
+          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format.",
           "scope": "resource",
           "enum": [
             "gofmt",
             "goimports",
-            "goreturns"
+            "goreturns",
+            "goformat"
           ]
         },
         "go.formatFlags": {
@@ -501,12 +602,6 @@
           },
           "default": [],
           "description": "Flags to pass to format tool (e.g. ['-s'])",
-          "scope": "resource"
-        },
-        "go.useDiffForFormatting": {
-          "type": "boolean",
-          "default": true,
-          "description": "Run the formatting tools with the -d flag",
           "scope": "resource"
         },
         "go.inferGopath": {
@@ -556,6 +651,11 @@
           "default": true,
           "description": "If true, shows test coverage when Go: Test Package command is run."
         },
+        "go.coverOnSingleTest": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, shows test coverage when Go: Test Function at cursor command is run."
+        },
         "go.coverageOptions": {
           "type": "string",
           "enum": [
@@ -568,13 +668,73 @@
           "scope": "resource"
         },
         "go.coverageDecorator": {
-          "type": "string",
-          "enum": [
-            "highlight",
-            "gutter"
-          ],
-          "default": "highlight",
-          "description": "This option lets you choose the way to display code coverage. Highlight, as its name states, highlights the line in red or green, gutter shows the colors in the gutter of the editor.",
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "default": "highlight",
+              "enum": [
+                "highlight",
+                "gutter"
+              ]
+            },
+            "coveredHighlightColor": {
+              "type": "string",
+              "default": "rgba(64,128,128,0.5)",
+              "description": "Color in the rgba format to use to highlight covered code."
+            },
+            "uncoveredHighlightColor": {
+              "type": "string",
+              "default": "rgba(128,64,64,0.25)",
+              "description": "Color in the rgba format to use to highlight uncovered code."
+            },
+            "coveredGutterStyle": {
+              "type": "string",
+              "default": "blockblue",
+              "enum": [
+                "blockblue",
+                "blockred",
+                "blockgreen",
+                "blockyellow",
+                "slashred",
+                "slashgreen",
+                "slashblue",
+                "slashyellow",
+                "verticalred",
+                "verticalgreen",
+                "verticalblue",
+                "verticalyellow"
+              ],
+              "description": "Gutter style to indicate covered code."
+            },
+            "uncoveredGutterStyle": {
+              "type": "string",
+              "default": "blockblue",
+              "enum": [
+                "blockblue",
+                "blockred",
+                "blockgreen",
+                "blockyellow",
+                "slashred",
+                "slashgreen",
+                "slashblue",
+                "slashyellow",
+                "verticalred",
+                "verticalgreen",
+                "verticalblue",
+                "verticalyellow"
+              ],
+              "description": "Gutter style to indicate covered code."
+            }
+          },
+          "default": {
+            "type": "highlight",
+            "coveredHighlightColor": "rgba(64,128,128,0.5)",
+            "uncoveredHighlightColor": "rgba(128,64,64,0.25)",
+            "coveredGutterStyle": "blockblue",
+            "uncoveredGutterStyle": "slashyellow"
+          },
+          "description": "This option lets you choose the way to display code coverage. Choose either to highlight the complete line or to show a decorator in the gutter. You can customize the color for the former and the style for the latter.",
           "scope": "resource"
         },
         "go.testTimeout": {
@@ -661,17 +821,43 @@
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
-          "description": "Experimental: Not available in Windows. Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features"
+          "description": "Experimental: Not available in Windows. Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features instead of tools like guru, godef, go-outline and go-symbol"
         },
         "go.languageServerFlags": {
           "type": "array",
           "default": [],
           "description": "Flags like -trace and -logfile to be used while running the language server."
         },
+        "go.languageServerExperimentalFeatures": {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, gofmt is used by the language server to format files."
+            },
+            "autoComplete": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will provide code completion results."
+            }
+          },
+          "default": {
+            "format": false,
+            "autoComplete": false
+          },
+          "description": "Use this setting to enable/disable experimental features from the language server."
+        },
         "go.gotoSymbol.includeImports": {
           "type": "boolean",
           "default": false,
           "description": "If false, the import statements will be excluded while using the Go to Symbol in File feature",
+          "scope": "resource"
+        },
+        "go.gotoSymbol.includeGoroot": {
+          "type": "boolean",
+          "default": false,
+          "description": "If false, the standard library located at $GOROOT will be excluded while using the Go to Symbol in File feature",
           "scope": "resource"
         },
         "go.enableCodeLens": {
@@ -824,6 +1010,11 @@
               "default": true,
               "description": "If true, adds command to remove configured tags from struct fields to the editor context menu"
             },
+            "fillStruct": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to fill struct literal with default values to the editor context menu"
+            },
             "testAtCursor": {
               "type": "boolean",
               "default": true,
@@ -896,6 +1087,98 @@
           "default": [],
           "description": "Folder names (not paths) to ignore while using Go to Symbol in Workspace feature",
           "scope": "resource"
+        },
+        "go.delveConfig": {
+          "type": "object",
+          "properties": {
+            "dlvLoadConfig": {
+              "type": "object",
+              "properties": {
+                "followPointers": {
+                  "type": "boolean",
+                  "description": "FollowPointers requests pointers to be automatically dereferenced",
+                  "default": true
+                },
+                "maxVariableRecurse": {
+                  "type": "number",
+                  "description": "MaxVariableRecurse is how far to recurse when evaluating nested types",
+                  "default": 1
+                },
+                "maxStringLen": {
+                  "type": "number",
+                  "description": "MaxStringLen is the maximum number of bytes read from a string",
+                  "default": 64
+                },
+                "maxArrayValues": {
+                  "type": "number",
+                  "description": "MaxArrayValues is the maximum number of elements read from an array, a slice or a map",
+                  "default": 64
+                },
+                "maxStructFields": {
+                  "type": "number",
+                  "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
+                  "default": -1
+                }
+              },
+              "description": "LoadConfig describes to delve, how to load values from target's memory",
+              "default": {
+                "followPointers": true,
+                "maxVariableRecurse": 1,
+                "maxStringLen": 64,
+                "maxArrayValues": 64,
+                "maxStructFields": -1
+              }
+            },
+            "useApiV1": {
+              "type": "boolean",
+              "description": "If true, the v1 of delve apis will be used, else v2 will be used",
+              "default": true
+            }
+          },
+          "scope": "resource"
+        },
+        "go.alternateTools": {
+          "type": "object",
+          "default": {},
+          "description": "Alternate tools or alternate paths for the same tools used by the Go extension. Provide either absolute path or the name of the binary in GOPATH/bin, GOROOT/bin or PATH. Useful when you want to use wrapper script for the Go tools or versioned tools from https://gopkg.in.",
+          "scope": "resource",
+          "properties": {
+            "go": {
+              "type": "string",
+              "default": "go",
+              "description": "Alternate tool to use instead of the go binary or alternate path to use for the go binary."
+            },
+            "gometalinter": {
+              "type": "string",
+              "default": "gometalinter",
+              "description": "Alternate tool to use instead of the gometalinter binary or alternate path to use for the gometalinter binary."
+            },
+            "gocode": {
+              "type": "string",
+              "default": "gocode",
+              "description": "Alternate tool to use instead of the gocode binary or alternate path to use for the gocode binary."
+            },
+            "gopkgs": {
+              "type": "string",
+              "default": "gopkgs",
+              "description": "Alternate tool to use instead of the gopkgs binary or alternate path to use for the gopkgs binary."
+            },
+            "godoc": {
+              "type": "string",
+              "default": "godoc",
+              "description": "Alternate tool to use instead of the godoc binary or alternate path to use for the godoc binary."
+            },
+            "go-outline": {
+              "type": "string",
+              "default": "go-outline",
+              "description": "Alternate tool to use instead of the go-outline binary or alternate path to use for the go-outline binary."
+            },
+            "guru": {
+              "type": "string",
+              "default": "guru",
+              "description": "Alternate tool to use instead of the guru binary or alternate path to use for the guru binary."
+            }
+          }
         }
       }
     },
@@ -914,6 +1197,11 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.removeTags && resourceLangId == go",
           "command": "go.remove.tags",
+          "group": "Go group 1"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.fillStruct && resourceLangId == go",
+          "command": "go.fill.struct",
           "group": "Go group 1"
         },
         {

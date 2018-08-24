@@ -8,17 +8,17 @@
 import vscode = require('vscode');
 import path = require('path');
 import os = require('os');
-import { getGoRuntimePath } from './goPath';
 import { getCoverage } from './goCover';
-import { outputChannel } from './goStatus';
+import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest } from './testUtils';
-import { ICheckResult } from './util';
+import { ICheckResult, getBinPath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
+const neverAgain = { title: 'Don\'t Show Again' };
 
 export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 	if (e.document.isUntitled) {
@@ -28,11 +28,30 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 	statusBarItem.text = '';
 }
 
+export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
+	let ctx = this;
+	if (e.document.isUntitled || e.document.languageId !== 'go') {
+		return;
+	}
+
+	let documentUri = e ? e.document.uri : null;
+	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
+
+	if ((ctx.globalState.get('ignoreGeneratedCodeWarning') !== true) && e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
+		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then(result => {
+			if (result === neverAgain) {
+				ctx.globalState.update('ignoreGeneratedCodeWarning', true);
+			}
+		});
+	}
+}
+
 export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+	diagnosticsStatusBarItem.hide();
 	outputChannel.clear();
 	let runningToolsPromises = [];
 	let cwd = path.dirname(fileUri.fsPath);
-	let goRuntimePath = getGoRuntimePath();
+	let goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');

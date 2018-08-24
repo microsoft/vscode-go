@@ -2,7 +2,7 @@ import path = require('path');
 import vscode = require('vscode');
 import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath } from './util';
 import { outputChannel } from './goStatus';
-
+import { diagnosticsStatusBarItem } from './goStatus';
 /**
  * Runs linter in the current package or workspace.
  */
@@ -19,13 +19,19 @@ export function lintCode(lintWorkspace?: boolean) {
 
 	let documentUri = editor ? editor.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
-	outputChannel.clear();
-	outputChannel.show();
-	outputChannel.appendLine('Litning in progress...');
+
+	outputChannel.clear(); // Ensures stale output from lint on save is cleared
+	diagnosticsStatusBarItem.show();
+	diagnosticsStatusBarItem.text = 'Linting...';
+
 	goLint(documentUri, goConfig, lintWorkspace)
-		.then(warnings => handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning))
+		.then(warnings => {
+			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
+			diagnosticsStatusBarItem.hide();
+		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
+			diagnosticsStatusBarItem.text = 'Linting Failed';
 		});
 }
 
@@ -37,21 +43,39 @@ export function lintCode(lintWorkspace?: boolean) {
  * @param lintWorkspace If true runs linter in all workspace.
  */
 export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?: boolean): Promise<ICheckResult[]> {
-	let lintTool = goConfig['lintTool'] || 'golint';
-	let lintFlags: string[] = goConfig['lintFlags'] || [];
-	let lintEnv = Object.assign({}, getToolsEnvVars());
-	let args = [];
-	let configFlag = '--config=';
-	let currentWorkspace = getWorkspaceFolderPath(fileUri);
+	epoch++;
+	let closureEpoch = epoch;
+	if (tokenSource) {
+		if (running) {
+			tokenSource.cancel();
+		}
+		tokenSource.dispose();
+	}
+	tokenSource = new vscode.CancellationTokenSource();
+
+	const currentWorkspace = getWorkspaceFolderPath(fileUri);
+	const cwd = (lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+	if (!path.isAbsolute(cwd)) {
+		return Promise.resolve([]);
+	}
+
+	const lintTool = goConfig['lintTool'] || 'golint';
+	const lintFlags: string[] = goConfig['lintFlags'] || [];
+	const lintEnv = Object.assign({}, getToolsEnvVars());
+	const args = [];
+
 	lintFlags.forEach(flag => {
 		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
 		if (flag === '--json') {
 			return;
 		}
-		if (flag.startsWith(configFlag)) {
-			let configFilePath = flag.substr(configFlag.length);
+		if (flag.startsWith('--config=') || flag.startsWith('-config=')) {
+			let configFilePath = flag.substr(flag.indexOf('=') + 1).trim();
+			if (!configFilePath) {
+				return;
+			}
 			configFilePath = resolvePath(configFilePath);
-			args.push(`${configFlag}${configFilePath}`);
+			args.push(`${flag.substr(0, flag.indexOf('=') + 1)}${configFilePath}`);
 			return;
 		}
 		args.push(flag);
@@ -66,19 +90,24 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 			lintEnv['GOPATH'] += path.delimiter + goConfig['toolsGopath'];
 		}
 	}
+	if (lintTool === 'golangci-lint') {
+		if (args.indexOf('run') === -1) {
+			args.unshift('run');
+		}
+		if (args.indexOf('--print-issued-lines=false') === -1) {
+			// print only file:number:column
+			args.push('--print-issued-lines=false');
+		}
+	}
 
 	if (lintWorkspace && currentWorkspace) {
 		args.push('./...');
 	}
 
-	if (running) {
-		tokenSource.cancel();
-	}
-
 	running = true;
 	const lintPromise = runTool(
 		args,
-		(lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath),
+		cwd,
 		'warning',
 		false,
 		lintTool,
@@ -86,12 +115,14 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		false,
 		tokenSource.token
 	).then((result) => {
-		running = false;
+		if (closureEpoch === epoch)
+			running = false;
 		return result;
 	});
 
 	return lintPromise;
 }
 
-let tokenSource = new vscode.CancellationTokenSource();
+let epoch = 0;
+let tokenSource: vscode.CancellationTokenSource;
 let running = false;

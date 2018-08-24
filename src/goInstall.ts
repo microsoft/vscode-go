@@ -1,8 +1,8 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, getCurrentGoPath } from './util';
+import { getToolsEnvVars, getCurrentGoPath, getBinPath } from './util';
 import { outputChannel } from './goStatus';
-import { getCurrentGoWorkspaceFromGOPATH, getGoRuntimePath } from './goPath';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import cp = require('child_process');
 
 export function installCurrentPackage() {
@@ -16,7 +16,7 @@ export function installCurrentPackage() {
 		return;
 	}
 
-	let goRuntimePath = getGoRuntimePath();
+	let goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return;
@@ -29,7 +29,7 @@ export function installCurrentPackage() {
 	const args = ['install', ...buildFlags];
 
 	if (goConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
-		args.push('-tags', '"' + goConfig['buildTags'] + '"');
+		args.push('-tags', goConfig['buildTags']);
 	}
 
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846

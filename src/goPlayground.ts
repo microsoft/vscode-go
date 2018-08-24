@@ -31,7 +31,7 @@ export const playgroundCommand = () => {
 		outputChannel.append(result);
 	}, (e: string) => {
 		if (e) {
-			vscode.window.showErrorMessage(e);
+			outputChannel.append(e);
 		}
 	});
 };
@@ -41,19 +41,22 @@ export function goPlay(code: string, goConfig: vscode.WorkspaceConfiguration): T
 	const binaryLocation = getBinPath(TOOL_CMD_NAME);
 
 	return new Promise<string>((resolve, reject) => {
-		execFile(binaryLocation, [...cliArgs, '-'], (err, stdout, stderr) => {
+		const p = execFile(binaryLocation, [...cliArgs, '-'], (err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
 				promptForMissingTool(TOOL_CMD_NAME);
 				return reject();
 			}
 			if (err) {
-				return reject(`${TOOL_CMD_NAME}: ${stdout || stderr || err.message}`);
+				return reject(`Upload to the Go Playground failed.\n${stdout || stderr || err.message}`);
 			}
 			return resolve(
 				`Output from the Go Playground:
 ${stdout || stderr}
 Finished running tool: ${binaryLocation} ${cliArgs.join(' ')} -\n`
 			);
-		}).stdin.end(code);
+		});
+		if (p.pid) {
+			p.stdin.end(code);
+		}
 	});
 }

@@ -1,7 +1,8 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion } from './util';
 import { outputChannel } from './goStatus';
+import { diagnosticsStatusBarItem } from './goStatus';
 
 /**
  * Runs go vet in the current package or workspace.
@@ -19,13 +20,19 @@ export function vetCode(vetWorkspace?: boolean) {
 
 	let documentUri = editor ? editor.document.uri : null;
 	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
-	outputChannel.clear();
-	outputChannel.show();
-	outputChannel.appendLine('Vetting in progress...');
+
+	outputChannel.clear(); // Ensures stale output from vet on save is cleared
+	diagnosticsStatusBarItem.show();
+	diagnosticsStatusBarItem.text = 'Vetting...';
+
 	goVet(documentUri, goConfig, vetWorkspace)
-		.then(warnings => handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning))
+		.then(warnings => {
+			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
+			diagnosticsStatusBarItem.hide();
+		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);
+			diagnosticsStatusBarItem.text = 'Vetting Failed';
 		});
 }
 
@@ -37,32 +44,56 @@ export function vetCode(vetWorkspace?: boolean) {
  * @param vetWorkspace If true vets code in all workspace.
  */
 export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace?: boolean): Promise<ICheckResult[]> {
-	let vetFlags = goConfig['vetFlags'] || [];
-	let vetEnv = Object.assign({}, getToolsEnvVars());
-	let vetArgs = vetFlags.length ? ['tool', 'vet', ...vetFlags, '.'] : ['vet', './...'];
-	let currentWorkspace = getWorkspaceFolderPath(fileUri);
+	epoch++;
+	let closureEpoch = epoch;
+	if (tokenSource) {
+		if (running) {
+			tokenSource.cancel();
+		}
+		tokenSource.dispose();
+	}
+	tokenSource = new vscode.CancellationTokenSource();
 
-	if (running) {
-		tokenSource.cancel();
+	const currentWorkspace = getWorkspaceFolderPath(fileUri);
+	const cwd = (vetWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+	if (!path.isAbsolute(cwd)) {
+		return Promise.resolve([]);
 	}
 
-	running = true;
-	const vetPromise = runTool(
-		vetArgs,
-		(vetWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath),
-		'warning',
-		true,
-		null,
-		vetEnv,
-		false,
-		tokenSource.token
-	).then((result) => {
-		running = false;
-		return result;
+	const vetFlags = goConfig['vetFlags'] || [];
+	const vetEnv = Object.assign({}, getToolsEnvVars());
+	const vetPromise = getGoVersion().then((version: SemVersion) => {
+		const tagsArg = [];
+		if (goConfig['buildTags'] && vetFlags.indexOf('-tags') === -1) {
+			tagsArg.push('-tags');
+			tagsArg.push(goConfig['buildTags']);
+		}
+
+		let vetArgs = ['vet', ...vetFlags, ...tagsArg, './...'];
+		if (version && version.major === 1 && version.minor <= 9 && vetFlags.length) {
+			vetArgs = ['tool', 'vet', ...vetFlags, ...tagsArg, '.'];
+		}
+
+		running = true;
+		return runTool(
+			vetArgs,
+			cwd,
+			'warning',
+			true,
+			null,
+			vetEnv,
+			false,
+			tokenSource.token
+		).then((result) => {
+			if (closureEpoch === epoch)
+				running = false;
+			return result;
+		});
 	});
 
 	return vetPromise;
 }
 
-let tokenSource = new vscode.CancellationTokenSource();
+let epoch = 0;
+let tokenSource: vscode.CancellationTokenSource;
 let running = false;

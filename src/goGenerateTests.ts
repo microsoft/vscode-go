@@ -55,6 +55,12 @@ export function toggleTestFile(): void {
 	} else {
 		targetFilePath = currentFilePath.substr(0, currentFilePath.lastIndexOf('.go')) + '_test.go';
 	}
+	for (let doc of vscode.window.visibleTextEditors) {
+		if (doc.document.fileName === targetFilePath) {
+			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath), doc.viewColumn);
+			return;
+		}
+	}
 	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath));
 }
 
@@ -93,7 +99,7 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 		};
 		if (!currentFunction) {
 			vscode.window.showInformationMessage('No function found at cursor.');
-			return;
+			return Promise.resolve(false);
 		}
 		let funcName = currentFunction.name;
 		if (funcName.includes('.')) {
@@ -122,7 +128,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 		let cmd = getBinPath('gotests');
 		let args;
 		if (conf.func) {
-			args = ['-w', '-only', conf.func, conf.dir];
+			args = ['-w', '-only', `^${conf.func}$`, conf.dir];
 		} else {
 			args = ['-w', '-all', conf.dir];
 		}

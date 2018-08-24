@@ -31,6 +31,9 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	if (!wordRange || lineText.startsWith('//') || isPositionInString(document, position) || word.match(/^\d+.?\d+$/) || goKeywords.indexOf(word) > 0) {
 		return Promise.resolve(null);
 	}
+	if (position.isEqual(wordRange.end) && position.isAfter(wordRange.start)) {
+		position = position.translate(0, -1);
+	}
 	if (!goConfig) {
 		goConfig = vscode.workspace.getConfiguration('go', document.uri);
 	}
@@ -67,7 +70,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 					return reject(missingToolMsg + 'godef');
 				}
 				if (err) {
-					return reject(err);
+					return reject(err.message || stderr);
 				};
 				let result = stdout.toString();
 				let lines = result.split('\n');
@@ -119,7 +122,9 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 				reject(e);
 			}
 		});
-		p.stdin.end(document.getText());
+		if (p.pid) {
+			p.stdin.end(document.getText());
+		}
 	});
 }
 
@@ -136,7 +141,7 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 
 		let gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', document.fileName + ':#' + offset.toString()];
 		let buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
-		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', '"' + buildTags + '"'] : gogetdocFlagsWithoutTags;
+		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
 		p = cp.execFile(gogetdoc, gogetdocFlags, { env }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
@@ -147,7 +152,7 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 					return definitionLocation_gogetdoc(document, position, offset, env, false, token);
 				}
 				if (err) {
-					return reject(err);
+					return reject(err.message || stderr);
 				};
 				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(goGetDocOutput.pos);
@@ -173,7 +178,9 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 				reject(e);
 			}
 		});
-		p.stdin.end(getFileArchive(document));
+		if (p.pid) {
+			p.stdin.end(getFileArchive(document));
+		}
 	});
 }
 
@@ -193,7 +200,7 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 					return reject(missingToolMsg + 'guru');
 				}
 				if (err) {
-					return reject(err);
+					return reject(err.message || stderr);
 				};
 				let guruOutput = <GuruDefinitionOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(guruOutput.objpos);
@@ -218,7 +225,9 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 				reject(e);
 			}
 		});
-		p.stdin.end(getFileArchive(document));
+		if (p.pid) {
+			p.stdin.end(getFileArchive(document));
+		}
 	});
 }
 
@@ -243,7 +252,7 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 				if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
 					promptForMissingTool(err.substr(missingToolMsg.length));
 				} else {
-					console.log(err);
+					return Promise.reject(err);
 				}
 			}
 			return Promise.resolve(null);

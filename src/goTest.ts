@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { getCoverage } from './goCover';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -34,6 +34,8 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
+
 	editor.document.save().then(() => {
 		return getFunctions(editor.document, null).then(testFunctions => {
 			let testFunctionName: string;
@@ -57,12 +59,22 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 				return;
 			}
 
-			const testConfig = {
+			let testConfigFns = [testFunctionName];
+
+			if (!isBenchmark && extractInstanceTestName(testFunctionName)) {
+				// find test function with corresponding suite.Run
+				const testFns = findAllTestSuiteRuns(editor.document, testFunctions);
+				if (testFns) {
+					testConfigFns = testConfigFns.concat(testFns.map(t => t.name));
+				}
+			}
+
+			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
-				flags: getTestFlags(goConfig, args),
-				functions: [testFunctionName],
-				isBenchmark: isBenchmark
+				flags: testFlags,
+				functions: testConfigFns,
+				isBenchmark: isBenchmark,
 			};
 
 			// Remember this config as the last executed test.
@@ -70,7 +82,11 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 
 			return goTest(testConfig);
 		});
-	}).then(null, err => {
+	}).then(success => {
+		if (success && tmpCoverPath) {
+			return getCoverage(tmpCoverPath);
+		}
+	}, err => {
 		console.error(err);
 	});
 }
@@ -87,18 +103,12 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 		return;
 	}
 
-	let tmpCoverPath = '';
-	let testFlags = getTestFlags(goConfig, args) || [];
-	if (goConfig['coverOnTestPackage'] === true) {
-		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
-		testFlags.push('-coverprofile=' + tmpCoverPath);
-	}
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
 
-	const testConfig = {
+	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: path.dirname(editor.document.fileName),
 		flags: testFlags,
-		showTestCoverage: true
 	};
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
@@ -158,11 +168,11 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 
 	return editor.document.save().then(() => {
 		return getTestFunctions(editor.document, null).then(testFunctions => {
-			const testConfig = {
+			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
 				flags: getTestFlags(goConfig, args),
-				functions: testFunctions.map(func => { return func.name; })
+				functions: testFunctions.map(sym => sym.name),
 			};
 			// Remember this config as the last executed test.
 			lastTestConfig = testConfig;
@@ -188,6 +198,18 @@ export function testPrevious() {
 	});
 }
 
+/**
+ * Computes the tmp coverage path and needed flags.
+ *
+ * @param goConfig Configuration for the Go extension.
+ */
+function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
+	let tmpCoverPath = '';
+	let testFlags = getTestFlags(goConfig, args) || [];
+	if (goConfig[confFlag] === true) {
+		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
+		testFlags.push('-coverprofile=' + tmpCoverPath);
+	}
 
-
-
+	return { tmpCoverPath, testFlags };
+}

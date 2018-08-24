@@ -10,6 +10,7 @@ import cp = require('child_process');
 import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess } from './util';
 import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
+import { outputChannel } from './goStatus';
 
 export class GoRenameProvider implements vscode.RenameProvider {
 
@@ -27,8 +28,11 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			let offset = byteOffsetAt(document, pos);
 			let env = getToolsEnvVars();
 			let gorename = getBinPath('gorename');
-			let buildTags = '"' + vscode.workspace.getConfiguration('go', document.uri)['buildTags'] + '"';
-			let gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName, '-tags', buildTags];
+			const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'] ;
+			let gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName];
+			if (buildTags) {
+				gorenameArgs.push('-tags', buildTags);
+			}
 			let canRenameToolUseDiff = isDiffToolAvailable();
 			if (canRenameToolUseDiff) {
 				gorenameArgs.push('-d');
@@ -48,7 +52,9 @@ export class GoRenameProvider implements vscode.RenameProvider {
 					if (err) {
 						let errMsg = stderr ? 'Rename failed: ' + stderr.replace(/\n/g, ' ') : 'Rename failed';
 						console.log(errMsg);
-						return reject(errMsg);
+						outputChannel.appendLine(errMsg);
+						outputChannel.show();
+						return reject();
 					}
 
 					let result = new vscode.WorkspaceEdit();

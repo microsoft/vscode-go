@@ -7,13 +7,23 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
-import { parseEnvFile, getGoRuntimePath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath } from './util';
+import { parseEnvFile, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath, getBinPath } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 
-let outputChannel = vscode.window.createOutputChannel('Go Tests');
+const sendSignal = 'SIGKILL';
+const outputChannel = vscode.window.createOutputChannel('Go Tests');
+const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+statusBarItem.command = 'go.test.cancel';
+statusBarItem.text = '$(x) Cancel Running Tests';
 
+/**
+ *  testProcesses holds a list of currently running test processes.
+ */
+const runningTestProcesses: cp.ChildProcess[] = [];
+
+const testSuiteMethodRegex = /^\(([^)]+)\)\.(Test.*)$/;
 
 /**
  * Input to goTest.
@@ -64,15 +74,15 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 		}
 	}
 
-	Object.keys(testEnvConfig).forEach(key => envVars[key] = resolvePath(testEnvConfig[key]));
-	Object.keys(fileEnv).forEach(key => envVars[key] = resolvePath(fileEnv[key]));
+	Object.keys(testEnvConfig).forEach(key => envVars[key] = typeof testEnvConfig[key] === 'string' ? resolvePath(testEnvConfig[key]) : testEnvConfig[key]);
+	Object.keys(fileEnv).forEach(key => envVars[key] = typeof fileEnv[key] === 'string' ? resolvePath(fileEnv[key]) : fileEnv[key]);
 
 	return envVars;
 }
 
 export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
 	let testFlags: string[] = goConfig['testFlags'] ? goConfig['testFlags'] : goConfig['buildFlags'];
-	testFlags = [...testFlags]; // Use copy of the flags, dont pass the actual object from config
+	testFlags = testFlags.map(x => resolvePath(x)); // Use copy of the flags, dont pass the actual object from config
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
 }
 
@@ -89,8 +99,36 @@ export function getTestFunctions(doc: vscode.TextDocument, token: vscode.Cancell
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example')))
+				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example') || testSuiteMethodRegex.test(sym.name))
+			)
 		);
+}
+
+/**
+ * Extracts test method name of a suite test function.
+ * For example a symbol with name "(*testSuite).TestMethod" will return "TestMethod".
+ *
+ * @param symbolName Symbol Name to extract method name from.
+ */
+export function extractInstanceTestName(symbolName: string): string {
+	const match = symbolName.match(testSuiteMethodRegex);
+	if (!match || match.length !== 3) {
+		return null;
+	}
+	return match[2];
+}
+
+/**
+ * Finds test methods containing "suite.Run()" call.
+ *
+ * @param doc Editor document
+ * @param allTests All test functions
+ */
+export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.SymbolInformation[]): vscode.SymbolInformation[] {
+	// get non-instance test functions
+	const testFunctions = allTests.filter(t => !testSuiteMethodRegex.test(t.name));
+	// filter further to ones containing suite.Run()
+	return testFunctions.filter(t => doc.getText(t.location.range).includes('suite.Run('));
 }
 
 /**
@@ -117,9 +155,14 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
  */
 export function goTest(testconfig: TestConfig): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		outputChannel.clear();
-		if (!testconfig.background) {
 
+		// We do not want to clear it if tests are already running, as that could
+		// lose valuable output.
+		if (runningTestProcesses.length < 1) {
+			outputChannel.clear();
+		}
+
+		if (!testconfig.background) {
 			outputChannel.show(true);
 		}
 
@@ -137,7 +180,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
-		let goRuntimePath = getGoRuntimePath();
+		let goRuntimePath = getBinPath('go');
 
 		if (!goRuntimePath) {
 			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -152,7 +195,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		targetArgs(testconfig).then(targets => {
 			let outTargets = args.slice(0);
-			if (targets.length > 2) {
+			if (targets.length > 4) {
 				outTargets.push('<long arguments omitted>');
 			} else {
 				outTargets.push(...targets);
@@ -162,30 +205,70 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 			args.push(...targets);
 
-			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
+			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
-			outBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
-			outBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
+			const packageResultLineRE = /^(ok|FAIL)[ \t]+(.+?)[ \t]+([0-9\.]+s|\(cached\))/; // 1=ok/FAIL, 2=package, 3=time/(cached)
+			const testResultLines: string[] = [];
 
-			errBuf.onLine(line => outputChannel.appendLine(line));
-			errBuf.onDone(last => last && outputChannel.appendLine(last));
+			const processTestResultLine = (line: string) => {
+				testResultLines.push(line);
+				const result = line.match(packageResultLineRE);
+				if (result && currentGoWorkspace) {
+					const packageNameArr = result[2].split('/');
+					const baseDir = path.join(currentGoWorkspace, ...packageNameArr);
+					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
+					testResultLines.splice(0);
+				}
+			};
 
-			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
-			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
+			// go test emits test results on stdout, which contain file names relative to the package under test
+			outBuf.onLine(line => processTestResultLine(line));
+			outBuf.onDone(last => {
+				if (last) processTestResultLine(last);
 
-			proc.on('close', code => {
+				// If there are any remaining test result lines, emit them to the output channel.
+				if (testResultLines.length > 0) {
+					testResultLines.forEach(line => outputChannel.appendLine(line));
+				}
+			});
+
+			// go test emits build errors on stderr, which contain paths relative to the cwd
+			errBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
+			errBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
+
+			tp.stdout.on('data', chunk => outBuf.append(chunk.toString()));
+			tp.stderr.on('data', chunk => errBuf.append(chunk.toString()));
+
+			statusBarItem.show();
+
+			tp.on('close', (code, signal) => {
 				outBuf.done();
 				errBuf.done();
 
 				if (code) {
 					outputChannel.appendLine(`Error: ${testType} failed.`);
+				} else if (signal === sendSignal) {
+					outputChannel.appendLine(`Error: ${testType} terminated by user.`);
 				} else {
 					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
+
+				let index = runningTestProcesses.indexOf(tp, 0);
+				if (index > -1) {
+					runningTestProcesses.splice(index, 1);
+				}
+
+				if (!runningTestProcesses.length) {
+					statusBarItem.hide();
+				}
+
 				resolve(code === 0);
 			});
+
+			runningTestProcesses.push(tp);
+
 		}, err => {
 			outputChannel.appendLine(`Error: ${testType} failed.`);
 			outputChannel.appendLine(err);
@@ -201,11 +284,25 @@ export function showTestOutput() {
 	outputChannel.show(true);
 }
 
+/**
+ * Iterates the list of currently running test processes and kills them all.
+ */
+export function cancelRunningTests(): Thenable<boolean> {
+	return new Promise<boolean>((resolve, reject) => {
+		runningTestProcesses.forEach(tp => {
+			tp.kill(sendSignal);
+		});
+		// All processes are now dead. Empty the array to prepare for the next run.
+		runningTestProcesses.splice(0, runningTestProcesses.length);
+		resolve(true);
+	});
+}
+
 function expandFilePathInOutput(output: string, cwd: string): string {
 	let lines = output.split('\n');
 	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\s+(\S+_test.go):(\d+):/);
-		if (matches) {
+		let matches = lines[i].match(/^\s*(.+.go):(\d+):/);
+		if (matches && matches[1] && !path.isAbsolute(matches[1])) {
 			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
 		}
 	}
@@ -219,7 +316,29 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  */
 function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	if (testconfig.functions) {
-		return Promise.resolve([testconfig.isBenchmark ? '-bench' : '-run', util.format('^%s$', testconfig.functions.join('|'))]);
+		let params: string[] = [];
+		if (testconfig.isBenchmark) {
+			params = ['-bench', util.format('^%s$', testconfig.functions.join('|'))];
+		} else {
+			let testFunctions = testconfig.functions;
+			let testifyMethods = testFunctions.filter(fn => testSuiteMethodRegex.test(fn));
+			if (testifyMethods.length > 0) {
+				// filter out testify methods
+				testFunctions = testFunctions.filter(fn => !testSuiteMethodRegex.test(fn));
+				testifyMethods = testifyMethods.map(extractInstanceTestName);
+			}
+
+			// we might skip the '-run' param when running only testify methods, which will result
+			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
+			// which will result in the correct thing to happen
+			if (testFunctions.length > 0) {
+				params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
+			}
+			if (testifyMethods.length > 0) {
+				params = params.concat(['-testify.m', util.format('^%s$', testifyMethods.join('|'))]);
+			}
+		}
+		return Promise.resolve(params);
 	} else if (testconfig.includeSubDirectories && !testconfig.isBenchmark) {
 		return getGoVersion().then((ver: SemVersion) => {
 			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
@@ -230,4 +349,3 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 	}
 	return Promise.resolve([]);
 }
-
