@@ -25,6 +25,19 @@ function clearCoverage() {
 	coverageFiles = {};
 }
 
+function setCoverageFile(data: CoverageFile) {
+	if (data.filename.startsWith('_')) {
+		data.filename = data.filename.substr(1);
+	}
+	if (process.platform === 'win32') {
+		const parts = data.filename.split('/');
+		if (parts.length) {
+			data.filename = parts.join(path.sep);
+		}
+	}
+	coverageFiles[data.filename] = data;
+}
+
 export function initGoCover(ctx: vscode.ExtensionContext) {
 	gutters = {
 		blockred: ctx.asAbsolutePath('images/gutter-blockred.svg'),
@@ -60,10 +73,6 @@ export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
 	}
 	for (let filename in coverageFiles) {
 		let found = editor.document.uri.fsPath.endsWith(filename);
-		// Check for file again if outside the $GOPATH.
-		if (!found && filename.startsWith('_')) {
-			found = editor.document.uri.fsPath.endsWith(filename.slice(1));
-		}
 		if (found) {
 			highlightCoverage(editor, coverageFiles[filename], true);
 			delete coverageFiles[filename];
@@ -81,10 +90,6 @@ export function toggleCoverageCurrentPackage() {
 	// If current file has highlights, then remove coverage, else add coverage
 	for (let filename in coverageFiles) {
 		let found = editor.document.uri.fsPath.endsWith(filename);
-		// Check for file again if outside the $GOPATH.
-		if (!found && filename.startsWith('_')) {
-			found = editor.document.uri.fsPath.endsWith(filename.slice(1));
-		}
 		if (found) {
 			clearCoverage();
 			return;
@@ -128,10 +133,6 @@ function applyCoverage(remove: boolean = false) {
 		// Highlight lines in current editor.
 		vscode.window.visibleTextEditors.forEach((value, index, obj) => {
 			let found = value.document.fileName.endsWith(filename);
-			// Check for file again if outside the $GOPATH.
-			if (!found && filename.startsWith('_')) {
-				found = value.document.fileName.endsWith(filename.slice(1));
-			}
 			if (found) {
 				highlightCoverage(value, file, remove);
 			}
@@ -253,7 +254,7 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				else {
 					coverage.uncoveredRange.push({ range });
 				}
-				coverageFiles[fileRange[1]] = coverage;
+				setCoverageFile(coverage);
 			});
 			lines.on('close', function (data) {
 				applyCoverage();
