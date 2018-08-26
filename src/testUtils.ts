@@ -332,7 +332,7 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
 			// which will result in the correct thing to happen
 			if (testFunctions.length > 0) {
-				params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
+				params = params.concat(['-run', util.format('^%s(/.*|$)', testFunctions.join('|'))]);
 			}
 			if (testifyMethods.length > 0) {
 				params = params.concat(['-testify.m', util.format('^%s$', testifyMethods.join('|'))]);
