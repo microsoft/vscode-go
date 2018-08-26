@@ -515,9 +515,15 @@
         "go.buildTags": {
           "type": "string",
           "default": "",
-          "description": "The Go build tags to use for all commands that support a `-tags '...'` argument",
+          "description": "The Go build tags to use for all commands, that support a `-tags '...'` argument. When running tests, go.testTags will be used instead if it was set.",
           "scope": "resource"
-        },
+		},
+		"go.testTags": {
+			"type": "string",
+			"default": "",
+			"description": "The Go build tags to use for when running tests",
+			"scope": "resource"
+		  },
         "go.installDependenciesWhenBuilding": {
           "type": "boolean",
           "default": true,

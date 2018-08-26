@@ -166,7 +166,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			outputChannel.show(true);
 		}
 
-		let buildTags: string = testconfig.goConfig['buildTags'];
+		let testTags: string = testconfig.goConfig.has('testTags') ? testconfig.goConfig['testTags'] : testconfig.goConfig['buildTags'];
 		let args: Array<string> = ['test', ...testconfig.flags];
 		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
 
@@ -175,8 +175,8 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		} else {
 			args.push('-timeout', testconfig.goConfig['testTimeout']);
 		}
-		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
-			args.push('-tags', buildTags);
+		if (testTags && testconfig.flags.indexOf('-tags') === -1) {
+			args.push('-tags', testTags);
 		}
 
 		let testEnvVars = getTestEnvVars(testconfig.goConfig);
