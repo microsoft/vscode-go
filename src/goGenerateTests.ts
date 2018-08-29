@@ -65,20 +65,25 @@ export function toggleTestFile(): void {
 	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath));
 }
 
-function getGoConfigObject(editor: vscode.TextEditor): vscode.WorkspaceConfiguration {
-	let documentUri = editor ? editor.document.uri : null;
-	return vscode.workspace.getConfiguration('go', documentUri);
+export function generateTestCurrentPackage(): Thenable<boolean> {
+	let editor = checkActiveEditor();
+	if (!editor) {
+		return;
+	}
+	return generateTests({ dir: path.dirname(editor.document.uri.fsPath) },
+		vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
-export function generateTestCurrentPackage(uri: vscode.Uri): Thenable<boolean> {
-	return generateTests({ dir: path.dirname(uri.fsPath) });
+export function generateTestCurrentFile(): Thenable<boolean> {
+	let editor = checkActiveEditor();
+	if (!editor) {
+		return;
+	}
+	return generateTests({ dir: editor.document.uri.fsPath },
+		vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
-export function generateTestCurrentFile(uri: vscode.Uri): Thenable<boolean> {
-	return generateTests({ dir: uri.fsPath });
-}
-
-export function generateTestCurrentFunction(uri: vscode.Uri): Thenable<boolean> {
+export function generateTestCurrentFunction(): Thenable<boolean> {
 	let editor = checkActiveEditor();
 	if (!editor) {
 		return;
@@ -101,7 +106,8 @@ export function generateTestCurrentFunction(uri: vscode.Uri): Thenable<boolean> 
 		if (funcName.includes('.')) {
 			funcName = funcName.split('.')[1];
 		}
-		return generateTests({ dir: uri.fsPath, func: funcName });
+		return generateTests({ dir: editor.document.uri.fsPath, func: funcName },
+			vscode.workspace.getConfiguration('go', editor.document.uri));
 	});
 }
 
@@ -119,14 +125,7 @@ interface Config {
 	func?: string;
 }
 
-function generateTests(conf: Config): Thenable<boolean> {
-	let editor = checkActiveEditor();
-	if (!editor) {
-		return;
-	}
-
-	let goConfig = getGoConfigObject(editor);
-
+function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		let cmd = getBinPath('gotests');
 		let args = ['-w'];
@@ -142,7 +141,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 			args = args.concat(['-all', conf.dir]);
 		}
 
-		cp.execFile(cmd, args, {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+		cp.execFile(cmd, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
 			outputChannel.appendLine('Generating Tests: ' + cmd + ' ' + args.join(' '));
 
 			try {
