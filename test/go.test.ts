@@ -302,7 +302,7 @@ It returns the number of bytes written and any write error encountered.
 			let uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
-					return generateTestCurrentFile(uri).then((result: boolean) => {
+					return generateTestCurrentFile().then((result: boolean) => {
 						assert.equal(result, true);
 						return Promise.resolve();
 					});
@@ -331,7 +331,7 @@ It returns the number of bytes written and any write error encountered.
 					assert(vscode.window.activeTextEditor, 'No active editor');
 					let selection = new vscode.Selection(5, 0, 6, 0);
 					editor.selection = selection;
-					return generateTestCurrentFunction(uri).then((result: boolean) => {
+					return generateTestCurrentFunction().then((result: boolean) => {
 						assert.equal(result, true);
 						return Promise.resolve();
 					});
@@ -357,7 +357,7 @@ It returns the number of bytes written and any write error encountered.
 			let uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
-					return generateTestCurrentPackage(uri).then((result: boolean) => {
+					return generateTestCurrentPackage().then((result: boolean) => {
 						assert.equal(result, true);
 						return Promise.resolve();
 					});
