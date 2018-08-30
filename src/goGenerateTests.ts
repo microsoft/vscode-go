@@ -129,11 +129,19 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): T
 	return new Promise<boolean>((resolve, reject) => {
 		let cmd = getBinPath('gotests');
 		let args = ['-w'];
-		let goGenerateTestsFlags: string[] = goConfig['genTestsFlags'] || [];
-
-		goGenerateTestsFlags.forEach(flag => {
+		let goGenerateTestsFlags: string[] = goConfig['generateTestsFlags'] || [];
+		
+		for (let i = 0; i < goGenerateTestsFlags.length; i++) {
+			const flag = goGenerateTestsFlags[i];
+			if (flag === '-w' || flag == 'all') {
+				continue;
+			}
+			if (flag === '-only') {
+				i++;
+				continue;
+			}
 			args.push(flag);
-		});
+		}
 
 		if (conf.func) {
 			args = args.concat(['-only', `^${conf.func}$`, conf.dir]);
