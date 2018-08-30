@@ -156,6 +156,10 @@ suite('Go Extension Tests', () => {
 	});
 
 	test('Test Definition Provider using gogetdoc', (done) => {
+		const gogetdocPath = getBinPath('gogetdoc');
+		if (gogetdocPath === 'gogetdoc') {
+			return done();
+		}
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
@@ -185,6 +189,11 @@ encountered.
 	});
 
 	test('Test SignatureHelp Provider using gogetdoc', (done) => {
+		const gogetdocPath = getBinPath('gogetdoc');
+		if (gogetdocPath === 'gogetdoc') {
+			return done();
+		}
+
 		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
 Spaces are always added between operands and a newline is appended.
 It returns the number of bytes written and any write error encountered.
@@ -229,6 +238,11 @@ encountered.
 	});
 
 	test('Test Hover Provider using gogetdoc', (done) => {
+		const gogetdocPath = getBinPath('gogetdoc');
+		if (gogetdocPath === 'gogetdoc') {
+			return done();
+		}
+
 		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
 Spaces are always added between operands and a newline is appended.
 It returns the number of bytes written and any write error encountered.
@@ -293,6 +307,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Generate unit tests skeleton for file', (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -319,6 +338,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Generate unit tests skeleton for a function', (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -348,6 +372,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Generate unit tests skeleton for package', (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -946,6 +975,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('goPlay - success run', (done) => {
+		const goplayPath = getBinPath('goplay');
+		if (goplayPath === 'goplay') {
+			return done();
+		}
+
 		const validCode = `
 			package main
 			import (
@@ -971,6 +1005,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('goPlay - success run & share', (done) => {
+		const goplayPath = getBinPath('goplay');
+		if (goplayPath === 'goplay') {
+			return done();
+		}
+
 		const validCode = `
 			package main
 			import (
@@ -995,6 +1034,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('goPlay - fail', (done) => {
+		const goplayPath = getBinPath('goplay');
+		if (goplayPath === 'goplay') {
+			return done();
+		}
+
 		const invalidCode = `
 			package main
 			import (
