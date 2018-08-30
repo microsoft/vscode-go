@@ -242,6 +242,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		let isBenchmark = false;
+		testCurrentPackage(goConfig, args);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.package', (args) => {
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		let isBenchmark = true;
 		testCurrentPackage(goConfig, args);
 	}));
 
