@@ -339,7 +339,11 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 			}
 		}
 		return Promise.resolve(params);
-	} else if (testconfig.includeSubDirectories && !testconfig.isBenchmark) {
+	}
+	let params: string[] = [];
+	if (testconfig.isBenchmark) {
+		params = ['-bench', '.'];
+	} else if (testconfig.includeSubDirectories) {
 		return getGoVersion().then((ver: SemVersion) => {
 			if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
 				return ['./...'];
@@ -347,5 +351,5 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 			return getNonVendorPackages(testconfig.dir);
 		});
 	}
-	return Promise.resolve([]);
+	return Promise.resolve(params);
 }

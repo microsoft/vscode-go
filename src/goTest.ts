@@ -96,7 +96,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
  *
  * @param goConfig Configuration for the Go extension.
  */
-export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args: any) {
+export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -104,11 +104,12 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 	}
 
 	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
-
+	
 	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: path.dirname(editor.document.fileName),
 		flags: testFlags,
+		isBenchmark: isBenchmark,
 	};
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
