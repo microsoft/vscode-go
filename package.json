@@ -116,7 +116,7 @@
       {
         "command": "go.benchmark.package",
         "title": "Go: Benchmark Package",
-        "description": "Runs all unit tests in the package of the current file."
+        "description": "Runs all benchmarks in the package of the current file."
       },
       {
         "command": "go.test.workspace",
