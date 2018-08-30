@@ -104,7 +104,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBe
 	}
 
 	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
-	
+
 	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: path.dirname(editor.document.fileName),
