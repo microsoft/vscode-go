@@ -60,7 +60,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		if (prevGoroot !== currentGoroot && prevGoroot) {
 			vscode.window.showInformationMessage('Your goroot is different than before, few Go tools may need re-compiling', updateToolsCmdText).then(selected => {
 				if (selected === updateToolsCmdText) {
-					vscode.commands.executeCommand('go.tools.install');
+					installAllTools(true);
 				}
 			});
 		} else {
@@ -73,7 +73,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 						if (prevVersion) {
 							vscode.window.showInformationMessage('Your Go version is different than before, few Go tools may need re-compiling', updateToolsCmdText).then(selected => {
 								if (selected === updateToolsCmdText) {
-									vscode.commands.executeCommand('go.tools.install');
+									installAllTools(true);
 								}
 							});
 						}
