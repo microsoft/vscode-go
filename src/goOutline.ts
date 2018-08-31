@@ -110,7 +110,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 		symbols: vscode.SymbolInformation[],
 		containerName: string,
 		byteOffsetToDocumentOffset: (byteOffset: number) => number): void {
-		const ignoredSymbols = ['_'];
+
 		let gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
 		let includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
 
@@ -119,7 +119,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 			let label = decl.label;
 
-			if (ignoredSymbols.indexOf(label) !== -1 && decl.type === 'variable') return;
+			if (label === '_' && decl.type === 'variable') return;
 
 			if (decl.receiverType) {
 				label = '(' + decl.receiverType + ').' + label;
