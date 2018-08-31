@@ -130,10 +130,10 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): T
 		let cmd = getBinPath('gotests');
 		let args = ['-w'];
 		let goGenerateTestsFlags: string[] = goConfig['generateTestsFlags'] || [];
-		
+
 		for (let i = 0; i < goGenerateTestsFlags.length; i++) {
 			const flag = goGenerateTestsFlags[i];
-			if (flag === '-w' || flag == 'all') {
+			if (flag === '-w' || flag === 'all') {
 				continue;
 			}
 			if (flag === '-only') {
