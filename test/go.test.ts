@@ -513,7 +513,7 @@ It returns the number of bytes written and any write error encountered.
 		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
-				return testCurrentFile(config, []).then((result: boolean) => {
+				return testCurrentFile(config, false, []).then((result: boolean) => {
 					assert.equal(result, true);
 					return Promise.resolve();
 				});
