@@ -113,9 +113,14 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 		let gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
 		let includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
+
 		(decls || []).forEach(decl => {
 			if (!includeImports && decl.type === 'import') return;
+
 			let label = decl.label;
+
+			if (label === '_' && decl.type === 'variable') return;
+
 			if (decl.receiverType) {
 				label = '(' + decl.receiverType + ').' + label;
 			}

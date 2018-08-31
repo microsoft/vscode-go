@@ -18,7 +18,7 @@ import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
-import { documentSymbols } from '../src/goOutline';
+import { documentSymbols, GoDocumentSymbolProvider } from '../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
@@ -76,6 +76,7 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'golden_2.go'), path.join(fixturePath, 'fillStruct', 'golden_2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_3.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'outlineTest', 'test.go'), path.join(fixturePath, 'outlineTest', 'test.go'));
 	});
 
 	suiteTeardown(() => {
@@ -551,7 +552,7 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Outline', (done) => {
-		let filePath = path.join(fixturePath, 'test.go');
+		let filePath = path.join(fixturePath, 'outlineTest', 'test.go');
 		let options = { fileName: filePath };
 		documentSymbols(options, null).then(outlines => {
 			let packageOutline = outlines[0];
@@ -569,7 +570,7 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Outline imports only', (done) => {
-		let filePath = path.join(fixturePath, 'test.go');
+		let filePath = path.join(fixturePath, 'outlineTest', 'test.go');
 		let options = { fileName: filePath, importsOnly: true };
 		documentSymbols(options, null).then(outlines => {
 			let packageOutline = outlines[0];
@@ -584,6 +585,27 @@ It returns the number of bytes written and any write error encountered.
 			assert.equal(imports.length, 1);
 			done();
 		}, done);
+	});
+
+	test('Test Outline document symbols', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then(symbols => {
+				let groupedSymbolNames = symbols.reduce(function (map, symbol) {
+					map[symbol.kind] = (map[symbol.kind] || []).concat([symbol.name]);
+					return map;
+				}, {});
+
+				let packageNames = groupedSymbolNames[vscode.SymbolKind.Package];
+				let variableNames = groupedSymbolNames[vscode.SymbolKind.Variable];
+				let functionNames = groupedSymbolNames[vscode.SymbolKind.Function];
+
+				assert.equal(packageNames[0], 'main');
+				assert.equal(variableNames, undefined);
+				assert.equal(functionNames[0], 'print');
+				assert.equal(functionNames[1], 'main');
+			});
+		}).then(() => done(), done);
 	});
 
 	test('Test listPackages', (done) => {
