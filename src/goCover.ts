@@ -47,7 +47,7 @@ function getCoverageFile(filename: string): CoverageData {
 			filename = parts.join(path.sep);
 		}
 	}
-	return coverageFiles[filename] || { coveredRange: [], uncoveredRange: [] }
+	return coverageFiles[filename] || { coveredRange: [], uncoveredRange: [] };
 }
 
 export function initGoCover(ctx: vscode.ExtensionContext) {
