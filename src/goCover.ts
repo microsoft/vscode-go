@@ -37,6 +37,19 @@ function setCoverageFile(filename: string, data: CoverageData) {
 	coverageFiles[filename] = data;
 }
 
+function getCoverageFile(filename: string): CoverageData {
+	if (filename.startsWith('_')) {
+		filename = filename.substr(1);
+	}
+	if (process.platform === 'win32') {
+		const parts = filename.split('/');
+		if (parts.length) {
+			filename = parts.join(path.sep);
+		}
+	}
+	return coverageFiles[filename] || { coveredRange: [], uncoveredRange: [] }
+}
+
 export function initGoCover(ctx: vscode.ExtensionContext) {
 	gutters = {
 		blockred: ctx.asAbsolutePath('images/gutter-blockred.svg'),
@@ -191,10 +204,10 @@ function updateCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
 	// before we're done, we need to turn these names into actual decorations
 	decorators = {
 		type: defaults.type,
-		coveredGutterDecorator:  vscode.window.createTextEditorDecorationType({gutterIconPath: gutters[defaults.coveredGutterStyle]}),
-		uncoveredGutterDecorator:  vscode.window.createTextEditorDecorationType({gutterIconPath: gutters[defaults.uncoveredGutterStyle]}),
-		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({backgroundColor: defaults.coveredHighlightColor}),
-		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({backgroundColor: defaults.uncoveredHighlightColor})
+		coveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutters[defaults.coveredGutterStyle] }),
+		uncoveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutters[defaults.uncoveredGutterStyle] }),
+		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: defaults.coveredHighlightColor }),
+		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: defaults.uncoveredHighlightColor })
 	};
 }
 
@@ -234,7 +247,7 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
 
-				let coverage = coverageFiles[fileRange[1]] || { coveredRange: [], uncoveredRange: [] };
+				let coverage = getCoverageFile(fileRange[1]);
 				let range = new vscode.Range(
 					// Start Line converted to zero based
 					parseInt(fileRange[2]) - 1,
@@ -247,11 +260,11 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				);
 				// If is Covered (CoverCount > 0)
 				if (parseInt(fileRange[7]) > 0) {
-					coverage.coveredRange.push({ range });
+					coverage.coveredRange.push(range);
 				}
 				// Not Covered
 				else {
-					coverage.uncoveredRange.push({ range });
+					coverage.uncoveredRange.push(range);
 				}
 				setCoverageFile(fileRange[1], coverage);
 			});
