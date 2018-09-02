@@ -529,9 +529,12 @@
           "scope": "resource"
 		},
 		"go.testTags": {
-			"type": "string",
-			"default": "",
-			"description": "The Go build tags to use for when running tests",
+			"type": [
+				"string",
+				"null"
+			],
+			"default": null,
+			"description": "The Go build tags to use for when running tests. If null, then buildTags will be used.",
 			"scope": "resource"
 		  },
         "go.installDependenciesWhenBuilding": {

@@ -166,7 +166,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			outputChannel.show(true);
 		}
 
-		let testTags: string = testconfig.goConfig.has('testTags') ? testconfig.goConfig['testTags'] : testconfig.goConfig['buildTags'];
+		let testTags: string = testconfig.goConfig['testTags'] !== null ? testconfig.goConfig['testTags'] : testconfig.goConfig['buildTags'];
 		let args: Array<string> = ['test', ...testconfig.flags];
 		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
 
