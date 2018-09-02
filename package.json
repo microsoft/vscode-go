@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.89-beta.2",
+  "version": "0.6.90-beta.1",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -112,6 +112,16 @@
         "command": "go.test.package",
         "title": "Go: Test Package",
         "description": "Runs all unit tests in the package of the current file."
+      },
+      {
+        "command": "go.benchmark.package",
+        "title": "Go: Benchmark Package",
+        "description": "Runs all benchmarks in the package of the current file."
+      },
+      {
+        "command": "go.benchmark.file",
+        "title": "Go: Benchmark File",
+        "description": "Runs all benchmarks in the current file."
       },
       {
         "command": "go.test.workspace",
@@ -765,6 +775,15 @@
           },
           "default": null,
           "description": "Flags to pass to `go test`. If null, then buildFlags will be used.",
+          "scope": "resource"
+        },
+        "go.generateTestsFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional command line flags to pass to `gotests` for generating tests.",
           "scope": "resource"
         },
         "go.toolsEnvVars": {

@@ -14,8 +14,7 @@ import rl = require('readline');
 let gutters;
 let coverageFiles = {};
 
-interface CoverageFile {
-	filename: string;
+interface CoverageData {
 	uncoveredRange: vscode.Range[];
 	coveredRange: vscode.Range[];
 }
@@ -23,6 +22,32 @@ interface CoverageFile {
 function clearCoverage() {
 	applyCoverage(true);
 	coverageFiles = {};
+}
+
+function setCoverageFile(filename: string, data: CoverageData) {
+	if (filename.startsWith('_')) {
+		filename = filename.substr(1);
+	}
+	if (process.platform === 'win32') {
+		const parts = filename.split('/');
+		if (parts.length) {
+			filename = parts.join(path.sep);
+		}
+	}
+	coverageFiles[filename] = data;
+}
+
+function getCoverageFile(filename: string): CoverageData {
+	if (filename.startsWith('_')) {
+		filename = filename.substr(1);
+	}
+	if (process.platform === 'win32') {
+		const parts = filename.split('/');
+		if (parts.length) {
+			filename = parts.join(path.sep);
+		}
+	}
+	return coverageFiles[filename] || { coveredRange: [], uncoveredRange: [] };
 }
 
 export function initGoCover(ctx: vscode.ExtensionContext) {
@@ -60,10 +85,6 @@ export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
 	}
 	for (let filename in coverageFiles) {
 		let found = editor.document.uri.fsPath.endsWith(filename);
-		// Check for file again if outside the $GOPATH.
-		if (!found && filename.startsWith('_')) {
-			found = editor.document.uri.fsPath.endsWith(filename.slice(1));
-		}
 		if (found) {
 			highlightCoverage(editor, coverageFiles[filename], true);
 			delete coverageFiles[filename];
@@ -81,10 +102,6 @@ export function toggleCoverageCurrentPackage() {
 	// If current file has highlights, then remove coverage, else add coverage
 	for (let filename in coverageFiles) {
 		let found = editor.document.uri.fsPath.endsWith(filename);
-		// Check for file again if outside the $GOPATH.
-		if (!found && filename.startsWith('_')) {
-			found = editor.document.uri.fsPath.endsWith(filename.slice(1));
-		}
 		if (found) {
 			clearCoverage();
 			return;
@@ -128,10 +145,6 @@ function applyCoverage(remove: boolean = false) {
 		// Highlight lines in current editor.
 		vscode.window.visibleTextEditors.forEach((value, index, obj) => {
 			let found = value.document.fileName.endsWith(filename);
-			// Check for file again if outside the $GOPATH.
-			if (!found && filename.startsWith('_')) {
-				found = value.document.fileName.endsWith(filename.slice(1));
-			}
 			if (found) {
 				highlightCoverage(value, file, remove);
 			}
@@ -191,14 +204,14 @@ function updateCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
 	// before we're done, we need to turn these names into actual decorations
 	decorators = {
 		type: defaults.type,
-		coveredGutterDecorator:  vscode.window.createTextEditorDecorationType({gutterIconPath: gutters[defaults.coveredGutterStyle]}),
-		uncoveredGutterDecorator:  vscode.window.createTextEditorDecorationType({gutterIconPath: gutters[defaults.uncoveredGutterStyle]}),
-		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({backgroundColor: defaults.coveredHighlightColor}),
-		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({backgroundColor: defaults.uncoveredHighlightColor})
+		coveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutters[defaults.coveredGutterStyle] }),
+		uncoveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutters[defaults.uncoveredGutterStyle] }),
+		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: defaults.coveredHighlightColor }),
+		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: defaults.uncoveredHighlightColor })
 	};
 }
 
-function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
+function highlightCoverage(editor: vscode.TextEditor, file: CoverageData, remove: boolean) {
 	let cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let coverageOptions = cfg['coverageOptions'];
 	updateCoverageDecorator(cfg);
@@ -234,7 +247,7 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
 
-				let coverage = coverageFiles[fileRange[1]] || { coveredRange: [], uncoveredRange: [] };
+				let coverage = getCoverageFile(fileRange[1]);
 				let range = new vscode.Range(
 					// Start Line converted to zero based
 					parseInt(fileRange[2]) - 1,
@@ -247,13 +260,13 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				);
 				// If is Covered (CoverCount > 0)
 				if (parseInt(fileRange[7]) > 0) {
-					coverage.coveredRange.push({ range });
+					coverage.coveredRange.push(range);
 				}
 				// Not Covered
 				else {
-					coverage.uncoveredRange.push({ range });
+					coverage.uncoveredRange.push(range);
 				}
-				coverageFiles[fileRange[1]] = coverage;
+				setCoverageFile(fileRange[1], coverage);
 			});
 			lines.on('close', function (data) {
 				applyCoverage();

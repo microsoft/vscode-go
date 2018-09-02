@@ -137,7 +137,7 @@ function getTools(goVersion: SemVersion): string[] {
 	return tools;
 }
 
-export function installAllTools() {
+export function installAllTools(updateExistingToolsOnly: boolean = false) {
 	const allToolsDescription: { [key: string]: string } = {
 		'gocode': '\t\t(Auto-completion)',
 		'gopkgs': '\t\t(Auto-completion of unimported packages & Add Import feature)',
@@ -168,10 +168,20 @@ export function installAllTools() {
 
 	getGoVersion().then((goVersion) => {
 		const allTools = getTools(goVersion);
+		if (updateExistingToolsOnly) {
+			installTools(allTools.filter(tool => {
+				const toolPath = getBinPath(tool);
+				return toolPath && path.isAbsolute(toolPath);
+			}));
+			return;
+		}
 		vscode.window.showQuickPick(allTools.map(x => `${x} ${allToolsDescription[x]}`), {
 			canPickMany: true,
 			placeHolder: 'Select the tool to install/update.'
 		}).then(selectedTools => {
+			if (!selectedTools) {
+				return;
+			}
 			installTools(selectedTools.map(x => x.substr(0, x.indexOf(' '))));
 		});
 	});

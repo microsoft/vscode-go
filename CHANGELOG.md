@@ -1,3 +1,10 @@
+## 0.6.89 - 30th August, 2018
+
+* Show package variables and not just local variables in the debug viewlet when debugging. [Feature Request 1854](https://github.com/Microsoft/vscode-go/issues/1854) implemented with [PR 1865](https://github.com/Microsoft/vscode-go/pull/1865)
+* Fix issue with anti virus scans blocking download of the Go plugin due to a dependency. [Bug 1871](https://github.com/Microsoft/vscode-go/pull/1871)
+* Fix broken code coverage feature in Windows in Go 1.11 as the cover profile no longer uses backward slashes. [Bug 1847](https://github.com/Microsoft/vscode-go/issues/1847)
+* Update existing Go tools when Go version or goroot changes, instead of the checkbox UI where user has to select the tools to update.
+
 ## 0.6.87 and 0.6.88 - 16th August, 2018
 
 ### Bug Fixes

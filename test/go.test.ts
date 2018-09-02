@@ -18,9 +18,9 @@ import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
-import { documentSymbols } from '../src/goOutline';
+import { documentSymbols, GoDocumentSymbolProvider } from '../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../src/goImport';
-import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
+import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
 import { goPlay } from '../src/goPlayground';
@@ -77,6 +77,7 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'golden_2.go'), path.join(fixturePath, 'fillStruct', 'golden_2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_3.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'outlineTest', 'test.go'), path.join(fixturePath, 'outlineTest', 'test.go'));
 	});
 
 	suiteTeardown(() => {
@@ -157,6 +158,10 @@ suite('Go Extension Tests', () => {
 	});
 
 	test('Test Definition Provider using gogetdoc', (done) => {
+		const gogetdocPath = getBinPath('gogetdoc');
+		if (gogetdocPath === 'gogetdoc') {
+			return done();
+		}
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
@@ -186,6 +191,11 @@ encountered.
 	});
 
 	test('Test SignatureHelp Provider using gogetdoc', (done) => {
+		const gogetdocPath = getBinPath('gogetdoc');
+		if (gogetdocPath === 'gogetdoc') {
+			return done();
+		}
+
 		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
 Spaces are always added between operands and a newline is appended.
 It returns the number of bytes written and any write error encountered.
@@ -230,6 +240,11 @@ encountered.
 	});
 
 	test('Test Hover Provider using gogetdoc', (done) => {
+		const gogetdocPath = getBinPath('gogetdoc');
+		if (gogetdocPath === 'gogetdoc') {
+			return done();
+		}
+
 		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
 Spaces are always added between operands and a newline is appended.
 It returns the number of bytes written and any write error encountered.
@@ -294,6 +309,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Generate unit tests skeleton for file', (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -320,6 +340,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Generate unit tests skeleton for a function', (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -349,6 +374,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Generate unit tests skeleton for package', (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -514,7 +544,7 @@ It returns the number of bytes written and any write error encountered.
 		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
-				return testCurrentFile(config, []).then((result: boolean) => {
+				return testCurrentFile(config, false, []).then((result: boolean) => {
 					assert.equal(result, true);
 					return Promise.resolve();
 				});
@@ -523,7 +553,7 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Outline', (done) => {
-		let filePath = path.join(fixturePath, 'test.go');
+		let filePath = path.join(fixturePath, 'outlineTest', 'test.go');
 		let options = { fileName: filePath };
 		documentSymbols(options, null).then(outlines => {
 			let packageOutline = outlines[0];
@@ -541,7 +571,7 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Outline imports only', (done) => {
-		let filePath = path.join(fixturePath, 'test.go');
+		let filePath = path.join(fixturePath, 'outlineTest', 'test.go');
 		let options = { fileName: filePath, importsOnly: true };
 		documentSymbols(options, null).then(outlines => {
 			let packageOutline = outlines[0];
@@ -556,6 +586,27 @@ It returns the number of bytes written and any write error encountered.
 			assert.equal(imports.length, 1);
 			done();
 		}, done);
+	});
+
+	test('Test Outline document symbols', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then(symbols => {
+				let groupedSymbolNames = symbols.reduce(function (map, symbol) {
+					map[symbol.kind] = (map[symbol.kind] || []).concat([symbol.name]);
+					return map;
+				}, {});
+
+				let packageNames = groupedSymbolNames[vscode.SymbolKind.Package];
+				let variableNames = groupedSymbolNames[vscode.SymbolKind.Variable];
+				let functionNames = groupedSymbolNames[vscode.SymbolKind.Function];
+
+				assert.equal(packageNames[0], 'main');
+				assert.equal(variableNames, undefined);
+				assert.equal(functionNames[0], 'print');
+				assert.equal(functionNames[1], 'main');
+			});
+		}).then(() => done(), done);
 	});
 
 	test('Test listPackages', (done) => {
@@ -947,6 +998,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('goPlay - success run', (done) => {
+		const goplayPath = getBinPath('goplay');
+		if (goplayPath === 'goplay') {
+			return done();
+		}
+
 		const validCode = `
 			package main
 			import (
@@ -972,6 +1028,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('goPlay - success run & share', (done) => {
+		const goplayPath = getBinPath('goplay');
+		if (goplayPath === 'goplay') {
+			return done();
+		}
+
 		const validCode = `
 			package main
 			import (
@@ -996,6 +1057,11 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('goPlay - fail', (done) => {
+		const goplayPath = getBinPath('goplay');
+		if (goplayPath === 'goplay') {
+			return done();
+		}
+
 		const invalidCode = `
 			package main
 			import (
