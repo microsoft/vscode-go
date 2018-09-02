@@ -121,7 +121,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							// Now that we have the package path, import it right after the "package" statement
 							let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
 							let posToAddImport = document.offsetAt(new vscode.Position(pkg.start + 1, 0));
-							let textToAdd = `import "${pkgPath}"\n`;
+							let textToAdd = `import "${pkgPath[0]}"\n`;
 							inputText = inputText.substr(0, posToAddImport) + textToAdd + inputText.substr(posToAddImport);
 							offset += textToAdd.length;
 
@@ -142,12 +142,12 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 									`${lineTillCurrentPosition.replace('.', '').trim()} (${pkg})`,
 									vscode.CompletionItemKind.Module
 								);
+								item.additionalTextEdits = getTextEditForAddImport(pkg);
 								item.insertText = '';
 								item.detail = pkg;
 								item.command = {
-									title: 'Import Package',
-									command: 'go.import.add',
-									arguments: [pkg]
+									title: 'Trigger Suggest',
+									command: 'editor.action.triggerSuggest'
 								};
 								suggestions.push(item);
 							});
