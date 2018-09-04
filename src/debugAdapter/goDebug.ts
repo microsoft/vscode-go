@@ -12,7 +12,7 @@ import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
-import { getTempFile } from '../util'
+import { getTempFile } from '../util';
 import * as logger from 'vscode-debug-logger';
 
 require('console-stamp')(console);

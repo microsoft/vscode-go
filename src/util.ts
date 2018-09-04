@@ -854,9 +854,9 @@ export const getTempDir = (() => {
 			}
 		}
 		return dir;
-	}
+	};
 })();
 
 export function getTempFile(name: string): string {
-	return path.normalize(path.join(getTempDir(), name))
+	return path.normalize(path.join(getTempDir(), name));
 }

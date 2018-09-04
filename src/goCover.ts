@@ -8,7 +8,7 @@ import vscode = require('vscode');
 import path = require('path');
 import os = require('os');
 import fs = require('fs');
-import { getTempFile } from './util'
+import { getTempFile } from './util';
 import { showTestOutput, goTest } from './testUtils';
 import rl = require('readline');
 
@@ -114,7 +114,6 @@ export function toggleCoverageCurrentPackage() {
 
 	let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
 	let tmpCoverPath = getTempFile('go-code-cover');
-	console.log(tmpCoverPath)
 	let args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
 	return goTest({
 		goConfig: goConfig,
