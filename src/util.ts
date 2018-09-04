@@ -844,3 +844,19 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 	};
 }
 
+export const getTempDir = (() => {
+	let dir: string | undefined;
+	return (): string => {
+		if (!dir) {
+			dir = fs.mkdtempSync(os.tmpdir() + '/vscode-go');
+			if (!fs.existsSync(dir)) {
+				fs.mkdirSync(dir);
+			}
+		}
+		return dir;
+	}
+})();
+
+export function getTempFile(name: string): string {
+	return path.normalize(path.join(getTempDir(), name))
+}
