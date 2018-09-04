@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.90-beta.1",
+  "version": "0.6.90-beta.2",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -527,16 +527,16 @@
           "default": "",
           "description": "The Go build tags to use for all commands, that support a `-tags '...'` argument. When running tests, go.testTags will be used instead if it was set.",
           "scope": "resource"
-		},
-		"go.testTags": {
-			"type": [
-				"string",
-				"null"
-			],
-			"default": null,
-			"description": "The Go build tags to use for when running tests. If null, then buildTags will be used.",
-			"scope": "resource"
-		  },
+        },
+        "go.testTags": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "The Go build tags to use for when running tests. If null, then buildTags will be used.",
+          "scope": "resource"
+        },
         "go.installDependenciesWhenBuilding": {
           "type": "boolean",
           "default": true,
