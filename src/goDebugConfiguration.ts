@@ -12,13 +12,9 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				'type': 'go',
 				'request': 'launch',
 				'mode': 'auto',
-				'remotePath': '',
-				'port': 2345,
-				'host': '127.0.0.1',
 				'program': '${fileDirname}',
 				'env': {},
-				'args': [],
-				'showLog': false
+				'args': []
 			}
 		];
 	}
