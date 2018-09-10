@@ -96,12 +96,13 @@ export function getTestFunctions(doc: vscode.TextDocument, token: vscode.Cancell
 	let documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
-		.then(symbols =>
-			symbols.filter(sym =>
+		.then(symbols => {
+			const testify = symbols.some(sym => sym.kind === vscode.SymbolKind.Module && sym.name === "github.com/stretchr/testify/suite");
+			return symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example') || testSuiteMethodRegex.test(sym.name))
+				&& (sym.name.startsWith('Test') || sym.name.startsWith('Example') || (testify && testSuiteMethodRegex.test(sym.name)))
 			)
-		);
+		});
 }
 
 /**
