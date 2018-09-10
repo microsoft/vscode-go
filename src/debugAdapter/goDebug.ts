@@ -12,7 +12,6 @@ import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
-import { getTempFile } from '../util';
 import * as logger from 'vscode-debug-logger';
 
 require('console-stamp')(console);
@@ -532,7 +531,7 @@ class GoDebugSession extends DebugSession {
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
 
-		const logPath = getTempFile('vscode-go-debug.txt');
+		const logPath = path.join(os.tmpdir(), 'vscode-go-debug.txt');
 		logger.init(e => this.sendEvent(e), logPath, isServer);
 	}
 

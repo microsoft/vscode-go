@@ -29,7 +29,7 @@ import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport, addImportToWorkspace } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars, TempFileProvider } from './util';
 import { LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature, ProvideCompletionItemsSignature } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -50,7 +50,7 @@ export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 export let warningDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
-
+	TempFileProvider.registerStore(ctx.globalState);
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 
 	updateGoPathGoRootFromConfig().then(() => {

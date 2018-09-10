@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { getTempFile } from './util';
+import { TempFileProvider } from './util';
 import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { getCoverage } from './goCover';
 
@@ -213,7 +213,7 @@ function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string
 	let tmpCoverPath = '';
 	let testFlags = getTestFlags(goConfig, args) || [];
 	if (goConfig[confFlag] === true) {
-		tmpCoverPath = getTempFile('go-code-cover');
+		tmpCoverPath = TempFileProvider.getFilePath('go-code-cover');
 		testFlags.push('-coverprofile=' + tmpCoverPath);
 	}
 

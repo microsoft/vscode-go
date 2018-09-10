@@ -844,19 +844,32 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 	};
 }
 
-export const getTempDir = (() => {
-	let dir: string | undefined;
-	return (): string => {
-		if (!dir) {
-			dir = fs.mkdtempSync(os.tmpdir() + '/vscode-go');
-			if (!fs.existsSync(dir)) {
-				fs.mkdirSync(dir);
-			}
-		}
-		return dir;
-	};
-})();
+export class TempFileProvider {
+	private static globalState: vscode.Memento;
 
-export function getTempFile(name: string): string {
-	return path.normalize(path.join(getTempDir(), name));
+	/**
+	 * register store to provider for persistance
+	 */
+	static registerStore(globalState: vscode.Memento) {
+		TempFileProvider.globalState = globalState;
+	}
+
+	/**
+	 * returns path to temp file with name
+	 * TempFileProvider.registerStore must be called before this
+	 */
+	static getFilePath(name: string): string {
+		let tempDir = TempFileProvider.globalState.get<string>('tempDir');
+
+		if (!tempDir) {
+			tempDir = fs.mkdtempSync(os.tmpdir() + path.sep + 'vscode-go');
+			TempFileProvider.globalState.update('tempDir', tempDir);
+		}
+
+		if (!fs.existsSync(tempDir)) {
+			fs.mkdirSync(tempDir);
+		}
+
+		return path.normalize(path.join(tempDir, name));
+	}
 }
