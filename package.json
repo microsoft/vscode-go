@@ -491,7 +491,7 @@
               "useApiV1": {
                 "type": "boolean",
                 "description": "If true, the v1 of delve apis will be used, else v2 will be used",
-                "default": true
+                "default": false
               }
             }
           }
@@ -1153,7 +1153,7 @@
             "useApiV1": {
               "type": "boolean",
               "description": "If true, the v1 of delve apis will be used, else v2 will be used",
-              "default": true
+              "default": false
             }
           },
           "scope": "resource"
