@@ -37,9 +37,8 @@ export function hideGoStatus() {
 
 export function showGoStatus(message: string, command: string, tooltip?: string) {
 	statusBarEntry = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, Number.MIN_VALUE);
-	statusBarEntry.text = message;
+	statusBarEntry.text = `$(alert) ${message}`;
 	statusBarEntry.command = command;
-	statusBarEntry.color = 'yellow';
 	statusBarEntry.tooltip = tooltip;
 	statusBarEntry.show();
 }
