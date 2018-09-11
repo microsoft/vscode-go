@@ -50,7 +50,6 @@ export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 export let warningDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
-	TempFileProvider.registerStore(ctx.globalState);
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 
 	updateGoPathGoRootFromConfig().then(() => {
@@ -402,6 +401,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 }
 
 export function deactivate() {
+	TempFileProvider.cleanUp();
 	return Promise.all([disposeTelemetryReporter(), cancelRunningTests()]);
 }
 

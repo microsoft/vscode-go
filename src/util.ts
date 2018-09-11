@@ -844,33 +844,49 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 	};
 }
 
-export class TempFileProvider {
-	private static globalState: vscode.Memento;
-
-	/**
-	 * register store to provider for persistance
-	 */
-	static registerStore(globalState: vscode.Memento) {
-		TempFileProvider.globalState = globalState;
+function rmdirRecursive(dir) {
+	if (fs.existsSync(dir)) {
+		fs.readdirSync(dir).forEach(file => {
+			const relPath = path.join(dir, file);
+			if (fs.lstatSync(relPath).isDirectory()) {
+				rmdirRecursive(dir);
+			} else {
+				fs.unlinkSync(relPath);
+			}
+		});
+		fs.rmdirSync(dir);
 	}
+}
+
+export class TempFileProvider {
+	private static dir: string | undefined;
 
 	/**
 	 * returns path to temp file with name
-	 * TempFileProvider.registerStore must be called before this
 	 */
 	static getFilePath(name: string): string {
-		let tempDir;
-		if (TempFileProvider.globalState) {
-			tempDir = TempFileProvider.globalState.get<string>('tempDir');
+		let { dir } = TempFileProvider;
+
+		if (!TempFileProvider.dir) {
+			dir = fs.mkdtempSync(os.tmpdir() + path.sep + 'vscode-go');
+			TempFileProvider.dir = dir;
 		}
 
-		if (!tempDir || !fs.existsSync(tempDir)) {
-			tempDir = fs.mkdtempSync(os.tmpdir() + path.sep + 'vscode-go');
-			if (TempFileProvider.globalState) {
-				TempFileProvider.globalState.update('tempDir', tempDir);
-			}
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir);
 		}
 
-		return path.normalize(path.join(tempDir, name));
+		return path.normalize(path.join(dir, name));
+	}
+
+	/**
+	 * deletes temp directory
+	 */
+	static cleanUp() {
+		const { dir } = TempFileProvider;
+		if (dir) {
+			rmdirRecursive(dir);
+			TempFileProvider.dir = undefined;
+		}
 	}
 }
