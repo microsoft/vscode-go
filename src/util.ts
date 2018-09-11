@@ -859,15 +859,16 @@ export class TempFileProvider {
 	 * TempFileProvider.registerStore must be called before this
 	 */
 	static getFilePath(name: string): string {
-		let tempDir = TempFileProvider.globalState.get<string>('tempDir');
-
-		if (!tempDir) {
-			tempDir = fs.mkdtempSync(os.tmpdir() + path.sep + 'vscode-go');
-			TempFileProvider.globalState.update('tempDir', tempDir);
+		let tempDir;
+		if (TempFileProvider.globalState) {
+			tempDir = TempFileProvider.globalState.get<string>('tempDir');
 		}
 
-		if (!fs.existsSync(tempDir)) {
-			fs.mkdirSync(tempDir);
+		if (!tempDir || !fs.existsSync(tempDir)) {
+			tempDir = fs.mkdtempSync(os.tmpdir() + path.sep + 'vscode-go');
+			if (TempFileProvider.globalState) {
+				TempFileProvider.globalState.update('tempDir', tempDir);
+			}
 		}
 
 		return path.normalize(path.join(tempDir, name));
