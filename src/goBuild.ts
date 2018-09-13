@@ -1,6 +1,6 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, TempFileProvider } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath } from './util';
 import { outputChannel } from './goStatus';
 import os = require('os');
 import { getNonVendorPackages } from './goPackages';
@@ -70,7 +70,7 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 	}
 
 	const buildEnv = Object.assign({}, getToolsEnvVars());
-	const tmpPath = TempFileProvider.getFilePath('go-code-check');
+	const tmpPath = getTempFilePath('go-code-check');
 	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
 	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig, null) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
 	const buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];

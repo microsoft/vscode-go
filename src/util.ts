@@ -858,35 +858,28 @@ function rmdirRecursive(dir) {
 	}
 }
 
-export class TempFileProvider {
-	private static dir: string | undefined;
+let tmpDir: string;
 
-	/**
-	 * returns path to temp file with name
-	 */
-	static getFilePath(name: string): string {
-		let { dir } = TempFileProvider;
-
-		if (!TempFileProvider.dir) {
-			dir = fs.mkdtempSync(os.tmpdir() + path.sep + 'vscode-go');
-			TempFileProvider.dir = dir;
-		}
-
-		if (!fs.existsSync(dir)) {
-			fs.mkdirSync(dir);
-		}
-
-		return path.normalize(path.join(dir, name));
+/**
+ * Returns file path for given name in temp dir
+ * @param name Name of the file
+ */
+export function getTempFilePath(name: string): string {
+	if (!tmpDir) {
+		tmpDir = fs.mkdtempSync(os.tmpdir() + path.sep + 'vscode-go');
 	}
 
-	/**
-	 * deletes temp directory
-	 */
-	static cleanUp() {
-		const { dir } = TempFileProvider;
-		if (dir) {
-			rmdirRecursive(dir);
-			TempFileProvider.dir = undefined;
-		}
+	if (!fs.existsSync(tmpDir)) {
+		fs.mkdirSync(tmpDir);
 	}
+
+	return path.normalize(path.join(tmpDir, name));
 }
+
+export function cleanupTempDir() {
+	if (!tmpDir) {
+		rmdirRecursive(tmpDir);
+	}
+	tmpDir = undefined;
+}
+
