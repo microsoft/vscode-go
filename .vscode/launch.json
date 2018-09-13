@@ -7,10 +7,14 @@
 			"request": "launch",
 			// path to VSCode executable
 			"runtimeExecutable": "${execPath}",
-			"args": [ "--extensionDevelopmentPath=${workspaceRoot}" ],
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}"
+			],
 			"stopOnEntry": false,
 			"sourceMaps": true,
-			"outFiles": ["${workspaceRoot}/out/**/*.js"],
+			"outFiles": [
+				"${workspaceRoot}/out/**/*.js"
+			],
 			"preLaunchTask": "npm"
 		},
 		{
@@ -18,9 +22,13 @@
 			"type": "node2",
 			"request": "launch",
 			"program": "${workspaceRoot}/out/src/debugAdapter/goDebug.js",
-			"args": [ "--server=4712" ],
+			"args": [
+				"--server=4712"
+			],
 			"sourceMaps": true,
-			"outFiles": ["${workspaceRoot}/out/**/*.js"]
+			"outFiles": [
+				"${workspaceRoot}/out/**/*.js"
+			]
 		},
 		{
 			"name": "Launch Tests",
@@ -28,17 +36,40 @@
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			// the workspace path should be GOPATH
-			"args": ["--extensionDevelopmentPath=${workspaceRoot}", "--extensionTestsPath=${workspaceRoot}/out/test", "env.GOPATH" ],
+			"args": [
+				"--extensionDevelopmentPath=${workspaceRoot}",
+				"--extensionTestsPath=${workspaceRoot}/out/test"
+			],
 			"stopOnEntry": false,
 			"sourceMaps": true,
-			"outFiles": ["${workspaceRoot}/out/**/*.js"],
+			"outFiles": [
+				"${workspaceRoot}/out/**/*.js"
+			],
 			"preLaunchTask": "npm"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Unit Tests",
+			"program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+			"args": [
+				"-u",
+				"tdd",
+				"--timeout",
+				"5000",
+				"--colors",
+				"${workspaceRoot}/out/test/unit"
+			],
+			"internalConsoleOptions": "openOnSessionStart"
 		}
 	],
 	"compounds": [
 		{
 			"name": "Extension + Debug server",
-			"configurations": ["Launch Extension", "Launch as server"]
+			"configurations": [
+				"Launch Extension",
+				"Launch as server"
+			]
 		}
 	]
 }

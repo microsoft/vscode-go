@@ -10,6 +10,8 @@ import vscode = require('vscode');
 
 export let outputChannel = vscode.window.createOutputChannel('Go');
 
+export let diagnosticsStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+
 let statusBarEntry: vscode.StatusBarItem;
 
 export function showHideStatus() {
@@ -35,9 +37,8 @@ export function hideGoStatus() {
 
 export function showGoStatus(message: string, command: string, tooltip?: string) {
 	statusBarEntry = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, Number.MIN_VALUE);
-	statusBarEntry.text = message;
+	statusBarEntry.text = `$(alert) ${message}`;
 	statusBarEntry.command = command;
-	statusBarEntry.color = 'yellow';
 	statusBarEntry.tooltip = tooltip;
 	statusBarEntry.show();
 }

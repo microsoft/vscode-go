@@ -5,47 +5,12 @@
 
 'use strict';
 
-import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
-import util = require('util');
 import os = require('os');
-import { parseEnvFile, getGoRuntimePath, resolvePath } from './goPath';
-import { getToolsEnvVars, LineBuffer } from './util';
-import { GoDocumentSymbolProvider } from './goOutline';
-import { getNonVendorPackages } from './goPackages';
-
-let outputChannel = vscode.window.createOutputChannel('Go Tests');
-
-/**
- * Input to goTest.
- */
-interface TestConfig {
-	/**
-	 * The working directory for `go test`.
-	 */
-	dir: string;
-	/**
-	 * Configuration for the Go extension
-	 */
-	goConfig: vscode.WorkspaceConfiguration;
-	/**
-	 * Test flags to override the testFlags and buildFlags from goConfig.
-	 */
-	flags: string[];
-	/**
-	 * Specific function names to test.
-	 */
-	functions?: string[];
-	/**
-	 * Test was not requested explicitly. The output should not appear in the UI.
-	 */
-	background?: boolean;
-	/**
-	 * Run all tests from all sub directories under `dir`
-	 */
-	includeSubDirectories?: boolean;
-}
+import { getTempFilePath } from './util';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
+import { getCoverage } from './goCover';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
 // the last test to be easily re-executed.
@@ -57,7 +22,7 @@ let lastTestConfig: TestConfig;
 *
 * @param goConfig Configuration for the Go extension.
 */
-export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any) {
+export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -67,39 +32,62 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
-	if (editor.document.isDirty) {
-		vscode.window.showInformationMessage('File has unsaved changes. Save and try again.');
-		return;
-	}
-	getTestFunctions(editor.document).then(testFunctions => {
-		let testFunctionName: string;
 
-		// We use functionName if it was provided as argument
-		// Otherwise find any test function containing the cursor.
-		if (args && args.functionName) {
-			testFunctionName = args.functionName;
-		} else {
-			for (let func of testFunctions) {
-				let selection = editor.selection;
-				if (selection && func.location.range.contains(selection.start)) {
-					testFunctionName = func.name;
-					break;
+	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
+
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
+
+	editor.document.save().then(() => {
+		return getFunctions(editor.document, null).then(testFunctions => {
+			let testFunctionName: string;
+
+			// We use functionName if it was provided as argument
+			// Otherwise find any test function containing the cursor.
+			if (args && args.functionName) {
+				testFunctionName = args.functionName;
+			} else {
+				for (let func of testFunctions) {
+					let selection = editor.selection;
+					if (selection && func.location.range.contains(selection.start)) {
+						testFunctionName = func.name;
+						break;
+					}
+				};
+			}
+
+			if (!testFunctionName) {
+				vscode.window.showInformationMessage('No test function found at cursor.');
+				return;
+			}
+
+			let testConfigFns = [testFunctionName];
+
+			if (!isBenchmark && extractInstanceTestName(testFunctionName)) {
+				// find test function with corresponding suite.Run
+				const testFns = findAllTestSuiteRuns(editor.document, testFunctions);
+				if (testFns) {
+					testConfigFns = testConfigFns.concat(testFns.map(t => t.name));
 				}
+			}
+
+			const testConfig: TestConfig = {
+				goConfig: goConfig,
+				dir: path.dirname(editor.document.fileName),
+				flags: testFlags,
+				functions: testConfigFns,
+				isBenchmark: isBenchmark,
 			};
-		}
 
-		if (!testFunctionName) {
-			vscode.window.showInformationMessage('No test function found at cursor.');
-			return;
-		}
+			// Remember this config as the last executed test.
+			lastTestConfig = testConfig;
 
-		return goTest({
-			goConfig: goConfig,
-			dir: path.dirname(editor.document.fileName),
-			flags: getTestFlags(goConfig, args),
-			functions: [testFunctionName]
+			return goTest(testConfig);
 		});
-	}).then(null, err => {
+	}).then(success => {
+		if (success && tmpCoverPath) {
+			return getCoverage(tmpCoverPath);
+		}
+	}, err => {
 		console.error(err);
 	});
 }
@@ -109,18 +97,30 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, args: any)
  *
  * @param goConfig Configuration for the Go extension.
  */
-export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args: any) {
+export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
-	goTest({
+
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
+
+	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: path.dirname(editor.document.fileName),
-		flags: getTestFlags(goConfig, args)
-	}).then(null, err => {
-		console.error(err);
+		flags: testFlags,
+		isBenchmark: isBenchmark,
+	};
+	// Remember this config as the last executed test.
+	lastTestConfig = testConfig;
+
+	goTest(testConfig).then(success => {
+		if (success && tmpCoverPath) {
+			return getCoverage(tmpCoverPath);
+		}
+	}, err => {
+		console.log(err);
 	});
 }
 
@@ -130,40 +130,35 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
  * @param goConfig Configuration for the Go extension.
  */
 export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any) {
-	goTest({
+	let dir = vscode.workspace.rootPath;
+	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+		dir = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+	}
+	if (!dir) {
+		vscode.window.showInformationMessage('No workspace is open to run tests.');
+		return;
+	}
+	const testConfig = {
 		goConfig: goConfig,
-		dir: vscode.workspace.rootPath,
+		dir: dir,
 		flags: getTestFlags(goConfig, args),
 		includeSubDirectories: true
-	}).then(null, err => {
+	};
+	// Remember this config as the last executed test.
+	lastTestConfig = testConfig;
+
+	goTest(testConfig).then(null, err => {
 		console.error(err);
 	});
-}
-
-export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
-	const toolsEnv = getToolsEnvVars();
-	const testEnv = config['testEnvVars'] || {};
-
-	let fileEnv = {};
-	let testEnvFile = config['testEnvFile'];
-	if (testEnvFile) {
-		testEnvFile = resolvePath(testEnvFile, vscode.workspace.rootPath);
-		try {
-			fileEnv = parseEnvFile(testEnvFile);
-		} catch (e) {
-			console.log(e);
-		}
-	}
-
-	return Object.assign({}, toolsEnv, fileEnv, testEnv);
 }
 
 /**
  * Runs all tests in the source of the active editor.
  *
  * @param goConfig Configuration for the Go extension.
+ * @param isBenchmark Boolean flag indicating if these are benchmark tests or not.
  */
-export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: string[]): Thenable<boolean> {
+export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: string[]): Thenable<boolean> {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -173,12 +168,22 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
-	return getTestFunctions(editor.document).then(testFunctions => {
-		return goTest({
-			goConfig: goConfig,
-			dir: path.dirname(editor.document.fileName),
-			flags: getTestFlags(goConfig, args),
-			functions: testFunctions.map(func => { return func.name; })
+
+	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
+
+	return editor.document.save().then(() => {
+		return getFunctions(editor.document, null).then(testFunctions => {
+			const testConfig: TestConfig = {
+				goConfig: goConfig,
+				dir: path.dirname(editor.document.fileName),
+				flags: getTestFlags(goConfig, args),
+				functions: testFunctions.map(sym => sym.name),
+				isBenchmark: isBenchmark,
+			};
+			// Remember this config as the last executed test.
+			lastTestConfig = testConfig;
+
+			return goTest(testConfig);
 		});
 	}).then(null, err => {
 		console.error(err);
@@ -190,7 +195,6 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
  * Runs the previously executed test.
  */
 export function testPrevious() {
-	let editor = vscode.window.activeTextEditor;
 	if (!lastTestConfig) {
 		vscode.window.showInformationMessage('No test has been recently executed.');
 		return;
@@ -201,142 +205,17 @@ export function testPrevious() {
 }
 
 /**
- * Reveals the output channel in the UI.
- */
-export function showTestOutput() {
-	outputChannel.show(true);
-}
-
-/**
- * Runs go test and presents the output in the 'Go' channel.
+ * Computes the tmp coverage path and needed flags.
  *
  * @param goConfig Configuration for the Go extension.
  */
-export function goTest(testconfig: TestConfig): Thenable<boolean> {
-	return new Promise<boolean>((resolve, reject) => {
-		outputChannel.clear();
-		if (!testconfig.background) {
-			// Remember this config as the last executed test.
-			lastTestConfig = testconfig;
-			outputChannel.show(true);
-		}
-
-		let buildTags: string = testconfig.goConfig['buildTags'];
-		let args = ['test', ...testconfig.flags, '-timeout', testconfig.goConfig['testTimeout']];
-		if (buildTags && testconfig.flags.indexOf('-tags') === -1) {
-			args.push('-tags');
-			args.push(buildTags);
-		}
-		let testEnvVars = getTestEnvVars(testconfig.goConfig);
-		let goRuntimePath = getGoRuntimePath();
-
-		if (!goRuntimePath) {
-			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-			return Promise.resolve();
-		}
-
-		targetArgs(testconfig).then(targets => {
-			let outTargets = args.slice(0);
-			if (targets.length > 2) {
-				outTargets.push('<long arguments omitted>');
-			} else {
-				outTargets.push(...targets);
-			}
-			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
-			outputChannel.appendLine('');
-
-			args.push(...targets);
-			let proc = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
-			const outBuf = new LineBuffer();
-			const errBuf = new LineBuffer();
-
-			outBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
-			outBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
-
-			errBuf.onLine(line => outputChannel.appendLine(line));
-			errBuf.onDone(last => last && outputChannel.appendLine(last));
-
-			proc.stdout.on('data', chunk => outBuf.append(chunk.toString()));
-			proc.stderr.on('data', chunk => errBuf.append(chunk.toString()));
-
-			proc.on('close', code => {
-				outBuf.done();
-				errBuf.done();
-
-				if (code) {
-					outputChannel.appendLine('Error: Tests failed.');
-				} else {
-					outputChannel.appendLine('Success: Tests passed.');
-				}
-				resolve(code === 0);
-			});
-		}, err => {
-			outputChannel.appendLine('Error: Tests failed.');
-			outputChannel.appendLine(err);
-			resolve(false);
-		});
-	});
-}
-
-/**
- * Returns all Go unit test functions in the given source file.
- *
- * @param the URI of a Go source file.
- * @return test function symbols for the source file.
- */
-export function getTestFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
-	let documentSymbolProvider = new GoDocumentSymbolProvider();
-	return documentSymbolProvider
-		.provideDocumentSymbols(doc, null)
-		.then(symbols =>
-			symbols.filter(sym =>
-				sym.kind === vscode.SymbolKind.Function
-				&& hasTestFunctionPrefix(sym.name))
-		);
-}
-
-/**
- * Returns whether a given function name has a test prefix.
- * Test functions have "Test" or "Example" as a prefix.
- *
- * @param the function name.
- * @return whether the name has a test function prefix.
- */
-function hasTestFunctionPrefix(name: string): boolean {
-	return name.startsWith('Test') || name.startsWith('Example');
-}
-
-export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any): string[] {
-	let testFlags = goConfig['testFlags'] ? goConfig['testFlags'] : goConfig['buildFlags'];
-	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
-}
-
-function expandFilePathInOutput(output: string, cwd: string): string {
-	let lines = output.split('\n');
-	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\s+(\S+_test.go):(\d+):/);
-		if (matches) {
-			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
-		}
+function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
+	let tmpCoverPath = '';
+	let testFlags = getTestFlags(goConfig, args) || [];
+	if (goConfig[confFlag] === true) {
+		tmpCoverPath = getTempFilePath('go-code-cover');
+		testFlags.push('-coverprofile=' + tmpCoverPath);
 	}
-	return lines.join('\n');
-}
 
-/**
- * Get the test target arguments.
- *
- * @param testconfig Configuration for the Go extension.
- */
-function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
-	if (testconfig.functions) {
-		return new Promise<Array<string>>((resolve, reject) => {
-			const args = [];
-			args.push('-run');
-			args.push(util.format('^%s$', testconfig.functions.join('|')));
-			return resolve(args);
-		});
-	} else if (testconfig.includeSubDirectories) {
-		return getNonVendorPackages(vscode.workspace.rootPath);
-	}
-	return Promise.resolve([]);
+	return { tmpCoverPath, testFlags };
 }

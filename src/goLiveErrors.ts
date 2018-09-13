@@ -1,7 +1,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getToolsEnvVars } from './util';
+import { getBinPath, getToolsEnvVars } from './util';
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
@@ -16,7 +16,7 @@ interface GoLiveErrorsConfig {
 let runner;
 
 export function goLiveErrorsEnabled() {
-	let goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go')['liveErrors'];
+	let goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['liveErrors'];
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
@@ -24,7 +24,7 @@ export function goLiveErrorsEnabled() {
 	let autoSave = files['autoSave'];
 	let autoSaveDelay = files['autoSaveDelay'];
 	if (autoSave !== null && autoSave !== undefined &&
-			autoSave === 'afterDelay' && autoSaveDelay < goConfig.delay * 1.5) {
+		autoSave === 'afterDelay' && autoSaveDelay < goConfig.delay * 1.5) {
 		return false;
 	}
 	return goConfig.enabled;
@@ -46,20 +46,24 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	if (runner != null) {
 		clearTimeout(runner);
 	}
-	runner = setTimeout(function(){
+	runner = setTimeout(function () {
 		processFile(e);
 		runner = null;
-	}, vscode.workspace.getConfiguration('go')['liveErrors']['delay']);
+	}, vscode.workspace.getConfiguration('go', e.document.uri)['liveErrors']['delay']);
 }
 
 // processFile does the actual work once the timeout has fired
 function processFile(e: vscode.TextDocumentChangeEvent) {
-	let gotypeLive = getBinPath('gotype-live');
+	const gotypeLive = getBinPath('gotype-live');
+	if (!path.isAbsolute(gotypeLive)) {
+		return promptForMissingTool('gotype-live');
+	}
+
 	let fileContents = e.document.getText();
 	let fileName = e.document.fileName;
 	let args = ['-e', '-a', '-lf=' + fileName, path.dirname(fileName)];
 	let env = getToolsEnvVars();
-	let p = cp.execFile(gotypeLive, args, {env}, (err, stdout, stderr) => {
+	let p = cp.execFile(gotypeLive, args, { env }, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gotype-live');
 			return;
@@ -96,5 +100,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			});
 		}
 	});
-	p.stdin.end(fileContents);
+	if (p.pid) {
+		p.stdin.end(fileContents);
+	}
 }

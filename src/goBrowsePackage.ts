@@ -7,9 +7,9 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getGoRuntimePath } from './goPath';
 import path = require('path');
-import { goListAll, isGoListComplete } from './goPackages';
+import { getAllPackages } from './goPackages';
+import { getImportPath, getCurrentGoPath, getBinPath } from './util';
 
 export function browsePackages() {
 	let selectedText = '';
@@ -23,79 +23,67 @@ export function browsePackages() {
 			// if selection is empty, then get the whole line the cursor is currently on.
 			selectedText = editor.document.lineAt(selection.active.line).text;
 		}
-		selectedText = getImportPath(selectedText);
+		selectedText = getImportPath(selectedText) || selectedText.trim();
 	}
 
-	if (isGoListComplete()) {
-		return showPackages(selectedText);
-	}
-
-	// `go list all` has not completed. Wait for a second which is an acceptable duration of delay.
-	setTimeout(() => {
-		// `go list all` still not complete. It takes a long time on slower machines or when there are way too many folders in GOPATH
-		if (!isGoListComplete()) {
-			vscode.window.showInformationMessage('Finding packages... Try after sometime.');
-			return;
-		}
-		showPackages(selectedText);
-	}, 1000);
-
+	showPackageFiles(selectedText, true);
 }
 
-function showPackages(selectedText: string) {
-	const goRuntimePath = getGoRuntimePath();
+function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean) {
+	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return;
+		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
 	}
-	goListAll().then(pkgMap => {
-		const pkgs: string[] = Array.from(pkgMap.keys());
-		if (!pkgs || pkgs.length === 0) {
-			return vscode.window.showErrorMessage('Could not find packages. Ensure `go list all` runs successfully.');
-		}
-		let selectPkgPromise: Thenable<string> = Promise.resolve(selectedText);
-		if (!selectedText || pkgs.indexOf(selectedText) === -1) {
-			selectPkgPromise = vscode.window.showQuickPick(pkgs, { placeHolder: 'Select a package to browse' });
-		}
-		selectPkgPromise.then(pkg => {
-			cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], (err, stdout, stderr) => {
-				if (!stdout || stdout.indexOf(':') === -1) {
-					return;
-				}
-				let matches = stdout.match(/(.*):\[(.*)\]:\[(.*)\]:\[(.*)\]/);
-				if (matches) {
-					let dir = matches[1];
-					let files = matches[2] ? matches[2].split(' ') : [];
-					let testfiles = matches[3] ? matches[3].split(' ') : [];
-					let xtestfiles = matches[4] ? matches[4].split(' ') : [];
-					files = files.concat(testfiles);
-					files = files.concat(xtestfiles);
-					vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then(file => {
-						// if user abandoned list, file will be null and path.join will error out.
-						// therefore return.
-						if (!file) return;
 
-						vscode.workspace.openTextDocument(path.join(dir, file)).then(document => {
-							vscode.window.showTextDocument(document);
-						});
-					});
-				}
+	if (!pkg && showAllPkgsIfPkgNotFound) {
+		return showPackageList();
+	}
+
+	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
+
+	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], { env }, (err, stdout, stderr) => {
+		if (!stdout || stdout.indexOf(':') === -1) {
+			if (showAllPkgsIfPkgNotFound) {
+				return showPackageList();
+			}
+
+			return;
+		}
+
+		let matches = stdout && stdout.match(/(.*):\[(.*)\]:\[(.*)\]:\[(.*)\]/);
+		if (matches) {
+			let dir = matches[1];
+			let files = matches[2] ? matches[2].split(' ') : [];
+			let testfiles = matches[3] ? matches[3].split(' ') : [];
+			let xtestfiles = matches[4] ? matches[4].split(' ') : [];
+			files = files.concat(testfiles);
+			files = files.concat(xtestfiles);
+			vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then(file => {
+				// if user abandoned list, file will be null and path.join will error out.
+				// therefore return.
+				if (!file) return;
+
+				vscode.workspace.openTextDocument(path.join(dir, file)).then(document => {
+					vscode.window.showTextDocument(document);
+				});
 			});
-		});
+		}
 	});
 }
 
-function getImportPath(text: string): string {
-	// Catch cases like `import alias "importpath"` and `import "importpath"`
-	let singleLineImportMatches = text.match(/^\s*import\s+([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
-	if (singleLineImportMatches) {
-		return singleLineImportMatches[2];
-	}
+function showPackageList() {
+	getAllPackages().then(pkgMap => {
+		const pkgs: string[] = Array.from(pkgMap.keys());
+		if (pkgs.length === 0) {
+			return vscode.window.showErrorMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
+		}
 
-	// Catch cases like `alias "importpath"` and "importpath"
-	let groupImportMatches = text.match(/^\s*([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
-	if (groupImportMatches) {
-		return groupImportMatches[2];
-	}
-
-	return text.trim();
+		vscode
+			.window
+			.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
+			.then(pkgFromDropdown => {
+				if (!pkgFromDropdown) return;
+				showPackageFiles(pkgFromDropdown, false);
+			});
+	});
 }

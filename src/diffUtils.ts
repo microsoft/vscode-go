@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { TextDocument, Position, Range, TextEdit, Uri, WorkspaceEdit, TextEditorEdit } from 'vscode';
+import { Position, Range, TextEdit, Uri, WorkspaceEdit, TextEditorEdit } from 'vscode';
 import { getBinPathFromEnvVar } from './goPath';
 import jsDiff = require('diff');
 
@@ -11,7 +11,8 @@ let diffToolAvailable: boolean = null;
 
 export function isDiffToolAvailable(): boolean {
 	if (diffToolAvailable == null) {
-		diffToolAvailable = getBinPathFromEnvVar('diff', process.env['PATH'], false) != null;
+		const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
+		diffToolAvailable = getBinPathFromEnvVar('diff', envPath, false) != null;
 	}
 	return diffToolAvailable;
 }
@@ -101,32 +102,21 @@ function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 			hunk.lines.forEach((line) => {
 				switch (line.substr(0, 1)) {
 					case '-':
-						if (edit == null) {
-							edit = new Edit(EditTypes.EDIT_DELETE, new Position(startLine - 1, 0));
-						}
+						edit = new Edit(EditTypes.EDIT_DELETE, new Position(startLine - 1, 0));
 						edit.end = new Position(startLine, 0);
+						edits.push(edit);
 						startLine++;
 						break;
 					case '+':
-						if (edit == null) {
-							edit = new Edit(EditTypes.EDIT_INSERT, new Position(startLine - 1, 0));
-						} else if (edit.action === EditTypes.EDIT_DELETE) {
-							edit.action = EditTypes.EDIT_REPLACE;
-						}
+						edit = new Edit(EditTypes.EDIT_INSERT, new Position(startLine - 1, 0));
 						edit.text += line.substr(1) + '\n';
+						edits.push(edit);
 						break;
 					case ' ':
 						startLine++;
-						if (edit != null) {
-							edits.push(edit);
-						}
-						edit = null;
 						break;
 				}
 			});
-			if (edit != null) {
-				edits.push(edit);
-			}
 		});
 
 		let fileName = uniDiff.oldFileName;

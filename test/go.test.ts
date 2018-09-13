@@ -18,24 +18,35 @@ import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
-import { documentSymbols } from '../src/goOutline';
-import { listPackages } from '../src/goImport';
-import { generateTestCurrentFile, generateTestCurrentPackage, generateTestCurrentFunction } from '../src/goGenerateTests';
-import { goListAll } from '../src/goPackages';
+import { documentSymbols, GoDocumentSymbolProvider } from '../src/goOutline';
+import { listPackages, getTextEditForAddImport } from '../src/goImport';
+import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../src/goGenerateTests';
+import { getAllPackages } from '../src/goPackages';
+import { getImportPath } from '../src/util';
+import { goPlay } from '../src/goPlayground';
+import { goLint } from '../src/goLint';
+import { runFillStruct } from '../src/goFillStruct';
+import { print } from 'util';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
+	if (!gopath) {
+		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
+		return;
+	}
+
 	let repoPath = path.join(gopath, 'src', 'test');
 	let fixturePath = path.join(repoPath, 'testfixture');
 	let fixtureSourcePath = path.join(__dirname, '..', '..', 'test', 'fixtures');
 	let generateTestsSourcePath = path.join(repoPath, 'generatetests');
 	let generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
 	let generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
-	let goListAllPromise = goListAll();
+	let testPath = path.join(__dirname, 'tests');
 
 	suiteSetup(() => {
-		assert.ok(gopath !== null, 'GOPATH is not defined');
+
 		fs.removeSync(repoPath);
+		fs.removeSync(testPath);
 		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
@@ -47,10 +58,31 @@ suite('Go Extension Tests', () => {
 		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file2.go'), path.join(fixturePath, 'diffTest1Data', 'file2.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file1.go'), path.join(fixturePath, 'diffTest2Data', 'file1.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'diffTestData', 'file2.go'), path.join(fixturePath, 'diffTest2Data', 'file2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_1.go'), path.join(fixturePath, 'linterTest', 'linter_1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'), path.join(fixturePath, 'linterTest', 'linter_2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(testPath, 'errorsTest', 'errors.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_1.go'), path.join(testPath, 'linterTest', 'linter_1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'), path.join(testPath, 'linterTest', 'linter_2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'buildTags', 'hello.go'), path.join(fixturePath, 'buildTags', 'hello.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'testTags', 'hello_test.go'), path.join(fixturePath, 'testTags', 'hello_test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'completions', 'unimportedPkgs.go'), path.join(fixturePath, 'completions', 'unimportedPkgs.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'completions', 'snippets.go'), path.join(fixturePath, 'completions', 'snippets.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'completions', 'nosnippets.go'), path.join(fixturePath, 'completions', 'nosnippets.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'completions', 'exportedMemberDocs.go'), path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'noimports.go'), path.join(fixturePath, 'importTest', 'noimports.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'groupImports.go'), path.join(fixturePath, 'importTest', 'groupImports.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'importTest', 'singleImports.go'), path.join(fixturePath, 'importTest', 'singleImports.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_1.go'), path.join(fixturePath, 'fillStruct', 'input_1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'golden_1.go'), path.join(fixturePath, 'fillStruct', 'golden_1.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'golden_2.go'), path.join(fixturePath, 'fillStruct', 'golden_2.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'fillStruct', 'input_2.go'), path.join(fixturePath, 'fillStruct', 'input_3.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'outlineTest', 'test.go'), path.join(fixturePath, 'outlineTest', 'test.go'));
 	});
 
 	suiteTeardown(() => {
 		fs.removeSync(repoPath);
+		fs.removeSync(testPath);
 	});
 
 	function testDefinitionProvider(goConfig: vscode.WorkspaceConfiguration): Thenable<any> {
@@ -126,6 +158,10 @@ suite('Go Extension Tests', () => {
 	});
 
 	test('Test Definition Provider using gogetdoc', (done) => {
+		const gogetdocPath = getBinPath('gogetdoc');
+		if (gogetdocPath === 'gogetdoc') {
+			return done();
+		}
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
@@ -155,6 +191,11 @@ encountered.
 	});
 
 	test('Test SignatureHelp Provider using gogetdoc', (done) => {
+		const gogetdocPath = getBinPath('gogetdoc');
+		if (gogetdocPath === 'gogetdoc') {
+			return done();
+		}
+
 		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
 Spaces are always added between operands and a newline is appended.
 It returns the number of bytes written and any write error encountered.
@@ -199,6 +240,11 @@ encountered.
 	});
 
 	test('Test Hover Provider using gogetdoc', (done) => {
+		const gogetdocPath = getBinPath('gogetdoc');
+		if (gogetdocPath === 'gogetdoc') {
+			return done();
+		}
+
 		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
 Spaces are always added between operands and a newline is appended.
 It returns the number of bytes written and any write error encountered.
@@ -230,35 +276,44 @@ It returns the number of bytes written and any write error encountered.
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'package' },
 			'vetFlags': { value: ['-all'] },
+			'lintOnSave': { value: 'package' },
 			'lintTool': { value: 'golint' },
 			'lintFlags': { value: [] }
 		});
 		let expected = [
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
-			{ line: 9, severity: 'warning', msg: 'possible formatting directive in Println call' },
-			{ line: 12, severity: 'error', msg: 'undefined: prin' },
+			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// golint is not supported in Go 1.5, so skip the test
 				return Promise.resolve();
 			}
-			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
+			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+				let matchCount = 0;
 				for (let i in expected) {
-					if (expected[i].line) {
-						assert(sortedDiagnostics[i]);
-						assert.equal(sortedDiagnostics[i].line, expected[i].line);
-					};
-					assert.equal(sortedDiagnostics[i].severity, expected[i].severity);
-					assert.equal(sortedDiagnostics[i].msg, expected[i].msg);
+					for (let j in sortedDiagnostics) {
+						if (expected[i].line
+							&& (expected[i].line === sortedDiagnostics[j].line)
+							&& (expected[i].severity === sortedDiagnostics[j].severity)
+							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							matchCount++;
+						}
+					}
 				}
+				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
 			});
 		}).then(() => done(), done);
 	});
 
-	test('Test Generate unit tests squeleton for file', (done) => {
+	test('Test Generate unit tests skeleton for file', (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -284,7 +339,12 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Test Generate unit tests squeleton for a function', (done) => {
+	test('Test Generate unit tests skeleton for a function', (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -313,7 +373,12 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Test Generate unit tests squeleton for package', (done) => {
+	test('Test Generate unit tests skeleton for package', (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+
 		getGoVersion().then(version => {
 			if (version && version.major === 1 && version.minor < 6) {
 				// gotests is not supported in Go 1.5, so skip the test
@@ -347,16 +412,18 @@ It returns the number of bytes written and any write error encountered.
 			}
 
 			let config = Object.create(vscode.workspace.getConfiguration('go'), {
+				'lintOnSave': { value: 'package' },
 				'lintTool': { value: 'gometalinter' },
 				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
 				'vetOnSave': { value: 'off' },
 				'buildOnSave': { value: 'off' }
 			});
 			let expected = [
-				{ line: 12, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-				{ line: 12, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
+				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
-			return check(path.join(fixturePath, 'errorsTest', 'errors.go'), config).then(diagnostics => {
+			let errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
+			return check(vscode.Uri.file(errorsTestPath), config).then(diagnostics => {
 				let sortedDiagnostics = diagnostics.sort((a, b) => {
 					if (a.msg < b.msg)
 						return -1;
@@ -364,12 +431,20 @@ It returns the number of bytes written and any write error encountered.
 						return 1;
 					return 0;
 				});
+
+				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+				let matchCount = 0;
 				for (let i in expected) {
-					assert.equal(sortedDiagnostics[i].line, expected[i].line, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-					assert.equal(sortedDiagnostics[i].severity, expected[i].severity, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
-					assert.equal(sortedDiagnostics[i].msg, expected[i].msg, `Failed to match expected error #${i}: ${JSON.stringify(sortedDiagnostics)}`);
+					for (let j in sortedDiagnostics) {
+						if ((expected[i].line === sortedDiagnostics[j].line)
+							&& (expected[i].severity === sortedDiagnostics[j].severity)
+							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							matchCount++;
+						}
+					}
 				}
-				assert.equal(sortedDiagnostics.length, expected.length, `too many errors ${JSON.stringify(sortedDiagnostics)}`);
+				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
+
 				return Promise.resolve();
 			});
 		}).then(() => done(), done);
@@ -463,13 +538,13 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Env Variables are passed to Tests', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue' } }
+			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue', 'dummyNonString': 1 } }
 		});
 
 		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
-				return testCurrentFile(config, []).then((result: boolean) => {
+				return testCurrentFile(config, false, []).then((result: boolean) => {
 					assert.equal(result, true);
 					return Promise.resolve();
 				});
@@ -478,9 +553,9 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Outline', (done) => {
-		let filePath = path.join(fixturePath, 'test.go');
+		let filePath = path.join(fixturePath, 'outlineTest', 'test.go');
 		let options = { fileName: filePath };
-		documentSymbols(options).then(outlines => {
+		documentSymbols(options, null).then(outlines => {
 			let packageOutline = outlines[0];
 			let symbols = packageOutline.children;
 			let imports = symbols.filter(x => x.type === 'import');
@@ -496,9 +571,9 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Outline imports only', (done) => {
-		let filePath = path.join(fixturePath, 'test.go');
+		let filePath = path.join(fixturePath, 'outlineTest', 'test.go');
 		let options = { fileName: filePath, importsOnly: true };
-		documentSymbols(options).then(outlines => {
+		documentSymbols(options, null).then(outlines => {
 			let packageOutline = outlines[0];
 			let symbols = packageOutline.children;
 			let imports = symbols.filter(x => x.type === 'import');
@@ -513,19 +588,37 @@ It returns the number of bytes written and any write error encountered.
 		}, done);
 	});
 
+	test('Test Outline document symbols', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then(symbols => {
+				let groupedSymbolNames = symbols.reduce(function (map, symbol) {
+					map[symbol.kind] = (map[symbol.kind] || []).concat([symbol.name]);
+					return map;
+				}, {});
+
+				let packageNames = groupedSymbolNames[vscode.SymbolKind.Package];
+				let variableNames = groupedSymbolNames[vscode.SymbolKind.Variable];
+				let functionNames = groupedSymbolNames[vscode.SymbolKind.Function];
+
+				assert.equal(packageNames[0], 'main');
+				assert.equal(variableNames, undefined);
+				assert.equal(functionNames[0], 'print');
+				assert.equal(functionNames[1], 'main');
+			});
+		}).then(() => done(), done);
+	});
+
 	test('Test listPackages', (done) => {
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
 				let includeImportedPkgs = listPackages(false);
 				let excludeImportedPkgs = listPackages(true);
-				includeImportedPkgs.then(pkgs => {
-					assert.equal(pkgs.indexOf('fmt') > -1, true);
+				return Promise.all([includeImportedPkgs, excludeImportedPkgs]).then(([pkgsInclude, pkgsExclude]) => {
+					assert.equal(pkgsInclude.indexOf('fmt') > -1, true);
+					assert.equal(pkgsExclude.indexOf('fmt') > -1, false);
 				});
-				excludeImportedPkgs.then(pkgs => {
-					assert.equal(pkgs.indexOf('fmt') > -1, false);
-				});
-				return Promise.all([includeImportedPkgs, excludeImportedPkgs]);
 			});
 		}).then(() => done(), done);
 	});
@@ -539,6 +632,7 @@ It returns the number of bytes written and any write error encountered.
 
 		let vendorSupportPromise = isVendorSupported();
 		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
+		let workDir = path.dirname(filePath);
 		let vendorPkgsFullPath = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9',
@@ -551,19 +645,18 @@ It returns the number of bytes written and any write error encountered.
 		];
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
-			let gopkgsPromise = new Promise<string[]>((resolve, reject) => {
-				cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
-					let pkgs = stdout.split('\n').sort().slice(1);
-					if (vendorSupport) {
-						vendorPkgsFullPath.forEach(pkg => {
-							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
-						});
-						vendorPkgsRelativePath.forEach(pkg => {
-							assert.equal(pkgs.indexOf(pkg), -1, `Relative path to vendor package ${pkg} should not be returned by gopkgs command`);
-						});
-					}
-					return resolve(pkgs);
-				});
+			let gopkgsPromise = getAllPackages(workDir).then(pkgMap => {
+				let pkgs = Array.from(pkgMap.keys());
+				pkgs = pkgs.filter(p => pkgMap.get(p) !== 'main');
+				if (vendorSupport) {
+					vendorPkgsFullPath.forEach(pkg => {
+						assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
+					});
+					vendorPkgsRelativePath.forEach(pkg => {
+						assert.equal(pkgs.indexOf(pkg), -1, `Relative path to vendor package ${pkg} should not be returned by gopkgs command`);
+					});
+				}
+				return Promise.resolve(pkgs);
 			});
 
 			let listPkgPromise: Thenable<string[]> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(document => {
@@ -584,8 +677,8 @@ It returns the number of bytes written and any write error encountered.
 
 			return Promise.all<string[]>([gopkgsPromise, listPkgPromise]).then((values: string[][]) => {
 				if (!vendorSupport) {
-					let originalPkgs = values[0];
-					let updatedPkgs = values[1];
+					let originalPkgs = values[0].sort();
+					let updatedPkgs = values[1].sort();
 					assert.equal(originalPkgs.length, updatedPkgs.length);
 					for (let index = 0; index < originalPkgs.length; index++) {
 						assert.equal(updatedPkgs[index], originalPkgs[index]);
@@ -612,8 +705,11 @@ It returns the number of bytes written and any write error encountered.
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
 			let gopkgsPromise = new Promise<void>((resolve, reject) => {
-				cp.execFile(getBinPath('gopkgs'), [], (err, stdout, stderr) => {
-					let pkgs = stdout.split('\n').sort().slice(1);
+				let cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
+				let chunks = [];
+				cmd.stdout.on('data', (d) => chunks.push(d));
+				cmd.on('close', () => {
+					let pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
 					if (vendorSupport) {
 						vendorPkgs.forEach(pkg => {
 							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
@@ -640,7 +736,7 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Workspace Symbols', (done) => {
+	test('Workspace Symbols', () => {
 		// This test needs a go project that has vendor folder and vendor packages
 		// Since the Go extension takes a dependency on the godef tool at github.com/rogpeppe/godef
 		// which has vendor packages, we are using it here to test the "replace vendor packages with relative path" feature.
@@ -662,14 +758,36 @@ It returns the number of bytes written and any write error encountered.
 				}
 			}
 		});
-		let withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', configWithoutIgnoringFolders).then(results => {
+		let configWithIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
+			'gotoSymbol': {
+				value: {
+					'includeGoroot': true
+				}
+			}
+		});
+		let configWithoutIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
+			'gotoSymbol': {
+				value: {
+					'includeGoroot': false
+				}
+			}
+		});
+
+		let withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithoutIgnoringFolders).then(results => {
 			assert.equal(results[0].name, 'WinInfo');
 			assert.equal(results[0].path, path.join(workspacePath, 'vendor/9fans.net/go/acme/acme.go'));
 		});
-		let withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', configWithIgnoringFolders).then(results => {
+		let withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithIgnoringFolders).then(results => {
 			assert.equal(results.length, 0);
 		});
-		Promise.all([withIgnoringFolders, withoutIgnoringFolders]).then(() => done(), done);
+		let withoutIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithoutIncludeGoroot).then(results => {
+			assert.equal(results.length, 0);
+		});
+		let withIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithIncludeGoroot).then(results => {
+			assert(results.some(result => result.name === 'Mutex'));
+		});
+
+		return Promise.all([withIgnoringFolders, withoutIgnoringFolders, withIncludingGoroot, withoutIncludingGoroot]);
 	});
 
 	test('Test Completion', (done) => {
@@ -703,43 +821,459 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
+	test('Test Completion Snippets For Functions', (done) => {
+		let provider = new GoCompletionItemProvider();
+		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'snippets.go'));
+		let testCases: [vscode.Position, string[]][] = [
+			[new vscode.Position(5, 6), ['Print']]
+		];
+		let baseConfig = vscode.workspace.getConfiguration('go');
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+
+				let noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+					let item = items.find(x => x.label === 'Print');
+					assert.equal(!item.insertText, true);
+				});
+
+				let withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'Print');
+					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a ...interface{\\}})');
+
+				});
+
+				let withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'Print');
+					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a})');
+				});
+
+				let noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal(!item.insertText, true);
+				});
+
+				let withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k string})');
+				});
+
+				let withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k})');
+				});
+
+				let noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+					let item1 = items.find(x => x.label === 'HandlerFunc');
+					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
+					let item3 = items.find(x => x.label === 'HandlerFuncNoReturnType');
+					assert.equal(!item1.insertText, true);
+					assert.equal(!item2.insertText, true);
+					assert.equal(!item3.insertText, true);
+				});
+
+				let withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item1 = items.find(x => x.label === 'HandlerFunc');
+					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
+					let item3 = items.find(x => x.label === 'HandlerFuncNoReturnType');
+					assert.equal((<vscode.SnippetString>item1.insertText).value, 'HandlerFunc(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n}) (string, string)');
+					assert.equal((<vscode.SnippetString>item2.insertText).value, 'HandlerFuncWithArgNames(func(${1:w} string, ${2:r} string) {\n\t$3\n}) int');
+					assert.equal((<vscode.SnippetString>item3.insertText).value, 'HandlerFuncNoReturnType(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n})');
+				});
+
+				return Promise.all([
+					noFunctionSnippet, withFunctionSnippet, withFunctionSnippetNotype,
+					noFunctionAsVarSnippet, withFunctionAsVarSnippet, withFunctionAsVarSnippetNoType,
+					noFunctionAsTypeSnippet, withFunctionAsTypeSnippet]).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
+			});
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+	});
+
+	test('Test No Completion Snippets For Functions', (done) => {
+		let provider = new GoCompletionItemProvider();
+		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'nosnippets.go'));
+		let baseConfig = vscode.workspace.getConfiguration('go');
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+
+				let symbolFollowedByBrackets = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(5, 10), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'Print');
+					assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is followed by ().');
+				});
+
+				let symbolAsLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(7, 13), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is a parameter inside func call');
+				});
+
+				let symbolsAsNonLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(8, 11), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					let item = items.find(x => x.label === 'funcAsVariable');
+					assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is one of the parameters inside func call.');
+				});
+
+				return Promise.all([
+					symbolFollowedByBrackets, symbolAsLastParameter, symbolsAsNonLastParameter]).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
+			});
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+	});
+
 	test('Test Completion on unimported packages', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'autocompleteUnimportedPackages': { value: true }
 		});
 		let provider = new GoCompletionItemProvider();
 		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(11, 3), ['bytes']],
-			[new vscode.Position(12, 5), ['Abs', 'Acos', 'Asin']]
+			[new vscode.Position(10, 3), ['bytes']],
+			[new vscode.Position(11, 6), ['Abs', 'Acos', 'Asin']]
 		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'unimportedPkgs.go'));
 
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
-
-				return editor.edit(editbuilder => {
-					editbuilder.insert(new vscode.Position(12, 1), 'by\n');
-					editbuilder.insert(new vscode.Position(13, 0), 'math.\n');
-				}).then(() => {
-					return goListAllPromise.then(() => {
-						let promises = testCases.map(([position, expected]) =>
-							provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
-								let labels = items.map(x => x.label);
-								for (let entry of expected) {
-									assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
-								}
-							})
-						);
-						return Promise.all(promises);
-					});
-				});
-			}).then(() => {
-				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-				return Promise.resolve();
+				let promises = testCases.map(([position, expected]) =>
+					provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+						let labels = items.map(x => x.label);
+						for (let entry of expected) {
+							assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
+						}
+					})
+				);
+				return Promise.all(promises).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
 			});
-
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+	});
+
+	test('Test Completion on Comments for Exported Members', (done) => {
+		let provider = new GoCompletionItemProvider();
+		let testCases: [vscode.Position, string[]][] = [
+			[new vscode.Position(6, 4), ['Language']],
+			[new vscode.Position(9, 4), ['GreetingText']],
+			// checking for comment completions with begining of comment without space
+			[new vscode.Position(12, 2), []],
+			// cursor between /$/ this should not trigger any completion
+			[new vscode.Position(12, 1), []],
+			[new vscode.Position(12, 4), ['SayHello']],
+			[new vscode.Position(17, 5), ['HelloParams']],
+			[new vscode.Position(26, 5), ['Abs']],
+		];
+		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				let promises = testCases.map(([position, expected]) =>
+					provider.provideCompletionItems(editor.document, position, null).then(items => {
+						let labels = items.map(x => x.label);
+						assert.equal(expected.length, labels.length, `expected number of completions: ${expected.length} Actual: ${labels.length} at position(${position.line},${position.character}) ${labels}`);
+						expected.forEach((entry, index) => {
+							assert.equal(entry, labels[index], `mismatch in comment completion list Expected: ${entry} Actual: ${labels[index]}`);
+						});
+
+					})
+				);
+				return Promise.all(promises).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
+			});
+		}, (err) => {
+			assert.ok(false, `error in OpenTextDocument ${err}`);
+		}).then(() => done(), done);
+	});
+
+	test('getImportPath()', () => {
+		let testCases: [string, string][] = [
+			['import "github.com/sirupsen/logrus"', 'github.com/sirupsen/logrus'],
+			['import "net/http"', 'net/http'],
+			['"github.com/sirupsen/logrus"', 'github.com/sirupsen/logrus'],
+			['', ''],
+			['func foo(bar int) (int, error) {', ''],
+			['// This is a comment, complete with punctuation.', '']
+		];
+
+		testCases.forEach(run => {
+			assert.equal(run[1], getImportPath(run[0]));
+		});
+	});
+
+	test('goPlay - success run', (done) => {
+		const goplayPath = getBinPath('goplay');
+		if (goplayPath === 'goplay') {
+			return done();
+		}
+
+		const validCode = `
+			package main
+			import (
+				"fmt"
+			)
+			func main() {
+				for i := 1; i < 4; i++ {
+					fmt.Printf("%v ", i)
+				}
+				fmt.Print("Go!")
+			}`;
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
+			'playground': { value: { run: true, openbrowser: false, share: false } }
+		});
+
+		goPlay(validCode, goConfig['playground']).then(result => {
+			assert(
+				result.includes('1 2 3 Go!')
+			);
+		}, (e) => {
+			assert.ifError(e);
+		}).then(() => done(), done);
+	});
+
+	test('goPlay - success run & share', (done) => {
+		const goplayPath = getBinPath('goplay');
+		if (goplayPath === 'goplay') {
+			return done();
+		}
+
+		const validCode = `
+			package main
+			import (
+				"fmt"
+			)
+			func main() {
+				for i := 1; i < 4; i++ {
+					fmt.Printf("%v ", i)
+				}
+				fmt.Print("Go!")
+			}`;
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
+			'playground': { value: { run: true, openbrowser: false, share: true } }
+		});
+
+		goPlay(validCode, goConfig['playground']).then(result => {
+			assert(result.includes('1 2 3 Go!'));
+			assert(result.includes('https://play.golang.org/'));
+		}, (e) => {
+			assert.ifError(e);
+		}).then(() => done(), done);
+	});
+
+	test('goPlay - fail', (done) => {
+		const goplayPath = getBinPath('goplay');
+		if (goplayPath === 'goplay') {
+			return done();
+		}
+
+		const invalidCode = `
+			package main
+			import (
+				"fmt"
+			)
+			func fantasy() {
+				fmt.Print("not a main package, sorry")
+			}`;
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
+			'playground': { value: { run: true, openbrowser: false, share: false } }
+		});
+
+		goPlay(invalidCode, goConfig['playground']).then(result => {
+			assert.ifError(result);
+		}, (e) => {
+			assert.ok(e);
+		}).then(() => done(), done);
+	});
+
+	test('Build Tags checking', (done) => {
+		const config1 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'buildTags': { value: 'randomtag' }
+		});
+
+		const checkWithTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config1).then(diagnostics => {
+			assert.equal(1, diagnostics.length, 'check with buildtag failed. Unexpected errors found');
+			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
+		});
+
+		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'buildTags': { value: 'randomtag othertag' }
+		});
+
+		const checkWithMultipleTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config2).then(diagnostics => {
+			assert.equal(1, diagnostics.length, 'check with multiple buildtags failed. Unexpected errors found');
+			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
+		});
+
+		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'buildTags': { value: '' }
+		});
+
+		const checkWithoutTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config3).then(diagnostics => {
+			assert.equal(1, diagnostics.length, 'check without buildtags failed. Unexpected errors found');
+			assert.equal(diagnostics[0].msg.indexOf('can\'t load package: package test/testfixture/buildTags') > -1, true, `check without buildtags failed. Go files not excluded. ${diagnostics[0].msg}`);
+		});
+
+		Promise.all([checkWithTags, checkWithMultipleTags, checkWithoutTags]).then(() => done(), done);
+
+	});
+
+	test('Test Tags checking', (done) => {
+
+		const config1 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'testTags': { value: null },
+			'buildTags': { value: 'randomtag' }
+		});
+
+		let uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
+		const testFallbackToBuildTags = vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				return testCurrentFile(config1, false, []).then((result: boolean) => {
+					assert.equal(result, true);
+					return Promise.resolve();
+				});
+			});
+		});
+
+		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'testTags': { value: 'randomtag' }
+		});
+
+		uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
+		const testWithTags = vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				return testCurrentFile(config2, false, []).then((result: boolean) => {
+					assert.equal(result, true);
+					return Promise.resolve();
+				});
+			});
+		});
+
+		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'testTags': { value: 'randomtag othertag' }
+		});
+
+		uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
+		const testWithMultipleTags = vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				return testCurrentFile(config3, false, []).then((result: boolean) => {
+					assert.equal(result, true);
+					return Promise.resolve();
+				});
+			});
+		});
+
+		const config4 = Object.create(vscode.workspace.getConfiguration('go'), {
+			'vetOnSave': { value: 'off' },
+			'lintOnSave': { value: 'off' },
+			'buildOnSave': { value: 'package' },
+			'testTags': { value: '' }
+		});
+
+		uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
+		const testWithoutTags = vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				return testCurrentFile(config4, false, []).then((result: boolean) => {
+					assert.equal(result, false);
+					return Promise.resolve();
+				});
+			});
+		});
+
+		Promise.all([testFallbackToBuildTags, testWithTags, testWithMultipleTags, testWithoutTags]).then(() => done(), done);
+
+	});
+
+	test('Add imports when no imports', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'noimports.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				const expectedText = document.getText() + '\n' + 'import (\n\t"bytes"\n)\n';
+				const edits = getTextEditForAddImport('bytes');
+				const edit = new vscode.WorkspaceEdit();
+				edit.set(document.uri, edits);
+				return vscode.workspace.applyEdit(edit).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Add imports to an import block', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'groupImports.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				const expectedText = document.getText().replace('\t"fmt"\n\t"math"', '\t"bytes"\n\t"fmt"\n\t"math"');
+				const edits = getTextEditForAddImport('bytes');
+				const edit = new vscode.WorkspaceEdit();
+				edit.set(document.uri, edits);
+				return vscode.workspace.applyEdit(edit).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Add imports and collapse single imports to an import block', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'singleImports.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			return vscode.window.showTextDocument(document).then(editor => {
+				const expectedText = document.getText().replace('import "fmt"\nimport . "math" // comment', 'import (\n\t"bytes"\n\t"fmt"\n\t. "math" // comment\n)');
+				const edits = getTextEditForAddImport('bytes');
+				const edit = new vscode.WorkspaceEdit();
+				edit.set(document.uri, edits);
+				return vscode.workspace.applyEdit(edit).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Fill struct', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_1.go'));
+		let golden = fs.readFileSync(path.join(fixturePath, 'fillStruct', 'golden_1.go'), 'utf-8');
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				let selection = new vscode.Selection(12, 15, 12, 15);
+				editor.selection = selection;
+				return runFillStruct(editor).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
+					return Promise.resolve();
+				});
+			});
+		}).then(() => done(), done);
+	});
+
+	test('Fill struct - select line', (done) => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_2.go'));
+		let golden = fs.readFileSync(path.join(fixturePath, 'fillStruct', 'golden_2.go'), 'utf-8');
+
+		vscode.workspace.openTextDocument(uri).then((textDocument) => {
+			return vscode.window.showTextDocument(textDocument).then(editor => {
+				let selection = new vscode.Selection(7, 0, 7, 10);
+				editor.selection = selection;
+				return runFillStruct(editor).then(() => {
+					assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
+					return Promise.resolve();
+				});
+			});
 		}).then(() => done(), done);
 	});
 });

@@ -1,9 +1,10 @@
 'use strict';
 
 import vscode = require('vscode');
-import { CodeLensProvider, SymbolInformation, SymbolKind, TextDocument, CancellationToken, CodeLens, Range, Command, Location, commands } from 'vscode';
-import { documentSymbols, GoDocumentSymbolProvider } from './goOutline';
+import { SymbolInformation, TextDocument, CancellationToken, CodeLens, Range, Command, Location, commands } from 'vscode';
+import { GoDocumentSymbolProvider } from './goOutline';
 import { GoReferenceProvider } from './goReferences';
+import { GoBaseCodeLensProvider } from './goBaseCodelens';
 
 const methodRegex = /^func\s+\(\s*\w+\s+\*?\w+\s*\)\s+/;
 
@@ -17,9 +18,12 @@ class ReferencesCodeLens extends CodeLens {
 	}
 }
 
-export class GoCodeLensProvider implements CodeLensProvider {
+export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 	public provideCodeLenses(document: TextDocument, token: CancellationToken): CodeLens[] | Thenable<CodeLens[]> {
-		let codeLensConfig = vscode.workspace.getConfiguration('go').get('enableCodeLens');
+		if (!this.enabled) {
+			return [];
+		}
+		let codeLensConfig = vscode.workspace.getConfiguration('go', document.uri).get('enableCodeLens');
 		let codelensEnabled = codeLensConfig ? codeLensConfig['references'] : false;
 		if (!codelensEnabled) {
 			return Promise.resolve([]);
@@ -52,20 +56,20 @@ export class GoCodeLensProvider implements CodeLensProvider {
 		};
 		let referenceProvider = new GoReferenceProvider();
 		return referenceProvider.provideReferences(codeLens.document, codeLens.range.start, options, token).then(references => {
-			if (references) {
-				codeLens.command = {
-					title: references.length === 1
-						? '1 reference'
-						: references.length + ' references',
-					command: 'editor.action.showReferences',
-					arguments: [codeLens.document.uri, codeLens.range.start, references]
-				};
-			} else {
-				codeLens.command = {
-					title: 'No references found',
-					command: ''
-				};
-			}
+			codeLens.command = {
+				title: references.length === 1
+					? '1 reference'
+					: references.length + ' references',
+				command: 'editor.action.showReferences',
+				arguments: [codeLens.document.uri, codeLens.range.start, references]
+			};
+			return codeLens;
+		}, err => {
+			console.log(err);
+			codeLens.command = {
+				title: 'Error finding references',
+				command: ''
+			};
 			return codeLens;
 		});
 	}

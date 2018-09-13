@@ -6,7 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getFileArchive } from './util';
+import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars } from './util';
 import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
 
@@ -30,7 +30,7 @@ export function addTags(commandArgs: GoTagsConfig) {
 		return;
 	}
 
-	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go')['addTags'], commandArgs).then(([tags, options, transformValue]) => {
+	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri)['addTags'], commandArgs).then(([tags, options, transformValue]) => {
 		if (!tags && !options) {
 			return;
 		}
@@ -57,7 +57,7 @@ export function removeTags(commandArgs: GoTagsConfig) {
 		return;
 	}
 
-	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go')['removeTags'], commandArgs).then(([tags, options]) => {
+	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri)['removeTags'], commandArgs).then(([tags, options]) => {
 		if (!tags && !options) {
 			args.push('--clear-tags');
 			args.push('--clear-options');
@@ -101,8 +101,8 @@ function getCommonArgs(): string[] {
 
 function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): Thenable<string[]> {
 	let tags = commandArgs && commandArgs.hasOwnProperty('tags') ? commandArgs['tags'] : config['tags'];
-	let options =  commandArgs && commandArgs.hasOwnProperty('options') ? commandArgs['options'] : config['options'];
-	let promptForTags =  commandArgs && commandArgs.hasOwnProperty('promptForTags') ? commandArgs['promptForTags'] : config['promptForTags'];
+	let options = commandArgs && commandArgs.hasOwnProperty('options') ? commandArgs['options'] : config['options'];
+	let promptForTags = commandArgs && commandArgs.hasOwnProperty('promptForTags') ? commandArgs['promptForTags'] : config['promptForTags'];
 	let transformValue = commandArgs && commandArgs.hasOwnProperty('transform') ? commandArgs['transform'] : config['transform'];
 
 	if (!promptForTags) {
@@ -126,7 +126,7 @@ function runGomodifytags(args: string[]) {
 	let gomodifytags = getBinPath('gomodifytags');
 	let editor = vscode.window.activeTextEditor;
 	let input = getFileArchive(editor.document);
-	let p = cp.execFile(gomodifytags, args, (err, stdout, stderr) => {
+	let p = cp.execFile(gomodifytags, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gomodifytags');
 			return;
@@ -140,5 +140,7 @@ function runGomodifytags(args: string[]) {
 			editBuilder.replace(new vscode.Range(output.start - 1, 0, output.end, 0), output.lines.join('\n') + '\n');
 		});
 	});
-	p.stdin.end(input);
+	if (p.pid) {
+		p.stdin.end(input);
+	}
 }
