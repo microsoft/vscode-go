@@ -11,7 +11,7 @@ import os = require('os');
 import { getCoverage } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest } from './testUtils';
-import { ICheckResult, getBinPath } from './util';
+import { ICheckResult, getBinPath, getTempFilePath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
@@ -69,7 +69,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 		let args = [...buildFlags];
 		if (goConfig['coverOnSave']) {
-			tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
+			tmpCoverPath = getTempFilePath('go-code-cover');
 			args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
 		}
 
