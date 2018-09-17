@@ -60,7 +60,7 @@ const importantTools = [
 	'guru',
 	'gorename',
 	'godef',
-	'gocode-gomod',
+	'godef-gomod',
 	'godoc',
 	'gogetdoc',
 	'goreturns',
