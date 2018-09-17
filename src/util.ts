@@ -12,9 +12,7 @@ import fs = require('fs');
 import os = require('os');
 import { outputChannel } from './goStatus';
 import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
-import { moduleTools } from './goInstallTools';
 import { NearestNeighborDict, Node } from './avlTree';
-import { resolve } from 'url';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;

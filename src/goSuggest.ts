@@ -50,7 +50,7 @@ function hasModFile(): Promise<boolean> {
 	}
 	const cwd = path.dirname(editor.document.uri.fsPath);
 	return new Promise((resolve, reject) => {
-		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd }, (err, stdout, stderr) => {
+		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd }, (err, stdout) => {
 			if (err) {
 				reject(err);
 				return;
@@ -173,6 +173,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				if (goMod) {
 					gocodeName = 'gocode-gomod';
 				}
+				console.log(gocodeName);
 				let gocode = getBinPath(gocodeName);
 				if (!path.isAbsolute(gocode)) {
 					promptForMissingTool(gocode);

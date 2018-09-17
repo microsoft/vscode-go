@@ -357,27 +357,22 @@ function installTools(missing: string[]) {
 					resolve([...sofar, null]);
 					return;
 				}
+				let args = ['get', '-u', '-v'];
 				if (tool.endsWith("-gomod")) {
-					cp.execFile(goRuntimePath, ['get', '-d', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
-						if (stderr.indexOf('unexpected directory layout:') > -1) {
-							outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-							cp.execFile(goRuntimePath, ['get', '-u', '-d', '-v', allTools[tool]], { env: envForTools }, callback);
-						} else {
-							cp.execFile(goRuntimePath, ['build', '-o', toolsGopath + "/bin/" + tool, allTools[tool]], { env: envForTools }, callback);
-						}
-					});
-				} else {
-					cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
-						if (stderr.indexOf('unexpected directory layout:') > -1) {
-							outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-							cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, callback);
-						} else {
-							callback(err, stdout, stderr);
-						};
-					});
+					args.push('-d');
 				}
+				args.push(allTools[tool]);
+				cp.execFile(goRuntimePath, args, { env: envForTools }, (err, stdout, stderr) => {
+					if (stderr.indexOf('unexpected directory layout:') > -1) {
+						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
+						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
+					} else if (tool.endsWith('-gomod')) {
+						cp.execFile(goRuntimePath, ['build', '-o', toolsGopath + "/bin/" + tool, allTools[tool]], { env: envForTools }, callback);
+					} else {
+						callback(err, stdout, stderr);
+					}
+				});
 			});
-
 		}));
 	}, Promise.resolve([])).then(res => {
 		outputChannel.appendLine(''); // Blank line for spacing
