@@ -137,4 +137,3 @@ function getGoroot(): Promise<string> {
 		});
 	});
 }
-

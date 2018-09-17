@@ -146,6 +146,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
+			let gocodeName = path.basename(gocode);
 			if (!path.isAbsolute(gocode)) {
 				promptForMissingTool(gocode);
 				return reject();
@@ -165,11 +166,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 			// Spawn `gocode` process
 			let p = cp.spawn(gocode, [...goCodeFlags, 'autocomplete', filename, '' + offset], { env });
+			console.log("AWesome spawning");
+			console.log(gocode);
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
 			p.on('error', err => {
 				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('gocode');
+					promptForMissingTool(gocodeName);
 					return reject();
 				}
 				return reject(err);
@@ -182,7 +185,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							this.killMsgShown = true;
 						}
 						if (stderr.startsWith('flag provided but not defined:')) {
-							promptForUpdatingTool('gocode');
+							promptForUpdatingTool(gocodeName);
 						}
 						return reject();
 					}

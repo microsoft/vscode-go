@@ -12,6 +12,7 @@ import fs = require('fs');
 import os = require('os');
 import { outputChannel } from './goStatus';
 import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
+import { moduleTools } from './goInstallTools';
 import { NearestNeighborDict, Node } from './avlTree';
 
 const extensionId: string = 'ms-vscode.Go';
@@ -365,7 +366,32 @@ function resolveToolsGopath(): string {
 	}
 }
 
+function hasModFile(): Promise<boolean> {
+	let goExecutable = getBinPath('go');
+	if (!goExecutable) {
+		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
+	}
+	return new Promise((resolve, reject) => {
+		cp.execFile(goExecutable, ['env', 'GOMOD'], {}, (err, stdout) => {
+			if (err) {
+				reject(err);
+				return;
+			}
+			let [goMod] = stdout.split('\n');
+			resolve(goMod != "");
+		});
+	});
+}
+
 export function getBinPath(tool: string): string {
+	if (moduleTools[tool]) {
+		hasModFile().then(goMod => {
+			if (goMod) {
+				tool += '-gomod';
+			}
+			return getBinPathWithPreferredGopath(tool, tool === 'go' ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
+		});
+	}
 	return getBinPathWithPreferredGopath(tool, tool === 'go' ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
 }
 

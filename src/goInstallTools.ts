@@ -45,6 +45,11 @@ const allTools: { [key: string]: string } = {
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct'
 };
 
+export const moduleTools: { [key: string]: boolean } = {
+	"gocode": true,
+	"godef": true,
+}
+
 // Tools used explicitly by the basic features of the extension
 const importantTools = [
 	'gocode',
@@ -146,7 +151,7 @@ function getTools(goVersion: SemVersion): string[] {
 export function installAllTools(updateExistingToolsOnly: boolean = false) {
 	const allToolsDescription: { [key: string]: string } = {
 		'gocode': '\t\t(Auto-completion)',
-		'gocode-gomod': '\t(Autocompletion, works with Modules)',
+		'gocode-gomod': '(Autocompletion, works with Modules)',
 		'gopkgs': '\t\t(Auto-completion of unimported packages & Add Import feature)',
 		'go-outline': '\t(Go to symbol in file)',
 		'go-symbols': '\t(Go to symbol in workspace)',
@@ -157,7 +162,7 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'impl': '\t\t(Stubs for interfaces)',
 		'gotype-live': 'Show errors as you type)',
 		'godef': '\t\t(Go to definition)',
-		'godef-gomod': '\t\t(Go to definition, works with Modules)',
+		'godef-gomod': '\t(Go to definition, works with Modules)',
 		'godoc': '\t\t(For text shown on hover)',
 		'gogetdoc': '\t(Go to definition & text shown on hover)',
 		'goimports': '\t(Formatter)',
@@ -175,14 +180,10 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 	};
 
 	getGoVersion().then((goVersion) => {
-		console.log(goVersion);
 		const allTools = getTools(goVersion);
-		console.log(allTools);
 		if (updateExistingToolsOnly) {
-			console.log("ok only updating");
 			installTools(allTools.filter(tool => {
 				const toolPath = getBinPath(tool);
-				console.log(toolPath);
 				return toolPath && path.isAbsolute(toolPath);
 			}));
 			return;
@@ -356,14 +357,25 @@ function installTools(missing: string[]) {
 					resolve([...sofar, null]);
 					return;
 				}
-				cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
-					if (stderr.indexOf('unexpected directory layout:') > -1) {
-						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-						cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, callback);
-					} else {
-						callback(err, stdout, stderr);
-					}
-				});
+				if (tool.endsWith("-gomod")) {
+					cp.execFile(goRuntimePath, ['get', '-d', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
+						if (stderr.indexOf('unexpected directory layout:') > -1) {
+							outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
+							cp.execFile(goRuntimePath, ['get', '-u', '-d', '-v', allTools[tool]], { env: envForTools }, callback);
+						} else {
+							cp.execFile(goRuntimePath, ['build', '-o', toolsGopath + "/bin/" + tool, allTools[tool]], { env: envForTools }, callback);
+						}
+					});
+				} else {
+					cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
+						if (stderr.indexOf('unexpected directory layout:') > -1) {
+							outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
+							cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, callback);
+						} else {
+							callback(err, stdout, stderr);
+						};
+					});
+				}
 			});
 
 		}));
