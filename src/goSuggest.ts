@@ -58,7 +58,7 @@ function hasModFile(): Promise<boolean> {
 			let [goMod] = stdout.split('\n');
 			resolve(goMod != "");
 		});
-    });
+	});
 }
 
 const lineCommentRegex = /^\s*\/\/\s+/;
@@ -70,6 +70,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private pkgsList = new Map<string, string>();
 	private killMsgShown: boolean = false;
 	private setGocodeOptions: boolean = true;
+	private isGoMod: boolean = false;
 	private globalState: vscode.Memento;
 
 	constructor(globalState?: vscode.Memento) {
@@ -168,174 +169,170 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
-			let gocodeName = 'gocode';
-			hasModFile().then(goMod => {
-				if (goMod) {
-					gocodeName = 'gocode-gomod';
-				}
-				console.log(gocodeName);
-				let gocode = getBinPath(gocodeName);
-				if (!path.isAbsolute(gocode)) {
-					promptForMissingTool(gocode);
+			let gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
+
+			console.log(gocodeName);
+			let gocode = getBinPath(gocodeName);
+			if (!path.isAbsolute(gocode)) {
+				promptForMissingTool(gocode);
+				return reject();
+			}
+
+			// Unset GOOS and GOARCH for the `gocode` process to ensure that GOHOSTOS and GOHOSTARCH
+			// are used as the target operating system and architecture. `gocode` is unable to provide
+			// autocompletion when the Go environment is configured for cross compilation.
+			let env = Object.assign({}, getToolsEnvVars(), { GOOS: '', GOARCH: '' });
+			let stdout = '';
+			let stderr = '';
+
+			let goCodeFlags = ['-f=json'];
+			if (!this.setGocodeOptions) {
+				goCodeFlags.push('-builtin');
+			}
+
+			// Spawn `gocode` process
+			let p = cp.spawn(gocode, [...goCodeFlags, 'autocomplete', filename, '' + offset], { env });
+			p.stdout.on('data', data => stdout += data);
+			p.stderr.on('data', data => stderr += data);
+			p.on('error', err => {
+				if (err && (<any>err).code === 'ENOENT') {
+					promptForMissingTool(gocodeName);
 					return reject();
 				}
-
-				// Unset GOOS and GOARCH for the `gocode` process to ensure that GOHOSTOS and GOHOSTARCH
-				// are used as the target operating system and architecture. `gocode` is unable to provide
-				// autocompletion when the Go environment is configured for cross compilation.
-				let env = Object.assign({}, getToolsEnvVars(), { GOOS: '', GOARCH: '' });
-				let stdout = '';
-				let stderr = '';
-
-				let goCodeFlags = ['-f=json'];
-				if (!this.setGocodeOptions) {
-					goCodeFlags.push('-builtin');
-				}
-
-				// Spawn `gocode` process
-				let p = cp.spawn(gocode, [...goCodeFlags, 'autocomplete', filename, '' + offset], { env });
-				p.stdout.on('data', data => stdout += data);
-				p.stderr.on('data', data => stderr += data);
-				p.on('error', err => {
-					if (err && (<any>err).code === 'ENOENT') {
-						promptForMissingTool(gocodeName);
+				return reject(err);
+			});
+			p.on('close', code => {
+				try {
+					if (code !== 0) {
+						if (stderr.indexOf('rpc: can\'t find service Server.AutoComplete') > -1 && !this.killMsgShown) {
+							vscode.window.showErrorMessage('Auto-completion feature failed as an older gocode process is still running. Please kill the running process for gocode and try again.');
+							this.killMsgShown = true;
+						}
+						if (stderr.startsWith('flag provided but not defined:')) {
+							promptForUpdatingTool(gocodeName);
+						}
 						return reject();
 					}
-					return reject(err);
-				});
-				p.on('close', code => {
-					try {
-						if (code !== 0) {
-							if (stderr.indexOf('rpc: can\'t find service Server.AutoComplete') > -1 && !this.killMsgShown) {
-								vscode.window.showErrorMessage('Auto-completion feature failed as an older gocode process is still running. Please kill the running process for gocode and try again.');
-								this.killMsgShown = true;
+					let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
+					let suggestions = [];
+					let suggestionSet = new Set<string>();
+
+					let wordAtPosition = document.getWordRangeAtPosition(position);
+
+					if (results && results[1]) {
+						for (let suggest of results[1]) {
+							if (inString && suggest.class !== 'import') continue;
+							let item = new vscode.CompletionItem(suggest.name);
+							item.kind = vscodeKindFromGoCodeClass(suggest.class);
+							item.detail = suggest.type;
+							if (inString && suggest.class === 'import') {
+								item.textEdit = new vscode.TextEdit(
+									new vscode.Range(
+										position.line,
+										lineText.substring(0, position.character).lastIndexOf('"') + 1,
+										position.line,
+										position.character),
+									suggest.name
+								);
 							}
-							if (stderr.startsWith('flag provided but not defined:')) {
-								promptForUpdatingTool(gocodeName);
+							if ((config['useCodeSnippetsOnFunctionSuggest'] || config['useCodeSnippetsOnFunctionSuggestWithoutType'])
+								&& (
+									(suggest.class === 'func' && lineText.substr(position.character, 2) !== '()') // Avoids met() -> method()()
+									|| (
+										suggest.class === 'var'
+										&& suggest.type.startsWith('func(')
+										&& lineText.substr(position.character, 1) !== ')' // Avoids snippets when typing params in a func call
+										&& lineText.substr(position.character, 1) !== ',' // Avoids snippets when typing params in a func call
+									))) {
+								let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));
+								let paramSnippets = [];
+								for (let i = 0; i < params.length; i++) {
+									let param = params[i].trim();
+									if (param) {
+										param = param.replace('${', '\\${').replace('}', '\\}');
+										if (config['useCodeSnippetsOnFunctionSuggestWithoutType']) {
+											if (param.includes(' ')) {
+												// Separate the variable name from the type
+												param = param.substr(0, param.indexOf(' '));
+											}
+										}
+										paramSnippets.push('${' + (i + 1) + ':' + param + '}');
+									}
+								}
+								item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
 							}
-							return reject();
-						}
-						let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
-						let suggestions = [];
-						let suggestionSet = new Set<string>();
-
-						let wordAtPosition = document.getWordRangeAtPosition(position);
-
-						if (results && results[1]) {
-							for (let suggest of results[1]) {
-								if (inString && suggest.class !== 'import') continue;
-								let item = new vscode.CompletionItem(suggest.name);
-								item.kind = vscodeKindFromGoCodeClass(suggest.class);
-								item.detail = suggest.type;
-								if (inString && suggest.class === 'import') {
-									item.textEdit = new vscode.TextEdit(
-										new vscode.Range(
-											position.line,
-											lineText.substring(0, position.character).lastIndexOf('"') + 1,
-											position.line,
-											position.character),
-										suggest.name
-									);
-								}
-								if ((config['useCodeSnippetsOnFunctionSuggest'] || config['useCodeSnippetsOnFunctionSuggestWithoutType'])
-									&& (
-										(suggest.class === 'func' && lineText.substr(position.character, 2) !== '()') // Avoids met() -> method()()
-										|| (
-											suggest.class === 'var'
-											&& suggest.type.startsWith('func(')
-											&& lineText.substr(position.character, 1) !== ')' // Avoids snippets when typing params in a func call
-											&& lineText.substr(position.character, 1) !== ',' // Avoids snippets when typing params in a func call
-										))) {
-									let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));
-									let paramSnippets = [];
-									for (let i = 0; i < params.length; i++) {
-										let param = params[i].trim();
-										if (param) {
-											param = param.replace('${', '\\${').replace('}', '\\}');
-											if (config['useCodeSnippetsOnFunctionSuggestWithoutType']) {
-												if (param.includes(' ')) {
-													// Separate the variable name from the type
-													param = param.substr(0, param.indexOf(' '));
-												}
-											}
-											paramSnippets.push('${' + (i + 1) + ':' + param + '}');
+							if (config['useCodeSnippetsOnFunctionSuggest'] && suggest.class === 'type' && suggest.type.startsWith('func(')) {
+								let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));
+								let paramSnippets = [];
+								for (let i = 0; i < params.length; i++) {
+									let param = params[i].trim();
+									if (param) {
+										param = param.replace('${', '\\${').replace('}', '\\}');
+										if (!param.includes(' ')) {
+											// If we don't have an argument name, we need to create one
+											param = 'arg' + (i + 1) + ' ' + param;
 										}
+										let arg = param.substr(0, param.indexOf(' '));
+										paramSnippets.push('${' + (i + 1) + ':' + arg + '}' + param.substr(param.indexOf(' '), param.length));
 									}
-									item.insertText = new vscode.SnippetString(suggest.name + '(' + paramSnippets.join(', ') + ')');
 								}
-								if (config['useCodeSnippetsOnFunctionSuggest'] && suggest.class === 'type' && suggest.type.startsWith('func(')) {
-									let { params, returnType } = getParametersAndReturnType(suggest.type.substring(4));
-									let paramSnippets = [];
-									for (let i = 0; i < params.length; i++) {
-										let param = params[i].trim();
-										if (param) {
-											param = param.replace('${', '\\${').replace('}', '\\}');
-											if (!param.includes(' ')) {
-												// If we don't have an argument name, we need to create one
-												param = 'arg' + (i + 1) + ' ' + param;
-											}
-											let arg = param.substr(0, param.indexOf(' '));
-											paramSnippets.push('${' + (i + 1) + ':' + arg + '}' + param.substr(param.indexOf(' '), param.length));
-										}
-									}
-									item.insertText = new vscode.SnippetString(suggest.name + '(func(' + paramSnippets.join(', ') + ') {\n	$' + (params.length + 1) + '\n})' + returnType);
-								}
+								item.insertText = new vscode.SnippetString(suggest.name + '(func(' + paramSnippets.join(', ') + ') {\n	$' + (params.length + 1) + '\n})' + returnType);
+							}
 
-								if (wordAtPosition && wordAtPosition.start.character === 0 &&
-									suggest.class === 'type' && !goBuiltinTypes.has(suggest.name)) {
-									let auxItem = new vscode.CompletionItem(suggest.name + ' method', vscode.CompletionItemKind.Snippet);
-									auxItem.label = 'func (*' + suggest.name + ')';
-									auxItem.filterText = suggest.name;
-									auxItem.detail = 'Method snippet';
-									auxItem.sortText = 'b';
-									let prefix = 'func (' + suggest.name[0].toLowerCase() + ' *' + suggest.name + ')';
-									let snippet = prefix + ' ${1:methodName}(${2}) ${3} \{\n\t$0\n\}';
-									auxItem.insertText = new vscode.SnippetString(snippet);
-									suggestions.push(auxItem);
-								}
+							if (wordAtPosition && wordAtPosition.start.character === 0 &&
+								suggest.class === 'type' && !goBuiltinTypes.has(suggest.name)) {
+								let auxItem = new vscode.CompletionItem(suggest.name + ' method', vscode.CompletionItemKind.Snippet);
+								auxItem.label = 'func (*' + suggest.name + ')';
+								auxItem.filterText = suggest.name;
+								auxItem.detail = 'Method snippet';
+								auxItem.sortText = 'b';
+								let prefix = 'func (' + suggest.name[0].toLowerCase() + ' *' + suggest.name + ')';
+								let snippet = prefix + ' ${1:methodName}(${2}) ${3} \{\n\t$0\n\}';
+								auxItem.insertText = new vscode.SnippetString(snippet);
+								suggestions.push(auxItem);
+							}
 
-								// Add same sortText to all suggestions from gocode so that they appear before the unimported packages
-								item.sortText = 'a';
-								suggestions.push(item);
-								suggestionSet.add(item.label);
-							};
-						}
-
-						// Add importable packages matching currentword to suggestions
-						let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(document, currentWord, suggestionSet) : [];
-						suggestions = suggestions.concat(importablePkgs);
-
-						// 'Smart Snippet' for package clause
-						// TODO: Factor this out into a general mechanism
-						if (!inputText.match(/package\s+(\w+)/)) {
-							return guessPackageNameFromFile(filename).then((pkgNames: string[]) => {
-								pkgNames.forEach(pkgName => {
-									let packageItem = new vscode.CompletionItem('package ' + pkgName);
-									packageItem.kind = vscode.CompletionItemKind.Snippet;
-									packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
-									suggestions.push(packageItem);
-								});
-								resolve(suggestions);
-							}, () => resolve(suggestions));
-						}
-
-						resolve(suggestions);
-					} catch (e) {
-						reject(e);
+							// Add same sortText to all suggestions from gocode so that they appear before the unimported packages
+							item.sortText = 'a';
+							suggestions.push(item);
+							suggestionSet.add(item.label);
+						};
 					}
-				});
-				if (p.pid) {
-					p.stdin.end(inputText);
+
+					// Add importable packages matching currentword to suggestions
+					let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(document, currentWord, suggestionSet) : [];
+					suggestions = suggestions.concat(importablePkgs);
+
+					// 'Smart Snippet' for package clause
+					// TODO: Factor this out into a general mechanism
+					if (!inputText.match(/package\s+(\w+)/)) {
+						return guessPackageNameFromFile(filename).then((pkgNames: string[]) => {
+							pkgNames.forEach(pkgName => {
+								let packageItem = new vscode.CompletionItem('package ' + pkgName);
+								packageItem.kind = vscode.CompletionItemKind.Snippet;
+								packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
+								suggestions.push(packageItem);
+							});
+							resolve(suggestions);
+						}, () => resolve(suggestions));
+					}
+
+					resolve(suggestions);
+				} catch (e) {
+					reject(e);
 				}
 			});
+			if (p.pid) {
+				p.stdin.end(inputText);
+			}
 		});
 	}
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(): Thenable<void> {
 		let setPkgsList = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true).then(pkgMap => { this.pkgsList = pkgMap; });
-
+		let hasModFilePromise = hasModFile().then(result => this.isGoMod = result);
 		if (!this.setGocodeOptions) {
-			return setPkgsList;
+			return Promise.all([setPkgsList, hasModFilePromise]).then(() => { return; });
 		}
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
@@ -386,7 +383,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			});
 		});
 
-		return Promise.all([setPkgsList, setGocodeProps]).then(() => {
+		return Promise.all([setPkgsList, setGocodeProps, hasModFilePromise]).then(() => {
 			return;
 		});
 	}
