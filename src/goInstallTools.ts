@@ -77,7 +77,6 @@ function getTools(goVersion: SemVersion): string[] {
 	let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	let tools: string[] = [
 		'gocode',
-		'gocode-gomod',
 		'gopkgs',
 		'go-outline',
 		'go-symbols',
@@ -85,6 +84,11 @@ function getTools(goVersion: SemVersion): string[] {
 		'gorename',
 		'dlv'
 	];
+
+	// gocode-gomod needed in go 1.11
+	if (goVersion && goVersion.major === 1 && goVersion.minor === 11) {
+		tools.push('gocode-gomod');
+	}
 
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
