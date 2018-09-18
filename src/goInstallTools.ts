@@ -46,9 +46,9 @@ const allTools: { [key: string]: string } = {
 };
 
 export const moduleTools: { [key: string]: boolean } = {
-	"gocode": true,
-	"godef": true,
-}
+	'gocode': true,
+	'godef': true,
+};
 
 // Tools used explicitly by the basic features of the extension
 const importantTools = [
@@ -358,7 +358,7 @@ function installTools(missing: string[]) {
 					return;
 				}
 				let args = ['get', '-u', '-v'];
-				if (tool.endsWith("-gomod")) {
+				if (tool.endsWith('-gomod')) {
 					args.push('-d');
 				}
 				args.push(allTools[tool]);
@@ -367,7 +367,7 @@ function installTools(missing: string[]) {
 						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
 						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
 					} else if (tool.endsWith('-gomod')) {
-						cp.execFile(goRuntimePath, ['build', '-o', toolsGopath + "/bin/" + tool, allTools[tool]], { env: envForTools }, callback);
+						cp.execFile(goRuntimePath, ['build', '-o', toolsGopath + '/bin/' + tool, allTools[tool]], { env: envForTools }, callback);
 					} else {
 						callback(err, stdout, stderr);
 					}

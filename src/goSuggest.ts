@@ -56,7 +56,7 @@ function hasModFile(): Promise<boolean> {
 				return;
 			}
 			let [goMod] = stdout.split('\n');
-			resolve(goMod != "");
+			resolve(!!goMod);
 		});
 	});
 }
