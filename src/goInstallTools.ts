@@ -45,11 +45,6 @@ const allTools: { [key: string]: string } = {
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct'
 };
 
-export const moduleTools: { [key: string]: boolean } = {
-	'gocode': true,
-	'godef': true,
-};
-
 // Tools used explicitly by the basic features of the extension
 const importantTools = [
 	'gocode',
@@ -93,7 +88,10 @@ function getTools(goVersion: SemVersion): string[] {
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools.push('godef');
-		tools.push('godef-gomod');
+		// godef-gomod needed in go 1.11
+		if (goVersion && goVersion.major === 1 && goVersion.minor === 11) {
+			tools.push('godef-gomod');
+		}
 		tools.push('godoc');
 	} else if (goConfig['docsTool'] === 'gogetdoc') {
 		tools.push('gogetdoc');
