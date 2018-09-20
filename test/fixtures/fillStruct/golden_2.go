@@ -7,7 +7,7 @@ import (
 func main() {
 	_ = http.Client{
 		Transport:     nil,
-		CheckRedirect: nil,
+		CheckRedirect: func(*http.Request, []*http.Request) error { panic("not implemented") },
 		Jar:           nil,
 		Timeout:       0,
 	}

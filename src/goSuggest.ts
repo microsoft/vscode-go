@@ -141,11 +141,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					if (suggestions.length === 0 && lineTillCurrentPosition.endsWith('.')) {
 
 						let pkgPath = this.getPackagePathFromLine(lineTillCurrentPosition);
-						if (pkgPath) {
+						if (pkgPath.length === 1) {
 							// Now that we have the package path, import it right after the "package" statement
 							let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
 							let posToAddImport = document.offsetAt(new vscode.Position(pkg.start + 1, 0));
-							let textToAdd = `import "${pkgPath}"\n`;
+							let textToAdd = `import "${pkgPath[0]}"\n`;
 							inputText = inputText.substr(0, posToAddImport) + textToAdd + inputText.substr(posToAddImport);
 							offset += textToAdd.length;
 
@@ -155,10 +155,27 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								// add additionalTextEdits to do the same in the actual document in the editor
 								// We use additionalTextEdits instead of command so that 'useCodeSnippetsOnFunctionSuggest' feature continues to work
 								newsuggestions.forEach(item => {
-									item.additionalTextEdits = getTextEditForAddImport(pkgPath);
+									item.additionalTextEdits = getTextEditForAddImport(pkgPath[0]);
 								});
 								resolve(newsuggestions);
 							}, reject);
+						}
+						if (pkgPath.length > 1) {
+							pkgPath.forEach(pkg => {
+								let item = new vscode.CompletionItem(
+									`${lineTillCurrentPosition.replace('.', '').trim()} (${pkg})`,
+									vscode.CompletionItemKind.Module
+								);
+								item.additionalTextEdits = getTextEditForAddImport(pkg);
+								item.insertText = '';
+								item.detail = pkg;
+								item.command = {
+									title: 'Trigger Suggest',
+									command: 'editor.action.triggerSuggest'
+								};
+								suggestions.push(item);
+							});
+							resolve(suggestions);
 						}
 					}
 					resolve(suggestions);
@@ -421,7 +438,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	// Given a line ending with dot, return the word preceeding the dot if it is a package name that can be imported
-	private getPackagePathFromLine(line: string): string {
+	private getPackagePathFromLine(line: string): string[] {
 		let pattern = /(\w+)\.$/g;
 		let wordmatches = pattern.exec(line);
 		if (!wordmatches) {
@@ -436,9 +453,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				matchingPackages.push(pkgPath);
 			}
 		});
-
-		if (matchingPackages && matchingPackages.length === 1) {
-			return matchingPackages[0];
-		}
+		return matchingPackages;
 	}
 }
