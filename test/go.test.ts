@@ -917,7 +917,7 @@ It returns the number of bytes written and any write error encountered.
 				return provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
 					let labels = items.map(x => x.label);
 					expectedItems.forEach(expectedItem => {
-						const actualItem: vscode.CompletionItem = items.filter(item => item.label === expectedItem.label)[0]
+						const actualItem: vscode.CompletionItem = items.filter(item => item.label === expectedItem.label)[0];
 						if (!actualItem) {
 							assert.fail(actualItem, expectedItem, `Missing expected item in completion list: ${expectedItem.label} Actual: ${labels}`);
 							return;
