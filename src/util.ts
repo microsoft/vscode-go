@@ -883,3 +883,20 @@ export function cleanupTempDir() {
 	tmpDir = undefined;
 }
 
+export function hasModFile(filepath: string): Promise<boolean> {
+	let goExecutable = getBinPath('go');
+	if (!goExecutable) {
+		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
+	}
+	const cwd = path.dirname(filepath);
+	return new Promise(resolve => {
+		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd }, (err, stdout) => {
+			if (err) {
+				console.warn(`Error when running go env GOMOD: ${err}`);
+				return resolve(false);
+			}
+			let [goMod] = stdout.split('\n');
+			resolve(!!goMod);
+		});
+	});
+}

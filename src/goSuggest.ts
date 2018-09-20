@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, hasModFile } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -38,29 +38,6 @@ interface GoCodeSuggestion {
 	type: string;
 }
 
-function hasModFile(): Promise<boolean> {
-	let goExecutable = getBinPath('go');
-	if (!goExecutable) {
-		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
-	}
-	let editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage('No editor is active, unable to determine GOMOD.');
-		return;
-	}
-	const cwd = path.dirname(editor.document.uri.fsPath);
-	return new Promise((resolve, reject) => {
-		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd }, (err, stdout) => {
-			if (err) {
-				reject(err);
-				return;
-			}
-			let [goMod] = stdout.split('\n');
-			resolve(!!goMod);
-		});
-	});
-}
-
 const lineCommentRegex = /^\s*\/\/\s+/;
 const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 const gocodeNoSupportForgbMsgKey = 'dontshowNoSupportForgb';
@@ -72,6 +49,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private setGocodeOptions: boolean = true;
 	private isGoMod: boolean = false;
 	private globalState: vscode.Memento;
+	private previousFile: string;
+	private previousFileDir: string;
 
 	constructor(globalState?: vscode.Memento) {
 		this.globalState = globalState;
@@ -82,7 +61,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
-		return this.ensureGoCodeConfigured().then(() => {
+		return this.ensureGoCodeConfigured(document.fileName).then(() => {
 			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 				let filename = document.fileName;
 				let lineText = document.lineAt(position.line).text;
@@ -326,9 +305,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		});
 	}
 	// TODO: Shouldn't lib-path also be set?
-	private ensureGoCodeConfigured(): Thenable<void> {
-		let setPkgsList = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true).then(pkgMap => { this.pkgsList = pkgMap; });
-		let hasModFilePromise = hasModFile().then(result => this.isGoMod = result);
+	private ensureGoCodeConfigured(currentFile): Thenable<void> {
+		let setPkgsList = getImportablePackages(currentFile, true).then(pkgMap => { this.pkgsList = pkgMap; });
+		if (!this.setGocodeOptions && (this.previousFile === currentFile || this.previousFileDir === path.dirname(currentFile))) {
+			return setPkgsList;
+		}
+
+		this.previousFile = currentFile;
+		this.previousFileDir = path.dirname(currentFile);
+		let hasModFilePromise = hasModFile(currentFile).then(result => this.isGoMod = result);
 		if (!this.setGocodeOptions) {
 			return Promise.all([setPkgsList, hasModFilePromise]).then(() => { return; });
 		}
