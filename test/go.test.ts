@@ -898,25 +898,34 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Completion on unimported packages (multiple)', (done) => {
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'autocompleteUnimportedMultiplePkgs': { value: true }
-		});
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {});
 		let provider = new GoCompletionItemProvider();
-		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(3, 14), ['template (html/template)', 'template (text/template)']]
+		let position = new vscode.Position(3, 14);
+		let expectedItems = [
+			{
+				label: 'template (html/template)',
+				import: '\nimport (\n\t"html/template"\n)\n'
+			},
+			{
+				label: 'template (text/template)',
+				import: '\nimport (\n\t"text/template"\n)\n'
+			}
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'unimportedMultiplePkgs.go'));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
-				let promises = testCases.map(([position, expected]) =>
-					provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
-						let labels = items.map(x => x.label);
-						for (let entry of expected) {
-							assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
+				return provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+					let labels = items.map(x => x.label);
+					expectedItems.forEach(expectedItem => {
+						const actualItem: vscode.CompletionItem = items.filter(item => item.label === expectedItem.label)[0]
+						if (!actualItem) {
+							assert.fail(actualItem, expectedItem, `Missing expected item in completion list: ${expectedItem.label} Actual: ${labels}`);
+							return;
 						}
-					})
-				);
-				return Promise.all(promises).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
+						assert.equal(actualItem.additionalTextEdits.length, 1);
+						assert.equal(actualItem.additionalTextEdits[0].newText, expectedItem.import);
+					});
+				}).then(() => vscode.commands.executeCommand('workbench.action.closeActiveEditor'));
 			});
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
