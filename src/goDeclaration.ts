@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath } from './util';
+import { byteOffsetAt, getBinPath, hasModFile } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 
@@ -24,7 +24,7 @@ export interface GoDefinitionInformation {
 	toolUsed: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs: boolean, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
+export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs: boolean, token: vscode.CancellationToken, isGoMod: boolean): Promise<GoDefinitionInformation> {
 	let wordRange = document.getWordRangeAtPosition(position);
 	let lineText = document.lineAt(position.line).text;
 	let word = wordRange ? document.getText(wordRange) : '';
@@ -44,7 +44,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		// If no Go version can be parsed, it means it's a non-tagged one.
 		// Assume it's > Go 1.5
 		if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
-			return definitionLocation_godef(document, position, offset, includeDocs, env, token);
+			return definitionLocation_godef(document, position, offset, includeDocs, env, token, isGoMod);
 		} else if (toolForDocs === 'guru') {
 			return definitionLocation_guru(document, position, offset, env, token);
 		}
@@ -52,10 +52,11 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	});
 }
 
-function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, offset: number, includeDocs: boolean, env: any, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
-	let godef = getBinPath('godef');
+function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, offset: number, includeDocs: boolean, env: any, token: vscode.CancellationToken, isGoMod: boolean): Promise<GoDefinitionInformation> {
+	let godefName = isGoMod ? 'godef-gomod' : 'godef';
+	let godef = getBinPath(godefName);
 	if (!path.isAbsolute(godef)) {
-		return Promise.reject(missingToolMsg + 'godef');
+		return Promise.reject(missingToolMsg + godefName);
 	}
 	let p: cp.ChildProcess;
 	if (token) {
@@ -67,7 +68,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 		p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], { env }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					return reject(missingToolMsg + 'godef');
+					return reject(missingToolMsg + godefName);
 				}
 				if (err) {
 					return reject(err.message || stderr);
@@ -89,7 +90,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 					line: +line - 1,
 					column: + col - 1,
 					declarationlines: lines.splice(1),
-					toolUsed: 'godef',
+					toolUsed: godefName,
 					doc: null,
 					name: null
 				};
@@ -234,28 +235,37 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
 	private goConfig = null;
+	private isGoMod: boolean = false;
 
 	constructor(goConfig?: vscode.WorkspaceConfiguration) {
 		this.goConfig = goConfig;
 	}
 
+	private ensureGoDefinitionConfigured(currentFile): Thenable<void> {
+		console.log(currentFile);
+		return hasModFile(currentFile).then(result => this.isGoMod = result).then(() => { return; });
+	}
+
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		return definitionLocation(document, position, this.goConfig, false, token).then(definitionInfo => {
-			if (definitionInfo == null || definitionInfo.file == null) return null;
-			let definitionResource = vscode.Uri.file(definitionInfo.file);
-			let pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
-			return new vscode.Location(definitionResource, pos);
-		}, err => {
-			if (err) {
-				// Prompt for missing tool is located here so that the
-				// prompts dont show up on hover or signature help
-				if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
-					promptForMissingTool(err.substr(missingToolMsg.length));
-				} else {
-					return Promise.reject(err);
+		return this.ensureGoDefinitionConfigured(document.fileName).then(() => {
+			console.log(this.isGoMod);
+			return definitionLocation(document, position, this.goConfig, false, token, this.isGoMod).then(definitionInfo => {
+				if (definitionInfo == null || definitionInfo.file == null) return null;
+				let definitionResource = vscode.Uri.file(definitionInfo.file);
+				let pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
+				return new vscode.Location(definitionResource, pos);
+			}, err => {
+				if (err) {
+					// Prompt for missing tool is located here so that the
+					// prompts dont show up on hover or signature help
+					if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
+						promptForMissingTool(err.substr(missingToolMsg.length));
+					} else {
+						return Promise.reject(err);
+					}
 				}
-			}
-			return Promise.resolve(null);
+				return Promise.resolve(null);
+			});
 		});
 	}
 }

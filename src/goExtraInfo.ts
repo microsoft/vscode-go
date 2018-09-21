@@ -26,7 +26,7 @@ export class GoHoverProvider implements HoverProvider {
 		if (goConfig['docsTool'] === 'guru') {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
-		return definitionLocation(document, position, goConfig, true, token).then(definitionInfo => {
+		return definitionLocation(document, position, goConfig, true, token, false).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			let lines = definitionInfo.declarationlines
 				.filter(line => line !== '')

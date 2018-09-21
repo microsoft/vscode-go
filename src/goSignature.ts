@@ -32,7 +32,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		if (goConfig['docsTool'] === 'guru') {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
-		return definitionLocation(document, callerPos, goConfig, true, token).then(res => {
+		return definitionLocation(document, callerPos, goConfig, true, token, false).then(res => {
 			if (!res) {
 				// The definition was not found
 				return null;
