@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, hasModFile } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -47,7 +47,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private pkgsList = new Map<string, string>();
 	private killMsgShown: boolean = false;
 	private setGocodeOptions: boolean = true;
+	private isGoMod: boolean = false;
 	private globalState: vscode.Memento;
+	private previousFile: string;
+	private previousFileDir: string;
 
 	constructor(globalState?: vscode.Memento) {
 		this.globalState = globalState;
@@ -58,7 +61,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
-		return this.ensureGoCodeConfigured().then(() => {
+		return this.ensureGoCodeConfigured(document.fileName).then(() => {
 			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 				let filename = document.fileName;
 				let lineText = document.lineAt(position.line).text;
@@ -162,9 +165,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
-			let gocode = getBinPath('gocode');
+			let gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
+			let gocode = getBinPath(gocodeName);
 			if (!path.isAbsolute(gocode)) {
-				promptForMissingTool(gocode);
+				promptForMissingTool(gocodeName);
 				return reject();
 			}
 
@@ -186,7 +190,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			p.stderr.on('data', data => stderr += data);
 			p.on('error', err => {
 				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('gocode');
+					promptForMissingTool(gocodeName);
 					return reject();
 				}
 				return reject(err);
@@ -199,7 +203,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							this.killMsgShown = true;
 						}
 						if (stderr.startsWith('flag provided but not defined:')) {
-							promptForUpdatingTool('gocode');
+							promptForUpdatingTool(gocodeName);
 						}
 						return reject();
 					}
@@ -318,11 +322,17 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		});
 	}
 	// TODO: Shouldn't lib-path also be set?
-	private ensureGoCodeConfigured(): Thenable<void> {
-		let setPkgsList = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true).then(pkgMap => { this.pkgsList = pkgMap; });
-
-		if (!this.setGocodeOptions) {
+	private ensureGoCodeConfigured(currentFile): Thenable<void> {
+		let setPkgsList = getImportablePackages(currentFile, true).then(pkgMap => { this.pkgsList = pkgMap; });
+		if (!this.setGocodeOptions && (this.previousFile === currentFile || this.previousFileDir === path.dirname(currentFile))) {
 			return setPkgsList;
+		}
+
+		this.previousFile = currentFile;
+		this.previousFileDir = path.dirname(currentFile);
+		let hasModFilePromise = hasModFile(currentFile).then(result => this.isGoMod = result);
+		if (!this.setGocodeOptions) {
+			return Promise.all([setPkgsList, hasModFilePromise]).then(() => { return; });
 		}
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
@@ -373,7 +383,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			});
 		});
 
-		return Promise.all([setPkgsList, setGocodeProps]).then(() => {
+		return Promise.all([setPkgsList, setGocodeProps, hasModFilePromise]).then(() => {
 			return;
 		});
 	}

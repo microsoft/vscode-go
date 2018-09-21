@@ -17,6 +17,7 @@ let updatesDeclinedTools: string[] = [];
 let installsDeclinedTools: string[] = [];
 const allTools: { [key: string]: string } = {
 	'gocode': 'github.com/mdempsky/gocode',
+	'gocode-gomod': 'github.com/stamblerre/gocode',
 	'gopkgs': 'github.com/uudashr/gopkgs/cmd/gopkgs',
 	'go-outline': 'github.com/ramya-rao-a/go-outline',
 	'go-symbols': 'github.com/acroca/go-symbols',
@@ -27,6 +28,7 @@ const allTools: { [key: string]: string } = {
 	'impl': 'github.com/josharian/impl',
 	'gotype-live': 'github.com/tylerb/gotype-live',
 	'godef': 'github.com/rogpeppe/godef',
+	'godef-gomod': 'github.com/ianthehat/godef',
 	'godoc': 'golang.org/x/tools/cmd/godoc',
 	'gogetdoc': 'github.com/zmb3/gogetdoc',
 	'goimports': 'golang.org/x/tools/cmd/goimports',
@@ -46,12 +48,14 @@ const allTools: { [key: string]: string } = {
 // Tools used explicitly by the basic features of the extension
 const importantTools = [
 	'gocode',
+	'gocode-gomod',
 	'gopkgs',
 	'go-outline',
 	'go-symbols',
 	'guru',
 	'gorename',
 	'godef',
+	'godef-gomod',
 	'godoc',
 	'gogetdoc',
 	'goreturns',
@@ -76,9 +80,18 @@ function getTools(goVersion: SemVersion): string[] {
 		'dlv'
 	];
 
+	// gocode-gomod needed in go 1.11
+	if (goVersion && goVersion.major === 1 && goVersion.minor === 11) {
+		tools.push('gocode-gomod');
+	}
+
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools.push('godef');
+		// godef-gomod needed in go 1.11
+		if (goVersion && goVersion.major === 1 && goVersion.minor === 11) {
+			tools.push('godef-gomod');
+		}
 		tools.push('godoc');
 	} else if (goConfig['docsTool'] === 'gogetdoc') {
 		tools.push('gogetdoc');
@@ -140,6 +153,7 @@ function getTools(goVersion: SemVersion): string[] {
 export function installAllTools(updateExistingToolsOnly: boolean = false) {
 	const allToolsDescription: { [key: string]: string } = {
 		'gocode': '\t\t(Auto-completion)',
+		'gocode-gomod': '(Autocompletion, works with Modules)',
 		'gopkgs': '\t\t(Auto-completion of unimported packages & Add Import feature)',
 		'go-outline': '\t(Go to symbol in file)',
 		'go-symbols': '\t(Go to symbol in workspace)',
@@ -150,6 +164,7 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'impl': '\t\t(Stubs for interfaces)',
 		'gotype-live': 'Show errors as you type)',
 		'godef': '\t\t(Go to definition)',
+		'godef-gomod': '\t(Go to definition, works with Modules)',
 		'godoc': '\t\t(For text shown on hover)',
 		'gogetdoc': '\t(Go to definition & text shown on hover)',
 		'goimports': '\t(Formatter)',
@@ -327,9 +342,9 @@ function installTools(missing: string[]) {
 			};
 
 			let closeToolPromise = Promise.resolve(true);
-			if (tool === 'gocode') {
+			if (tool === 'gocode' || tool === 'gocode-gomod') {
 				closeToolPromise = new Promise<boolean>((innerResolve) => {
-					cp.execFile(getBinPath('gocode'), ['close'], {}, (err, stdout, stderr) => {
+					cp.execFile(getBinPath(tool), ['close'], {}, (err, stdout, stderr) => {
 						if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
 							outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
 							return innerResolve(false);
@@ -344,16 +359,22 @@ function installTools(missing: string[]) {
 					resolve([...sofar, null]);
 					return;
 				}
-				cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, (err, stdout, stderr) => {
+				let args = ['get', '-u', '-v'];
+				if (tool.endsWith('-gomod')) {
+					args.push('-d');
+				}
+				args.push(allTools[tool]);
+				cp.execFile(goRuntimePath, args, { env: envForTools }, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
 						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-						cp.execFile(goRuntimePath, ['get', '-u', '-v', allTools[tool]], { env: envForTools }, callback);
+						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
+					} else if (tool.endsWith('-gomod')) {
+						cp.execFile(goRuntimePath, ['build', '-o', toolsGopath + '/bin/' + tool, allTools[tool]], { env: envForTools }, callback);
 					} else {
 						callback(err, stdout, stderr);
 					}
 				});
 			});
-
 		}));
 	}, Promise.resolve([])).then(res => {
 		outputChannel.appendLine(''); // Blank line for spacing
