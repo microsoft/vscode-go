@@ -194,7 +194,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		if (e.added.length) {
 			updateWorkspaceModCache();
 		}
-	})
+	});
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {

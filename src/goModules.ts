@@ -1,4 +1,4 @@
-import { getBinPath, getToolsEnvVars, getGoVersion } from "./util";
+import { getBinPath, getToolsEnvVars, getGoVersion } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
@@ -51,7 +51,7 @@ export function updateWorkspaceModCache() {
 		containsModFile(folder.uri.fragment).then(result => {
 			workspaceModCache.set(folder.uri.fsPath, result);
 		});
-	})
+	});
 }
 
 export function getModulePackages(workDir: string): Promise<Map<string, string>> {
