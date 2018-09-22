@@ -156,6 +156,31 @@ export function getAllPackages(isMod: boolean, workDir: string): Promise<Map<str
 	});
 }
 
+function getModulePackages(folderPath: string): Promise<Map<string, string>> {
+	let goRuntimePath = getBinPath('go');
+	return new Promise<Map<string, string>>((resolve) => {
+		cp.execFile(goRuntimePath, ['list', '-m', '-f', '{{.Path}}', 'all'], { cwd: folderPath, env: getToolsEnvVars() }, (error, stdout, stderr) => {
+			const pkgMap = new Map<string, string>();
+
+			if (error) {
+				// module might not supported or turned off
+				return resolve(pkgMap);
+			}
+
+			stdout.split('\n').forEach(line => {
+				line = line.trim();
+				if (line === '') {
+					return;
+				}
+
+				pkgMap.set(line, line.substring(line.lastIndexOf('/') + 1));
+			});
+			return resolve(pkgMap);
+		});
+	});
+}
+
+
 /**
  * Returns mapping of import path and package name for packages that can be imported
  * Possible to return empty if useCache options is used.
@@ -180,7 +205,7 @@ export function getImportablePackages(filePath: string, isMod: boolean, useCache
 	}
 
 
-	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {
+	return Promise.all([isVendorSupported(), getAllPackagesPromise, getModulePackages(fileDirPath)]).then(([vendorSupported, pkgs, modPkgs]) => {
 		let pkgMap = new Map<string, string>();
 		if (!pkgs) {
 			return pkgMap;
@@ -215,6 +240,10 @@ export function getImportablePackages(filePath: string, isMod: boolean, useCache
 			if (allowToImport) {
 				pkgMap.set(relativePkgPath, pkgName);
 			}
+		});
+
+		modPkgs.forEach((pkgName, pkgPath) => {
+			pkgMap.set(pkgPath, pkgName);
 		});
 		return pkgMap;
 	});
