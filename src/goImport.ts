@@ -11,12 +11,15 @@ import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars } from './
 import { documentSymbols } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
+import { isModSupported } from './goModules';
 
 const missingToolMsg = 'Missing tool: ';
 
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
-	let pkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
+	let pkgsPromise = isModSupported(vscode.window.activeTextEditor.document.uri).then(isMod => {
+		return getImportablePackages(vscode.window.activeTextEditor.document.fileName, isMod, true);
+	});
 
 	return Promise.all([pkgsPromise, importsPromise]).then(([pkgMap, importedPkgs]) => {
 		importedPkgs.forEach(pkg => {

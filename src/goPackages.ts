@@ -4,6 +4,7 @@ import path = require('path');
 import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
+import { getModulePackages } from './goModules';
 
 type GopkgsDone = (res: Map<string, string>) => void;
 interface Cache {
@@ -21,7 +22,10 @@ let allPkgsCache: Map<string, Cache> = new Map<string, Cache>();
 
 let pkgRootDirs = new Map<string, string>();
 
-function gopkgs(workDir?: string): Promise<Map<string, string>> {
+function gopkgs(isMod: boolean, workDir?: string): Promise<Map<string, string>> {
+	if (isMod) {
+		return getModulePackages(workDir);
+	}
 	const gopkgsBinPath = getBinPath('gopkgs');
 	if (!path.isAbsolute(gopkgsBinPath)) {
 		promptForMissingTool('gopkgs');
@@ -53,7 +57,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 				if (errorMsg.startsWith('flag provided but not defined: -workDir')) {
 					promptForUpdatingTool('gopkgs');
 					// fallback to gopkgs without -workDir
-					return gopkgs().then(result => resolve(result));
+					return gopkgs(false).then(result => resolve(result));
 				}
 
 				console.log(`Running gopkgs failed with "${errorMsg}"\nCheck if you can run \`gopkgs -format {{.Name}};{{.ImportPath}}\` in a terminal successfully.`);
@@ -95,7 +99,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 	});
 }
 
-function getAllPackagesNoCache(workDir?: string): Promise<Map<string, string>> {
+function getAllPackagesNoCache(isMod: boolean, workDir: string): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
 		let callback = function (pkgMap: Map<string, string>) {
@@ -113,7 +117,7 @@ function getAllPackagesNoCache(workDir?: string): Promise<Map<string, string>> {
 		if (!gopkgsRunning.has(workDir)) {
 			gopkgsRunning.add(workDir);
 
-			gopkgs(workDir).then((pkgMap) => {
+			gopkgs(isMod, workDir).then((pkgMap) => {
 				gopkgsRunning.delete(workDir);
 				gopkgsSubscriptions.delete(workDir);
 				subs.forEach((callback) => callback(pkgMap));
@@ -124,10 +128,11 @@ function getAllPackagesNoCache(workDir?: string): Promise<Map<string, string>> {
 
 /**
  * Runs gopkgs
+ * @argument isMod. Indicates whether current project uses Go modules
  * @argument workDir. The workspace directory of the project.
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
+export function getAllPackages(isMod: boolean, workDir: string): Promise<Map<string, string>> {
 	let cache = allPkgsCache.get(workDir);
 	let useCache = cache && (new Date().getTime() - cache.lastHit) < cacheTimeout;
 	if (useCache) {
@@ -135,7 +140,7 @@ export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
 		return Promise.resolve(cache.entry);
 	}
 
-	return getAllPackagesNoCache(workDir).then((pkgs) => {
+	return getAllPackagesNoCache(isMod, workDir).then((pkgs) => {
 		if (!pkgs || pkgs.size === 0) {
 			if (!gopkgsNotified) {
 				vscode.window.showInformationMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
@@ -155,10 +160,11 @@ export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
  * Returns mapping of import path and package name for packages that can be imported
  * Possible to return empty if useCache options is used.
  * @param filePath. Used to determine the right relative path for vendor pkgs
+ * @param isMod. Indicates whether current project uses Go modules
  * @param useCache. Force to use cache
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, string>> {
+export function getImportablePackages(filePath: string, isMod: boolean, useCache: boolean = false): Promise<Map<string, string>> {
 	filePath = fixDriveCasingInWindows(filePath);
 	let getAllPackagesPromise: Promise<Map<string, string>>;
 	let fileDirPath = path.dirname(filePath);
@@ -168,9 +174,9 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 	let cache = allPkgsCache.get(workDir);
 
 	if (useCache && cache) {
-		getAllPackagesPromise = Promise.race([getAllPackages(workDir), cache.entry]);
+		getAllPackagesPromise = Promise.race([getAllPackages(isMod, workDir), cache.entry]);
 	} else {
-		getAllPackagesPromise = getAllPackages(workDir);
+		getAllPackagesPromise = getAllPackages(isMod, workDir);
 	}
 
 

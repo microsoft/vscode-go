@@ -10,11 +10,16 @@ import cp = require('child_process');
 import path = require('path');
 import { getAllPackages } from './goPackages';
 import { getImportPath, getCurrentGoPath, getBinPath } from './util';
+import { isModSupported } from './goModules';
 
 export function browsePackages() {
+	let workDir = '';
+	let currentUri: vscode.Uri = null;
 	let selectedText = '';
 	const editor = vscode.window.activeTextEditor;
 	if (editor) {
+		currentUri = vscode.window.activeTextEditor.document.uri;
+		workDir = path.dirname(currentUri.fsPath);
 		let selection = editor.selection;
 		if (!selection.isEmpty) {
 			// get selected text
@@ -24,27 +29,38 @@ export function browsePackages() {
 			selectedText = editor.document.lineAt(selection.active.line).text;
 		}
 		selectedText = getImportPath(selectedText) || selectedText.trim();
+	} else if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length === 1) {
+		currentUri = vscode.workspace.workspaceFolders[0].uri;
+		workDir = currentUri.fsPath;
 	}
 
-	showPackageFiles(selectedText, true);
+	(currentUri ? isModSupported(currentUri) : Promise.resolve(false)).then(isMod => {
+		showPackageFiles(selectedText, true, isMod, workDir);
+	});
+
 }
 
-function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean) {
+function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, isMod: boolean, workDir: string) {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
 	}
 
 	if (!pkg && showAllPkgsIfPkgNotFound) {
-		return showPackageList();
+		return showPackageList(isMod, workDir);
 	}
 
-	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
+	const options = {
+		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() })
+	};
+	if (workDir) {
+		options['cwd'] = workDir;
+	}
 
-	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], { env }, (err, stdout, stderr) => {
+	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], options, (err, stdout, stderr) => {
 		if (!stdout || stdout.indexOf(':') === -1) {
 			if (showAllPkgsIfPkgNotFound) {
-				return showPackageList();
+				return showPackageList(isMod, workDir);
 			}
 
 			return;
@@ -71,8 +87,8 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean) {
 	});
 }
 
-function showPackageList() {
-	getAllPackages().then(pkgMap => {
+function showPackageList(isMod: boolean, workDir: string) {
+	return getAllPackages(isMod, workDir).then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (pkgs.length === 0) {
 			return vscode.window.showErrorMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
@@ -83,7 +99,8 @@ function showPackageList() {
 			.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
 			.then(pkgFromDropdown => {
 				if (!pkgFromDropdown) return;
-				showPackageFiles(pkgFromDropdown, false);
+				showPackageFiles(pkgFromDropdown, false, isMod, workDir);
 			});
 	});
+
 }
