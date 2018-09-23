@@ -330,7 +330,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		if (this.previousFile !== currentFile && this.previousFileDir !== path.dirname(currentFile)) {
 			this.previousFile = currentFile;
 			this.previousFileDir = path.dirname(currentFile);
-			checkModSupport = isModSupported(fileuri);
+			checkModSupport = isModSupported(fileuri).then(result => this.isGoMod = result);
 		}
 		let setPkgsList = getImportablePackages(currentFile, true).then(pkgMap => { this.pkgsList = pkgMap; });
 
