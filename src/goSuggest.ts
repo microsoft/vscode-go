@@ -326,19 +326,16 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(fileuri: vscode.Uri): Thenable<void> {
 		const currentFile = fileuri.fsPath;
-		const checkModSupport = this.previousFile !== currentFile && this.previousFileDir !== path.dirname(currentFile);
-		if (checkModSupport) {
+		let checkModSupport = Promise.resolve(this.isGoMod);
+		if (this.previousFile !== currentFile && this.previousFileDir !== path.dirname(currentFile)) {
 			this.previousFile = currentFile;
 			this.previousFileDir = path.dirname(currentFile);
+			checkModSupport = isModSupported(fileuri).then(result => this.isGoMod = result);
 		}
-		let setPkgsList = (checkModSupport ? isModSupported(fileuri) : Promise.resolve(this.isGoMod))
-			.then(result => {
-				this.isGoMod = result;
-				return getImportablePackages(currentFile, this.isGoMod, true).then(pkgMap => { this.pkgsList = pkgMap; });
-			});
+		let setPkgsList = getImportablePackages(currentFile, true).then(pkgMap => { this.pkgsList = pkgMap; });
 
 		if (!this.setGocodeOptions) {
-			return setPkgsList;
+			return Promise.all([checkModSupport, setPkgsList]).then(() => { return; });
 		}
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
@@ -389,7 +386,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			});
 		});
 
-		return Promise.all([setPkgsList, setGocodeProps]).then(() => {
+		return Promise.all([setPkgsList, setGocodeProps, checkModSupport]).then(() => {
 			return;
 		});
 	}

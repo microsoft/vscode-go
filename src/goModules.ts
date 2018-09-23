@@ -54,34 +54,34 @@ export function updateWorkspaceModCache() {
 	});
 }
 
-export function getModulePackages(workDir: string): Promise<Map<string, string>> {
-	let goRuntimePath = getBinPath('go');
+// export function getModulePackages(workDir: string): Promise<Map<string, string>> {
+// 	let goRuntimePath = getBinPath('go');
 
-	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-		return Promise.resolve(null);
-	}
-	return new Promise<Map<string, string>>((resolve, reject) => {
-		let childProcess = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], {
-			cwd: workDir,
-			env: getToolsEnvVars()
-		});
-		let chunks = [];
-		childProcess.stdout.on('data', (stdout) => {
-			chunks.push(stdout);
-		});
+// 	if (!goRuntimePath) {
+// 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+// 		return Promise.resolve(null);
+// 	}
+// 	return new Promise<Map<string, string>>((resolve, reject) => {
+// 		let childProcess = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], {
+// 			cwd: workDir,
+// 			env: getToolsEnvVars()
+// 		});
+// 		let chunks = [];
+// 		childProcess.stdout.on('data', (stdout) => {
+// 			chunks.push(stdout);
+// 		});
 
-		childProcess.on('close', (status) => {
-			let pkgs = new Map<string, string>();
-			let output = chunks.join('').toString();
+// 		childProcess.on('close', (status) => {
+// 			let pkgs = new Map<string, string>();
+// 			let output = chunks.join('').toString();
 
-			output.split('\n').forEach((pkgDetail) => {
-				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
-				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
-				pkgs.set(pkgPath, pkgName);
-			});
+// 			output.split('\n').forEach((pkgDetail) => {
+// 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
+// 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
+// 				pkgs.set(pkgPath, pkgName);
+// 			});
 
-			resolve(pkgs);
-		});
-	});
-}
+// 			resolve(pkgs);
+// 		});
+// 	});
+// }

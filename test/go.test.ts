@@ -172,7 +172,7 @@ suite('Go Extension Tests', () => {
 			}
 			return Promise.resolve();
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test SignatureHelp Provider using godoc', (done) => {
 		let printlnDoc = `Println formats using the default formats for its operands and writes to
@@ -215,7 +215,7 @@ It returns the number of bytes written and any write error encountered.
 			}
 			return Promise.resolve();
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test Hover Provider using godoc', (done) => {
 		let printlnDoc = `Println formats using the default formats for its operands and writes to
@@ -271,7 +271,7 @@ It returns the number of bytes written and any write error encountered.
 			}
 			return Promise.resolve();
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Error checking', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
@@ -646,7 +646,7 @@ It returns the number of bytes written and any write error encountered.
 		];
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
-			let gopkgsPromise = getAllPackages(false, workDir).then(pkgMap => {
+			let gopkgsPromise = getAllPackages(workDir).then(pkgMap => {
 				let pkgs = Array.from(pkgMap.keys());
 				pkgs = pkgs.filter(p => pkgMap.get(p) !== 'main');
 				if (vendorSupport) {
