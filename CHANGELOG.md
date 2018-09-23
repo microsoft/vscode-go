@@ -1,3 +1,40 @@
+## 0.6.90 - Coming Soon
+
+* [Bianca Rosa de Mendonça @biancarosa](https://github.com/biancarosa)
+    * New commands `Go: Benchmark File`, `Go: Benchmark Package` and codelens to run all the benchmarks in current file & package respectively. [Feature Request 1522](https://github.com/Microsoft/vscode-go/issues/1522) with [PR 1898](https://github.com/Microsoft/vscode-go/pull/1898) & [PR 1899](https://github.com/Microsoft/vscode-go/pull/1899)
+
+* [Jeffrey Bean @jeffbean](https://github.com/jeffbean)
+    * New setting `go.generateTestsFlags` to provide flags for the `gotests` tool when generating tests. [PR 1841](https://github.com/Microsoft/vscode-go/pull/1841)
+    
+* [Johan Lejdung @johan-lejdung](https://github.com/johan-lejdung)
+    * New setting `go.testTags` to be used for running tests. This way, you can use the existing `go.buildTags` for compiling and a different set of tags for running tests. [Feature Request 1842](https://github.com/Microsoft/vscode-go/issues/1842) implemented with [PR 1877](https://github.com/Microsoft/vscode-go/pull/1877)
+
+* [Ryan Gurney @ragurney](https://github.com/ragurney)
+    * Skip the blank identifiers in file outline. [Bug 1889](https://github.com/Microsoft/vscode-go/issues/1889) fixed with [PR 1893](https://github.com/Microsoft/vscode-go/pull/1893)
+
+* [Benas Svipas @svipben](https://github.com/svipben)
+    * Fix accessibility issues with the `Analysis Tools Missing` button in the status bar. [PR 1922](https://github.com/Microsoft/vscode-go/pull/1922)
+
+* [Alec Thomas @alecthomas](https://github.com/alecthomas)
+    * Improve snippets for `iferr` and `forr` i.e  "if err ..." the "for range". [Feature Request 1920](https://github.com/Microsoft/vscode-go/issues/1920) implemented with [PR 1924](https://github.com/Microsoft/vscode-go/pull/1924)
+
+* [Charles Kenney @Charliekenney23](https://github.com/Charliekenney23)
+    * Create new tmp directory for each session to avoid insecure use of the temporary files created by the extension. Fixes [Bug 1905](https://github.com/Microsoft/vscode-go/issues/1905) with [PR 1912](https://github.com/Microsoft/vscode-go/pull/1912)
+
+* [Shreyas Karnik (@shreyu86)](https://github.com/shreyu86)
+    * Provide auto-completions for symbols from unimported packages even when the package name has multiple matches. Fixes [Bug 1884](https://github.com/Microsoft/vscode-go/issues/1884) with [PR 1900](https://github.com/Microsoft/vscode-go/pull/1900)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Use random port instead of hard-coded 2345 when running delve. Fixes [Bug 1906](https://github.com/Microsoft/vscode-go/issues/1906)
+    * Fix issue where tests using the check package cannot be run using the `Go: Test File` command. [Bug 1911](https://github.com/Microsoft/vscode-go/issues/1911)
+    * Disable module support when installing the Go tools. Fixes [Bug 1919](https://github.com/Microsoft/vscode-go/issues/1919)
+    * Use version 2 of delve apis by default instead of version 1. [Feature Request 1876](https://github.com/Microsoft/vscode-go/issues/1876)
+    * Add support for the below features when using Go modules
+        * `Go: Add Import` command that gives you a list of importable packages to add to the import block of current file
+        * `Go: Browse Packages` command that lets you browse available packages and their files
+        * Auto-completion of unimported packages when `go.autocompleteUnimportedPackages` setting is enabled.
+
+
 ## 0.6.89 - 30th August, 2018
 
 * Show package variables and not just local variables in the debug viewlet when debugging. [Feature Request 1854](https://github.com/Microsoft/vscode-go/issues/1854) implemented with [PR 1865](https://github.com/Microsoft/vscode-go/pull/1865)
