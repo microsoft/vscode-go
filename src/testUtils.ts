@@ -25,7 +25,7 @@ const runningTestProcesses: cp.ChildProcess[] = [];
 
 const testFuncRegex = /^Test.+|Example.+/;
 const testMethodRegex = /^\(([^)]+)\)\.(Test.*)$/;
-const benchmarkRegex = /^Benchmark$/;
+const benchmarkRegex = /^Benchmark.+/;
 
 /**
  * Input to goTest.
