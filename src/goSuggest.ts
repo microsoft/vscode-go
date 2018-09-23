@@ -13,7 +13,6 @@ import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
-import { isModSupported } from './goModules';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -48,10 +47,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private pkgsList = new Map<string, string>();
 	private killMsgShown: boolean = false;
 	private setGocodeOptions: boolean = true;
-	private isGoMod: boolean = false;
 	private globalState: vscode.Memento;
-	private previousFile: string;
-	private previousFileDir: string;
 
 	constructor(globalState?: vscode.Memento) {
 		this.globalState = globalState;
@@ -326,17 +322,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	// TODO: Shouldn't lib-path also be set?
 	private ensureGoCodeConfigured(fileuri: vscode.Uri): Thenable<void> {
 		const currentFile = fileuri.fsPath;
-		const checkModSupport = this.previousFile !== currentFile && this.previousFileDir !== path.dirname(currentFile);
-		if (checkModSupport) {
-			this.previousFile = currentFile;
-			this.previousFileDir = path.dirname(currentFile);
-		}
-		let setPkgsList = (checkModSupport ? isModSupported(fileuri) : Promise.resolve(this.isGoMod))
-			.then(result => {
-				this.isGoMod = result;
-				return getImportablePackages(currentFile, this.isGoMod, true).then(pkgMap => { this.pkgsList = pkgMap; });
-			});
-
+		let setPkgsList = getImportablePackages(currentFile, true).then(pkgMap => { this.pkgsList = pkgMap; });
 		if (!this.setGocodeOptions) {
 			return setPkgsList;
 		}

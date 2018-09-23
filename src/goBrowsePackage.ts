@@ -10,7 +10,6 @@ import cp = require('child_process');
 import path = require('path');
 import { getAllPackages } from './goPackages';
 import { getImportPath, getCurrentGoPath, getBinPath } from './util';
-import { isModSupported } from './goModules';
 
 export function browsePackages() {
 	let workDir = '';
@@ -34,20 +33,18 @@ export function browsePackages() {
 		workDir = currentUri.fsPath;
 	}
 
-	(currentUri ? isModSupported(currentUri) : Promise.resolve(false)).then(isMod => {
-		showPackageFiles(selectedText, true, isMod, workDir);
-	});
+	showPackageFiles(selectedText, true, workDir);
 
 }
 
-function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, isMod: boolean, workDir: string) {
+function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDir: string) {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
 	}
 
 	if (!pkg && showAllPkgsIfPkgNotFound) {
-		return showPackageList(isMod, workDir);
+		return showPackageList(workDir);
 	}
 
 	const options = {
@@ -60,7 +57,7 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, isMod:
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], options, (err, stdout, stderr) => {
 		if (!stdout || stdout.indexOf(':') === -1) {
 			if (showAllPkgsIfPkgNotFound) {
-				return showPackageList(isMod, workDir);
+				return showPackageList(workDir);
 			}
 
 			return;
@@ -87,8 +84,8 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, isMod:
 	});
 }
 
-function showPackageList(isMod: boolean, workDir: string) {
-	return getAllPackages(isMod, workDir).then(pkgMap => {
+function showPackageList(workDir: string) {
+	return getAllPackages(workDir).then(pkgMap => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (pkgs.length === 0) {
 			return vscode.window.showErrorMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
@@ -99,7 +96,7 @@ function showPackageList(isMod: boolean, workDir: string) {
 			.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
 			.then(pkgFromDropdown => {
 				if (!pkgFromDropdown) return;
-				showPackageFiles(pkgFromDropdown, false, isMod, workDir);
+				showPackageFiles(pkgFromDropdown, false, workDir);
 			});
 	});
 

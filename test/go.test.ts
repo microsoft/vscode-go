@@ -646,7 +646,7 @@ It returns the number of bytes written and any write error encountered.
 		];
 
 		vendorSupportPromise.then((vendorSupport: boolean) => {
-			let gopkgsPromise = getAllPackages(false, workDir).then(pkgMap => {
+			let gopkgsPromise = getAllPackages(workDir).then(pkgMap => {
 				let pkgs = Array.from(pkgMap.keys());
 				pkgs = pkgs.filter(p => pkgMap.get(p) !== 'main');
 				if (vendorSupport) {
