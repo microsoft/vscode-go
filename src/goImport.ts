@@ -17,7 +17,6 @@ const missingToolMsg = 'Missing tool: ';
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
 	let pkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
-
 	return Promise.all([pkgsPromise, importsPromise]).then(([pkgMap, importedPkgs]) => {
 		importedPkgs.forEach(pkg => {
 			pkgMap.delete(pkg);
@@ -61,6 +60,10 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	}
 
 	let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
+	if (imports.some(block => block.pkgs.some(pkgpath => pkgpath === arg))) {
+		return [];
+	}
+
 	let multis = imports.filter(x => x.kind === 'multi');
 	if (multis.length > 0) {
 		// There is a multiple import declaration, add to the last one

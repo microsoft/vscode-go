@@ -95,7 +95,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 	});
 }
 
-function getAllPackagesNoCache(workDir?: string): Promise<Map<string, string>> {
+function getAllPackagesNoCache(workDir: string): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
 		let callback = function (pkgMap: Map<string, string>) {
@@ -127,7 +127,7 @@ function getAllPackagesNoCache(workDir?: string): Promise<Map<string, string>> {
  * @argument workDir. The workspace directory of the project.
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function getAllPackages(workDir?: string): Promise<Map<string, string>> {
+export function getAllPackages(workDir: string): Promise<Map<string, string>> {
 	let cache = allPkgsCache.get(workDir);
 	let useCache = cache && (new Date().getTime() - cache.lastHit) < cacheTimeout;
 	if (useCache) {
@@ -173,7 +173,6 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 		getAllPackagesPromise = getAllPackages(workDir);
 	}
 
-
 	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {
 		let pkgMap = new Map<string, string>();
 		if (!pkgs) {
@@ -185,6 +184,7 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 			if (pkgName === 'main') {
 				return;
 			}
+
 
 			if (!vendorSupported || !currentWorkspace) {
 				pkgMap.set(pkgPath, pkgName);

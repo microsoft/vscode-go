@@ -87,7 +87,7 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
 }
 
 export interface Prelude {
-	imports: Array<{ kind: string; start: number; end: number; }>;
+	imports: Array<{ kind: string; start: number; end: number; pkgs: string[] }>;
 	pkg: { start: number; end: number; name: string };
 }
 
@@ -101,16 +101,24 @@ export function parseFilePrelude(text: string): Prelude {
 			ret.pkg = { start: i, end: i, name: pkgMatch[3] };
 		}
 		if (line.match(/^(\s)*import(\s)+\(/)) {
-			ret.imports.push({ kind: 'multi', start: i, end: -1 });
+			ret.imports.push({ kind: 'multi', start: i, end: -1, pkgs: [] });
 		}
 		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
-			ret.imports.push({ kind: 'single', start: i, end: i });
+			ret.imports.push({ kind: 'single', start: i, end: i, pkgs: [] });
 		}
 		if (line.match(/^(\s)*(\/\*.*\*\/)*\s*\)/)) {
 			if (ret.imports[ret.imports.length - 1].end === -1) {
 				ret.imports[ret.imports.length - 1].end = i;
 			}
+		} else if (ret.imports.length) {
+			if (ret.imports[ret.imports.length - 1].end === -1) {
+				const pkgMatch = line.match(/"([^"]+)"/);
+				if (pkgMatch) {
+					ret.imports[ret.imports.length - 1].pkgs.push(pkgMatch[1]);
+				}
+			}
 		}
+
 		if (line.match(/^(\s)*(func|const|type|var)\s/)) {
 			break;
 		}
@@ -883,20 +891,3 @@ export function cleanupTempDir() {
 	tmpDir = undefined;
 }
 
-export function hasModFile(filepath: string): Promise<boolean> {
-	let goExecutable = getBinPath('go');
-	if (!goExecutable) {
-		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
-	}
-	const cwd = path.dirname(filepath);
-	return new Promise(resolve => {
-		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd }, (err, stdout) => {
-			if (err) {
-				console.warn(`Error when running go env GOMOD: ${err}`);
-				return resolve(false);
-			}
-			let [goMod] = stdout.split('\n');
-			resolve(!!goMod);
-		});
-	});
-}
