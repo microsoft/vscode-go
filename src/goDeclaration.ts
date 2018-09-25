@@ -42,7 +42,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	let offset = byteOffsetAt(document, position);
 	let env = getToolsEnvVars();
 	return getGoVersion().then((ver: SemVersion) => {
-		const gogetdocPrompt = (ver.major === 1 && ver.minor >= 11 && toolForDocs !== 'gogetdoc' && !includeDocs) ? isGoMod: Promise.resolve(false);
+		const gogetdocPrompt = (ver.major === 1 && ver.minor >= 11 && toolForDocs !== 'gogetdoc' && !includeDocs) ? isGoMod : false;
 		if (goConfig['docsTool'] == 'gogetdoc' && gogetdocPrompt) {
 			vscode.window.showInformationMessage('To get support for the Go to definition feature when using Go modules, please use the "gogetdoc" tool. Use "go get -u -v github.com/zmb3/gogetdoc" to install or press the Install button.', 'Install', 'Later')
 			.then(selected => {
