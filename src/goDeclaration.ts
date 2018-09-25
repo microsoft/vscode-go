@@ -63,7 +63,6 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		// If no Go version can be parsed, it means it's a non-tagged one.
 		// Assume it's > Go 1.5
 		if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
-			console.log("use godef!");
 			return definitionLocation_godef(document, position, offset, includeDocs, env, token, isGoMod);
 		} else if (toolForDocs === 'guru') {
 			return definitionLocation_guru(document, position, offset, env, token);
