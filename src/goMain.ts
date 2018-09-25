@@ -52,7 +52,7 @@ export let warningDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
-	
+
 	updateGoPathGoRootFromConfig().then(() => {
 		updateWorkspaceModCache();
 		const updateToolsCmdText = 'Update tools';
