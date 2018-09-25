@@ -8,40 +8,48 @@
 import vscode = require('vscode');
 import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
+import { isModSupported } from './goModules';
 
 export class GoHoverProvider implements HoverProvider {
 	private goConfig = null;
+	private isGoMod: boolean = false;
 
 	constructor(goConfig?: WorkspaceConfiguration) {
 		this.goConfig = goConfig;
 	}
 
-	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
-		if (!this.goConfig) {
-			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
-		}
-		let goConfig = this.goConfig;
+	private ensureGoHoverConfigured(fileuri: vscode.Uri): Thenable<void> {
+		return isModSupported(fileuri).then(result => this.isGoMod = result).then(() => { return; });
+	}
 
-		// Temporary fix to fall back to godoc if guru is the set docsTool
-		if (goConfig['docsTool'] === 'guru') {
-			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
-		}
-		return definitionLocation(document, position, goConfig, true, token, false).then(definitionInfo => {
-			if (definitionInfo == null) return null;
-			let lines = definitionInfo.declarationlines
-				.filter(line => line !== '')
-				.map(line => line.replace(/\t/g, '    '));
-			let text;
-			text = lines.join('\n').replace(/\n+$/, '');
-			let hoverTexts: MarkedString[] = [];
-			hoverTexts.push({ language: 'go', value: text });
-			if (definitionInfo.doc != null) {
-				hoverTexts.push(definitionInfo.doc);
+	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
+		return this.ensureGoHoverConfigured(document.uri).then(() => {
+			if (!this.goConfig) {
+				this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
 			}
-			let hover = new Hover(hoverTexts);
-			return hover;
-		}, () => {
-			return null;
+			let goConfig = this.goConfig;
+
+			// Temporary fix to fall back to godoc if guru is the set docsTool
+			if (goConfig['docsTool'] === 'guru') {
+				goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
+			}
+			return definitionLocation(document, position, goConfig, true, token, this.isGoMod).then(definitionInfo => {
+				if (definitionInfo == null) return null;
+				let lines = definitionInfo.declarationlines
+					.filter(line => line !== '')
+					.map(line => line.replace(/\t/g, '    '));
+				let text;
+				text = lines.join('\n').replace(/\n+$/, '');
+				let hoverTexts: MarkedString[] = [];
+				hoverTexts.push({ language: 'go', value: text });
+				if (definitionInfo.doc != null) {
+					hoverTexts.push(definitionInfo.doc);
+				}
+				let hover = new Hover(hoverTexts);
+				return hover;
+			}, () => {
+				return null;
+			});
 		});
 	}
 }

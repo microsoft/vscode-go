@@ -42,34 +42,33 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	let offset = byteOffsetAt(document, position);
 	let env = getToolsEnvVars();
 	return getGoVersion().then((ver: SemVersion) => {
-		const gogetdocPrompt = (ver.major === 1 && ver.minor >= 11 && toolForDocs !== 'gogetdoc' && !includeDocs) ? isModSupported(document.uri) : Promise.resolve(false);
-		return gogetdocPrompt.then(prompt => {
-			if (prompt) {
-				vscode.window.showInformationMessage('To get support for the Go to definition feature when using Go modules, please use the "gogetdoc" tool. Use "go get -u -v github.com/zmb3/gogetdoc" to install or press the Install button.', 'Install', 'Later')
-				.then(selected => {
-					if (selected === 'Install') {
-						const result = goConfig.inspect('docsTool');
-						if (result.workspaceFolderValue) {
-							goConfig.update('docsTool', 'gogetdoc', vscode.ConfigurationTarget.WorkspaceFolder);
-						}
-						if (result.workspaceValue) {
-							goConfig.update('docsTool', 'gogetdoc', vscode.ConfigurationTarget.Workspace);
-						}
-						goConfig.update('docsTool', 'gogetdoc', vscode.ConfigurationTarget.Global);
-						installTools(['gogetdoc']);
+		const gogetdocPrompt = (ver.major === 1 && ver.minor >= 11 && toolForDocs !== 'gogetdoc' && !includeDocs) ? isGoMod: Promise.resolve(false);
+		if (goConfig['docsTool'] == 'gogetdoc' && gogetdocPrompt) {
+			vscode.window.showInformationMessage('To get support for the Go to definition feature when using Go modules, please use the "gogetdoc" tool. Use "go get -u -v github.com/zmb3/gogetdoc" to install or press the Install button.', 'Install', 'Later')
+			.then(selected => {
+				if (selected === 'Install') {
+					const result = goConfig.inspect('docsTool');
+					if (result.workspaceFolderValue) {
+						goConfig.update('docsTool', 'gogetdoc', vscode.ConfigurationTarget.WorkspaceFolder);
 					}
-				});
-				return Promise.resolve(null);
-			}
-			// If no Go version can be parsed, it means it's a non-tagged one.
-			// Assume it's > Go 1.5
-			if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
-				return definitionLocation_godef(document, position, offset, includeDocs, env, token, isGoMod);
-			} else if (toolForDocs === 'guru') {
-				return definitionLocation_guru(document, position, offset, env, token);
-			}
-			return definitionLocation_gogetdoc(document, position, offset, env, true, token);
-		});
+					if (result.workspaceValue) {
+						goConfig.update('docsTool', 'gogetdoc', vscode.ConfigurationTarget.Workspace);
+					}
+					goConfig.update('docsTool', 'gogetdoc', vscode.ConfigurationTarget.Global);
+					installTools(['gogetdoc']);
+				}
+			});
+			return Promise.resolve(null);
+		}
+		// If no Go version can be parsed, it means it's a non-tagged one.
+		// Assume it's > Go 1.5
+		if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
+			console.log("use godef!");
+			return definitionLocation_godef(document, position, offset, includeDocs, env, token, isGoMod);
+		} else if (toolForDocs === 'guru') {
+			return definitionLocation_guru(document, position, offset, env, token);
+		}
+		return definitionLocation_gogetdoc(document, position, offset, env, true, token);
 	});
 }
 
@@ -262,13 +261,12 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 		this.goConfig = goConfig;
 	}
 
-	private ensureGoDefinitionConfigured(currentFile): Thenable<void> {
-		return isModSupported(currentFile).then(result => this.isGoMod = result).then(() => { return; });
+	private ensureGoDefinitionConfigured(fileuri: vscode.Uri): Thenable<void> {
+		return isModSupported(fileuri).then(result => this.isGoMod = result).then(() => { return; });
 	}
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		return this.ensureGoDefinitionConfigured(document.fileName).then(() => {
-			console.log(this.isGoMod);
+		return this.ensureGoDefinitionConfigured(document.uri).then(() => {
 			return definitionLocation(document, position, this.goConfig, false, token, this.isGoMod).then(definitionInfo => {
 				if (definitionInfo == null || definitionInfo.file == null) return null;
 				let definitionResource = vscode.Uri.file(definitionInfo.file);

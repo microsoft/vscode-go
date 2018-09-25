@@ -9,72 +9,80 @@ import vscode = require('vscode');
 import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 import { getParametersAndReturnType } from './util';
+import { isModSupported } from './goModules';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	private goConfig = null;
+	private isGoMod: boolean = false;
 
 	constructor(goConfig?: WorkspaceConfiguration) {
 		this.goConfig = goConfig;
 	}
 
+	private ensureGoSignatureHelpConfigured(currentFile): Promise<void> {
+		return isModSupported(currentFile).then(result => this.isGoMod = result).then(() => { return; });
+	}
+
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
-		if (!this.goConfig) {
-			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
-		}
+		return this.ensureGoSignatureHelpConfigured(document.fileName).then(() => {
+			if (!this.goConfig) {
+				this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
+			}
 
-		let theCall = this.walkBackwardsToBeginningOfCall(document, position);
-		if (theCall == null) {
-			return Promise.resolve(null);
-		}
-		let callerPos = this.previousTokenPosition(document, theCall.openParen);
-		// Temporary fix to fall back to godoc if guru is the set docsTool
-		let goConfig = this.goConfig;
-		if (goConfig['docsTool'] === 'guru') {
-			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
-		}
-		return definitionLocation(document, callerPos, goConfig, true, token, false).then(res => {
-			if (!res) {
-				// The definition was not found
-				return null;
+			let theCall = this.walkBackwardsToBeginningOfCall(document, position);
+			if (theCall == null) {
+				return Promise.resolve(null);
 			}
-			if (res.line === callerPos.line) {
-				// This must be a function definition
-				return null;
+			let callerPos = this.previousTokenPosition(document, theCall.openParen);
+			// Temporary fix to fall back to godoc if guru is the set docsTool
+			let goConfig = this.goConfig;
+			if (goConfig['docsTool'] === 'guru') {
+				goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 			}
-			let declarationText: string = (res.declarationlines || []).join(' ').trim();
-			if (!declarationText) {
-				return null;
-			}
-			let result = new SignatureHelp();
-			let sig: string;
-			let si: SignatureInformation;
-			if (res.toolUsed === 'godef') {
-				// declaration is of the form "Add func(a int, b int) int"
-				let nameEnd = declarationText.indexOf(' ');
-				let sigStart = nameEnd + 5; // ' func'
-				let funcName = declarationText.substring(0, nameEnd);
-				sig = declarationText.substring(sigStart);
-				si = new SignatureInformation(funcName + sig, res.doc);
-			} else if (res.toolUsed === 'gogetdoc') {
-				// declaration is of the form "func Add(a int, b int) int"
-				declarationText = declarationText.substring(5);
-				let funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it
-				if (funcNameStart > 0) {
-					declarationText = declarationText.substring(funcNameStart);
+			return definitionLocation(document, callerPos, goConfig, true, token, this.isGoMod).then(res => {
+				if (!res) {
+					// The definition was not found
+					return null;
 				}
-				si = new SignatureInformation(declarationText, res.doc);
-				sig = declarationText.substring(res.name.length);
-			}
+				if (res.line === callerPos.line) {
+					// This must be a function definition
+					return null;
+				}
+				let declarationText: string = (res.declarationlines || []).join(' ').trim();
+				if (!declarationText) {
+					return null;
+				}
+				let result = new SignatureHelp();
+				let sig: string;
+				let si: SignatureInformation;
+				if (res.toolUsed === 'godef') {
+					// declaration is of the form "Add func(a int, b int) int"
+					let nameEnd = declarationText.indexOf(' ');
+					let sigStart = nameEnd + 5; // ' func'
+					let funcName = declarationText.substring(0, nameEnd);
+					sig = declarationText.substring(sigStart);
+					si = new SignatureInformation(funcName + sig, res.doc);
+				} else if (res.toolUsed === 'gogetdoc') {
+					// declaration is of the form "func Add(a int, b int) int"
+					declarationText = declarationText.substring(5);
+					let funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it
+					if (funcNameStart > 0) {
+						declarationText = declarationText.substring(funcNameStart);
+					}
+					si = new SignatureInformation(declarationText, res.doc);
+					sig = declarationText.substring(res.name.length);
+				}
 
-			si.parameters = getParametersAndReturnType(sig).params.map(paramText =>
-				new ParameterInformation(paramText)
-			);
-			result.signatures = [si];
-			result.activeSignature = 0;
-			result.activeParameter = Math.min(theCall.commas.length, si.parameters.length - 1);
-			return result;
-		}, () => {
-			return null;
+				si.parameters = getParametersAndReturnType(sig).params.map(paramText =>
+					new ParameterInformation(paramText)
+				);
+				result.signatures = [si];
+				result.activeSignature = 0;
+				result.activeParameter = Math.min(theCall.commas.length, si.parameters.length - 1);
+				return result;
+			}, () => {
+				return null;
+			});
 		});
 	}
 
