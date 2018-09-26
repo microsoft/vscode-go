@@ -381,7 +381,7 @@ export function installTools(missing: string[]) {
 						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
 					} else if (tool.endsWith('-gomod')) {
 						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
-						cp.execFile(goRuntimePath, ['build', '-o', outputFile], { env: envForTools }, callback);
+						cp.execFile(goRuntimePath, ['build', '-o', outputFile, allTools[tool]], { env: envForTools }, callback);
 					} else {
 						callback(err, stdout, stderr);
 					}
