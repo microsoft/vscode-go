@@ -57,7 +57,7 @@ export function updateWorkspaceModCache() {
 }
 
 const promptedToolsForCurrentSession = new Set<string>();
-export function promptToUpdateToolForModules(tool: string) {
+export function promptToUpdateToolForModules(tool: string, promptMsg: string) {
 	if (promptedToolsForCurrentSession.has(tool)) {
 		return;
 	}
@@ -66,7 +66,7 @@ export function promptToUpdateToolForModules(tool: string) {
 		return;
 	}
 	vscode.window.showInformationMessage(
-		`To auto-complete unimported packages when using Go modules, please update your version of the "${tool}" tool.`,
+		promptMsg,
 		'Update',
 		'Later',
 		`Don't show again`)

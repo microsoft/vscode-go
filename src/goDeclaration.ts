@@ -14,7 +14,7 @@ import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVa
 import { isModSupported, promptToUpdateToolForModules } from './goModules';
 
 const missingToolMsg = 'Missing tool: ';
-let gogetdocUpdateForModulesDoneForSession: boolean = false;
+
 export interface GoDefinitionInformation {
 	file: string;
 	line: number;
@@ -160,7 +160,7 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, isMod: boole
 						&& !includeDocs
 						&& stdout.startsWith(`gogetdoc: couldn't get package for`)
 					) {
-						promptToUpdateToolForModules('gogetdoc');
+						promptToUpdateToolForModules('gogetdoc', `To get the Go to Definition feature when using Go modules, please update your version of the "gogetdoc" tool.`);
 						return resolve(null);
 					}
 					return reject(err.message || stderr);
