@@ -231,9 +231,9 @@ export function promptForMissingTool(tool: string) {
 
 			let msg = `The "${tool}" command is not available.  Use "go get -v ${allTools[tool]}" to install.`;
 			if (tool === 'gocode-gomod') {
-				msg = `To provide auto-completions when using Go modules, we are testing a fork of "gocode". Please use "go get -v ${allTools[tool]}" to install.`;
+				msg = `To provide auto-completions when using Go modules, we are testing a fork(${allTools[tool]}) of "gocode". Please press the Install button to install it.`;
 			} else if (tool === 'godef-gomod') {
-				msg = `To provide the Go to definition feature when using Go modules, we are testing a fork of "godef". Please use "go get -v ${allTools[tool]}" to install.`;
+				msg = `To provide the Go to definition feature when using Go modules, we are testing a fork(${allTools[tool]}) of "godef". Please press the Install button to install it.`;
 			}
 			vscode.window.showInformationMessage(msg, ...items).then(selected => {
 				if (selected === 'Install') {

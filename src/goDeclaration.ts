@@ -12,9 +12,10 @@ import { byteOffsetAt, getBinPath } from './util';
 import { promptForMissingTool, installTools } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { isModSupported } from './goModules';
+import { getFromGlobalState, updateGlobalState } from './stateUtils';
 
 const missingToolMsg = 'Missing tool: ';
-
+let gogetdocUpdateForModulesDoneForSession: boolean = false;
 export interface GoDefinitionInformation {
 	file: string;
 	line: number;
@@ -42,47 +43,24 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	let offset = byteOffsetAt(document, position);
 	let env = getToolsEnvVars();
 	return getGoVersion().then((ver: SemVersion) => {
-		const gogetdocPrompt = (!ver || (ver.major === 1 && ver.minor >= 11 && !includeDocs)) ? isModSupported(document.uri) : Promise.resolve(false);
-		return gogetdocPrompt.then(promptMod => {
-			if (promptMod) {
-				let msg = 'To get support for the Go to definition feature when using Go modules, please use the "gogetdoc" tool. Use "go get -u -v github.com/zmb3/gogetdoc" to install or press the Install button.';
-				if (toolForDocs === 'gogetdoc') {
-					msg = 'To get support for the Go to definition feature when using Go modules, please update your version of the "gogetdoc" tool. Use "go get -u -v github.com/zmb3/gogetdoc" to update or press the Update button.';
-				}
-				vscode.window.showInformationMessage(msg, toolForDocs === 'gogetdoc' ? 'Update' : 'Install', 'Later')
-					.then(selected => {
-						if (selected === 'Install') {
-							const result = goConfig.inspect('docsTool');
-							if (result.workspaceFolderValue) {
-								goConfig.update('docsTool', 'gogetdoc', vscode.ConfigurationTarget.WorkspaceFolder);
-							}
-							if (result.workspaceValue) {
-								goConfig.update('docsTool', 'gogetdoc', vscode.ConfigurationTarget.Workspace);
-							}
-							goConfig.update('docsTool', 'gogetdoc', vscode.ConfigurationTarget.Global);
-						}
-						if (selected === 'Install' || selected === 'Update') {
-							installTools(['gogetdoc']);
-						}
-					});
-				return Promise.resolve(null);
-			}
+		return isModSupported(document.uri).then(isMod => {
 			// If no Go version can be parsed, it means it's a non-tagged one.
 			// Assume it's > Go 1.5
 			if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
-				return definitionLocation_godef(document, position, offset, includeDocs, env, token);
+				return definitionLocation_godef(document, isMod, offset, includeDocs, env, token);
 			} else if (toolForDocs === 'guru') {
 				return definitionLocation_guru(document, position, offset, env, token);
 			}
-			return definitionLocation_gogetdoc(document, position, offset, env, true, token);
+			return definitionLocation_gogetdoc(document, isMod, includeDocs, position, offset, env, true, token);
 		});
 	});
 }
 
-function definitionLocation_godef(document: vscode.TextDocument, position: vscode.Position, offset: number, includeDocs: boolean, env: any, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
-	let godef = getBinPath('godef');
-	if (!path.isAbsolute(godef)) {
-		return Promise.reject(missingToolMsg + 'godef');
+function definitionLocation_godef(document: vscode.TextDocument, isMod: boolean, offset: number, includeDocs: boolean, env: any, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
+	let godefTool = isMod ? 'godef-gomod' : 'godef';
+	let godefPath = getBinPath(godefTool);
+	if (!path.isAbsolute(godefPath)) {
+		return Promise.reject(missingToolMsg + godefTool);
 	}
 	let p: cp.ChildProcess;
 	if (token) {
@@ -91,10 +69,10 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
-		p = cp.execFile(godef, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], { env }, (err, stdout, stderr) => {
+		p = cp.execFile(godefPath, ['-t', '-i', '-f', document.fileName, '-o', offset.toString()], { env }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
-					return reject(missingToolMsg + 'godef');
+					return reject(missingToolMsg + godefTool);
 				}
 				if (err) {
 					return reject(err.message || stderr);
@@ -155,7 +133,7 @@ function definitionLocation_godef(document: vscode.TextDocument, position: vscod
 	});
 }
 
-function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vscode.Position, offset: number, env: any, useTags: boolean, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
+function definitionLocation_gogetdoc(document: vscode.TextDocument, isMod: boolean, includeDocs: boolean, position: vscode.Position, offset: number, env: any, useTags: boolean, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
 	let gogetdoc = getBinPath('gogetdoc');
 	if (!path.isAbsolute(gogetdoc)) {
 		return Promise.reject(missingToolMsg + 'gogetdoc');
@@ -176,9 +154,39 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, position: vs
 				}
 				if (stderr && stderr.startsWith('flag provided but not defined: -tags')) {
 					p = null;
-					return definitionLocation_gogetdoc(document, position, offset, env, false, token);
+					return definitionLocation_gogetdoc(document, isMod, includeDocs, position, offset, env, false, token);
 				}
 				if (err) {
+					if (isMod
+						&& !includeDocs
+						&& stdout.startsWith(`gogetdoc: couldn't get package for`)
+						&& !gogetdocUpdateForModulesDoneForSession
+						&& !getFromGlobalState('gogetdocUpdateForModulesDone', false)
+					) {
+						vscode.window.showInformationMessage(
+							'To get support for the Go to definition feature when using Go modules, please update your version of the "gogetdoc" tool. Use "go get -u -v github.com/zmb3/gogetdoc" to update or press the Update button.',
+							'Update',
+							'Later',
+							`Don't show again`)
+							.then(selected => {
+								switch (selected) {
+									case 'Update':
+										installTools(['gogetdoc']);
+										updateGlobalState('gogetdocUpdateForModulesDone', true);
+										break;
+									case 'Later':
+										gogetdocUpdateForModulesDoneForSession = true;
+										break;
+									case `Don't show again`:
+										updateGlobalState('gogetdocUpdateForModulesDone', true);
+										break;
+									default:
+										gogetdocUpdateForModulesDoneForSession = true;
+										break;
+								}
+							});
+						return resolve(null);
+					}
 					return reject(err.message || stderr);
 				};
 				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());

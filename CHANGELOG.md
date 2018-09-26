@@ -1,5 +1,8 @@
 ## 0.6.90 - Coming Soon
 
+* [Rebecca Stambler @stamblerre](https://github.com/stamblerre)
+    * Use of forks for the tools `godef` and `gocode` to provide `Go to definition` and `Auto-completion` features respectively when using Go modules. The binaries installed from these forks will have the suffix `-gomod` and will only be used when you use Go modules.
+
 * [Bianca Rosa de Mendonça @biancarosa](https://github.com/biancarosa)
     * New commands `Go: Benchmark File`, `Go: Benchmark Package` and codelens to run all the benchmarks in current file & package respectively. [Feature Request 1522](https://github.com/Microsoft/vscode-go/issues/1522) with [PR 1898](https://github.com/Microsoft/vscode-go/pull/1898) & [PR 1899](https://github.com/Microsoft/vscode-go/pull/1899)
 

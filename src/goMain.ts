@@ -46,12 +46,14 @@ import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
 import { updateWorkspaceModCache } from './goModules';
+import { setGlobalState } from './stateUtils';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 export let warningDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
+	setGlobalState(ctx.globalState);
 
 	updateGoPathGoRootFromConfig().then(() => {
 		updateWorkspaceModCache();
