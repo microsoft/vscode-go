@@ -225,13 +225,15 @@ export function promptForMissingTool(tool: string) {
 				return;
 			}
 			missing = missing.filter(x => x === tool || importantTools.indexOf(x) > -1);
-			if (missing.length > 1 && tool.indexOf('gocode-gomod') === -1) {
+			if (missing.length > 1 && tool.indexOf('-gomod') === -1) {
 				items.push('Install All');
 			}
 
 			let msg = `The "${tool}" command is not available.  Use "go get -v ${allTools[tool]}" to install.`;
-			if (tool.indexOf('gocode-gomod') > -1) {
+			if (tool === 'gocode-gomod') {
 				msg = `To provide auto-completions when using Go modules, we are testing a fork of "gocode". Please use "go get -v ${allTools[tool]}" to install.`;
+			} else if (tool === 'godef-gomod') {
+				msg = `To provide the Go to definition feature when using Go modules, we are testing a fork of "godef". Please use "go get -v ${allTools[tool]}" to install.`;
 			}
 			vscode.window.showInformationMessage(msg, ...items).then(selected => {
 				if (selected === 'Install') {
