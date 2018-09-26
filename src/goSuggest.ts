@@ -13,7 +13,7 @@ import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
-import { isModSupported } from './goModules';
+import { isModSupported, promptToUpdateToolForModules } from './goModules';
 
 function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -295,8 +295,12 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					}
 
 					// Add importable packages matching currentword to suggestions
-					let importablePkgs = includeUnimportedPkgs ? this.getMatchingPackages(document, currentWord, suggestionSet) : [];
-					suggestions = suggestions.concat(importablePkgs);
+					if (includeUnimportedPkgs) {
+						if (this.isGoMod) {
+							promptToUpdateToolForModules('gopkgs');
+						}
+						suggestions = suggestions.concat(this.getMatchingPackages(document, currentWord, suggestionSet));
+					}
 
 					// 'Smart Snippet' for package clause
 					// TODO: Factor this out into a general mechanism

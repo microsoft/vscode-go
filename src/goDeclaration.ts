@@ -9,10 +9,9 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath } from './util';
-import { promptForMissingTool, installTools } from './goInstallTools';
+import { promptForMissingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
-import { isModSupported } from './goModules';
-import { getFromGlobalState, updateGlobalState } from './stateUtils';
+import { isModSupported, promptToUpdateToolForModules } from './goModules';
 
 const missingToolMsg = 'Missing tool: ';
 let gogetdocUpdateForModulesDoneForSession: boolean = false;
@@ -160,31 +159,8 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, isMod: boole
 					if (isMod
 						&& !includeDocs
 						&& stdout.startsWith(`gogetdoc: couldn't get package for`)
-						&& !gogetdocUpdateForModulesDoneForSession
-						&& !getFromGlobalState('gogetdocUpdateForModulesDone', false)
 					) {
-						vscode.window.showInformationMessage(
-							'To get support for the Go to definition feature when using Go modules, please update your version of the "gogetdoc" tool. Use "go get -u -v github.com/zmb3/gogetdoc" to update or press the Update button.',
-							'Update',
-							'Later',
-							`Don't show again`)
-							.then(selected => {
-								switch (selected) {
-									case 'Update':
-										installTools(['gogetdoc']);
-										updateGlobalState('gogetdocUpdateForModulesDone', true);
-										break;
-									case 'Later':
-										gogetdocUpdateForModulesDoneForSession = true;
-										break;
-									case `Don't show again`:
-										updateGlobalState('gogetdocUpdateForModulesDone', true);
-										break;
-									default:
-										gogetdocUpdateForModulesDoneForSession = true;
-										break;
-								}
-							});
+						promptToUpdateToolForModules('gogetdoc');
 						return resolve(null);
 					}
 					return reject(err.message || stderr);

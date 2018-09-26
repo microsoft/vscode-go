@@ -6,7 +6,7 @@ export function getFromGlobalState(key: string, defaultValue?: any) {
 	if (!globalState) {
 		return defaultValue;
 	}
-	return globalState.get(key, defaultValue)
+	return globalState.get(key, defaultValue);
 }
 
 export function updateGlobalState(key: string, value: any) {

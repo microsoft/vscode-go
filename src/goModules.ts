@@ -2,6 +2,8 @@ import { getBinPath, getToolsEnvVars, getGoVersion } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
+import { getFromGlobalState, updateGlobalState } from './stateUtils';
+import { installTools } from './goInstallTools';
 
 function containsModFile(folderPath: string): Promise<boolean> {
 	let goExecutable = getBinPath('go');
@@ -54,34 +56,35 @@ export function updateWorkspaceModCache() {
 	});
 }
 
-// export function getModulePackages(workDir: string): Promise<Map<string, string>> {
-// 	let goRuntimePath = getBinPath('go');
-
-// 	if (!goRuntimePath) {
-// 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-// 		return Promise.resolve(null);
-// 	}
-// 	return new Promise<Map<string, string>>((resolve, reject) => {
-// 		let childProcess = cp.spawn(goRuntimePath, ['list', '-f', '{{.Name}};{{.ImportPath}}', 'all'], {
-// 			cwd: workDir,
-// 			env: getToolsEnvVars()
-// 		});
-// 		let chunks = [];
-// 		childProcess.stdout.on('data', (stdout) => {
-// 			chunks.push(stdout);
-// 		});
-
-// 		childProcess.on('close', (status) => {
-// 			let pkgs = new Map<string, string>();
-// 			let output = chunks.join('').toString();
-
-// 			output.split('\n').forEach((pkgDetail) => {
-// 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
-// 				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
-// 				pkgs.set(pkgPath, pkgName);
-// 			});
-
-// 			resolve(pkgs);
-// 		});
-// 	});
-// }
+const promptedToolsForCurrentSession = new Set<string>();
+export function promptToUpdateToolForModules(tool: string) {
+	if (promptedToolsForCurrentSession.has(tool)) {
+		return;
+	}
+	const promptedToolsForModules = getFromGlobalState('promptedToolsForModules', {});
+	if (promptedToolsForModules[tool]) {
+		return;
+	}
+	vscode.window.showInformationMessage(
+		`To auto-complete unimported packages when using Go modules, please update your version of the "${tool}" tool.`,
+		'Update',
+		'Later',
+		`Don't show again`)
+		.then(selected => {
+			switch (selected) {
+				case 'Update':
+					installTools([tool]);
+					promptedToolsForModules[tool] = true;
+					updateGlobalState('promptedToolsForModules', promptedToolsForModules);
+					break;
+				case `Don't show again`:
+					promptedToolsForModules[tool] = true;
+					updateGlobalState('promptedToolsForModules', promptedToolsForModules);
+					break;
+				case 'Later':
+				default:
+					promptedToolsForCurrentSession.add(tool);
+					break;
+			}
+		});
+}
