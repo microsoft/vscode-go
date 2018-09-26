@@ -166,8 +166,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
-			// let gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
-			let gocodeName = 'gocode';
+			let gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
 			let gocode = getBinPath(gocodeName);
 			if (!path.isAbsolute(gocode)) {
 				promptForMissingTool(gocodeName);
