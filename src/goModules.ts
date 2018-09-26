@@ -27,7 +27,6 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 		if (value && (value.major !== 1 || value.minor < 11)) {
 			return false;
 		}
-
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(fileuri);
 		if (workspaceFolder && workspaceModCache.get(workspaceFolder.uri.fsPath)) {
 			return true;
