@@ -19,12 +19,12 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		this.goConfig = goConfig;
 	}
 
-	private ensureGoSignatureHelpConfigured(currentFile): Promise<void> {
-		return isModSupported(currentFile).then(result => this.isGoMod = result).then(() => { return; });
+	private ensureGoSignatureHelpConfigured(fileuri: vscode.Uri): Promise<void> {
+		return isModSupported(fileuri).then(result => this.isGoMod = result).then(() => { return; });
 	}
 
 	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
-		return this.ensureGoSignatureHelpConfigured(document.fileName).then(() => {
+		return this.ensureGoSignatureHelpConfigured(document.uri).then(() => {
 			if (!this.goConfig) {
 				this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
 			}
