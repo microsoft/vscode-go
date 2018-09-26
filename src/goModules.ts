@@ -24,7 +24,7 @@ const packageModCache = new Map<string, string>();
 
 export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 	return getGoVersion().then(value => {
-		if (value.major !== 1 || value.minor < 11) {
+		if (value && (value.major !== 1 || value.minor < 11)) {
 			return false;
 		}
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(fileuri);

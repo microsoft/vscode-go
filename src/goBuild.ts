@@ -7,6 +7,7 @@ import { getNonVendorPackages } from './goPackages';
 import { getTestFlags } from './testUtils';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { diagnosticsStatusBarItem } from './goStatus';
+import { isModSupported } from './goModules';
 /**
  * Builds current package or workspace.
  */
@@ -30,7 +31,8 @@ export function buildCode(buildWorkspace?: boolean) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Building...';
 
-	goBuild(documentUri, goConfig, buildWorkspace)
+	isModSupported(documentUri).then(isMod => {
+		goBuild(documentUri, isMod, goConfig, buildWorkspace)
 		.then(errors => {
 			handleDiagnosticErrors(editor ? editor.document : null, errors, vscode.DiagnosticSeverity.Error);
 			diagnosticsStatusBarItem.hide();
@@ -39,16 +41,18 @@ export function buildCode(buildWorkspace?: boolean) {
 			vscode.window.showInformationMessage('Error: ' + err);
 			diagnosticsStatusBarItem.text = 'Build Failed';
 		});
+	});
 }
 
 /**
  * Runs go build -i or go test -i and presents the output in the 'Go' channel and in the diagnostic collections.
  *
  * @param fileUri Document uri.
+ * @param isMod Boolean denoting if modules are being used.
  * @param goConfig Configuration for the Go extension.
  * @param buildWorkspace If true builds code in all workspace.
  */
-export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
+export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
 	epoch++;
 	let closureEpoch = epoch;
 	if (tokenSource) {
@@ -75,7 +79,7 @@ export function goBuild(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigura
 	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig, null) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
 	const buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
 
-	if (goConfig['installDependenciesWhenBuilding'] === true) {
+	if (goConfig['installDependenciesWhenBuilding'] === true && !isMod) {
 		buildArgs.push('-i');
 		// Remove the -i flag from user as we add it anyway
 		if (buildFlags.indexOf('-i') > -1) {

@@ -15,6 +15,7 @@ import { ICheckResult, getBinPath, getTempFilePath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
+import { isModSupported } from './goModules';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -83,7 +84,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	};
 
 	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
-		runningToolsPromises.push(goBuild(fileUri, goConfig, goConfig['buildOnSave'] === 'workspace'));
+		runningToolsPromises.push(isModSupported(fileUri).then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace')));
 	}
 
 	if (!!goConfig['testOnSave']) {
