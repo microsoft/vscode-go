@@ -175,7 +175,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		}
 
 		let testTags: string = testconfig.goConfig['testTags'] !== null ? testconfig.goConfig['testTags'] : testconfig.goConfig['buildTags'];
-		let args: Array<string> = ['test', ...testconfig.flags];
+		let args: Array<string> = ['test'];
 		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
 
 		if (testconfig.isBenchmark) {
@@ -231,11 +231,14 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				outTargets.push('<long arguments omitted>');
 			} else {
 				outTargets.push(...targets);
+				outTargets.push(...testconfig.flags);
 			}
 			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
 			outputChannel.appendLine('');
 
 			args.push(...targets);
+			// ensure that user provided flags are appended last (allow use of -args ...)
+			args.push(...testconfig.flags);
 
 			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
