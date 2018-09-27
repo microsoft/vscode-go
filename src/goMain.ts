@@ -367,8 +367,29 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.show.commands', () => {
-		vscode.window.showQuickPick(getExtensionCommands().map(x => x.title)).then(cmd => {
-			let selectedCmd = getExtensionCommands().find(x => x.title === cmd);
+		let extCommands = getExtensionCommands()
+		extCommands.push({
+			command : 'editor.action.goToTypeDefinition',
+			title : 'Go : Go to Type Definition',
+			description : 'Go : invokes the GoDefinitionProvider'
+		})
+		extCommands.push({
+			command : 'editor.action.goToImplementation',
+			title : 'Go : Go to Implementation',
+			description : 'Go : invokes the GoImplementationProvider'
+		})
+		extCommands.push({
+			command : 'workbench.action.gotoSymbol',
+			title : 'Go : Go to Symbol in Document',
+			description : 'Go : invokes the GoDocumentSymbolProvider'
+		})
+		extCommands.push({
+			command : 'workbench.action.showAllSymbols',
+			title : 'Go : Go to Symbol in Workspace',
+			description : 'Go : invokes the GoWorkspaceSymbolProvider'
+		})
+		vscode.window.showQuickPick(extCommands.map(x => x.title)).then(cmd => {
+			let selectedCmd = extCommands.find(x => x.title === cmd);
 			if (selectedCmd) {
 				vscode.commands.executeCommand(selectedCmd.command);
 			}
