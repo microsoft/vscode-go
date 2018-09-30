@@ -4,7 +4,7 @@ import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticEr
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
 /**
- * Runs linter in the current package or workspace.
+ * Runs linter on the current file, package or workspace.
  */
 export function lintCode(lintWorkspace?: boolean) {
 	let editor = vscode.window.activeTextEditor;
@@ -40,9 +40,8 @@ export function lintCode(lintWorkspace?: boolean) {
  *
  * @param fileUri Document uri.
  * @param goConfig Configuration for the Go extension.
- * @param lintWorkspace If true runs linter in all workspace.
  */
-export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?: boolean): Promise<ICheckResult[]> {
+export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
 	epoch++;
 	let closureEpoch = epoch;
 	if (tokenSource) {
@@ -54,7 +53,15 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	tokenSource = new vscode.CancellationTokenSource();
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
-	const cwd = (lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+
+	const lintFile = goConfig['lintOnSave'] === 'file';
+	const lintPackage = goConfig['lintOnSave'] === 'package';
+	const lintWorkspace = goConfig['lintOnSave'] === 'workspace';
+	
+	const cwd = (lintWorkspace && currentWorkspace) ? currentWorkspace : 
+		(lintFile) ? fileUri.fsPath :
+		(lintPackage) ? path.dirname(fileUri.fsPath) : path.dirname(fileUri.fsPath);
+
 	if (!path.isAbsolute(cwd)) {
 		return Promise.resolve([]);
 	}
