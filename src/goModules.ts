@@ -22,7 +22,7 @@ function containsModFile(folderPath: string): Promise<boolean> {
 	});
 }
 const workspaceModCache = new Map<string, boolean>();
-const packageModCache = new Map<string, string>();
+const packageModCache = new Map<string, boolean>();
 
 export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 	return getGoVersion().then(value => {
@@ -39,7 +39,14 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 			return true;
 		}
 		return containsModFile(pkgPath).then(result => {
-			workspaceModCache.set(pkgPath, result);
+			packageModCache.set(pkgPath, result);
+			if (result) {
+				const goConfig = vscode.workspace.getConfiguration('go', fileuri);
+				if (goConfig['inferGopath'] === true) {
+					goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder);
+					alertDisablingInferGopath();
+				}
+			}
 			return result;
 		});
 	});
@@ -49,11 +56,28 @@ export function updateWorkspaceModCache() {
 	if (!vscode.workspace.workspaceFolders) {
 		return;
 	}
-	vscode.workspace.workspaceFolders.forEach(folder => {
-		containsModFile(folder.uri.fragment).then(result => {
+	let inferGopathUpdated = false;
+	const promises = vscode.workspace.workspaceFolders.map(folder => {
+		return containsModFile(folder.uri.fragment).then(result => {
 			workspaceModCache.set(folder.uri.fsPath, result);
+			if (result) {
+				const goConfig = vscode.workspace.getConfiguration('go', folder.uri);
+				if (goConfig['inferGopath'] === true) {
+					return goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder)
+						.then(() => inferGopathUpdated = true);
+				}
+			}
 		});
 	});
+	Promise.all(promises).then(() => {
+		if (inferGopathUpdated) {
+			alertDisablingInferGopath();
+		}
+	});
+}
+
+function alertDisablingInferGopath() {
+	vscode.window.showInformationMessage('The "inferGopath" setting is disabled for this workspace because Go modules are being used.');
 }
 
 const promptedToolsForCurrentSession = new Set<string>();
