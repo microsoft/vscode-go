@@ -396,6 +396,7 @@ class Delve {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
 
+			verbose(`Current working directory: ${dlvCwd}`);
 			verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
 
 			this.debugProcess = spawn(dlv, dlvArgs, {
