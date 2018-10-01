@@ -14,6 +14,7 @@ import { outputChannel } from './goStatus';
 import { NearestNeighborDict, Node } from './avlTree';
 import { getCurrentPackage } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { lineCommentFirstWordRegex } from './goSuggest';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -328,14 +329,51 @@ export function disposeTelemetryReporter(): Promise<any> {
 }
 
 export function isPositionInString(document: vscode.TextDocument, position: vscode.Position): boolean {
+	const inSingleLineString = isInSingleLineString(document, position);
+
+	let oddBackticks = false;
+	// If not in a double quoted string
+	if (!inSingleLineString) {
+		const doc = document.getText();
+		let backTickCount = (doc.match(/`/g) || []).length;
+
+		if (backTickCount > 0) {
+			let backTickCounter = 0;
+			let inMultiLineComment = false;
+			// Check for backticks in every line leading up to the current one
+			for (let i = 0; i < position.line; i++) {
+				let lineTillCurrentPosition = document.lineAt(i).text.substr(0, position.character);
+				for (let j = 0; j < document.lineAt(i).text.length; j++) {
+					if (isInSingleLineString(document, new vscode.Position(i, j)) || lineCommentFirstWordRegex.test(lineTillCurrentPosition)) continue;
+					const currChar = document.lineAt(i).text.charAt(j);
+					const nextChar = document.lineAt(i).text.charAt(j + 1);
+					if (currChar + nextChar === '/*' && backTickCounter % 2 === 0) inMultiLineComment = true;
+					else if (currChar + nextChar === '*/' && backTickCounter % 2 === 0) inMultiLineComment = false;
+					else if (!inMultiLineComment && currChar === '`') backTickCounter++;
+				}
+			}
+
+			// Then check for backticks in the current line
+			for (let i = 0; i < position.character; i++) {
+				if (document.lineAt(position.line).text.charAt(i) === '`') backTickCounter++;
+			}
+
+			// If we are in a raw string, there must be an odd amount of backticks before the current character
+			oddBackticks = (backTickCounter % 2) === 1;
+		}
+	}
+
+	return inSingleLineString || oddBackticks;
+}
+
+function isInSingleLineString(document: vscode.TextDocument, position: vscode.Position): boolean {
 	let lineText = document.lineAt(position.line).text;
 	let lineTillCurrentPosition = lineText.substr(0, position.character);
 
 	// Count the number of double quotes in the line till current position. Ignore escaped double quotes
-	let doubleQuotesCnt = (lineTillCurrentPosition.match(/\"/g) || []).length;
 	let escapedDoubleQuotesCnt = (lineTillCurrentPosition.match(/\\\"/g) || []).length;
+	let doubleQuotesCnt = (lineTillCurrentPosition.match(/\"/g) || []).length - escapedDoubleQuotesCnt;
 
-	doubleQuotesCnt -= escapedDoubleQuotesCnt;
 	return doubleQuotesCnt % 2 === 1;
 }
 

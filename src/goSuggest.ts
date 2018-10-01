@@ -53,7 +53,7 @@ class ExtendedCompletionItem extends vscode.CompletionItem {
 	fileName: string;
 }
 
-const lineCommentFirstWordRegex = /^\s*\/\/\s+[\S]*$/;
+export const lineCommentFirstWordRegex = /^\s*\/\/\s+[\S]*$/;
 const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 const gocodeNoSupportForgbMsgKey = 'dontshowNoSupportForgb';
 
