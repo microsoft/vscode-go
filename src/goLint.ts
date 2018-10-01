@@ -24,7 +24,7 @@ export function lintCode(lintWorkspace?: boolean) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Linting...';
 
-	goLint(documentUri, goConfig, lintWorkspace)
+	goLint(documentUri, goConfig)
 		.then(warnings => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
 			diagnosticsStatusBarItem.hide();
@@ -111,6 +111,8 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		args.push('./...');
 	}
 
+	console.log(cwd);
+	
 	running = true;
 	const lintPromise = runTool(
 		args,
