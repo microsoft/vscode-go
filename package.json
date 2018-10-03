@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.90-beta.9",
+  "version": "0.6.90-beta.10",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -488,10 +488,14 @@
                   "maxStructFields": -1
                 }
               },
-              "useApiV1": {
-                "type": "boolean",
-                "description": "If true, the v1 of delve apis will be used, else v2 will be used",
-                "default": false
+              "apiVersion": {
+                "type": "number",
+                "enum": [
+                  1,
+                  2
+                ],
+                "description": "Delve Api Version to use. Default value is 2.",
+                "default": 2
               }
             }
           }
@@ -1150,10 +1154,14 @@
                 "maxStructFields": -1
               }
             },
-            "useApiV1": {
-              "type": "boolean",
-              "description": "If true, the v1 of delve apis will be used, else v2 will be used",
-              "default": false
+            "apiVersion": {
+              "type": "number",
+              "enum": [
+                1,
+                2
+              ],
+              "description": "Delve Api Version to use. Default value is 2.",
+              "default": 2
             }
           },
           "scope": "resource"

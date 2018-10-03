@@ -208,7 +208,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	/** Delve LoadConfig parameters **/
 	dlvLoadConfig?: LoadConfig;
 	/** Delve Version */
-	useApiV1: boolean;
+	apiVersion: number;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -261,7 +261,12 @@ class Delve {
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = normalizePath(program);
 		this.remotePath = remotePath;
-		this.isApiV1 = typeof launchArgs.useApiV1 === 'boolean' ? launchArgs.useApiV1 : false;
+		this.isApiV1 = false;
+		if (typeof launchArgs.apiVersion === 'number') {
+			this.isApiV1 = launchArgs.apiVersion === 1;
+		} else if (typeof launchArgs['useApiV1'] === 'boolean') {
+			this.isApiV1 = launchArgs['useApiV1'];
+		}
 		let mode = launchArgs.mode;
 		let dlvCwd = dirname(program);
 		let isProgramDirectory = false;
@@ -609,7 +614,7 @@ class GoDebugSession extends DebugSession {
 					}
 					let clientVersion = this.delve.isApiV1 ? 1 : 2;
 					if (out.APIVersion !== clientVersion) {
-						const errorMessage = `The remote server is running on delve v${out.APIVersion} API and the client is running v${clientVersion} API. Change the version used on the client by using the setting "useApiV1" to true or false as appropriate.`;
+						const errorMessage = `The remote server is running on delve v${out.APIVersion} API and the client is running v${clientVersion} API. Change the version used on the client by using the setting "apiVersion" to true or false as appropriate.`;
 						logError(errorMessage);
 						return this.sendErrorResponse(response,
 							3000,

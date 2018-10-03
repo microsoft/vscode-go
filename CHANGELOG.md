@@ -31,8 +31,9 @@
     * Use random port instead of hard-coded 2345 when running delve. Fixes [Bug 1906](https://github.com/Microsoft/vscode-go/issues/1906)
     * Fix issue where tests using the check package cannot be run using the `Go: Test File` command. [Bug 1911](https://github.com/Microsoft/vscode-go/issues/1911)
     * Disable module support when installing the Go tools. Fixes [Bug 1919](https://github.com/Microsoft/vscode-go/issues/1919)
-    * Use version 2 of delve apis by default instead of version 1. [Feature Request 1876](https://github.com/Microsoft/vscode-go/issues/1876)
+    * Use version 2 of delve apis by default instead of version 1. Replace existing `useApiV1` setting/configuration with `apiVersion`. [Feature Request 1876](https://github.com/Microsoft/vscode-go/issues/1876)
     * Prompt to update `gogetdoc` and `gopkgs` if using Go modules.
+    * Disable `go.inferGopath` in workspace settings when using Go modules automatically.
     * Add support for the below features when using Go modules
         * `Go: Add Import` command that gives you a list of importable packages to add to the import block of current file
         * `Go: Browse Packages` command that lets you browse available packages and their files
