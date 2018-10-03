@@ -1,4 +1,4 @@
-import { getBinPath, getToolsEnvVars, getGoVersion } from './util';
+import { getBinPath, getGoVersion, sendTelemetryEvent } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
@@ -36,6 +36,12 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 		}
 		const pkgPath = path.dirname(fileuri.fsPath);
 		if (packageModCache.get(pkgPath)) {
+			if (workspaceFolder && pkgPath === workspaceFolder.uri.fsPath) {
+				workspaceModCache.set(workspaceFolder.uri.fsPath, true);
+				logModuleUsage(true);
+			} else {
+				logModuleUsage(false);
+			}
 			return true;
 		}
 		return containsModFile(pkgPath).then(result => {
@@ -61,6 +67,7 @@ export function updateWorkspaceModCache() {
 		return containsModFile(folder.uri.fragment).then(result => {
 			workspaceModCache.set(folder.uri.fsPath, result);
 			if (result) {
+				logModuleUsage(true);
 				const goConfig = vscode.workspace.getConfiguration('go', folder.uri);
 				if (goConfig['inferGopath'] === true) {
 					return goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder)
@@ -78,6 +85,17 @@ export function updateWorkspaceModCache() {
 
 function alertDisablingInferGopath() {
 	vscode.window.showInformationMessage('The "inferGopath" setting is disabled for this workspace because Go modules are being used.');
+}
+
+function logModuleUsage(atroot: boolean) {
+	/* __GDPR__
+		"modules" : {
+			"atroot" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+		}
+	*/
+	sendTelemetryEvent('modules', {
+		atroot: atroot ? 'true' : 'false'
+	});
 }
 
 const promptedToolsForCurrentSession = new Set<string>();
