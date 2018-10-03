@@ -1,4 +1,4 @@
-## 0.6.90 - Coming Soon
+## 0.6.90 - 3rd October, 2018
 
 * [Rebecca Stambler @stamblerre](https://github.com/stamblerre)
     * Use of forks for the tools `godef` and `gocode` to provide `Go to definition` and `Auto-completion` features respectively when using Go modules. The binaries installed from these forks will have the suffix `-gomod` and will only be used when you use Go modules.
