@@ -107,6 +107,10 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		args.push('./...');
 	}
 	
+	if (lintFile) {
+		args.push(fileUri)
+	}
+	
 	running = true;
 	const lintPromise = runTool(
 		args,
