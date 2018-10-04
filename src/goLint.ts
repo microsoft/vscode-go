@@ -6,7 +6,7 @@ import { diagnosticsStatusBarItem } from './goStatus';
 /**
  * Runs linter on the current file, package or workspace.
  */
-export function lintCode(lintWorkspace?: boolean) {
+export function lintCode(lintWorkspace?: boolean, lintFile?: boolean) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor && !lintWorkspace) {
 		vscode.window.showInformationMessage('No editor is active, cannot find current package to lint');
@@ -24,7 +24,7 @@ export function lintCode(lintWorkspace?: boolean) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Linting...';
 
-	goLint(documentUri, goConfig)
+	goLint(documentUri, goConfig, lintWorkspace, lintFile)
 		.then(warnings => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
 			diagnosticsStatusBarItem.hide();
@@ -40,8 +40,10 @@ export function lintCode(lintWorkspace?: boolean) {
  *
  * @param fileUri Document uri.
  * @param goConfig Configuration for the Go extension.
+ * @param lintWorkspace If true, runs linter in the entire workspace.
+ * @param lintFile If true, runs linter on a single file.
  */
-export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?:boolean, lintFile?: boolean): Promise<ICheckResult[]> {
 	epoch++;
 	let closureEpoch = epoch;
 	if (tokenSource) {
@@ -54,13 +56,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
 
-	const lintFile = goConfig['lintOnSave'] === 'file';
-	const lintPackage = goConfig['lintOnSave'] === 'package';
-	const lintWorkspace = goConfig['lintOnSave'] === 'workspace';
-	
-	const cwd = (lintWorkspace && currentWorkspace) ? currentWorkspace : 
-		(lintFile) ? fileUri.fsPath :
-		(lintPackage) ? path.dirname(fileUri.fsPath) : path.dirname(fileUri.fsPath);
+	const cwd = (lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
 
 	if (!path.isAbsolute(cwd)) {
 		return Promise.resolve([]);
@@ -110,8 +106,6 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	if (lintWorkspace && currentWorkspace) {
 		args.push('./...');
 	}
-
-	console.log(cwd);
 	
 	running = true;
 	const lintPromise = runTool(
