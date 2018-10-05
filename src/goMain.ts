@@ -22,8 +22,7 @@ import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
 import { updateGoPathGoRootFromConfig, offerToInstallTools, promptForMissingTool } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
-import { initGoCover } from './goCover';
+import { initCoverageDecorators, toggleCoverageCurrentPackage, updateCodeCoverage, removeCodeCoverageOnFileChange, updateCoverageDecorator } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
 import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
@@ -171,7 +170,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 	});
 
-	initGoCover(ctx);
+	initCoverageDecorators(ctx);
 
 	let testCodeLensProvider = new GoRunTestCodeLensProvider();
 	let referencesCodeLensProvider = new GoReferencesCodeLensProvider();
@@ -186,10 +185,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(errorDiagnosticCollection);
 	warningDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-warning');
 	ctx.subscriptions.push(warningDiagnosticCollection);
-	vscode.workspace.onDidChangeTextDocument(removeCodeCoverage, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
-	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
+	vscode.window.onDidChangeActiveTextEditor(updateCodeCoverage, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
 	vscode.workspace.onDidChangeWorkspaceFolders(e => {
@@ -346,6 +345,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 		if (e.affectsConfiguration('go.docsTool')) {
 			checkToolExists(updatedGoConfig['docsTool']);
+		}
+		if (e.affectsConfiguration('go.coverageDecorator')) {
+			updateCoverageDecorator(updatedGoConfig['coverageDecorator']);
 		}
 	}));
 

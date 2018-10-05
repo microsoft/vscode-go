@@ -7,8 +7,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import os = require('os');
-import { getCoverage } from './goCover';
+import { extractCoverageData } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest } from './testUtils';
 import { ICheckResult, getBinPath, getTempFilePath } from './util';
@@ -116,7 +115,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 				return [];
 			}
 			// FIXME: it's not obvious that tmpCoverPath comes from runTest()
-			return getCoverage(tmpCoverPath);
+			return extractCoverageData(tmpCoverPath);
 		});
 	}
 
