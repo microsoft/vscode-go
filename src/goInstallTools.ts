@@ -80,16 +80,16 @@ function getTools(goVersion: SemVersion): string[] {
 		'dlv'
 	];
 
-	// gocode-gomod needed in go 1.11
-	if (goVersion && goVersion.major === 1 && goVersion.minor === 11) {
+	// gocode-gomod needed in go 1.11 & higher
+	if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
 		tools.push('gocode-gomod');
 	}
 
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools.push('godef');
-		// godef-gomod needed in go 1.11
-		if (goVersion && goVersion.major === 1 && goVersion.minor === 11) {
+		// godef-gomod needed in go 1.11 & higher
+		if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
 			tools.push('godef-gomod');
 		}
 		tools.push('godoc');
