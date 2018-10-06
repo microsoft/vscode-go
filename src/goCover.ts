@@ -55,14 +55,14 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 	}
 
 	// Update the decorators
-	updateCoverageDecorator(goConfig.get('coverageDecorator'));
+	updateCodeCoverageDecorators(goConfig.get('coverageDecorator'));
 }
 
 /**
  * Updates the decorators used for Code coverage.
  * @param coverageDecoratorConfig The coverage decorated as configured by the user
  */
-export function updateCoverageDecorator(coverageDecoratorConfig: any) {
+export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 	// These defaults are chosen to be distinguishable in nearly any color scheme (even Red) 
 	// as well as by people who have difficulties with color perception.
 	let coverageDecoratorData = {
@@ -125,10 +125,10 @@ function clearCoverage() {
 }
 
 /**
- * Extract the coverage data from the given cover profile & apply then on the files in the open editors.
+ * Extract the coverage data from the given cover profile & apply them on the files in the open editors.
  * @param coverProfilePath Path to the file that has the cover profile data
  */
-export function extractCoverageData(coverProfilePath: string): Promise<void> {
+export function applyCodeCoverageToAllEditors(coverProfilePath: string): Promise<void> {
 	return new Promise((resolve, reject) => {
 		try {
 			// Clear existing coverage files
@@ -146,7 +146,7 @@ export function extractCoverageData(coverProfilePath: string): Promise<void> {
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
 
-				let coverage = getCoverageFile(fileRange[1]);
+				let coverage = getCoverageData(fileRange[1]);
 				let range = new vscode.Range(
 					// Start Line converted to zero based
 					parseInt(fileRange[2]) - 1,
@@ -165,10 +165,10 @@ export function extractCoverageData(coverProfilePath: string): Promise<void> {
 				else {
 					coverage.uncoveredRange.push(range);
 				}
-				setCoverageFile(fileRange[1], coverage);
+				setCoverageData(fileRange[1], coverage);
 			});
 			lines.on('close', () => {
-				vscode.window.visibleTextEditors.forEach(updateCodeCoverage);
+				vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
 				resolve();
 			});
 		} catch (e) {
@@ -178,7 +178,11 @@ export function extractCoverageData(coverProfilePath: string): Promise<void> {
 	});
 }
 
-function getCoverageFile(filePath: string): CoverageData {
+/**
+ * Get the object that holds the coverage data for given file path.
+ * @param filePath 
+ */
+function getCoverageData(filePath: string): CoverageData {
 	if (filePath.startsWith('_')) {
 		filePath = filePath.substr(1);
 	}
@@ -191,7 +195,12 @@ function getCoverageFile(filePath: string): CoverageData {
 	return coverageFiles[filePath] || { coveredRange: [], uncoveredRange: [] };
 }
 
-function setCoverageFile(filePath: string, data: CoverageData) {
+/**
+ * Set the object that holds the coverage data for given file path.
+ * @param filePath 
+ * @param data 
+ */
+function setCoverageData(filePath: string, data: CoverageData) {
 	if (filePath.startsWith('_')) {
 		filePath = filePath.substr(1);
 	}
@@ -208,7 +217,7 @@ function setCoverageFile(filePath: string, data: CoverageData) {
  * Apply the code coverage highlighting in given editor
  * @param editor 
  */
-export function updateCodeCoverage(editor: vscode.TextEditor) {
+export function applyCodeCoverage(editor: vscode.TextEditor) {
 	if (!editor) {
 		return;
 	}
@@ -278,6 +287,6 @@ export function toggleCoverageCurrentPackage() {
 			showTestOutput();
 			return [];
 		}
-		return extractCoverageData(tmpCoverPath);
+		return applyCodeCoverageToAllEditors(tmpCoverPath);
 	});
 }

@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { extractCoverageData } from './goCover';
+import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest } from './testUtils';
 import { ICheckResult, getBinPath, getTempFilePath } from './util';
@@ -115,7 +115,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 				return [];
 			}
 			// FIXME: it's not obvious that tmpCoverPath comes from runTest()
-			return extractCoverageData(tmpCoverPath);
+			return applyCodeCoverageToAllEditors(tmpCoverPath);
 		});
 	}
 
