@@ -10,7 +10,7 @@ import vscode = require('vscode');
 import os = require('os');
 import { getTempFilePath } from './util';
 import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
-import { getCoverage } from './goCover';
+import { applyCodeCoverageToAllEditors } from './goCover';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
 // the last test to be easily re-executed.
@@ -85,7 +85,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 		});
 	}).then(success => {
 		if (success && tmpCoverPath) {
-			return getCoverage(tmpCoverPath);
+			return applyCodeCoverageToAllEditors(tmpCoverPath);
 		}
 	}, err => {
 		console.error(err);
@@ -117,7 +117,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBe
 
 	goTest(testConfig).then(success => {
 		if (success && tmpCoverPath) {
-			return getCoverage(tmpCoverPath);
+			return applyCodeCoverageToAllEditors(tmpCoverPath);
 		}
 	}, err => {
 		console.log(err);
