@@ -9,7 +9,8 @@ import path = require('path');
 import fs = require('fs');
 import rl = require('readline');
 import { getTempFilePath } from './util';
-import { showTestOutput, goTest } from './testUtils';
+import { showTestOutput, goTest, TestConfig } from './testUtils';
+import { isModSupported } from './goModules';
 
 let gutterSvgs: { [key: string]: string };
 let decorators: {
@@ -135,7 +136,7 @@ function clearCoverage() {
  * Extract the coverage data from the given cover profile & apply them on the files in the open editors.
  * @param coverProfilePath Path to the file that has the cover profile data
  */
-export function applyCodeCoverageToAllEditors(coverProfilePath: string): Promise<void> {
+export function applyCodeCoverageToAllEditors(coverProfilePath: string, currentPackage?: string): Promise<void> {
 	return new Promise((resolve, reject) => {
 		try {
 			// Clear existing coverage files
@@ -152,8 +153,15 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string): Promise
 				// The first line will be "mode: set" which will be ignored
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
+				let filePath = fileRange[1];
+				if (currentPackage) {
+					const index = filePath.indexOf(currentPackage);
+					if (index > -1) {
+						filePath = filePath.substr(currentPackage.length);
+					}
+				}
 
-				let coverage = getCoverageData(fileRange[1]);
+				let coverage = getCoverageData(filePath);
 				let range = new vscode.Range(
 					// Start Line converted to zero based
 					parseInt(fileRange[2]) - 1,
@@ -172,7 +180,7 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string): Promise
 				else {
 					coverage.uncoveredRange.push(range);
 				}
-				setCoverageData(fileRange[1], coverage);
+				setCoverageData(filePath, coverage);
 			});
 			lines.on('close', () => {
 				vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
@@ -285,16 +293,20 @@ export function toggleCoverageCurrentPackage() {
 	let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
 	let tmpCoverPath = getTempFilePath('go-code-cover');
 	let args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
-	return goTest({
+	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,
 		flags: args,
 		background: true
-	}).then(success => {
-		if (!success) {
-			showTestOutput();
-			return [];
-		}
-		return applyCodeCoverageToAllEditors(tmpCoverPath);
+	}
+	return isModSupported(editor.document.uri).then(isMod => {
+		testConfig.isMod = isMod;
+		return goTest(testConfig).then(success => {
+			if (!success) {
+				showTestOutput();
+				return [];
+			}
+			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.currentPackage);
+		});
 	});
 }
