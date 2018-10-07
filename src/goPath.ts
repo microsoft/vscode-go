@@ -179,7 +179,20 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 			}
 		}
 	}
+	// use current root if the package is using go modules outside of GOPATH
+	if (isGoModule(currentFileDirPath)) {
+		currentWorkspace = currentFileDirPath;
+	}
 	return currentWorkspace;
+}
+
+export function isGoModule(modulePath: string): Boolean {
+	try {
+		return fs.statSync(path.join(modulePath, 'go.mod')).isFile();
+	}
+	catch (e) {
+		return false;
+	}
 }
 
 // Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026

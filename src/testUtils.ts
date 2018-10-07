@@ -7,7 +7,7 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
-import { parseEnvFile, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { parseEnvFile, getCurrentGoWorkspaceFromGOPATH, isGoModule } from './goPath';
 import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath, getBinPath } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
@@ -229,7 +229,8 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				const result = line.match(packageResultLineRE);
 				if (result && currentGoWorkspace) {
 					const packageNameArr = result[2].split('/');
-					const baseDir = path.join(currentGoWorkspace, ...packageNameArr);
+
+					const baseDir = isGoModule(currentGoWorkspace) ? currentGoWorkspace : path.join(currentGoWorkspace, ...packageNameArr);
 					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
 					testResultLines.splice(0);
 				}

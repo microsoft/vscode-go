@@ -126,6 +126,9 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
 	let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
 	let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+	if (importPath === '') {
+		importPath = currentGoWorkspace;
+	}
 	running = true;
 	return runTool(
 		buildArgs.concat('-o', tmpPath, importPath),
