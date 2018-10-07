@@ -1,27 +1,37 @@
+## 0.6.91 - Coming Soon
+
+* [Mathias Griffe (@Mathiasgr)](https://github.com/MathiasGr)
+    * Fix the regression introduced in the previous update where the testify suites arent being indentified as tests by the codelens. [Bug 1968](https://github.com/Microsoft/vscode-go/issues/1968) fixed with [PR 1969](https://github.com/Microsoft/vscode-go/pull/1969)
+    
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix the bug where code coverage is not displayed when using Go modules. [Bug 1927](https://github.com/Microsoft/vscode-go/issues/1927)
+    * Dont display the `Analysis Tools Missing` warning for the forks of `godef` and `gocode`. They are needed only when using Go modules and there are prompts to install them when the extension detects the use of modules.
+    
+
 ## 0.6.90 - 3rd October, 2018
 
-* [Rebecca Stambler @stamblerre](https://github.com/stamblerre)
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
     * Use of forks for the tools `godef` and `gocode` to provide `Go to definition` and `Auto-completion` features respectively when using Go modules. The binaries installed from these forks will have the suffix `-gomod` and will only be used when you use Go modules.
 
-* [Bianca Rosa de Mendonça @biancarosa](https://github.com/biancarosa)
+* [Bianca Rosa de Mendonça (@biancarosa)](https://github.com/biancarosa)
     * New commands `Go: Benchmark File`, `Go: Benchmark Package` and codelens to run all the benchmarks in current file & package respectively. [Feature Request 1522](https://github.com/Microsoft/vscode-go/issues/1522) with [PR 1898](https://github.com/Microsoft/vscode-go/pull/1898) & [PR 1899](https://github.com/Microsoft/vscode-go/pull/1899)
 
-* [Jeffrey Bean @jeffbean](https://github.com/jeffbean)
+* [Jeffrey Bean (@jeffbean)](https://github.com/jeffbean)
     * New setting `go.generateTestsFlags` to provide flags for the `gotests` tool when generating tests. [PR 1841](https://github.com/Microsoft/vscode-go/pull/1841)
     
-* [Johan Lejdung @johan-lejdung](https://github.com/johan-lejdung)
+* [Johan Lejdung (@johan-lejdung)](https://github.com/johan-lejdung)
     * New setting `go.testTags` to be used for running tests. This way, you can use the existing `go.buildTags` for compiling and a different set of tags for running tests. [Feature Request 1842](https://github.com/Microsoft/vscode-go/issues/1842) implemented with [PR 1877](https://github.com/Microsoft/vscode-go/pull/1877)
 
-* [Ryan Gurney @ragurney](https://github.com/ragurney)
+* [Ryan Gurney (@ragurney)](https://github.com/ragurney)
     * Skip the blank identifiers in file outline. [Bug 1889](https://github.com/Microsoft/vscode-go/issues/1889) fixed with [PR 1893](https://github.com/Microsoft/vscode-go/pull/1893)
 
-* [Benas Svipas @svipben](https://github.com/svipben)
+* [Benas Svipas (@svipben)](https://github.com/svipben)
     * Fix accessibility issues with the `Analysis Tools Missing` button in the status bar. [PR 1922](https://github.com/Microsoft/vscode-go/pull/1922)
 
-* [Alec Thomas @alecthomas](https://github.com/alecthomas)
+* [Alec Thomas (@alecthomas)](https://github.com/alecthomas)
     * Improve snippets for `iferr` and `forr` i.e  "if err ..." the "for range". [Feature Request 1920](https://github.com/Microsoft/vscode-go/issues/1920) implemented with [PR 1924](https://github.com/Microsoft/vscode-go/pull/1924)
 
-* [Charles Kenney @Charliekenney23](https://github.com/Charliekenney23)
+* [Charles Kenney (@Charliekenney23)](https://github.com/Charliekenney23)
     * Create new tmp directory for each session to avoid insecure use of the temporary files created by the extension. Fixes [Bug 1905](https://github.com/Microsoft/vscode-go/issues/1905) with [PR 1912](https://github.com/Microsoft/vscode-go/pull/1912)
 
 * [Shreyas Karnik (@shreyu86)](https://github.com/shreyu86)
