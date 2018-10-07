@@ -11,6 +11,7 @@ import os = require('os');
 import { getTempFilePath } from './util';
 import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { applyCodeCoverageToAllEditors } from './goCover';
+import { isModSupported } from './goModules';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
 // the last test to be easily re-executed.
@@ -81,13 +82,16 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 			// Remember this config as the last executed test.
 			lastTestConfig = testConfig;
 
-			return goTest(testConfig);
+			return isModSupported(editor.document.uri).then(isMod => {
+				testConfig.isMod = isMod;
+				return goTest(testConfig).then(success => {
+					if (success && tmpCoverPath) {
+						return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.currentPackage);
+					}
+				});
+			});
 		});
-	}).then(success => {
-		if (success && tmpCoverPath) {
-			return applyCodeCoverageToAllEditors(tmpCoverPath);
-		}
-	}, err => {
+	}).then(null, err => {
 		console.error(err);
 	});
 }
@@ -115,12 +119,15 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBe
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
 
-	goTest(testConfig).then(success => {
-		if (success && tmpCoverPath) {
-			return applyCodeCoverageToAllEditors(tmpCoverPath);
-		}
-	}, err => {
-		console.log(err);
+	isModSupported(editor.document.uri).then(isMod => {
+		testConfig.isMod = isMod;
+		return goTest(testConfig).then(success => {
+			if (success && tmpCoverPath) {
+				return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.currentPackage);
+			}
+		}, err => {
+			console.log(err);
+		});
 	});
 }
 
@@ -183,7 +190,10 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBench
 			// Remember this config as the last executed test.
 			lastTestConfig = testConfig;
 
-			return goTest(testConfig);
+			return isModSupported(editor.document.uri).then(isMod => {
+				testConfig.isMod = isMod;
+				return goTest(testConfig);
+			});
 		});
 	}).then(null, err => {
 		console.error(err);

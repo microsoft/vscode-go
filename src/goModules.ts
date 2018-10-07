@@ -1,4 +1,4 @@
-import { getBinPath, getGoVersion, sendTelemetryEvent } from './util';
+import { getBinPath, getGoVersion, sendTelemetryEvent, getToolsEnvVars } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
@@ -129,4 +129,36 @@ export function promptToUpdateToolForModules(tool: string, promptMsg: string) {
 					break;
 			}
 		});
+}
+
+const folderToPackageMapping: { [key: string]: string } = {};
+export function getCurrentPackage(cwd: string): Promise<string> {
+	if (folderToPackageMapping[cwd]) {
+		return Promise.resolve(folderToPackageMapping[cwd]);
+	}
+
+	let goRuntimePath = getBinPath('go');
+
+	if (!goRuntimePath) {
+		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		return Promise.resolve(null);
+	}
+	return new Promise<string>(resolve => {
+		let childProcess = cp.spawn(goRuntimePath, ['list'], { cwd, env: getToolsEnvVars() });
+		let chunks = [];
+		childProcess.stdout.on('data', (stdout) => {
+			chunks.push(stdout);
+		});
+
+		childProcess.on('close', () => {
+			// Ignore lines that are empty or those that have logs about updating the module cache
+			let pkgs = chunks.join('').toString().split('\n').filter(line => line && line.indexOf(' ') === -1);
+			if (pkgs.length !== 1) {
+				resolve();
+				return;
+			}
+			folderToPackageMapping[cwd] = pkgs[0];
+			resolve(pkgs[0]);
+		});
+	});
 }
