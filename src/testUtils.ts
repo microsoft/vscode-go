@@ -24,7 +24,7 @@ statusBarItem.text = '$(x) Cancel Running Tests';
  */
 const runningTestProcesses: cp.ChildProcess[] = [];
 
-const testFuncRegex = /^Test.+|Example.+/;
+const testFuncRegex = /^Test.+|^Example.+/;
 const testMethodRegex = /^\(([^)]+)\)\.(Test.*)$/;
 const benchmarkRegex = /^Benchmark.+/;
 
@@ -108,7 +108,7 @@ export function getTestFunctions(doc: vscode.TextDocument, token: vscode.Cancell
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
 		.then(symbols => {
-			const testify = symbols.some(sym => sym.kind === vscode.SymbolKind.Module && sym.name === 'github.com/stretchr/testify/suite');
+			const testify = symbols.some(sym => sym.kind === vscode.SymbolKind.Namespace && sym.name === '"github.com/stretchr/testify/suite"');
 			return symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
 				&& (testFuncRegex.test(sym.name) || (testify && testMethodRegex.test(sym.name)))
