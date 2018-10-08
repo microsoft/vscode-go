@@ -121,7 +121,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 				return [];
 			}
 			// FIXME: it's not obvious that tmpCoverPath comes from runTest()
-			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.currentPackage);
+			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 		});
 	}
 

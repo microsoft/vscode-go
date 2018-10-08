@@ -135,9 +135,9 @@ function clearCoverage() {
 /**
  * Extract the coverage data from the given cover profile & apply them on the files in the open editors.
  * @param coverProfilePath Path to the file that has the cover profile data
- * @param currentPackage Import path of the package for which the coverage was calculated
+ * @param packageDirPath Absolute path of the package for which the coverage was calculated
  */
-export function applyCodeCoverageToAllEditors(coverProfilePath: string, currentPackage: string): Promise<void> {
+export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageDirPath: string): Promise<void> {
 	return new Promise((resolve, reject) => {
 		try {
 			// Clear existing coverage files
@@ -154,13 +154,8 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, currentP
 				// The first line will be "mode: set" which will be ignored
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
-				let filePath = fileRange[1];
-				if (currentPackage && filePath.startsWith(currentPackage)) {
-					// Strip the import path of the package as the actual file path will not have
-					// the import path when using Go modules. Fixes https://github.com/Microsoft/vscode-go/issues/1927
-					filePath = filePath.substr(currentPackage.length);
-				}
-
+				
+				let filePath = path.join(packageDirPath, path.basename(fileRange[1]));
 				let coverage = getCoverageData(filePath);
 				let range = new vscode.Range(
 					// Start Line converted to zero based
@@ -306,7 +301,7 @@ export function toggleCoverageCurrentPackage() {
 				showTestOutput();
 				return [];
 			}
-			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.currentPackage);
+			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 		});
 	});
 }

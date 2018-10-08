@@ -86,7 +86,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 				testConfig.isMod = isMod;
 				return goTest(testConfig).then(success => {
 					if (success && tmpCoverPath) {
-						return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.currentPackage);
+						return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 					}
 				});
 			});
@@ -123,7 +123,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBe
 		testConfig.isMod = isMod;
 		return goTest(testConfig).then(success => {
 			if (success && tmpCoverPath) {
-				return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.currentPackage);
+				return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 			}
 		}, err => {
 			console.log(err);
