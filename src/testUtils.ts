@@ -199,13 +199,40 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			return Promise.resolve();
 		}
 
-		// Fetch the package name to be used in the args to enable running tests in symlinked directories
-		let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
-		if (currentGoWorkspace && !testconfig.includeSubDirectories) {
-			testconfig.currentPackage = testconfig.dir.substr(currentGoWorkspace.length + 1);
+		let currentGoWorkspace = testconfig.isMod ? '' : getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
+		let targets = targetArgs(testconfig);
+		let getCurrentPackagePromise = testconfig.isMod ? getCurrentPackage(testconfig.dir) : Promise.resolve(currentGoWorkspace ? testconfig.dir.substr(currentGoWorkspace.length + 1) : '');
+		let pkgMapPromise: Promise<Map<string, string> | null> = Promise.resolve(null);
+		if (testconfig.includeSubDirectories) {
+			if (testconfig.isMod) {
+				targets = ['./...'];
+				pkgMapPromise = getNonVendorPackages(testconfig.dir); // We need the mapping to get absolute paths for the files in the test output
+			} else {
+				pkgMapPromise = getGoVersion().then(ver => {
+					if (!ver || ver.major > 1 || (ver.major === 1 && ver.minor >= 9)) {
+						targets = ['./...'];
+						return null; // We dont need mapping, as we can derive the absolute paths from package path
+					}
+					return getNonVendorPackages(testconfig.dir).then(pkgMap => {
+						targets = Array.from(pkgMap.keys());
+						return pkgMap; // We need the individual package paths to pass to `go test`
+					});
+				});
+			}
 		}
 
-		targetArgs(testconfig).then(targets => {
+		Promise.all([pkgMapPromise, getCurrentPackagePromise]).then(([pkgMap, currentPackage]) => {
+			if (!pkgMap) {
+				pkgMap = new Map<string, string>();
+			}
+			if (!testconfig.includeSubDirectories) {
+				if (currentPackage) {
+					testconfig.currentPackage = currentPackage;
+
+					// Use the package name to be in the args to enable running tests in symlinked directories
+					targets.splice(0, 0, testconfig.currentPackage);
+				}
+			}
 			let outTargets = args.slice(0);
 			if (targets.length > 4) {
 				outTargets.push('<long arguments omitted>');
@@ -225,11 +252,15 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			const testResultLines: string[] = [];
 
 			const processTestResultLine = (line: string) => {
+				if (!testconfig.includeSubDirectories) {
+					outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir));
+					return;
+				}
 				testResultLines.push(line);
 				const result = line.match(packageResultLineRE);
-				if (result && currentGoWorkspace) {
+				if (result && (pkgMap.has(result[2]) || currentGoWorkspace)) {
 					const packageNameArr = result[2].split('/');
-					const baseDir = path.join(currentGoWorkspace, ...packageNameArr);
+					const baseDir = pkgMap.get(result[2]) || path.join(currentGoWorkspace, ...packageNameArr);
 					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
 					testResultLines.splice(0);
 				}
@@ -326,51 +357,36 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  *
  * @param testconfig Configuration for the Go extension.
  */
-function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
+function targetArgs(testconfig: TestConfig): Array<string> {
 	let params: string[] = [];
-	let getCurrentPackagePromise = testconfig.isMod ? getCurrentPackage(testconfig.dir) : Promise.resolve(testconfig.currentPackage);
 
-	return getCurrentPackagePromise.then(pkg => {
-		if (pkg && !testconfig.includeSubDirectories) {
-			params.push(pkg);
-			testconfig.currentPackage = pkg;
-		}
-
-		if (testconfig.functions) {
-			if (testconfig.isBenchmark) {
-				params = ['-bench', util.format('^%s$', testconfig.functions.join('|'))];
-			} else {
-				let testFunctions = testconfig.functions;
-				let testifyMethods = testFunctions.filter(fn => testMethodRegex.test(fn));
-				if (testifyMethods.length > 0) {
-					// filter out testify methods
-					testFunctions = testFunctions.filter(fn => !testMethodRegex.test(fn));
-					testifyMethods = testifyMethods.map(extractInstanceTestName);
-				}
-
-				// we might skip the '-run' param when running only testify methods, which will result
-				// in running all the test methods, but one of them should call testify's `suite.Run(...)`
-				// which will result in the correct thing to happen
-				if (testFunctions.length > 0) {
-					params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
-				}
-				if (testifyMethods.length > 0) {
-					params = params.concat(['-testify.m', util.format('^%s$', testifyMethods.join('|'))]);
-				}
-			}
-			return params;
-		}
-
+	if (testconfig.functions) {
 		if (testconfig.isBenchmark) {
-			params = ['-bench', '.'];
-		} else if (testconfig.includeSubDirectories) {
-			return getGoVersion().then((ver: SemVersion) => {
-				if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
-					return ['./...'];
-				}
-				return getNonVendorPackages(testconfig.dir);
-			});
+			params = ['-bench', util.format('^%s$', testconfig.functions.join('|'))];
+		} else {
+			let testFunctions = testconfig.functions;
+			let testifyMethods = testFunctions.filter(fn => testMethodRegex.test(fn));
+			if (testifyMethods.length > 0) {
+				// filter out testify methods
+				testFunctions = testFunctions.filter(fn => !testMethodRegex.test(fn));
+				testifyMethods = testifyMethods.map(extractInstanceTestName);
+			}
+
+			// we might skip the '-run' param when running only testify methods, which will result
+			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
+			// which will result in the correct thing to happen
+			if (testFunctions.length > 0) {
+				params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
+			}
+			if (testifyMethods.length > 0) {
+				params = params.concat(['-testify.m', util.format('^%s$', testifyMethods.join('|'))]);
+			}
 		}
 		return params;
-	});
+	}
+
+	if (testconfig.isBenchmark) {
+		params = ['-bench', '.'];
+	}
+	return params;
 }

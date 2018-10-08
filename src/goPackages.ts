@@ -244,34 +244,42 @@ function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: st
 	return pkgPath;
 }
 
+const pkgToFolderMappingRegex = /ImportPath: (.*) FolderPath: (.*)/;
 /**
- * Returns import paths for all packages under given folder (vendor will be excluded)
+ * Returns mapping between import paths and folder paths for all packages under given folder (vendor will be excluded)
  */
-export function getNonVendorPackages(folderPath: string): Promise<string[]> {
+export function getNonVendorPackages(folderPath: string): Promise<Map<string, string>> {
 	let goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return Promise.resolve(null);
 	}
-	return new Promise<string[]>((resolve, reject) => {
-		let childProcess = cp.spawn(goRuntimePath, ['list', './...'], { cwd: folderPath, env: getToolsEnvVars() });
+	return new Promise<Map<string, string>>((resolve, reject) => {
+		let childProcess = cp.spawn(goRuntimePath, ['list', '-f', 'ImportPath: {{.ImportPath}} FolderPath: {{.Dir}}', './...'], { cwd: folderPath, env: getToolsEnvVars() });
 		let chunks = [];
 		childProcess.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
 		});
 
 		childProcess.on('close', (status) => {
-			let pkgs = chunks.join('').toString().split('\n');
-			if (!pkgs[pkgs.length - 1]) {
-				pkgs.splice(pkgs.length - 1);
-			}
+			let lines = chunks.join('').toString().split('\n');
+
 			getGoVersion().then((ver: SemVersion) => {
-				if (ver && (ver.major > 1 || (ver.major === 1 && ver.minor >= 9))) {
-					resolve(pkgs);
-				} else {
-					resolve(pkgs.filter(pkgPath => pkgPath && !pkgPath.includes('/vendor/')));
-				}
+				const result = new Map<string, string>();
+				const vendorAlreadyExcluded = !ver || ver.major > 1 || (ver.major === 1 && ver.minor >= 9);
+				lines.forEach(line => {
+					const matches = line.match(pkgToFolderMappingRegex);
+					if (!matches || matches.length !== 3) {
+						return;
+					}
+					let [_, pkgPath, folderPath] = matches;
+					if (!pkgPath || (!vendorAlreadyExcluded && pkgPath.includes('/vendor/'))) {
+						return;
+					}
+					result.set(pkgPath, folderPath);
+				});
+				resolve(result);
 			});
 		});
 	});

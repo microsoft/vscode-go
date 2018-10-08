@@ -154,7 +154,7 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				// The first line will be "mode: set" which will be ignored
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
-				
+
 				let filePath = path.join(packageDirPath, path.basename(fileRange[1]));
 				let coverage = getCoverageData(filePath);
 				let range = new vscode.Range(

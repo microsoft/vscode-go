@@ -64,7 +64,7 @@ export function updateWorkspaceModCache() {
 	}
 	let inferGopathUpdated = false;
 	const promises = vscode.workspace.workspaceFolders.map(folder => {
-		return containsModFile(folder.uri.fragment).then(result => {
+		return containsModFile(folder.uri.fsPath).then(result => {
 			workspaceModCache.set(folder.uri.fsPath, result);
 			if (result) {
 				logModuleUsage(true);

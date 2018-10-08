@@ -137,25 +137,29 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBe
  * @param goConfig Configuration for the Go extension.
  */
 export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any) {
-	let dir = vscode.workspace.rootPath;
-	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-		dir = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
-	}
-	if (!dir) {
+	if (!vscode.workspace.workspaceFolders.length) {
 		vscode.window.showInformationMessage('No workspace is open to run tests.');
 		return;
 	}
-	const testConfig = {
+	let workspaceUri = vscode.workspace.workspaceFolders[0].uri;
+	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+		workspaceUri = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
+	}
+
+	const testConfig: TestConfig = {
 		goConfig: goConfig,
-		dir: dir,
+		dir: workspaceUri.fsPath,
 		flags: getTestFlags(goConfig, args),
 		includeSubDirectories: true
 	};
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
 
-	goTest(testConfig).then(null, err => {
-		console.error(err);
+	isModSupported(workspaceUri).then(isMod => {
+		testConfig.isMod = isMod;
+		goTest(testConfig).then(null, err => {
+			console.error(err);
+		});
 	});
 }
 

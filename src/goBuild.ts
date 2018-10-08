@@ -96,7 +96,7 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 		let count = 1;
 		return getNonVendorPackages(currentWorkspace).then(pkgs => {
 			let buildPromises = [];
-			buildPromises = pkgs.map(pkgPath => {
+			buildPromises = Array.from(pkgs.keys()).map(pkgPath => {
 				running = true;
 				return runTool(
 					buildArgs.concat('-o', `${tmpPath}-${count++}`, pkgPath),
