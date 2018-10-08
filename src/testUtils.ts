@@ -64,10 +64,6 @@ export interface TestConfig {
 	 * Whether the tests are being run in a project that uses Go modules
 	 */
 	isMod?: boolean;
-	/**
-	 * Name of the package corresponding to `dir`
-	 */
-	currentPackage?: string;
 }
 
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
@@ -225,14 +221,11 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			if (!pkgMap) {
 				pkgMap = new Map<string, string>();
 			}
-			if (!testconfig.includeSubDirectories) {
-				if (currentPackage) {
-					testconfig.currentPackage = currentPackage;
-
-					// Use the package name to be in the args to enable running tests in symlinked directories
-					targets.splice(0, 0, testconfig.currentPackage);
-				}
+			// Use the package name to be in the args to enable running tests in symlinked directories
+			if (!testconfig.includeSubDirectories && currentPackage) {
+				targets.splice(0, 0, currentPackage);
 			}
+
 			let outTargets = args.slice(0);
 			if (targets.length > 4) {
 				outTargets.push('<long arguments omitted>');
