@@ -1,10 +1,14 @@
-## 0.6.91 - Coming Soon
+## 0.6.91 - 10th October, 2018
 
 * [Mathias Griffe (@Mathiasgr)](https://github.com/MathiasGr)
     * Fix the regression introduced in the previous update where the testify suites arent being indentified as tests by the codelens. [Bug 1968](https://github.com/Microsoft/vscode-go/issues/1968) fixed with [PR 1969](https://github.com/Microsoft/vscode-go/pull/1969)
     
+* [Nuruddin Ashr (@uudashr)](https://github.com/uudashr) and [Alec Thomas (@alecthomas)](https://github.com/alecthomas) 
+    * Improve the `iferr` snippet. [PR 1980](https://github.com/Microsoft/vscode-go/pull/1980) fixes [Bug 1962](https://github.com/Microsoft/vscode-go/issues/1962)
+
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Fix the bug where code coverage is not displayed when using Go modules. [Bug 1927](https://github.com/Microsoft/vscode-go/issues/1927)
+    * Fix the bug where file paths in the test output are not clickable when using Go modules. [Bug 1973](https://github.com/Microsoft/vscode-go/issues/1973)
     * Dont display the `Analysis Tools Missing` warning for the forks of `godef` and `gocode`. They are needed only when using Go modules and there are prompts to install them when the extension detects the use of modules.
     
 
