@@ -377,8 +377,25 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.show.commands', () => {
-		vscode.window.showQuickPick(getExtensionCommands().map(x => x.title)).then(cmd => {
-			let selectedCmd = getExtensionCommands().find(x => x.title === cmd);
+		let extCommands = getExtensionCommands();
+		extCommands.push({
+			command : 'editor.action.goToDeclaration',
+			title : 'Go to Definition'
+		});
+		extCommands.push({
+			command : 'editor.action.goToImplementation',
+			title : 'Go to Implementation'
+		});
+		extCommands.push({
+			command : 'workbench.action.gotoSymbol',
+			title : 'Go to Symbol in File...'
+		});
+		extCommands.push({
+			command : 'workbench.action.showAllSymbols',
+			title : 'Go to Symbol in Workspace...'
+		});
+		vscode.window.showQuickPick(extCommands.map(x => x.title)).then(cmd => {
+			let selectedCmd = extCommands.find(x => x.title === cmd);
 			if (selectedCmd) {
 				vscode.commands.executeCommand(selectedCmd.command);
 			}
