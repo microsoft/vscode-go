@@ -97,13 +97,8 @@
 		},
 		"if err != nil": {
 			"prefix": "iferr",
-			"body": "if err != nil {\n\t${1:return}\n}",
+			"body": "if err != nil {\n\t${1:return ${2:nil, }${3:err}}\n}",
 			"description": "Snippet for if err != nil"
-		},
-		"if err != nil with return": {
-			"prefix": "iferrret",
-			"body": "if err != nil {\n\treturn ${1:nil, }err\n}",
-			"description": "Snippet for if err != nil with return"
 		},
 		"fmt.Println": {
 			"prefix": "fp",
