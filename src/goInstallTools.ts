@@ -301,6 +301,8 @@ export function installTools(missing: string[]) {
 	// Else use the Current Gopath
 	let toolsGopath = getToolsGopath() || getCurrentGoPath();
 	if (toolsGopath) {
+		let paths = toolsGopath.split(path.delimiter);
+		toolsGopath = paths[0];
 		envForTools['GOPATH'] = toolsGopath;
 	} else {
 		vscode.window.showInformationMessage('Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.', 'Open User Settings', 'Open Workspace Settings').then(selected => {
