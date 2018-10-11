@@ -43,7 +43,7 @@ export function lintCode(lintWorkspace?: boolean, lintFile?: boolean) {
  * @param lintWorkspace If true, runs linter in the entire workspace.
  * @param lintFile If true, runs linter on a single file.
  */
-export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?:boolean, lintFile?: boolean): Promise<ICheckResult[]> {
+export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?: boolean, lintFile?: boolean): Promise<ICheckResult[]> {
 	epoch++;
 	let closureEpoch = epoch;
 	if (tokenSource) {
@@ -106,11 +106,11 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	if (lintWorkspace && currentWorkspace) {
 		args.push('./...');
 	}
-	
+
 	if (lintFile) {
-		args.push(fileUri)
+		args.push(fileUri);
 	}
-	
+
 	running = true;
 	const lintPromise = runTool(
 		args,
