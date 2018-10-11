@@ -103,7 +103,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
-		runningToolsPromises.push(goLint(fileUri, goConfig, (goConfig['lintOnSave'] === 'workspace'), (goConfig['lintOnSave'] === 'file')));
+		runningToolsPromises.push(goLint(fileUri, goConfig, (goConfig['lintOnSave'])));
 	}
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
