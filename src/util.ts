@@ -348,7 +348,7 @@ export function getToolsGopath(useCache: boolean = true): string {
 
 function resolveToolsGopath(): string {
 
-	let toolsGopathForWorkspace = vscode.workspace.getConfiguration('go')['toolsGopath'] || '';
+	let toolsGopathForWorkspace = substituteEnv(vscode.workspace.getConfiguration('go')['toolsGopath'] || '');
 
 	// In case of single root, use resolvePath to resolve ~ and ${workspaceRoot}
 	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length <= 1) {
@@ -371,6 +371,12 @@ function resolveToolsGopath(): string {
 			return toolsGopath;
 		}
 	}
+}
+
+export function substituteEnv(input: string): string {
+	return input.replace(/\${env:([^}]+)}/g, function (match, capture) {
+		return process.env[capture.trim()] || '';
+	});
 }
 
 export function getBinPath(tool: string): string {
@@ -443,7 +449,7 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 		}
 	}
 
-	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
+	const configGopath = config["gopath"] ? resolvePath(substituteEnv(config["gopath"]), currentRoot) : ""
 	return inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
 }
 
