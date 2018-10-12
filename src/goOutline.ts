@@ -52,7 +52,7 @@ export interface GoOutlineOptions {
 	document?: vscode.TextDocument;
 
 	/**
-	 * Skips range information in the output. 
+	 * Skips range information in the output.
 	 * Calculating ranges is slightly expensive for large files, therefore skip it when not required.
 	 */
 	skipRanges?: boolean;

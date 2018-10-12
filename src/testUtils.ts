@@ -100,7 +100,7 @@ export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args: any)
  * @return test function symbols for the source file.
  */
 export function getTestFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-	let documentSymbolProvider = new GoDocumentSymbolProvider();
+	let documentSymbolProvider = new GoDocumentSymbolProvider(true);
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
 		.then(symbols => {
