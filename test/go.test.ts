@@ -18,7 +18,7 @@ import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
 import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
-import { documentSymbols, GoDocumentSymbolProvider } from '../src/goOutline';
+import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../src/goGenerateTests';
 import { getAllPackages } from '../src/goPackages';
@@ -555,36 +555,36 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Outline', (done) => {
 		let filePath = path.join(fixturePath, 'outlineTest', 'test.go');
-		let options = { fileName: filePath };
+		let options = { fileName: filePath, importsOption: GoOutlineImportsOptions.Include, skipRanges: true };
 		documentSymbols(options, null).then(outlines => {
-			let packageOutline = outlines[0];
-			let symbols = packageOutline.children;
-			let imports = symbols.filter(x => x.type === 'import');
-			let functions = symbols.filter(x => x.type === 'function');
+			let packageSymbols = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
+			let imports = outlines.filter(x => x.kind === vscode.SymbolKind.Namespace);
+			let functions = outlines.filter(x => x.kind === vscode.SymbolKind.Function);
 
-			assert.equal(packageOutline.type, 'package');
-			assert.equal(packageOutline.label, 'main');
-			assert.equal(imports[0].label, '"fmt"');
-			assert.equal(functions[0].label, 'print');
-			assert.equal(functions[1].label, 'main');
+			assert.equal(packageSymbols.length, 1);
+			assert.equal(packageSymbols[0].name, 'main');
+			assert.equal(imports.length, 1);
+			assert.equal(imports[0].name, '"fmt"');
+			assert.equal(functions.length, 2);
+			assert.equal(functions[0].name, 'print');
+			assert.equal(functions[1].name, 'main');
 			done();
 		}, done);
 	});
 
 	test('Test Outline imports only', (done) => {
 		let filePath = path.join(fixturePath, 'outlineTest', 'test.go');
-		let options = { fileName: filePath, importsOnly: true };
+		let options = { fileName: filePath, importsOption: GoOutlineImportsOptions.Only, skipRanges: true };
 		documentSymbols(options, null).then(outlines => {
-			let packageOutline = outlines[0];
-			let symbols = packageOutline.children;
-			let imports = symbols.filter(x => x.type === 'import');
-			let functions = symbols.filter(x => x.type === 'function');
+			let packageSymbols = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
+			let imports = outlines.filter(x => x.kind === vscode.SymbolKind.Namespace);
+			let functions = outlines.filter(x => x.kind === vscode.SymbolKind.Function);
 
-			assert.equal(packageOutline.type, 'package');
-			assert.equal(packageOutline.label, 'main');
-			assert.equal(imports[0].label, '"fmt"');
-			assert.equal(functions.length, 0);
+			assert.equal(packageSymbols.length, 1);
+			assert.equal(packageSymbols[0].name, 'main');
 			assert.equal(imports.length, 1);
+			assert.equal(imports[0].name, '"fmt"');
+			assert.equal(functions.length, 0);
 			done();
 		}, done);
 	});

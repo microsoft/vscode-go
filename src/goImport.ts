@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars } from './util';
-import { documentSymbols } from './goOutline';
+import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
 
@@ -32,13 +32,13 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
  * @returns Array of imported package paths wrapped in a promise
  */
 function getImports(document: vscode.TextDocument): Promise<string[]> {
-	let options = { fileName: document.fileName, importsOnly: true, document };
+	let options = { fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only, document, skipRanges: true };
 	return documentSymbols(options, null).then(symbols => {
-		if (!symbols || !symbols[0] || !symbols[0].children) {
+		if (!symbols || !symbols.length) {
 			return [];
 		}
-		// imports will be of the form { type: 'import', label: '"math"'}
-		let imports = symbols[0].children.filter(x => x.type === 'import').map(x => x.label.substr(1, x.label.length - 2));
+		// import names will be of the form "math", so strip the quotes in the beginning and the end
+		let imports = symbols.filter(x => x.kind === vscode.SymbolKind.Namespace).map(x => x.name.substr(1, x.name.length - 2));
 		return imports;
 	});
 }
