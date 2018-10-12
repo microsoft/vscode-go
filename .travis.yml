@@ -41,7 +41,7 @@ install:
   - go get -u -v github.com/mdempsky/gocode
   - go get -u -v github.com/rogpeppe/godef
   - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo hello; else go get -u -v github.com/zmb3/gogetdoc; fi
-  - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo cannot get golint; else go get -u -v github.com/golang/lint/golint; fi
+  - if [[ "$(go version)" =~ "go version go1.5" ]]; then echo cannot get golint; else go get -u -v golang.org/x/lint/golint; fi
   - go get -u -v github.com/ramya-rao-a/go-outline
   - go get -u -v github.com/sqs/goreturns
   - go get -u -v golang.org/x/tools/cmd/gorename
