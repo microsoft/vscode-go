@@ -15,14 +15,20 @@ import { getTextEditForAddImport } from './goImport';
 import { getImportablePackages } from './goPackages';
 import { isModSupported } from './goModules';
 
-function vscodeKindFromGoCodeClass(kind: string): vscode.CompletionItemKind {
+function vscodeKindFromGoCodeClass(kind: string, type: string): vscode.CompletionItemKind {
 	switch (kind) {
 		case 'const':
 			return vscode.CompletionItemKind.Constant;
 		case 'package':
 			return vscode.CompletionItemKind.Module;
 		case 'type':
-			return vscode.CompletionItemKind.Class;
+			switch (type) {
+				case 'struct':
+					return vscode.CompletionItemKind.Class;
+				case 'interface':
+					return vscode.CompletionItemKind.Interface;
+			}
+			return vscode.CompletionItemKind.Struct;
 		case 'func':
 			return vscode.CompletionItemKind.Function;
 		case 'var':
@@ -75,7 +81,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					let memberType = nextLine.match(exportedMemberRegex);
 					let suggestionItem: vscode.CompletionItem;
 					if (memberType && memberType.length === 4) {
-						suggestionItem = new vscode.CompletionItem(memberType[3], vscodeKindFromGoCodeClass(memberType[1]));
+						suggestionItem = new vscode.CompletionItem(memberType[3], vscodeKindFromGoCodeClass(memberType[1], ''));
 					}
 					return resolve(suggestionItem ? [suggestionItem] : []);
 				}
@@ -218,7 +224,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 						for (let suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
 							let item = new vscode.CompletionItem(suggest.name);
-							item.kind = vscodeKindFromGoCodeClass(suggest.class);
+							item.kind = vscodeKindFromGoCodeClass(suggest.class, suggest.type);
 							item.detail = suggest.type;
 							if (inString && suggest.class === 'import') {
 								item.textEdit = new vscode.TextEdit(
