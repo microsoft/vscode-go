@@ -257,12 +257,16 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
  * @param e TextDocumentChangeEvent
  */
 export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent) {
-	if (e.document.languageId !== 'go') {
+	if (e.document.languageId !== 'go' || e.contentChanges.length < 1) {
 		return;
+	}
+	if(isPartOfComment(e)){
+		return
 	}
 	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e.document)) {
 		return;
 	}
+	
 	clearCoverage();
 }
 
@@ -304,4 +308,20 @@ export function toggleCoverageCurrentPackage() {
 			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 		});
 	});
+}
+
+export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
+	let result = false
+	e.contentChanges.every(function(change, index){
+		let line = e.document.lineAt(change.range.start)
+		let text = e.document.getText(line.rangeIncludingLineBreak)
+		// Exit the loop as soon as one of the changes is not part of a comment.
+		if (!text.startsWith('//')){
+			result = false
+			return false;
+		}else{
+			result = true;
+		}
+	})
+	return result
 }
