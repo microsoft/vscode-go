@@ -34,7 +34,7 @@ const allTools: { [key: string]: string } = {
 	'goimports': 'golang.org/x/tools/cmd/goimports',
 	'goreturns': 'github.com/sqs/goreturns',
 	'goformat': 'winterdrache.de/goformat/goformat',
-	'golint': 'github.com/golang/lint/golint',
+	'golint': 'golang.org/x/lint/golint',
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
 	'megacheck': 'honnef.co/go/tools/...',
