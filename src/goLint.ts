@@ -4,15 +4,15 @@ import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticEr
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
 /**
- * Runs linter in the current package or workspace.
+ * Runs linter on the current file, package or workspace.
  */
-export function lintCode(lintWorkspace?: boolean) {
+export function lintCode(scope?: string) {
 	let editor = vscode.window.activeTextEditor;
-	if (!editor && !lintWorkspace) {
+	if (!editor && scope !== 'workspace') {
 		vscode.window.showInformationMessage('No editor is active, cannot find current package to lint');
 		return;
 	}
-	if (editor.document.languageId !== 'go' && !lintWorkspace) {
+	if (editor.document.languageId !== 'go' && scope !== 'workspace') {
 		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to lint');
 		return;
 	}
@@ -24,7 +24,7 @@ export function lintCode(lintWorkspace?: boolean) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Linting...';
 
-	goLint(documentUri, goConfig, lintWorkspace)
+	goLint(documentUri, goConfig, scope)
 		.then(warnings => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
 			diagnosticsStatusBarItem.hide();
@@ -40,9 +40,9 @@ export function lintCode(lintWorkspace?: boolean) {
  *
  * @param fileUri Document uri.
  * @param goConfig Configuration for the Go extension.
- * @param lintWorkspace If true runs linter in all workspace.
+ * @param scope Scope in which to run the linter.
  */
-export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, lintWorkspace?: boolean): Promise<ICheckResult[]> {
+export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, scope?: string): Promise<ICheckResult[]> {
 	epoch++;
 	let closureEpoch = epoch;
 	if (tokenSource) {
@@ -54,7 +54,9 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	tokenSource = new vscode.CancellationTokenSource();
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
-	const cwd = (lintWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+
+	const cwd = (scope === 'workspace' && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+
 	if (!path.isAbsolute(cwd)) {
 		return Promise.resolve([]);
 	}
@@ -100,8 +102,12 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		}
 	}
 
-	if (lintWorkspace && currentWorkspace) {
+	if (scope === 'workspace' && currentWorkspace) {
 		args.push('./...');
+	}
+
+	if (scope === 'file') {
+		args.push(fileUri);
 	}
 
 	running = true;
