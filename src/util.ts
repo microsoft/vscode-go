@@ -350,16 +350,16 @@ function resolveToolsGopath(): string {
 
 	let toolsGopathForWorkspace = vscode.workspace.getConfiguration('go')['toolsGopath'] || '';
 
-	// In case of single root, use resolvePath to resolve ~ and ${workspaceRoot}
+	// In case of single root
 	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length <= 1) {
 		return resolvePath(toolsGopathForWorkspace);
 	}
 
-	// In case of multi-root, resolve ~ and ignore ${workspaceRoot}
+	// In case of multi-root, resolve ~ and ${workspaceFolder}
 	if (toolsGopathForWorkspace.startsWith('~')) {
 		toolsGopathForWorkspace = path.join(os.homedir(), toolsGopathForWorkspace.substr(1));
 	}
-	if (toolsGopathForWorkspace && toolsGopathForWorkspace.trim() && !/\${workspaceRoot}/.test(toolsGopathForWorkspace)) {
+	if (toolsGopathForWorkspace && toolsGopathForWorkspace.trim() && !/\${workspaceFolder}/.test(toolsGopathForWorkspace)) {
 		return toolsGopathForWorkspace;
 	}
 
@@ -502,21 +502,21 @@ export function timeout(millis): Promise<void> {
 }
 
 /**
- * Exapnds ~ to homedir in non-Windows platform and resolves ${workspaceRoot}
+ * Exapnds ~ to homedir in non-Windows platform and resolves ${workspaceFolder}
  */
-export function resolvePath(inputPath: string, workspaceRoot?: string): string {
+export function resolvePath(inputPath: string, workspaceFolder?: string): string {
 	if (!inputPath || !inputPath.trim()) return inputPath;
 
-	if (!workspaceRoot && vscode.workspace.workspaceFolders) {
+	if (!workspaceFolder && vscode.workspace.workspaceFolders) {
 		if (vscode.workspace.workspaceFolders.length === 1) {
-			workspaceRoot = vscode.workspace.rootPath;
+			workspaceFolder = vscode.workspace.rootPath;
 		} else if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			workspaceRoot = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+			workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
 		}
 	}
 
-	if (workspaceRoot) {
-		inputPath = inputPath.replace(/\${workspaceRoot}/g, workspaceRoot).replace(/\${workspaceFolder}/g, workspaceRoot);
+	if (workspaceFolder) {
+		inputPath = inputPath.replace(/\${workspaceFolder}/g, workspaceFolder);
 	}
 	return resolveHomeDir(inputPath);
 }
@@ -890,4 +890,3 @@ export function cleanupTempDir() {
 	}
 	tmpDir = undefined;
 }
-
