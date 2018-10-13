@@ -50,6 +50,11 @@
 			"body": "switch ${1:expression} {\ncase ${2:condition}:\n\t$0\n}",
 			"description": "Snippet for switch statement"
 		},
+		"select statement": {
+			"prefix": "sel",
+			"body": "select {\ncase ${1:condition}:\n\t$0\n}",
+			"description": "Snippet for select statement"
+		},
 		"case clause": {
 			"prefix": "cs",
 			"body": "case ${1:condition}:$0",
