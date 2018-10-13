@@ -100,6 +100,21 @@
 			"body": "if err != nil {\n\t${1:return ${2:nil, }${3:err}}\n}",
 			"description": "Snippet for if err != nil"
 		},
+		"errors wrap": {
+			"prefix": "ewr",
+			"body": "errors.Wrap(${2:err},\"$1\")",
+			"description": "Snippet for errors wrap"
+		},
+		"errors wrapf": {
+			"prefix": "ewrf",
+			"body": "errors.Wrapf(${3:err},\"$1\",${2:var})",
+			"description": "Snippet for errors wrapf"
+		},
+		"errors cause": {
+			"prefix": "ecs",
+			"body": "errors.Cause(${1:err})",
+			"description": "Snippet for errors cause"
+		},
 		"fmt.Println": {
 			"prefix": "fp",
 			"body": "fmt.Println(\"$1\")",
