@@ -55,7 +55,6 @@ const importantTools = [
 	'gorename',
 	'godef',
 	'godef-gomod',
-	'godoc',
 	'gogetdoc',
 	'goreturns',
 	'goimports',
