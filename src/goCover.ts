@@ -260,13 +260,13 @@ export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent
 	if (e.document.languageId !== 'go' || e.contentChanges.length < 1) {
 		return;
 	}
-	if(isPartOfComment(e)){
+	if (isPartOfComment(e)) {
 		return
 	}
 	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e.document)) {
 		return;
 	}
-	
+
 	clearCoverage();
 }
 
@@ -312,15 +312,15 @@ export function toggleCoverageCurrentPackage() {
 
 export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
 	let result = false
-	e.contentChanges.every(function(change, index){
+	e.contentChanges.every(function (change, index) {
 		let line = e.document.lineAt(change.range.start)
 		let text = e.document.getText(line.range)
 		let idx = text.search('//')
 		let changeIdx = change.range.start.character
-		if (idx == -1 || idx > changeIdx || !change.range.isSingleLine || change.text.includes("\n") ){
+		if (idx == -1 || idx > changeIdx || !change.range.isSingleLine || change.text.includes("\n")) {
 			result = false
 			return false;
-		}else{
+		} else {
 			result = true;
 		}
 	})
