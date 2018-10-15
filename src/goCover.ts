@@ -315,8 +315,10 @@ export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
 	e.contentChanges.every(function(change, index){
 		let line = e.document.lineAt(change.range.start)
 		let text = e.document.getText(line.rangeIncludingLineBreak)
+		let idx = text.search('//')
+		let changeIdx = change.range.start.character
 		// Exit the loop as soon as one of the changes is not part of a comment.
-		if (!text.startsWith('//')){
+		if (idx != -1 && idx > changeIdx){
 			result = false
 			return false;
 		}else{
@@ -324,4 +326,14 @@ export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
 		}
 	})
 	return result
+}
+
+export function isPartOfMultiLineComment(lineNumber: number, doc: vscode.TextDocument): boolean{
+	do{
+		let text = doc.lineAt(lineNumber).text
+		if (text.search("*/")){
+			return true
+		}
+	}while(lineNumber<doc.lineCount)
+	return false
 }
