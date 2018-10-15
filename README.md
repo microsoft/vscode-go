@@ -151,7 +151,7 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Fill Struct` Fills struct literal with default values
 * `Go: Run on Go Playground` Upload the current selection or file to the Go Playground
 
-You can access all of the above commands from the command pallet (`Cmd+Shift+P` or `Ctrl+Shift+P`).
+You can access all of the above commands from the command palette (`Cmd+Shift+P` or `Ctrl+Shift+P`).
 
 Few of these are available in the editor context menu as an experimental feature as well. To control which of these commands show up in the editor context menu, update the setting `go.editorContextMenuCommands`.
 
