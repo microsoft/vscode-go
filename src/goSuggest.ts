@@ -63,13 +63,21 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		this.globalState = globalState;
 	}
 
-	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionItem[]> {
-		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go', document.uri));
+	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionList> {
+		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go', document.uri)).then(result => {
+			if (!result) {
+				return new vscode.CompletionList([], false);
+			}
+			if (Array.isArray(result)) {
+				return new vscode.CompletionList(result, false);
+			}
+			return result;
+		});
 	}
 
-	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
+	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
 		return this.ensureGoCodeConfigured(document.uri).then(() => {
-			return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
+			return new Promise<vscode.CompletionItem[] | vscode.CompletionList>((resolve, reject) => {
 				let filename = document.fileName;
 				let lineText = document.lineAt(position.line).text;
 				let lineTillCurrentPosition = lineText.substr(0, position.character);
@@ -161,7 +169,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 								};
 								suggestions.push(item);
 							});
-							resolve(suggestions);
+							resolve(new vscode.CompletionList(suggestions, true));
 						}
 					}
 					resolve(suggestions);
