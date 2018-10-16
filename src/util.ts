@@ -359,7 +359,7 @@ function resolveToolsGopath(): string {
 	if (toolsGopathForWorkspace.startsWith('~')) {
 		toolsGopathForWorkspace = path.join(os.homedir(), toolsGopathForWorkspace.substr(1));
 	}
-	if (toolsGopathForWorkspace && toolsGopathForWorkspace.trim() && !/\${workspaceFolder}/.test(toolsGopathForWorkspace)) {
+	if (toolsGopathForWorkspace && toolsGopathForWorkspace.trim() && !/\${workspaceFolder}|\${workspaceRoot}/.test(toolsGopathForWorkspace)) {
 		return toolsGopathForWorkspace;
 	}
 
@@ -502,7 +502,7 @@ export function timeout(millis): Promise<void> {
 }
 
 /**
- * Exapnds ~ to homedir in non-Windows platform and resolves ${workspaceFolder}
+ * Exapnds ~ to homedir in non-Windows platform and resolves ${workspaceFolder} or ${workspaceRoot}
  */
 export function resolvePath(inputPath: string, workspaceFolder?: string): string {
 	if (!inputPath || !inputPath.trim()) return inputPath;
@@ -516,7 +516,7 @@ export function resolvePath(inputPath: string, workspaceFolder?: string): string
 	}
 
 	if (workspaceFolder) {
-		inputPath = inputPath.replace(/\${workspaceFolder}/g, workspaceFolder);
+		inputPath = inputPath.replace(/\${workspaceFolder}|\${workspaceRoot}/g, workspaceFolder);
 	}
 	return resolveHomeDir(inputPath);
 }
