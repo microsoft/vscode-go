@@ -15,7 +15,6 @@ import { getWorkspaceSymbols } from '../src/goSymbol';
 import { check } from '../src/goCheck';
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
-import jsDiff = require('diff');
 import { testCurrentFile } from '../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../src/goOutline';
@@ -24,9 +23,7 @@ import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurre
 import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
 import { goPlay } from '../src/goPlayground';
-import { goLint } from '../src/goLint';
 import { runFillStruct } from '../src/goFillStruct';
-import { print } from 'util';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -804,7 +801,7 @@ It returns the number of bytes written and any write error encountered.
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 				let promises = testCases.map(([position, expected]) =>
 					provider.provideCompletionItems(editor.document, position, null).then(items => {
-						let labels = items.map(x => x.label);
+						let labels = items.items.map(x => x.label);
 						for (let entry of expected) {
 							if (labels.indexOf(entry) < 0) {
 								assert.fail('', entry, 'missing expected item in competion list', '');
@@ -833,37 +830,44 @@ It returns the number of bytes written and any write error encountered.
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 
 				let noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item = items.find(x => x.label === 'Print');
 					assert.equal(!item.insertText, true);
 				});
 
 				let withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item = items.find(x => x.label === 'Print');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a ...interface{\\}})');
-
 				});
 
 				let withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item = items.find(x => x.label === 'Print');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'Print(${1:a})');
 				});
 
 				let noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal(!item.insertText, true);
+
 				});
 
 				let withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k string})');
 				});
 
 				let withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal((<vscode.SnippetString>item.insertText).value, 'funcAsVariable(${1:k})');
 				});
 
 				let noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item1 = items.find(x => x.label === 'HandlerFunc');
 					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
 					let item3 = items.find(x => x.label === 'HandlerFuncNoReturnType');
@@ -873,6 +877,7 @@ It returns the number of bytes written and any write error encountered.
 				});
 
 				let withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item1 = items.find(x => x.label === 'HandlerFunc');
 					let item2 = items.find(x => x.label === 'HandlerFuncWithArgNames');
 					let item3 = items.find(x => x.label === 'HandlerFuncNoReturnType');
@@ -899,16 +904,19 @@ It returns the number of bytes written and any write error encountered.
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 
 				let symbolFollowedByBrackets = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(5, 10), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item = items.find(x => x.label === 'Print');
 					assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is followed by ().');
 				});
 
 				let symbolAsLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(7, 13), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is a parameter inside func call');
 				});
 
 				let symbolsAsNonLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(8, 11), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let item = items.find(x => x.label === 'funcAsVariable');
 					assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is one of the parameters inside func call.');
 				});
@@ -936,6 +944,7 @@ It returns the number of bytes written and any write error encountered.
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 				let promises = testCases.map(([position, expected]) =>
 					provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+						items = items instanceof vscode.CompletionList ? items.items : items;
 						let labels = items.map(x => x.label);
 						for (let entry of expected) {
 							assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
@@ -967,8 +976,10 @@ It returns the number of bytes written and any write error encountered.
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 				return provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
 					let labels = items.map(x => x.label);
 					expectedItems.forEach(expectedItem => {
+						items = items instanceof vscode.CompletionList ? items.items : items;
 						const actualItem: vscode.CompletionItem = items.filter(item => item.label === expectedItem.label)[0];
 						if (!actualItem) {
 							assert.fail(actualItem, expectedItem, `Missing expected item in completion list: ${expectedItem.label} Actual: ${labels}`);
@@ -1003,7 +1014,7 @@ It returns the number of bytes written and any write error encountered.
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 				let promises = testCases.map(([position, expected]) =>
 					provider.provideCompletionItems(editor.document, position, null).then(items => {
-						let labels = items.map(x => x.label);
+						let labels = items.items.map(x => x.label);
 						assert.equal(expected.length, labels.length, `expected number of completions: ${expected.length} Actual: ${labels.length} at position(${position.line},${position.character}) ${labels}`);
 						expected.forEach((entry, index) => {
 							assert.equal(entry, labels[index], `mismatch in comment completion list Expected: ${entry} Actual: ${labels[index]}`);
