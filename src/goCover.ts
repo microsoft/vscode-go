@@ -311,18 +311,15 @@ export function toggleCoverageCurrentPackage() {
 }
 
 export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
-	let result = false;
-	e.contentChanges.every(function (change, index) {
+	return e.contentChanges.every(function (change, index) {
 		let line = e.document.lineAt(change.range.start);
 		let text = e.document.getText(line.range);
 		let idx = text.search('//');
 		let changeIdx = change.range.start.character;
 		if (idx === -1 || idx > changeIdx || !change.range.isSingleLine || change.text.includes('\n')) {
-			result = false;
 			return false;
 		} else {
-			result = true;
+			return true;
 		}
 	});
-	return result;
 }
