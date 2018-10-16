@@ -277,7 +277,7 @@
               "type": "go",
               "request": "launch",
               "mode": "debug",
-              "program": "^\"\\${workspaceRoot}${1:}\""
+              "program": "^\"\\${workspaceFolder}${1:}\""
             }
           },
           {
@@ -299,7 +299,7 @@
               "type": "go",
               "request": "launch",
               "mode": "test",
-              "program": "^\"\\${workspaceRoot}${1:}\""
+              "program": "^\"\\${workspaceFolder}${1:}\""
             }
           },
           {
@@ -310,7 +310,7 @@
               "type": "go",
               "request": "launch",
               "mode": "test",
-              "program": "^\"\\${workspaceRoot}${1:}\"",
+              "program": "^\"\\${workspaceFolder}${1:}\"",
               "args": [
                 "-test.run",
                 "${2:MyTestFunction}"
@@ -325,10 +325,10 @@
               "type": "go",
               "request": "launch",
               "mode": "remote",
-              "remotePath": "^\"\\${workspaceRoot}${1:}\"",
+              "remotePath": "^\"\\${workspaceFolder}${1:}\"",
               "port": 2345,
               "host": "127.0.0.1",
-              "program": "^\"\\${workspaceRoot}${1:}\"",
+              "program": "^\"\\${workspaceFolder}${1:}\"",
               "env": {},
               "args": []
             }
@@ -341,7 +341,7 @@
               "program": {
                 "type": "string",
                 "description": "Path to the program folder (or any file within that folder) when in 'debug' or 'test' mode, and to the pre-built binary file to debug in 'exec' mode.",
-                "default": "${workspaceRoot}"
+                "default": "${workspaceFolder}"
               },
               "mode": {
                 "enum": [
@@ -422,7 +422,7 @@
               "envFile": {
                 "type": "string",
                 "description": "Absolute path to a file containing environment variable definitions.",
-                "default": "${workspaceRoot}/.env"
+                "default": "${workspaceFolder}/.env"
               },
               "backend": {
                 "type": "string",
