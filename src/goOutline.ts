@@ -28,6 +28,12 @@ export interface GoOutlineDeclaration {
 	comment?: GoOutlineRange;
 }
 
+export enum GoOutlineImportsOptions {
+	Include,
+	Exclude,
+	Only
+}
+
 export interface GoOutlineOptions {
 	/**
 	 * Path of the file for which outline is needed
@@ -35,21 +41,42 @@ export interface GoOutlineOptions {
 	fileName: string;
 
 	/**
-	 * If true, then the file will be parsed only till imports are collected
+	 * Option to decide if the output includes, excludes or only includes imports
+	 * If the option is to only include imports, then the file will be parsed only till imports are collected
 	 */
-	importsOnly?: boolean;
+	importsOption: GoOutlineImportsOptions;
 
 	/**
 	 * Document to be parsed. If not provided, saved contents of the given fileName is used
 	 */
 	document?: vscode.TextDocument;
+
+	/**
+	 * Skips range information in the output.
+	 * Calculating ranges is slightly expensive for large files, therefore skip it when not required.
+	 */
+	skipRanges?: boolean;
 }
 
-export function documentSymbols(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<GoOutlineDeclaration[]> {
+export function documentSymbols(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<vscode.SymbolInformation[]> {
+	return runGoOutline(options, token).then(decls => {
+		let symbols: vscode.SymbolInformation[] = [];
+		convertToCodeSymbols(
+			options.document,
+			decls,
+			symbols,
+			'',
+			options.importsOption !== GoOutlineImportsOptions.Exclude,
+			(options.skipRanges || !options.document) ? null : makeMemoizedByteOffsetConverter(new Buffer(options.document.getText())));
+		return symbols;
+	});
+}
+
+export function runGoOutline(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<GoOutlineDeclaration[]> {
 	return new Promise<GoOutlineDeclaration[]>((resolve, reject) => {
 		let gooutline = getBinPath('go-outline');
 		let gooutlineFlags = ['-f', options.fileName];
-		if (options.importsOnly) {
+		if (options.importsOption === GoOutlineImportsOptions.Only) {
 			gooutlineFlags.push('-imports-only');
 		}
 		if (options.document) {
@@ -70,13 +97,13 @@ export function documentSymbols(options: GoOutlineOptions, token: vscode.Cancell
 				if (stderr && stderr.startsWith('flag provided but not defined: ')) {
 					promptForUpdatingTool('go-outline');
 					if (stderr.startsWith('flag provided but not defined: -imports-only')) {
-						options.importsOnly = false;
+						options.importsOption = GoOutlineImportsOptions.Include;
 					}
 					if (stderr.startsWith('flag provided but not defined: -modified')) {
 						options.document = null;
 					}
 					p = null;
-					return documentSymbols(options, token).then(results => {
+					return runGoOutline(options, token).then(results => {
 						return resolve(results);
 					});
 				}
@@ -94,59 +121,67 @@ export function documentSymbols(options: GoOutlineOptions, token: vscode.Cancell
 	});
 }
 
-export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
+const goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
+	'package': vscode.SymbolKind.Package,
+	'import': vscode.SymbolKind.Namespace,
+	'variable': vscode.SymbolKind.Variable,
+	'type': vscode.SymbolKind.Interface,
+	'function': vscode.SymbolKind.Function
+};
 
-	private goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
-		'package': vscode.SymbolKind.Package,
-		'import': vscode.SymbolKind.Namespace,
-		'variable': vscode.SymbolKind.Variable,
-		'type': vscode.SymbolKind.Interface,
-		'function': vscode.SymbolKind.Function
-	};
 
-	private convertToCodeSymbols(
-		document: vscode.TextDocument,
-		decls: GoOutlineDeclaration[],
-		symbols: vscode.SymbolInformation[],
-		containerName: string,
-		byteOffsetToDocumentOffset: (byteOffset: number) => number): void {
+function convertToCodeSymbols(
+	document: vscode.TextDocument,
+	decls: GoOutlineDeclaration[],
+	symbols: vscode.SymbolInformation[],
+	containerName: string,
+	includeImports: boolean,
+	byteOffsetToDocumentOffset: (byteOffset: number) => number): void {
 
-		let gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
-		let includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
+	(decls || []).forEach(decl => {
+		if (!includeImports && decl.type === 'import') return;
 
-		(decls || []).forEach(decl => {
-			if (!includeImports && decl.type === 'import') return;
+		let label = decl.label;
 
-			let label = decl.label;
+		if (label === '_' && decl.type === 'variable') return;
 
-			if (label === '_' && decl.type === 'variable') return;
+		if (decl.receiverType) {
+			label = '(' + decl.receiverType + ').' + label;
+		}
 
-			if (decl.receiverType) {
-				label = '(' + decl.receiverType + ').' + label;
-			}
-
+		let range = null;
+		if (document && byteOffsetToDocumentOffset) {
 			let start = byteOffsetToDocumentOffset(decl.start - 1);
 			let end = byteOffsetToDocumentOffset(decl.end - 1);
+			range = new vscode.Range(document.positionAt(start), document.positionAt(end));
+		}
 
-			let symbolInfo = new vscode.SymbolInformation(
-				label,
-				this.goKindToCodeKind[decl.type],
-				new vscode.Range(document.positionAt(start), document.positionAt(end)),
-				document.uri,
-				containerName);
-			symbols.push(symbolInfo);
-			if (decl.children) {
-				this.convertToCodeSymbols(document, decl.children, symbols, decl.label, byteOffsetToDocumentOffset);
-			}
-		});
+		let symbolInfo = new vscode.SymbolInformation(
+			label,
+			goKindToCodeKind[decl.type],
+			range,
+			document ? document.uri : null,
+			containerName);
+		symbols.push(symbolInfo);
+		if (decl.children) {
+			convertToCodeSymbols(document, decl.children, symbols, decl.label, includeImports, byteOffsetToDocumentOffset);
+		}
+	});
+}
+
+export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
+
+	constructor(private includeImports?: boolean) {
+
 	}
 
+
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-		let options = { fileName: document.fileName, document: document };
-		return documentSymbols(options, token).then(decls => {
-			let symbols: vscode.SymbolInformation[] = [];
-			this.convertToCodeSymbols(document, decls, symbols, '', makeMemoizedByteOffsetConverter(new Buffer(document.getText())));
-			return symbols;
-		});
+		if (typeof this.includeImports !== 'boolean') {
+			let gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
+			this.includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
+		}
+		let options = { fileName: document.fileName, document: document, importsOption: this.includeImports ? GoOutlineImportsOptions.Include : GoOutlineImportsOptions.Exclude };
+		return documentSymbols(options, token);
 	}
 }

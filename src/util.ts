@@ -374,7 +374,7 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, tool === 'go' ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
+	return getBinPathWithPreferredGopath(tool, (tool === 'go' || tool === 'godoc') ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {

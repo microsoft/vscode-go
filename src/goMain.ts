@@ -406,9 +406,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.playground', playgroundCommand));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.package', lintCode));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.package', () => lintCode('package')));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.workspace', () => lintCode(true)));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.workspace', () => lintCode('workspace')));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.file', () => lintCode('file')));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.vet.package', vetCode));
 

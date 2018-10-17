@@ -29,12 +29,11 @@ const allTools: { [key: string]: string } = {
 	'gotype-live': 'github.com/tylerb/gotype-live',
 	'godef': 'github.com/rogpeppe/godef',
 	'godef-gomod': 'github.com/ianthehat/godef',
-	'godoc': 'golang.org/x/tools/cmd/godoc',
 	'gogetdoc': 'github.com/zmb3/gogetdoc',
 	'goimports': 'golang.org/x/tools/cmd/goimports',
 	'goreturns': 'github.com/sqs/goreturns',
 	'goformat': 'winterdrache.de/goformat/goformat',
-	'golint': 'github.com/golang/lint/golint',
+	'golint': 'golang.org/x/lint/golint',
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
 	'megacheck': 'honnef.co/go/tools/...',
@@ -56,7 +55,6 @@ const importantTools = [
 	'gorename',
 	'godef',
 	'godef-gomod',
-	'godoc',
 	'gogetdoc',
 	'goreturns',
 	'goimports',
@@ -301,6 +299,8 @@ export function installTools(missing: string[]) {
 	// Else use the Current Gopath
 	let toolsGopath = getToolsGopath() || getCurrentGoPath();
 	if (toolsGopath) {
+		let paths = toolsGopath.split(path.delimiter);
+		toolsGopath = paths[0];
 		envForTools['GOPATH'] = toolsGopath;
 	} else {
 		vscode.window.showInformationMessage('Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.', 'Open User Settings', 'Open Workspace Settings').then(selected => {

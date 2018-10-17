@@ -82,7 +82,7 @@ Set `go.useLanguageServer` to `true` to use the Go language server from [Sourceg
 * This is an experimental feature and is not available in Windows yet.
 * Since only a single language server is spun up for given VS Code instance, having multi-root setup where the folders have different GOPATH is not supported.
 * If set to true, you will be prompted to install the Go language server. Once installed, you will have to reload VS Code window. The language server will then be run by the Go extension in the background to provide services needed for the above mentioned features.
-* Everytime you change the value of the setting `go.useLanguageServer`, you need to reload the VS Code window for it to take effect.
+* Every time you change the value of the setting `go.useLanguageServer`, you need to reload the VS Code window for it to take effect.
 * To collect traces, set `"go.languageServerFlags": ["-trace"]`
 * To collect errors from language server in a logfile, set `"go.languageServerFlags": ["-trace", "-logfile", "path to a text file that exists"]`
 * Use the new setting `go.languageServerExperimentalFeatures` to opt-in to try new features like Code Completion and Formatting from the language server that might not be feature complete yet. 
@@ -151,7 +151,7 @@ In addition to integrated editing features, the extension also provides several 
 * `Go: Fill Struct` Fills struct literal with default values
 * `Go: Run on Go Playground` Upload the current selection or file to the Go Playground
 
-You can access all of the above commands from the command pallet (`Cmd+Shift+P` or `Ctrl+Shift+P`).
+You can access all of the above commands from the command palette (`Cmd+Shift+P` or `Ctrl+Shift+P`).
 
 Few of these are available in the editor context menu as an experimental feature as well. To control which of these commands show up in the editor context menu, update the setting `go.editorContextMenuCommands`.
 
