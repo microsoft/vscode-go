@@ -187,10 +187,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				return reject();
 			}
 
-			// Unset GOOS and GOARCH for the `gocode` process to ensure that GOHOSTOS and GOHOSTARCH
-			// are used as the target operating system and architecture. `gocode` is unable to provide
-			// autocompletion when the Go environment is configured for cross compilation.
-			let env = Object.assign({}, getToolsEnvVars(), { GOOS: '', GOARCH: '' });
+			let env = getToolsEnvVars();
 			let stdout = '';
 			let stderr = '';
 
