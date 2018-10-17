@@ -965,6 +965,7 @@ class GoDebugSession extends DebugSession {
 				return {
 					name: '[' + i + ']',
 					value: result,
+					evaluateName: '[' + i + ']',
 					variablesReference
 				};
 			});
