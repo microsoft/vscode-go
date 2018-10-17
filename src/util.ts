@@ -12,10 +12,12 @@ import fs = require('fs');
 import os = require('os');
 import { outputChannel } from './goStatus';
 import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
+import { NearestNeighborDict, Node } from './avlTree';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
 const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
+let userNameHash: number = 0;
 
 export const goKeywords: string[] = [
 	'break',
@@ -85,7 +87,7 @@ export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Pos
 }
 
 export interface Prelude {
-	imports: Array<{ kind: string; start: number; end: number; }>;
+	imports: Array<{ kind: string; start: number; end: number; pkgs: string[] }>;
 	pkg: { start: number; end: number; name: string };
 }
 
@@ -99,16 +101,24 @@ export function parseFilePrelude(text: string): Prelude {
 			ret.pkg = { start: i, end: i, name: pkgMatch[3] };
 		}
 		if (line.match(/^(\s)*import(\s)+\(/)) {
-			ret.imports.push({ kind: 'multi', start: i, end: -1 });
+			ret.imports.push({ kind: 'multi', start: i, end: -1, pkgs: [] });
 		}
 		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
-			ret.imports.push({ kind: 'single', start: i, end: i });
+			ret.imports.push({ kind: 'single', start: i, end: i, pkgs: [] });
 		}
 		if (line.match(/^(\s)*(\/\*.*\*\/)*\s*\)/)) {
 			if (ret.imports[ret.imports.length - 1].end === -1) {
 				ret.imports[ret.imports.length - 1].end = i;
 			}
+		} else if (ret.imports.length) {
+			if (ret.imports[ret.imports.length - 1].end === -1) {
+				const pkgMatch = line.match(/"([^"]+)"/);
+				if (pkgMatch) {
+					ret.imports[ret.imports.length - 1].pkgs.push(pkgMatch[1]);
+				}
+			}
 		}
+
 		if (line.match(/^(\s)*(func|const|type|var)\s/)) {
 			break;
 		}
@@ -175,6 +185,36 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 
 	if (!currentWorkspace) return filename;
 	return currentWorkspace + filename.slice(currentWorkspace.length);
+}
+
+/**
+ * Gets a numeric hash based on given string.
+ * Returns a number between 0 and 4294967295.
+ */
+export function getStringHash(value: string): number {
+	let hash = 5381,
+		i = value.length;
+
+	while (i) {
+		hash = (hash * 33) ^ value.charCodeAt(--i);
+	}
+
+	/* JavaScript does bitwise operations (like XOR, above) on 32-bit signed
+		* integers. Since we want the results to be always positive, convert the
+		* signed int to an unsigned by doing an unsigned bitshift. */
+	return hash >>> 0;
+}
+
+export function getUserNameHash() {
+	if (userNameHash) {
+		return userNameHash;
+	}
+	try {
+		userNameHash = getStringHash(os.userInfo().username);
+	} catch (error) {
+		userNameHash = 1;
+	}
+	return userNameHash;
 }
 
 /**
@@ -310,16 +350,16 @@ function resolveToolsGopath(): string {
 
 	let toolsGopathForWorkspace = substituteEnv(vscode.workspace.getConfiguration('go')['toolsGopath'] || '');
 
-	// In case of single root, use resolvePath to resolve ~ and ${workspaceRoot}
+	// In case of single root
 	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length <= 1) {
 		return resolvePath(toolsGopathForWorkspace);
 	}
 
-	// In case of multi-root, resolve ~ and ignore ${workspaceRoot}
+	// In case of multi-root, resolve ~ and ${workspaceFolder}
 	if (toolsGopathForWorkspace.startsWith('~')) {
 		toolsGopathForWorkspace = path.join(os.homedir(), toolsGopathForWorkspace.substr(1));
 	}
-	if (toolsGopathForWorkspace && toolsGopathForWorkspace.trim() && !/\${workspaceRoot}/.test(toolsGopathForWorkspace)) {
+	if (toolsGopathForWorkspace && toolsGopathForWorkspace.trim() && !/\${workspaceFolder}|\${workspaceRoot}/.test(toolsGopathForWorkspace)) {
 		return toolsGopathForWorkspace;
 	}
 
@@ -334,7 +374,7 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, tool === 'go' ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
+	return getBinPathWithPreferredGopath(tool, (tool === 'go' || tool === 'godoc') ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {
@@ -404,7 +444,7 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 				// No op
 			}
 		}
-		if (inferredGopath && process.env['GOPATH']) {
+		if (inferredGopath && process.env['GOPATH'] && inferredGopath !== process.env['GOPATH']) {
 			inferredGopath += path.delimiter + process.env['GOPATH'];
 		}
 	}
@@ -468,21 +508,21 @@ export function timeout(millis): Promise<void> {
 }
 
 /**
- * Exapnds ~ to homedir in non-Windows platform and resolves ${workspaceRoot}
+ * Exapnds ~ to homedir in non-Windows platform and resolves ${workspaceFolder} or ${workspaceRoot}
  */
-export function resolvePath(inputPath: string, workspaceRoot?: string): string {
+export function resolvePath(inputPath: string, workspaceFolder?: string): string {
 	if (!inputPath || !inputPath.trim()) return inputPath;
 
-	if (!workspaceRoot && vscode.workspace.workspaceFolders) {
+	if (!workspaceFolder && vscode.workspace.workspaceFolders) {
 		if (vscode.workspace.workspaceFolders.length === 1) {
-			workspaceRoot = vscode.workspace.rootPath;
+			workspaceFolder = vscode.workspace.rootPath;
 		} else if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			workspaceRoot = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
+			workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
 		}
 	}
 
-	if (workspaceRoot) {
-		inputPath = inputPath.replace(/\${workspaceRoot}/g, workspaceRoot).replace(/\${workspaceFolder}/g, workspaceRoot);
+	if (workspaceFolder) {
+		inputPath = inputPath.replace(/\${workspaceFolder}|\${workspaceRoot}/g, workspaceFolder);
 	}
 	return resolveHomeDir(inputPath);
 }
@@ -795,4 +835,64 @@ export function killTree(processId: number): void {
 		} catch (err) {
 		}
 	}
+}
+
+export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: number) => number {
+	let defaultValue = new Node<number, number>(0, 0); // 0 bytes will always be 0 characters
+	let memo = new NearestNeighborDict(defaultValue, NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
+	return (byteOffset: number) => {
+		let nearest = memo.getNearest(byteOffset);
+		let byteDelta = byteOffset - nearest.key;
+
+		if (byteDelta === 0)
+			return nearest.value;
+
+		let charDelta: number;
+		if (byteDelta > 0)
+			charDelta = buffer.toString('utf8', nearest.key, byteOffset).length;
+		else
+			charDelta = -buffer.toString('utf8', byteOffset, nearest.key).length;
+
+		memo.insert(byteOffset, nearest.value + charDelta);
+		return nearest.value + charDelta;
+	};
+}
+
+function rmdirRecursive(dir) {
+	if (fs.existsSync(dir)) {
+		fs.readdirSync(dir).forEach(file => {
+			const relPath = path.join(dir, file);
+			if (fs.lstatSync(relPath).isDirectory()) {
+				rmdirRecursive(dir);
+			} else {
+				fs.unlinkSync(relPath);
+			}
+		});
+		fs.rmdirSync(dir);
+	}
+}
+
+let tmpDir: string;
+
+/**
+ * Returns file path for given name in temp dir
+ * @param name Name of the file
+ */
+export function getTempFilePath(name: string): string {
+	if (!tmpDir) {
+		tmpDir = fs.mkdtempSync(os.tmpdir() + path.sep + 'vscode-go');
+	}
+
+	if (!fs.existsSync(tmpDir)) {
+		fs.mkdirSync(tmpDir);
+	}
+
+	return path.normalize(path.join(tmpDir, name));
+}
+
+export function cleanupTempDir() {
+	if (!tmpDir) {
+		rmdirRecursive(tmpDir);
+	}
+	tmpDir = undefined;
 }

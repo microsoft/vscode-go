@@ -50,6 +50,11 @@
 			"body": "switch ${1:expression} {\ncase ${2:condition}:\n\t$0\n}",
 			"description": "Snippet for switch statement"
 		},
+		"select statement": {
+			"prefix": "sel",
+			"body": "select {\ncase ${1:condition}:\n\t$0\n}",
+			"description": "Snippet for select statement"
+		},
 		"case clause": {
 			"prefix": "cs",
 			"body": "case ${1:condition}:$0",
@@ -62,7 +67,7 @@
 		},
 		"for range statement": {
 			"prefix": "forr",
-			"body": "for ${1:var} := range ${2:var} {\n\t$0\n}",
+			"body": "for ${1:_, }${2:var} := range ${3:var} {\n\t$0\n}",
 			"description": "Snippet for a for range loop"
 		},
 		"channel declaration": {
@@ -97,7 +102,7 @@
 		},
 		"if err != nil": {
 			"prefix": "iferr",
-			"body": "if err != nil {\n\t${1:return}\n}",
+			"body": "if err != nil {\n\t${1:return ${2:nil, }${3:err}}\n}",
 			"description": "Snippet for if err != nil"
 		},
 		"fmt.Println": {

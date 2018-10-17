@@ -22,14 +22,13 @@ import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
 import { updateGoPathGoRootFromConfig, offerToInstallTools, promptForMissingTool } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { toggleCoverageCurrentPackage, getCodeCoverage, removeCodeCoverage } from './goCover';
-import { initGoCover } from './goCover';
+import { initCoverageDecorators, toggleCoverageCurrentPackage, applyCodeCoverage, removeCodeCoverageOnFileChange, updateCodeCoverageDecorators } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
 import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
-import { addImport } from './goImport';
+import { addImport, addImportToWorkspace } from './goImport';
 import { installAllTools, checkLanguageServer } from './goInstallTools';
-import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars } from './util';
+import { isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath, getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars, cleanupTempDir } from './util';
 import { LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature, ProvideCompletionItemsSignature } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -45,22 +44,25 @@ import { lintCode } from './goLint';
 import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
+import { updateWorkspaceModCache } from './goModules';
+import { setGlobalState } from './stateUtils';
 
 export let errorDiagnosticCollection: vscode.DiagnosticCollection;
 export let warningDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
-
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
+	setGlobalState(ctx.globalState);
 
 	updateGoPathGoRootFromConfig().then(() => {
+		updateWorkspaceModCache();
 		const updateToolsCmdText = 'Update tools';
 		const prevGoroot = ctx.globalState.get('goroot');
 		const currentGoroot = process.env['GOROOT'];
 		if (prevGoroot !== currentGoroot && prevGoroot) {
-			vscode.window.showInformationMessage('Your goroot is different than before, few Go tools may need re-compiling', updateToolsCmdText).then(selected => {
+			vscode.window.showInformationMessage('Your goroot is different than before, a few Go tools may need recompiling', updateToolsCmdText).then(selected => {
 				if (selected === updateToolsCmdText) {
-					vscode.commands.executeCommand('go.tools.install');
+					installAllTools(true);
 				}
 			});
 		} else {
@@ -73,7 +75,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 						if (prevVersion) {
 							vscode.window.showInformationMessage('Your Go version is different than before, few Go tools may need re-compiling', updateToolsCmdText).then(selected => {
 								if (selected === updateToolsCmdText) {
-									vscode.commands.executeCommand('go.tools.install');
+									installAllTools(true);
 								}
 							});
 						}
@@ -168,7 +170,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 	});
 
-	initGoCover(ctx);
+	initCoverageDecorators(ctx);
 
 	let testCodeLensProvider = new GoRunTestCodeLensProvider();
 	let referencesCodeLensProvider = new GoReferencesCodeLensProvider();
@@ -183,13 +185,17 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(errorDiagnosticCollection);
 	warningDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-warning');
 	ctx.subscriptions.push(warningDiagnosticCollection);
-	vscode.workspace.onDidChangeTextDocument(removeCodeCoverage, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
-	vscode.window.onDidChangeActiveTextEditor(getCodeCoverage, null, ctx.subscriptions);
+	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
-
+	vscode.workspace.onDidChangeWorkspaceFolders(e => {
+		if (e.added.length) {
+			updateWorkspaceModCache();
+		}
+	});
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
@@ -209,6 +215,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 
 		vscode.window.showInformationMessage(msg);
+		return gopath;
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.add.tags', (args) => {
@@ -241,12 +248,26 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		testCurrentPackage(goConfig, args);
+		let isBenchmark = false;
+		testCurrentPackage(goConfig, isBenchmark, args);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.package', (args) => {
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		let isBenchmark = true;
+		testCurrentPackage(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		testCurrentFile(goConfig, args);
+		let isBenchmark = false;
+		testCurrentFile(goConfig, isBenchmark, args);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.file', (args) => {
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		let isBenchmark = true;
+		testCurrentFile(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.workspace', (args) => {
@@ -272,6 +293,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
 		return addImport(typeof arg === 'string' ? arg : null);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.add.package.workspace', () => {
+		addImportToWorkspace();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', () => {
@@ -321,6 +346,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		if (e.affectsConfiguration('go.docsTool')) {
 			checkToolExists(updatedGoConfig['docsTool']);
 		}
+		if (e.affectsConfiguration('go.coverageDecorator')) {
+			updateCodeCoverageDecorators(updatedGoConfig['coverageDecorator']);
+		}
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.generate.package', () => {
@@ -349,8 +377,25 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.show.commands', () => {
-		vscode.window.showQuickPick(getExtensionCommands().map(x => x.title)).then(cmd => {
-			let selectedCmd = getExtensionCommands().find(x => x.title === cmd);
+		let extCommands = getExtensionCommands();
+		extCommands.push({
+			command : 'editor.action.goToDeclaration',
+			title : 'Go to Definition'
+		});
+		extCommands.push({
+			command : 'editor.action.goToImplementation',
+			title : 'Go to Implementation'
+		});
+		extCommands.push({
+			command : 'workbench.action.gotoSymbol',
+			title : 'Go to Symbol in File...'
+		});
+		extCommands.push({
+			command : 'workbench.action.showAllSymbols',
+			title : 'Go to Symbol in Workspace...'
+		});
+		vscode.window.showQuickPick(extCommands.map(x => x.title)).then(cmd => {
+			let selectedCmd = extCommands.find(x => x.title === cmd);
 			if (selectedCmd) {
 				vscode.commands.executeCommand(selectedCmd.command);
 			}
@@ -361,9 +406,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.playground', playgroundCommand));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.package', lintCode));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.package', () => lintCode('package')));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.workspace', () => lintCode(true)));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.workspace', () => lintCode('workspace')));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.file', () => lintCode('file')));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.vet.package', vetCode));
 
@@ -383,7 +430,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 }
 
 export function deactivate() {
-	return Promise.all([disposeTelemetryReporter(), cancelRunningTests()]);
+	return Promise.all([disposeTelemetryReporter(), cancelRunningTests(), Promise.resolve(cleanupTempDir())]);
 }
 
 function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConfiguration) {
@@ -419,6 +466,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "buildTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "formatTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "formatFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
+		  "generateTestsFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "lintOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "lintFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "lintTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
@@ -460,6 +508,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		lintOnSave: goConfig['lintOnSave'] + '',
 		lintFlags: goConfig['lintFlags'],
 		lintTool: goConfig['lintTool'],
+		generateTestsFlags: goConfig['generateTestsFlags'],
 		vetOnSave: goConfig['vetOnSave'] + '',
 		vetFlags: goConfig['vetFlags'],
 		testOnSave: goConfig['testOnSave'] + '',

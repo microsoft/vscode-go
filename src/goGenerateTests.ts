@@ -12,6 +12,7 @@ import vscode = require('vscode');
 import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
+import { outputChannel } from './goStatus';
 
 const generatedWord = 'Generated ';
 
@@ -69,8 +70,8 @@ export function generateTestCurrentPackage(): Thenable<boolean> {
 	if (!editor) {
 		return;
 	}
-	let dir = path.dirname(editor.document.uri.fsPath);
-	return generateTests({ dir: dir });
+	return generateTests({ dir: path.dirname(editor.document.uri.fsPath) },
+		vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
 export function generateTestCurrentFile(): Thenable<boolean> {
@@ -78,8 +79,8 @@ export function generateTestCurrentFile(): Thenable<boolean> {
 	if (!editor) {
 		return;
 	}
-	let file = editor.document.uri.fsPath;
-	return generateTests({ dir: file });
+	return generateTests({ dir: editor.document.uri.fsPath },
+		vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
 export function generateTestCurrentFunction(): Thenable<boolean> {
@@ -87,7 +88,7 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 	if (!editor) {
 		return;
 	}
-	let file = editor.document.uri.fsPath;
+
 	return getFunctions(editor.document).then(functions => {
 		let currentFunction: vscode.SymbolInformation;
 		for (let func of functions) {
@@ -105,7 +106,8 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 		if (funcName.includes('.')) {
 			funcName = funcName.split('.')[1];
 		}
-		return generateTests({ dir: file, func: funcName });
+		return generateTests({ dir: editor.document.uri.fsPath, func: funcName },
+			vscode.workspace.getConfiguration('go', editor.document.uri));
 	});
 }
 
@@ -123,16 +125,33 @@ interface Config {
 	func?: string;
 }
 
-function generateTests(conf: Config): Thenable<boolean> {
+function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		let cmd = getBinPath('gotests');
-		let args;
-		if (conf.func) {
-			args = ['-w', '-only', `^${conf.func}$`, conf.dir];
-		} else {
-			args = ['-w', '-all', conf.dir];
+		let args = ['-w'];
+		let goGenerateTestsFlags: string[] = goConfig['generateTestsFlags'] || [];
+
+		for (let i = 0; i < goGenerateTestsFlags.length; i++) {
+			const flag = goGenerateTestsFlags[i];
+			if (flag === '-w' || flag === 'all') {
+				continue;
+			}
+			if (flag === '-only') {
+				i++;
+				continue;
+			}
+			args.push(flag);
 		}
-		cp.execFile(cmd, args, {env: getToolsEnvVars()}, (err, stdout, stderr) => {
+
+		if (conf.func) {
+			args = args.concat(['-only', `^${conf.func}$`, conf.dir]);
+		} else {
+			args = args.concat(['-all', conf.dir]);
+		}
+
+		cp.execFile(cmd, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
+			outputChannel.appendLine('Generating Tests: ' + cmd + ' ' + args.join(' '));
+
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('gotests');
@@ -140,6 +159,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 				}
 				if (err) {
 					console.log(err);
+					outputChannel.appendLine(err.message);
 					return reject('Cannot generate test due to errors');
 				}
 
@@ -158,6 +178,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 				}
 
 				vscode.window.showInformationMessage(message);
+				outputChannel.append(message);
 				if (testsGenerated) {
 					toggleTestFile();
 				}
@@ -165,6 +186,7 @@ function generateTests(conf: Config): Thenable<boolean> {
 				return resolve(true);
 			} catch (e) {
 				vscode.window.showInformationMessage(e.msg);
+				outputChannel.append(e.msg);
 				reject(e);
 			}
 		});

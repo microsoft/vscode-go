@@ -6,8 +6,9 @@
 'use strict';
 
 import vscode = require('vscode');
-import { parseFilePrelude } from './util';
-import { documentSymbols } from './goOutline';
+import cp = require('child_process');
+import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars } from './util';
+import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
 
@@ -16,7 +17,6 @@ const missingToolMsg = 'Missing tool: ';
 export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
 	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
 	let pkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
-
 	return Promise.all([pkgsPromise, importsPromise]).then(([pkgMap, importedPkgs]) => {
 		importedPkgs.forEach(pkg => {
 			pkgMap.delete(pkg);
@@ -32,13 +32,13 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
  * @returns Array of imported package paths wrapped in a promise
  */
 function getImports(document: vscode.TextDocument): Promise<string[]> {
-	let options = { fileName: document.fileName, importsOnly: true, document };
+	let options = { fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only, document, skipRanges: true };
 	return documentSymbols(options, null).then(symbols => {
-		if (!symbols || !symbols[0] || !symbols[0].children) {
+		if (!symbols || !symbols.length) {
 			return [];
 		}
-		// imports will be of the form { type: 'import', label: '"math"'}
-		let imports = symbols[0].children.filter(x => x.type === 'import').map(x => x.label.substr(1, x.label.length - 2));
+		// import names will be of the form "math", so strip the quotes in the beginning and the end
+		let imports = symbols.filter(x => x.kind === vscode.SymbolKind.Namespace).map(x => x.name.substr(1, x.name.length - 2));
 		return imports;
 	});
 }
@@ -60,6 +60,10 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	}
 
 	let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
+	if (imports.some(block => block.pkgs.some(pkgpath => pkgpath === arg))) {
+		return [];
+	}
+
 	let multis = imports.filter(x => x.kind === 'multi');
 	if (multis.length > 0) {
 		// There is a multiple import declaration, add to the last one
@@ -102,5 +106,59 @@ export function addImport(arg: string) {
 			edit.set(vscode.window.activeTextEditor.document.uri, edits);
 			vscode.workspace.applyEdit(edit);
 		}
+	});
+}
+
+export function addImportToWorkspace() {
+	const editor = vscode.window.activeTextEditor;
+	const selection = editor.selection;
+
+	let importPath = '';
+	if (!selection.isEmpty) {
+		let selectedText = editor.document.getText(selection).trim();
+		if (selectedText.length > 0) {
+			if (selectedText.indexOf(' ') === -1) {
+				// Attempt to load a partial import path based on currently selected text
+				if (!selectedText.startsWith('"')) {
+					selectedText = '"' + selectedText;
+				}
+				if (!selectedText.endsWith('"')) {
+					selectedText = selectedText + '"';
+				}
+			}
+			importPath = getImportPath(selectedText);
+		}
+	}
+
+	if (importPath === '') {
+		// Failing that use the current line
+		let selectedText = editor.document.lineAt(selection.active.line).text;
+		importPath = getImportPath(selectedText);
+	}
+
+	if (importPath === '') {
+		vscode.window.showErrorMessage('No import path to add');
+		return;
+	}
+
+	const goRuntimePath = getBinPath('go');
+	const env = getToolsEnvVars();
+
+	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
+		let dirs = (stdout || '').split('\n');
+		if (!dirs.length || !dirs[0].trim()) {
+			vscode.window.showErrorMessage(`Could not find package ${importPath}`);
+			return;
+		}
+
+		const importPathUri = vscode.Uri.file(dirs[0]);
+
+		const existingWorkspaceFolder = vscode.workspace.getWorkspaceFolder(importPathUri);
+		if (existingWorkspaceFolder !== undefined) {
+			vscode.window.showInformationMessage('Already available under ' + existingWorkspaceFolder.name);
+			return;
+		}
+
+		vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, { uri: importPathUri });
 	});
 }

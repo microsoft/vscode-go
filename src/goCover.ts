@@ -6,27 +6,35 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import os = require('os');
 import fs = require('fs');
-import { showTestOutput, goTest } from './testUtils';
 import rl = require('readline');
+import { getTempFilePath } from './util';
+import { showTestOutput, goTest, TestConfig } from './testUtils';
+import { isModSupported } from './goModules';
 
-let gutters;
-let coverageFiles = {};
+let gutterSvgs: { [key: string]: string };
+let decorators: {
+	type: string;
+	coveredGutterDecorator: vscode.TextEditorDecorationType;
+	uncoveredGutterDecorator: vscode.TextEditorDecorationType;
+	coveredHighlightDecorator: vscode.TextEditorDecorationType;
+	uncoveredHighlightDecorator: vscode.TextEditorDecorationType;
+};
+let decoratorConfig: {
+	type: string;
+	coveredHighlightColor: string;
+	uncoveredHighlightColor: string;
+	coveredGutterStyle: string;
+	uncoveredGutterStyle: string;
+};
 
-interface CoverageFile {
-	filename: string;
-	uncoveredRange: vscode.Range[];
-	coveredRange: vscode.Range[];
-}
-
-function clearCoverage() {
-	applyCoverage(true);
-	coverageFiles = {};
-}
-
-export function initGoCover(ctx: vscode.ExtensionContext) {
-	gutters = {
+/**
+ * Initializes the decorators used for Code coverage.
+ * @param ctx The extension context
+ */
+export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
+	// Initialize gutter svgs
+	gutterSvgs = {
 		blockred: ctx.asAbsolutePath('images/gutter-blockred.svg'),
 		blockgreen: ctx.asAbsolutePath('images/gutter-blockgreen.svg'),
 		blockblue: ctx.asAbsolutePath('images/gutter-blockblue.svg'),
@@ -41,6 +49,7 @@ export function initGoCover(ctx: vscode.ExtensionContext) {
 		verticalyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
 	};
 
+	// Update the coverageDecorator in User config, if they are using the old style.
 	const goConfig = vscode.workspace.getConfiguration('go');
 	const inspectResult = goConfig.inspect('coverageDecorator');
 	if (typeof inspectResult.globalValue === 'string') {
@@ -49,119 +58,22 @@ export function initGoCover(ctx: vscode.ExtensionContext) {
 	if (typeof inspectResult.workspaceValue === 'string') {
 		goConfig.update('coverageDecorator', { type: inspectResult.workspaceValue }, vscode.ConfigurationTarget.Workspace);
 	}
+	if (typeof inspectResult.workspaceFolderValue === 'string') {
+		goConfig.update('coverageDecorator', { type: inspectResult.workspaceValue }, vscode.ConfigurationTarget.WorkspaceFolder);
+	}
+
+	// Update the decorators
+	updateCodeCoverageDecorators(goConfig.get('coverageDecorator'));
 }
 
-export function removeCodeCoverage(e: vscode.TextDocumentChangeEvent) {
-	let editor = vscode.window.visibleTextEditors.find((value, index, obj) => {
-		return value.document === e.document;
-	});
-	if (!editor) {
-		return;
-	}
-	for (let filename in coverageFiles) {
-		let found = editor.document.uri.fsPath.endsWith(filename);
-		// Check for file again if outside the $GOPATH.
-		if (!found && filename.startsWith('_')) {
-			found = editor.document.uri.fsPath.endsWith(filename.slice(1));
-		}
-		if (found) {
-			highlightCoverage(editor, coverageFiles[filename], true);
-			delete coverageFiles[filename];
-		}
-	}
-}
-
-export function toggleCoverageCurrentPackage() {
-	let editor = vscode.window.activeTextEditor;
-	if (!editor) {
-		vscode.window.showInformationMessage('No editor is active.');
-		return;
-	}
-
-	// If current file has highlights, then remove coverage, else add coverage
-	for (let filename in coverageFiles) {
-		let found = editor.document.uri.fsPath.endsWith(filename);
-		// Check for file again if outside the $GOPATH.
-		if (!found && filename.startsWith('_')) {
-			found = editor.document.uri.fsPath.endsWith(filename.slice(1));
-		}
-		if (found) {
-			clearCoverage();
-			return;
-		}
-	}
-
-	let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
-	let cwd = path.dirname(editor.document.uri.fsPath);
-
-	let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
-	let tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
-	let args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
-	return goTest({
-		goConfig: goConfig,
-		dir: cwd,
-		flags: args,
-		background: true
-	}).then(success => {
-		if (!success) {
-			showTestOutput();
-			return [];
-		}
-		return getCoverage(tmpCoverPath, true);
-	});
-}
-
-export function getCodeCoverage(editor: vscode.TextEditor) {
-	if (!editor) {
-		return;
-	}
-	for (let filename in coverageFiles) {
-		if (editor.document.uri.fsPath.endsWith(filename)) {
-			highlightCoverage(editor, coverageFiles[filename], false);
-		}
-	}
-}
-
-function applyCoverage(remove: boolean = false) {
-	Object.keys(coverageFiles).forEach(filename => {
-		let file = coverageFiles[filename];
-		// Highlight lines in current editor.
-		vscode.window.visibleTextEditors.forEach((value, index, obj) => {
-			let found = value.document.fileName.endsWith(filename);
-			// Check for file again if outside the $GOPATH.
-			if (!found && filename.startsWith('_')) {
-				found = value.document.fileName.endsWith(filename.slice(1));
-			}
-			if (found) {
-				highlightCoverage(value, file, remove);
-			}
-			return found;
-		});
-	});
-}
-
-let decorators: {
-	type: string;
-	coveredGutterDecorator: vscode.TextEditorDecorationType;
-	uncoveredGutterDecorator: vscode.TextEditorDecorationType;
-	coveredHighlightDecorator: vscode.TextEditorDecorationType;
-	uncoveredHighlightDecorator: vscode.TextEditorDecorationType;
-};
-
-// updateCoverageDecorator fetches the value of the go.coverageDecorator
-// setting; historical values may be simply the string 'highlight' or
-// 'gutter' so we want to have sensible defaults for those (and if it's a
-// string but not one of those strings we just return the highlight default)
-//
-// However, modern versions should have an object with appropriate fields,
-// so if it's not a string we just make sure we have all the fields we need.
-function updateCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
-	// These defaults are chosen to be distinguishable
-	// in nearly any color scheme (even Red) as well as by people
-	// who have difficulties with color perception. There are also
-	// enough options that everyone (we hope) should be able to
-	// find a choice that pleases them.
-	let defaults = {
+/**
+ * Updates the decorators used for Code coverage.
+ * @param coverageDecoratorConfig The coverage decorated as configured by the user
+ */
+export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
+	// These defaults are chosen to be distinguishable in nearly any color scheme (even Red)
+	// as well as by people who have difficulties with color perception.
+	decoratorConfig = {
 		type: 'highlight',
 		coveredHighlightColor: 'rgba(64,128,128,0.5)',
 		uncoveredHighlightColor: 'rgba(128,64,64,0.25)',
@@ -169,54 +81,63 @@ function updateCoverageDecorator(cfg: vscode.WorkspaceConfiguration) {
 		uncoveredGutterStyle: 'slashyellow'
 	};
 
-	let coverageDecorator = cfg['coverageDecorator'];
-	if (typeof (coverageDecorator) === 'string') {
-		defaults.type = coverageDecorator;
+	// Update from configuration
+	if (typeof (coverageDecoratorConfig) === 'string') {
+		decoratorConfig.type = coverageDecoratorConfig;
 	} else {
-		// look at all the values in coverageDecorator and overwrite the
-		// equivalent in defaults (this way coverageDecorator overrides
-		// every default but the result will still have all required fields).
-		for (let k in coverageDecorator) {
-			defaults[k] = coverageDecorator[k];
+		for (let k in coverageDecoratorConfig) {
+			decoratorConfig[k] = coverageDecoratorConfig[k];
 		}
 	}
+	disposeDecorators();
+	setDecorators();
+}
 
+function setDecorators() {
+	decorators = {
+		type: decoratorConfig.type,
+		coveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutterSvgs[decoratorConfig.coveredGutterStyle] }),
+		uncoveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutterSvgs[decoratorConfig.uncoveredGutterStyle] }),
+		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: decoratorConfig.coveredHighlightColor }),
+		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: decoratorConfig.uncoveredHighlightColor })
+	};
+}
+
+/**
+ * Disposes decorators so that the current coverage is removed from the editor.
+ */
+function disposeDecorators() {
 	if (decorators) {
 		decorators.coveredGutterDecorator.dispose();
 		decorators.uncoveredGutterDecorator.dispose();
 		decorators.coveredHighlightDecorator.dispose();
 		decorators.uncoveredHighlightDecorator.dispose();
 	}
-
-	// before we're done, we need to turn these names into actual decorations
-	decorators = {
-		type: defaults.type,
-		coveredGutterDecorator:  vscode.window.createTextEditorDecorationType({gutterIconPath: gutters[defaults.coveredGutterStyle]}),
-		uncoveredGutterDecorator:  vscode.window.createTextEditorDecorationType({gutterIconPath: gutters[defaults.uncoveredGutterStyle]}),
-		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({backgroundColor: defaults.coveredHighlightColor}),
-		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({backgroundColor: defaults.uncoveredHighlightColor})
-	};
 }
 
-function highlightCoverage(editor: vscode.TextEditor, file: CoverageFile, remove: boolean) {
-	let cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
-	let coverageOptions = cfg['coverageOptions'];
-	updateCoverageDecorator(cfg);
-
-	if (remove) {
-		return;
-	}
-
-	if (coverageOptions === 'showCoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-		editor.setDecorations(decorators.type === 'gutter' ? decorators.coveredGutterDecorator : decorators.coveredHighlightDecorator, file.coveredRange);
-	}
-
-	if (coverageOptions === 'showUncoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-		editor.setDecorations(decorators.type === 'gutter' ? decorators.uncoveredGutterDecorator : decorators.uncoveredHighlightDecorator, file.uncoveredRange);
-	}
+interface CoverageData {
+	uncoveredRange: vscode.Range[];
+	coveredRange: vscode.Range[];
 }
 
-export function getCoverage(coverProfilePath: string, showErrOutput: boolean = false): Promise<any[]> {
+let coverageFiles: { [key: string]: CoverageData } = {};
+let isCoverageApplied: boolean = false;
+
+/**
+ * Clear the coverage on all files
+ */
+function clearCoverage() {
+	coverageFiles = {};
+	disposeDecorators();
+	isCoverageApplied = false;
+}
+
+/**
+ * Extract the coverage data from the given cover profile & apply them on the files in the open editors.
+ * @param coverProfilePath Path to the file that has the cover profile data
+ * @param packageDirPath Absolute path of the package for which the coverage was calculated
+ */
+export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageDirPath: string): Promise<void> {
 	return new Promise((resolve, reject) => {
 		try {
 			// Clear existing coverage files
@@ -234,7 +155,8 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
 
-				let coverage = coverageFiles[fileRange[1]] || { coveredRange: [], uncoveredRange: [] };
+				let filePath = path.join(packageDirPath, path.basename(fileRange[1]));
+				let coverage = getCoverageData(filePath);
 				let range = new vscode.Range(
 					// Start Line converted to zero based
 					parseInt(fileRange[2]) - 1,
@@ -247,21 +169,139 @@ export function getCoverage(coverProfilePath: string, showErrOutput: boolean = f
 				);
 				// If is Covered (CoverCount > 0)
 				if (parseInt(fileRange[7]) > 0) {
-					coverage.coveredRange.push({ range });
+					coverage.coveredRange.push(range);
 				}
 				// Not Covered
 				else {
-					coverage.uncoveredRange.push({ range });
+					coverage.uncoveredRange.push(range);
 				}
-				coverageFiles[fileRange[1]] = coverage;
+				setCoverageData(filePath, coverage);
 			});
-			lines.on('close', function (data) {
-				applyCoverage();
-				resolve([]);
+			lines.on('close', () => {
+				vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
+				resolve();
 			});
 		} catch (e) {
 			vscode.window.showInformationMessage(e.msg);
 			reject(e);
 		}
+	});
+}
+
+/**
+ * Get the object that holds the coverage data for given file path.
+ * @param filePath
+ */
+function getCoverageData(filePath: string): CoverageData {
+	if (filePath.startsWith('_')) {
+		filePath = filePath.substr(1);
+	}
+	if (process.platform === 'win32') {
+		const parts = filePath.split('/');
+		if (parts.length) {
+			filePath = parts.join(path.sep);
+		}
+	}
+	return coverageFiles[filePath] || { coveredRange: [], uncoveredRange: [] };
+}
+
+/**
+ * Set the object that holds the coverage data for given file path.
+ * @param filePath
+ * @param data
+ */
+function setCoverageData(filePath: string, data: CoverageData) {
+	if (filePath.startsWith('_')) {
+		filePath = filePath.substr(1);
+	}
+	if (process.platform === 'win32') {
+		const parts = filePath.split('/');
+		if (parts.length) {
+			filePath = parts.join(path.sep);
+		}
+	}
+	coverageFiles[filePath] = data;
+}
+
+/**
+ * Apply the code coverage highlighting in given editor
+ * @param editor
+ */
+export function applyCodeCoverage(editor: vscode.TextEditor) {
+	if (!editor || editor.document.languageId !== 'go' || editor.document.fileName.endsWith('_test.go')) {
+		return;
+	}
+
+	const cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
+	const coverageOptions = cfg['coverageOptions'];
+	setDecorators();
+
+	for (let filename in coverageFiles) {
+		if (editor.document.uri.fsPath.endsWith(filename)) {
+			isCoverageApplied = true;
+			const coverageData = coverageFiles[filename];
+			if (coverageOptions === 'showCoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
+				editor.setDecorations(decorators.type === 'gutter' ? decorators.coveredGutterDecorator : decorators.coveredHighlightDecorator, coverageData.coveredRange);
+			}
+
+			if (coverageOptions === 'showUncoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
+				editor.setDecorations(decorators.type === 'gutter' ? decorators.uncoveredGutterDecorator : decorators.uncoveredHighlightDecorator, coverageData.uncoveredRange);
+			}
+		}
+	}
+}
+
+/**
+ * Listener for change in the editor.
+ * A change in a Go file means the coverage data is stale. Therefore it should be cleared.
+ * @param e TextDocumentChangeEvent
+ */
+export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent) {
+	if (e.document.languageId !== 'go') {
+		return;
+	}
+	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e.document)) {
+		return;
+	}
+	clearCoverage();
+}
+
+/**
+ * If current editor has Code coverage applied, then remove it.
+ * Else run tests to get the coverage and apply.
+ */
+export function toggleCoverageCurrentPackage() {
+	let editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage('No editor is active.');
+		return;
+	}
+
+	if (isCoverageApplied) {
+		clearCoverage();
+		return;
+	}
+
+	let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
+	let cwd = path.dirname(editor.document.uri.fsPath);
+
+	let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
+	let tmpCoverPath = getTempFilePath('go-code-cover');
+	let args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
+	const testConfig: TestConfig = {
+		goConfig: goConfig,
+		dir: cwd,
+		flags: args,
+		background: true
+	};
+	return isModSupported(editor.document.uri).then(isMod => {
+		testConfig.isMod = isMod;
+		return goTest(testConfig).then(success => {
+			if (!success) {
+				showTestOutput();
+				return [];
+			}
+			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
+		});
 	});
 }

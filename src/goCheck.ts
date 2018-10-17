@@ -7,14 +7,14 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import os = require('os');
-import { getCoverage } from './goCover';
+import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
-import { goTest } from './testUtils';
-import { ICheckResult, getBinPath } from './util';
+import { goTest, TestConfig } from './testUtils';
+import { ICheckResult, getBinPath, getTempFilePath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
+import { isModSupported } from './goModules';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -60,6 +60,13 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath;
+	let testConfig: TestConfig = {
+		goConfig: goConfig,
+		dir: cwd,
+		flags: [],
+		background: true
+	};
+
 	let runTest = () => {
 		if (testPromise) {
 			return testPromise;
@@ -67,23 +74,22 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 		let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
 
-		let args = [...buildFlags];
 		if (goConfig['coverOnSave']) {
-			tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
-			args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
+			tmpCoverPath = getTempFilePath('go-code-cover');
+			testConfig.flags = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
+		} else {
+			testConfig.flags = [...buildFlags];
 		}
 
-		testPromise = goTest({
-			goConfig: goConfig,
-			dir: cwd,
-			flags: args,
-			background: true
+		testPromise = isModSupported(fileUri).then(isMod => {
+			testConfig.isMod = isMod;
+			return goTest(testConfig);
 		});
 		return testPromise;
 	};
 
 	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
-		runningToolsPromises.push(goBuild(fileUri, goConfig, goConfig['buildOnSave'] === 'workspace'));
+		runningToolsPromises.push(isModSupported(fileUri).then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace')));
 	}
 
 	if (!!goConfig['testOnSave']) {
@@ -102,7 +108,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
-		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'] === 'workspace'));
+		runningToolsPromises.push(goLint(fileUri, goConfig, (goConfig['lintOnSave'])));
 	}
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
@@ -115,7 +121,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 				return [];
 			}
 			// FIXME: it's not obvious that tmpCoverPath comes from runTest()
-			return getCoverage(tmpCoverPath);
+			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 		});
 	}
 

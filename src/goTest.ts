@@ -8,8 +8,10 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions } from './testUtils';
-import { getCoverage } from './goCover';
+import { getTempFilePath } from './util';
+import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
+import { applyCodeCoverageToAllEditors } from './goCover';
+import { isModSupported } from './goModules';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
 // the last test to be easily re-executed.
@@ -34,7 +36,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
 
 	editor.document.save().then(() => {
 		return getFunctions(editor.document, null).then(testFunctions => {
@@ -59,25 +61,37 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 				return;
 			}
 
-			const testConfig = {
+			let testConfigFns = [testFunctionName];
+
+			if (!isBenchmark && extractInstanceTestName(testFunctionName)) {
+				// find test function with corresponding suite.Run
+				const testFns = findAllTestSuiteRuns(editor.document, testFunctions);
+				if (testFns) {
+					testConfigFns = testConfigFns.concat(testFns.map(t => t.name));
+				}
+			}
+
+			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
 				flags: testFlags,
-				functions: [testFunctionName],
+				functions: testConfigFns,
 				isBenchmark: isBenchmark,
-				showTestCoverage: true
 			};
 
 			// Remember this config as the last executed test.
 			lastTestConfig = testConfig;
 
-			return goTest(testConfig);
+			return isModSupported(editor.document.uri).then(isMod => {
+				testConfig.isMod = isMod;
+				return goTest(testConfig).then(success => {
+					if (success && tmpCoverPath) {
+						return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
+					}
+				});
+			});
 		});
-	}).then(success => {
-		if (success && tmpCoverPath) {
-			return getCoverage(tmpCoverPath);
-		}
-	}, err => {
+	}).then(null, err => {
 		console.error(err);
 	});
 }
@@ -87,30 +101,33 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
  *
  * @param goConfig Configuration for the Go extension.
  */
-export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args: any) {
+export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
 	}
 
-	const {tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
 
-	const testConfig = {
+	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: path.dirname(editor.document.fileName),
 		flags: testFlags,
-		showTestCoverage: true
+		isBenchmark: isBenchmark,
 	};
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
 
-	goTest(testConfig).then(success => {
-		if (success && tmpCoverPath) {
-			return getCoverage(tmpCoverPath);
-		}
-	}, err => {
-		console.log(err);
+	isModSupported(editor.document.uri).then(isMod => {
+		testConfig.isMod = isMod;
+		return goTest(testConfig).then(success => {
+			if (success && tmpCoverPath) {
+				return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
+			}
+		}, err => {
+			console.log(err);
+		});
 	});
 }
 
@@ -120,25 +137,29 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
  * @param goConfig Configuration for the Go extension.
  */
 export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any) {
-	let dir = vscode.workspace.rootPath;
-	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-		dir = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
-	}
-	if (!dir) {
+	if (!vscode.workspace.workspaceFolders.length) {
 		vscode.window.showInformationMessage('No workspace is open to run tests.');
 		return;
 	}
-	const testConfig = {
+	let workspaceUri = vscode.workspace.workspaceFolders[0].uri;
+	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+		workspaceUri = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
+	}
+
+	const testConfig: TestConfig = {
 		goConfig: goConfig,
-		dir: dir,
+		dir: workspaceUri.fsPath,
 		flags: getTestFlags(goConfig, args),
 		includeSubDirectories: true
 	};
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
 
-	goTest(testConfig).then(null, err => {
-		console.error(err);
+	isModSupported(workspaceUri).then(isMod => {
+		testConfig.isMod = isMod;
+		goTest(testConfig).then(null, err => {
+			console.error(err);
+		});
 	});
 }
 
@@ -146,8 +167,9 @@ export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any
  * Runs all tests in the source of the active editor.
  *
  * @param goConfig Configuration for the Go extension.
+ * @param isBenchmark Boolean flag indicating if these are benchmark tests or not.
  */
-export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: string[]): Thenable<boolean> {
+export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: string[]): Thenable<boolean> {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -158,18 +180,24 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, args: s
 		return;
 	}
 
+	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
+
 	return editor.document.save().then(() => {
-		return getTestFunctions(editor.document, null).then(testFunctions => {
-			const testConfig = {
+		return getFunctions(editor.document, null).then(testFunctions => {
+			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
 				flags: getTestFlags(goConfig, args),
-				functions: testFunctions.map(func => { return func.name; })
+				functions: testFunctions.map(sym => sym.name),
+				isBenchmark: isBenchmark,
 			};
 			// Remember this config as the last executed test.
 			lastTestConfig = testConfig;
 
-			return goTest(testConfig);
+			return isModSupported(editor.document.uri).then(isMod => {
+				testConfig.isMod = isMod;
+				return goTest(testConfig);
+			});
 		});
 	}).then(null, err => {
 		console.error(err);
@@ -199,9 +227,9 @@ function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string
 	let tmpCoverPath = '';
 	let testFlags = getTestFlags(goConfig, args) || [];
 	if (goConfig[confFlag] === true) {
-		tmpCoverPath = path.normalize(path.join(os.tmpdir(), 'go-code-cover'));
+		tmpCoverPath = getTempFilePath('go-code-cover');
 		testFlags.push('-coverprofile=' + tmpCoverPath);
 	}
 
-	return {tmpCoverPath, testFlags};
+	return { tmpCoverPath, testFlags };
 }
