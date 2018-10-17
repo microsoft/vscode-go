@@ -1,3 +1,52 @@
+## 0.6.92 - Coming Soon...
+
+* [Logan (@brainsnail)](https://github.com/brainsnail)
+    * Add option `file` to `go.lintOnSave` setting to enable linting just the current file instead of package/workspace on file save. [Feature Request 1931](https://github.com/Microsoft/vscode-go/issues/1931) implemented with [PR 1965](https://github.com/Microsoft/vscode-go/pull/1965)
+
+* [Tobiasz Heller (@nephe)](https://github.com/nephe)
+    * New snippet for `select` statements. [PR 2004](https://github.com/Microsoft/vscode-go/pull/2004)
+
+* [饺子w (@eternal-flame-AD)](https://github.com/eternal-flame-AD)
+    * Support auto-completion during cross-compilation. Fixes [Bug 1874](https://github.com/Microsoft/vscode-go/issues/1874) with [PR 2015](https://github.com/Microsoft/vscode-go/pull/2015)
+
+* [Ralph Schmieder (@rschmied)](https://github.com/rschmied)
+    * Enable the use of `args` in test flags to pass arguments to tests. Fixes [Bug 1534](https://github.com/Microsoft/vscode-go/issues/1534) with [PR 1976](https://github.com/Microsoft/vscode-go/pull/1976)
+
+* [Vimal Kumar (@vimak78)](https://github.com/vimak78)
+    * Include out of the box commands for Go to definition, implementation and symbol in the `Go: Show All Commands` feature. [Feature Request 1822](https://github.com/Microsoft/vscode-go/issues/1822) implmented with [PR 1952](https://github.com/Microsoft/vscode-go/pull/1952)
+
+* [Cezar Sá Espinola (@cezarsa)](https://github.com/cezarsa)
+    * Use different icons for structs, interfaces and types. [PR 1961](https://github.com/Microsoft/vscode-go/pull/1961)
+
+* [Kaarthik Rao Bekal Radhakrishna (@karthikraobr)](https://github.com/karthikraobr)
+    * Use the new import path for `golint`. Fixes [Bug 1997](https://github.com/Microsoft/vscode-go/issues/1997) with [PR 1998](https://github.com/Microsoft/vscode-go/pull/1998)
+
+* [ShowerYing (@showerying)](https://github.com/showerying), [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Remove `godoc` from the list of installable Go tools as it doesnt support CLI mode anymore. Use `godoc` binary which is shipped as part of the Go distribution instead.
+
+* [Jay R. Wren (@jrwren)](https://github.com/jrwren)
+    * Fix the bug where the forks of `gocode` & `godef` failed to install when user has multiple GOPATH. Fixes [Bug 1966](https://github.com/Microsoft/vscode-go/issues/1966) with [PR 1988](https://github.com/Microsoft/vscode-go/pull/1988)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix the regression introduced in the previous update where the testify suites arent being indentified as tests by the codelens unless `go.gotoSymbol.includeImports` was enabled.
+    * Fix the regression where auto-completions are messed up when multiple packages match with the one being used. Fixes [Bug 2011](https://github.com/Microsoft/vscode-go/issues/2011) with [commit d789de0f](https://github.com/Microsoft/vscode-go/commit/d789de0f9561a1c9aa979a145cb64bcbfbe185cf)
+
+Documentation Updates
+
+* [@chiijlaw](https://github.com/chiijlaw)
+* [Miguel Carvajal (@krvajal)](https://github.com/krvajal)
+* [Forrest Cahoon (@forrcaho)](https://github.com/forrcaho)
+
+Engineering Updates
+
+* [@wachino](https://github.com/wachino)
+    * Fix failing tests with [PR 2016](https://github.com/Microsoft/vscode-go/pull/2016)
+
+* [Nguyen Long Nhat (@torn4dom4n)](https://github.com/torn4dom4n)
+    * Replace the use of deprecated `$workspaceRoot` with `$workspaceFolder`. [PR 1977](https://github.com/Microsoft/vscode-go/pull/1977)
+
+
+
 ## 0.6.91 - 10th October, 2018
 
 * [Mathias Griffe (@Mathiasgr)](https://github.com/MathiasGr)
