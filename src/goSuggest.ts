@@ -187,7 +187,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				return reject();
 			}
 
-			let env = Object.assign({}, getToolsEnvVars());
+			let env = getToolsEnvVars();
 			let stdout = '';
 			let stderr = '';
 
