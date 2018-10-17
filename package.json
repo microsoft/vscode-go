@@ -800,7 +800,7 @@
             "bzl"
           ],
           "default": "go",
-          "description": "If go, use standard Go package lookup rules for completions. If gb, use gb-specific lookup rules for completions",
+          "description": "Used to determine the Go package lookup rules for completions by gocode. Only applies when using nsf/gocode. Latest versions of the Go extension uses mdempsky/gocode by default.",
           "scope": "resource"
         },
         "go.useCodeSnippetsOnFunctionSuggest": {
