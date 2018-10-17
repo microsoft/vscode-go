@@ -107,7 +107,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	}
 
 	if (scope === 'file') {
-		args.push(fileUri);
+		args.push(fileUri.fsPath);
 	}
 
 	running = true;
