@@ -3,7 +3,7 @@
 		"prefix": "user",
 		"scope": "markdown",
 		"body": [
-			"[$2 (@$1)](https://github.com/$1)"
+			"* [$2 (@$1)](https://github.com/$1)"
 		],
 		"description": "User Info"
 	},
@@ -19,7 +19,7 @@
 		"prefix": "bug",
 		"scope": "markdown",
 		"body": [
-			"[Bug $1](https://github.com/Microsoft/vscode-go/issues/$1)"
+			"Fixes [Bug $1](https://github.com/Microsoft/vscode-go/issues/$1) with [PR $2](https://github.com/Microsoft/vscode-go/pull/$2)"
 		],
 		"description": "Bug Number"
 	},
@@ -27,7 +27,7 @@
 		"prefix": "feature",
 		"scope": "markdown",
 		"body": [
-			"[Feature Request $1](https://github.com/Microsoft/vscode-go/issues/$1)"
+			"[Feature Request $1](https://github.com/Microsoft/vscode-go/issues/$1) implemented with [PR $2](https://github.com/Microsoft/vscode-go/pull/$2)"
 		],
 		"description": "Feature Request Number"
 	}
