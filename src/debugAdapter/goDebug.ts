@@ -850,7 +850,7 @@ class GoDebugSession extends DebugSession {
 						let initdoneIndex = -1;
 						for (let i = 0; i < globals.length; i++) {
 							globals[i].name = globals[i].name.substr(packageName.length + 1);
-							if (initdoneIndex === -1 && globals[i].name  === this.initdone) {
+							if (initdoneIndex === -1 && globals[i].name === this.initdone) {
 								initdoneIndex = i;
 							}
 						}
@@ -979,6 +979,7 @@ class GoDebugSession extends DebugSession {
 				variables.push({
 					name: mapKey.result,
 					value: mapValue.result,
+					evaluateName: mapValue.result,
 					variablesReference: mapValue.variablesReference
 				});
 			}
@@ -988,6 +989,7 @@ class GoDebugSession extends DebugSession {
 				return {
 					name: v.name,
 					value: result,
+					evaluateName: v.name,
 					variablesReference
 				};
 			});
