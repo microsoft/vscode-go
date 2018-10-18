@@ -1,3 +1,8 @@
+## 0.6.93 - 18th October, 2018
+
+Fix for issue with installing/updating tools when using the `Go: Install/Update Tools` command.
+[Bug 2024](https://github.com/Microsoft/vscode-go/issues/1874) fixed by [Kaarthik Rao Bekal Radhakrishna (@karthikraobr)](https://github.com/karthikraobr) and [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+
 ## 0.6.92 - 17th October, 2018
 
 * [Logan (@brainsnail)](https://github.com/brainsnail)
