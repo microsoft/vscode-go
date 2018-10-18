@@ -41,7 +41,8 @@ const allTools: { [key: string]: string } = {
 	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
 	'dlv': 'github.com/derekparker/delve/cmd/dlv',
-	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct'
+	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct',
+	'godoc': 'golang.org/x/tools/cmd/godoc'
 };
 
 // Tools used explicitly by the basic features of the extension
