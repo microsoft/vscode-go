@@ -352,18 +352,16 @@ export function installTools(missing: string[]) {
 			};
 
 			let closeToolPromise = Promise.resolve(true);
-			if (tool === 'gocode' || tool === 'gocode-gomod') {
+			const toolBinPath = getBinPath(tool);
+			if (path.isAbsolute(toolBinPath) && (tool === 'gocode' || tool === 'gocode-gomod')) {
 				closeToolPromise = new Promise<boolean>((innerResolve) => {
-					const gocodeToolPath = getBinPath(tool);
-					if (path.isAbsolute(gocodeToolPath)) {
-						cp.execFile(gocodeToolPath, ['close'], {}, (err, stdout, stderr) => {
-							if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
-								outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
-								return innerResolve(false);
-							}
-							innerResolve(true);
-						});
-					}
+					cp.execFile(toolBinPath, ['close'], {}, (err, stdout, stderr) => {
+						if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
+							outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
+							return innerResolve(false);
+						}
+						innerResolve(true);
+					});
 				});
 			}
 
