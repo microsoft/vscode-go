@@ -19,8 +19,7 @@
 
 	// show the output window only if unrecognized errors occur.
 	"presentation": {
-        	"reveal": "always",
-        	"panel": "new"
+        	"reveal": "never"
     	},
 
 	// we run the custom script "compile" as defined in package.json
