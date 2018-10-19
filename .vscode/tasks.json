@@ -9,16 +9,19 @@
 // A task runner that calls the Typescript compiler (tsc) and
 // compiles the extension.
 {
-	"version": "0.1.0",
+	"version": "2.0.0",
 
 	// we want to run npm
 	"command": "npm",
 
 	// the command is a shell script
-	"isShellCommand": true,
+	"type": "shell",
 
 	// show the output window only if unrecognized errors occur.
-	"showOutput": "silent",
+	"presentation": {
+        	"reveal": "always",
+        	"panel": "new"
+    	},
 
 	// we run the custom script "compile" as defined in package.json
 	"args": ["run", "compile"],
