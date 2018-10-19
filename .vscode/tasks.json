@@ -10,9 +10,9 @@
 // compiles the extension.
 {
 	"version": "2.0.0",
-	"task": [
+	"tasks": [
 		{
-			"label": "Compile",
+			"label": "npm",
 			"type": "shell",
 			"command": "npm",
 			"presentation": {
