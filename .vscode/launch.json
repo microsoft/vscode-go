@@ -1,5 +1,5 @@
 {
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"configurations": [
 		{
 			"name": "Launch Extension",
@@ -7,28 +7,21 @@
 			"request": "launch",
 			// path to VSCode executable
 			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
-			],
+			"args": ["--extensionDevelopmentPath=${workspaceFolder}"],
 			"stopOnEntry": false,
 			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			],
+			"outFiles": ["${workspaceFolder}/out/**/*.js"],
 			"preLaunchTask": "npm"
 		},
 		{
 			"name": "Launch as server",
-			"type": "node2",
+			"type": "node",
+			"protocol": "inspector",
 			"request": "launch",
 			"program": "${workspaceFolder}/out/src/debugAdapter/goDebug.js",
-			"args": [
-				"--server=4712"
-			],
+			"args": ["--server=4711"],
 			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			]
+			"outFiles": ["${workspaceFolder}/out/**/*.js"]
 		},
 		{
 			"name": "Launch Tests",
@@ -42,9 +35,7 @@
 			],
 			"stopOnEntry": false,
 			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
-			],
+			"outFiles": ["${workspaceFolder}/out/**/*.js"],
 			"preLaunchTask": "npm"
 		},
 		{
@@ -66,10 +57,7 @@
 	"compounds": [
 		{
 			"name": "Extension + Debug server",
-			"configurations": [
-				"Launch Extension",
-				"Launch as server"
-			]
+			"configurations": ["Launch Extension", "Launch as server"]
 		}
 	]
 }
