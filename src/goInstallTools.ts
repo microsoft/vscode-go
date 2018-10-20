@@ -379,7 +379,7 @@ export function installTools(missing: string[]) {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
 						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
 						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
-					} else if (tool.endsWith('-gomod')) {
+					} else if (!err && tool.endsWith('-gomod')) {
 						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
 						cp.execFile(goRuntimePath, ['build', '-o', outputFile, allTools[tool]], { env: envForTools }, callback);
 					} else {
