@@ -348,7 +348,7 @@ export function getToolsGopath(useCache: boolean = true): string {
 
 function resolveToolsGopath(): string {
 
-	let toolsGopathForWorkspace = vscode.workspace.getConfiguration('go')['toolsGopath'] || '';
+	let toolsGopathForWorkspace = substituteEnv(vscode.workspace.getConfiguration('go')['toolsGopath'] || '');
 
 	// In case of single root
 	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length <= 1) {
@@ -408,6 +408,12 @@ export function getToolsEnvVars(): any {
 	return envVars;
 }
 
+export function substituteEnv(input: string): string {
+	return input.replace(/\${env:([^}]+)}/g, function (match, capture) {
+		return process.env[capture.trim()] || '';
+	});
+}
+
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	let currentFilePath: string;
 	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
@@ -443,7 +449,7 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 		}
 	}
 
-	const configGopath = config['gopath'] ? resolvePath(config['gopath'], currentRoot) : '';
+	let configGopath = config['gopath'] ? resolvePath(substituteEnv(config['gopath']), currentRoot) : '';
 	return inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
 }
 
