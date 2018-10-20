@@ -93,30 +93,18 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 	}
 
 	if (buildWorkspace && currentWorkspace && !isTestFile) {
-		let count = 1;
 		return getNonVendorPackages(currentWorkspace).then(pkgs => {
-			let buildPromises = [];
-			buildPromises = Array.from(pkgs.keys()).map(pkgPath => {
-				running = true;
-				return runTool(
-					buildArgs.concat('-o', `${tmpPath}-${count++}`, pkgPath),
-					currentWorkspace,
-					'error',
-					true,
-					null,
-					buildEnv,
-					true,
-					tokenSource.token
-				);
-			});
-			return Promise.all(buildPromises).then((resultSets) => {
-				let results: ICheckResult[] = [].concat.apply([], resultSets);
-				// Filter duplicates
-				return results.filter((results, index, self) =>
-					self.findIndex((t) => {
-						return t.file === results.file && t.line === results.line && t.msg === results.msg && t.severity === results.severity;
-					}) === index);
-			}).then(v => {
+			running = true;
+			return runTool(
+				buildArgs.concat(Array.from(pkgs.keys())),
+				currentWorkspace,
+				'error',
+				true,
+				null,
+				buildEnv,
+				true,
+				tokenSource.token
+			).then(v => {
 				updateRunning();
 				return v;
 			});
