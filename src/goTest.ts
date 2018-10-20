@@ -53,7 +53,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 						testFunctionName = func.name;
 						break;
 					}
-				};
+				}
 			}
 
 			if (!testFunctionName) {

@@ -97,7 +97,7 @@ export function generateTestCurrentFunction(): Thenable<boolean> {
 				currentFunction = func;
 				break;
 			}
-		};
+		}
 		if (!currentFunction) {
 			vscode.window.showInformationMessage('No function found at cursor.');
 			return Promise.resolve(false);

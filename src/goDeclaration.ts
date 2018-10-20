@@ -75,7 +75,7 @@ function definitionLocation_godef(document: vscode.TextDocument, isMod: boolean,
 				}
 				if (err) {
 					return reject(err.message || stderr);
-				};
+				}
 				let result = stdout.toString();
 				let lines = result.split('\n');
 				let match = /(.*):(\d+):(\d+)/.exec(lines[0]);
@@ -164,7 +164,7 @@ function definitionLocation_gogetdoc(document: vscode.TextDocument, isMod: boole
 						return resolve(null);
 					}
 					return reject(err.message || stderr);
-				};
+				}
 				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(goGetDocOutput.pos);
 				let definitionInfo = {
@@ -212,7 +212,7 @@ function definitionLocation_guru(document: vscode.TextDocument, position: vscode
 				}
 				if (err) {
 					return reject(err.message || stderr);
-				};
+				}
 				let guruOutput = <GuruDefinitionOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(guruOutput.objpos);
 				let definitionInfo = {
