@@ -762,7 +762,7 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 			warningDiagnosticCollection.set(fileUri, newWarnings);
 		}
 	});
-};
+}
 
 
 function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {

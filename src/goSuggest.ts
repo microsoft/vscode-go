@@ -302,7 +302,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							item.sortText = 'a';
 							suggestions.push(item);
 							suggestionSet.add(item.label);
-						};
+						}
 					}
 
 					// Add importable packages matching currentword to suggestions

@@ -36,4 +36,4 @@ export function goGetPackage() {
 		// go get -v doesn't write anything when the package already exists
 		vscode.window.showInformationMessage(`Package already exists: ${importPath}`);
 	});
-};
+}
