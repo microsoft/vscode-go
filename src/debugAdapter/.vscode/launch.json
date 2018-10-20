@@ -7,9 +7,9 @@
 			"request": "launch",
 			"program": "${workspaceRoot}/../../out/src/debugAdapter/goDebug.js",
 			"stopOnEntry": false,
-			"args": [ "--server=4711" ],
+			"args": ["--server=4711"],
 			"sourceMaps": true,
-			"outDir": "${workspaceRoot}/../../out/src/debugAdapter"
+			"outFiles": ["${workspaceRoot}/../../out/src/debugAdapter"]
 		}
 	]
 }
