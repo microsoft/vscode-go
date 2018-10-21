@@ -157,6 +157,7 @@ interface DebugVariable {
 	cap: number;
 	children: DebugVariable[];
 	unreadable: string;
+	fqn: string;
 }
 
 interface ListGoroutinesOut {
@@ -808,6 +809,14 @@ class GoDebugSession extends DebugSession {
 			}
 			const locals = this.delve.isApiV1 ? <DebugVariable[]>out : (<ListVarsOut>out).Variables;
 			verbose('locals', locals);
+			locals.every(local => {
+				local.fqn = local.name;
+				local.children.every(child => {
+					child.fqn = local.name;
+					return true;
+				});
+				return true;
+			})
 			let listLocalFunctionArgsIn = { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId };
 			this.delve.call<DebugVariable[] | ListFunctionArgsOut>('ListFunctionArgs', this.delve.isApiV1 ? [listLocalFunctionArgsIn] : [{ scope: listLocalFunctionArgsIn, cfg: this.delve.loadConfig }], (err, outArgs) => {
 				if (err) {
@@ -816,7 +825,16 @@ class GoDebugSession extends DebugSession {
 				}
 				const args = this.delve.isApiV1 ? <DebugVariable[]>outArgs : (<ListFunctionArgsOut>outArgs).Args;
 				verbose('functionArgs', args);
+				args.every(local => {
+					local.fqn = local.name;
+					local.children.every(child => {
+						child.fqn = local.name;
+						return true;
+					});
+					return true;
+				})
 				let vars = args.concat(locals);
+
 
 				let scopes = new Array<Scope>();
 				let localVariables = {
@@ -829,8 +847,10 @@ class GoDebugSession extends DebugSession {
 					len: 0,
 					cap: 0,
 					children: vars,
-					unreadable: ''
+					unreadable: '',
+					fqn: '',
 				};
+
 				scopes.push(new Scope('Local', this._variableHandles.create(localVariables), false));
 				response.body = { scopes };
 
@@ -869,7 +889,8 @@ class GoDebugSession extends DebugSession {
 							len: 0,
 							cap: 0,
 							children: globals,
-							unreadable: ''
+							unreadable: '',
+							fqn: '',
 						};
 						scopes.push(new Scope('Global', this._variableHandles.create(globalVariables), false));
 						this.sendResponse(response);
@@ -922,6 +943,13 @@ class GoDebugSession extends DebugSession {
 					variablesReference: 0
 				};
 			} else {
+				if(v.children[0].children.length > 0){
+					v.children[0].fqn=v.fqn;
+					v.children[0].children.every(child=>{
+						child.fqn=v.fqn+'.'+child.name;
+						return true;
+					});
+				}
 				return {
 					result: '<' + v.type + '>',
 					variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(v.children[0]) : 0
@@ -965,7 +993,7 @@ class GoDebugSession extends DebugSession {
 				return {
 					name: '[' + i + ']',
 					value: result,
-					evaluateName: '[' + i + ']',
+					evaluateName: vari.fqn+'[' + i + ']',
 					variablesReference
 				};
 			});
@@ -980,17 +1008,18 @@ class GoDebugSession extends DebugSession {
 				variables.push({
 					name: mapKey.result,
 					value: mapValue.result,
-					evaluateName: mapValue.result,
+					evaluateName: vari.fqn+'[' + mapKey.result + ']',
 					variablesReference: mapValue.variablesReference
 				});
 			}
 		} else {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
+				v.fqn =  v.fqn == undefined ? vari.fqn + '.' + v.name : v.fqn;
 				return {
 					name: v.name,
 					value: result,
-					evaluateName: v.name,
+					evaluateName: v.fqn == undefined ? vari.fqn + '.' + v.name : v.fqn,
 					variablesReference
 				};
 			});
