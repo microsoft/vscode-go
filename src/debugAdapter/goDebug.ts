@@ -104,7 +104,7 @@ interface LoadConfig {
 	maxArrayValues: number;
 	// MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields.
 	maxStructFields: number;
-};
+}
 
 interface DebugThread {
 	file: string;
@@ -112,7 +112,7 @@ interface DebugThread {
 	line: number;
 	pc: number;
 	function?: DebugFunction;
-};
+}
 
 interface StacktraceOut {
 	Locations: DebugLocation[];

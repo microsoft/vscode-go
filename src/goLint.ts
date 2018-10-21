@@ -1,6 +1,6 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath } from './util';
+import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getToolsGopath } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
 /**
@@ -89,7 +89,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		if (goConfig['toolsGopath']) {
 			// gometalinter will expect its linters to be in the GOPATH
 			// So add the toolsGopath to GOPATH
-			lintEnv['GOPATH'] += path.delimiter + goConfig['toolsGopath'];
+			lintEnv['GOPATH'] += path.delimiter + getToolsGopath();
 		}
 	}
 	if (lintTool === 'golangci-lint') {
@@ -107,7 +107,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	}
 
 	if (scope === 'file') {
-		args.push(fileUri);
+		args.push(fileUri.fsPath);
 	}
 
 	running = true;

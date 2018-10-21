@@ -41,7 +41,7 @@ const allTools: { [key: string]: string } = {
 	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
 	'dlv': 'github.com/derekparker/delve/cmd/dlv',
-	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct'
+	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct',
 };
 
 // Tools used explicitly by the basic features of the extension
@@ -90,7 +90,6 @@ function getTools(goVersion: SemVersion): string[] {
 		if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
 			tools.push('godef-gomod');
 		}
-		tools.push('godoc');
 	} else if (goConfig['docsTool'] === 'gogetdoc') {
 		tools.push('gogetdoc');
 	}
@@ -353,18 +352,16 @@ export function installTools(missing: string[]) {
 			};
 
 			let closeToolPromise = Promise.resolve(true);
-			if (tool === 'gocode' || tool === 'gocode-gomod') {
+			const toolBinPath = getBinPath(tool);
+			if (path.isAbsolute(toolBinPath) && (tool === 'gocode' || tool === 'gocode-gomod')) {
 				closeToolPromise = new Promise<boolean>((innerResolve) => {
-					const gocodeToolPath = getBinPath(tool);
-					if (path.isAbsolute(gocodeToolPath)) {
-						cp.execFile(gocodeToolPath, ['close'], {}, (err, stdout, stderr) => {
-							if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
-								outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
-								return innerResolve(false);
-							}
-							innerResolve(true);
-						});
-					}
+					cp.execFile(toolBinPath, ['close'], {}, (err, stdout, stderr) => {
+						if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
+							outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
+							return innerResolve(false);
+						}
+						innerResolve(true);
+					});
 				});
 			}
 
@@ -382,7 +379,7 @@ export function installTools(missing: string[]) {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
 						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
 						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
-					} else if (tool.endsWith('-gomod')) {
+					} else if (!err && tool.endsWith('-gomod')) {
 						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
 						cp.execFile(goRuntimePath, ['build', '-o', outputFile, allTools[tool]], { env: envForTools }, callback);
 					} else {

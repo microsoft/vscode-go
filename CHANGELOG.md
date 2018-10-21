@@ -1,16 +1,21 @@
-## 0.6.92 - Coming Soon...
+## 0.6.93 - 18th October, 2018
+
+Fix for issue with installing/updating tools when using the `Go: Install/Update Tools` command.
+[Bug 2024](https://github.com/Microsoft/vscode-go/issues/1874) fixed by [Kaarthik Rao Bekal Radhakrishna (@karthikraobr)](https://github.com/karthikraobr) and [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+
+## 0.6.92 - 17th October, 2018
 
 * [Logan (@brainsnail)](https://github.com/brainsnail)
     * Add option `file` to `go.lintOnSave` setting to enable linting just the current file instead of package/workspace on file save. [Feature Request 1931](https://github.com/Microsoft/vscode-go/issues/1931) implemented with [PR 1965](https://github.com/Microsoft/vscode-go/pull/1965)
-
-* [Tobiasz Heller (@nephe)](https://github.com/nephe)
-    * New snippet for `select` statements. [PR 2004](https://github.com/Microsoft/vscode-go/pull/2004)
 
 * [饺子w (@eternal-flame-AD)](https://github.com/eternal-flame-AD)
     * Support auto-completion during cross-compilation. Fixes [Bug 1874](https://github.com/Microsoft/vscode-go/issues/1874) with [PR 2015](https://github.com/Microsoft/vscode-go/pull/2015)
 
 * [Ralph Schmieder (@rschmied)](https://github.com/rschmied)
     * Enable the use of `args` in test flags to pass arguments to tests. Fixes [Bug 1534](https://github.com/Microsoft/vscode-go/issues/1534) with [PR 1976](https://github.com/Microsoft/vscode-go/pull/1976)
+
+* [Tobiasz Heller (@nephe)](https://github.com/nephe)
+    * New snippet for `select` statements. [PR 2004](https://github.com/Microsoft/vscode-go/pull/2004)
 
 * [Vimal Kumar (@vimak78)](https://github.com/vimak78)
     * Include out of the box commands for Go to definition, implementation and symbol in the `Go: Show All Commands` feature. [Feature Request 1822](https://github.com/Microsoft/vscode-go/issues/1822) implmented with [PR 1952](https://github.com/Microsoft/vscode-go/pull/1952)
@@ -26,6 +31,9 @@
 
 * [Jay R. Wren (@jrwren)](https://github.com/jrwren)
     * Fix the bug where the forks of `gocode` & `godef` failed to install when user has multiple GOPATH. Fixes [Bug 1966](https://github.com/Microsoft/vscode-go/issues/1966) with [PR 1988](https://github.com/Microsoft/vscode-go/pull/1988)
+
+* [Bradley Weston (@bweston92)](https://github.com/bweston92)
+    * Include bazel option in `go.gocodePackageLookupMode` setting. Note: This only applies when using nsf/gocode. Latest versions of the Go extension uses mdempsky/gocode by default. [PR 1908](https://github.com/Microsoft/vscode-go/pull/1908)
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Fix the regression introduced in the previous update where the testify suites arent being indentified as tests by the codelens unless `go.gotoSymbol.includeImports` was enabled.

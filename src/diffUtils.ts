@@ -17,7 +17,7 @@ export function isDiffToolAvailable(): boolean {
 	return diffToolAvailable;
 }
 
-export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE };
+export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE }
 
 export class Edit {
 	action: number;

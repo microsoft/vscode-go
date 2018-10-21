@@ -26,7 +26,7 @@ Signing the CLA might sound scary but it's actually very simple and can be done 
 
 Have a question? First, ask away on [Gitter](https://gitter.im/Microsoft/vscode-go) or on the `vscode` channel in the [Gophers Slack](https://invite.slack.golangbridge.org/).
 
-The active community will be eager to assist you. If you dont get answers there, then feel free to ask your question by opening an issue here.
+The active community will be eager to assist you. If you don't get answers there, then feel free to ask your question by opening an issue here.
 Your well-worded question will serve as a resource to others searching for help.
 
 ## Reporting Issues
@@ -100,4 +100,3 @@ If you believe the bot got something wrong, please open a new issue and let us k
 # Thank You!
 
 Your contributions to open source, large or small, make great projects like this possible. Thank you for taking the time to contribute.
-
