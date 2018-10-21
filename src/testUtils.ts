@@ -340,11 +340,9 @@ export function cancelRunningTests(): Thenable<boolean> {
 function expandFilePathInOutput(output: string, cwd: string): string {
 	let lines = output.split('\n');
 	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\s*(.+.go):(\d+):/);
+		let matches = lines[i].match(/^\s*(\s*\w+.go):(\d+):/);
 		if (matches && matches[1] && !path.isAbsolute(matches[1])) {
-			if (lines[i + 1].includes('--- FAIL: ')) {
-				lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
-			}
+			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
 		}
 	}
 	return lines.join('\n');
