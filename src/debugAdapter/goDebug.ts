@@ -943,10 +943,10 @@ class GoDebugSession extends DebugSession {
 					variablesReference: 0
 				};
 			} else {
-				if(v.children[0].children.length > 0){
-					v.children[0].fqn=v.fqn;
-					v.children[0].children.every(child=>{
-						child.fqn=v.fqn+'.'+child.name;
+				if (v.children[0].children.length > 0) {
+					v.children[0].fqn = v.fqn;
+					v.children[0].children.every(child => {
+						child.fqn = v.fqn + '.' + child.name;
 						return true;
 					});
 				}
@@ -993,7 +993,7 @@ class GoDebugSession extends DebugSession {
 				return {
 					name: '[' + i + ']',
 					value: result,
-					evaluateName: vari.fqn+'[' + i + ']',
+					evaluateName: vari.fqn + '[' + i + ']',
 					variablesReference
 				};
 			});
@@ -1008,14 +1008,14 @@ class GoDebugSession extends DebugSession {
 				variables.push({
 					name: mapKey.result,
 					value: mapValue.result,
-					evaluateName: vari.fqn+'[' + mapKey.result + ']',
+					evaluateName: vari.fqn + '[' + mapKey.result + ']',
 					variablesReference: mapValue.variablesReference
 				});
 			}
 		} else {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
-				v.fqn =  v.fqn == undefined ? vari.fqn + '.' + v.name : v.fqn;
+				v.fqn = v.fqn == undefined ? vari.fqn + '.' + v.name : v.fqn;
 				return {
 					name: v.name,
 					value: result,
