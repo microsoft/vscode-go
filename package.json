@@ -523,7 +523,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. ['-ldflags=\"-s\"'])",
+          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. [\"-ldflags='-s'\"])",
           "scope": "resource"
         },
         "go.buildTags": {
@@ -598,7 +598,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])",
+          "description": "Flags to pass to `go tool vet` (e.g. [\"-all\", \"-shadow\"])",
           "scope": "resource"
         },
         "go.formatTool": {
@@ -619,7 +619,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to format tool (e.g. ['-s'])",
+          "description": "Flags to pass to format tool (e.g. [\"-s\"])",
           "scope": "resource"
         },
         "go.inferGopath": {
