@@ -3,7 +3,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath } from './util';
+import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath, killTree } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getToolsEnvVars } from './util';
 
@@ -96,9 +96,9 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 
 					return resolve(results);
 				});
-				token.onCancellationRequested(() => guruProcess.kill());
+				token.onCancellationRequested(() => killTree(guruProcess.pid));
 			});
-			token.onCancellationRequested(() => listProcess.kill());
+			token.onCancellationRequested(() => killTree(listProcess.pid));
 		});
 	}
 }
