@@ -157,7 +157,7 @@ interface DebugVariable {
 	cap: number;
 	children: DebugVariable[];
 	unreadable: string;
-	fqn: string;
+	fullyQualifiedName: string;
 }
 
 interface ListGoroutinesOut {
@@ -834,7 +834,7 @@ class GoDebugSession extends DebugSession {
 					cap: 0,
 					children: vars,
 					unreadable: '',
-					fqn: '',
+					fullyQualifiedName: '',
 				};
 
 				scopes.push(new Scope('Local', this._variableHandles.create(localVariables), false));
@@ -876,7 +876,7 @@ class GoDebugSession extends DebugSession {
 							cap: 0,
 							children: globals,
 							unreadable: '',
-							fqn: '',
+							fullyQualifiedName: '',
 						};
 						scopes.push(new Scope('Global', this._variableHandles.create(globalVariables), false));
 						this.sendResponse(response);
@@ -930,9 +930,9 @@ class GoDebugSession extends DebugSession {
 				};
 			} else {
 				if (v.children[0].children.length > 0) {
-					v.children[0].fqn = v.fqn;
+					v.children[0].fullyQualifiedName = v.fullyQualifiedName;
 					v.children[0].children.every(child => {
-						child.fqn = v.fqn + '.' + child.name;
+						child.fullyQualifiedName = v.fullyQualifiedName + '.' + child.name;
 						return true;
 					});
 				}
@@ -979,7 +979,7 @@ class GoDebugSession extends DebugSession {
 				return {
 					name: '[' + i + ']',
 					value: result,
-					evaluateName: vari.fqn + '[' + i + ']',
+					evaluateName: vari.fullyQualifiedName + '[' + i + ']',
 					variablesReference
 				};
 			});
@@ -994,18 +994,18 @@ class GoDebugSession extends DebugSession {
 				variables.push({
 					name: mapKey.result,
 					value: mapValue.result,
-					evaluateName: vari.fqn + '[' + mapKey.result + ']',
+					evaluateName: vari.fullyQualifiedName + '[' + mapKey.result + ']',
 					variablesReference: mapValue.variablesReference
 				});
 			}
 		} else {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
-				v.fqn = v.fqn === undefined ? vari.fqn + '.' + v.name : v.fqn;
+				v.fullyQualifiedName = v.fullyQualifiedName === undefined ? vari.fullyQualifiedName + '.' + v.name : v.fullyQualifiedName;
 				return {
 					name: v.name,
 					value: result,
-					evaluateName: v.fqn,
+					evaluateName: v.fullyQualifiedName,
 					variablesReference
 				};
 			});
@@ -1161,9 +1161,9 @@ class GoDebugSession extends DebugSession {
 
 	private addFullyQualifiedName(data: DebugVariable[]) {
 		data.every(local => {
-			local.fqn = local.name;
+			local.fullyQualifiedName = local.name;
 			local.children.every(child => {
-				child.fqn = local.name;
+				child.fullyQualifiedName = local.name;
 				return true;
 			});
 			return true;
