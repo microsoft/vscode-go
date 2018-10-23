@@ -809,14 +809,7 @@ class GoDebugSession extends DebugSession {
 			}
 			const locals = this.delve.isApiV1 ? <DebugVariable[]>out : (<ListVarsOut>out).Variables;
 			verbose('locals', locals);
-			locals.every(local => {
-				local.fqn = local.name;
-				local.children.every(child => {
-					child.fqn = local.name;
-					return true;
-				});
-				return true;
-			})
+			this.addFullyQualifiedName(locals);
 			let listLocalFunctionArgsIn = { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId };
 			this.delve.call<DebugVariable[] | ListFunctionArgsOut>('ListFunctionArgs', this.delve.isApiV1 ? [listLocalFunctionArgsIn] : [{ scope: listLocalFunctionArgsIn, cfg: this.delve.loadConfig }], (err, outArgs) => {
 				if (err) {
@@ -825,14 +818,7 @@ class GoDebugSession extends DebugSession {
 				}
 				const args = this.delve.isApiV1 ? <DebugVariable[]>outArgs : (<ListFunctionArgsOut>outArgs).Args;
 				verbose('functionArgs', args);
-				args.every(local => {
-					local.fqn = local.name;
-					local.children.every(child => {
-						child.fqn = local.name;
-						return true;
-					});
-					return true;
-				})
+				this.addFullyQualifiedName(args);
 				let vars = args.concat(locals);
 
 
@@ -1015,11 +1001,11 @@ class GoDebugSession extends DebugSession {
 		} else {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
-				v.fqn = v.fqn == undefined ? vari.fqn + '.' + v.name : v.fqn;
+				v.fqn = v.fqn === undefined ? vari.fqn + '.' + v.name : v.fqn;
 				return {
 					name: v.name,
 					value: result,
-					evaluateName: v.fqn == undefined ? vari.fqn + '.' + v.name : v.fqn,
+					evaluateName: v.fqn,
 					variablesReference
 				};
 			});
@@ -1170,6 +1156,17 @@ class GoDebugSession extends DebugSession {
 			response.body = this.convertDebugVariableToProtocolVariable(variable, 0);
 			this.sendResponse(response);
 			verbose('EvaluateResponse');
+		});
+	}
+
+	private addFullyQualifiedName(data: DebugVariable[]) {
+		data.every(local => {
+			local.fqn = local.name;
+			local.children.every(child => {
+				child.fqn = local.name;
+				return true;
+			});
+			return true;
 		});
 	}
 }
