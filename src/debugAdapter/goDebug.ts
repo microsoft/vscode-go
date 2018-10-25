@@ -9,7 +9,7 @@ import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
 import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
-import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
+import { spawn, ChildProcess, execSync, spawnSync, execFile, execFileSync } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 import * as logger from 'vscode-debug-logger';
@@ -245,6 +245,38 @@ function normalizePath(filePath: string) {
 	return filePath;
 }
 
+interface GoOutlineRange {
+	start: number;
+	end: number;
+}
+
+interface GoOutlineDeclaration {
+	label: string;
+	type: string;
+	receiverType?: string;
+	icon?: string; // icon class or null to use the default images based on the type
+	start: number;
+	end: number;
+	children?: GoOutlineDeclaration[];
+	signature?: GoOutlineRange;
+	comment?: GoOutlineRange;
+}
+
+function fileContainsMainFunction(filePath: string) {
+	let goOutline = getBinPathWithPreferredGopath('go-outline', []);
+	let goOutlineFlags = ['-f', filePath];
+
+	try {
+		let goOutlineOutput = execFileSync(goOutline, goOutlineFlags);
+		let declarations = <GoOutlineDeclaration[]>JSON.parse(goOutlineOutput);
+		return declarations.some((declaration) => declaration.type === 'package' && declaration.label === 'main'
+							&& declaration.children.some((symbol) => symbol.type === 'function' && symbol.label === 'main'));
+	}
+	catch (e) {
+		return false;
+	}
+}
+
 class Delve {
 	program: string;
 	remotePath: string;
@@ -366,7 +398,7 @@ class Delve {
 
 			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
 			let dlvArgs = [mode || 'debug'];
-			if (mode === 'exec') {
+			if (mode === 'exec' || mode === 'debug' && !isProgramDirectory && fileContainsMainFunction(program)) {
 				dlvArgs = dlvArgs.concat([program]);
 			} else if (currentGOWorkspace) {
 				dlvArgs = dlvArgs.concat([dirname.substr(currentGOWorkspace.length + 1)]);
