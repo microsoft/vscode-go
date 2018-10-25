@@ -234,6 +234,7 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 
 	const cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
 	const coverageOptions = cfg['coverageOptions'];
+	disposeDecorators();
 	setDecorators();
 
 	for (let filename in coverageFiles) {
