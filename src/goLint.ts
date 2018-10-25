@@ -36,13 +36,45 @@ export function lintCode(scope?: string) {
 }
 
 /**
+ * Runs linter on the current file, package or workspace.
+ */
+export function lintSlow(scope?: string) {
+	let editor = vscode.window.activeTextEditor;
+	if (!editor && scope !== 'workspace') {
+		vscode.window.showInformationMessage('No editor is active, cannot find current package to lint');
+		return;
+	}
+	if (editor.document.languageId !== 'go' && scope !== 'workspace') {
+		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to lint');
+		return;
+	}
+
+	let documentUri = editor ? editor.document.uri : null;
+	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
+
+	outputChannel.clear(); // Ensures stale output from lint on save is cleared
+	diagnosticsStatusBarItem.show();
+	diagnosticsStatusBarItem.text = 'Linting...';
+
+	goLint(documentUri, goConfig, scope, true)
+		.then(warnings => {
+			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
+			diagnosticsStatusBarItem.hide();
+		})
+		.catch(err => {
+			vscode.window.showInformationMessage('Error: ' + err);
+			diagnosticsStatusBarItem.text = 'Linting Failed';
+		});
+}
+
+/**
  * Runs linter and presents the output in the 'Go' channel and in the diagnostic collections.
  *
  * @param fileUri Document uri.
  * @param goConfig Configuration for the Go extension.
  * @param scope Scope in which to run the linter.
  */
-export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, scope?: string): Promise<ICheckResult[]> {
+export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, scope?: string, slow?: boolean): Promise<ICheckResult[]> {
 	epoch++;
 	let closureEpoch = epoch;
 	if (tokenSource) {
@@ -61,8 +93,8 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		return Promise.resolve([]);
 	}
 
-	const lintTool = goConfig['lintTool'] || 'golint';
-	const lintFlags: string[] = goConfig['lintFlags'] || [];
+	const lintTool = (slow ? goConfig['slowLintTool'] : goConfig['lintTool']) || 'golint';
+	const lintFlags: string[] = (slow ? goConfig['slowLintFlags'] : goConfig['lintFlags']) || [];
 	const lintEnv = Object.assign({}, getToolsEnvVars());
 	const args = [];
 

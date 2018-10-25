@@ -40,7 +40,7 @@ import { browsePackages } from './goBrowsePackage';
 import { goGetPackage } from './goGetPackage';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';
 import { playgroundCommand } from './goPlayground';
-import { lintCode } from './goLint';
+import { lintCode, lintSlow } from './goLint';
 import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
@@ -343,6 +343,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		if (e.affectsConfiguration('go.lintTool')) {
 			checkToolExists(updatedGoConfig['lintTool']);
 		}
+		if (e.affectsConfiguration('go.slowLintTool')) {
+			checkToolExists(updatedGoConfig['slowLintTool']);
+		}
 		if (e.affectsConfiguration('go.docsTool')) {
 			checkToolExists(updatedGoConfig['docsTool']);
 		}
@@ -379,20 +382,20 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.show.commands', () => {
 		let extCommands = getExtensionCommands();
 		extCommands.push({
-			command : 'editor.action.goToDeclaration',
-			title : 'Go to Definition'
+			command: 'editor.action.goToDeclaration',
+			title: 'Go to Definition'
 		});
 		extCommands.push({
-			command : 'editor.action.goToImplementation',
-			title : 'Go to Implementation'
+			command: 'editor.action.goToImplementation',
+			title: 'Go to Implementation'
 		});
 		extCommands.push({
-			command : 'workbench.action.gotoSymbol',
-			title : 'Go to Symbol in File...'
+			command: 'workbench.action.gotoSymbol',
+			title: 'Go to Symbol in File...'
 		});
 		extCommands.push({
-			command : 'workbench.action.showAllSymbols',
-			title : 'Go to Symbol in Workspace...'
+			command: 'workbench.action.showAllSymbols',
+			title: 'Go to Symbol in Workspace...'
 		});
 		vscode.window.showQuickPick(extCommands.map(x => x.title)).then(cmd => {
 			let selectedCmd = extCommands.find(x => x.title === cmd);
@@ -409,6 +412,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.package', () => lintCode('package')));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.workspace', () => lintCode('workspace')));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.slowlint.package', () => lintSlow('package')));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.slowlint.workspace', () => lintSlow('workspace')));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.lint.file', () => lintCode('file')));
 
@@ -470,6 +477,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "lintOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "lintFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "lintTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "slowLintTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "vetOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "vetFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "testOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
@@ -508,6 +516,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		lintOnSave: goConfig['lintOnSave'] + '',
 		lintFlags: goConfig['lintFlags'],
 		lintTool: goConfig['lintTool'],
+		slowLintTool: goConfig['slowLintTool'],
 		generateTestsFlags: goConfig['generateTestsFlags'],
 		vetOnSave: goConfig['vetOnSave'] + '',
 		vetFlags: goConfig['vetFlags'],

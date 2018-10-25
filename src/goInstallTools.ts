@@ -108,19 +108,19 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('golint');
 	}
 
-	if (goConfig['lintTool'] === 'gometalinter') {
+	if (goConfig['lintTool'] === 'gometalinter' || goConfig['slowLintTool'] === 'gometalinter') {
 		tools.push('gometalinter');
 	}
 
-	if (goConfig['lintTool'] === 'megacheck') {
+	if (goConfig['lintTool'] === 'megacheck' || goConfig['slowLintTool'] === 'megacheck') {
 		tools.push('megacheck');
 	}
 
-	if (goConfig['lintTool'] === 'golangci-lint') {
+	if (goConfig['lintTool'] === 'golangci-lint' || goConfig['slowLintTool'] === 'golangci-lint') {
 		tools.push('golangci-lint');
 	}
 
-	if (goConfig['lintTool'] === 'revive') {
+	if (goConfig['lintTool'] === 'revive' || goConfig['slowLintTool'] === 'revive') {
 		tools.push('revive');
 	}
 

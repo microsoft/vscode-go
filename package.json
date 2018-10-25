@@ -224,6 +224,16 @@
         "description": "Run linter in the current workspace."
       },
       {
+        "command": "go.slowlint.package",
+        "title": "Go: Slow Lint Current Package",
+        "description": "Run slow linter in the package of the current file."
+      },
+      {
+        "command": "go.slowlint.workspace",
+        "title": "Go: Slow Lint Workspace",
+        "description": "Run slow linter in the current workspace."
+      },
+      {
         "command": "go.vet.package",
         "title": "Go: Vet Current Package",
         "description": "Run go vet in the package of the current file."
@@ -579,6 +589,28 @@
           },
           "default": [],
           "description": "Flags to pass to Lint tool (e.g. [\"-min_confidence=.8\"])",
+          "scope": "resource"
+        },
+        "go.slowLintTool": {
+          "type": "string",
+          "default": "gometalinter",
+          "description": "Specifies Slow Lint tool name.",
+          "scope": "resource",
+          "enum": [
+            "golint",
+            "gometalinter",
+            "megacheck",
+            "golangci-lint",
+            "revive"
+          ]
+        },
+        "go.slowLintFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Flags to pass to Slow Lint tool (e.g. [\"--disable=megacheck\"])",
           "scope": "resource"
         },
         "go.vetOnSave": {
