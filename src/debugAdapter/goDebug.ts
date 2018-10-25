@@ -245,34 +245,24 @@ function normalizePath(filePath: string) {
 	return filePath;
 }
 
-interface GoOutlineRange {
-	start: number;
-	end: number;
-}
-
-interface GoOutlineDeclaration {
-	label: string;
-	type: string;
-	receiverType?: string;
-	icon?: string; // icon class or null to use the default images based on the type
-	start: number;
-	end: number;
-	children?: GoOutlineDeclaration[];
-	signature?: GoOutlineRange;
-	comment?: GoOutlineRange;
-}
-
-function fileContainsMainFunction(filePath: string) {
+function fileContainsEntryPoint(filePath: string) {
 	let goOutline = getBinPathWithPreferredGopath('go-outline', []);
 	let goOutlineFlags = ['-f', filePath];
 
 	try {
 		let goOutlineOutput = execFileSync(goOutline, goOutlineFlags);
-		let declarations = <GoOutlineDeclaration[]>JSON.parse(goOutlineOutput);
-		return declarations.some((declaration) => declaration.type === 'package' && declaration.label === 'main'
-							&& declaration.children.some((symbol) => symbol.type === 'function' && symbol.label === 'main'));
+		let declarations = JSON.parse(goOutlineOutput) as { label, type, children }[];
+
+		return declarations.some((declaration) => 
+			declaration.type === 'package' 
+			&& declaration.label === 'main' 
+			&& declaration.children.some((child) =>
+				child.type === 'function' && child.label === 'main'
+			)
+		);
 	}
 	catch (e) {
+		//If go-outline failed, we are probably not in a position to debug this file.
 		return false;
 	}
 }
@@ -398,7 +388,7 @@ class Delve {
 
 			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
 			let dlvArgs = [mode || 'debug'];
-			if (mode === 'exec' || mode === 'debug' && !isProgramDirectory && fileContainsMainFunction(program)) {
+			if (mode === 'exec' || mode === 'debug' && !isProgramDirectory && fileContainsEntryPoint(program)) {
 				dlvArgs = dlvArgs.concat([program]);
 			} else if (currentGOWorkspace) {
 				dlvArgs = dlvArgs.concat([dirname.substr(currentGOWorkspace.length + 1)]);
