@@ -262,7 +262,7 @@ function fileContainsEntryPoint(filePath: string) {
 		);
 	}
 	catch (e) {
-		//If go-outline failed, we are probably not in a position to debug this file.
+		//If go-outline failed or it's not installed, we can't assume this file is executable.
 		return false;
 	}
 }
