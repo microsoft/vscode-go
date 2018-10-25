@@ -95,7 +95,7 @@ By default this extension uses the official [golint](https://github.com/golang/l
 You can change the default linter and use the more advanced [Go Meta Linter](https://github.com/alecthomas/gometalinter)
 by setting `go.lintTool` to "gometalinter" in your settings.
 
-Go meta linter uses a collection of various linters which will be installed for you by the extension.
+Go Meta Linter uses a collection of various linters which will be installed for you by the extension.
 
 Some of the very useful linter tools:
 * [errcheck](https://github.com/kisielk/errcheck) checks for unchecked errors in your code.
@@ -153,12 +153,12 @@ In addition to integrated editing features, the extension also provides several 
 
 You can access all of the above commands from the command palette (`Cmd+Shift+P` or `Ctrl+Shift+P`).
 
-Few of these are available in the editor context menu as an experimental feature as well. To control which of these commands show up in the editor context menu, update the setting `go.editorContextMenuCommands`.
+A few of these are available in the editor context menu as an experimental feature as well. To control which of these commands show up in the editor context menu, update the setting `go.editorContextMenuCommands`.
 
 
 ### _Optional_: Debugging
 
-To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation) for full details.  On OS X it requires creating a self-signed cert to sign the `dlv` binary.
+To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation) for full details.  On MacOS it requires creating a self-signed cert to sign the `dlv` binary.
 
 For more read [Debugging Go Code Using VS Code](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code).
 
@@ -168,7 +168,7 @@ To remote debug using VS Code, read [Remote Debugging](https://github.com/Micros
 
 ## Install or update all dependencies
 
-To quickly get all dependencies installed (or updated) see the [Go Tools wiki page](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on)
+To quickly get all dependencies installed (or updated) see the [Go Tools wiki page](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on).
 
 ## Building and Debugging the Extension
 
