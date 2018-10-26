@@ -41,8 +41,14 @@ function vscodeKindFromGoCodeClass(kind: string, type: string): vscode.Completio
 
 interface GoCodeSuggestion {
 	class: string;
+	package: string;
 	name: string;
 	type: string;
+}
+
+class ExtendedCompletionItem extends vscode.CompletionItem {
+	package: string;
+	document: vscode.TextDocument;
 }
 
 const lineCommentRegex = /^\s*\/\/\s+/;
@@ -73,6 +79,44 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			}
 			return result;
 		});
+	}
+
+	public resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
+		if (item instanceof ExtendedCompletionItem) {
+			const goRuntimePath = getBinPath('go');
+			if (!goRuntimePath) {
+				vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+				return;
+			}
+
+			const env = getToolsEnvVars();
+			const cwd = path.dirname(item.document.fileName);
+
+			return new Promise<vscode.CompletionItem>((resolve, reject) => {
+				let args = ['doc', '-c', '-cmd', '-u'];
+				if (item.package) {
+					args.push(item.package, item.label);
+				} else {
+					args.push(item.label);
+				}
+
+				cp.execFile(goRuntimePath, args, { cwd }, (err, stdout, stderr) => {
+					if (err) {
+						reject(err);
+					}
+
+					let doc = '';
+					const goDocLines = stdout.toString().split('\n');
+					// i = 1 to skip the func signature line
+					for (let i = 1; goDocLines[i].startsWith('    '); i++) {
+						doc += goDocLines[i].substring(4) + '\n';
+					}
+
+					item.documentation = doc;
+					resolve(item);
+				});
+			});
+		}
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
@@ -228,9 +272,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					if (results && results[1]) {
 						for (let suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
-							let item = new vscode.CompletionItem(suggest.name);
+							let item = new ExtendedCompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class, suggest.type);
 							item.detail = suggest.type;
+							item.package = suggest.package;
+							item.document = document;
 							if (inString && suggest.class === 'import') {
 								item.textEdit = new vscode.TextEdit(
 									new vscode.Range(
