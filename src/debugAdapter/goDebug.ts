@@ -360,7 +360,7 @@ class Delve {
 			let dlv = getBinPathWithPreferredGopath('dlv', [resolveHomeDir(env['GOPATH']), process.env['GOPATH']]);
 
 			if (!existsSync(dlv)) {
-				verbose(`Couldnt find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
+				verbose(`Couldn't find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
 				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
 			}
 
@@ -736,7 +736,7 @@ class GoDebugSession extends DebugSession {
 
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
 		if (this.continueRequestRunning) {
-			// Thread request to delve is syncronous and will block if a previous async continue request didnt return
+			// Thread request to delve is syncronous and will block if a previous async continue request didn't return
 			response.body = { threads: [] };
 			return this.sendResponse(response);
 		}

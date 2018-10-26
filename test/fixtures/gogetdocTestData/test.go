@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-// ABC is a struct, you coudnt use Goto Definition or Hover info on this before
+// ABC is a struct, you coudn't use Goto Definition or Hover info on this before
 // Now you can due to gogetdoc
 type ABC struct {
 	a int
@@ -14,7 +14,7 @@ type ABC struct {
 	c int
 }
 
-// This is an unexported function so couldnt get this comment on hover :(
+// This is an unexported function so couldn't get this comment on hover :(
 // Not anymore!! gogetdoc to the rescue
 func print(txt string) {
 	fmt.Println(txt)

@@ -200,7 +200,7 @@ It returns the number of bytes written and any write error encountered.
 `;
 		let testCases: [vscode.Position, string, string, string[]][] = [
 			[new vscode.Position(19, 13), 'Println(a ...interface{}) (n int, err error)', printlnDoc, ['a ...interface{}']],
-			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldnt get this comment on hover :(\nNot anymore!! gogetdoc to the rescue\n', ['txt string']],
+			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :(\nNot anymore!! gogetdoc to the rescue\n', ['txt string']],
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this correctly\n', ['s string', 'exclaim bool']]
 		];
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
@@ -253,10 +253,10 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(20, 0), null, null], // just a }
 			[new vscode.Position(28, 16), null, null], // inside a number
 			[new vscode.Position(22, 5), 'func main()', ''],
-			[new vscode.Position(23, 4), 'func print(txt string)', 'This is an unexported function so couldnt get this comment on hover :(\nNot anymore!! gogetdoc to the rescue\n'],
+			[new vscode.Position(23, 4), 'func print(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :(\nNot anymore!! gogetdoc to the rescue\n'],
 			[new vscode.Position(40, 23), 'package math', 'Package math provides basic constants and mathematical functions.\n'],
 			[new vscode.Position(19, 6), 'func Println(a ...interface{}) (n int, err error)', printlnDoc],
-			[new vscode.Position(27, 14), 'type ABC struct {\n    a int\n    b int\n    c int\n}', 'ABC is a struct, you coudnt use Goto Definition or Hover info on this before\nNow you can due to gogetdoc\n'],
+			[new vscode.Position(27, 14), 'type ABC struct {\n    a int\n    b int\n    c int\n}', 'ABC is a struct, you coudn\'t use Goto Definition or Hover info on this before\nNow you can due to gogetdoc\n'],
 			[new vscode.Position(28, 6), 'func CIDRMask(ones, bits int) IPMask', 'CIDRMask returns an IPMask consisting of `ones\' 1 bits\nfollowed by 0s up to a total length of `bits\' bits.\nFor a mask of this form, CIDRMask is the inverse of IPMask.Size.\n']
 		];
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
