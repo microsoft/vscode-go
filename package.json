@@ -250,6 +250,11 @@
         "command": "go.test.cancel",
         "title": "Go: Cancel Running Tests",
         "description": "Cancels running tests."
+      },
+      {
+        "command": "go.test.debug",
+        "title": "Go: Debug Test At Cursor",
+        "description": "Debug test at the cursor."
       }
     ],
     "debuggers": [
@@ -1155,6 +1160,11 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to upload the current file or selection to the Go Playground"
+            },
+            "debugTestAtCursor": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to debug the test under the cursor to the editor context menu"
             }
           },
           "default": {
@@ -1169,7 +1179,8 @@
             "generateTestForPackage": false,
             "addImport": true,
             "testCoverage": true,
-            "playground": true
+            "playground": true,
+            "debugTestAtCursor": true
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor.",
           "scope": "resource"
@@ -1347,6 +1358,11 @@
           "when": "editorTextFocus && resourceLangId == go",
           "command": "go.show.commands",
           "group": "Go group 2"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.debugTestAtCursor && resourceLangId == go && !config.editor.codeLens",
+          "command": "go.test.debug",
+          "group": "Go group 1"
         }
       ]
     }

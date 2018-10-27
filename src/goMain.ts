@@ -55,6 +55,7 @@ import { installCurrentPackage } from './goInstall';
 import { setGlobalState } from './stateUtils';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
+import { debugTestAtCursor } from './goDebugTest';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -335,6 +336,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		let isBenchmark = true;
 		testAtCursor(goConfig, isBenchmark, args);
+	}));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.debug', (args) => {
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		debugTestAtCursor(goConfig, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', (args) => {
