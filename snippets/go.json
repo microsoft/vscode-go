@@ -249,6 +249,36 @@
 			"prefix": "helloweb",
 			"body": "package main\n\nimport (\n\t\"fmt\"\n\t\"net/http\"\n\t\"time\"\n)\n\nfunc greet(w http.ResponseWriter, r *http.Request) {\n\tfmt.Fprintf(w, \"Hello World! %s\", time.Now())\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/\", greet)\n\thttp.ListenAndServe(\":8080\", nil)\n}",
 			"description": "Snippet for sample hello world webapp"
+		},
+		"context definition": {
+			"prefix": "cdef",
+			"body": "${1:ctx} context.Context",
+			"description": "Snippet for context definition"
+		},
+		"context background": {
+			"prefix": "cbg",
+			"body": "context.Background()",
+			"description": "Snippet for context background definition"
+		},
+		"context var background": {
+			"prefix": "cvbg",
+			"body": "${1:ctx} := context.Background()\n$0",
+			"description": "Snippet for context background variable"
+		},
+		"context var with cancel": {
+			"prefix": "cvc",
+			"body": "${1:ctx}, ${2:cancel} := context.WithCancel(${3:ctx})\ndefer ${2:cancel}()\n$0",
+			"description": "Snippet for context with cancel"
+		},
+		"context var with timeout": {
+			"prefix": "cvt",
+			"body": "${1:ctx}, ${2:cancel} := context.WithTimeout(${3:ctx},${4:timeout})\ndefer ${2:cancel}()\n$0",
+			"description": "Snippet for context with timeout"
+		},
+		"context var with deadline": {
+			"prefix": "cvd",
+			"body": "${1:ctx}, ${2:cancel} := context.WithDeadline(${3:ctx},${4:deadline})\ndefer ${2:cancel}()\n$0",
+			"description": "Snippet for context with deadline"
 		}
 	}
 }
