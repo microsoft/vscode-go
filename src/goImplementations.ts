@@ -29,8 +29,8 @@ interface GuruImplementsOutput {
 
 export class GoImplementationProvider implements vscode.ImplementationProvider {
 	public provideImplementation(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Definition> {
-		// To keep `guru implements` fast we want to restrict the scope of the search to current workpsace
-		// If no workpsace is open, then no-op
+		// To keep `guru implements` fast we want to restrict the scope of the search to current workspace
+		// If no workspace is open, then no-op
 		const root = getWorkspaceFolderPath(document.uri);
 		if (!root) {
 			vscode.window.showInformationMessage('Cannot find implementations when there is no workspace open.');
