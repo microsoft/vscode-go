@@ -59,15 +59,15 @@ Engineering Updates
 
 * [Mathias Griffe (@Mathiasgr)](https://github.com/MathiasGr)
     * Fix the regression introduced in the previous update where the testify suites arent being indentified as tests by the codelens. [Bug 1968](https://github.com/Microsoft/vscode-go/issues/1968) fixed with [PR 1969](https://github.com/Microsoft/vscode-go/pull/1969)
-    
-* [Nuruddin Ashr (@uudashr)](https://github.com/uudashr) and [Alec Thomas (@alecthomas)](https://github.com/alecthomas) 
+
+* [Nuruddin Ashr (@uudashr)](https://github.com/uudashr) and [Alec Thomas (@alecthomas)](https://github.com/alecthomas)
     * Improve the `iferr` snippet. [PR 1980](https://github.com/Microsoft/vscode-go/pull/1980) fixes [Bug 1962](https://github.com/Microsoft/vscode-go/issues/1962)
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Fix the bug where code coverage is not displayed when using Go modules. [Bug 1927](https://github.com/Microsoft/vscode-go/issues/1927)
     * Fix the bug where file paths in the test output are not clickable when using Go modules. [Bug 1973](https://github.com/Microsoft/vscode-go/issues/1973)
     * Dont display the `Analysis Tools Missing` warning for the forks of `godef` and `gocode`. They are needed only when using Go modules and there are prompts to install them when the extension detects the use of modules.
-    
+
 
 ## 0.6.90 - 3rd October, 2018
 
@@ -79,7 +79,7 @@ Engineering Updates
 
 * [Jeffrey Bean (@jeffbean)](https://github.com/jeffbean)
     * New setting `go.generateTestsFlags` to provide flags for the `gotests` tool when generating tests. [PR 1841](https://github.com/Microsoft/vscode-go/pull/1841)
-    
+
 * [Johan Lejdung (@johan-lejdung)](https://github.com/johan-lejdung)
     * New setting `go.testTags` to be used for running tests. This way, you can use the existing `go.buildTags` for compiling and a different set of tags for running tests. [Feature Request 1842](https://github.com/Microsoft/vscode-go/issues/1842) implemented with [PR 1877](https://github.com/Microsoft/vscode-go/pull/1877)
 
@@ -195,14 +195,14 @@ Engineering Updates
     * Fix the watch feature in the debug panel that got introduced in the previous update. Fixes [Bug 1714](https://github.com/Microsoft/vscode-go/issues/1714) with [PR 1718](https://github.com/Microsoft/vscode-go/pull/1718)
 
 * [@ikedam](https://github.com/ikedam)
-    * New setting `go.alternateTools` to provide alternate tools or alternate paths for the same tools used by the Go extension. Provide either absolute path or the name of the binary in GOPATH/bin, GOROOT/bin or PATH. 
+    * New setting `go.alternateTools` to provide alternate tools or alternate paths for the same tools used by the Go extension. Provide either absolute path or the name of the binary in GOPATH/bin, GOROOT/bin or PATH.
     Useful when you want to use wrapper script for the Go tools or versioned tools from https://gopkg.in. [PR 1297](https://github.com/Microsoft/vscode-go/pull/1297). Some scenarios:
         * Map `go` to `goapp` when using App Engine Go
         * Map `gometalinter` to `gometalinter.v2` if you want to use the stable version of the tool
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Support the new outline feature which is in preview. [Bug 1725](https://github.com/Microsoft/vscode-go/issues/1725)
-    * Close `gocode` before updating and show appropriate message when failed to do so.  
+    * Close `gocode` before updating and show appropriate message when failed to do so.
 
 ## 0.6.82 - 6th June, 2018
 
@@ -303,7 +303,7 @@ Engineering Updates
     * Support the `Go to Implementation` and `Peek Implmentation` commands when using the Go Language Server. [Feature Request 1611](https://github.com/Microsoft/vscode-go/issues/1611)
     * Fix automatic imports of packages when there is a comment in the end of the import block. [Bug 1606](https://github.com/Microsoft/vscode-go/issues/1606)
     * Fix automatic imports of packages when package alias starts with any keyword in the import block. [Bug 1618](https://github.com/Microsoft/vscode-go/issues/1618)
-    
+
 ## 0.6.78 - 3rd April, 2018
 
 ### New Features and Enhancements
@@ -368,9 +368,9 @@ Engineering Updates
 
 ## 0.6.76 - 10th February, 2018
 
-* [Bug 1449](https://github.com/Microsoft/vscode-go/issues/1449): Rename fails due to cgo not being able to find the go executable.  
+* [Bug 1449](https://github.com/Microsoft/vscode-go/issues/1449): Rename fails due to cgo not being able to find the go executable.
 * [Bug 1508](https://github.com/Microsoft/vscode-go/issues/1508): Broken Path in Windows when running Go tools
-   
+
 ## 0.6.74 - 8th February, 2018
 
 * [Nikhil Raman (@cheesedosa)](https://github.com/cheesedosa)
@@ -455,7 +455,7 @@ Engineering Updates
 
 * Completion Improvements
     * [wangkechun (@wangkechun)](https://github.com/wangkechun)
-        * Completions for standard packages are now shown before custom packages when providing completions for unimported packages. [PR 1309](https://github.com/Microsoft/vscode-go/pull/1309) 
+        * Completions for standard packages are now shown before custom packages when providing completions for unimported packages. [PR 1309](https://github.com/Microsoft/vscode-go/pull/1309)
     * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
         * `gocode` can now use [gb](https://github.com/constabulary/gb) specific rules when providing completions. Set the new setting `go.gocodePackageLookupMode` to `gb` to use this feature. [Feature Request #547](https://github.com/Microsoft/vscode-go/issues/547)
 
@@ -465,7 +465,7 @@ Engineering Updates
             * Since we use the `-i` flag when building, we do not rely on `autobuild` feature of `gocode` to ensure fresh results from dependencies.
             * If you have disabled the `buildOnSave` setting, then use the new `Go: Build Current Package` command once in a while to ensure the dependencies are up to date or enable the `go.gocodeAutoBuild` setting.
         * In Go 1.9 and higher, running the vet feature in the absence of vet flags will be faster due to the use of `go vet ./...` instead of `go tool vet -flags`. Fixes [Bug 1215](https://github.com/Microsoft/vscode-go/issues/1215)
-        * Performance issues caused by a large number of lingering processes for vet/lint/hover features are now solved. 
+        * Performance issues caused by a large number of lingering processes for vet/lint/hover features are now solved.
             * Measures are now in place to kill older processes before starting new ones for vet/lint feature. Fixes [Bug 1265](https://github.com/Microsoft/vscode-go/issues/1265)
             * For other features like hover/outline/definition etc. the cancellation token provided by the core is used to kill processes if the corresponding request from the core is cancelled. Fixes [Bug 667](https://github.com/Microsoft/vscode-go/issues/667)
 
@@ -501,7 +501,7 @@ Engineering Updates
 ## 0.6.66 - 2nd October, 2017
 
 ### [Multi Root support](https://code.visualstudio.com/updates/v1_15#_preview-multi-root-workspaces) when using [VS Code Insiders](https://code.visualstudio.com/insiders)
-   
+
 We now have [Multi Root support](https://code.visualstudio.com/updates/v1_15#_preview-multi-root-workspaces) for Go. [PR 1221](https://github.com/Microsoft/vscode-go/pull/1221) Please note:
 * The settings at Folder level takes precedence over the ones at the Workspace level which in turn take precedence over the ones at the User level
 * You can have the different roots in the multi-root mode use different GOPATHs. The experimental language server feature is not supported in such cases though.
@@ -516,7 +516,7 @@ We now have [Multi Root support](https://code.visualstudio.com/updates/v1_15#_pr
     * The `package` snippet completion is now smarter when suggesting package names. [PR 1220](https://github.com/Microsoft/vscode-go/pull/1220). It suggests
         * `main` when current file is `main.go` or there exists a `main.go` file in current folder
         * The folder name when the current file is `internal_test.go`
-        * The folder name with `_test` when current file is a test file 
+        * The folder name with `_test` when current file is a test file
         * If the folder name in above cases has `-` or `.`, then what appears after the `-` or `.` is suggested.
 * [Alexander Kohler (@alexkohler)](https://github.com/alexkohler)
     * A new setting `go.useCodeSnippetsOnFunctionSuggestWithoutType` is introduced. This allows completions of functions with their parameter signature but without the parameter types. [Feature Request 1241](https://github.com/Microsoft/vscode-go/issues/1241)
@@ -577,14 +577,14 @@ We now have [Multi Root support](https://code.visualstudio.com/updates/v1_15#_pr
         * Fix the extra text being selected at the end of formatting run on save. Fixes [Issue #899](https://github.com/Microsoft/vscode-go/issues/899) and [Issue #1096](https://github.com/Microsoft/vscode-go/issues/1096).
         * `gometalinter` and `dlv` will honor the `go.toolsGopath` setting. Fixes [Issue #1110](https://github.com/Microsoft/vscode-go/issues/1110)
         * Skip vendor folders from lint and vet results. Fixes [Issue #1119](https://github.com/Microsoft/vscode-go/issues/1119) and [Issue #1121](https://github.com/Microsoft/vscode-go/issues/1121)
-    
+
 
 ## 0.6.63 - 26th July, 2017
 
 ### Features
-    
+
 * [Ian Chiles (@fortytw2)](https://github.com/fortytw2)
-    * Option to use [megacheck](https://github.com/dominikh/go-tools/tree/master/cmd/megacheck) as a linting tool which 
+    * Option to use [megacheck](https://github.com/dominikh/go-tools/tree/master/cmd/megacheck) as a linting tool which
 can have significantly better performance than `gometalinter`, while only supporting a subset of the tools. Use the setting `go.lintTool` to try this.
 * [alexandrevez (@alexandrevez)](https://github.com/alexandrevez)
     * Option to highlight gutters rather than full text for code coverage. Use the new setting `go.coverageDecorator` to try this.
@@ -595,7 +595,7 @@ can have significantly better performance than `gometalinter`, while only suppor
          - Selecting any of the Go files, will open the file in a new editor.
 * [Saud Khan (@bidrohi)](https://github.com/bidrohi)
     * Print import paths of Go tools as they get installed. [PR 1032](https://github.com/Microsoft/vscode-go/pull/1032)
-* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a) 
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Prompt to update dependent Go tools when there is a change in the Go version. [Feature Request 797](https://github.com/Microsoft/vscode-go/issues/797)
     * Better user experience when dependent Go tools are missing. [Feature Request 998](https://github.com/Microsoft/vscode-go/issues/998)
          - Prompts will only show up for tools that are used for features that are explicitly executed by the user. Eg: Rename, Generate Unit Tests, Modify tags. And not for features that get triggered behind the scenes like linting, hover or format on save.
@@ -637,7 +637,7 @@ can have significantly better performance than `gometalinter`, while only suppor
         - When debugging using the debug viewlet or pressing `F5`, the above will not be used. Continue to use the `env` and/or `envFile` property in the debug configurations in the `launch.json` file.
 * [Ole (@vapourismo)](https://github.com/vapourismo)
     * You can now run build/lint/vet on the whole workspace instead of just the current package on file save. [PR 1023](https://github.com/Microsoft/vscode-go/pull/1023)
-        - To enable this, the settings `go.buildOnSave`, `go.lintOnSave` and `go.vetOnSave` now take values `package`, `workspace` or `off` instead of the previous `true`/`false`. 
+        - To enable this, the settings `go.buildOnSave`, `go.lintOnSave` and `go.vetOnSave` now take values `package`, `workspace` or `off` instead of the previous `true`/`false`.
         - These features are backward compatible and so if you are still using `true`/`false` for these settings, they will work as they did before, but you will get a warning in your settings file.
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Better build performance when working on main packages and test files by using the `-i` flag.
@@ -649,7 +649,7 @@ can have significantly better performance than `gometalinter`, while only suppor
     * Fix for [Bug 981](https://github.com/Microsoft/vscode-go/issues/981) where `Go: Test Function At Cursor` fails.
     * Fix for [Bug 983](https://github.com/Microsoft/vscode-go/issues/983) where the Go binary is not found in MSYS2 as it is not located in GOROOT.
     * Fix for [Bug 1022](https://github.com/Microsoft/vscode-go/issues/1002) where snippets from function auto complete do not insert the placeholders
-    * Fix for [Bug 962](https://github.com/Microsoft/vscode-go/issues/962) where references codelens wouldnt work for methods.
+    * Fix for [Bug 962](https://github.com/Microsoft/vscode-go/issues/962) where references codelens wouldn't work for methods.
 * [F0zi (@f0zi)](https://github.com/f0zi)
     * Fix for [Bug 1009](https://github.com/Microsoft/vscode-go/issues/1009) where remote debugging fails to verify breakpoint if GOPATH partially matches remote GOPATH
 * [Anton Kryukov (@Emreu)](https://github.com/Emreu)
@@ -681,8 +681,8 @@ can have significantly better performance than `gometalinter`, while only suppor
     * New setting `go.coverageOptions` to control whether you want to highlight only covered code or only uncovered code or both when code coverage is run. [PR 945](https://github.com/Microsoft/vscode-go/pull/945)
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * The command `Go: Test Coverage In Current Package` is renamed to `Go: Toggle Test Coverage In Current Package` and it does exactly what the name suggests. Toggles test coverage. [Commit cc661daf](https://github.com/Microsoft/vscode-go/commit/cc661dafd06770137459b72441e5f7cc877483f0)
-        
-### Bug Fixes 
+
+### Bug Fixes
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Fix for [Bug 529](https://github.com/Microsoft/vscode-go/issues/529) Code completion for unimported packages now works on unsaved file after deleting imports.
     * Fix for [Bug 922](https://github.com/Microsoft/vscode-go/issues/922) Go to Symbol in File feature now includes symbols from unsaved file contents. [PR 929](https://github.com/Microsoft/vscode-go/pull/929)
@@ -704,7 +704,7 @@ can have significantly better performance than `gometalinter`, while only suppor
 
 * [Tyler Bunnell (@tylerb)](https://github.com/tylerb)
     * Add live error feedback using `gotype-live` which is `gotype` with support for unsaved file contents. [PR 903](https://github.com/Microsoft/vscode-go/pull/903)
-        * New setting `go.liveErrors` controls this feature. 
+        * New setting `go.liveErrors` controls this feature.
         * Set `"go.liveErrors": { "enabled": true }` to enable this feature
         * Edit the delay property in `"go.liveErrors": { "enabled": true, "delay": 500 }` to update the delay (in milliseconds) after which `gotype-live` would be run post a keystroke
 
@@ -726,12 +726,12 @@ Fix for [Bug 892](https://github.com/Microsoft/vscode-go/issues/892) which break
     * Use [gomodifytags](https://github.com/fatih/gomodifytags) to add/remove tags on selected struct fields. [PR 880](https://github.com/Microsoft/vscode-go/pull/880)
          * If there is no selection, then the whole struct under the cursor will be selected for the tag modification.
          * `Go: Add Tags` command adds tags configured in `go.addTags` setting to selected struct fields. By default, `json` tags are added. Examples:
-             * To add `xml` tags, set `go.addTags` to `{"tags": "xml"}` 
-             * To add `xml` with `cdata` option, set `go.addTags` to `{"tags": "xml", "options": "xml=cdata"}`  
-             * To add both `json` and `xml` tags, set `go.addTags` to `{"tags": "json,xml"}` 
-         * `Go: Remove Tags` command removes tags configured in `go.removeTags` setting from selected struct fields. 
-             * By default, all tags are removed. 
-             * To remove only say `xml` tags, set `go.removeTags` to `{"tags": "xml"}` 
+             * To add `xml` tags, set `go.addTags` to `{"tags": "xml"}`
+             * To add `xml` with `cdata` option, set `go.addTags` to `{"tags": "xml", "options": "xml=cdata"}`
+             * To add both `json` and `xml` tags, set `go.addTags` to `{"tags": "json,xml"}`
+         * `Go: Remove Tags` command removes tags configured in `go.removeTags` setting from selected struct fields.
+             * By default, all tags are removed.
+             * To remove only say `xml` tags, set `go.removeTags` to `{"tags": "xml"}`
          * To be prompted for tags instead of using the configured ones, set `go.addTags` and/or `go.removeTags` to `{"promptForTags": true}`
     * Fix rename issue when `diff` tool from Git or Cygwin are in the `PATH` in Windows. [PR 866](https://github.com/Microsoft/vscode-go/pull/866)
     * Keywords are now supported in completion suggestions. [PR 865](https://github.com/Microsoft/vscode-go/pull/865)
@@ -763,7 +763,7 @@ Fix for [Bug 892](https://github.com/Microsoft/vscode-go/issues/892) which break
     * Experimental new setting `go.editorContextMenuCommands` to control which commands show up in the editor context menu.
 * [Albert Callarisa (@acroca)](https://github.com/acroca) and [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * New setting `go.gotoSymbol.ignoreFolders` that allows to ignore folders while using the "Go to Symbol in Workspace" feature. This takes in an array of folder names (not paths). Best used to ignore vendor folders while doing a workspace symbol search. [PR 795](https://github.com/Microsoft/vscode-go/pull/795)
-    
+
 ## 0.6.55 - 3rd March, 2017
 * Re-publishing the extension from a non Windows machine as the fix for [Bug 438](https://github.com/Microsoft/vscode-go/issues/438) worked only on Windows machines.
 For details read the discussion in [PR 838](https://github.com/Microsoft/vscode-go/pull/838).
@@ -787,7 +787,7 @@ For details read the discussion in [PR 838](https://github.com/Microsoft/vscode-
 
 ### Debugging improvements
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
-    * Debug current file without a launch configuration file. Simply press `F5` to start the debug session. 
+    * Debug current file without a launch configuration file. Simply press `F5` to start the debug session.
     A `launch.json` is still required to debug tests or for advanced debug configurations. [PR 769](https://github.com/Microsoft/vscode-go/pull/769)
     * Launch configuration snippets are now available for common scenarios like debugging file/package or debugging a test package/function.
     These snippets can be used through IntelliSense when editing the `launch.json` file. [PR 794](https://github.com/Microsoft/vscode-go/pull/794)
@@ -797,16 +797,16 @@ For details read the discussion in [PR 838](https://github.com/Microsoft/vscode-
 * [Suraj Barkale (@surajbarkale-dolby)](https://github.com/surajbarkale-dolby)
     * Fix for [Bug 782](https://github.com/Microsoft/vscode-go/issues/782). Helpful error messages when the `program` attribute in `launch.json` file is invalid or not a full path. [PR 790](https://github.com/Microsoft/vscode-go/pull/790)
 * [F0zi (@f0zi)](https://github.com/f0zi)
-    * Fix for [Bug 689](https://github.com/Microsoft/vscode-go/issues/689). When debugging against a remote machine, paths anywhere under the GOPATH will be correctly mapped so you can set breakpoints in them. 
+    * Fix for [Bug 689](https://github.com/Microsoft/vscode-go/issues/689). When debugging against a remote machine, paths anywhere under the GOPATH will be correctly mapped so you can set breakpoints in them.
     Previously only paths next to the program could be debugged. [PR 742](https://github.com/Microsoft/vscode-go/pull/742)
 
 ### Testing improvements
 * [Oleg Bulatov (@dmage)](https://github.com/dmage)
-    * Added new setting `go.testOnSave`. When `true`, all tests in the current package will be run on saving a Go file. 
+    * Added new setting `go.testOnSave`. When `true`, all tests in the current package will be run on saving a Go file.
     The status of the tests will be shown in the status bar at the bottom of the VS Code window. It is not advised to have this on when you have Auto Save enabled. [PR 810](https://github.com/Microsoft/vscode-go/pull/810)
 * [Jeff Willette (@deltaskelta)](https://github.com/deltaskelta)
     * Test output is no longer verbose by default. Add `-v` to the `go.testFlags` to get verbose output. [PR 817](https://github.com/Microsoft/vscode-go/pull/817)
-    
+
 ### Other Bug Fixes
 * [Richard Musiol (@neelance)](https://github.com/neelance)
     * Fix offset for files with multibyte characters so that features like Hover and Go To Definition work as expected. [PR 780](https://github.com/Microsoft/vscode-go/pull/780)
@@ -836,7 +836,7 @@ For details read the discussion in [PR 838](https://github.com/Microsoft/vscode-
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * A new setting `go.testFlags` that can be used to run tests. If null, `go.buildFlags` will be used. [PR 482](https://github.com/Microsoft/vscode-go/pull/482)
     * Customize flags for each of the test command by using different keybindings. [PR 482](https://github.com/Microsoft/vscode-go/pull/482). In the below example, `ctrl+shift+t` is bound to run the tests in current file with `-short` flag. The commands here can be `go.test.package`, `go.test.file` or `go.test.cursor`.
-	
+
         ```json
         {
             "key": "ctrl+shift+t",
@@ -848,7 +848,7 @@ For details read the discussion in [PR 838](https://github.com/Microsoft/vscode-
         }
         ```
     * New toggle command `Go: Toggle Test File` that lets you toggle between your Go file and the corresponding test file. Previous commands `Go: Open Test File` and `Go: Open Implementation For Test File` have been deprecated in favor of this new command. [PR 739](https://github.com/Microsoft/vscode-go/pull/739). You can add a keyboard binding to this as below:
-	
+
         ```json
         {
             "key": "ctrl+shift+t",
