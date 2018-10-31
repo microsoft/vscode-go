@@ -107,28 +107,30 @@ export function promptToUpdateToolForModules(tool: string, promptMsg: string) {
 	if (promptedToolsForModules[tool]) {
 		return;
 	}
-	vscode.window.showInformationMessage(
-		promptMsg,
-		'Update',
-		'Later',
-		`Don't show again`)
-		.then(selected => {
-			switch (selected) {
-				case 'Update':
-					installTools([tool]);
-					promptedToolsForModules[tool] = true;
-					updateGlobalState('promptedToolsForModules', promptedToolsForModules);
-					break;
-				case `Don't show again`:
-					promptedToolsForModules[tool] = true;
-					updateGlobalState('promptedToolsForModules', promptedToolsForModules);
-					break;
-				case 'Later':
-				default:
-					promptedToolsForCurrentSession.add(tool);
-					break;
-			}
-		});
+	getGoVersion().then(goVersion => {
+		vscode.window.showInformationMessage(
+			promptMsg,
+			'Update',
+			'Later',
+			`Don't show again`)
+			.then(selected => {
+				switch (selected) {
+					case 'Update':
+						installTools([tool], goVersion);
+						promptedToolsForModules[tool] = true;
+						updateGlobalState('promptedToolsForModules', promptedToolsForModules);
+						break;
+					case `Don't show again`:
+						promptedToolsForModules[tool] = true;
+						updateGlobalState('promptedToolsForModules', promptedToolsForModules);
+						break;
+					case 'Later':
+					default:
+						promptedToolsForCurrentSession.add(tool);
+						break;
+				}
+			});
+	});
 }
 
 const folderToPackageMapping: { [key: string]: string } = {};
