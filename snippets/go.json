@@ -249,6 +249,11 @@
 			"prefix": "helloweb",
 			"body": "package main\n\nimport (\n\t\"fmt\"\n\t\"net/http\"\n\t\"time\"\n)\n\nfunc greet(w http.ResponseWriter, r *http.Request) {\n\tfmt.Fprintf(w, \"Hello World! %s\", time.Now())\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/\", greet)\n\thttp.ListenAndServe(\":8080\", nil)\n}",
 			"description": "Snippet for sample hello world webapp"
+		},
+		"type switch": {
+			"prefix": "tpsw",
+			"body": "switch v := i.(type) {\ncase ${1:type}:\n\t${2}\ndefault:\n\t${3}\n}$0",
+			"description": "Snippet for type switch"
 		}
 	}
 }
