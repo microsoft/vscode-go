@@ -256,7 +256,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				const result = line.match(packageResultLineRE);
 				if (result && (pkgMap.has(result[2]) || currentGoWorkspace)) {
 					const packageNameArr = result[2].split('/');
-					const baseDir = pkgMap.get(result[2]) || path.join(currentGoWorkspace, ...packageNameArr);
+					const baseDir = currentGoWorkspace ? path.join(currentGoWorkspace, ...packageNameArr) : pkgMap.get(result[2]);
 					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
 					testResultLines.splice(0);
 				}
