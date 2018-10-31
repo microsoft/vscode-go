@@ -249,6 +249,16 @@
 			"prefix": "helloweb",
 			"body": "package main\n\nimport (\n\t\"fmt\"\n\t\"net/http\"\n\t\"time\"\n)\n\nfunc greet(w http.ResponseWriter, r *http.Request) {\n\tfmt.Fprintf(w, \"Hello World! %s\", time.Now())\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/\", greet)\n\thttp.ListenAndServe(\":8080\", nil)\n}",
 			"description": "Snippet for sample hello world webapp"
+		},
+		"functional options constructor": {
+			"prefix": "fopt",
+			"body": "func ${1:NewService}(options ...func(*${2:service})) *${2:service} {\n\t${3:s} := ${2:service}{}\n\tfor _, option := range options {\n\t\toption(&${3:s})\n\t}\n\treturn &${3:s}\n}$0",
+			"description": "Snippet for functional options constructor"
+		},
+		"functional options single": {
+			"prefix": "fsopt",
+			"body": "func ${1:WithOption}(${2:var} ${3:type}) func(*${4:service}) {\n\treturn func(${5:s} *${4:service}) {\n\t\t${5:s}.$0 = ${2:var}\n\t}\n}",
+			"description": "Snippet for single functional option"
 		}
 	}
 }
