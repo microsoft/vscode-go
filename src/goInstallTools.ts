@@ -131,7 +131,7 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('revive');
 	}
 
-	if (goConfig['useLanguageServer'] && process.platform !== 'win32') {
+	if (goConfig['useLanguageServer']) {
 		tools.push('go-langserver');
 	}
 
@@ -508,10 +508,6 @@ export function checkLanguageServer(): boolean {
 	let latestGoConfig = vscode.workspace.getConfiguration('go');
 	if (!latestGoConfig['useLanguageServer']) return false;
 
-	if (process.platform === 'win32') {
-		vscode.window.showInformationMessage('The Go language server is not supported on Windows yet.');
-		return false;
-	}
 	if (!allFoldersHaveSameGopath()) {
 		vscode.window.showInformationMessage('The Go language server is not supported in a multi root set up with different GOPATHs.');
 		return false;

@@ -316,8 +316,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		updateGoPathGoRootFromConfig();
 
 		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
-		if (process.platform !== 'win32'
-			&& didLangServerConfigChange(e)
+		if (didLangServerConfigChange(e)
 			&& (!updatedGoConfig['useLanguageServer'] || checkLanguageServer())) {
 			vscode.window.showInformationMessage('Reload VS Code window for the change in usage of language server to take effect', 'Reload').then(selected => {
 				if (selected === 'Reload') {
