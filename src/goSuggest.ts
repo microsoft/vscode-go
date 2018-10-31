@@ -48,7 +48,7 @@ interface GoCodeSuggestion {
 
 class ExtendedCompletionItem extends vscode.CompletionItem {
 	package: string;
-	document: vscode.TextDocument;
+	fileName: string;
 }
 
 const lineCommentRegex = /^\s*\/\/\s+/;
@@ -90,7 +90,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			}
 
 			const env = getToolsEnvVars();
-			const cwd = path.dirname(item.document.fileName);
+			const cwd = path.dirname(item.fileName);
 
 			return new Promise<vscode.CompletionItem>((resolve, reject) => {
 				let args = ['doc', '-c', '-cmd', '-u'];
@@ -100,7 +100,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					args.push(item.label);
 				}
 
-				cp.execFile(goRuntimePath, args, { cwd }, (err, stdout, stderr) => {
+				cp.execFile(goRuntimePath, args, { cwd, env }, (err, stdout, stderr) => {
 					if (err) {
 						reject(err);
 					}
@@ -108,7 +108,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					let doc = '';
 					const goDocLines = stdout.toString().split('\n');
 					// i = 1 to skip the func signature line
-					for (let i = 1; goDocLines[i].startsWith('    '); i++) {
+					for (let i = 1; i < goDocLines.length && goDocLines[i].startsWith('    '); i++) {
 						doc += goDocLines[i].substring(4) + '\n';
 					}
 
@@ -276,7 +276,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							item.kind = vscodeKindFromGoCodeClass(suggest.class, suggest.type);
 							item.detail = suggest.type;
 							item.package = suggest.package;
-							item.document = document;
+							item.fileName = document.fileName;
 							if (inString && suggest.class === 'import') {
 								item.textEdit = new vscode.TextEdit(
 									new vscode.Range(
