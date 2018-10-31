@@ -38,7 +38,7 @@ install:
   -  nvm install $TRAVIS_NODE_VERSION;
   - npm install
   - npm run vscode:prepublish
-  - go get -u -v github.com/mdempsky/gocode
+  - if [[ "$(go version)" =~ "go version go1.8" ]]; then go get -u -v github.com/nsf/gocode; else go get -u -v go get -u -v github.com/mdempsky/gocode; fi
   - go get -u -v github.com/rogpeppe/godef
   - go get -u -v github.com/zmb3/gogetdoc
   - go get -u -v golang.org/x/lint/golint

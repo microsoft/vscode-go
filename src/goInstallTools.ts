@@ -45,7 +45,7 @@ const _allTools: { [key: string]: string } = {
 };
 
 function getToolImportPath(tool: string, goVersion: SemVersion) {
-	if (tool === 'gocode' && goVersion && goVersion.major < 2 && goVersion.minor < 10) {
+	if (tool === 'gocode' && goVersion && goVersion.major < 2 && goVersion.minor < 9) {
 		return 'github.com/nsf/gocode';
 	}
 	return _allTools[tool];
