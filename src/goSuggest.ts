@@ -90,7 +90,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		const env = getToolsEnvVars();
 		const cwd = path.dirname(item.fileName);
 
-		return new Promise<vscode.CompletionItem>((resolve, reject) => {
+		return new Promise<vscode.CompletionItem>(resolve => {
 			const args = ['doc', '-c', '-cmd', '-u'];
 			if (item.package) {
 				args.push(item.package, item.label);
@@ -99,9 +99,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				args.push(item.label);
 			}
 
-			cp.execFile(goRuntimePath, args, { cwd, env }, (err, stdout, stderr) => {
+			cp.execFile(goRuntimePath, args, { cwd, env }, (err, stdout) => {
 				if (err) {
-					reject(err);
+					console.log(err);
+					return resolve(item);
 				}
 
 				let doc = '';
