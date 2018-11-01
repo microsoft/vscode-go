@@ -3,14 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import vscode = require("vscode");
-import path = require("path");
-import {
-	guessPackageNameFromFile,
-	runTool,
-	getTempFilePath,
-	getWorkspaceFolderPath
-} from "../../src/util";
+import { guessPackageNameFromFile } from "../../src/util";
 import * as assert from "assert";
 import { substituteEnv } from "../../src/util";
 
@@ -35,70 +28,38 @@ suite("utils Tests", () => {
 
 suite("GuessPackageNameFromFile Tests", () => {
 	test("package name from main file", done => {
-		const packageName = "main";
+		const expectedPackageName = "main";
 		const filename = "main.go";
 
 		guessPackageNameFromFile(filename)
 			.then(result => {
-				assert.equal(result, packageName);
+				assert.equal(result, expectedPackageName);
 			})
 			.then(() => done(), done);
 	});
 
 	test("package name from dirpath", done => {
-		const packageName = "package";
+		const expectedPackageName = "package";
 		const fileDir = "path/package/file.go";
 
 		guessPackageNameFromFile(fileDir)
 			.then(([result]) => {
-				assert.equal(result, packageName);
+				assert.equal(result, expectedPackageName);
 			})
 			.then(() => done(), done);
 	});
 
 	test("package name from test file", done => {
-		const packageName = "file";
-		const packageTestName = "file_test";
+		const expectedPackageName = "file";
+		const expectedPackageTestName = "file_test";
 		const fileDir = "file_test.go";
 
 		guessPackageNameFromFile(fileDir)
 			.then(([packageNameResult, packageTestNameResult]) => {
-				assert.equal(packageNameResult, packageName);
-				assert.equal(packageTestNameResult, packageTestName);
+				assert.equal(packageNameResult, expectedPackageName);
+				assert.equal(packageTestNameResult, expectedPackageTestName);
 			})
 			.then(() => done(), done);
 	});
 });
 
-suite("RunTool Tests", () => {
-	test("go version command", done => {
-		runTool(["version"], null, null, false, null, null, true, null)
-			.then(result => {
-				assert.equal(result.length, 0);
-			})
-			.then(() => done(), done);
-	});
-
-	test("go clean command", done => {
-		runTool(["clean"], ".", null, false, "go", null, true, null)
-			.then(result => {
-				assert.equal(result.length, 0);
-			})
-			.then(() => done(), done);
-	});
-});
-
-suite("GetWorkspaceFolderPath Tests", () => {
-	test("workspace from ...", () => {
-		let uri = vscode.workspace.workspaceFolders[0].uri;
-		const result = getWorkspaceFolderPath(uri);
-		assert("test", path.basename(result));
-	});
-});
-
-suite("GetTempFilePath Tests", () => {
-	test("file temporal file path", () => {
-		const result = getTempFilePath("file.go");
-		assert("file.go", path.basename(result));
-	});
-});
