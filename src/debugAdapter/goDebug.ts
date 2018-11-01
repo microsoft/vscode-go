@@ -821,7 +821,6 @@ class GoDebugSession extends DebugSession {
 				this.addFullyQualifiedName(args);
 				let vars = args.concat(locals);
 
-
 				let scopes = new Array<Scope>();
 				let localVariables = {
 					name: 'Local',
@@ -931,9 +930,8 @@ class GoDebugSession extends DebugSession {
 			} else {
 				if (v.children[0].children.length > 0) {
 					v.children[0].fullyQualifiedName = v.fullyQualifiedName;
-					v.children[0].children.every(child => {
+					v.children[0].children.forEach(child => {
 						child.fullyQualifiedName = v.fullyQualifiedName + '.' + child.name;
-						return true;
 					});
 				}
 				return {
@@ -1001,7 +999,9 @@ class GoDebugSession extends DebugSession {
 		} else {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
-				v.fullyQualifiedName = v.fullyQualifiedName === undefined ? vari.fullyQualifiedName + '.' + v.name : v.fullyQualifiedName;
+				if (v.fullyQualifiedName === undefined) {
+					v.fullyQualifiedName = vari.fullyQualifiedName + '.' + v.name;
+				}
 				return {
 					name: v.name,
 					value: result,
@@ -1159,14 +1159,12 @@ class GoDebugSession extends DebugSession {
 		});
 	}
 
-	private addFullyQualifiedName(data: DebugVariable[]) {
-		data.every(local => {
+	private addFullyQualifiedName(variables: DebugVariable[]) {
+		variables.forEach(local => {
 			local.fullyQualifiedName = local.name;
-			local.children.every(child => {
+			local.children.forEach(child => {
 				child.fullyQualifiedName = local.name;
-				return true;
 			});
-			return true;
 		});
 	}
 }
