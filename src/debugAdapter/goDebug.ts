@@ -157,6 +157,7 @@ interface DebugVariable {
 	cap: number;
 	children: DebugVariable[];
 	unreadable: string;
+	fullyQualifiedName: string;
 }
 
 interface ListGoroutinesOut {
@@ -808,6 +809,7 @@ class GoDebugSession extends DebugSession {
 			}
 			const locals = this.delve.isApiV1 ? <DebugVariable[]>out : (<ListVarsOut>out).Variables;
 			verbose('locals', locals);
+			this.addFullyQualifiedName(locals);
 			let listLocalFunctionArgsIn = { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId };
 			this.delve.call<DebugVariable[] | ListFunctionArgsOut>('ListFunctionArgs', this.delve.isApiV1 ? [listLocalFunctionArgsIn] : [{ scope: listLocalFunctionArgsIn, cfg: this.delve.loadConfig }], (err, outArgs) => {
 				if (err) {
@@ -816,6 +818,7 @@ class GoDebugSession extends DebugSession {
 				}
 				const args = this.delve.isApiV1 ? <DebugVariable[]>outArgs : (<ListFunctionArgsOut>outArgs).Args;
 				verbose('functionArgs', args);
+				this.addFullyQualifiedName(args);
 				let vars = args.concat(locals);
 
 				let scopes = new Array<Scope>();
@@ -829,8 +832,10 @@ class GoDebugSession extends DebugSession {
 					len: 0,
 					cap: 0,
 					children: vars,
-					unreadable: ''
+					unreadable: '',
+					fullyQualifiedName: '',
 				};
+
 				scopes.push(new Scope('Local', this._variableHandles.create(localVariables), false));
 				response.body = { scopes };
 
@@ -850,7 +855,7 @@ class GoDebugSession extends DebugSession {
 						let initdoneIndex = -1;
 						for (let i = 0; i < globals.length; i++) {
 							globals[i].name = globals[i].name.substr(packageName.length + 1);
-							if (initdoneIndex === -1 && globals[i].name  === this.initdone) {
+							if (initdoneIndex === -1 && globals[i].name === this.initdone) {
 								initdoneIndex = i;
 							}
 						}
@@ -869,7 +874,8 @@ class GoDebugSession extends DebugSession {
 							len: 0,
 							cap: 0,
 							children: globals,
-							unreadable: ''
+							unreadable: '',
+							fullyQualifiedName: '',
 						};
 						scopes.push(new Scope('Global', this._variableHandles.create(globalVariables), false));
 						this.sendResponse(response);
@@ -922,6 +928,12 @@ class GoDebugSession extends DebugSession {
 					variablesReference: 0
 				};
 			} else {
+				if (v.children[0].children.length > 0) {
+					v.children[0].fullyQualifiedName = v.fullyQualifiedName;
+					v.children[0].children.forEach(child => {
+						child.fullyQualifiedName = v.fullyQualifiedName + '.' + child.name;
+					});
+				}
 				return {
 					result: '<' + v.type + '>',
 					variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(v.children[0]) : 0
@@ -965,6 +977,7 @@ class GoDebugSession extends DebugSession {
 				return {
 					name: '[' + i + ']',
 					value: result,
+					evaluateName: vari.fullyQualifiedName + '[' + i + ']',
 					variablesReference
 				};
 			});
@@ -979,15 +992,20 @@ class GoDebugSession extends DebugSession {
 				variables.push({
 					name: mapKey.result,
 					value: mapValue.result,
+					evaluateName: vari.fullyQualifiedName + '[' + mapKey.result + ']',
 					variablesReference: mapValue.variablesReference
 				});
 			}
 		} else {
 			variables = vari.children.map((v, i) => {
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
+				if (v.fullyQualifiedName === undefined) {
+					v.fullyQualifiedName = vari.fullyQualifiedName + '.' + v.name;
+				}
 				return {
 					name: v.name,
 					value: result,
+					evaluateName: v.fullyQualifiedName,
 					variablesReference
 				};
 			});
@@ -1138,6 +1156,15 @@ class GoDebugSession extends DebugSession {
 			response.body = this.convertDebugVariableToProtocolVariable(variable, 0);
 			this.sendResponse(response);
 			verbose('EvaluateResponse');
+		});
+	}
+
+	private addFullyQualifiedName(variables: DebugVariable[]) {
+		variables.forEach(local => {
+			local.fullyQualifiedName = local.name;
+			local.children.forEach(child => {
+				child.fullyQualifiedName = local.name;
+			});
 		});
 	}
 }
