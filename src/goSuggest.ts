@@ -117,7 +117,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 					doc += goDocLines[i].substring(4) + '\n';
 				}
 
-				item.documentation = doc;
+				item.documentation = new vscode.MarkdownString(doc);
 				resolve(item);
 			});
 		});
