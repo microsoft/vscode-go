@@ -40,8 +40,8 @@ install:
   - npm run vscode:prepublish
   - if [[ "$(go version)" =~ "go version go1.8" ]]; then go get -u -v github.com/nsf/gocode; else go get -u -v github.com/mdempsky/gocode; fi
   - go get -u -v github.com/rogpeppe/godef
-  - go get -u -v github.com/zmb3/gogetdoc
-  - go get -u -v golang.org/x/lint/golint
+  - if [[ "$(go version)" =~ "go version go1.8" ]]; then echo skipping gogetdoc; else go get -u -v github.com/zmb3/gogetdoc; fi
+  - if [[ "$(go version)" =~ "go version go1.8" ]]; then echo skipping golint; else go get -u -v golang.org/x/lint/golint; fi
   - go get -u -v github.com/ramya-rao-a/go-outline
   - go get -u -v github.com/sqs/goreturns
   - go get -u -v golang.org/x/tools/cmd/gorename

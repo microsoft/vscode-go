@@ -164,7 +164,7 @@ suite('Go Extension Tests', () => {
 			'docsTool': { value: 'gogetdoc' }
 		});
 		getGoVersion().then(version => {
-			if (!version || version.major > 1 || (version.major === 1 && version.minor > 5)) {
+			if (!version || version.major > 1 || (version.major === 1 && version.minor > 8)) {
 				return testDefinitionProvider(config);
 			}
 			return Promise.resolve();
@@ -207,7 +207,7 @@ It returns the number of bytes written and any write error encountered.
 			'docsTool': { value: 'gogetdoc' }
 		});
 		getGoVersion().then(version => {
-			if (!version || version.major > 1 || (version.major === 1 && version.minor > 5)) {
+			if (!version || version.major > 1 || (version.major === 1 && version.minor > 8)) {
 				return testSignatureHelpProvider(config, testCases);
 			}
 			return Promise.resolve();
@@ -263,7 +263,7 @@ It returns the number of bytes written and any write error encountered.
 			'docsTool': { value: 'gogetdoc' }
 		});
 		getGoVersion().then(version => {
-			if (!version || version.major > 1 || (version.major === 1 && version.minor > 5)) {
+			if (!version || version.major > 1 || (version.major === 1 && version.minor > 8)) {
 				return testHoverProvider(config, testCases);
 			}
 			return Promise.resolve();
@@ -283,8 +283,8 @@ It returns the number of bytes written and any write error encountered.
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// golint is not supported in Go 1.5, so skip the test
+			if (version && version.major === 1 && version.minor < 9) {
+				// golint supports only latest 3 versions, so skip the test
 				return Promise.resolve();
 			}
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
