@@ -51,7 +51,7 @@ class ExtendedCompletionItem extends vscode.CompletionItem {
 	fileName: string;
 }
 
-const lineCommentRegex = /^\s*\/\/\s+/;
+const lineCommentWithNoContentRegex = /^\s*\/\/\s+$/;
 const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 const gocodeNoSupportForgbMsgKey = 'dontshowNoSupportForgb';
 
@@ -133,8 +133,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
 				// triggering completions in comments on exported members
-				if (lineCommentRegex.test(lineTillCurrentPosition) && position.line + 1 < document.lineCount) {
-					let nextLine = document.lineAt(position.line + 1).text.trim();
+				if (lineCommentWithNoContentRegex.test(lineTillCurrentPosition) && position.line + 1 < document.lineCount) {					let nextLine = document.lineAt(position.line + 1).text.trim();
 					let memberType = nextLine.match(exportedMemberRegex);
 					let suggestionItem: vscode.CompletionItem;
 					if (memberType && memberType.length === 4) {
