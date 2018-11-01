@@ -41,13 +41,13 @@ function vscodeKindFromGoCodeClass(kind: string, type: string): vscode.Completio
 
 interface GoCodeSuggestion {
 	class: string;
-	package: string;
+	package?: string;
 	name: string;
 	type: string;
 }
 
 class ExtendedCompletionItem extends vscode.CompletionItem {
-	package: string;
+	package?: string;
 	fileName: string;
 }
 
@@ -84,6 +84,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	public resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
 		const goRuntimePath = getBinPath('go');
 		if (!goRuntimePath || !(item instanceof ExtendedCompletionItem)) {
+			return;
+		}
+
+		if (typeof item.package === 'undefined') {
+			promptForUpdatingTool('gocode');
 			return;
 		}
 
