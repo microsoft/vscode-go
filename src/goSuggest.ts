@@ -82,41 +82,40 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	public resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
-		if (item instanceof ExtendedCompletionItem) {
-			const goRuntimePath = getBinPath('go');
-			if (!goRuntimePath) {
-				vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-				return;
+		const goRuntimePath = getBinPath('go');
+		if (!goRuntimePath || !(item instanceof ExtendedCompletionItem)) {
+			return;
+		}
+
+		const env = getToolsEnvVars();
+		const cwd = path.dirname(item.fileName);
+
+		return new Promise<vscode.CompletionItem>((resolve, reject) => {
+			const args = ['doc', '-c', '-cmd', '-u'];
+			if (item.package) {
+				args.push(item.package, item.label);
+			} else {
+				// item.package would be empty for symbols from the current package
+				args.push(item.label);
 			}
 
-			const env = getToolsEnvVars();
-			const cwd = path.dirname(item.fileName);
-
-			return new Promise<vscode.CompletionItem>((resolve, reject) => {
-				let args = ['doc', '-c', '-cmd', '-u'];
-				if (item.package) {
-					args.push(item.package, item.label);
-				} else {
-					args.push(item.label);
+			cp.execFile(goRuntimePath, args, { cwd, env }, (err, stdout, stderr) => {
+				if (err) {
+					reject(err);
 				}
 
-				cp.execFile(goRuntimePath, args, { cwd, env }, (err, stdout, stderr) => {
-					if (err) {
-						reject(err);
-					}
+				let doc = '';
+				const goDocLines = stdout.toString().split('\n');
+				// i = 1 to skip the func signature line
+				for (let i = 1; i < goDocLines.length && goDocLines[i].startsWith('    '); i++) {
+					doc += goDocLines[i].substring(4) + '\n';
+				}
 
-					let doc = '';
-					const goDocLines = stdout.toString().split('\n');
-					// i = 1 to skip the func signature line
-					for (let i = 1; i < goDocLines.length && goDocLines[i].startsWith('    '); i++) {
-						doc += goDocLines[i].substring(4) + '\n';
-					}
-
-					item.documentation = doc;
-					resolve(item);
-				});
+				item.documentation = doc;
+				resolve(item);
 			});
-		}
+		});
+
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
