@@ -97,8 +97,6 @@ function getTools(goVersion: SemVersion): string[] {
 		if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
 			tools.push('godef-gomod');
 		}
-	} else if (goConfig['docsTool'] === 'gogetdoc') {
-		tools.push('gogetdoc');
 	}
 
 	// Install the formattool that was chosen by the user
@@ -110,9 +108,14 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('goreturns');
 	}
 
-	// golint is not supported in go1.5
-	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
-		tools.push('golint');
+	// Tools not supported in go1.8
+	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 8))) {
+		if (goConfig['lintTool'] === 'golint') {
+			tools.push('golint');
+		}
+		if (goConfig['docsTool'] === 'gogetdoc') {
+			tools.push('gogetdoc');
+		}
 	}
 
 	if (goConfig['lintTool'] === 'gometalinter') {
@@ -214,7 +217,7 @@ export function promptForMissingTool(tool: string) {
 	getGoVersion().then((goVersion) => {
 		if (goVersion && goVersion.major === 1 && goVersion.minor < 6) {
 			if (tool === 'golint') {
-				vscode.window.showInformationMessage('golint no longer supports go1.5, update your settings to use gometalinter as go.lintTool and install gometalinter');
+				vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
 				return;
 			}
 			if (tool === 'gotests') {
