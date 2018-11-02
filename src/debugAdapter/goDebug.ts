@@ -935,8 +935,8 @@ class GoDebugSession extends DebugSession {
 					});
 				}
 				return {
-					result: '<' + v.type + '>',
 					variablesReference: v.children[0].children.length > 0 ? this._variableHandles.create(v.children[0]) : 0
+					result: `<${v.type}>(0x${v.children[0].addr.toString(16)})`,
 				};
 			}
 		} else if (v.kind === GoReflectKind.Slice) {
