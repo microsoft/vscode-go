@@ -770,7 +770,8 @@ class GoDebugSession extends DebugSession {
 
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
 		verbose('StackTraceRequest');
-		let stackTraceIn = { id: args.threadId, depth: args.levels };
+		// delve does not support frame paging, so we ask for a large depth
+		let stackTraceIn = { id: args.threadId, depth: 50 };
 		if (!this.delve.isApiV1) {
 			Object.assign(stackTraceIn, { full: false, cfg: this.delve.loadConfig });
 		}
@@ -793,7 +794,13 @@ class GoDebugSession extends DebugSession {
 					0
 				)
 			);
-			response.body = { stackFrames };
+			if (args.startFrame > 0) {
+				stackFrames = stackFrames.slice(args.startFrame);
+			}
+			if (args.levels > 0) {
+				stackFrames = stackFrames.slice(0, args.levels);
+			}
+			response.body = { stackFrames, totalFrames: locations.length };
 			this.sendResponse(response);
 			verbose('StackTraceResponse');
 		});
