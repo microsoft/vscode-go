@@ -51,7 +51,7 @@ class ExtendedCompletionItem extends vscode.CompletionItem {
 	fileName: string;
 }
 
-const lineCommentWithNoContentRegex = /^\s*\/\/\s+$/;
+const lineCommentFirstWordRegex = /^\s*\/\/\s+[\w_]*$/;
 const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 const gocodeNoSupportForgbMsgKey = 'dontshowNoSupportForgb';
 
@@ -133,10 +133,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				let autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
 				// triggering completions in comments on exported members
-				if (lineCommentWithNoContentRegex.test(lineTillCurrentPosition) && position.line + 1 < document.lineCount) {					let nextLine = document.lineAt(position.line + 1).text.trim();
+				if (lineCommentFirstWordRegex.test(lineTillCurrentPosition) && position.line + 1 < document.lineCount) {					let nextLine = document.lineAt(position.line + 1).text.trim();
 					let memberType = nextLine.match(exportedMemberRegex);
 					let suggestionItem: vscode.CompletionItem;
-					if (memberType && memberType.length === 4) {
+					let firstWordOrEmptyString = (lineTillCurrentPosition.match(/[\w_]*/) || [''])[0];
+				if (memberType && memberType.length === 4 && memberType[3].startsWith(firstWordOrEmptyString)) {
 						suggestionItem = new vscode.CompletionItem(memberType[3], vscodeKindFromGoCodeClass(memberType[1], ''));
 					}
 					return resolve(suggestionItem ? [suggestionItem] : []);
