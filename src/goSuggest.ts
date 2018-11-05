@@ -242,9 +242,11 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 			let goCodeFlags = ['-f=json'];
 			if (!this.setGocodeOptions) {
-				goCodeFlags.push('-builtin');
+				let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+				goConfig['gocodeFlags'].forEach(element => {
+					goCodeFlags.push(element);
+				});
 			}
-
 			// Spawn `gocode` process
 			let p = cp.spawn(gocode, [...goCodeFlags, 'autocomplete', filename, '' + offset], { env });
 			p.stdout.on('data', data => stdout += data);

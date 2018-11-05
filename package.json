@@ -800,6 +800,19 @@
           "description": "Environment variables that will passed to the processes that run the Go tools (e.g. CGO_CFLAGS)",
           "scope": "resource"
         },
+        "go.gocodeFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "-builtin",
+            "-ignore-case",
+            "-unimported-packages"
+          ],
+          "description": "Additional flags to pass to gocode.",
+          "scope": "resource"
+        },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": false,
