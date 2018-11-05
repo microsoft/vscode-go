@@ -81,6 +81,25 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		});
 	}
 
+	private getPackageFromDir(dir: string): Promise<string> {
+		const goRuntimePath = getBinPath('go');
+		if (!goRuntimePath) {
+			return Promise.reject();
+		}
+
+		const env = getToolsEnvVars();
+
+		return new Promise<string>((resolve, reject) => {
+			cp.execFile(goRuntimePath, ['list', dir], {env}, (err, stdout) => {
+				if (err) {
+					reject(err);
+				}
+
+				resolve(stdout.trim());
+			});
+		});
+	}
+
 	public resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
 		const goRuntimePath = getBinPath('go');
 		if (!goRuntimePath || !(item instanceof ExtendedCompletionItem)) {
@@ -93,35 +112,38 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		}
 
 		const env = getToolsEnvVars();
-		const cwd = path.dirname(item.fileName);
 
-		return new Promise<vscode.CompletionItem>(resolve => {
-			const args = ['doc', '-c', '-cmd', '-u'];
-			if (item.package) {
-				args.push(item.package, item.label);
-			} else {
-				// item.package would be empty for symbols from the current package
-				args.push(item.label);
-			}
+		let promise;
+		if (item.package) {
+			promise = Promise.resolve(item.package);
+		} else {
+			// item.package would be empty for symbols from the current package
+			promise = this.getPackageFromDir(path.dirname(item.fileName));
+		}
 
-			cp.execFile(goRuntimePath, args, { cwd, env }, (err, stdout) => {
-				if (err) {
-					console.log(err);
-					return resolve(item);
-				}
+		return promise.then(packageName => {
+			return new Promise<vscode.CompletionItem>((resolve, reject) => {
+				const args = ['doc', '-c', '-cmd', '-u', packageName, item.label];
+				cp.execFile(goRuntimePath, args, { env }, (err, stdout) => {
+					if (err) {
+						reject(item);
+					}
 
-				let doc = '';
-				const goDocLines = stdout.toString().split('\n');
-				// i = 1 to skip the func signature line
-				for (let i = 1; i < goDocLines.length && goDocLines[i].startsWith('    '); i++) {
-					doc += goDocLines[i].substring(4) + '\n';
-				}
+					let doc = '';
+					const goDocLines = stdout.toString().split('\n');
+					// i = 1 to skip the func signature line
+					for (let i = 1; i < goDocLines.length && goDocLines[i].startsWith('    '); i++) {
+						doc += goDocLines[i].substring(4) + '\n';
+					}
 
-				item.documentation = new vscode.MarkdownString(doc);
-				resolve(item);
+					item.documentation = new vscode.MarkdownString(doc);
+					resolve(item);
+				});
 			});
+		}).catch(err => {
+			console.log(err);
+			return item;
 		});
-
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
