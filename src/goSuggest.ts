@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -82,8 +82,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	public resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
-		const goRuntimePath = getBinPath('go');
-		if (!goRuntimePath || !(item instanceof ExtendedCompletionItem)) {
+		if (!(item instanceof ExtendedCompletionItem)) {
 			return;
 		}
 
@@ -92,36 +91,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			return;
 		}
 
-		const env = getToolsEnvVars();
-		const cwd = path.dirname(item.fileName);
-
-		return new Promise<vscode.CompletionItem>(resolve => {
-			const args = ['doc', '-c', '-cmd', '-u'];
-			if (item.package) {
-				args.push(item.package, item.label);
-			} else {
-				// item.package would be empty for symbols from the current package
-				args.push(item.label);
-			}
-
-			cp.execFile(goRuntimePath, args, { cwd, env }, (err, stdout) => {
-				if (err) {
-					console.log(err);
-					return resolve(item);
-				}
-
-				let doc = '';
-				const goDocLines = stdout.toString().split('\n');
-				// i = 1 to skip the func signature line
-				for (let i = 1; i < goDocLines.length && goDocLines[i].startsWith('    '); i++) {
-					doc += goDocLines[i].substring(4) + '\n';
-				}
-
-				item.documentation = new vscode.MarkdownString(doc);
-				resolve(item);
-			});
+		return runGodoc(item.package || path.dirname(item.fileName), item.label, token).then(doc => {
+			item.documentation = new vscode.MarkdownString(doc);
+			return item;
+		}, err => {
+			console.log(err);
+			return item;
 		});
-
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {

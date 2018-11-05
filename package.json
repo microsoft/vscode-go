@@ -1194,11 +1194,6 @@
               "default": "gopkgs",
               "description": "Alternate tool to use instead of the gopkgs binary or alternate path to use for the gopkgs binary."
             },
-            "godoc": {
-              "type": "string",
-              "default": "godoc",
-              "description": "Alternate tool to use instead of the godoc binary or alternate path to use for the godoc binary."
-            },
             "go-outline": {
               "type": "string",
               "default": "go-outline",

@@ -172,7 +172,6 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'gotype-live': 'Show errors as you type)',
 		'godef': '\t\t(Go to definition)',
 		'godef-gomod': '\t(Go to definition, works with Modules)',
-		'godoc': '\t\t(For text shown on hover)',
 		'gogetdoc': '\t(Go to definition & text shown on hover)',
 		'goimports': '\t(Formatter)',
 		'goreturns': '\t(Formatter)',

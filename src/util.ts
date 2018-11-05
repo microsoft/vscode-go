@@ -374,7 +374,7 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, (tool === 'go' || tool === 'godoc') ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
+	return getBinPathWithPreferredGopath(tool, (tool === 'go') ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {
@@ -895,4 +895,51 @@ export function cleanupTempDir() {
 		rmdirRecursive(tmpDir);
 	}
 	tmpDir = undefined;
+}
+
+/**
+ * Runs `go doc` to get documentation for given symbol
+ * @param packagePath Either the absolute path or import path of the package.
+ * @param symbol Symbol for which docs need to be found
+ * @param token Cancellation token
+ */
+export function runGodoc(packagePath: string, symbol: string, token: vscode.CancellationToken) {
+
+	return new Promise<string>((resolve, reject) => {
+		if (!packagePath) {
+			return reject(new Error('Package Path not provided'));
+		}
+		if (!symbol) {
+			return reject(new Error('Symbol not provided'));
+		}
+
+		const goRuntimePath = getBinPath('go');
+		if (!goRuntimePath) {
+			return reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
+		}
+
+		const env = getToolsEnvVars();
+		const args = ['doc', '-c', '-cmd', '-u', packagePath, symbol];
+		const p = cp.execFile(goRuntimePath, args, { env }, (err, stdout) => {
+			if (err) {
+				return reject(err);
+			}
+			const godocLines = stdout.split('\n');
+			let doc = '';
+
+			for (let i = 1; i < godocLines.length; i++) {
+				if (godocLines[i].startsWith('    ')) {
+					doc += godocLines[i].substring(4);
+				}
+				doc += '\n';
+			}
+			return resolve(doc);
+		});
+
+		token.onCancellationRequested(() => {
+			killTree(p.pid);
+		});
+	});
+
+
 }

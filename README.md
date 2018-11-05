@@ -11,12 +11,12 @@ Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Not
 ### IntelliSense
 
 - Auto Completion of symbols as you type (using `gocode`)
-- Signature Help for functions as you type (using `gogetdoc` or `godef`+`godoc`)
-- Quick Info on the symbol as you hover over it (using `gogetdoc` or `godef`+`godoc`)
+- Signature Help for functions as you type (using `gogetdoc` or `godef`+`go doc`)
+- Quick Info on the symbol as you hover over it (using `gogetdoc` or `godef`+`go doc`)
 
 ### Code Navigation
 
-- Go to or Peek Definition of symbols (using `gogetdoc` or `godef`+`godoc`)
+- Go to or Peek Definition of symbols (using `gogetdoc` or `godef`+`go doc`)
 - Find References of symbols and Implementations of interfaces (using `guru`)
 - Go to symbol in file or see the file outline (using `go-outline`)
 - Go to symbol in workspace (using `go-symbols`)
