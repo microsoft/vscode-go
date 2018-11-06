@@ -35,7 +35,6 @@
   },
   "extensionDependencies": [],
   "dependencies": {
-    "console-stamp": "^0.2.7",
     "diff": "^3.5.0",
     "json-rpc2": "^1.0.2",
     "vscode-debug-logger": "0.0.5",

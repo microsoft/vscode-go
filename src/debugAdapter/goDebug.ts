@@ -14,8 +14,6 @@ import { Client, RPCConnection } from 'json-rpc2';
 import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 import * as logger from 'vscode-debug-logger';
 
-require('console-stamp')(console);
-
 // This enum should stay in sync with https://golang.org/pkg/reflect/#Kind
 
 enum GoReflectKind {
