@@ -483,7 +483,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	/**
-	 * Returns import path for given package. Since there can be multiple matches, 
+	 * Returns import path for given package. Since there can be multiple matches,
 	 * this returns an array of matches
 	 * @param input Package name
 	 */
