@@ -116,7 +116,8 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 						definitionInformation.doc = doc;
 					}
 					resolve(definitionInformation);
-				}, () => {
+				}).catch(err => {
+					console.log(err);
 					resolve(definitionInformation);
 				});
 			} catch (e) {

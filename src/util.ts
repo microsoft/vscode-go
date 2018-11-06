@@ -927,17 +927,31 @@ export function runGodoc(packagePath: string, symbol: string, token: vscode.Canc
 					return reject(err);
 				}
 				const godocLines = stdout.split('\n');
-				let doc = '';
 
-				for (let i = 1; i < godocLines.length && godocLines[i].startsWith('    '); i++) {
-					doc += godocLines[i].substring(4) + '\n';
+				// Skip trailing empty lines
+				let lastLine = godocLines.length - 1;
+				for (; lastLine > 1; lastLine--) {
+					if (godocLines[lastLine].trim()) {
+						break;
+					}
+				}
+
+				let doc = '';
+				for (let i = 1; i <= lastLine; i++) {
+					if (godocLines[i].startsWith('    ')) {
+						doc += godocLines[i].substring(4) + '\n';
+					} else if (!godocLines[i].trim()) {
+						doc += '\n';
+					}
 				}
 				return resolve(doc);
 			});
 
-			token.onCancellationRequested(() => {
-				killTree(p.pid);
-			});
+			if (token) {
+				token.onCancellationRequested(() => {
+					killTree(p.pid);
+				});
+			}
 		});
 	});
 }
