@@ -66,6 +66,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	});
 }
 
+const godefImportDefinitionRegex = /^import \(.* ".*"\)$/;
 function definitionLocation_godef(input: GoDefinitionInput, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
 	let godefTool = input.isMod ? 'godef-gomod' : 'godef';
 	let godefPath = getBinPath(godefTool);
@@ -108,7 +109,7 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 					doc: null,
 					name: null
 				};
-				if (!input.includeDocs) {
+				if (!input.includeDocs || godefImportDefinitionRegex.test(definitionInformation.declarationlines[0])) {
 					return resolve(definitionInformation);
 				}
 				runGodoc(pkgPath, input.word, token).then(doc => {

@@ -922,9 +922,9 @@ export function runGodoc(packagePath: string, symbol: string, token: vscode.Canc
 		return new Promise<string>((resolve, reject) => {
 			const env = getToolsEnvVars();
 			const args = ['doc', '-c', '-cmd', '-u', packageImportPath, symbol];
-			const p = cp.execFile(goRuntimePath, args, { env }, (err, stdout) => {
+			const p = cp.execFile(goRuntimePath, args, { env }, (err, stdout, stderr) => {
 				if (err) {
-					return reject(err);
+					return reject(err.message || stderr);
 				}
 				const godocLines = stdout.split('\n');
 
