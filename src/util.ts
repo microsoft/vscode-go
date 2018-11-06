@@ -917,8 +917,7 @@ export function runGodoc(packagePath: string, symbol: string, token: vscode.Canc
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
 
-	const cwd = packagePath;
-	const getCurrentPackagePromise = 1 !== 1 ? getCurrentPackage(cwd) : Promise.resolve(cwd);
+	const getCurrentPackagePromise = path.isAbsolute(packagePath) ? getCurrentPackage(packagePath) : Promise.resolve(packagePath);
 	return getCurrentPackagePromise.then(packageImportPath => {
 		return new Promise<string>((resolve, reject) => {
 			const env = getToolsEnvVars();
