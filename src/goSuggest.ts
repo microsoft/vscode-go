@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -82,8 +82,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	public resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
-		const goRuntimePath = getBinPath('go');
-		if (!goRuntimePath || !(item instanceof ExtendedCompletionItem)) {
+		if (!(item instanceof ExtendedCompletionItem) || item.kind === vscode.CompletionItemKind.Module) {
 			return;
 		}
 
@@ -92,36 +91,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			return;
 		}
 
-		const env = getToolsEnvVars();
-		const cwd = path.dirname(item.fileName);
-
-		return new Promise<vscode.CompletionItem>(resolve => {
-			const args = ['doc', '-c', '-cmd', '-u'];
-			if (item.package) {
-				args.push(item.package, item.label);
-			} else {
-				// item.package would be empty for symbols from the current package
-				args.push(item.label);
-			}
-
-			cp.execFile(goRuntimePath, args, { cwd, env }, (err, stdout) => {
-				if (err) {
-					console.log(err);
-					return resolve(item);
-				}
-
-				let doc = '';
-				const goDocLines = stdout.toString().split('\n');
-				// i = 1 to skip the func signature line
-				for (let i = 1; i < goDocLines.length && goDocLines[i].startsWith('    '); i++) {
-					doc += goDocLines[i].substring(4) + '\n';
-				}
-
-				item.documentation = new vscode.MarkdownString(doc);
-				resolve(item);
-			});
+		return runGodoc(item.package || path.dirname(item.fileName), item.label, token).then(doc => {
+			item.documentation = new vscode.MarkdownString(doc);
+			return item;
+		}).catch(err => {
+			console.log(err);
+			return item;
 		});
-
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
@@ -279,9 +255,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							if (inString && suggest.class !== 'import') continue;
 							let item = new ExtendedCompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class, suggest.type);
-							item.detail = suggest.type;
 							item.package = suggest.package;
 							item.fileName = document.fileName;
+							item.detail = suggest.type;
+							if (suggest.class === 'package') {
+								const possiblePackageImportPaths = this.getPackageImportPath(item.label);
+								if (possiblePackageImportPaths.length === 1) {
+									item.detail = possiblePackageImportPaths[0];
+								}
+							}
 							if (inString && suggest.class === 'import') {
 								item.textEdit = new vscode.TextEdit(
 									new vscode.Range(
@@ -487,7 +469,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		return completionItems;
 	}
 
-	// Given a line ending with dot, return the word preceeding the dot if it is a package name that can be imported
+	// Given a line ending with dot, return the import paths of packages that match with the word preceeding the dot
 	private getPackagePathFromLine(line: string): string[] {
 		let pattern = /(\w+)\.$/g;
 		let wordmatches = pattern.exec(line);
@@ -497,9 +479,18 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 		let [_, pkgNameFromWord] = wordmatches;
 		// Word is isolated. Now check pkgsList for a match
+		return this.getPackageImportPath(pkgNameFromWord);
+	}
+
+	/**
+	 * Returns import path for given package. Since there can be multiple matches,
+	 * this returns an array of matches
+	 * @param input Package name
+	 */
+	private getPackageImportPath(input: string): string[] {
 		let matchingPackages = [];
 		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
-			if (pkgNameFromWord === pkgName) {
+			if (input === pkgName) {
 				matchingPackages.push(pkgPath);
 			}
 		});

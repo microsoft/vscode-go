@@ -13,6 +13,7 @@ import os = require('os');
 import { outputChannel } from './goStatus';
 import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
 import { NearestNeighborDict, Node } from './avlTree';
+import { getCurrentPackage } from './goModules';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -374,7 +375,7 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, (tool === 'go' || tool === 'godoc') ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
+	return getBinPathWithPreferredGopath(tool, (tool === 'go') ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {
@@ -895,4 +896,62 @@ export function cleanupTempDir() {
 		rmdirRecursive(tmpDir);
 	}
 	tmpDir = undefined;
+}
+
+/**
+ * Runs `go doc` to get documentation for given symbol
+ * @param packagePath Either the absolute path or import path of the package.
+ * @param symbol Symbol for which docs need to be found
+ * @param token Cancellation token
+ */
+export function runGodoc(packagePath: string, symbol: string, token: vscode.CancellationToken) {
+	if (!packagePath) {
+		return Promise.reject(new Error('Package Path not provided'));
+	}
+	if (!symbol) {
+		return Promise.reject(new Error('Symbol not provided'));
+	}
+
+	const goRuntimePath = getBinPath('go');
+	if (!goRuntimePath) {
+		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
+	}
+
+	const getCurrentPackagePromise = path.isAbsolute(packagePath) ? getCurrentPackage(packagePath) : Promise.resolve(packagePath);
+	return getCurrentPackagePromise.then(packageImportPath => {
+		return new Promise<string>((resolve, reject) => {
+			const env = getToolsEnvVars();
+			const args = ['doc', '-c', '-cmd', '-u', packageImportPath, symbol];
+			const p = cp.execFile(goRuntimePath, args, { env }, (err, stdout, stderr) => {
+				if (err) {
+					return reject(err.message || stderr);
+				}
+				const godocLines = stdout.split('\n');
+
+				// Skip trailing empty lines
+				let lastLine = godocLines.length - 1;
+				for (; lastLine > 1; lastLine--) {
+					if (godocLines[lastLine].trim()) {
+						break;
+					}
+				}
+
+				let doc = '';
+				for (let i = 1; i <= lastLine; i++) {
+					if (godocLines[i].startsWith('    ')) {
+						doc += godocLines[i].substring(4) + '\n';
+					} else if (!godocLines[i].trim()) {
+						doc += '\n';
+					}
+				}
+				return resolve(doc);
+			});
+
+			if (token) {
+				token.onCancellationRequested(() => {
+					killTree(p.pid);
+				});
+			}
+		});
+	});
 }

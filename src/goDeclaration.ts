@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath } from './util';
+import { byteOffsetAt, getBinPath, runGodoc } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { isModSupported, promptToUpdateToolForModules } from './goModules';
@@ -28,6 +28,7 @@ export interface GoDefinitionInformation {
 interface GoDefinitionInput {
 	document: vscode.TextDocument;
 	position: vscode.Position;
+	word: string;
 	includeDocs: boolean;
 	isMod: boolean;
 }
@@ -51,6 +52,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 			const input: GoDefinitionInput = {
 				document,
 				position,
+				word,
 				includeDocs,
 				isMod
 			};
@@ -64,6 +66,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	});
 }
 
+const godefImportDefinitionRegex = /^import \(.* ".*"\)$/;
 function definitionLocation_godef(input: GoDefinitionInput, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
 	let godefTool = input.isMod ? 'godef-gomod' : 'godef';
 	let godefPath = getBinPath(godefTool);
@@ -96,8 +99,6 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 					return resolve(null);
 				}
 				let [_, file, line, col] = match;
-				let signature = lines[1];
-				let godoc = getBinPath('godoc');
 				let pkgPath = path.dirname(file);
 				let definitionInformation: GoDefinitionInformation = {
 					file: file,
@@ -108,30 +109,17 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 					doc: null,
 					name: null
 				};
-				if (!input.includeDocs) {
+				if (!input.includeDocs || godefImportDefinitionRegex.test(definitionInformation.declarationlines[0])) {
 					return resolve(definitionInformation);
 				}
-				p = cp.execFile(godoc, [pkgPath], { env }, (err, stdout, stderr) => {
-					if (err && (<any>err).code === 'ENOENT') {
-						vscode.window.showInformationMessage('The "godoc" command is not available.');
-					}
-					let godocLines = stdout.toString().split('\n');
-					let doc = '';
-					let sigName = signature.substring(0, signature.indexOf(' '));
-					let sigParams = signature.substring(signature.indexOf(' func') + 5);
-					let searchSignature = 'func ' + sigName + sigParams;
-					for (let i = 0; i < godocLines.length; i++) {
-						if (godocLines[i] === searchSignature) {
-							while (godocLines[++i].startsWith('    ')) {
-								doc += godocLines[i].substring(4) + '\n';
-							}
-							break;
-						}
-					}
-					if (doc !== '') {
+				runGodoc(pkgPath, input.word, token).then(doc => {
+					if (doc) {
 						definitionInformation.doc = doc;
 					}
-					return resolve(definitionInformation);
+					resolve(definitionInformation);
+				}).catch(err => {
+					console.log(err);
+					resolve(definitionInformation);
 				});
 			} catch (e) {
 				reject(e);
