@@ -82,7 +82,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	public resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
-		if (!(item instanceof ExtendedCompletionItem)) {
+		if (!(item instanceof ExtendedCompletionItem) || item.kind === vscode.CompletionItemKind.Module) {
 			return;
 		}
 
@@ -255,9 +255,15 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 							if (inString && suggest.class !== 'import') continue;
 							let item = new ExtendedCompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class, suggest.type);
-							item.detail = suggest.type;
 							item.package = suggest.package;
 							item.fileName = document.fileName;
+							item.detail = suggest.type;
+							if (suggest.class === 'package') {
+								const possiblePackageImportPaths = this.getPackageImportPath(item.label);
+								if (possiblePackageImportPaths.length === 1) {
+									item.detail = possiblePackageImportPaths[0];
+								}
+							}
 							if (inString && suggest.class === 'import') {
 								item.textEdit = new vscode.TextEdit(
 									new vscode.Range(
@@ -463,7 +469,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		return completionItems;
 	}
 
-	// Given a line ending with dot, return the word preceeding the dot if it is a package name that can be imported
+	// Given a line ending with dot, return the import paths of packages that match with the word preceeding the dot
 	private getPackagePathFromLine(line: string): string[] {
 		let pattern = /(\w+)\.$/g;
 		let wordmatches = pattern.exec(line);
@@ -473,9 +479,18 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 		let [_, pkgNameFromWord] = wordmatches;
 		// Word is isolated. Now check pkgsList for a match
+		return this.getPackageImportPath(pkgNameFromWord);
+	}
+
+	/**
+	 * Returns import path for given package. Since there can be multiple matches, 
+	 * this returns an array of matches
+	 * @param input Package name
+	 */
+	private getPackageImportPath(input: string): string[] {
 		let matchingPackages = [];
 		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
-			if (pkgNameFromWord === pkgName) {
+			if (input === pkgName) {
 				matchingPackages.push(pkgPath);
 			}
 		});

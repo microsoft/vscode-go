@@ -790,24 +790,39 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Completion', (done) => {
+		let printlnDoc = `Println formats using the default formats for its operands and writes to
+standard output. Spaces are always added between operands and a newline is
+appended. It returns the number of bytes written and any write error
+encountered.
+`;
 		let provider = new GoCompletionItemProvider();
-		let testCases: [vscode.Position, string[]][] = [
-			[new vscode.Position(1, 0), []],
-			[new vscode.Position(4, 1), ['main', 'print', 'fmt']],
-			[new vscode.Position(7, 4), ['fmt']],
-			[new vscode.Position(8, 0), ['main', 'print', 'fmt', 'txt']]
+		let testCases: [vscode.Position, string, string, string][] = [
+			[new vscode.Position(7, 4), 'fmt', 'fmt', null],
+			[new vscode.Position(7, 6), 'Println', 'func(a ...interface{}) (n int, err error)', printlnDoc]
 		];
 		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
-				let promises = testCases.map(([position, expected]) =>
+				let promises = testCases.map(([position, expectedLabel, expectedDetail, expectedDoc]) =>
 					provider.provideCompletionItems(editor.document, position, null).then(items => {
-						let labels = items.items.map(x => x.label);
-						for (let entry of expected) {
-							if (labels.indexOf(entry) < 0) {
-								assert.fail('', entry, 'missing expected item in competion list', '');
-							}
+						let item = items.items.find(x => x.label === expectedLabel);
+						assert.equal(!!item, true, 'missing expected item in competion list');
+						assert.equal(item.detail, expectedDetail);
+						const resolvedItemResult: vscode.ProviderResult<vscode.CompletionItem> = provider.resolveCompletionItem(item, null);
+						if (!resolvedItemResult) {
+							return;
 						}
+						if (resolvedItemResult instanceof vscode.CompletionItem) {
+							if (resolvedItemResult.documentation) {
+								assert.equal((<vscode.MarkdownString>resolvedItemResult.documentation).value, expectedDoc);
+							}
+							return;
+						}
+						return resolvedItemResult.then(resolvedItem => {
+							if (resolvedItem) {
+								assert.equal((<vscode.MarkdownString>resolvedItem.documentation).value, expectedDoc);
+							}
+						});
 					})
 				);
 				return Promise.all(promises);
