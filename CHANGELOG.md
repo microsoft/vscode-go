@@ -1,25 +1,28 @@
-## 0.6.94 - Coming Soon
-
-* [Marcus Farkas (@ToothlessGear)](https://github.com/ToothlessGear)
-    * Pass list of packages to single `go build` call instead of calling `go build` on each package to improve performance. Fixes [Bug 1890](https://github.com/Microsoft/vscode-go/issues/1890) with [PR 2021](https://github.com/Microsoft/vscode-go/pull/2021)
-
-* [Sewon Park (@sphawk)](https://github.com/sphawk)
-    * `go.gopath` & `go.toolsGopath` settings now support the use of environment variables using the format `${env:XXX}`. [Feature Request 1732](https://github.com/Microsoft/vscode-go/issues/1732) implemented with [PR 1743](https://github.com/Microsoft/vscode-go/pull/1743)
-
-* [Diogo Monteiro (@diogogmt)](https://github.com/diogogmt)
-    * Clear coverage decorators before applying new ones. Fixes [Bug 2045](https://github.com/Microsoft/vscode-go/issues/2045) with [PR 2047](https://github.com/Microsoft/vscode-go/pull/2047)
-
-* [Kaarthik Rao Bekal Radhakrishna (@karthikraobr)](https://github.com/karthikraobr)
-    * Support `Copy Value`, `Copy as expression` and `Add to Watch` features in the context menu on the variables pane in the debug viewlet. [Feature Request 1990](https://github.com/Microsoft/vscode-go/issues/1990) implemented with [PR 2020](https://github.com/Microsoft/vscode-go/pull/2020)
+## 0.7.0 - 6th November, 2018
 
 * [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
     * Support documentation in auto-completion widget. [Feature Request 194](https://github.com/Microsoft/vscode-go/issues/194) implemented with [PR 2054](https://github.com/Microsoft/vscode-go/pull/2054)
 
-* [Denys Yaroshenko (@freezlite)](https://github.com/freezlite)
-    * Skip auto-generated stack frames from delve. Fixes [Bug 1987](https://github.com/Microsoft/vscode-go/issues/1987) & [Bug 2038](https://github.com/Microsoft/vscode-go/issues/2038) with [PR 2029](https://github.com/Microsoft/vscode-go/pull/2029)
+* [Kaarthik Rao Bekal Radhakrishna (@karthikraobr)](https://github.com/karthikraobr)
+    * Support `Copy Value`, `Copy as expression` and `Add to Watch` features in the context menu on the variables pane in the debug viewlet. [Feature Request 1990](https://github.com/Microsoft/vscode-go/issues/1990) implemented with [PR 2020](https://github.com/Microsoft/vscode-go/pull/2020)
+
+* [Sewon Park (@sphawk)](https://github.com/sphawk)
+    * `go.gopath` & `go.toolsGopath` settings now support the use of environment variables using the format `${env:XXX}`. [Feature Request 1732](https://github.com/Microsoft/vscode-go/issues/1732) implemented with [PR 1743](https://github.com/Microsoft/vscode-go/pull/1743)
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Language Server from Sourcegraph is now supported on Windows as well.
+    * Fallback to using `nsf/gocode` when using Go version 1.8 or older due to [mdempsky/gocode#73](https://github.com/mdempsky/gocode/issues/73)
+    * `golint` and `gogetdoc` are no longer supported in Go version 1.8 or older
+    * Use `go doc` instead of `godoc` for the showing the documentation when hovering over symbols and the Signature Help widget.
+
+* [Marcus Farkas (@ToothlessGear)](https://github.com/ToothlessGear)
+    * Pass list of packages to single `go build` call instead of calling `go build` on each package to improve performance. Fixes [Bug 1890](https://github.com/Microsoft/vscode-go/issues/1890) with [PR 2021](https://github.com/Microsoft/vscode-go/pull/2021)
+
+* [Denys Yaroshenko (@freezlite)](https://github.com/freezlite)
+    * Skip auto-generated stack frames from delve. Fixes [Bug 1987](https://github.com/Microsoft/vscode-go/issues/1987) & [Bug 2038](https://github.com/Microsoft/vscode-go/issues/2038) with [PR 2029](https://github.com/Microsoft/vscode-go/pull/2029)
+
+* [Diogo Monteiro (@diogogmt)](https://github.com/diogogmt)
+    * Clear coverage decorators before applying new ones to avoid brighthned coverages. Fixes [Bug 2045](https://github.com/Microsoft/vscode-go/issues/2045) with [PR 2047](https://github.com/Microsoft/vscode-go/pull/2047)
 
 Engineering Updates
 
@@ -33,9 +36,8 @@ Engineering Updates
 * [@SteelPhase](https://github.com/SteelPhase)
     * Refactor the fix for [Bug 2045](https://github.com/Microsoft/vscode-go/issues/2045) with [PR 2068](https://github.com/Microsoft/vscode-go/pull/2068)
 
-* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
-    * Fallback to using `nsf/gocode` when using Go version 1.8 or older due to [mdempsky/gocode#73](https://github.com/mdempsky/gocode/issues/73)
-    
+* [@wachino](https://github.com/wachino)
+    * Add more tests for util.ts file
 
 Documentation Updates
 
