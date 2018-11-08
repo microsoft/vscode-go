@@ -206,6 +206,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	output?: string;
 	/** Delve LoadConfig parameters **/
 	dlvLoadConfig?: LoadConfig;
+	dlvToolPath?: string;
 	/** Delve Version */
 	apiVersion: number;
 }
@@ -356,7 +357,7 @@ class Delve {
 				return;
 			}
 
-			let dlv = getBinPathWithPreferredGopath('dlv', [resolveHomeDir(env['GOPATH']), process.env['GOPATH']]);
+			let dlv = launchArgs.dlvToolPath || getBinPathWithPreferredGopath('dlv', [resolveHomeDir(env['GOPATH']), process.env['GOPATH']]);
 
 			if (!existsSync(dlv)) {
 				verbose(`Couldn't find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);

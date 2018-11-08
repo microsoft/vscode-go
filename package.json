@@ -487,6 +487,11 @@
                   "maxStructFields": -1
                 }
               },
+              "dlvToolPath": {
+                "type": "string",
+                "description": "Path to dlv tool (Auto detected if not given).",
+                "default": ""
+              },
               "apiVersion": {
                 "type": "number",
                 "enum": [

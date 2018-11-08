@@ -1,7 +1,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent } from './util';
+import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent, getBinPath } from './util';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -76,6 +76,10 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 		if (!debugConfiguration.hasOwnProperty('dlvLoadConfig') && dlvConfig.hasOwnProperty('dlvLoadConfig')) {
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
+		}
+
+		if (!debugConfiguration['dlvToolPath']) {
+			debugConfiguration['dlvToolPath'] = getBinPath('dlv');
 		}
 
 		if (debugConfiguration['mode'] === 'auto') {
