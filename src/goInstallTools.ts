@@ -31,6 +31,7 @@ const _allTools: { [key: string]: string } = {
 	'godef-gomod': 'github.com/ianthehat/godef',
 	'gogetdoc': 'github.com/zmb3/gogetdoc',
 	'goimports': 'golang.org/x/tools/cmd/goimports',
+	'goimports-gomod': 'github.com/heschik/goimports/cmd/goimports',
 	'goreturns': 'github.com/sqs/goreturns',
 	'goformat': 'winterdrache.de/goformat/goformat',
 	'golint': 'golang.org/x/lint/golint',
@@ -65,6 +66,7 @@ const importantTools = [
 	'gogetdoc',
 	'goreturns',
 	'goimports',
+	'goimports-gomod',
 	'golint',
 	'gometalinter',
 	'megacheck',
@@ -102,6 +104,10 @@ function getTools(goVersion: SemVersion): string[] {
 	// Install the formattool that was chosen by the user
 	if (goConfig['formatTool'] === 'goimports') {
 		tools.push('goimports');
+		// godef-gomod needed in go 1.11 & higher
+		if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
+			tools.push('goimports-gomod');
+		}
 	} else if (goConfig['formatTool'] === 'goformat') {
 		tools.push('goformat');
 	} else if (goConfig['formatTool'] === 'goreturns') {
@@ -174,6 +180,7 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'godef-gomod': '\t(Go to definition, works with Modules)',
 		'gogetdoc': '\t(Go to definition & text shown on hover)',
 		'goimports': '\t(Formatter)',
+		'goimports-gomod': '\t(Formatter, works with Modules)',
 		'goreturns': '\t(Formatter)',
 		'goformat': '\t(Formatter)',
 		'golint': '\t\t(Linter)',
@@ -240,7 +247,10 @@ export function promptForMissingTool(tool: string) {
 				msg = `To provide auto-completions when using Go modules, we are testing a fork(${getToolImportPath(tool, goVersion)}) of "gocode" and an updated version of "gopkgs". Please press the Install button to install them.`;
 			} else if (tool === 'godef-gomod') {
 				msg = `To provide the Go to definition feature when using Go modules, we are testing a fork(${getToolImportPath(tool, goVersion)}) of "godef". Please press the Install button to install it.`;
+			} else if (tool === 'goimports-gomod') {
+				msg = `To provide the formatting feature when using Go modules, we are testing a fork(${getToolImportPath(tool, goVersion)}) of "goimports". Please press the Install button to install it.`;
 			}
+
 			vscode.window.showInformationMessage(msg, ...items).then(selected => {
 				if (selected === 'Install') {
 					if (tool === 'gocode-gomod') {

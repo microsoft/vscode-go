@@ -10,6 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './util';
+import { isModSupported } from './goModules';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
@@ -34,15 +35,18 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			formatFlags.push('-style=indent=' + options.tabSize);
 		}
 
-		return this.runFormatter(formatTool, formatFlags, document, token).then(edits => edits, err => {
-			if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
-				promptForUpdatingTool(formatTool);
-				return Promise.resolve([]);
-			}
-			if (err) {
-				console.log(err);
-				return Promise.reject('Check the console in dev tools to find errors when formatting.');
-			}
+		const formatToolPromise = formatTool !== 'goimports' ? Promise.resolve(formatTool) : isModSupported(document.uri).then(isMod => isMod ? 'goimports-gomod' : 'goimports');
+		return formatToolPromise.then(updatedFormatTool => {
+			return this.runFormatter(updatedFormatTool, formatFlags, document, token).then(edits => edits, err => {
+				if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
+					promptForUpdatingTool(updatedFormatTool);
+					return Promise.resolve([]);
+				}
+				if (err) {
+					console.log(err);
+					return Promise.reject('Check the console in dev tools to find errors when formatting.');
+				}
+			});
 		});
 	}
 
