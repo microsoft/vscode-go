@@ -707,7 +707,7 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 
 	diagnosticCollection.clear();
 
-	let diagnosticMap: Map<string, Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>> = new Map();
+	let diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
 	errors.forEach(error => {
 		let canonicalFile = vscode.Uri.file(error.file).toString();
 		let startColumn = 0;
@@ -729,20 +729,14 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 		diagnostic.source = diagnosticCollection.name;
 		let diagnostics = diagnosticMap.get(canonicalFile);
 		if (!diagnostics) {
-			diagnostics = new Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>();
+			diagnostics = [];
 		}
-		if (!diagnostics[severity]) {
-			diagnostics[severity] = [];
-		}
-		diagnostics[severity].push(diagnostic);
+		diagnostics.push(diagnostic);
 		diagnosticMap.set(canonicalFile, diagnostics);
 	});
 
-	diagnosticMap.forEach((diagMap, file) => {
+	diagnosticMap.forEach((newDiagnostics, file) => {
 		const fileUri = vscode.Uri.parse(file);
-		const newErrors = diagMap[vscode.DiagnosticSeverity.Error] || [];
-		const newWarnings = diagMap[vscode.DiagnosticSeverity.Warning] || [];
-		let newDiagnostics = newErrors.concat(newWarnings)
 
 		if (diagnosticCollection === buildDiagnosticCollection) {
 			// If there are vet warnings on current file, remove the ones co-inciding with the new build errors
