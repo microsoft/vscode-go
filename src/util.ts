@@ -13,7 +13,7 @@ import os = require('os');
 import { outputChannel } from './goStatus';
 import { NearestNeighborDict, Node } from './avlTree';
 import { getCurrentPackage } from './goModules';
-import { buildDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -739,8 +739,15 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 		const fileUri = vscode.Uri.parse(file);
 
 		if (diagnosticCollection === buildDiagnosticCollection) {
-			// If there are vet warnings on current file, remove the ones co-inciding with the new build errors
-			let existingDiagnostics = vetDiagnosticCollection.get(fileUri);
+			// If there are lint/vet warnings on current file, remove the ones co-inciding with the new build errors
+			let existingDiagnostics = lintDiagnosticCollection.get(fileUri);
+			if (existingDiagnostics) {
+				const diagnosticLines = newDiagnostics.map(x => x.range.start.line);
+				existingDiagnostics = existingDiagnostics.filter(x => diagnosticLines.indexOf(x.range.start.line) === -1);
+				lintDiagnosticCollection.set(fileUri, existingDiagnostics);
+			}
+
+			existingDiagnostics = vetDiagnosticCollection.get(fileUri);
 			if (existingDiagnostics) {
 				const diagnosticLines = newDiagnostics.map(x => x.range.start.line);
 				existingDiagnostics = existingDiagnostics.filter(x => diagnosticLines.indexOf(x.range.start.line) === -1);
@@ -748,8 +755,8 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 			}
 		}
 
-		if (diagnosticCollection === vetDiagnosticCollection) {
-			// If there are build errors on current file, ignore the new vet warnings co-inciding with them
+		if (diagnosticCollection === lintDiagnosticCollection || diagnosticCollection === vetDiagnosticCollection) {
+			// If there are build errors on current file, ignore the new lint/vet warnings co-inciding with them
 			const existingDiagnostics = buildDiagnosticCollection.get(fileUri);
 			if (existingDiagnostics) {
 				const diagnosticLines = existingDiagnostics.map(x => x.range.start.line);
