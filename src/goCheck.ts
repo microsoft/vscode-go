@@ -15,6 +15,7 @@ import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
 import { isModSupported } from './goModules';
+import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -46,7 +47,12 @@ export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
 	}
 }
 
-export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+interface IToolCheckResults {
+	diagnosticCollection: vscode.DiagnosticCollection;
+	errors: ICheckResult[];
+}
+
+export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<IToolCheckResults[]> {
 	diagnosticsStatusBarItem.hide();
 	outputChannel.clear();
 	let runningToolsPromises = [];
@@ -89,7 +95,9 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	};
 
 	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
-		runningToolsPromises.push(isModSupported(fileUri).then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace')));
+		runningToolsPromises.push(isModSupported(fileUri)
+			.then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace'))
+			.then(errors => ({ diagnosticCollection: buildDiagnosticCollection, errors })));
 	}
 
 	if (!!goConfig['testOnSave']) {
@@ -108,11 +116,13 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
-		runningToolsPromises.push(goLint(fileUri, goConfig, (goConfig['lintOnSave'])));
+		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'])
+			.then(errors => ({diagnosticCollection: lintDiagnosticCollection, errors: errors})));
 	}
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
-		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace'));
+		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace')
+			.then(errors => ({diagnosticCollection: vetDiagnosticCollection, errors: errors})));
 	}
 
 	if (!!goConfig['coverOnSave']) {

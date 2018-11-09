@@ -11,9 +11,9 @@ import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
 import os = require('os');
 import { outputChannel } from './goStatus';
-import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
 import { NearestNeighborDict, Node } from './avlTree';
 import { getCurrentPackage } from './goModules';
+import { buildDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -703,14 +703,9 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 	});
 }
 
-export function handleDiagnosticErrors(document: vscode.TextDocument, errors: ICheckResult[], diagnosticSeverity?: vscode.DiagnosticSeverity) {
+export function handleDiagnosticErrors(document: vscode.TextDocument, errors: ICheckResult[], diagnosticCollection: vscode.DiagnosticCollection) {
 
-	if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Error) {
-		errorDiagnosticCollection.clear();
-	}
-	if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Warning) {
-		warningDiagnosticCollection.clear();
-	}
+	diagnosticCollection.clear();
 
 	let diagnosticMap: Map<string, Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>> = new Map();
 	errors.forEach(error => {
@@ -731,6 +726,7 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 		let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
 		let severity = mapSeverityToVSCodeSeverity(error.severity);
 		let diagnostic = new vscode.Diagnostic(range, error.msg, severity);
+		diagnostic.source = diagnosticCollection.name;
 		let diagnostics = diagnosticMap.get(canonicalFile);
 		if (!diagnostics) {
 			diagnostics = new Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>();
@@ -744,30 +740,30 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 
 	diagnosticMap.forEach((diagMap, file) => {
 		const fileUri = vscode.Uri.parse(file);
-		if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Error) {
-			const newErrors = diagMap[vscode.DiagnosticSeverity.Error];
-			let existingWarnings = warningDiagnosticCollection.get(fileUri);
-			errorDiagnosticCollection.set(fileUri, newErrors);
+		const newErrors = diagMap[vscode.DiagnosticSeverity.Error] || [];
+		const newWarnings = diagMap[vscode.DiagnosticSeverity.Warning] || [];
+		let newDiagnostics = newErrors.concat(newWarnings)
 
-			// If there are warnings on current file, remove the ones co-inciding with the new errors
-			if (newErrors && existingWarnings) {
-				const errorLines = newErrors.map(x => x.range.start.line);
-				existingWarnings = existingWarnings.filter(x => errorLines.indexOf(x.range.start.line) === -1);
-				warningDiagnosticCollection.set(fileUri, existingWarnings);
+		if (diagnosticCollection === buildDiagnosticCollection) {
+			// If there are vet warnings on current file, remove the ones co-inciding with the new build errors
+			let existingDiagnostics = vetDiagnosticCollection.get(fileUri);
+			if (existingDiagnostics) {
+				const diagnosticLines = newDiagnostics.map(x => x.range.start.line);
+				existingDiagnostics = existingDiagnostics.filter(x => diagnosticLines.indexOf(x.range.start.line) === -1);
+				vetDiagnosticCollection.set(fileUri, existingDiagnostics);
 			}
 		}
-		if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Warning) {
-			const existingErrors = errorDiagnosticCollection.get(fileUri);
-			let newWarnings = diagMap[vscode.DiagnosticSeverity.Warning];
 
-			// If there are errors on current file, ignore the new warnings co-inciding with them
-			if (existingErrors && newWarnings) {
-				const errorLines = existingErrors.map(x => x.range.start.line);
-				newWarnings = newWarnings.filter(x => errorLines.indexOf(x.range.start.line) === -1);
+		if (diagnosticCollection === vetDiagnosticCollection) {
+			// If there are build errors on current file, ignore the new vet warnings co-inciding with them
+			const existingDiagnostics = buildDiagnosticCollection.get(fileUri);
+			if (existingDiagnostics) {
+				const diagnosticLines = existingDiagnostics.map(x => x.range.start.line);
+				newDiagnostics = newDiagnostics.filter(x => diagnosticLines.indexOf(x.range.start.line) === -1);
 			}
-
-			warningDiagnosticCollection.set(fileUri, newWarnings);
 		}
+
+		diagnosticCollection.set(fileUri, newDiagnostics);
 	});
 }
 

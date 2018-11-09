@@ -289,7 +289,8 @@ It returns the number of bytes written and any write error encountered.
 				return Promise.resolve();
 			}
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
-				let sortedDiagnostics = diagnostics.sort((a, b) => a.line - b.line);
+				const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
+				let sortedDiagnostics = allDiagnostics.sort((a, b) => a.line - b.line);
 				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
 				let matchCount = 0;
 				for (let i in expected) {
@@ -423,7 +424,8 @@ It returns the number of bytes written and any write error encountered.
 			];
 			let errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
 			return check(vscode.Uri.file(errorsTestPath), config).then(diagnostics => {
-				let sortedDiagnostics = diagnostics.sort((a, b) => {
+				const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
+				let sortedDiagnostics = allDiagnostics.sort((a, b) => {
 					if (a.msg < b.msg)
 						return -1;
 					if (a.msg > b.msg)
@@ -1154,7 +1156,8 @@ encountered.
 
 		const checkWithTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config1).then(diagnostics => {
 			assert.equal(1, diagnostics.length, 'check with buildtag failed. Unexpected errors found');
-			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
+			assert.equal(1, diagnostics[0].errors.length, 'check with buildtag failed. Unexpected errors found');
+			assert.equal(diagnostics[0].errors[0].msg, 'undefined: fmt.Prinln');
 		});
 
 		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
@@ -1166,7 +1169,8 @@ encountered.
 
 		const checkWithMultipleTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config2).then(diagnostics => {
 			assert.equal(1, diagnostics.length, 'check with multiple buildtags failed. Unexpected errors found');
-			assert.equal(diagnostics[0].msg, 'undefined: fmt.Prinln');
+			assert.equal(1, diagnostics[0].errors.length, 'check with multiple buildtags failed. Unexpected errors found');
+			assert.equal(diagnostics[0].errors[0].msg, 'undefined: fmt.Prinln');
 		});
 
 		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
@@ -1178,7 +1182,8 @@ encountered.
 
 		const checkWithoutTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config3).then(diagnostics => {
 			assert.equal(1, diagnostics.length, 'check without buildtags failed. Unexpected errors found');
-			assert.equal(diagnostics[0].msg.indexOf('can\'t load package: package test/testfixture/buildTags') > -1, true, `check without buildtags failed. Go files not excluded. ${diagnostics[0].msg}`);
+			assert.equal(1, diagnostics[0].errors.length, 'check without buildtags failed. Unexpected errors found');
+			assert.equal(diagnostics[0].errors[0].msg.indexOf('can\'t load package: package test/testfixture/buildTags') > -1, true, `check without buildtags failed. Go files not excluded. ${diagnostics[0].errors[0].msg}`);
 		});
 
 		Promise.all([checkWithTags, checkWithMultipleTags, checkWithoutTags]).then(() => done(), done);

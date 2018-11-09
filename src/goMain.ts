@@ -47,8 +47,9 @@ import { installCurrentPackage } from './goInstall';
 import { updateWorkspaceModCache } from './goModules';
 import { setGlobalState } from './stateUtils';
 
-export let errorDiagnosticCollection: vscode.DiagnosticCollection;
-export let warningDiagnosticCollection: vscode.DiagnosticCollection;
+export let buildDiagnosticCollection: vscode.DiagnosticCollection;
+export let lintDiagnosticCollection: vscode.DiagnosticCollection;
+export let vetDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
@@ -181,10 +182,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, referencesCodeLensProvider));
 	ctx.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('go', new GoDebugConfigurationProvider()));
 
-	errorDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-error');
-	ctx.subscriptions.push(errorDiagnosticCollection);
-	warningDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-warning');
-	ctx.subscriptions.push(warningDiagnosticCollection);
+	buildDiagnosticCollection = vscode.languages.createDiagnosticCollection('go');
+	ctx.subscriptions.push(buildDiagnosticCollection);
+	lintDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-lint');
+	ctx.subscriptions.push(lintDiagnosticCollection);
+	vetDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-vet');
+	ctx.subscriptions.push(vetDiagnosticCollection);
 	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
@@ -437,11 +440,11 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 		return;
 	}
 
-	errorDiagnosticCollection.clear();
-	warningDiagnosticCollection.clear();
 	check(document.uri, goConfig)
-		.then((errors) => {
-			handleDiagnosticErrors(document, errors);
+		.then(results => {
+			results.forEach(result => {
+				handleDiagnosticErrors(document, result.errors, result.diagnosticCollection);
+			});
 		})
 		.catch(err => {
 			vscode.window.showInformationMessage('Error: ' + err);

@@ -5,7 +5,7 @@ import { getBinPath, getToolsEnvVars } from './util';
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
-import { errorDiagnosticCollection } from './goMain';
+import { buildDiagnosticCollection } from './goMain';
 
 // Interface for settings configuration for adding and removing tags
 interface GoLiveErrorsConfig {
@@ -69,7 +69,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			return;
 		}
 
-		errorDiagnosticCollection.clear();
+		buildDiagnosticCollection.clear();
 
 		if (err) {
 			// we want to take the error path here because the command we are calling
@@ -86,6 +86,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 				file = vscode.Uri.file(file).toString();
 				let range = new vscode.Range(+line - 1, +column, +line - 1, +column);
 				let diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
+				diagnostic.source = 'go';
 
 				let diagnostics = diagnosticMap.get(file);
 				if (!diagnostics) {
@@ -96,7 +97,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 			});
 
 			diagnosticMap.forEach((diagnostics, file) => {
-				errorDiagnosticCollection.set(vscode.Uri.parse(file), diagnostics);
+				buildDiagnosticCollection.set(vscode.Uri.parse(file), diagnostics);
 			});
 		}
 	});
