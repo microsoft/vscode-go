@@ -24,9 +24,9 @@ statusBarItem.text = '$(x) Cancel Running Tests';
  */
 const runningTestProcesses: cp.ChildProcess[] = [];
 
-const testFuncRegex = /^Test.+|^Example.+/;
+const testFuncRegex = /^Test.*|^Example.*/;
 const testMethodRegex = /^\(([^)]+)\)\.(Test.*)$/;
-const benchmarkRegex = /^Benchmark.+/;
+const benchmarkRegex = /^Benchmark.*/;
 
 /**
  * Input to goTest.
