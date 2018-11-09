@@ -440,6 +440,9 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 		return;
 	}
 
+	buildDiagnosticCollection.clear();
+	lintDiagnosticCollection.clear();
+	vetDiagnosticCollection.clear();
 	check(document.uri, goConfig)
 		.then(results => {
 			results.forEach(result => {
