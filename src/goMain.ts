@@ -19,7 +19,7 @@ import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { GoCodeActionProvider } from './goCodeAction';
 import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
-import { updateGoPathGoRootFromConfig, offerToInstallTools, promptForMissingTool } from './goInstallTools';
+import { updateGoPathGoRootFromConfig, offerToInstallTools, promptForMissingTool, installTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
 import { initCoverageDecorators, toggleCoverageCurrentPackage, applyCodeCoverage, removeCodeCoverageOnFileChange, updateCodeCoverageDecorators } from './goCover';
@@ -299,7 +299,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		addImportToWorkspace();
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', () => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', (args) => {
+		if (Array.isArray(args) && args.length) {
+			getGoVersion().then(goVersion => {
+				installTools(args, goVersion);
+			});
+			return;
+		}
 		installAllTools();
 	}));
 
