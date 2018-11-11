@@ -159,7 +159,7 @@ function convertToCodeSymbols(
 			if (decl.type === 'type') {
 				let line = document.lineAt(document.positionAt(start));
 				let regex = new RegExp('\\bstruct\\b');
-				decl.type = line.text.match(regex) ? 'struct' : 'type';
+				decl.type = regex.test(line.text) ? 'struct' : 'type';
 			}
 		}
 
