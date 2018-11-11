@@ -64,6 +64,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	private globalState: vscode.Memento;
 	private previousFile: string;
 	private previousFileDir: string;
+	private gocodeFlags: string[];
 
 	constructor(globalState?: vscode.Memento) {
 		this.globalState = globalState;
@@ -101,7 +102,12 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
-		return this.ensureGoCodeConfigured(document.uri).then(() => {
+		this.gocodeFlags = ['-f=json'];
+		if (Array.isArray(config['gocodeFlags'])) {
+			this.gocodeFlags.push(...config['gocodeFlags']);
+		}
+
+		return this.ensureGoCodeConfigured(document.uri, config).then(() => {
 			return new Promise<vscode.CompletionItem[] | vscode.CompletionList>((resolve, reject) => {
 				let filename = document.fileName;
 				let lineText = document.lineAt(position.line).text;
@@ -216,13 +222,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			let stdout = '';
 			let stderr = '';
 
-			let goCodeFlags = ['-f=json'];
-			if (!this.setGocodeOptions) {
-				goCodeFlags.push('-builtin');
-			}
-
 			// Spawn `gocode` process
-			let p = cp.spawn(gocode, [...goCodeFlags, 'autocomplete', filename, '' + offset], { env });
+			let p = cp.spawn(gocode, [...this.gocodeFlags, 'autocomplete', filename, '' + offset], { env });
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
 			p.on('error', err => {
@@ -368,7 +369,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		});
 	}
 	// TODO: Shouldn't lib-path also be set?
-	private ensureGoCodeConfigured(fileuri: vscode.Uri): Thenable<void> {
+	private ensureGoCodeConfigured(fileuri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Thenable<void> {
 		const currentFile = fileuri.fsPath;
 		let checkModSupport = Promise.resolve(this.isGoMod);
 		if (this.previousFile !== currentFile && this.previousFileDir !== path.dirname(currentFile)) {
@@ -384,7 +385,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
-			let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 			let env = getToolsEnvVars();
 
 			cp.execFile(gocode, ['set'], { env }, (err, stdout, stderr) => {

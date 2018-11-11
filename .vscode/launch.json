@@ -21,7 +21,8 @@
 			"program": "${workspaceFolder}/out/src/debugAdapter/goDebug.js",
 			"args": ["--server=4711"],
 			"sourceMaps": true,
-			"outFiles": ["${workspaceFolder}/out/**/*.js"]
+			"outFiles": ["${workspaceFolder}/out/**/*.js"],
+			"preLaunchTask": "npm"
 		},
 		{
 			"name": "Launch Tests",
