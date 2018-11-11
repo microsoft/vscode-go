@@ -128,7 +128,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
 		this.gocodeFlags = ['-f=json'];
 		if (Array.isArray(config['gocodeFlags'])) {
-			this.gocodeFlags.push(...config['gocodeFlags'])
+			this.gocodeFlags.push(...config['gocodeFlags']);
 		}
 
 		return this.ensureGoCodeConfigured(document.uri, config).then(() => {
