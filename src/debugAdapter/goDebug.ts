@@ -1172,8 +1172,9 @@ class GoDebugSession extends DebugSession {
 		};
 		this.delve.call(this.delve.isApiV1 ? 'SetSymbol' : 'Set', [setSymbolArgs], (err) => {
 			if (err) {
-				logError('Failed to set variable: ', err.toString());
-				return this.sendErrorResponse(response, 2010, 'Unable to set variable:', err.toString());
+				const errMessage = `Failed to set variable: ${err.toString()}`;
+				logError(errMessage);
+				return this.sendErrorResponse(response, 2010, errMessage);
 			}
 			response.body = { value: args.value };
 			this.sendResponse(response);
