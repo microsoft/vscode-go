@@ -544,6 +544,7 @@ class GoDebugSession extends DebugSession {
 		verbose('InitializeRequest');
 		// This debug adapter implements the configurationDoneRequest.
 		response.body.supportsConfigurationDoneRequest = true;
+		response.body.supportsSetVariable = true;
 		this.sendResponse(response);
 		verbose('InitializeResponse');
 	}
@@ -1154,6 +1155,28 @@ class GoDebugSession extends DebugSession {
 			response.body = this.convertDebugVariableToProtocolVariable(variable, 0);
 			this.sendResponse(response);
 			verbose('EvaluateResponse');
+		});
+	}
+
+	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {
+		verbose('SetVariableRequest');
+		const scope = {
+			goroutineID: this.debugState.currentGoroutine.id
+		};
+		const setSymbolArgs = {
+			Scope: scope,
+			Symbol: args.name,
+			Value: args.value
+		};
+		this.delve.call(this.delve.isApiV1 ? 'SetSymbol' : 'Set', [setSymbolArgs], (err) => {
+			if (err) {
+				const errMessage = `Failed to set variable: ${err.toString()}`;
+				logError(errMessage);
+				return this.sendErrorResponse(response, 2010, errMessage);
+			}
+			response.body = { value: args.value };
+			this.sendResponse(response);
+			verbose('SetVariableResponse');
 		});
 	}
 
