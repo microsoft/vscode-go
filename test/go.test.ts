@@ -959,7 +959,9 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Completion on unimported packages (multiple)', (done) => {
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {});
+		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'gocodeFlags': { value: ['-builtin'] }
+		});
 		let provider = new GoCompletionItemProvider();
 		let position = new vscode.Position(3, 14);
 		let expectedItems = [
