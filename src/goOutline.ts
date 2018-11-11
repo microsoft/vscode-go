@@ -156,10 +156,13 @@ function convertToCodeSymbols(
 			let start = byteOffsetToDocumentOffset(decl.start - 1);
 			let end = byteOffsetToDocumentOffset(decl.end - 1);
 			range = new vscode.Range(document.positionAt(start), document.positionAt(end));
+			if (decl.type === 'type') {
+				let line = document.lineAt(document.positionAt(start));
+				let regex = new RegExp('\\bstruct\\b');
+				decl.type = line.text.match(regex) ? 'struct' : 'type';
+			}
 		}
-		if (decl.type === 'type') {
-			decl.type = document.getText(range).includes('struct') ? 'struct' : 'type';
-		}
+
 		let symbolInfo = new vscode.SymbolInformation(
 			label,
 			goKindToCodeKind[decl.type],
