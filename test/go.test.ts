@@ -271,13 +271,14 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	}).timeout(10000);
 
-	test('Error checking', (done) => {
+	test.only('Error checking', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'package' },
 			'vetFlags': { value: ['-all'] },
 			'lintOnSave': { value: 'package' },
 			'lintTool': { value: 'golint' },
-			'lintFlags': { value: [] }
+			'lintFlags': { value: [] },
+			'buildOnSave': { value: 'package' },
 		});
 		let expected = [
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },

@@ -740,34 +740,25 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 
 		if (diagnosticCollection === buildDiagnosticCollection) {
 			// If there are lint/vet warnings on current file, remove the ones co-inciding with the new build errors
-			let existingDiagnostics = lintDiagnosticCollection.get(fileUri);
-			if (existingDiagnostics) {
-				const diagnosticLines = newDiagnostics.map(x => x.range.start.line);
-				existingDiagnostics = existingDiagnostics.filter(x => diagnosticLines.indexOf(x.range.start.line) === -1);
-				lintDiagnosticCollection.set(fileUri, existingDiagnostics);
+			if (lintDiagnosticCollection.has(fileUri)) {
+				lintDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, lintDiagnosticCollection.get(fileUri)));
 			}
 
-			existingDiagnostics = vetDiagnosticCollection.get(fileUri);
-			if (existingDiagnostics) {
-				const diagnosticLines = newDiagnostics.map(x => x.range.start.line);
-				existingDiagnostics = existingDiagnostics.filter(x => diagnosticLines.indexOf(x.range.start.line) === -1);
-				vetDiagnosticCollection.set(fileUri, existingDiagnostics);
+			if (vetDiagnosticCollection.has(fileUri)) {
+				vetDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, vetDiagnosticCollection.get(fileUri)));
 			}
-		}
-
-		if (diagnosticCollection === lintDiagnosticCollection || diagnosticCollection === vetDiagnosticCollection) {
+		} else if (buildDiagnosticCollection.has(fileUri)) {
 			// If there are build errors on current file, ignore the new lint/vet warnings co-inciding with them
-			const existingDiagnostics = buildDiagnosticCollection.get(fileUri);
-			if (existingDiagnostics) {
-				const diagnosticLines = existingDiagnostics.map(x => x.range.start.line);
-				newDiagnostics = newDiagnostics.filter(x => diagnosticLines.indexOf(x.range.start.line) === -1);
-			}
+			newDiagnostics = deDupeDiagnostics(buildDiagnosticCollection.get(fileUri), newDiagnostics);
 		}
-
 		diagnosticCollection.set(fileUri, newDiagnostics);
 	});
 }
 
+function deDupeDiagnostics(buildDiagnostics: vscode.Diagnostic[], otherDiagnostics: vscode.Diagnostic[]): vscode.Diagnostic[] {
+	const buildDiagnosticsLines = buildDiagnostics.map(x => x.range.start.line);
+	return otherDiagnostics.filter(x => buildDiagnosticsLines.indexOf(x.range.start.line) === -1);
+}
 
 function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {
 	switch (sev) {
