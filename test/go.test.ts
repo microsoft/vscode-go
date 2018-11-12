@@ -271,7 +271,7 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	}).timeout(10000);
 
-	test.only('Error checking', (done) => {
+	test('Error checking', (done) => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'package' },
 			'vetFlags': { value: ['-all'] },
