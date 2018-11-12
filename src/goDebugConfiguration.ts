@@ -1,7 +1,9 @@
 'use strict';
 
 import vscode = require('vscode');
+import path = require('path');
 import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent, getBinPath } from './util';
+import { promptForMissingTool } from './goInstallTools';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -78,8 +80,10 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
 		}
 
-		if (!debugConfiguration['dlvToolPath']) {
-			debugConfiguration['dlvToolPath'] = getBinPath('dlv');
+		debugConfiguration['dlvToolPath'] = getBinPath('dlv');
+		if (!path.isAbsolute(debugConfiguration['dlvToolPath'])) {
+			promptForMissingTool('dlv');
+			return;
 		}
 
 		if (debugConfiguration['mode'] === 'auto') {
