@@ -206,6 +206,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	output?: string;
 	/** Delve LoadConfig parameters **/
 	dlvLoadConfig?: LoadConfig;
+	dlvToolPath: string;
 	/** Delve Version */
 	apiVersion: number;
 }
@@ -356,11 +357,9 @@ class Delve {
 				return;
 			}
 
-			let dlv = getBinPathWithPreferredGopath('dlv', [resolveHomeDir(env['GOPATH']), process.env['GOPATH']]);
-
-			if (!existsSync(dlv)) {
-				verbose(`Couldn't find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
-				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
+			if (!existsSync(launchArgs.dlvToolPath)) {
+				verbose(`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
+				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
 			}
 
 			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
@@ -401,9 +400,9 @@ class Delve {
 			}
 
 			verbose(`Current working directory: ${dlvCwd}`);
-			verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
+			verbose(`Running: ${launchArgs.dlvToolPath} ${dlvArgs.join(' ')}`);
 
-			this.debugProcess = spawn(dlv, dlvArgs, {
+			this.debugProcess = spawn(launchArgs.dlvToolPath, dlvArgs, {
 				cwd: dlvCwd,
 				env,
 			});
