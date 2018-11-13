@@ -320,7 +320,15 @@ class Delve {
 			if (!!launchArgs.noDebug) {
 				if (mode === 'debug' && !isProgramDirectory) {
 					this.noDebug = true;
-					this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), ['run', program], { env });
+					let runArgs = ['run'];
+					if (launchArgs.buildFlags) {
+						runArgs.push(launchArgs.buildFlags);
+					}
+					runArgs.push(program);
+					if (launchArgs.args) {
+						runArgs.push(...launchArgs.args);
+					}
+					this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), runArgs, { env });
 					this.debugProcess.stderr.on('data', chunk => {
 						let str = chunk.toString();
 						if (this.onstderr) { this.onstderr(str); }
