@@ -222,8 +222,12 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			let stdout = '';
 			let stderr = '';
 
+			const flags = [...this.gocodeFlags];
+			if (gocodeName == 'gocode') {
+				flags.push('-unimported-packages');
+			}
 			// Spawn `gocode` process
-			let p = cp.spawn(gocode, [...this.gocodeFlags, 'autocomplete', filename, '' + offset], { env });
+			let p = cp.spawn(gocode, [...flags, 'autocomplete', filename, '' + offset], { env });
 			p.stdout.on('data', data => stdout += data);
 			p.stderr.on('data', data => stderr += data);
 			p.on('error', err => {

@@ -806,8 +806,7 @@
           },
           "default": [
             "-builtin",
-            "-ignore-case",
-            "-unimported-packages"
+            "-ignore-case"
           ],
           "description": "Additional flags to pass to gocode.",
           "scope": "resource"
