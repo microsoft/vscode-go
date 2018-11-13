@@ -210,6 +210,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	dlvLoadConfig?: LoadConfig;
 	/** Delve Version */
 	apiVersion: number;
+	/** Delve maximum stack trace depth */
+	stackTraceDepth: number;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -258,6 +260,7 @@ class Delve {
 	noDebug: boolean;
 	isApiV1: boolean;
 	dlvEnv: any;
+	stackTraceDepth: number;
 
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = normalizePath(program);
@@ -268,6 +271,7 @@ class Delve {
 		} else if (typeof launchArgs['useApiV1'] === 'boolean') {
 			this.isApiV1 = launchArgs['useApiV1'];
 		}
+		this.stackTraceDepth = launchArgs.stackTraceDepth;
 		let mode = launchArgs.mode;
 		let dlvCwd = dirname(program);
 		let isProgramDirectory = false;
@@ -771,7 +775,7 @@ class GoDebugSession extends DebugSession {
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
 		verbose('StackTraceRequest');
 		// delve does not support frame paging, so we ask for a large depth
-		let stackTraceIn = { id: args.threadId, depth: 50 };
+		let stackTraceIn = { id: args.threadId, depth: this.delve.stackTraceDepth };
 		if (!this.delve.isApiV1) {
 			Object.assign(stackTraceIn, { full: false, cfg: this.delve.loadConfig });
 		}

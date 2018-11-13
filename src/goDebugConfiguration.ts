@@ -77,6 +77,9 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		if (!debugConfiguration.hasOwnProperty('dlvLoadConfig') && dlvConfig.hasOwnProperty('dlvLoadConfig')) {
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
 		}
+		if (!debugConfiguration.hasOwnProperty('stackTraceDepth') && dlvConfig.hasOwnProperty('stackTraceDepth')) {
+			debugConfiguration['stackTraceDepth'] = dlvConfig['stackTraceDepth'];
+		}
 
 		if (debugConfiguration['mode'] === 'auto') {
 			debugConfiguration['mode'] = (activeEditor && activeEditor.document.fileName.endsWith('_test.go')) ? 'test' : 'debug';
