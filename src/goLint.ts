@@ -3,6 +3,7 @@ import vscode = require('vscode');
 import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getToolsGopath } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
+import { lintDiagnosticCollection } from './goMain';
 /**
  * Runs linter on the current file, package or workspace.
  */
@@ -26,7 +27,7 @@ export function lintCode(scope?: string) {
 
 	goLint(documentUri, goConfig, scope)
 		.then(warnings => {
-			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
+			handleDiagnosticErrors(editor ? editor.document : null, warnings, lintDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
 		})
 		.catch(err => {

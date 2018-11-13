@@ -8,6 +8,7 @@ import { getTestFlags } from './testUtils';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { diagnosticsStatusBarItem } from './goStatus';
 import { isModSupported } from './goModules';
+import { buildDiagnosticCollection } from './goMain';
 /**
  * Builds current package or workspace.
  */
@@ -34,7 +35,7 @@ export function buildCode(buildWorkspace?: boolean) {
 	isModSupported(documentUri).then(isMod => {
 		goBuild(documentUri, isMod, goConfig, buildWorkspace)
 		.then(errors => {
-			handleDiagnosticErrors(editor ? editor.document : null, errors, vscode.DiagnosticSeverity.Error);
+			handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
 		})
 		.catch(err => {
