@@ -211,6 +211,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	apiVersion: number;
 	/** Delve maximum stack trace depth */
 	stackTraceDepth: number;
+	currentFile: string;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -318,34 +319,41 @@ class Delve {
 			verbose(`Using GOPATH: ${env['GOPATH']}`);
 
 			if (!!launchArgs.noDebug) {
-				if (mode === 'debug' && !isProgramDirectory) {
-					this.noDebug = true;
-					let runArgs = ['run'];
-					if (launchArgs.buildFlags) {
-						runArgs.push(launchArgs.buildFlags);
+				if (mode === 'debug') {
+					if (isProgramDirectory && launchArgs.currentFile) {
+						program = launchArgs.currentFile;
+						isProgramDirectory = false;
 					}
-					runArgs.push(program);
-					if (launchArgs.args) {
-						runArgs.push(...launchArgs.args);
+
+					if (!isProgramDirectory) {
+						this.noDebug = true;
+						let runArgs = ['run'];
+						if (launchArgs.buildFlags) {
+							runArgs.push(launchArgs.buildFlags);
+						}
+						runArgs.push(program);
+						if (launchArgs.args) {
+							runArgs.push(...launchArgs.args);
+						}
+						this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), runArgs, { env });
+						this.debugProcess.stderr.on('data', chunk => {
+							let str = chunk.toString();
+							if (this.onstderr) { this.onstderr(str); }
+						});
+						this.debugProcess.stdout.on('data', chunk => {
+							let str = chunk.toString();
+							if (this.onstdout) { this.onstdout(str); }
+						});
+						this.debugProcess.on('close', (code) => {
+							logError('Process exiting with code: ' + code);
+							if (this.onclose) { this.onclose(code); }
+						});
+						this.debugProcess.on('error', function (err) {
+							reject(err);
+						});
+						resolve();
+						return;
 					}
-					this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), runArgs, { env });
-					this.debugProcess.stderr.on('data', chunk => {
-						let str = chunk.toString();
-						if (this.onstderr) { this.onstderr(str); }
-					});
-					this.debugProcess.stdout.on('data', chunk => {
-						let str = chunk.toString();
-						if (this.onstdout) { this.onstdout(str); }
-					});
-					this.debugProcess.on('close', (code) => {
-						logError('Process exiting with code: ' + code);
-						if (this.onclose) { this.onclose(code); }
-					});
-					this.debugProcess.on('error', function (err) {
-						reject(err);
-					});
-					resolve();
-					return;
 				}
 			}
 			this.noDebug = false;
