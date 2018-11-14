@@ -599,11 +599,13 @@ It returns the number of bytes written and any write error encountered.
 				let packageNames = groupedSymbolNames[vscode.SymbolKind.Package];
 				let variableNames = groupedSymbolNames[vscode.SymbolKind.Variable];
 				let functionNames = groupedSymbolNames[vscode.SymbolKind.Function];
-
+				let structs = groupedSymbolNames[vscode.SymbolKind.Struct];
 				assert.equal(packageNames[0], 'main');
 				assert.equal(variableNames, undefined);
 				assert.equal(functionNames[0], 'print');
 				assert.equal(functionNames[1], 'main');
+				assert.equal(structs.length, 1);
+				assert.equal(structs[0], 'foo');
 			});
 		}).then(() => done(), done);
 	});
