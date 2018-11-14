@@ -1077,6 +1077,9 @@ class GoDebugSession extends LoggingDebugSession {
 				}
 				const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
 				this.updateThreads(goroutines);
+				if (!this.debugState.currentGoroutine && goroutines.length > 0) {
+					this.debugState.currentGoroutine = goroutines[0];
+				}
 
 				let stoppedEvent = new StoppedEvent(reason, this.debugState.currentGoroutine.id);
 				(<any>stoppedEvent.body).allThreadsStopped = true;
