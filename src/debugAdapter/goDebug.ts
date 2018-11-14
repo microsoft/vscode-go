@@ -774,7 +774,7 @@ class GoDebugSession extends LoggingDebugSession {
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
 		if (this.continueRequestRunning) {
 			// Thread request to delve is syncronous and will block if a previous async continue request didn't return
-			response.body = { threads: [] };
+			response.body = { threads: [new Thread(1, 'Dummy')] };
 			return this.sendResponse(response);
 		}
 		log('ThreadsRequest');
