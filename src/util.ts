@@ -11,9 +11,9 @@ import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
 import os = require('os');
 import { outputChannel } from './goStatus';
-import { errorDiagnosticCollection, warningDiagnosticCollection } from './goMain';
 import { NearestNeighborDict, Node } from './avlTree';
 import { getCurrentPackage } from './goModules';
+import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -703,16 +703,11 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 	});
 }
 
-export function handleDiagnosticErrors(document: vscode.TextDocument, errors: ICheckResult[], diagnosticSeverity?: vscode.DiagnosticSeverity) {
+export function handleDiagnosticErrors(document: vscode.TextDocument, errors: ICheckResult[], diagnosticCollection: vscode.DiagnosticCollection) {
 
-	if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Error) {
-		errorDiagnosticCollection.clear();
-	}
-	if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Warning) {
-		warningDiagnosticCollection.clear();
-	}
+	diagnosticCollection.clear();
 
-	let diagnosticMap: Map<string, Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>> = new Map();
+	let diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
 	errors.forEach(error => {
 		let canonicalFile = vscode.Uri.file(error.file).toString();
 		let startColumn = 0;
@@ -731,46 +726,39 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 		let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
 		let severity = mapSeverityToVSCodeSeverity(error.severity);
 		let diagnostic = new vscode.Diagnostic(range, error.msg, severity);
+		diagnostic.source = diagnosticCollection.name;
 		let diagnostics = diagnosticMap.get(canonicalFile);
 		if (!diagnostics) {
-			diagnostics = new Map<vscode.DiagnosticSeverity, vscode.Diagnostic[]>();
+			diagnostics = [];
 		}
-		if (!diagnostics[severity]) {
-			diagnostics[severity] = [];
-		}
-		diagnostics[severity].push(diagnostic);
+		diagnostics.push(diagnostic);
 		diagnosticMap.set(canonicalFile, diagnostics);
 	});
 
-	diagnosticMap.forEach((diagMap, file) => {
+	diagnosticMap.forEach((newDiagnostics, file) => {
 		const fileUri = vscode.Uri.parse(file);
-		if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Error) {
-			const newErrors = diagMap[vscode.DiagnosticSeverity.Error];
-			let existingWarnings = warningDiagnosticCollection.get(fileUri);
-			errorDiagnosticCollection.set(fileUri, newErrors);
 
-			// If there are warnings on current file, remove the ones co-inciding with the new errors
-			if (newErrors && existingWarnings) {
-				const errorLines = newErrors.map(x => x.range.start.line);
-				existingWarnings = existingWarnings.filter(x => errorLines.indexOf(x.range.start.line) === -1);
-				warningDiagnosticCollection.set(fileUri, existingWarnings);
-			}
-		}
-		if (diagnosticSeverity === undefined || diagnosticSeverity === vscode.DiagnosticSeverity.Warning) {
-			const existingErrors = errorDiagnosticCollection.get(fileUri);
-			let newWarnings = diagMap[vscode.DiagnosticSeverity.Warning];
-
-			// If there are errors on current file, ignore the new warnings co-inciding with them
-			if (existingErrors && newWarnings) {
-				const errorLines = existingErrors.map(x => x.range.start.line);
-				newWarnings = newWarnings.filter(x => errorLines.indexOf(x.range.start.line) === -1);
+		if (diagnosticCollection === buildDiagnosticCollection) {
+			// If there are lint/vet warnings on current file, remove the ones co-inciding with the new build errors
+			if (lintDiagnosticCollection.has(fileUri)) {
+				lintDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, lintDiagnosticCollection.get(fileUri)));
 			}
 
-			warningDiagnosticCollection.set(fileUri, newWarnings);
+			if (vetDiagnosticCollection.has(fileUri)) {
+				vetDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, vetDiagnosticCollection.get(fileUri)));
+			}
+		} else if (buildDiagnosticCollection.has(fileUri)) {
+			// If there are build errors on current file, ignore the new lint/vet warnings co-inciding with them
+			newDiagnostics = deDupeDiagnostics(buildDiagnosticCollection.get(fileUri), newDiagnostics);
 		}
+		diagnosticCollection.set(fileUri, newDiagnostics);
 	});
 }
 
+function deDupeDiagnostics(buildDiagnostics: vscode.Diagnostic[], otherDiagnostics: vscode.Diagnostic[]): vscode.Diagnostic[] {
+	const buildDiagnosticsLines = buildDiagnostics.map(x => x.range.start.line);
+	return otherDiagnostics.filter(x => buildDiagnosticsLines.indexOf(x.range.start.line) === -1);
+}
 
 function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {
 	switch (sev) {

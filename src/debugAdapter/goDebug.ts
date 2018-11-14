@@ -206,8 +206,11 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	output?: string;
 	/** Delve LoadConfig parameters **/
 	dlvLoadConfig?: LoadConfig;
+	dlvToolPath: string;
 	/** Delve Version */
 	apiVersion: number;
+	/** Delve maximum stack trace depth */
+	stackTraceDepth: number;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -256,6 +259,7 @@ class Delve {
 	noDebug: boolean;
 	isApiV1: boolean;
 	dlvEnv: any;
+	stackTraceDepth: number;
 
 	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
 		this.program = normalizePath(program);
@@ -266,6 +270,7 @@ class Delve {
 		} else if (typeof launchArgs['useApiV1'] === 'boolean') {
 			this.isApiV1 = launchArgs['useApiV1'];
 		}
+		this.stackTraceDepth = launchArgs.stackTraceDepth;
 		let mode = launchArgs.mode;
 		let dlvCwd = dirname(program);
 		let isProgramDirectory = false;
@@ -356,11 +361,9 @@ class Delve {
 				return;
 			}
 
-			let dlv = getBinPathWithPreferredGopath('dlv', [resolveHomeDir(env['GOPATH']), process.env['GOPATH']]);
-
-			if (!existsSync(dlv)) {
-				verbose(`Couldn't find dlv at ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
-				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your "GOPATH/bin" or "PATH".`);
+			if (!existsSync(launchArgs.dlvToolPath)) {
+				verbose(`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
+				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
 			}
 
 			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
@@ -401,9 +404,9 @@ class Delve {
 			}
 
 			verbose(`Current working directory: ${dlvCwd}`);
-			verbose(`Running: ${dlv} ${dlvArgs.join(' ')}`);
+			verbose(`Running: ${launchArgs.dlvToolPath} ${dlvArgs.join(' ')}`);
 
-			this.debugProcess = spawn(dlv, dlvArgs, {
+			this.debugProcess = spawn(launchArgs.dlvToolPath, dlvArgs, {
 				cwd: dlvCwd,
 				env,
 			});
@@ -769,7 +772,8 @@ class GoDebugSession extends DebugSession {
 
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
 		verbose('StackTraceRequest');
-		let stackTraceIn = { id: args.threadId, depth: args.levels };
+		// delve does not support frame paging, so we ask for a large depth
+		let stackTraceIn = { id: args.threadId, depth: this.delve.stackTraceDepth };
 		if (!this.delve.isApiV1) {
 			Object.assign(stackTraceIn, { full: false, cfg: this.delve.loadConfig });
 		}
@@ -792,7 +796,13 @@ class GoDebugSession extends DebugSession {
 					0
 				)
 			);
-			response.body = { stackFrames };
+			if (args.startFrame > 0) {
+				stackFrames = stackFrames.slice(args.startFrame);
+			}
+			if (args.levels > 0) {
+				stackFrames = stackFrames.slice(0, args.levels);
+			}
+			response.body = { stackFrames, totalFrames: locations.length };
 			this.sendResponse(response);
 			verbose('StackTraceResponse');
 		});

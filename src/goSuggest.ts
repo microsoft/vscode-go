@@ -222,6 +222,14 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 			let stdout = '';
 			let stderr = '';
 
+			// stamblerre/gocode does not support -unimported-packages flags.
+			if (this.isGoMod) {
+				const upflag = '-unimported-packages';
+				const idx = this.gocodeFlags.indexOf(upflag);
+				if (idx >= 0) {
+					this.gocodeFlags.splice(idx, 1);
+				}
+			}
 			// Spawn `gocode` process
 			let p = cp.spawn(gocode, [...this.gocodeFlags, 'autocomplete', filename, '' + offset], { env });
 			p.stdout.on('data', data => stdout += data);
