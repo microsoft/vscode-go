@@ -1165,9 +1165,11 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			log('pause state', state);
-			this.sendResponse(response);
-			log('PauseResponse');
+			this.debugState = state;
+			this.handleReenterDebug('pause');
 		});
+		this.sendResponse(response);
+		log('PauseResponse');
 	}
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
