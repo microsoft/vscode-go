@@ -495,6 +495,11 @@
                 ],
                 "description": "Delve Api Version to use. Default value is 2.",
                 "default": 2
+              },
+              "stackTraceDepth": {
+                "type": "number",
+                "description": "Maximum depth of stack trace collected from Delve",
+                "default": 20
               }
             }
           }
