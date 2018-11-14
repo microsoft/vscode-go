@@ -500,7 +500,7 @@
               "stackTraceDepth": {
                 "type": "number",
                 "description": "Maximum depth of stack trace collected from Delve",
-                "default": 50
+                "default": 20
               }
             }
           }
