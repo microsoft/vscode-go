@@ -759,7 +759,7 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 		log('ThreadsRequest');
 		this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [], (err, out) => {
-			if (this.debugState.exited) {
+			if (this.debugState && this.debugState.exited) {
 				// If the program exits very quickly, the initial threadsRequest will complete after it has exited.
 				// A TerminatedEvent has already been sent. Ignore the err returned in this case.
 				response.body = { threads: [] };
