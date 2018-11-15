@@ -534,6 +534,7 @@ class GoDebugSession extends LoggingDebugSession {
 
 	private _variableHandles: Handles<DebugVariable>;
 	private breakpoints: Map<string, DebugBreakpoint[]>;
+	private skipStopEventOnce: boolean;
 	private threads: Set<number>;
 	private debugState: DebuggerState;
 	private delve: Delve;
@@ -548,6 +549,7 @@ class GoDebugSession extends LoggingDebugSession {
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super('', debuggerLinesStartAt1, isServer);
 		this._variableHandles = new Handles<DebugVariable>();
+		this.skipStopEventOnce = false;
 		this.threads = new Set<number>();
 		this.debugState = null;
 		this.delve = null;
@@ -694,15 +696,14 @@ class GoDebugSession extends LoggingDebugSession {
 		return pathToConvert.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
 	}
 
-	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
-		log('SetBreakPointsRequest');
+	private setBreakPoints(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Thenable<void> {
 		let file = normalizePath(args.source.path);
 		if (!this.breakpoints.get(file)) {
 			this.breakpoints.set(file, []);
 		}
 		let remoteFile = this.toDebuggerPath(file);
 
-		Promise.all(this.breakpoints.get(file).map(existingBP => {
+		return Promise.all(this.breakpoints.get(file).map(existingBP => {
 			log('Clearing: ' + existingBP.id);
 			return this.delve.callPromise('ClearBreakpoint', [this.delve.isApiV1 ? existingBP.id : { Id: existingBP.id }]);
 		})).then(() => {
@@ -749,6 +750,26 @@ class GoDebugSession extends LoggingDebugSession {
 			this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
 			logError(err);
 		});
+	}
+
+	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
+		log('SetBreakPointsRequest');
+		if (!this.continueRequestRunning) {
+			this.setBreakPoints(response, args);
+		} else {
+			this.skipStopEventOnce = true;
+			this.delve.callPromise('Command', [{ name: 'halt' }]).then(() => {
+				return this.setBreakPoints(response, args).then(() => {
+					return this.continue();
+				}, err => {
+					logError(err);
+					return this.sendErrorResponse(response, 2009, 'Failed to continue delve after setting the breakpoint: "{e}"', { e: err.toString() });
+				});
+			}, err => {
+				logError(err);
+				return this.sendErrorResponse(response, 2008, 'Failed to halt delve before attempting to set breakpoint: "{e}"', { e: err.toString() });
+			});
+		}
 	}
 
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
@@ -1073,6 +1094,11 @@ class GoDebugSession extends LoggingDebugSession {
 					this.threads.delete(id);
 				});
 
+				if (this.skipStopEventOnce) {
+					this.skipStopEventOnce = false;
+					return;
+				}
+
 				let stoppedEvent = new StoppedEvent(reason, this.debugState.currentGoroutine.id);
 				(<any>stoppedEvent.body).allThreadsStopped = true;
 				this.sendEvent(stoppedEvent);
@@ -1080,10 +1106,10 @@ class GoDebugSession extends LoggingDebugSession {
 			});
 		}
 	}
+
 	private continueEpoch = 0;
 	private continueRequestRunning = false;
-	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
-		log('ContinueRequest');
+	private continue(): void {
 		this.continueEpoch++;
 		let closureEpoch = this.continueEpoch;
 		this.continueRequestRunning = true;
@@ -1099,6 +1125,11 @@ class GoDebugSession extends LoggingDebugSession {
 			this.debugState = state;
 			this.handleReenterDebug('breakpoint');
 		});
+	}
+
+	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
+		log('ContinueRequest');
+		this.continue();
 		this.sendResponse(response);
 		log('ContinueResponse');
 	}
