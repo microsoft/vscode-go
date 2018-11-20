@@ -163,7 +163,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 
 					// If no suggestions and cursor is at a dot, then check if preceeding word is a package name
 					// If yes, then import the package in the inputText and run gocode again to get suggestions
-					if (suggestions.length === 0 && lineTillCurrentPosition.endsWith('.')) {
+					if ((!suggestions || suggestions.length === 0) && lineTillCurrentPosition.endsWith('.')) {
 
 						let pkgPath = this.getPackagePathFromLine(lineTillCurrentPosition);
 						if (pkgPath.length === 1) {
@@ -482,7 +482,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 		let pattern = /(\w+)\.$/g;
 		let wordmatches = pattern.exec(line);
 		if (!wordmatches) {
-			return;
+			return [];
 		}
 
 		let [_, pkgNameFromWord] = wordmatches;
