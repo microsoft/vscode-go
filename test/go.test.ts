@@ -105,6 +105,7 @@ suite('Go Extension Tests', () => {
 		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			let promises = testCases.map(([position, expected, expectedDoc, expectedParams]) =>
 				provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
+					assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position}`);
 					assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 					assert.equal(sigHelp.signatures[0].label, expected);
 					assert.equal(sigHelp.signatures[0].documentation, expectedDoc);
