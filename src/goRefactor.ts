@@ -18,7 +18,7 @@ export class GoRefactorProvider implements vscode.CodeActionProvider {
 			vscode.CodeActionKind.RefactorExtract
 		);
 		extractFunction.command = {
-			title: '',
+			title: 'Extract to function in package scope',
 			command: 'go.godoctor.extract',
 		};
 		extractVar.command = {
