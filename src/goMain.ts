@@ -44,7 +44,7 @@ import { runFillStruct } from './goFillStruct';
 import { parseLiveFile } from './goLiveErrors';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
-import { extractFunction } from './goDoctor';
+import { extractFunction, extractVariable } from './goDoctor';
 import { browsePackages } from './goBrowsePackage';
 import { goGetPackage } from './goGetPackage';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';
@@ -332,6 +332,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.godoctor.extract', () => {
 		extractFunction();
+	}));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.godoctor.var', () => {
+		extractVariable();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {

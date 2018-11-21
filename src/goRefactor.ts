@@ -10,18 +10,22 @@ import vscode = require('vscode');
 export class GoRefactorProvider implements vscode.CodeActionProvider {
 	public provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeAction[]> {
 		const extractFunction = new vscode.CodeAction(
-			'Extract Function',
+			'Extract to function in package scope',
+			vscode.CodeActionKind.RefactorExtract
+		);
+		const extractVar = new vscode.CodeAction(
+			'Extract to variable in local scope',
 			vscode.CodeActionKind.RefactorExtract
 		);
 		extractFunction.command = {
-			title: 'Extract Function',
+			title: '',
 			command: 'go.godoctor.extract',
-			arguments: [
-				document,
-				range,
-			],
+		};
+		extractVar.command = {
+			title: 'Extract to variable in local scope',
+			command: 'go.godoctor.var',
 		};
 
-		return [extractFunction];
+		return [extractFunction, extractVar];
 	}
 }
