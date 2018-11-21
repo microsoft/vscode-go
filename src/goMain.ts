@@ -44,6 +44,7 @@ import { runFillStruct } from './goFillStruct';
 import { parseLiveFile } from './goLiveErrors';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
+import { extractFunction } from './goDoctor';
 import { browsePackages } from './goBrowsePackage';
 import { goGetPackage } from './goGetPackage';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';
@@ -53,8 +54,12 @@ import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
 import { setGlobalState } from './stateUtils';
+<<<<<<< HEAD
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
+=======
+import { GoRefactorProvider } from './goRefactor';
+>>>>>>> Add godoctor extract function command and code action
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -271,6 +276,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
+	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoRefactorProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, referencesCodeLensProvider));
 	ctx.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('go', new GoDebugConfigurationProvider()));
@@ -323,6 +329,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.impl.cursor', () => {
 		implCursor();
+	}));
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.godoctor.extract', () => {
+		extractFunction();
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {
