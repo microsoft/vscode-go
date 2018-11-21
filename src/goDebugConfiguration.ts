@@ -89,7 +89,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		if (debugConfiguration['mode'] === 'auto') {
 			debugConfiguration['mode'] = (activeEditor && activeEditor.document.fileName.endsWith('_test.go')) ? 'test' : 'debug';
 		}
-		debugConfiguration['currentFile'] = activeEditor && activeEditor.document.fileName;
+		debugConfiguration['currentFile'] = activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
 
 		return debugConfiguration;
 	}
