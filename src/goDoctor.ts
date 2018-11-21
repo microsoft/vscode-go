@@ -46,7 +46,7 @@ export function extractVariable() {
         return;
     }
     if (activeEditor.selections.length !== 1) {
-        vscode.window.showInformationMessage('You need to have a single selection for extracting method');
+        vscode.window.showInformationMessage('You need to have a single selection for extracting variable');
         return;
     }
     let showInputBoxPromise = vscode.window.showInputBox({ placeHolder: 'Plese enter a name for the extracted variable.' });
