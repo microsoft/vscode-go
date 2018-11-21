@@ -126,7 +126,8 @@ const goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
 	'import': vscode.SymbolKind.Namespace,
 	'variable': vscode.SymbolKind.Variable,
 	'type': vscode.SymbolKind.Interface,
-	'function': vscode.SymbolKind.Function
+	'function': vscode.SymbolKind.Function,
+	'struct': vscode.SymbolKind.Struct,
 };
 
 
@@ -149,11 +150,17 @@ function convertToCodeSymbols(
 			label = '(' + decl.receiverType + ').' + label;
 		}
 
+
 		let range = null;
 		if (document && byteOffsetToDocumentOffset) {
 			let start = byteOffsetToDocumentOffset(decl.start - 1);
 			let end = byteOffsetToDocumentOffset(decl.end - 1);
 			range = new vscode.Range(document.positionAt(start), document.positionAt(end));
+			if (decl.type === 'type') {
+				let line = document.lineAt(document.positionAt(start));
+				let regex = new RegExp(`^\\s*type\\s+${decl.label}\\s+struct\\b`);
+				decl.type = regex.test(line.text) ? 'struct' : 'type';
+			}
 		}
 
 		let symbolInfo = new vscode.SymbolInformation(
