@@ -55,8 +55,7 @@ const lineCommentRegex = /^\s*\/\/\s+/;
 const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 const gocodeNoSupportForgbMsgKey = 'dontshowNoSupportForgb';
 
-export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
-
+export class GoCompletionItemProvider implements vscode.CompletionItemProvider, vscode.Disposable {
 	private pkgsList = new Map<string, string>();
 	private killMsgShown: boolean = false;
 	private setGocodeOptions: boolean = true;
@@ -207,6 +206,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider {
 				}, reject);
 			});
 		});
+	}
+
+	public dispose() {
+		let gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
+		let gocode = getBinPath(gocodeName);
+		let env = getToolsEnvVars();
+		cp.spawn(gocode, ['close'], { env });
 	}
 
 	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
