@@ -358,7 +358,7 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 
 	if (testconfig.functions) {
 		if (testconfig.isBenchmark) {
-			params = ['-bench', util.format('^%s$', testconfig.functions.join('|'))];
+			params = ['-bench', util.format('^(%s)$', testconfig.functions.join('|'))];
 		} else {
 			let testFunctions = testconfig.functions;
 			let testifyMethods = testFunctions.filter(fn => testMethodRegex.test(fn));
@@ -372,10 +372,10 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
 			// which will result in the correct thing to happen
 			if (testFunctions.length > 0) {
-				params = params.concat(['-run', util.format('^%s$', testFunctions.join('|'))]);
+				params = params.concat(['-run', util.format('^(%s)$', testFunctions.join('|'))]);
 			}
 			if (testifyMethods.length > 0) {
-				params = params.concat(['-testify.m', util.format('^%s$', testifyMethods.join('|'))]);
+				params = params.concat(['-testify.m', util.format('^(%s)$', testifyMethods.join('|'))]);
 			}
 		}
 		return params;
