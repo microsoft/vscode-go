@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getFileArchive, killTree } from './util';
+import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getFileArchive, killTree, goBuiltinTypes } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getToolsEnvVars } from './util';
 
@@ -62,7 +62,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 					let results: vscode.Location[] = [];
 
 					if (!guruOutput.value || !guruOutput.value.typespos) {
-						if (guruOutput.value && guruOutput.value.type) {
+						if (guruOutput.value && guruOutput.value.type && !goBuiltinTypes.has(guruOutput.value.type)) {
 							promptForUpdatingTool('guru');
 						}
 						return resolve(null);
