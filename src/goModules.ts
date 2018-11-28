@@ -11,7 +11,7 @@ function containsModFile(folderPath: string): Promise<boolean> {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
 	}
 	return new Promise(resolve => {
-		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath }, (err, stdout) => {
+		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
 			if (err) {
 				console.warn(`Error when running go env GOMOD: ${err}`);
 				return resolve(false);
