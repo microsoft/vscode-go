@@ -563,5 +563,7 @@ function checkToolExists(tool: string) {
 }
 
 function registerCompletionProvider(ctx: vscode.ExtensionContext) {
-	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, new GoCompletionItemProvider(ctx.globalState), '.', '\"'));
+	let provider = new GoCompletionItemProvider(ctx.globalState);
+	ctx.subscriptions.push(provider);
+	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '\"'));
 }
