@@ -211,8 +211,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	public dispose() {
 		let gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
 		let gocode = getBinPath(gocodeName);
-		let env = getToolsEnvVars();
-		cp.spawn(gocode, ['close'], { env });
+		if (path.isAbsolute(gocode)) {
+			cp.spawn(gocode, ['close'], { env: getToolsEnvVars() });
+		}
 	}
 
 	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
