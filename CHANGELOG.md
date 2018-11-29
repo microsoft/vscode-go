@@ -1,3 +1,38 @@
+# 0.8.0 - Coming Soon
+
+* [Charles Kenney (@Charliekenney23)](https://github.com/Charliekenney23)
+    * Support test functions with names `Test`, `Example` in codelens. Fixes [Bug 2071](https://github.com/Microsoft/vscode-go/issues/2071) with [PR 2072](https://github.com/Microsoft/vscode-go/pull/2072)
+
+* [Bryce Kahle (@brycekahle)](https://github.com/brycekahle)
+    * Support setting of variables during debugging in the variable pane. [Feature Request 1129](https://github.com/Microsoft/vscode-go/issues/1129) implemented with [PR 2076](https://github.com/Microsoft/vscode-go/pull/2076)
+    * Show pointer values during debugging in the variable pane. [Feature Request 1989](https://github.com/Microsoft/vscode-go/issues/1989) implemented with [PR 2075](https://github.com/Microsoft/vscode-go/pull/2075)
+    * Support the paging feature in stack traces during debugging. [Feature Request 946](https://github.com/Microsoft/vscode-go/issues/946) implemented with [PR 2080](https://github.com/Microsoft/vscode-go/pull/2080)
+
+* [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
+    * Avoid duplicate diagnostics when using tasks with build on save feature. Fixes [Bug 2100](https://github.com/Microsoft/vscode-go/issues/2100) with [PR 2109](https://github.com/Microsoft/vscode-go/pull/2109)
+    * Use `dlv` from the path set in the `go.toolsGopath` setting. Fixes [Bug 2099](https://github.com/Microsoft/vscode-go/issues/2099) with [PR 2108](https://github.com/Microsoft/vscode-go/pull/2108)
+
+* [Kaarthik Rao Bekal Radhakrishna (@karthikraobr)](https://github.com/karthikraobr)
+    * Differentiate structs from interfaces in the outline view. [PR 2114](https://github.com/Microsoft/vscode-go/pull/2114)
+
+* [Dima (@hummerd)](https://github.com/hummerd)
+    * Support the `Go to Type Definition` & `Peek to Type Definition` commands. [Feature Request 2121](https://github.com/Microsoft/vscode-go/issues/2121) implemented with [PR 2136](https://github.com/Microsoft/vscode-go/pull/2136)
+
+* [Sardorbek (@oneslash)](https://github.com/oneslash)
+    * Fix error that shows up when typing if no packages are found. Fixes [Bug 2134](https://github.com/Microsoft/vscode-go/issues/2134) with [PR 2135](https://github.com/Microsoft/vscode-go/pull/2135)
+
+* [Nisheet Sinvhal (@Ashniu123)](https://github.com/Ashniu123)
+    * Rebuild the package after running `Go: Get Package` to get rid of the missing import errors. Fixes [Bug 2087](https://github.com/Microsoft/vscode-go/issues/2087) with [PR 2129](https://github.com/Microsoft/vscode-go/pull/2129)
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Support modules when `GO111MODULE` is explicitly set. Fixes [Bug 1944](https://github.com/Microsoft/vscode-go/issues/1944) with [PR 2156](https://github.com/Microsoft/vscode-go/pull/2156)
+
+* [JP Moresmau (@JPMoresmau)](https://github.com/JPMoresmau)
+    * Fix bug where tests from another file are run due to partial match of function names. Fixes [Bug 2144](https://github.com/Microsoft/vscode-go/issues/2144) with [PR 2155](https://github.com/Microsoft/vscode-go/pull/2155)
+
+* [Zac Bergquist (@zmb3)](https://github.com/zmb3)
+    * Close the gocode daemon when closing VS Code. Fixes [Bug 2132](https://github.com/Microsoft/vscode-go/issues/2132) with [PR 2137](https://github.com/Microsoft/vscode-go/pull/2137)
+
 ## 0.7.0 - 6th November, 2018
 
 * [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
