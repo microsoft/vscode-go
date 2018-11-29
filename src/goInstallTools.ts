@@ -5,13 +5,13 @@
 
 'use strict';
 
-import vscode = require('vscode');
+import cp = require('child_process');
 import fs = require('fs');
 import path = require('path');
-import cp = require('child_process');
+import vscode = require('vscode');
+import { goLiveErrorsEnabled } from './goLiveErrors';
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
-import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
 let installsDeclinedTools: string[] = [];
@@ -40,6 +40,8 @@ const _allTools: { [key: string]: string } = {
 	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
+	'golsp': 'golang.org/x/tools/cmd/golsp',
+	'bingo': 'github.com/saibing/bingo',
 	'dlv': 'github.com/derekparker/delve/cmd/dlv',
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct',
 };
@@ -85,7 +87,7 @@ function getTools(goVersion: SemVersion): string[] {
 		'dlv'
 	];
 
-	// gocode-gomod needed in go 1.11 & higher
+	// gocode-gomod needed in go1.11 & higher
 	if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
 		tools.push('gocode-gomod');
 	}
@@ -93,7 +95,7 @@ function getTools(goVersion: SemVersion): string[] {
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools.push('godef');
-		// godef-gomod needed in go 1.11 & higher
+		// godef-gomod needed in go1.11 & higher
 		if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
 			tools.push('godef-gomod');
 		}
@@ -134,8 +136,16 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('revive');
 	}
 
-	if (goConfig['useLanguageServer']) {
+	// Install Go language server selected by the user
+	if (goConfig['useLanguageServer'] === 'go-langserver') {
 		tools.push('go-langserver');
+	} else if (goConfig['useLanguageServer'] === 'golsp') {
+		tools.push('golsp');
+	} else if (
+		goConfig['useLanguageServer'] === 'bingo' &&
+		(!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) // bingo requires go1.11 & higher
+	) {
+		tools.push('bingo');
 	}
 
 	if (goLiveErrorsEnabled()) {
@@ -182,7 +192,9 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'megacheck': '\t(Linter)',
 		'golangci-lint': 'Linter)',
 		'revive': '\t\t(Linter)',
-		'go-langserver': '(Language Server)',
+		'go-langserver': '(Language Server by Sourcegraph)',
+		'golsp': '(Language Server by Google)',
+		'bingo': '(Language Server by saibing)',
 		'dlv': '\t\t\t(Debugging)',
 		'fillstruct': '\t\t(Fill structs with defaults)'
 	};
@@ -401,7 +413,11 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 		outputChannel.appendLine(''); // Blank line for spacing
 		let failures = res.filter(x => x != null);
 		if (failures.length === 0) {
-			if (missing.indexOf('go-langserver') > -1) {
+			if (
+				missing.indexOf('go-langserver') > -1 ||
+				missing.indexOf('golsp') > -1 ||
+				missing.indexOf('bingo') > -1
+			) {
 				outputChannel.appendLine('Reload VS Code window to use the Go language server');
 			}
 			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
@@ -503,24 +519,42 @@ function getMissingTools(goVersion: SemVersion): Promise<string[]> {
 	});
 }
 
-// If langserver needs to be used, but is not installed, this will prompt user to install and Reload
-// If langserver needs to be used, and is installed, this will return true
-// Returns false in all other cases
-export function checkLanguageServer(): boolean {
-	let latestGoConfig = vscode.workspace.getConfiguration('go');
-	if (!latestGoConfig['useLanguageServer']) return false;
-
-	if (!allFoldersHaveSameGopath()) {
-		vscode.window.showInformationMessage('The Go language server is not supported in a multi root set up with different GOPATHs.');
+/**
+ * Checks if the client has met all the prerequisites to use the selected language server. Returns
+ * `false` in any of the following conditions below are met:
+ *   - User is using multi-root workspaces with different `GOPATH`
+ *   - User has not selected a language server
+ *   - User has selected `bingo` as language server but Go version installed is below `1.11`
+ *   - User has selected a language server but it is not yet installed on user's machine
+ *     (extension will subsequently prompt the user to install the selected language server)
+ */
+export async function checkLanguageServer(): Promise<boolean> {
+	const languageServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
+	if (languageServer === 'none') {
 		return false;
 	}
 
-	let langServerAvailable = getBinPath('go-langserver') !== 'go-langserver';
-	if (!langServerAvailable) {
-		promptForMissingTool('go-langserver');
-		vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
+	if (!allFoldersHaveSameGopath()) {
+		vscode.window.showInformationMessage(`The Go language server (${languageServer}) does not support multi-root workspaces with different GOPATH.`);
+		return false;
 	}
-	return langServerAvailable;
+
+	if (languageServer === 'bingo') {
+		const goVersion = await getGoVersion();
+		if (!goVersion || (goVersion.major <= 1 && goVersion.minor < 11)) {
+			vscode.window.showInformationMessage(`The Go language server (${languageServer}) does not support Go versions below 1.11. Falling back to default behavior.`);
+			return false;
+		}
+	}
+
+	const isLanguageServerAvailable = getBinPath(languageServer) !== languageServer;
+	if (!isLanguageServerAvailable) {
+		promptForMissingTool(languageServer);
+		vscode.window.showInformationMessage(`Reload VS Code window after installing the Go language server (${languageServer})`);
+		return false;
+	}
+
+	return true;
 }
 
 function allFoldersHaveSameGopath(): boolean {
@@ -528,6 +562,6 @@ function allFoldersHaveSameGopath(): boolean {
 		return true;
 	}
 
-	let tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
+	const tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
 	return vscode.workspace.workspaceFolders.find(x => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
 }

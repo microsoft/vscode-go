@@ -864,9 +864,21 @@
           ]
         },
         "go.useLanguageServer": {
-          "type": "boolean",
-          "default": false,
-          "description": "Experimental: Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features instead of tools like guru, godef, go-outline and go-symbol"
+          "type": "string",
+          "enum": [
+            "go-langserver",
+            "golsp",
+            "bingo",
+            "none"
+          ],
+          "enumDescriptions": [
+            "Go language server by Sourcegraph.",
+            "Go language server by Google.",
+            "Go language server by saibing. (requires Go version >= 1.11)",
+            ""
+          ],
+          "default": "none",
+          "description": "Experimental: Use an external Go language server to provide programming language-specific features."
         },
         "go.languageServerFlags": {
           "type": "array",
