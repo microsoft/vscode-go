@@ -885,11 +885,60 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the language server will provide code completion results."
+            },
+            "rename": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Rename feature."
+            },
+            "goToDefinition": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Go to/Peek Definition feature."
+            },
+            "goToTypeDefinition": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Go to/Peek Type Definition feature."
+            },
+            "hover": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the hover feature."
+            },
+            "findReferences": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Find/Peek References feature."
+            },
+            "signatureHelp": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Signature Help/Parameter Hints feature."
+            },
+            "documentSymbols": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Go to Document Symbols/Outline/Breadcrumbs feature."
+            },
+            "workspaceSymbols": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Go to Workspace Symbols feature."
             }
           },
           "default": {
             "format": false,
-            "autoComplete": false
+            "autoComplete": false,
+            "rename": true,
+            "goToDefinition": true,
+            "hover": true,
+            "signatureHelp": true,
+            "goToTypeDefinition": true,
+            "goToImplementation": true,
+            "documentSymbols": true,
+            "workspaceSymbols": true,
+            "findReferences": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
