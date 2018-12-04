@@ -8,9 +8,10 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getFileArchive, killTree, goBuiltinTypes } from './util';
-import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
+import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getFileArchive, killTree, goBuiltinTypes, isPositionInString, goKeywords } from './util';
+import { promptForMissingTool } from './goInstallTools';
 import { getToolsEnvVars } from './util';
+import { definitionLocation, parseMissingError, adjustWordPosition } from './goDeclaration';
 
 interface GuruDescribeOutput {
 	desc: string;
@@ -33,7 +34,13 @@ interface GuruDefinitionOutput {
 
 export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 	provideTypeDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Definition> {
-		return new Promise<vscode.Location[]>((resolve, reject) => {
+		let adjustedPos = adjustWordPosition(document, position);
+		if (!adjustedPos[0]) {
+			return Promise.resolve(null);
+		}
+		position = adjustedPos[2];
+
+		return new Promise<vscode.Definition>((resolve, reject) => {
 			let goGuru = getBinPath('guru');
 			if (!path.isAbsolute(goGuru)) {
 				promptForMissingTool('guru');
@@ -58,9 +65,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 						return reject(err);
 					}
 
-					let guruOutput = <GuruDescribeOutput>JSON.parse(stdout.toString());
-					let results: vscode.Location[] = [];
-
+					let guruOutput = <GuruDescribeOutput>JSON.parse(stdout.toString());		
 					if (!guruOutput.value || !guruOutput.value.typespos) {
 						if (guruOutput.value 
 							&& guruOutput.value.type 
@@ -68,9 +73,25 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 							&& guruOutput.value.type !== 'invalid type') {
 							console.log("no typespos from guru's output - try to update guru tool");
 						}
-						return resolve(null);
-					}
 
+						// Fall back to position of declaration
+						return definitionLocation(document, position, null, false, token).then(definitionInfo => {
+							if (definitionInfo == null || definitionInfo.file == null) return null;
+							let definitionResource = vscode.Uri.file(definitionInfo.file);
+							let pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
+							resolve(new vscode.Location(definitionResource, pos));
+						}, err => {
+							let miss = parseMissingError(err);
+							if (miss[0]) {
+								promptForMissingTool(miss[1]);
+							} else if (err) {
+								return Promise.reject(err);
+							}
+							return Promise.resolve(null);
+						});
+					} 
+
+					let results: vscode.Location[] = [];
 					guruOutput.value.typespos.forEach(ref => {
 						let match = /^(.*):(\d+):(\d+)/.exec(ref.objpos);
 						if (!match)  {
