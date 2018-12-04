@@ -62,8 +62,11 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 					let results: vscode.Location[] = [];
 
 					if (!guruOutput.value || !guruOutput.value.typespos) {
-						if (guruOutput.value && guruOutput.value.type && !goBuiltinTypes.has(guruOutput.value.type)) {
-							promptForUpdatingTool('guru');
+						if (guruOutput.value 
+							&& guruOutput.value.type 
+							&& !goBuiltinTypes.has(guruOutput.value.type)
+							&& guruOutput.value.type !== 'invalid type') {
+							console.log("no typespos from guru's output - try to update guru tool");
 						}
 						return resolve(null);
 					}
