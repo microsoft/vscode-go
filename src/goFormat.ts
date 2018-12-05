@@ -57,11 +57,12 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 			let t0 = Date.now();
 			let env = getToolsEnvVars();
+			let cwd = path.dirname(document.fileName);
 			let stdout = '';
 			let stderr = '';
 
 			// Use spawn instead of exec to avoid maxBufferExceeded error
-			const p = cp.spawn(formatCommandBinPath, formatFlags, { env });
+			const p = cp.spawn(formatCommandBinPath, formatFlags, { env, cwd });
 			token.onCancellationRequested(() => !p.killed && killTree(p.pid));
 			p.stdout.setEncoding('utf8');
 			p.stdout.on('data', data => stdout += data);
