@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, runGodoc } from './util';
+import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { isModSupported, promptToUpdateToolForModules } from './goModules';
@@ -79,10 +79,11 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
+	const cwd = getWorkspaceFolderPath(input.document.uri);
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
-		p = cp.execFile(godefPath, ['-t', '-i', '-f', input.document.fileName, '-o', offset.toString()], { env }, (err, stdout, stderr) => {
+		p = cp.execFile(godefPath, ['-t', '-i', '-f', input.document.fileName, '-o', offset.toString()], { env, cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + godefTool);
