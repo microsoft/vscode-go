@@ -34,15 +34,13 @@ interface GoDefinitionInput {
 }
 
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs: boolean, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
-	let wordRange = document.getWordRangeAtPosition(position);
-	let lineText = document.lineAt(position.line).text;
-	let word = wordRange ? document.getText(wordRange) : '';
-	if (!wordRange || lineText.startsWith('//') || isPositionInString(document, position) || word.match(/^\d+.?\d+$/) || goKeywords.indexOf(word) > 0) {
+	let adjustedPos = adjustWordPosition(document, position);
+	if (!adjustedPos[0]) {
 		return Promise.resolve(null);
 	}
-	if (position.isEqual(wordRange.end) && position.isAfter(wordRange.start)) {
-		position = position.translate(0, -1);
-	}
+	let word = adjustedPos[1];
+	position = adjustedPos[2];
+
 	if (!goConfig) {
 		goConfig = vscode.workspace.getConfiguration('go', document.uri);
 	}
@@ -64,6 +62,20 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 			return definitionLocation_gogetdoc(input, token, true);
 		});
 	});
+}
+
+export function adjustWordPosition(document: vscode.TextDocument, position: vscode.Position): [boolean, string, vscode.Position] {
+	let wordRange = document.getWordRangeAtPosition(position);
+	let lineText = document.lineAt(position.line).text;
+	let word = wordRange ? document.getText(wordRange) : '';
+	if (!wordRange || lineText.startsWith('//') || isPositionInString(document, position) || word.match(/^\d+.?\d+$/) || goKeywords.indexOf(word) > 0) {
+		return [false, null, null];
+	}
+	if (position.isEqual(wordRange.end) && position.isAfter(wordRange.start)) {
+		position = position.translate(0, -1);
+	}
+
+	return [true, word, position];
 }
 
 const godefImportDefinitionRegex = /^import \(.* ".*"\)$/;
@@ -246,6 +258,16 @@ function definitionLocation_guru(input: GoDefinitionInput, token: vscode.Cancell
 	});
 }
 
+export function parseMissingError(err: any): [boolean, string] {
+	if (err) {
+		// Prompt for missing tool is located here so that the
+		// prompts dont show up on hover or signature help
+		if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
+			return [true, err.substr(missingToolMsg.length)];
+		}
+	}
+	return [false, null];
+}
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
 	private goConfig = null;
@@ -261,14 +283,11 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 			let pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
 			return new vscode.Location(definitionResource, pos);
 		}, err => {
-			if (err) {
-				// Prompt for missing tool is located here so that the
-				// prompts dont show up on hover or signature help
-				if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
-					promptForMissingTool(err.substr(missingToolMsg.length));
-				} else {
-					return Promise.reject(err);
-				}
+			let miss = parseMissingError(err);
+			if (miss[0]) {
+				promptForMissingTool(miss[1]);
+			} else if (err) {
+				return Promise.reject(err);
 			}
 			return Promise.resolve(null);
 		});
