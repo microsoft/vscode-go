@@ -1,4 +1,4 @@
-import { getBinPath, getGoVersion, sendTelemetryEvent, getToolsEnvVars } from './util';
+import { getBinPath, getGoVersion, sendTelemetryEvent, getToolsEnvVars, getCurrentGoPath } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
@@ -51,6 +51,14 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 				if (goConfig['inferGopath'] === true) {
 					goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder);
 					alertDisablingInferGopath();
+				}
+			} else {
+				let currentGopath = getCurrentGoPath();
+				if (currentGopath) {
+					currentGopath = currentGopath.split(path.delimiter)[0];
+					if (fileuri.fsPath.startsWith(path.join(currentGopath, 'pkg', 'mod'))) {
+						return true;
+					}
 				}
 			}
 			return result;
