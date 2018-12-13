@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
+import { TextDocument, CancellationToken, CodeLens, Command, debug } from 'vscode';
 import { getTestFunctions, getBenchmarkFunctions, getTestFlags, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getCurrentGoPath } from './util';
@@ -121,13 +121,15 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 					args = args.concat('-test.run', `^${func.name}$`);
 				}
 
-				let debugTestCmd: Command = {
-					title: 'debug test',
-					command: 'go.debug.startSession',
-					arguments: [Object.assign({}, currentDebugConfig, { args: args })]
-				};
+				if (!debug.activeDebugSession) {
+					let debugTestCmd: Command = {
+						title: 'debug test',
+						command: 'go.debug.startSession',
+						arguments: [Object.assign({}, currentDebugConfig, { args: args })]
+					};
 
-				codelens.push(new CodeLens(func.location.range, debugTestCmd));
+					codelens.push(new CodeLens(func.location.range, debugTestCmd));
+				}
 			});
 		});
 
@@ -141,13 +143,15 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 				codelens.push(new CodeLens(func.location.range, runBenchmarkCmd));
 
-				let debugTestCmd: Command = {
-					title: 'debug benchmark',
-					command: 'go.debug.startSession',
-					arguments: [Object.assign({}, currentDebugConfig, { args: ['-test.bench', '^' + func.name + '$', '-test.run', 'a^'] })]
-				};
+				if (!debug.activeDebugSession) {
+					let debugTestCmd: Command = {
+						title: 'debug benchmark',
+						command: 'go.debug.startSession',
+						arguments: [Object.assign({}, currentDebugConfig, { args: ['-test.bench', '^' + func.name + '$', '-test.run', 'a^'] })]
+					};
 
-				codelens.push(new CodeLens(func.location.range, debugTestCmd));
+					codelens.push(new CodeLens(func.location.range, debugTestCmd));
+				}
 			});
 
 		});
