@@ -1206,31 +1206,11 @@ encountered.
 			'buildTags': { value: 'randomtag' }
 		});
 
-		let uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
-		const testFallbackToBuildTags = vscode.workspace.openTextDocument(uri).then(document => {
-			return vscode.window.showTextDocument(document).then(editor => {
-				return testCurrentFile(config1, false, []).then((result: boolean) => {
-					assert.equal(result, true);
-					return Promise.resolve();
-				});
-			});
-		});
-
 		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
 			'lintOnSave': { value: 'off' },
 			'buildOnSave': { value: 'package' },
 			'testTags': { value: 'randomtag' }
-		});
-
-		uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
-		const testWithTags = vscode.workspace.openTextDocument(uri).then(document => {
-			return vscode.window.showTextDocument(document).then(editor => {
-				return testCurrentFile(config2, false, []).then((result: boolean) => {
-					assert.equal(result, true);
-					return Promise.resolve();
-				});
-			});
 		});
 
 		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
@@ -1240,16 +1220,6 @@ encountered.
 			'testTags': { value: 'randomtag othertag' }
 		});
 
-		uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
-		const testWithMultipleTags = vscode.workspace.openTextDocument(uri).then(document => {
-			return vscode.window.showTextDocument(document).then(editor => {
-				return testCurrentFile(config3, false, []).then((result: boolean) => {
-					assert.equal(result, true);
-					return Promise.resolve();
-				});
-			});
-		});
-
 		const config4 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
 			'lintOnSave': { value: 'off' },
@@ -1257,18 +1227,24 @@ encountered.
 			'testTags': { value: '' }
 		});
 
-		uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
-		const testWithoutTags = vscode.workspace.openTextDocument(uri).then(document => {
+		let uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
-				return testCurrentFile(config4, false, []).then((result: boolean) => {
-					assert.equal(result, false);
-					return Promise.resolve();
+				return testCurrentFile(config1, false, []).then((result: boolean) => {
+					assert.equal(result, true);
+					return testCurrentFile(config2, false, []).then((result: boolean) => {
+						assert.equal(result, true);
+						return testCurrentFile(config3, false, []).then((result: boolean) => {
+							assert.equal(result, true);
+							return testCurrentFile(config4, false, []).then((result: boolean) => {
+								assert.equal(result, false);
+								return Promise.resolve();
+							});
+						});
+					});
 				});
 			});
-		});
-
-		Promise.all([testFallbackToBuildTags, testWithTags, testWithMultipleTags, testWithoutTags]).then(() => done(), done);
-
+		}).then(done, done);
 	});
 
 	test('Add imports when no imports', (done) => {
