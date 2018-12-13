@@ -3,7 +3,7 @@
 ### Modules
 
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
-    * Support modules when `GO111MODULE` is explicitly set inside GOPATH. Fixes [Bug 1944](https://github.com/Microsoft/vscode-go/issues/1944) with [PR 2156](https://github.com/Microsoft/vscode-go/pull/2156)
+    * Support modules when `GO111MODULE` is explicitly set inside GOPATH.
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Support Go to Definition feature when using modules even when VS Code is not started from the same path as the project.
@@ -16,8 +16,7 @@
     * Show pointer values during debugging in the variable pane. [Feature Request 1989](https://github.com/Microsoft/vscode-go/issues/1989) implemented with [PR 2075](https://github.com/Microsoft/vscode-go/pull/2075)
     * Support the paging feature in stack traces during debugging. [Feature Request 946](https://github.com/Microsoft/vscode-go/issues/946) implemented with [PR 2080](https://github.com/Microsoft/vscode-go/pull/2080)
     * Run without debugging should use current file when the debug configuration points to package and respect the args, buildFlags set in the debug configuration. Fixes [Bug 2085](https://github.com/Microsoft/vscode-go/issues/2085) & [Bug 2086](https://github.com/Microsoft/vscode-go/issues/2086) with [PR 2123](https://github.com/Microsoft/vscode-go/pull/2123)
-    * Run without debugging should 
-
+    
 * [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
     * Use `dlv` from the path set in the `go.toolsGopath` setting. Fixes [Bug 2099](https://github.com/Microsoft/vscode-go/issues/2099) with [PR 2108](https://github.com/Microsoft/vscode-go/pull/2108)
 
