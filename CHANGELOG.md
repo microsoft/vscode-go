@@ -32,7 +32,7 @@
 
 * [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
     * Avoid duplicate diagnostics when using tasks with build on save feature. Fixes [Bug 2100](https://github.com/Microsoft/vscode-go/issues/2100) with [PR 2109](https://github.com/Microsoft/vscode-go/pull/2109)
-    * Set diagnostic source so that each problem in the Problems view shows the source. Fixes [Bug 2101](https://github.com/Microsoft/vscode-go/issues/2100) with [PR 2109](https://github.com/Microsoft/vscode-go/pull/2109)
+    * Set diagnostic source so that each problem in the Problems view shows the source. Fixes [Bug 2101](https://github.com/Microsoft/vscode-go/issues/2101) with [PR 2109](https://github.com/Microsoft/vscode-go/pull/2109)
     
 
 ### Testing
