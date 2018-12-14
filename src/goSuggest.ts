@@ -64,6 +64,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	private previousFile: string;
 	private previousFileDir: string;
 	private gocodeFlags: string[];
+	private excludeDocs: boolean = false;
 
 	constructor(globalState?: vscode.Memento) {
 		this.globalState = globalState;
@@ -82,7 +83,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	}
 
 	public resolveCompletionItem(item: vscode.CompletionItem, token: vscode.CancellationToken): vscode.ProviderResult<vscode.CompletionItem> {
-		if (!(item instanceof ExtendedCompletionItem) || item.kind === vscode.CompletionItemKind.Module) {
+		if (!(item instanceof ExtendedCompletionItem)
+		|| item.kind === vscode.CompletionItemKind.Module
+		|| this.excludeDocs) {
 			return;
 		}
 
@@ -101,6 +104,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	}
 
 	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
+		this.excludeDocs = false;
 		this.gocodeFlags = ['-f=json'];
 		if (Array.isArray(config['gocodeFlags'])) {
 			this.gocodeFlags.push(...config['gocodeFlags']);
@@ -231,12 +235,19 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 			// stamblerre/gocode does not support -unimported-packages flags.
 			if (this.isGoMod) {
-				const upflag = '-unimported-packages';
-				const idx = this.gocodeFlags.indexOf(upflag);
+				const idx = this.gocodeFlags.indexOf('-unimported-packages');
 				if (idx >= 0) {
 					this.gocodeFlags.splice(idx, 1);
 				}
 			}
+
+			// -exclude-docs is something we use internally and is not related to gocode
+			const idx = this.gocodeFlags.indexOf('-exclude-docs');
+			if (idx >= 0) {
+				this.gocodeFlags.splice(idx, 1);
+				this.excludeDocs = true;
+			}
+
 			// Spawn `gocode` process
 			let p = cp.spawn(gocode, [...this.gocodeFlags, 'autocomplete', filename, '' + offset], { env });
 			p.stdout.on('data', data => stdout += data);
