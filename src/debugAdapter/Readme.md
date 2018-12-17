@@ -15,6 +15,8 @@ npm install
 1. Open the `vscode-go` folder in VS Code. Choose the `Launch as server` debug configuraion from the drop down in the debug viewlet. Add a breakpoint in the desired localtion in the `vscode-go/src/debugAdapter/goDebug.ts` file
 2. Open the Go application that you want to debug in another instance of VS Code. Create a debug configuration if it doesnt exist. In this configuration add `"debugServer": 4711` in the root of the configuration. Start debugging your Go application and the breakpoint in the `goDebug.ts` file in the other VS Code instance will be hit.
 
+## Debugging the debugger and other changes
+
 If you have changes in any file other `goDebug.ts` which you want to use, then this setup involves three instances of Code:
 
 1. Open the `vscode-go` folder in one instance. Choose the `Launch Extension` debug target and hit F5 to launch a second instance.
