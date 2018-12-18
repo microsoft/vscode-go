@@ -81,9 +81,15 @@ function getTools(goVersion: SemVersion): string[] {
 		'go-outline',
 		'go-symbols',
 		'guru',
-		'gorename',
-		'dlv'
+		'gorename'
 	];
+
+	// Check if the system supports dlv (e.g. is 64-bit)
+	// There doesn't seem to be a good way to check if the mips and s390
+	// families are 64-bit, so just try to install it and hope for the best
+	if (process.arch.match(/^(arm64|mips|mipsel|ppc64|s390|s390x|x64)$/)) {
+		tools.push('dlv');
+	}
 
 	// gocode-gomod needed in go 1.11 & higher
 	if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
