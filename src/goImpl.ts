@@ -45,7 +45,7 @@ export function implCursor() {
 			// use its first character as reciever variable
 			// and let user search the interface arg
 			typeArg = inputArgs[0][0].toLowerCase() + ' ' + ((inputArgs[0].startsWith('*')) ? inputArgs[0] : ('*' + inputArgs[0]));
-		} else if (inputArgs.length === 2 ) {
+		} else if (inputArgs.length === 2) {
 			if (inputArgs[0].startsWith('*')) {
 				// if the first arg starts with "*",
 				// assume it as type name and the second one as interface name
@@ -71,7 +71,7 @@ export function implCursor() {
 		}
 		if (interfaceArg.length === 0) {
 			// let user search manually for interface name
-			getSelectedInterface().then( seletedInterface => {
+			getSelectedInterface().then(seletedInterface => {
 				if (seletedInterface.length === 0) {
 					vscode.window.showInformationMessage('Cannot stub interface: no interface selected');
 					return;
@@ -97,6 +97,7 @@ export function implCursor() {
 	});
 }
 
+// args for `runGoIpml`, type name and intreface name
 function runGoImpl(args: string[], insertPos: vscode.Position) {
 	let goimpl = getBinPath('impl');
 	let p = cp.execFile(goimpl, args, { env: getToolsEnvVars(), cwd: dirname(vscode.window.activeTextEditor.document.fileName) }, (err, stdout, stderr) => {
@@ -111,7 +112,8 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 		}
 
 		vscode.window.activeTextEditor.edit(editBuilder => {
-			editBuilder.insert(insertPos, stdout);
+			let staticConversion: string = 'var _ ' + args[0] + ' = (*' + args[1] + ')(nil)';
+			editBuilder.insert(insertPos, stdout + staticConversion);
 		});
 	});
 	if (p.pid) {
@@ -123,25 +125,25 @@ function getSelectedInterface(): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
 		//  show package list
 		getAllPackages().then(pkgMap => {
-		const pkgs: string[] = Array.from(pkgMap.keys());
-		if (pkgs.length === 0) {
-			vscode.window.showErrorMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
-			resolve('');
-		}
-		vscode
-			.window
-			.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
-			.then(pkgFromDropdown => {
-				if (!pkgFromDropdown) {
-					resolve('');
-				}
-				getInterfaceFromPkg(pkgFromDropdown).then(selectedInterface => {
-					if (selectedInterface.length === 0) {
+			const pkgs: string[] = Array.from(pkgMap.keys());
+			if (pkgs.length === 0) {
+				vscode.window.showErrorMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
+				resolve('');
+			}
+			vscode
+				.window
+				.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
+				.then(pkgFromDropdown => {
+					if (!pkgFromDropdown) {
 						resolve('');
 					}
-					resolve(pkgFromDropdown + '.' + selectedInterface);
+					getInterfaceFromPkg(pkgFromDropdown).then(selectedInterface => {
+						if (selectedInterface.length === 0) {
+							resolve('');
+						}
+						resolve(pkgFromDropdown + '.' + selectedInterface);
+					});
 				});
-			});
 		});
 	});
 }
@@ -190,10 +192,12 @@ function getInterfaceFromPkg(pkg: string): Promise<string> {
 								vscode.window.showInformationMessage('no interface in selected file');
 								resolve('');
 							}
-							interfaceList =  interfaceList.concat(syms.map(interfaceSymbol => interfaceSymbol.name));
+							interfaceList = interfaceList.concat(syms.map(interfaceSymbol => interfaceSymbol.name));
 							vscode.window.showQuickPick(interfaceList,
-								{ignoreFocusOut: true,
-								placeHolder: `Below are interfaces from ${selectedFile}`}
+								{
+									ignoreFocusOut: true,
+									placeHolder: `Below are interfaces from ${selectedFile}`
+								}
 							).then(selected => {
 								if (!selected) {
 									resolve('');
