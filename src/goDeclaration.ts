@@ -125,7 +125,9 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 				if (!input.includeDocs || godefImportDefinitionRegex.test(definitionInformation.declarationlines[0])) {
 					return resolve(definitionInformation);
 				}
-				runGodoc(pkgPath, input.word, token).then(doc => {
+				// TODO #2107 Once godef supports printing method receivers we should pass
+				// the receiver to runGodoc
+				runGodoc(pkgPath, '', input.word, token).then(doc => {
 					if (doc) {
 						definitionInformation.doc = doc;
 					}

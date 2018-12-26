@@ -44,10 +44,12 @@ interface GoCodeSuggestion {
 	package?: string;
 	name: string;
 	type: string;
+	receiver?: string;
 }
 
 class ExtendedCompletionItem extends vscode.CompletionItem {
 	package?: string;
+	receiver?: string;
 	fileName: string;
 }
 
@@ -94,7 +96,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 			return;
 		}
 
-		return runGodoc(item.package || path.dirname(item.fileName), item.label, token).then(doc => {
+		return runGodoc(item.package || path.dirname(item.fileName), item.receiver, item.label, token).then(doc => {
 			item.documentation = new vscode.MarkdownString(doc);
 			return item;
 		}).catch(err => {
@@ -283,6 +285,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 							let item = new ExtendedCompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class, suggest.type);
 							item.package = suggest.package;
+							item.receiver = suggest.receiver;
 							item.fileName = document.fileName;
 							item.detail = suggest.type;
 							if (suggest.class === 'package') {
