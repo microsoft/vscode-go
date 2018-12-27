@@ -10,65 +10,65 @@ const folderModCache = new Map<string, string>();
 
 export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 	return getModPath(fileuri).then(modPath => {
-		return modPath != ""
-	})
+		return modPath !== '';
+	});
 }
 
 export function getModPath(fileuri: vscode.Uri): Promise<string> {
-	const folderPath = path.dirname(fileuri.fsPath)
+	const folderPath = path.dirname(fileuri.fsPath);
 
-	const hit = folderModCache.get(folderPath)
-	if (hit != undefined) {
-		return Promise.resolve(hit)
+	const hit = folderModCache.get(folderPath);
+	if (hit !== undefined) {
+		return Promise.resolve(hit);
 	}
 
 	workspaceModCache.forEach((v, k) => {
 		if (folderPath.startsWith(k)) {
-			folderModCache.set(folderPath, k)
-			return Promise.resolve(k)
+			folderModCache.set(folderPath, k);
+			return Promise.resolve(k);
 		}
-	})
+	});
 
 	return getGoVersion().then(value => {
 		if (value && (value.major !== 1 || value.minor < 11)) {
-			folderModCache.set(folderPath, "")
-			return ""
+			folderModCache.set(folderPath, '');
+			return '';
 		}
 
 		return new Promise<string>(resolve => {
-			let goExecutable = getBinPath('go')
+			let goExecutable = getBinPath('go');
 			if (!goExecutable) {
-				return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'))
+				return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
 			}
 			cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
 				if (err) {
-					console.warn(`Error when running go env GOMOD: ${err}`)
-					resolve("")
+					console.warn(`Error when running go env GOMOD: ${err}`);
+					resolve('');
 				}
-				let [goMod] = stdout.split('\n')
-				resolve(goMod)
+				let [goMod] = stdout.split('\n');
+				resolve(goMod);
 			});
 		}).then(result => {
-			let modPath: string
-			if (result != "") {
-				const goConfig = vscode.workspace.getConfiguration('go', fileuri)
+			let modPath: string;
+			if (result !== '') {
+				const goConfig = vscode.workspace.getConfiguration('go', fileuri);
 				if (goConfig['inferGopath'] === true) {
-					goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder)
-					alertDisablingInferGopath()
+					goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder);
+					alertDisablingInferGopath();
 				}
-				logModuleUsage(true)
-				modPath = path.dirname(result)
-				workspaceModCache.set(modPath, true)
+				logModuleUsage(true);
+				modPath = path.dirname(result);
+				workspaceModCache.set(modPath, true);
 			} else {
-				modPath = ""
+				modPath = '';
 			}
 
-			folderModCache.set(folderPath, modPath)
-			return modPath
-		})
+			folderModCache.set(folderPath, modPath);
+			return modPath;
+		});
 	}).catch(() => {
-		return ""
-	})
+		return '';
+	});
 }
 
 export function updateWorkspaceModCache() {
@@ -76,9 +76,9 @@ export function updateWorkspaceModCache() {
 		return;
 	}
 	const promises = vscode.workspace.workspaceFolders.map(folder => {
-		return getModPath(folder.uri)
+		return getModPath(folder.uri);
 	});
-	Promise.all(promises)
+	Promise.all(promises);
 }
 
 function alertDisablingInferGopath() {

@@ -53,7 +53,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				position,
 				word,
 				includeDocs,
-				isMod: modPath != "",
+				isMod: modPath !== '',
 				modPath,
 			};
 			if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
@@ -94,9 +94,9 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 		token.onCancellationRequested(() => killProcess(p));
 	}
 
-	let cwd: string
+	let cwd: string;
 	if (input.isMod) {
-		cwd = input.modPath
+		cwd = input.modPath;
 	} else {
 		cwd = getWorkspaceFolderPath(input.document.uri);
 	}
