@@ -1,94 +1,84 @@
-import { getBinPath, getGoVersion, sendTelemetryEvent, getToolsEnvVars, getCurrentGoPath } from './util';
+import { getBinPath, getGoVersion, sendTelemetryEvent, getToolsEnvVars } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
 import { installTools } from './goInstallTools';
 
-function containsModFile(folderPath: string): Promise<boolean> {
-	let goExecutable = getBinPath('go');
-	if (!goExecutable) {
-		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
-	}
-	return new Promise(resolve => {
-		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
-			if (err) {
-				console.warn(`Error when running go env GOMOD: ${err}`);
-				return resolve(false);
-			}
-			let [goMod] = stdout.split('\n');
-			resolve(!!goMod);
-		});
-	});
-}
 const workspaceModCache = new Map<string, boolean>();
-const packageModCache = new Map<string, boolean>();
+const folderModCache = new Map<string, string>();
 
 export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
+	return getModPath(fileuri).then(modPath => {
+		return modPath != ""
+	})
+}
+
+export function getModPath(fileuri: vscode.Uri): Promise<string> {
+	const folderPath = path.dirname(fileuri.fsPath)
+
+	const hit = folderModCache.get(folderPath)
+	if (hit != undefined) {
+		return Promise.resolve(hit)
+	}
+
+	workspaceModCache.forEach((v, k) => {
+		if (folderPath.startsWith(k)) {
+			folderModCache.set(folderPath, k)
+			return Promise.resolve(k)
+		}
+	})
+
 	return getGoVersion().then(value => {
 		if (value && (value.major !== 1 || value.minor < 11)) {
-			return false;
+			folderModCache.set(folderPath, "")
+			return ""
 		}
 
-		const workspaceFolder = vscode.workspace.getWorkspaceFolder(fileuri);
-		if (workspaceFolder && workspaceModCache.get(workspaceFolder.uri.fsPath)) {
-			return true;
-		}
-		const pkgPath = path.dirname(fileuri.fsPath);
-		if (packageModCache.get(pkgPath)) {
-			if (workspaceFolder && pkgPath === workspaceFolder.uri.fsPath) {
-				workspaceModCache.set(workspaceFolder.uri.fsPath, true);
-				logModuleUsage(true);
-			} else {
-				logModuleUsage(false);
+		return new Promise<string>(resolve => {
+			let goExecutable = getBinPath('go')
+			if (!goExecutable) {
+				return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'))
 			}
-			return true;
-		}
-		return containsModFile(pkgPath).then(result => {
-			packageModCache.set(pkgPath, result);
-			if (result) {
-				const goConfig = vscode.workspace.getConfiguration('go', fileuri);
+			cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
+				if (err) {
+					console.warn(`Error when running go env GOMOD: ${err}`)
+					resolve("")
+				}
+				let [goMod] = stdout.split('\n')
+				resolve(goMod)
+			});
+		}).then(result => {
+			let modPath: string
+			if (result != "") {
+				const goConfig = vscode.workspace.getConfiguration('go', fileuri)
 				if (goConfig['inferGopath'] === true) {
-					goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder);
-					alertDisablingInferGopath();
+					goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder)
+					alertDisablingInferGopath()
 				}
+				logModuleUsage(true)
+				modPath = path.dirname(result)
+				workspaceModCache.set(modPath, true)
 			} else {
-				let currentGopath = getCurrentGoPath();
-				if (currentGopath) {
-					currentGopath = currentGopath.split(path.delimiter)[0];
-					if (fileuri.fsPath.startsWith(path.join(currentGopath, 'pkg', 'mod'))) {
-						return true;
-					}
-				}
+				modPath = ""
 			}
-			return result;
-		});
-	});
+
+			folderModCache.set(folderPath, modPath)
+			return modPath
+		})
+	}).catch(() => {
+		return ""
+	})
 }
 
 export function updateWorkspaceModCache() {
 	if (!vscode.workspace.workspaceFolders) {
 		return;
 	}
-	let inferGopathUpdated = false;
 	const promises = vscode.workspace.workspaceFolders.map(folder => {
-		return containsModFile(folder.uri.fsPath).then(result => {
-			workspaceModCache.set(folder.uri.fsPath, result);
-			if (result) {
-				logModuleUsage(true);
-				const goConfig = vscode.workspace.getConfiguration('go', folder.uri);
-				if (goConfig['inferGopath'] === true) {
-					return goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder)
-						.then(() => inferGopathUpdated = true);
-				}
-			}
-		});
+		return getModPath(folder.uri)
 	});
-	Promise.all(promises).then(() => {
-		if (inferGopathUpdated) {
-			alertDisablingInferGopath();
-		}
-	});
+	Promise.all(promises)
 }
 
 function alertDisablingInferGopath() {

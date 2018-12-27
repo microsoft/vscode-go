@@ -11,7 +11,7 @@ import path = require('path');
 import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
-import { isModSupported, promptToUpdateToolForModules } from './goModules';
+import { promptToUpdateToolForModules, getModPath } from './goModules';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -31,6 +31,7 @@ interface GoDefinitionInput {
 	word: string;
 	includeDocs: boolean;
 	isMod: boolean;
+	modPath: string;
 }
 
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs: boolean, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
@@ -46,13 +47,14 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	}
 	let toolForDocs = goConfig['docsTool'] || 'godoc';
 	return getGoVersion().then((ver: SemVersion) => {
-		return isModSupported(document.uri).then(isMod => {
+		return getModPath(document.uri).then(modPath => {
 			const input: GoDefinitionInput = {
 				document,
 				position,
 				word,
 				includeDocs,
-				isMod
+				isMod: modPath != "",
+				modPath,
 			};
 			if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
 				return definitionLocation_godef(input, token);
@@ -91,7 +93,13 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
-	const cwd = getWorkspaceFolderPath(input.document.uri);
+
+	let cwd: string
+	if (input.isMod) {
+		cwd = input.modPath
+	} else {
+		cwd = getWorkspaceFolderPath(input.document.uri);
+	}
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
@@ -147,9 +155,6 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 				reject(e);
 			}
 		});
-		if (p.pid) {
-			p.stdin.end(input.document.getText());
-		}
 	});
 }
 
