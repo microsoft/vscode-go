@@ -13,7 +13,11 @@ import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './uti
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
-	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
+	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TextEdit[]> {
+		if (vscode.window.visibleTextEditors.every(e => e.document.fileName !== document.fileName)) {
+			return [];
+		}
+
 		let filename = document.fileName;
 		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
 		let formatTool = goConfig['formatTool'] || 'goreturns';

@@ -560,7 +560,9 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 		if (document.languageId !== 'go') {
 			return;
 		}
-		runBuilds(document, vscode.workspace.getConfiguration('go', document.uri));
+		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
+			runBuilds(document, vscode.workspace.getConfiguration('go', document.uri));
+		}
 	}, null, subscriptions);
 }
 
