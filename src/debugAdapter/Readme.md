@@ -1,6 +1,8 @@
 # Go Debug Adapter
 
-This code runs in a separate Node process spawned by Code when launch the 'go' type in the Code debugger.
+This code runs in a separate Node process spawned by Code when you debug Go code.
+
+Please see [The Debug Adapter Protocol](https://code.visualstudio.com/blogs/2018/08/07/debug-adapter-protocol-website) to understand how the Debug Adapter acts as an intermediary between VS Code and the debugger which in case of Go is [delve](https://github.com/derekparker/delve)
 
 ## Debugging the debugger
 
