@@ -271,7 +271,7 @@ class Delve {
 		} else if (typeof launchArgs['useApiV1'] === 'boolean') {
 			this.isApiV1 = launchArgs['useApiV1'];
 		}
-		this.stackTraceDepth = launchArgs.stackTraceDepth || 50;
+		this.stackTraceDepth = typeof launchArgs.stackTraceDepth === 'number' ? launchArgs.stackTraceDepth : 50;
 		let mode = launchArgs.mode;
 		let dlvCwd = dirname(program);
 		let isProgramDirectory = false;
