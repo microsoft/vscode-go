@@ -6,13 +6,12 @@
 import * as path from 'path';
 import * as os from 'os';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles } from 'vscode-debugadapter';
+import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles, LoggingDebugSession, Logger, logger } from 'vscode-debugadapter';
 import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
-import * as logger from 'vscode-debug-logger';
 
 // This enum should stay in sync with https://golang.org/pkg/reflect/#Kind
 
@@ -533,7 +532,7 @@ class Delve {
 	}
 }
 
-class GoDebugSession extends DebugSession {
+class GoDebugSession extends LoggingDebugSession {
 
 	private _variableHandles: Handles<DebugVariable>;
 	private breakpoints: Map<string, DebugBreakpoint[]>;
@@ -548,15 +547,12 @@ class GoDebugSession extends DebugSession {
 	private readonly initdone = 'initdone·';
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
-		super(debuggerLinesStartAt1, isServer);
+		super('', debuggerLinesStartAt1, isServer);
 		this._variableHandles = new Handles<DebugVariable>();
 		this.threads = new Set<number>();
 		this.debugState = null;
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
-
-		const logPath = path.join(os.tmpdir(), 'vscode-go-debug.txt');
-		logger.init(e => this.sendEvent(e), logPath, isServer);
 	}
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
@@ -576,10 +572,10 @@ class GoDebugSession extends DebugSession {
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		this.launchArgs = args;
 		const logLevel = args.trace === 'verbose' ?
-			logger.LogLevel.Verbose :
-			args.trace ? logger.LogLevel.Log :
-				logger.LogLevel.Error;
-		logger.setMinLogLevel(logLevel);
+			Logger.LogLevel.Verbose :
+			args.trace ? Logger.LogLevel.Log :
+				Logger.LogLevel.Error;
+		logger.setup(logLevel);
 
 		if (!args.program) {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
