@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath } from './util';
-import { promptForMissingTool } from './goInstallTools';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { isModSupported, promptToUpdateToolForModules } from './goModules';
 
@@ -95,12 +95,15 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
-		p = cp.execFile(godefPath, ['-t', '-i', '-f', input.document.fileName, '-o', offset.toString()], { env, cwd }, (err, stdout, stderr) => {
+		p = cp.execFile(godefPath, ['-t', '-r', '-i', '-f', input.document.fileName, '-o', offset.toString()], { env, cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + godefTool);
 				}
 				if (err) {
+					if (stderr.indexOf('flag provided but not defined: -r') !== -1) {
+						promptForUpdatingTool('godef');
+					}
 					return reject(err.message || stderr);
 				}
 				let result = stdout.toString();
@@ -117,7 +120,7 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 					file: file,
 					line: +line - 1,
 					column: + col - 1,
-					declarationlines: lines.splice(1),
+					declarationlines: lines.slice(1),
 					toolUsed: 'godef',
 					doc: null,
 					name: null
@@ -125,9 +128,8 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 				if (!input.includeDocs || godefImportDefinitionRegex.test(definitionInformation.declarationlines[0])) {
 					return resolve(definitionInformation);
 				}
-				// TODO #2107 Once godef supports printing method receivers we should pass
-				// the receiver to runGodoc
-				runGodoc(pkgPath, '', input.word, token).then(doc => {
+				match = /^\w+ \(\*?(\w+)\)/.exec(lines[1]);
+				runGodoc(pkgPath, match ? match[1] : '', input.word, token).then(doc => {
 					if (doc) {
 						definitionInformation.doc = doc;
 					}
