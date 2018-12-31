@@ -220,6 +220,7 @@ process.on('uncaughtException', (err: any) => {
 });
 
 function logArgsToString(args: any[]): string {
+	args.splice(0, 0, 'Go Debug Adapter:');
 	return args.map(arg => {
 		return typeof arg === 'string' ?
 			arg :
@@ -607,10 +608,10 @@ class GoDebugSession extends LoggingDebugSession {
 
 		this.delve = new Delve(remotePath, port, host, localPath, args);
 		this.delve.onstdout = (str: string) => {
-			this.sendEvent(new OutputEvent(str, 'stdout'));
+			this.sendEvent(new OutputEvent('Delve: ' + str, 'stdout'));
 		};
 		this.delve.onstderr = (str: string) => {
-			this.sendEvent(new OutputEvent(str, 'stderr'));
+			this.sendEvent(new OutputEvent('Delve: ' + str, 'stderr'));
 		};
 		this.delve.onclose = (code) => {
 			if (code !== 0) {
