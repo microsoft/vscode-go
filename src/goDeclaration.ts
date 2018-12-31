@@ -155,12 +155,14 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
+	const cwd = getWorkspaceFolderPath(input.document.uri);
+
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		let gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', input.document.fileName + ':#' + offset.toString()];
 		let buildTags = vscode.workspace.getConfiguration('go', input.document.uri)['buildTags'];
 		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
-		p = cp.execFile(gogetdoc, gogetdocFlags, { env }, (err, stdout, stderr) => {
+		p = cp.execFile(gogetdoc, gogetdocFlags, { env, cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'gogetdoc');
