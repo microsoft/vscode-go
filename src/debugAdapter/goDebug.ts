@@ -1093,10 +1093,10 @@ class GoDebugSession extends DebugSession {
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			verbose('continue state', state);
 			this.debugState = state;
+			this.sendResponse(response);
+			verbose('ContinueResponse');
 			this.handleReenterDebug('breakpoint');
 		});
-		this.sendResponse(response);
-		verbose('ContinueResponse');
 	}
 
 	protected nextRequest(response: DebugProtocol.NextResponse): void {
@@ -1108,10 +1108,10 @@ class GoDebugSession extends DebugSession {
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			verbose('next state', state);
 			this.debugState = state;
+			this.sendResponse(response);
+			verbose('NextResponse');
 			this.handleReenterDebug('step');
 		});
-		this.sendResponse(response);
-		verbose('NextResponse');
 	}
 
 	protected stepInRequest(response: DebugProtocol.StepInResponse): void {
@@ -1123,10 +1123,10 @@ class GoDebugSession extends DebugSession {
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			verbose('stop state', state);
 			this.debugState = state;
+			this.sendResponse(response);
+			verbose('StepInResponse');
 			this.handleReenterDebug('step');
 		});
-		this.sendResponse(response);
-		verbose('StepInResponse');
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse): void {
@@ -1138,10 +1138,10 @@ class GoDebugSession extends DebugSession {
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			verbose('stepout state', state);
 			this.debugState = state;
+			this.sendResponse(response);
+			verbose('StepOutResponse');
 			this.handleReenterDebug('step');
 		});
-		this.sendResponse(response);
-		verbose('StepOutResponse');
 	}
 
 	protected pauseRequest(response: DebugProtocol.PauseResponse): void {
