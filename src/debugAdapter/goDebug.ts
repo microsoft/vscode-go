@@ -220,7 +220,6 @@ process.on('uncaughtException', (err: any) => {
 });
 
 function logArgsToString(args: any[]): string {
-	args.splice(0, 0, 'Go Debug Adapter:');
 	return args.map(arg => {
 		return typeof arg === 'string' ?
 			arg :
@@ -229,7 +228,7 @@ function logArgsToString(args: any[]): string {
 }
 
 function log(...args: any[]) {
-	logger.log(logArgsToString(args));
+	logger.warn(logArgsToString(args));
 }
 
 function logError(...args: any[]) {
@@ -540,7 +539,7 @@ class GoDebugSession extends LoggingDebugSession {
 	private remotePathSeparator: string;
 	private packageInfo = new Map<string, string>();
 	private launchArgs: LaunchRequestArguments;
-
+	private logLevel: Logger.LogLevel = Logger.LogLevel.Error;
 	private readonly initdone = 'initdone·';
 
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
@@ -568,12 +567,12 @@ class GoDebugSession extends LoggingDebugSession {
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		this.launchArgs = args;
-		const logLevel = args.trace === 'verbose' ?
+		this.logLevel = args.trace === 'verbose' ?
 			Logger.LogLevel.Verbose :
 			args.trace === 'log' ? Logger.LogLevel.Log :
 				Logger.LogLevel.Error;
-		const logPath = logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-go-debug.txt') : undefined;
-		logger.setup(logLevel, logPath);
+		const logPath = this.logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-go-debug.txt') : undefined;
+		logger.setup(this.logLevel, logPath);
 
 		if (!args.program) {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
@@ -605,10 +604,10 @@ class GoDebugSession extends LoggingDebugSession {
 
 		this.delve = new Delve(remotePath, port, host, localPath, args);
 		this.delve.onstdout = (str: string) => {
-			this.sendEvent(new OutputEvent('Delve: ' + str, 'stdout'));
+			this.sendEvent(new OutputEvent(str, 'stdout'));
 		};
 		this.delve.onstderr = (str: string) => {
-			this.sendEvent(new OutputEvent('Delve: ' + str, 'stderr'));
+			this.sendEvent(new OutputEvent(str, 'stderr'));
 		};
 		this.delve.onclose = (code) => {
 			if (code !== 0) {
