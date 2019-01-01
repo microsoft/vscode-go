@@ -406,16 +406,14 @@
                 "default": "127.0.0.1"
               },
               "trace": {
-                "type": [
-                  "boolean",
-                  "string"
-                ],
+                "type": "string",
                 "enum": [
+                  "log",
                   "verbose",
-                  true
+                  "error"
                 ],
-                "default": true,
-                "description": "When 'true', the extension will log diagnostic info to a file. When 'verbose', it will also show logs in the console."
+                "default": "error",
+                "description": "Various levels of logging shown in the debug console. When set to 'log' or 'verbose', the logs will also be written to a file."
               },
               "envFile": {
                 "type": "string",

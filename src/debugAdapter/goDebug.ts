@@ -198,7 +198,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	host?: string;
 	buildFlags?: string;
 	init?: string;
-	trace?: boolean | 'verbose';
+	trace?: 'verbose' | 'log' | 'error';
 	/** Optional path to .env file. */
 	envFile?: string;
 	backend?: string;
@@ -226,10 +226,6 @@ function logArgsToString(args: any[]): string {
 			arg :
 			JSON.stringify(arg);
 	}).join(' ');
-}
-
-function verbose(...args: any[]) {
-	logger.verbose(logArgsToString(args));
 }
 
 function log(...args: any[]) {
@@ -316,7 +312,7 @@ class Delve {
 				env['GOPATH'] = getInferredGopath(dirname) || env['GOPATH'];
 			}
 			this.dlvEnv = env;
-			verbose(`Using GOPATH: ${env['GOPATH']}`);
+			log(`Using GOPATH: ${env['GOPATH']}`);
 
 			if (!!launchArgs.noDebug) {
 				if (mode === 'debug') {
@@ -378,7 +374,7 @@ class Delve {
 			}
 
 			if (!existsSync(launchArgs.dlvToolPath)) {
-				verbose(`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
+				log(`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
 				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
 			}
 
@@ -419,8 +415,8 @@ class Delve {
 				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
 
-			verbose(`Current working directory: ${dlvCwd}`);
-			verbose(`Running: ${launchArgs.dlvToolPath} ${dlvArgs.join(' ')}`);
+			log(`Current working directory: ${dlvCwd}`);
+			log(`Running: ${launchArgs.dlvToolPath} ${dlvArgs.join(' ')}`);
 
 			this.debugProcess = spawn(launchArgs.dlvToolPath, dlvArgs, {
 				cwd: dlvCwd,
@@ -484,13 +480,13 @@ class Delve {
 	}
 
 	close(): Thenable<void> {
-		verbose('HaltRequest');
+		log('HaltRequest');
 
 		return new Promise(resolve => {
 			let timeoutToken: NodeJS.Timer;
 			if (this.debugProcess) {
 				timeoutToken = setTimeout(() => {
-					verbose('Killing debug process manually as we could not halt and detach delve in time');
+					log('Killing debug process manually as we could not halt and detach delve in time');
 					killTree(this.debugProcess.pid);
 					resolve();
 				}, 1000);
@@ -500,20 +496,20 @@ class Delve {
 				if (timeoutToken) {
 					clearTimeout(timeoutToken);
 				}
-				verbose('HaltResponse');
+				log('HaltResponse');
 				if (!this.debugProcess) {
-					verbose('RestartRequest');
+					log('RestartRequest');
 					return this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }])
 						.then(null, err => {
-							verbose('RestartResponse');
+							log('RestartResponse');
 							logError(`Failed to restart - ${(err || '').toString()}`);
 						})
 						.then(() => resolve());
 				} else {
-					verbose('DetachRequest');
+					log('DetachRequest');
 					return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }])
 						.then(null, err => {
-							verbose('DetachResponse');
+							log('DetachResponse');
 							logError(`Killing debug process manually as we failed to detach - ${(err || '').toString()}`);
 							killTree(this.debugProcess.pid);
 						})
@@ -557,12 +553,12 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	protected initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments): void {
-		verbose('InitializeRequest');
+		log('InitializeRequest');
 		// This debug adapter implements the configurationDoneRequest.
 		response.body.supportsConfigurationDoneRequest = true;
 		response.body.supportsSetVariable = true;
 		this.sendResponse(response);
-		verbose('InitializeResponse');
+		log('InitializeResponse');
 	}
 
 	protected findPathSeperator(path) {
@@ -574,9 +570,10 @@ class GoDebugSession extends LoggingDebugSession {
 		this.launchArgs = args;
 		const logLevel = args.trace === 'verbose' ?
 			Logger.LogLevel.Verbose :
-			args.trace ? Logger.LogLevel.Log :
+			args.trace === 'log' ? Logger.LogLevel.Log :
 				Logger.LogLevel.Error;
-		logger.setup(logLevel);
+		const logPath = logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-go-debug.txt') : undefined;
+		logger.setup(logLevel, logPath);
 
 		if (!args.program) {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
@@ -617,7 +614,7 @@ class GoDebugSession extends LoggingDebugSession {
 			if (code !== 0) {
 				this.sendErrorResponse(response, 3000, 'Failed to continue: Check the debug console for details.');
 			}
-			verbose('Sending TerminatedEvent as delve is closed');
+			log('Sending TerminatedEvent as delve is closed');
 			this.sendEvent(new TerminatedEvent());
 		};
 
@@ -639,30 +636,30 @@ class GoDebugSession extends LoggingDebugSession {
 				});
 
 				this.sendEvent(new InitializedEvent());
-				verbose('InitializeEvent');
+				log('InitializeEvent');
 			}
 			this.sendResponse(response);
 		}, err => {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: "{e}"', { e: err.toString() });
-			verbose('ContinueResponse');
+			log('ContinueResponse');
 		});
 	}
 
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
-		verbose('DisconnectRequest');
+		log('DisconnectRequest');
 		this.delve.close().then(() => {
-			verbose('DisconnectRequest to parent');
+			log('DisconnectRequest to parent');
 			super.disconnectRequest(response, args);
-			verbose('DisconnectResponse');
+			log('DisconnectResponse');
 		});
 	}
 
 	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
-		verbose('ConfigurationDoneRequest');
+		log('ConfigurationDoneRequest');
 
 		if (this.launchArgs.stopOnEntry) {
 			this.sendEvent(new StoppedEvent('breakpoint', 0));
-			verbose('StoppedEvent("breakpoint")');
+			log('StoppedEvent("breakpoint")');
 			this.sendResponse(response);
 		} else {
 			this.continueRequest(<DebugProtocol.ContinueResponse>response);
@@ -694,7 +691,7 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
-		verbose('SetBreakPointsRequest');
+		log('SetBreakPointsRequest');
 		let file = normalizePath(args.source.path);
 		if (!this.breakpoints.get(file)) {
 			this.breakpoints.set(file, []);
@@ -702,15 +699,15 @@ class GoDebugSession extends LoggingDebugSession {
 		let remoteFile = this.toDebuggerPath(file);
 
 		Promise.all(this.breakpoints.get(file).map(existingBP => {
-			verbose('Clearing: ' + existingBP.id);
+			log('Clearing: ' + existingBP.id);
 			return this.delve.callPromise('ClearBreakpoint', [this.delve.isApiV1 ? existingBP.id : { Id: existingBP.id }]);
 		})).then(() => {
-			verbose('All cleared');
+			log('All cleared');
 			return Promise.all(args.breakpoints.map(breakpoint => {
 				if (this.delve.remotePath.length === 0) {
-					verbose('Creating on: ' + file + ':' + breakpoint.line);
+					log('Creating on: ' + file + ':' + breakpoint.line);
 				} else {
-					verbose('Creating on: ' + file + ' (' + remoteFile + ') :' + breakpoint.line);
+					log('Creating on: ' + file + ' (' + remoteFile + ') :' + breakpoint.line);
 				}
 				let breakpointIn = <DebugBreakpoint>{};
 				breakpointIn.file = remoteFile;
@@ -719,7 +716,7 @@ class GoDebugSession extends LoggingDebugSession {
 				breakpointIn.loadLocals = this.delve.loadConfig;
 				breakpointIn.cond = breakpoint.condition;
 				return this.delve.callPromise('CreateBreakpoint', [this.delve.isApiV1 ? breakpointIn : { Breakpoint: breakpointIn }]).then(null, err => {
-					verbose('Error on CreateBreakpoint: ' + err.toString());
+					log('Error on CreateBreakpoint: ' + err.toString());
 					return null;
 				});
 			}));
@@ -730,7 +727,7 @@ class GoDebugSession extends LoggingDebugSession {
 					return bp ? bp.Breakpoint : null;
 				});
 			}
-			verbose('All set:' + JSON.stringify(newBreakpoints));
+			log('All set:' + JSON.stringify(newBreakpoints));
 			let breakpoints = newBreakpoints.map((bp, i) => {
 				if (bp) {
 					return { verified: true, line: bp.line };
@@ -743,7 +740,7 @@ class GoDebugSession extends LoggingDebugSession {
 		}).then(breakpoints => {
 			response.body = { breakpoints };
 			this.sendResponse(response);
-			verbose('SetBreakPointsResponse');
+			log('SetBreakPointsResponse');
 		}, err => {
 			this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
 			logError(err);
@@ -756,7 +753,7 @@ class GoDebugSession extends LoggingDebugSession {
 			response.body = { threads: [] };
 			return this.sendResponse(response);
 		}
-		verbose('ThreadsRequest');
+		log('ThreadsRequest');
 		this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [], (err, out) => {
 			if (this.debugState.exited) {
 				// If the program exits very quickly, the initial threadsRequest will complete after it has exited.
@@ -770,7 +767,7 @@ class GoDebugSession extends LoggingDebugSession {
 				return this.sendErrorResponse(response, 2003, 'Unable to display threads: "{e}"', { e: err.toString() });
 			}
 			const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
-			verbose('goroutines', goroutines);
+			log('goroutines', goroutines);
 			let threads = goroutines.map(goroutine =>
 				new Thread(
 					goroutine.id,
@@ -779,12 +776,12 @@ class GoDebugSession extends LoggingDebugSession {
 			);
 			response.body = { threads };
 			this.sendResponse(response);
-			verbose('ThreadsResponse', threads);
+			log('ThreadsResponse', threads);
 		});
 	}
 
 	protected stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments): void {
-		verbose('StackTraceRequest');
+		log('StackTraceRequest');
 		// delve does not support frame paging, so we ask for a large depth
 		let stackTraceIn = { id: args.threadId, depth: this.delve.stackTraceDepth };
 		if (!this.delve.isApiV1) {
@@ -796,7 +793,7 @@ class GoDebugSession extends LoggingDebugSession {
 				return this.sendErrorResponse(response, 2004, 'Unable to produce stack trace: "{e}"', { e: err.toString() });
 			}
 			const locations = this.delve.isApiV1 ? <DebugLocation[]>out : (<StacktraceOut>out).Locations;
-			verbose('locations', locations);
+			log('locations', locations);
 			let stackFrames = locations.map((location, i) =>
 				new StackFrame(
 					i,
@@ -817,12 +814,12 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 			response.body = { stackFrames, totalFrames: locations.length };
 			this.sendResponse(response);
-			verbose('StackTraceResponse');
+			log('StackTraceResponse');
 		});
 	}
 
 	protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
-		verbose('ScopesRequest');
+		log('ScopesRequest');
 		const listLocalVarsIn = { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId };
 		this.delve.call<DebugVariable[] | ListVarsOut>('ListLocalVars', this.delve.isApiV1 ? [listLocalVarsIn] : [{ scope: listLocalVarsIn, cfg: this.delve.loadConfig }], (err, out) => {
 			if (err) {
@@ -830,7 +827,7 @@ class GoDebugSession extends LoggingDebugSession {
 				return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', { e: err.toString() });
 			}
 			const locals = this.delve.isApiV1 ? <DebugVariable[]>out : (<ListVarsOut>out).Variables;
-			verbose('locals', locals);
+			log('locals', locals);
 			this.addFullyQualifiedName(locals);
 			let listLocalFunctionArgsIn = { goroutineID: this.debugState.currentGoroutine.id, frame: args.frameId };
 			this.delve.call<DebugVariable[] | ListFunctionArgsOut>('ListFunctionArgs', this.delve.isApiV1 ? [listLocalFunctionArgsIn] : [{ scope: listLocalFunctionArgsIn, cfg: this.delve.loadConfig }], (err, outArgs) => {
@@ -839,7 +836,7 @@ class GoDebugSession extends LoggingDebugSession {
 					return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', { e: err.toString() });
 				}
 				const args = this.delve.isApiV1 ? <DebugVariable[]>outArgs : (<ListFunctionArgsOut>outArgs).Args;
-				verbose('functionArgs', args);
+				log('functionArgs', args);
 				this.addFullyQualifiedName(args);
 				let vars = args.concat(locals);
 
@@ -864,7 +861,7 @@ class GoDebugSession extends LoggingDebugSession {
 				this.getPackageInfo(this.debugState).then(packageName => {
 					if (!packageName) {
 						this.sendResponse(response);
-						verbose('ScopesResponse');
+						log('ScopesResponse');
 						return;
 					}
 					const filter = `^${packageName}\\.`;
@@ -884,7 +881,7 @@ class GoDebugSession extends LoggingDebugSession {
 						if (initdoneIndex > -1) {
 							globals.splice(initdoneIndex, 1);
 						}
-						verbose('global vars', globals);
+						log('global vars', globals);
 
 						const globalVariables = {
 							name: 'Global',
@@ -901,7 +898,7 @@ class GoDebugSession extends LoggingDebugSession {
 						};
 						scopes.push(new Scope('Global', this._variableHandles.create(globalVariables), false));
 						this.sendResponse(response);
-						verbose('ScopesResponse');
+						log('ScopesResponse');
 					});
 				});
 			});
@@ -990,7 +987,7 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
-		verbose('VariablesRequest');
+		log('VariablesRequest');
 		let vari = this._variableHandles.get(args.variablesReference);
 		let variables;
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
@@ -1034,13 +1031,13 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 		response.body = { variables };
 		this.sendResponse(response);
-		verbose('VariablesResponse', JSON.stringify(variables, null, ' '));
+		log('VariablesResponse', JSON.stringify(variables, null, ' '));
 	}
 
 	private handleReenterDebug(reason: string): void {
 		if (this.debugState.exited) {
 			this.sendEvent(new TerminatedEvent());
-			verbose('TerminatedEvent');
+			log('TerminatedEvent');
 		} else {
 			// [TODO] Can we avoid doing this? https://github.com/Microsoft/vscode/issues/40#issuecomment-161999881
 			this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [], (err, out) => {
@@ -1069,14 +1066,14 @@ class GoDebugSession extends LoggingDebugSession {
 				let stoppedEvent = new StoppedEvent(reason, this.debugState.currentGoroutine.id);
 				(<any>stoppedEvent.body).allThreadsStopped = true;
 				this.sendEvent(stoppedEvent);
-				verbose('StoppedEvent("' + reason + '")');
+				log('StoppedEvent("' + reason + '")');
 			});
 		}
 	}
 	private continueEpoch = 0;
 	private continueRequestRunning = false;
 	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
-		verbose('ContinueRequest');
+		log('ContinueRequest');
 		this.continueEpoch++;
 		let closureEpoch = this.continueEpoch;
 		this.continueRequestRunning = true;
@@ -1088,75 +1085,75 @@ class GoDebugSession extends LoggingDebugSession {
 				logError('Failed to continue - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
-			verbose('continue state', state);
+			log('continue state', state);
 			this.debugState = state;
 			this.handleReenterDebug('breakpoint');
 		});
 		this.sendResponse(response);
-		verbose('ContinueResponse');
+		log('ContinueResponse');
 	}
 
 	protected nextRequest(response: DebugProtocol.NextResponse): void {
-		verbose('NextRequest');
+		log('NextRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'next' }], (err, out) => {
 			if (err) {
 				logError('Failed to next - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
-			verbose('next state', state);
+			log('next state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
 		this.sendResponse(response);
-		verbose('NextResponse');
+		log('NextResponse');
 	}
 
 	protected stepInRequest(response: DebugProtocol.StepInResponse): void {
-		verbose('StepInRequest');
+		log('StepInRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'step' }], (err, out) => {
 			if (err) {
 				logError('Failed to step - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
-			verbose('stop state', state);
+			log('stop state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
 		this.sendResponse(response);
-		verbose('StepInResponse');
+		log('StepInResponse');
 	}
 
 	protected stepOutRequest(response: DebugProtocol.StepOutResponse): void {
-		verbose('StepOutRequest');
+		log('StepOutRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'stepOut' }], (err, out) => {
 			if (err) {
 				logError('Failed to stepout - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
-			verbose('stepout state', state);
+			log('stepout state', state);
 			this.debugState = state;
 			this.handleReenterDebug('step');
 		});
 		this.sendResponse(response);
-		verbose('StepOutResponse');
+		log('StepOutResponse');
 	}
 
 	protected pauseRequest(response: DebugProtocol.PauseResponse): void {
-		verbose('PauseRequest');
+		log('PauseRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'halt' }], (err, out) => {
 			if (err) {
 				logError('Failed to halt - ' + err.toString());
 				return this.sendErrorResponse(response, 2010, 'Unable to halt execution: "{e}"', { e: err.toString() });
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
-			verbose('pause state', state);
+			log('pause state', state);
 			this.sendResponse(response);
-			verbose('PauseResponse');
+			log('PauseResponse');
 		});
 	}
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
-		verbose('EvaluateRequest');
+		log('EvaluateRequest');
 		const scope = {
 			goroutineID: this.debugState.currentGoroutine.id,
 			frame: args.frameId
@@ -1177,12 +1174,12 @@ class GoDebugSession extends LoggingDebugSession {
 			const variable = this.delve.isApiV1 ? <DebugVariable>out : (<EvalOut>out).Variable;
 			response.body = this.convertDebugVariableToProtocolVariable(variable, 0);
 			this.sendResponse(response);
-			verbose('EvaluateResponse');
+			log('EvaluateResponse');
 		});
 	}
 
 	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {
-		verbose('SetVariableRequest');
+		log('SetVariableRequest');
 		const scope = {
 			goroutineID: this.debugState.currentGoroutine.id
 		};
@@ -1199,7 +1196,7 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 			response.body = { value: args.value };
 			this.sendResponse(response);
-			verbose('SetVariableResponse');
+			log('SetVariableResponse');
 		});
 	}
 
