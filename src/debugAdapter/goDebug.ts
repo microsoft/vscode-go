@@ -210,6 +210,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	apiVersion: number;
 	/** Delve maximum stack trace depth */
 	stackTraceDepth: number;
+
+	showGlobalVariables?: boolean;
 	currentFile: string;
 }
 
@@ -542,6 +544,7 @@ class GoDebugSession extends LoggingDebugSession {
 	private logLevel: Logger.LogLevel = Logger.LogLevel.Error;
 	private readonly initdone = 'initdone·';
 
+	private showGlobalVariables: boolean = false;
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super('', debuggerLinesStartAt1, isServer);
 		this._variableHandles = new Handles<DebugVariable>();
@@ -573,6 +576,8 @@ class GoDebugSession extends LoggingDebugSession {
 				Logger.LogLevel.Error;
 		const logPath = this.logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-go-debug.txt') : undefined;
 		logger.setup(this.logLevel, logPath);
+
+		this.showGlobalVariables = args.showGlobalVariables === true;
 
 		if (!args.program) {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
@@ -856,6 +861,12 @@ class GoDebugSession extends LoggingDebugSession {
 
 				scopes.push(new Scope('Local', this._variableHandles.create(localVariables), false));
 				response.body = { scopes };
+
+				if (!this.showGlobalVariables) {
+					this.sendResponse(response);
+					log('ScopesResponse');
+					return;
+				}
 
 				this.getPackageInfo(this.debugState).then(packageName => {
 					if (!packageName) {

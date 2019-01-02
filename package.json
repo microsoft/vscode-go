@@ -497,6 +497,11 @@
                 "type": "number",
                 "description": "Maximum depth of stack trace collected from Delve",
                 "default": 50
+              },
+              "showGlobalVariables": {
+                "type": "boolean",
+                "default": false,
+                "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not."
               }
             }
           }
