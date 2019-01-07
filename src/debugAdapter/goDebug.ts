@@ -939,7 +939,7 @@ class GoDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	private convertDebugVariableToProtocolVariable(v: DebugVariable, i: number): { result: string; variablesReference: number; } {
+	private convertDebugVariableToProtocolVariable(v: DebugVariable): { result: string; variablesReference: number; } {
 		if (v.kind === GoReflectKind.UnsafePointer) {
 			return {
 				result: `unsafe.Pointer(0x${v.children[0].addr.toString(16)})`,
@@ -999,49 +999,67 @@ class GoDebugSession extends LoggingDebugSession {
 	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
 		log('VariablesRequest');
 		let vari = this._variableHandles.get(args.variablesReference);
-		let variables;
-		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
-			variables = vari.children.map((v, i) => {
-				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
-				return {
-					name: '[' + i + ']',
-					value: result,
-					evaluateName: vari.fullyQualifiedName + '[' + i + ']',
-					variablesReference
-				};
-			});
-		} else if (vari.kind === GoReflectKind.Map) {
-			variables = [];
-			for (let i = 0; i < vari.children.length; i += 2) {
-				if (i + 1 >= vari.children.length) {
-					break;
-				}
-				let mapKey = this.convertDebugVariableToProtocolVariable(vari.children[i], i);
-				let mapValue = this.convertDebugVariableToProtocolVariable(vari.children[i + 1], i + 1);
-				variables.push({
-					name: mapKey.result,
-					value: mapValue.result,
-					evaluateName: vari.fullyQualifiedName + '[' + mapKey.result + ']',
-					variablesReference: mapValue.variablesReference
-				});
+		let variablesPromise: Promise<DebugProtocol.Variable[]>;
+		const loadChildren = async (exp: string, v: DebugVariable) => {
+			if (v.len > 0 && v.children.length === 0) {
+				// from https://github.com/derekparker/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
+				await this.evaluateRequestImpl({ 'expression': exp }).then(result => {
+					const variable = this.delve.isApiV1 ? <DebugVariable>result : (<EvalOut>result).Variable;
+					v.children = variable.children;
+				}, err => err /* do nothing on failure */);
 			}
+		};
+		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
+			variablesPromise = Promise.all(vari.children.map(async (v, i) => {
+					await loadChildren(`*(*${v.type})(${v.addr})`, v);
+					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
+					return {
+						name: '[' + i + ']',
+						value: result,
+						evaluateName: vari.fullyQualifiedName + '[' + i + ']',
+						variablesReference
+					};
+				})
+			);
+		} else if (vari.kind === GoReflectKind.Map) {
+			variablesPromise = Promise.resolve((async () => {
+				const variables = new Array<DebugProtocol.Variable>();
+				for (let i = 0; i < vari.children.length; i += 2) {
+					if (i + 1 >= vari.children.length) {
+						break;
+					}
+					let mapKey = this.convertDebugVariableToProtocolVariable(vari.children[i]);
+					await loadChildren(`${vari.fullyQualifiedName}.${vari.name}[${mapKey.result}]`, vari.children[i + 1]);
+					let mapValue = this.convertDebugVariableToProtocolVariable(vari.children[i + 1]);
+					variables.push({
+						name: mapKey.result,
+						value: mapValue.result,
+						evaluateName: vari.fullyQualifiedName + '[' + mapKey.result + ']',
+						variablesReference: mapValue.variablesReference
+					});
+				}
+				return variables;
+			})());
 		} else {
-			variables = vari.children.map((v, i) => {
-				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v, i);
+			variablesPromise = Promise.all(vari.children.map(async (v, i) => {
 				if (v.fullyQualifiedName === undefined) {
 					v.fullyQualifiedName = vari.fullyQualifiedName + '.' + v.name;
 				}
+				await loadChildren(`*(*${v.type})(${v.addr})`, v);
+				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
 				return {
 					name: v.name,
 					value: result,
 					evaluateName: v.fullyQualifiedName,
 					variablesReference
 				};
-			});
+			}));
 		}
-		response.body = { variables };
-		this.sendResponse(response);
-		log('VariablesResponse', JSON.stringify(variables, null, ' '));
+		variablesPromise.then((variables) => {
+			response.body = { variables };
+			this.sendResponse(response);
+			log('VariablesResponse', JSON.stringify(variables, null, ' '));
+		});
 	}
 
 	private handleReenterDebug(reason: string): void {
@@ -1164,6 +1182,17 @@ class GoDebugSession extends LoggingDebugSession {
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
 		log('EvaluateRequest');
+		this.evaluateRequestImpl(args).then(out => {
+			const variable = this.delve.isApiV1 ? <DebugVariable>out : (<EvalOut>out).Variable;
+			response.body = this.convertDebugVariableToProtocolVariable(variable);
+			this.sendResponse(response);
+			log('EvaluateResponse');
+		}, err => {
+			this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', { e: err.toString() });
+		});
+	}
+
+	private evaluateRequestImpl(args: DebugProtocol.EvaluateArguments): Thenable<EvalOut | DebugVariable> {
 		const scope = {
 			goroutineID: this.debugState.currentGoroutine.id,
 			frame: args.frameId
@@ -1175,17 +1204,13 @@ class GoDebugSession extends LoggingDebugSession {
 				Expr: args.expression,
 				Scope: scope,
 				Cfg: this.delve.loadConfig
-			};
-		this.delve.call<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs], (err, out) => {
-			if (err) {
-				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
-				return this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', { e: err.toString() });
-			}
-			const variable = this.delve.isApiV1 ? <DebugVariable>out : (<EvalOut>out).Variable;
-			response.body = this.convertDebugVariableToProtocolVariable(variable, 0);
-			this.sendResponse(response);
-			log('EvaluateResponse');
+		};
+		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
+		err => {
+			logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
+			return Promise.reject(err);
 		});
+		return  returnValue;
 	}
 
 	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {
