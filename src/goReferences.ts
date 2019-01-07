@@ -33,7 +33,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 			let filename = canonicalizeGOPATHPrefix(document.fileName);
 			let cwd = path.dirname(filename);
-			let offset = byteOffsetAt(document, position);
+			let offset = byteOffsetAt(document, wordRange.start);
 			let env = getToolsEnvVars();
 			let buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
 			let args = buildTags ? ['-tags', buildTags] : [];
