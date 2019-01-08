@@ -80,7 +80,7 @@ export function adjustWordPosition(document: vscode.TextDocument, position: vsco
 
 const godefImportDefinitionRegex = /^import \(.* ".*"\)$/;
 function definitionLocation_godef(input: GoDefinitionInput, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
-	let godefTool = input.isMod ? 'godef-gomod' : 'godef';
+	let godefTool = 'godef';
 	let godefPath = getBinPath(godefTool);
 	if (!path.isAbsolute(godefPath)) {
 		return Promise.reject(missingToolMsg + godefTool);
