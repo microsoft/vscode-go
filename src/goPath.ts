@@ -87,11 +87,13 @@ function correctBinname(toolName: string) {
 }
 
 function fileExists(filePath: string): boolean {
+	let flag = true;
 	try {
-		return fs.statSync(filePath).isFile();
+		fs.accessSync(filePath, fs.constants.F_OK | fs.constants.X_OK);
 	} catch (e) {
-		return false;
+		flag = false;
 	}
+	return flag;
 }
 
 export function clearCacheForTools() {
