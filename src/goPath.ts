@@ -90,7 +90,7 @@ function fileExists(filePath: string): boolean {
 	let flag = true;
 	try {
 		fs.accessSync(filePath, fs.constants.F_OK | fs.constants.X_OK);
-	}	catch	(e)	{
+	} catch (e) {
 		flag = false;
 	}
 	return flag;
