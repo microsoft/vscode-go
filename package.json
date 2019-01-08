@@ -573,9 +573,9 @@
           "enum": [
             "golint",
             "gometalinter",
-            "megacheck",
             "golangci-lint",
-            "revive"
+            "revive",
+            "staticcheck"
           ]
         },
         "go.lintFlags": {
