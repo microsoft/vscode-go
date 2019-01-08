@@ -36,7 +36,7 @@ const _allTools: { [key: string]: string } = {
 	'golint': 'golang.org/x/lint/golint',
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
-	'megacheck': 'honnef.co/go/tools/...',
+	'staticcheck': 'honnef.co/go/tools/...',
 	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
@@ -67,7 +67,7 @@ const importantTools = [
 	'goimports',
 	'golint',
 	'gometalinter',
-	'megacheck',
+	'staticcheck',
 	'golangci-lint',
 	'revive',
 	'dlv'
@@ -122,8 +122,8 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('gometalinter');
 	}
 
-	if (goConfig['lintTool'] === 'megacheck') {
-		tools.push('megacheck');
+	if (goConfig['lintTool'] === 'staticcheck') {
+		tools.push('staticcheck');
 	}
 
 	if (goConfig['lintTool'] === 'golangci-lint') {
@@ -179,9 +179,9 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'golint': '\t\t(Linter)',
 		'gotests': '\t\t(Generate unit tests)',
 		'gometalinter': 'Linter)',
-		'megacheck': '\t(Linter)',
 		'golangci-lint': 'Linter)',
 		'revive': '\t\t(Linter)',
+		'staticcheck': '\t(Linter)',
 		'go-langserver': '(Language Server)',
 		'dlv': '\t\t\t(Debugging)',
 		'fillstruct': '\t\t(Fill structs with defaults)'

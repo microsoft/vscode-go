@@ -36,7 +36,7 @@ Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Not
 
 - Build-on-save to compile code and show build errors. (using `go build` and `go test`)
 - Vet-on-save to run `go vet` and show errors as warnings
-- Lint-on-save to show linting errors as warnings (using `golint`, `gometalinter`, `megacheck`, `golangci-lint` or `revive`)
+- Lint-on-save to show linting errors as warnings (using `golint`, `gometalinter`, `staticcheck`, `golangci-lint` or `revive`)
 - Semantic/Syntactic error reporting as you type (using `gotype-live`)
 
 ### Testing
@@ -107,7 +107,7 @@ If you want to run only specific linters (some linters are slow), you can modify
   "go.lintFlags": ["--disable=all", "--enable=errcheck"],
 ```
 
-Alternatively, you can use [megacheck](https://github.com/dominikh/go-tools/tree/master/cmd/megacheck) which 
+Alternatively, you can use [staticcheck](https://github.com/dominikh/go-tools/tree/master/cmd/staticcheck) which 
 may have significantly better performance than `gometalinter`, while only supporting a subset of the tools.
 
 Another alternative is [golangci-lint](https://github.com/golangci/golangci-lint) which shares some of the performance
