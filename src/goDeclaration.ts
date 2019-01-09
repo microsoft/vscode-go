@@ -155,6 +155,9 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 				reject(e);
 			}
 		});
+		if (p.pid) {
+			p.stdin.end(input.document.getText());
+		}
 	});
 }
 

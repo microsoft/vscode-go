@@ -22,12 +22,12 @@ export function getModPath(fileuri: vscode.Uri): Promise<string> {
 		return Promise.resolve(hit);
 	}
 
-	workspaceModCache.forEach((v, k) => {
+	for (let k of Array.from(workspaceModCache.keys())) {
 		if (folderPath.startsWith(k)) {
 			folderModCache.set(folderPath, k);
 			return Promise.resolve(k);
 		}
-	});
+	}
 
 	return getGoVersion().then(value => {
 		if (value && (value.major !== 1 || value.minor < 11)) {
@@ -40,9 +40,9 @@ export function getModPath(fileuri: vscode.Uri): Promise<string> {
 			if (!goExecutable) {
 				return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
 			}
-			cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
+			cp.execFile(goExecutable, ['list', '-m', '-f', '{{.GoMod}}'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
 				if (err) {
-					console.warn(`Error when running go env GOMOD: ${err}`);
+					console.warn(`Error when running go list -m -f {{.GoMod}}: ${err}`);
 					resolve('');
 				}
 				let [goMod] = stdout.split('\n');
