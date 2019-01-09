@@ -96,9 +96,9 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
 		const args = ['-t', '-i', '-f', input.document.fileName, '-o', offset.toString()];
-		if (useReceivers) {
-			args.push('-r');
-		}
+		// if (useReceivers) {
+		// 	args.push('-r');
+		// }
 		p = cp.execFile(godefPath, args, { env, cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
