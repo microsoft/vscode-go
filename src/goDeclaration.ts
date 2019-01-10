@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath } from './util';
-import { promptForMissingTool } from './goInstallTools';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { isModSupported, promptToUpdateToolForModules } from './goModules';
 
@@ -79,8 +79,8 @@ export function adjustWordPosition(document: vscode.TextDocument, position: vsco
 }
 
 const godefImportDefinitionRegex = /^import \(.* ".*"\)$/;
-function definitionLocation_godef(input: GoDefinitionInput, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
-	let godefTool = input.isMod ? 'godef-gomod' : 'godef';
+function definitionLocation_godef(input: GoDefinitionInput, token: vscode.CancellationToken, useReceivers: boolean = true): Promise<GoDefinitionInformation> {
+	let godefTool = 'godef';
 	let godefPath = getBinPath(godefTool);
 	if (!path.isAbsolute(godefPath)) {
 		return Promise.reject(missingToolMsg + godefTool);
@@ -95,13 +95,21 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
-		p = cp.execFile(godefPath, ['-t', '-i', '-f', input.document.fileName, '-o', offset.toString()], { env, cwd }, (err, stdout, stderr) => {
+		const args = ['-t', '-i', '-f', input.document.fileName, '-o', offset.toString()];
+		// if (useReceivers) {
+		// 	args.push('-r');
+		// }
+		p = cp.execFile(godefPath, args, { env, cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + godefTool);
 				}
 				if (err) {
-					return reject(err.message || stderr);
+					if (stderr.indexOf('flag provided but not defined: -r') !== -1) {
+						promptForUpdatingTool('godef');
+					}
+					p = null;
+					return definitionLocation_godef(input, token, false).then(resolve, reject);
 				}
 				let result = stdout.toString();
 				let lines = result.split('\n');
@@ -117,7 +125,7 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 					file: file,
 					line: +line - 1,
 					column: + col - 1,
-					declarationlines: lines.splice(1),
+					declarationlines: lines.slice(1),
 					toolUsed: 'godef',
 					doc: null,
 					name: null
@@ -125,7 +133,8 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 				if (!input.includeDocs || godefImportDefinitionRegex.test(definitionInformation.declarationlines[0])) {
 					return resolve(definitionInformation);
 				}
-				runGodoc(pkgPath, input.word, token).then(doc => {
+				match = /^\w+ \(\*?(\w+)\)/.exec(lines[1]);
+				runGodoc(pkgPath, match ? match[1] : '', input.word, token).then(doc => {
 					if (doc) {
 						definitionInformation.doc = doc;
 					}
@@ -169,7 +178,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 				}
 				if (stderr && stderr.startsWith('flag provided but not defined: -tags')) {
 					p = null;
-					return definitionLocation_gogetdoc(input, token, false);
+					return definitionLocation_gogetdoc(input, token, false).then(resolve, reject);
 				}
 				if (err) {
 					if (input.isMod

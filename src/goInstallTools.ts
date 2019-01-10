@@ -28,7 +28,6 @@ const _allTools: { [key: string]: string } = {
 	'impl': 'github.com/josharian/impl',
 	'gotype-live': 'github.com/tylerb/gotype-live',
 	'godef': 'github.com/rogpeppe/godef',
-	'godef-gomod': 'github.com/ianthehat/godef',
 	'gogetdoc': 'github.com/zmb3/gogetdoc',
 	'goimports': 'golang.org/x/tools/cmd/goimports',
 	'goreturns': 'github.com/sqs/goreturns',
@@ -36,7 +35,7 @@ const _allTools: { [key: string]: string } = {
 	'golint': 'golang.org/x/lint/golint',
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
-	'megacheck': 'honnef.co/go/tools/...',
+	'staticcheck': 'honnef.co/go/tools/...',
 	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
@@ -61,13 +60,12 @@ const importantTools = [
 	'guru',
 	'gorename',
 	'godef',
-	'godef-gomod',
 	'gogetdoc',
 	'goreturns',
 	'goimports',
 	'golint',
 	'gometalinter',
-	'megacheck',
+	'staticcheck',
 	'golangci-lint',
 	'revive',
 	'dlv'
@@ -93,10 +91,6 @@ function getTools(goVersion: SemVersion): string[] {
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools.push('godef');
-		// godef-gomod needed in go 1.11 & higher
-		if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
-			tools.push('godef-gomod');
-		}
 	}
 
 	// Install the formattool that was chosen by the user
@@ -122,8 +116,8 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('gometalinter');
 	}
 
-	if (goConfig['lintTool'] === 'megacheck') {
-		tools.push('megacheck');
+	if (goConfig['lintTool'] === 'staticcheck') {
+		tools.push('staticcheck');
 	}
 
 	if (goConfig['lintTool'] === 'golangci-lint') {
@@ -169,19 +163,18 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'gomodifytags': '(Modify tags on structs)',
 		'goplay': '\t\t(The Go playground)',
 		'impl': '\t\t(Stubs for interfaces)',
-		'gotype-live': 'Show errors as you type)',
+		'gotype-live': '\t(Show errors as you type)',
 		'godef': '\t\t(Go to definition)',
-		'godef-gomod': '\t(Go to definition, works with Modules)',
 		'gogetdoc': '\t(Go to definition & text shown on hover)',
 		'goimports': '\t(Formatter)',
 		'goreturns': '\t(Formatter)',
 		'goformat': '\t(Formatter)',
 		'golint': '\t\t(Linter)',
 		'gotests': '\t\t(Generate unit tests)',
-		'gometalinter': 'Linter)',
-		'megacheck': '\t(Linter)',
-		'golangci-lint': 'Linter)',
+		'gometalinter': '\t(Linter)',
+		'golangci-lint': '\t(Linter)',
 		'revive': '\t\t(Linter)',
+		'staticcheck': '\t(Linter)',
 		'go-langserver': '(Language Server)',
 		'dlv': '\t\t\t(Debugging)',
 		'fillstruct': '\t\t(Fill structs with defaults)'
@@ -238,8 +231,6 @@ export function promptForMissingTool(tool: string) {
 			let msg = `The "${tool}" command is not available.  Use "go get -v ${getToolImportPath(tool, goVersion)}" to install.`;
 			if (tool === 'gocode-gomod') {
 				msg = `To provide auto-completions when using Go modules, we are testing a fork(${getToolImportPath(tool, goVersion)}) of "gocode" and an updated version of "gopkgs". Please press the Install button to install them.`;
-			} else if (tool === 'godef-gomod') {
-				msg = `To provide the Go to definition feature when using Go modules, we are testing a fork(${getToolImportPath(tool, goVersion)}) of "godef". Please press the Install button to install it.`;
 			}
 			vscode.window.showInformationMessage(msg, ...items).then(selected => {
 				if (selected === 'Install') {

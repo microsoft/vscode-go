@@ -892,7 +892,7 @@ export function cleanupTempDir() {
  * @param symbol Symbol for which docs need to be found
  * @param token Cancellation token
  */
-export function runGodoc(packagePath: string, symbol: string, token: vscode.CancellationToken) {
+export function runGodoc(packagePath: string, receiver: string, symbol: string, token: vscode.CancellationToken) {
 	if (!packagePath) {
 		return Promise.reject(new Error('Package Path not provided'));
 	}
@@ -908,6 +908,11 @@ export function runGodoc(packagePath: string, symbol: string, token: vscode.Canc
 	const getCurrentPackagePromise = path.isAbsolute(packagePath) ? getCurrentPackage(packagePath) : Promise.resolve(packagePath);
 	return getCurrentPackagePromise.then(packageImportPath => {
 		return new Promise<string>((resolve, reject) => {
+			if (receiver) {
+				receiver = receiver.replace(/^\*/, '');
+				symbol = receiver + '.' + symbol;
+			}
+
 			const env = getToolsEnvVars();
 			const args = ['doc', '-c', '-cmd', '-u', packageImportPath, symbol];
 			const p = cp.execFile(goRuntimePath, args, { env }, (err, stdout, stderr) => {
