@@ -42,7 +42,6 @@ export function getModPath(fileuri: vscode.Uri): Promise<string> {
 			}
 			cp.execFile(goExecutable, ['list', '-m', '-f', '{{.GoMod}}'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
 				if (err) {
-					console.warn(`Error when running go list -m -f {{.GoMod}}: ${err}`);
 					resolve('');
 				}
 				let [goMod] = stdout.split('\n');
