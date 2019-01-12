@@ -14,6 +14,7 @@ import { outputChannel } from './goStatus';
 import { NearestNeighborDict, Node } from './avlTree';
 import { getCurrentPackage } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import godocToMarkdown from './godocToMarkdown';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -937,7 +938,7 @@ export function runGodoc(packagePath: string, receiver: string, symbol: string, 
 						doc += '\n';
 					}
 				}
-				return resolve(doc);
+				return resolve(godocToMarkdown(doc, null));
 			});
 
 			if (token) {

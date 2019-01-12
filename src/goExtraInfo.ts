@@ -33,10 +33,10 @@ export class GoHoverProvider implements HoverProvider {
 				.map(line => line.replace(/\t/g, '    '));
 			let text;
 			text = lines.join('\n').replace(/\n+$/, '');
-			let hoverTexts: MarkedString[] = [];
-			hoverTexts.push({ language: 'go', value: text });
+			let hoverTexts = new vscode.MarkdownString();
+			hoverTexts.appendCodeblock(text, 'go');
 			if (definitionInfo.doc != null) {
-				hoverTexts.push(definitionInfo.doc);
+				hoverTexts.appendMarkdown(definitionInfo.doc);
 			}
 			let hover = new Hover(hoverTexts);
 			return hover;
