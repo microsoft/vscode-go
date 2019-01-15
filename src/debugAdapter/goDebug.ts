@@ -246,11 +246,11 @@ function normalizePath(filePath: string) {
 }
 
 function frameId(threadId: number, frame: number): number {
-	return threadId << 8 | frame;
+	return threadId << 12 | frame;
 }
 
 function splitFrameId(frameId: number): [number, number] {
-	return [frameId >> 8, frameId & 0xFF];
+	return [frameId >> 12, frameId & 0xFF];
 }
 
 class Delve {
