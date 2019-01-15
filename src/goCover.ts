@@ -257,12 +257,18 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
  * @param e TextDocumentChangeEvent
  */
 export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent) {
-	if (e.document.languageId !== 'go') {
+	if (e.document.languageId !== 'go' || !e.contentChanges.length || !isCoverageApplied) {
 		return;
 	}
+
 	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e.document)) {
 		return;
 	}
+
+	if (isPartOfComment(e)) {
+		return;
+	}
+
 	clearCoverage();
 }
 
@@ -303,5 +309,19 @@ export function toggleCoverageCurrentPackage() {
 			}
 			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 		});
+	});
+}
+
+export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
+	return e.contentChanges.every(change => {
+		// We cannot be sure with using just regex on individual lines whether a multi line change is part of a comment or not
+		// So play it safe and treat it as not a comment
+		if (!change.range.isSingleLine || change.text.includes('\n')) {
+			return false;
+		}
+
+		const text = e.document.lineAt(change.range.start).text;
+		const idx = text.search('//');
+		return (idx > -1 && idx <= change.range.start.character);
 	});
 }
