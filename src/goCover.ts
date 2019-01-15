@@ -260,7 +260,7 @@ export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent
 	if (e.document.languageId !== 'go' || !e.contentChanges.length || !isCoverageApplied) {
 		return;
 	}
-	
+
 	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e.document)) {
 		return;
 	}
