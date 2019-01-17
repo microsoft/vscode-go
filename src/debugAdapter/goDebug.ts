@@ -45,6 +45,14 @@ enum GoReflectKind {
 	UnsafePointer
 }
 
+enum GoVariableFlags {
+	VariableEscaped = 1,
+	VariableShadowed = 2,
+	VariableConstant = 4,
+	VariableArgument = 8,
+	VariableReturnArgument = 16
+}
+
 // These types should stay in sync with:
 // https://github.com/derekparker/delve/blob/master/service/api/types.go
 
@@ -149,6 +157,8 @@ interface DebugVariable {
 	type: string;
 	realType: string;
 	kind: GoReflectKind;
+	flags: GoVariableFlags;
+	DeclLine: number;
 	value: string;
 	len: number;
 	cap: number;
@@ -843,7 +853,35 @@ class GoDebugSession extends LoggingDebugSession {
 				log('functionArgs', args);
 				this.addFullyQualifiedName(args);
 				let vars = args.concat(locals);
-
+				// annotate shadowed variables in parentheses
+				const shadowedVars = new Map<string, Array<number>>();
+				for (let i = 0; i < vars.length; ++i) {
+					if ((vars[i].flags & GoVariableFlags.VariableShadowed) === 0) {
+						continue;
+					}
+					const varName = vars[i].name;
+					if (!shadowedVars.has(varName)) {
+						const indices = new Array<number>();
+						indices.push(i);
+						shadowedVars.set(varName, indices);
+					} else {
+						shadowedVars.get(varName).push(i);
+					}
+				}
+				for (const svIndices of shadowedVars.values()) {
+					// sort by declared line number in descending order
+					svIndices.sort((lhs: number, rhs: number) => {
+						return vars[rhs].DeclLine - vars[lhs].DeclLine;
+					});
+					// enclose in parentheses, one pair per scope
+					for (let scope = 0; scope < svIndices.length; ++scope) {
+						const svIndex = svIndices[scope];
+						// start at -1 so scope of 0 has one pair of parens
+						for (let count = -1; count < scope; ++count) {
+							vars[svIndex].name = `(${vars[svIndex].name})`;
+						}
+					}
+				}
 				let scopes = new Array<Scope>();
 				let localVariables = {
 					name: 'Local',
@@ -851,6 +889,8 @@ class GoDebugSession extends LoggingDebugSession {
 					type: '',
 					realType: '',
 					kind: 0,
+					flags: 0,
+					DeclLine: 0,
 					value: '',
 					len: 0,
 					cap: 0,
@@ -899,6 +939,8 @@ class GoDebugSession extends LoggingDebugSession {
 							type: '',
 							realType: '',
 							kind: 0,
+							flags: 0,
+							DeclLine: 0,
 							value: '',
 							len: 0,
 							cap: 0,
