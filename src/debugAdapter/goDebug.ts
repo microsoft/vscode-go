@@ -534,7 +534,7 @@ class GoDebugSession extends LoggingDebugSession {
 
 	private _variableHandles: Handles<DebugVariable>;
 	private breakpoints: Map<string, DebugBreakpoint[]>;
-	private skipStopEventOnce: boolean;
+	private skipStopEventOnce: boolean; // Editing breakpoints requires halting delve, skip sending Stop Event to VS Code in such cases
 	private threads: Set<number>;
 	private debugState: DebuggerState;
 	private delve: Delve;
@@ -760,10 +760,10 @@ class GoDebugSession extends LoggingDebugSession {
 			this.skipStopEventOnce = true;
 			this.delve.callPromise('Command', [{ name: 'halt' }]).then(() => {
 				return this.setBreakPoints(response, args).then(() => {
-					return this.continue();
-				}, err => {
-					logError(err);
-					return this.sendErrorResponse(response, 2009, 'Failed to continue delve after setting the breakpoint: "{e}"', { e: err.toString() });
+					return this.continue(true).then(null, err => {
+						logError(err);
+						this.sendErrorResponse(response, 2009, 'Failed to continue delve after halting it to set breakpoints: "{e}"', { e: err.toString() });
+					});
 				});
 			}, err => {
 				logError(err);
@@ -1109,22 +1109,25 @@ class GoDebugSession extends LoggingDebugSession {
 
 	private continueEpoch = 0;
 	private continueRequestRunning = false;
-	private continue(): void {
+	private continue(calledWhenSettingBreakpoint?: boolean): Thenable<void> {
 		this.continueEpoch++;
 		let closureEpoch = this.continueEpoch;
 		this.continueRequestRunning = true;
-		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'continue' }], (err, out) => {
+
+		const callback = (out) => {
 			if (closureEpoch === this.continueEpoch) {
 				this.continueRequestRunning = false;
-			}
-			if (err) {
-				logError('Failed to continue - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			log('continue state', state);
 			this.debugState = state;
 			this.handleReenterDebug('breakpoint');
-		});
+		};
+
+		// If called when setting breakpoint internally, we want the error to bubble up.
+		const errorCallback = calledWhenSettingBreakpoint ? null : callback;
+
+		return this.delve.callPromise('Command', [{ name: 'continue' }]).then(callback, errorCallback);
 	}
 
 	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
