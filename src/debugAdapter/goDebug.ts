@@ -1125,7 +1125,12 @@ class GoDebugSession extends LoggingDebugSession {
 		};
 
 		// If called when setting breakpoint internally, we want the error to bubble up.
-		const errorCallback = calledWhenSettingBreakpoint ? null : callback;
+		const errorCallback = calledWhenSettingBreakpoint ? null : (err) => {
+			if (err) {
+				logError('Failed to continue - ' + err.toString());
+			}
+			this.handleReenterDebug('breakpoint');
+		};
 
 		return this.delve.callPromise('Command', [{ name: 'continue' }]).then(callback, errorCallback);
 	}
