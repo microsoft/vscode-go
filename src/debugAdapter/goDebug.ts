@@ -761,8 +761,7 @@ class GoDebugSession extends LoggingDebugSession {
 			this.delve.callPromise('Command', [{ name: 'halt' }]).then(() => {
 				return this.setBreakPoints(response, args).then(() => {
 					return this.continue(true).then(null, err => {
-						logError(err);
-						this.sendErrorResponse(response, 2009, 'Failed to continue delve after halting it to set breakpoints: "{e}"', { e: err.toString() });
+						logError(`Failed to continue delve after halting it to set breakpoints: "${err.toString()}"`);
 					});
 				});
 			}, err => {
@@ -1131,6 +1130,7 @@ class GoDebugSession extends LoggingDebugSession {
 				logError('Failed to continue - ' + err.toString());
 			}
 			this.handleReenterDebug('breakpoint');
+			throw err;
 		};
 
 		return this.delve.callPromise('Command', [{ name: 'continue' }]).then(callback, errorCallback);
