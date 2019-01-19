@@ -766,6 +766,7 @@ class GoDebugSession extends LoggingDebugSession {
 					});
 				});
 			}, err => {
+				this.skipStopEventOnce = false;
 				logError(err);
 				return this.sendErrorResponse(response, 2008, 'Failed to halt delve before attempting to set breakpoint: "{e}"', { e: err.toString() });
 			});
