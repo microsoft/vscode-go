@@ -1,4 +1,4 @@
-import { getBinPath, getGoVersion, getToolsEnvVars, getModuleCache } from './util';
+import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModuleCache } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
@@ -29,6 +29,11 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 
 const packageModCache = new Map<string, string>();
 export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
+	const pkgPath = path.dirname(fileuri.fsPath);
+	if (packageModCache.has(pkgPath)) {
+		return Promise.resolve(packageModCache.get(pkgPath));
+	}
+
 	// We never would be using the path under module cache for anything
 	// So, dont bother finding where exactly is the go.mod file
 	const moduleCache = getModuleCache();
@@ -41,12 +46,9 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 			return;
 		}
 
-		const pkgPath = path.dirname(fileuri.fsPath);
-		if (packageModCache.has(pkgPath)) {
-			return packageModCache.get(pkgPath);
-		}
 		return runGoModEnv(pkgPath).then(result => {
 			if (result) {
+				logModuleUsage();
 				result = path.dirname(result);
 				const goConfig = vscode.workspace.getConfiguration('go', fileuri);
 				if (goConfig['inferGopath'] === true) {
@@ -63,6 +65,18 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 
 function alertDisablingInferGopath() {
 	vscode.window.showInformationMessage('The "inferGopath" setting is disabled for this workspace because Go modules are being used.');
+}
+
+let moduleUsageLogged = false;
+function logModuleUsage() {
+	if (moduleUsageLogged) {
+		return;
+	}
+	moduleUsageLogged = true;
+	/* __GDPR__
+		"modules" : {}
+	*/
+	sendTelemetryEvent('modules');
 }
 
 const promptedToolsForCurrentSession = new Set<string>();
