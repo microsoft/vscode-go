@@ -8,10 +8,10 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath } from './util';
+import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCache } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
-import { isModSupported, promptToUpdateToolForModules } from './goModules';
+import { promptToUpdateToolForModules, getModFolderPath } from './goModules';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -31,6 +31,7 @@ interface GoDefinitionInput {
 	word: string;
 	includeDocs: boolean;
 	isMod: boolean;
+	cwd: string;
 }
 
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs: boolean, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
@@ -46,13 +47,14 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	}
 	let toolForDocs = goConfig['docsTool'] || 'godoc';
 	return getGoVersion().then((ver: SemVersion) => {
-		return isModSupported(document.uri).then(isMod => {
+		return getModFolderPath(document.uri).then(modFolderPath => {
 			const input: GoDefinitionInput = {
 				document,
 				position,
 				word,
 				includeDocs,
-				isMod
+				isMod: !!modFolderPath,
+				cwd: (modFolderPath && modFolderPath !== getModuleCache()) ? modFolderPath : getWorkspaceFolderPath(document.uri)
 			};
 			if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
 				return definitionLocation_godef(input, token);
@@ -91,7 +93,6 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
-	const cwd = getWorkspaceFolderPath(input.document.uri);
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
@@ -99,7 +100,7 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 		// if (useReceivers) {
 		// 	args.push('-r');
 		// }
-		p = cp.execFile(godefPath, args, { env, cwd }, (err, stdout, stderr) => {
+		p = cp.execFile(godefPath, args, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + godefTool);
@@ -165,14 +166,13 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
-	const cwd = getWorkspaceFolderPath(input.document.uri);
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		let gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', input.document.fileName + ':#' + offset.toString()];
 		let buildTags = vscode.workspace.getConfiguration('go', input.document.uri)['buildTags'];
 		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
-		p = cp.execFile(gogetdoc, gogetdocFlags, { env, cwd }, (err, stdout, stderr) => {
+		p = cp.execFile(gogetdoc, gogetdocFlags, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'gogetdoc');

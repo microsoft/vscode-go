@@ -415,6 +415,7 @@ export function substituteEnv(input: string): string {
 	});
 }
 
+let currentGopath = '';
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	let currentFilePath: string;
 	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
@@ -451,7 +452,14 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	}
 
 	let configGopath = config['gopath'] ? resolvePath(substituteEnv(config['gopath']), currentRoot) : '';
-	return inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
+	currentGopath = inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
+	return currentGopath;
+}
+
+export function getModuleCache(): string {
+	if (currentGopath) {
+		return path.join(currentGopath.split(path.delimiter)[0], 'pkg', 'mod');
+	}
 }
 
 export function getExtensionCommands(): any[] {
