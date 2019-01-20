@@ -9,7 +9,7 @@ import path = require('path');
 import fs = require('fs');
 import rl = require('readline');
 import { getTempFilePath } from './util';
-import { showTestOutput, goTest, TestConfig } from './testUtils';
+import { showTestOutput, goTest, TestConfig, getTestFlags } from './testUtils';
 import { isModSupported } from './goModules';
 
 let gutterSvgs: { [key: string]: string };
@@ -291,9 +291,9 @@ export function toggleCoverageCurrentPackage() {
 	let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let cwd = path.dirname(editor.document.uri.fsPath);
 
-	let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
+	let args = getTestFlags(goConfig);
 	let tmpCoverPath = getTempFilePath('go-code-cover');
-	let args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
+	args.push('-coverprofile=' + tmpCoverPath);
 	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,

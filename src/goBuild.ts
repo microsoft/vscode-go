@@ -77,7 +77,7 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 	const buildEnv = Object.assign({}, getToolsEnvVars());
 	const tmpPath = getTempFilePath('go-code-check');
 	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
-	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig, null) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
+	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
 	const buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
 
 	if (goConfig['installDependenciesWhenBuilding'] === true && !isMod) {
