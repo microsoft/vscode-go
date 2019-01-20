@@ -107,9 +107,10 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 				if (err) {
 					if (stderr.indexOf('flag provided but not defined: -r') !== -1) {
 						promptForUpdatingTool('godef');
+						p = null;
+						return definitionLocation_godef(input, token, false).then(resolve, reject);
 					}
-					p = null;
-					return definitionLocation_godef(input, token, false).then(resolve, reject);
+					return reject(err.message || stderr);
 				}
 				let result = stdout.toString();
 				let lines = result.split('\n');
