@@ -136,7 +136,7 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 					return resolve(definitionInformation);
 				}
 				match = /^\w+ \(\*?(\w+)\)/.exec(lines[1]);
-				runGodoc(pkgPath, match ? match[1] : '', input.word, token).then(doc => {
+				runGodoc(input.cwd, pkgPath, match ? match[1] : '', input.word, token).then(doc => {
 					if (doc) {
 						definitionInformation.doc = doc;
 					}

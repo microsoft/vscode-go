@@ -120,6 +120,12 @@ export function getCurrentPackage(cwd: string): Promise<string> {
 		return Promise.resolve(folderToPackageMapping[cwd]);
 	}
 
+	const moduleCache = getModuleCache();
+	if (cwd.startsWith(moduleCache)) {
+		folderToPackageMapping[cwd] = cwd.substr(moduleCache.length+1);
+		return Promise.resolve(folderToPackageMapping[cwd]);
+	}
+
 	let goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
