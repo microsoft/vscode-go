@@ -12,6 +12,7 @@ import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCa
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { promptToUpdateToolForModules, getModFolderPath } from './goModules';
+import godocToMarkdown from './godocToMarkdown';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -221,7 +222,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 					column: 0,
 					toolUsed: 'gogetdoc',
 					declarationlines: goGetDocOutput.decl.split('\n'),
-					doc: goGetDocOutput.doc,
+					doc: godocToMarkdown(goGetDocOutput.doc, null),
 					name: goGetDocOutput.name
 				};
 				if (!match) {
