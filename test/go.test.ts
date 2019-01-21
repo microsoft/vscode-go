@@ -166,15 +166,15 @@ suite('Go Extension Tests', () => {
 
 	test('Test SignatureHelp Provider using godoc', (done) => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
-standard output. Spaces are always added between operands and a newline is
-appended. It returns the number of bytes written and any write error
-encountered.
+standard output\\. Spaces are always added between operands and a newline is
+appended\\. It returns the number of bytes written and any write error
+encountered\\.
 `;
 
 		const testCases: [vscode.Position, string, string, string[]][] = [
 			[new vscode.Position(19, 13), 'Println(a ...interface{}) (n int, err error)', printlnDoc, ['a ...interface{}']],
-			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :( Not\nanymore!!\n', ['txt string']],
-			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this\ncorrectly\n', ['s string', 'exclaim bool']],
+			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldn\\\'t get this comment on hover \\:\\( Not\nanymore\\!\\!\n', ['txt string']],
+			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC\\. Will signature help understand this\ncorrectly\n', ['s string', 'exclaim bool']],
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
@@ -189,14 +189,14 @@ encountered.
 			return done();
 		}
 
-		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
-Spaces are always added between operands and a newline is appended.
-It returns the number of bytes written and any write error encountered.
-`;
+		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output\\.
+		Spaces are always added between operands and a newline is appended\\.
+		It returns the number of bytes written and any write error encountered\\.
+		`;
 		const testCases: [vscode.Position, string, string, string[]][] = [
 			[new vscode.Position(19, 13), 'Println(a ...interface{}) (n int, err error)', printlnDoc, ['a ...interface{}']],
-			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :(\nNot anymore!!\n', ['txt string']],
-			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this correctly\n', ['s string', 'exclaim bool']],
+			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldn\\\'t get this comment on hover \\:\\(\nNot anymore\\!\\!\n', ['txt string']],
+			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC\\. Will signature help understand this correctly\n', ['s string', 'exclaim bool']],
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
@@ -207,10 +207,10 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Hover Provider using godoc', (done) => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
-standard output. Spaces are always added between operands and a newline is
-appended. It returns the number of bytes written and any write error
-encountered.
-`;
+		standard output\\.Spaces are always added between operands and a newline is
+		appended\\.It returns the number of bytes written and any write error
+		encountered\\.
+		`;
 		const testCases: [vscode.Position, string, string][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
 			[new vscode.Position(0, 3), null, null], // keyword
@@ -220,7 +220,7 @@ encountered.
 			[new vscode.Position(22, 5), 'main func()', '\n'],
 			[new vscode.Position(40, 23), 'import (math "math")', null],
 			[new vscode.Position(19, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
-			[new vscode.Position(23, 4), 'print func(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :( Not\nanymore!!\n']
+			[new vscode.Position(23, 4), 'print func(txt string)', 'This is an unexported function so couldn\\\'t get this comment on hover \\:\\( Not\nanymore\\!\\!\n']
 		];
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'godoc' }
@@ -234,21 +234,22 @@ encountered.
 			return done();
 		}
 
-		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
-Spaces are always added between operands and a newline is appended.
-It returns the number of bytes written and any write error encountered.
-`;
+		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output\\.
+		Spaces are always added between operands and a newline is appended\\.
+		It returns the number of bytes written and any write error encountered\\.
+		`;
+
 		const testCases: [vscode.Position, string, string][] = [
 			[new vscode.Position(0, 3), null, null], // keyword
 			[new vscode.Position(23, 11), null, null], // inside a string
 			[new vscode.Position(20, 0), null, null], // just a }
 			[new vscode.Position(28, 16), null, null], // inside a number
 			[new vscode.Position(22, 5), 'func main()', ''],
-			[new vscode.Position(23, 4), 'func print(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :(\nNot anymore!!\n'],
-			[new vscode.Position(40, 23), 'package math', 'Package math provides basic constants and mathematical functions.\n\nThis package does not guarantee bit-identical results across architectures.\n'],
+			[new vscode.Position(23, 4), 'func print(txt string)', 'This is an unexported function so couldn\\\'t get this comment on hover \\:\\(\nNot anymore\\!\\!\n'],
+			[new vscode.Position(40, 23), 'package math', 'Package math provides basic constants and mathematical functions\\.\n\nThis package does not guarantee bit\\-identical results across architectures\\.\n'],
 			[new vscode.Position(19, 6), 'func Println(a ...interface{}) (n int, err error)', printlnDoc],
-			[new vscode.Position(27, 14), 'type ABC struct {\n    a int\n    b int\n    c int\n}', 'ABC is a struct, you coudn\'t use Goto Definition or Hover info on this before\nNow you can due to gogetdoc and go doc\n'],
-			[new vscode.Position(28, 6), 'func CIDRMask(ones, bits int) IPMask', 'CIDRMask returns an IPMask consisting of `ones\' 1 bits\nfollowed by 0s up to a total length of `bits\' bits.\nFor a mask of this form, CIDRMask is the inverse of IPMask.Size.\n']
+			[new vscode.Position(27, 14), 'type ABC struct {\n    a int\n    b int\n    c int\n}', 'ABC is a struct\\, you coudn\\\'t use Goto Definition or Hover info on this before\nNow you can due to gogetdoc and go doc\n'],
+			[new vscode.Position(28, 6), 'func CIDRMask(ones, bits int) IPMask', 'CIDRMask returns an IPMask consisting of \\`ones\\\' 1 bits\nfollowed by 0s up to a total length of \\`bits\\\' bits\\.\nFor a mask of this form\\, CIDRMask is the inverse of IPMask\\.Size\\.\n']
 		];
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
@@ -734,9 +735,9 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Completion', (done) => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
-standard output. Spaces are always added between operands and a newline is
-appended. It returns the number of bytes written and any write error
-encountered.
+standard output\\. Spaces are always added between operands and a newline is
+appended\\. It returns the number of bytes written and any write error
+encountered\\.
 `;
 		const provider = new GoCompletionItemProvider();
 		const testCases: [vscode.Position, string, string, string][] = [
