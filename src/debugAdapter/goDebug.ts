@@ -1001,12 +1001,13 @@ class GoDebugSession extends LoggingDebugSession {
 		let vari = this._variableHandles.get(args.variablesReference);
 		let variablesPromise: Promise<DebugProtocol.Variable[]>;
 		const loadChildren = async (exp: string, v: DebugVariable) => {
-			if (v.len > 0 && v.children.length === 0) {
+			// for string types the value of v.len is the string's length so skip evaluation
+			if (v.type !== 'string' && v.len > 0 && v.children.length === 0) {
 				// from https://github.com/derekparker/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
 				await this.evaluateRequestImpl({ 'expression': exp }).then(result => {
 					const variable = this.delve.isApiV1 ? <DebugVariable>result : (<EvalOut>result).Variable;
 					v.children = variable.children;
-				}, err => err /* do nothing on failure */);
+				}, err => logError('Failed to evaluate expression - ' + err.toString()));
 			}
 		};
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
