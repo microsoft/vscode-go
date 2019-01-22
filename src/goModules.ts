@@ -122,8 +122,14 @@ export function getCurrentPackage(cwd: string): Promise<string> {
 
 	const moduleCache = getModuleCache();
 	if (cwd.startsWith(moduleCache)) {
-		folderToPackageMapping[cwd] = cwd.substr(moduleCache.length+1);
-		return Promise.resolve(folderToPackageMapping[cwd]);
+		let importPath = cwd.substr(moduleCache.length + 1);
+		const matches = /@v\d+(\.\d+)?(\.\d+)?/.exec(importPath);
+		if (matches) {
+			importPath = importPath.substr(0, matches.index);
+		}
+
+		folderToPackageMapping[cwd] = importPath;
+		return Promise.resolve(importPath);
 	}
 
 	let goRuntimePath = getBinPath('go');
