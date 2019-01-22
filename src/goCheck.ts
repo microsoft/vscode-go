@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import path = require('path');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
-import { goTest, TestConfig } from './testUtils';
+import { goTest, TestConfig, getTestFlags } from './testUtils';
 import { ICheckResult, getBinPath, getTempFilePath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
@@ -69,7 +69,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	let testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,
-		flags: [],
+		flags: getTestFlags(goConfig),
 		background: true
 	};
 
@@ -78,13 +78,9 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			return testPromise;
 		}
 
-		let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
-
 		if (goConfig['coverOnSave']) {
 			tmpCoverPath = getTempFilePath('go-code-cover');
-			testConfig.flags = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
-		} else {
-			testConfig.flags = [...buildFlags];
+			testConfig.flags.push('-coverprofile=' + tmpCoverPath);
 		}
 
 		testPromise = isModSupported(fileUri).then(isMod => {
