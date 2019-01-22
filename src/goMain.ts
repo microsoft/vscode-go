@@ -52,7 +52,6 @@ import { lintCode } from './goLint';
 import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
-import { updateWorkspaceModCache } from './goModules';
 import { setGlobalState } from './stateUtils';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
@@ -66,7 +65,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	setGlobalState(ctx.globalState);
 
 	updateGoPathGoRootFromConfig().then(() => {
-		updateWorkspaceModCache();
 		const updateToolsCmdText = 'Update tools';
 		const prevGoroot = ctx.globalState.get('goroot');
 		const currentGoroot = process.env['GOROOT'];
@@ -289,11 +287,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
-	vscode.workspace.onDidChangeWorkspaceFolders(e => {
-		if (e.added.length) {
-			updateWorkspaceModCache();
-		}
-	});
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {

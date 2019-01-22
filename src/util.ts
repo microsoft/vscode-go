@@ -415,6 +415,7 @@ export function substituteEnv(input: string): string {
 	});
 }
 
+let currentGopath = '';
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	let currentFilePath: string;
 	if (vscode.window.activeTextEditor) {
@@ -453,7 +454,14 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	}
 
 	let configGopath = config['gopath'] ? resolvePath(substituteEnv(config['gopath']), currentRoot) : '';
-	return inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
+	currentGopath = inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
+	return currentGopath;
+}
+
+export function getModuleCache(): string {
+	if (currentGopath) {
+		return path.join(currentGopath.split(path.delimiter)[0], 'pkg', 'mod');
+	}
 }
 
 export function getExtensionCommands(): any[] {
@@ -890,11 +898,12 @@ export function cleanupTempDir() {
 
 /**
  * Runs `go doc` to get documentation for given symbol
+ * @param cwd The cwd where the go doc process will be run
  * @param packagePath Either the absolute path or import path of the package.
  * @param symbol Symbol for which docs need to be found
  * @param token Cancellation token
  */
-export function runGodoc(packagePath: string, receiver: string, symbol: string, token: vscode.CancellationToken) {
+export function runGodoc(cwd: string, packagePath: string, receiver: string, symbol: string, token: vscode.CancellationToken) {
 	if (!packagePath) {
 		return Promise.reject(new Error('Package Path not provided'));
 	}
@@ -917,7 +926,7 @@ export function runGodoc(packagePath: string, receiver: string, symbol: string, 
 
 			const env = getToolsEnvVars();
 			const args = ['doc', '-c', '-cmd', '-u', packageImportPath, symbol];
-			const p = cp.execFile(goRuntimePath, args, { env }, (err, stdout, stderr) => {
+			const p = cp.execFile(goRuntimePath, args, { env, cwd }, (err, stdout, stderr) => {
 				if (err) {
 					return reject(err.message || stderr);
 				}
