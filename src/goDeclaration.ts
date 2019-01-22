@@ -54,7 +54,8 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				word,
 				includeDocs,
 				isMod: !!modFolderPath,
-				cwd: (modFolderPath && modFolderPath !== getModuleCache()) ? modFolderPath : getWorkspaceFolderPath(document.uri)
+				cwd: (modFolderPath && modFolderPath !== getModuleCache()) 
+				? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
 			};
 			if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
 				return definitionLocation_godef(input, token);
