@@ -45,14 +45,6 @@ enum GoReflectKind {
 	UnsafePointer
 }
 
-enum GoVariableFlags {
-	VariableEscaped = 1,
-	VariableShadowed = 2,
-	VariableConstant = 4,
-	VariableArgument = 8,
-	VariableReturnArgument = 16
-}
-
 // These types should stay in sync with:
 // https://github.com/derekparker/delve/blob/master/service/api/types.go
 
@@ -149,6 +141,14 @@ interface ListFunctionArgsOut {
 
 interface EvalOut {
 	Variable: DebugVariable;
+}
+
+enum GoVariableFlags {
+	VariableEscaped = 1,
+	VariableShadowed = 2,
+	VariableConstant = 4,
+	VariableArgument = 8,
+	VariableReturnArgument = 16
 }
 
 interface DebugVariable {
