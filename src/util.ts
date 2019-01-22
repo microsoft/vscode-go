@@ -417,9 +417,11 @@ export function substituteEnv(input: string): string {
 
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	let currentFilePath: string;
-	if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-		workspaceUri = workspaceUri || vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
+	if (vscode.window.activeTextEditor) {
 		currentFilePath = vscode.window.activeTextEditor.document.uri.fsPath;
+		if (!workspaceUri && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
+			workspaceUri = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
+		}
 	}
 	const config = vscode.workspace.getConfiguration('go', workspaceUri);
 	let currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
