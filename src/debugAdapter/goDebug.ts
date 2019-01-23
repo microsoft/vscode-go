@@ -158,6 +158,7 @@ interface DebugVariable {
 	realType: string;
 	kind: GoReflectKind;
 	flags: GoVariableFlags;
+	onlyAddr: boolean;
 	DeclLine: number;
 	value: string;
 	len: number;
@@ -890,6 +891,7 @@ class GoDebugSession extends LoggingDebugSession {
 					realType: '',
 					kind: 0,
 					flags: 0,
+					onlyAddr: false,
 					DeclLine: 0,
 					value: '',
 					len: 0,
@@ -940,6 +942,7 @@ class GoDebugSession extends LoggingDebugSession {
 							realType: '',
 							kind: 0,
 							flags: 0,
+							onlyAddr: false,
 							DeclLine: 0,
 							value: '',
 							len: 0,
@@ -1043,18 +1046,20 @@ class GoDebugSession extends LoggingDebugSession {
 		let vari = this._variableHandles.get(args.variablesReference);
 		let variablesPromise: Promise<DebugProtocol.Variable[]>;
 		const loadChildren = async (exp: string, v: DebugVariable) => {
-			// for string types the value of v.len is the string's length so skip evaluation
-			if (v.type !== 'string' && v.len > 0 && v.children.length === 0) {
-				// from https://github.com/derekparker/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
+			// from https://github.com/go-delve/delve/blob/master/Documentation/api/ClientHowto.md#looking-into-variables
+			if (((v.kind === GoReflectKind.Array || v.kind === GoReflectKind.Slice || v.kind === GoReflectKind.Struct) && v.len > v.children.length) ||
+				(v.kind === GoReflectKind.Map && v.len > v.children.length / 2) ||
+				(v.kind === GoReflectKind.Interface && v.children.length > 0 && v.children[0].onlyAddr === true)) {
 				await this.evaluateRequestImpl({ 'expression': exp }).then(result => {
 					const variable = this.delve.isApiV1 ? <DebugVariable>result : (<EvalOut>result).Variable;
 					v.children = variable.children;
 				}, err => logError('Failed to evaluate expression - ' + err.toString()));
 			}
 		};
+		// expressions passed to loadChildren defined per https://github.com/derekparker/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
 			variablesPromise = Promise.all(vari.children.map(async (v, i) => {
-					await loadChildren(`*(*${v.type})(${v.addr})`, v);
+					await loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v);
 					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
 					return {
 						name: '[' + i + ']',
@@ -1088,7 +1093,7 @@ class GoDebugSession extends LoggingDebugSession {
 				if (v.fullyQualifiedName === undefined) {
 					v.fullyQualifiedName = vari.fullyQualifiedName + '.' + v.name;
 				}
-				await loadChildren(`*(*${v.type})(${v.addr})`, v);
+				await loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v);
 				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
 				return {
 					name: v.name,
@@ -1103,6 +1108,16 @@ class GoDebugSession extends LoggingDebugSession {
 			this.sendResponse(response);
 			log('VariablesResponse', JSON.stringify(variables, null, ' '));
 		});
+	}
+
+	// removes all parts of the repo path from a type name.
+	// e.g. github.com/some/repo/package.TypeName becomes package.TypeName
+	private removeRepoFromTypeName(typeName: string): string {
+		const i = typeName.lastIndexOf('/');
+		if (i === -1) {
+			return typeName;
+		}
+		return typeName.substr(i + 1);
 	}
 
 	private handleReenterDebug(reason: string): void {
