@@ -21,6 +21,11 @@ When your pull-request is created, a bot will evaluate whether you have signed t
 
 Signing the CLA might sound scary but it's actually very simple and can be done in less than a minute :)
 
+### Contributing to snippets
+
+The `go.json` in this repo contains all the Code Snippets that is provided by this plugin. If you want to add more snippets, please create an issue first. If this issue gets atleast 10 upvotes, we will then consider adding your snippets to the plugin.
+
+We have this policy in place because excessive snippets will hinder the normal coding by adding unexpected entries in the auto-completion widget. Therefore, we want to add a snippet only after atleast 10 users from the community have upvoted it.
 
 ## Asking Questions
 
