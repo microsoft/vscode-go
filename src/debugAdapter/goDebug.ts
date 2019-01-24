@@ -1018,6 +1018,11 @@ class GoDebugSession extends LoggingDebugSession {
 				result: '<' + v.type + '> (length: ' + v.len + ', cap: ' + v.cap + ')',
 				variablesReference: this._variableHandles.create(v)
 			};
+		} else if (v.kind === GoReflectKind.Map) {
+			return {
+				result: '<' + v.type + '> (length: ' + v.len + ')',
+				variablesReference: this._variableHandles.create(v)
+			};
 		} else if (v.kind === GoReflectKind.Array) {
 			return {
 				result: '<' + v.type + '>',
@@ -1058,49 +1063,48 @@ class GoDebugSession extends LoggingDebugSession {
 		};
 		// expressions passed to loadChildren defined per https://github.com/derekparker/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
-			variablesPromise = Promise.all(vari.children.map(async (v, i) => {
-					await loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v);
-					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
-					return {
-						name: '[' + i + ']',
-						value: result,
-						evaluateName: vari.fullyQualifiedName + '[' + i + ']',
-						variablesReference
-					};
+			variablesPromise = Promise.all(vari.children.map((v, i) => {
+					return loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v).then((): DebugProtocol.Variable => {
+						let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
+						return {
+							name: '[' + i + ']',
+							value: result,
+							evaluateName: vari.fullyQualifiedName + '[' + i + ']',
+							variablesReference
+						};
+					});
 				})
 			);
 		} else if (vari.kind === GoReflectKind.Map) {
-			variablesPromise = Promise.resolve((async () => {
-				const variables = new Array<DebugProtocol.Variable>();
-				for (let i = 0; i < vari.children.length; i += 2) {
-					if (i + 1 >= vari.children.length) {
-						break;
-					}
+			variablesPromise = Promise.all(vari.children.map((_, i) => {
+				// even indices are map keys, odd indices are values
+				if (i % 2 === 0 && i + 1 < vari.children.length) {
 					let mapKey = this.convertDebugVariableToProtocolVariable(vari.children[i]);
-					await loadChildren(`${vari.fullyQualifiedName}.${vari.name}[${mapKey.result}]`, vari.children[i + 1]);
-					let mapValue = this.convertDebugVariableToProtocolVariable(vari.children[i + 1]);
-					variables.push({
-						name: mapKey.result,
-						value: mapValue.result,
-						evaluateName: vari.fullyQualifiedName + '[' + mapKey.result + ']',
-						variablesReference: mapValue.variablesReference
+					return loadChildren(`${vari.fullyQualifiedName}.${vari.name}[${mapKey.result}]`, vari.children[i + 1]).then(() => {
+						let mapValue = this.convertDebugVariableToProtocolVariable(vari.children[i + 1]);
+						return {
+							name: mapKey.result,
+							value: mapValue.result,
+							evaluateName: vari.fullyQualifiedName + '[' + mapKey.result + ']',
+							variablesReference: mapValue.variablesReference
+						};
 					});
 				}
-				return variables;
-			})());
+			}));
 		} else {
-			variablesPromise = Promise.all(vari.children.map(async (v, i) => {
+			variablesPromise = Promise.all(vari.children.map((v) => {
 				if (v.fullyQualifiedName === undefined) {
 					v.fullyQualifiedName = vari.fullyQualifiedName + '.' + v.name;
 				}
-				await loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v);
-				let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
-				return {
-					name: v.name,
-					value: result,
-					evaluateName: v.fullyQualifiedName,
-					variablesReference
-				};
+				return loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v).then((): DebugProtocol.Variable => {
+					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
+					return {
+						name: v.name,
+						value: result,
+						evaluateName: v.fullyQualifiedName,
+						variablesReference
+					};
+				});
 			}));
 		}
 		variablesPromise.then((variables) => {
