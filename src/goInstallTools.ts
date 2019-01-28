@@ -31,6 +31,7 @@ const _allTools: { [key: string]: string } = {
 	'gogetdoc': 'github.com/zmb3/gogetdoc',
 	'goimports': 'golang.org/x/tools/cmd/goimports',
 	'goreturns': 'github.com/sqs/goreturns',
+	'gomultifmt': 'github.com/Eun/gomultifmt',
 	'goformat': 'winterdrache.de/goformat/goformat',
 	'golint': 'golang.org/x/lint/golint',
 	'gotests': 'github.com/cweill/gotests/...',
