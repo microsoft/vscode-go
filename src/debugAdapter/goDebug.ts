@@ -545,7 +545,7 @@ class GoDebugSession extends LoggingDebugSession {
 	private _variableHandles: Handles<DebugVariable>;
 	private breakpoints: Map<string, DebugBreakpoint[]>;
 	private skipStopEventOnce: boolean; // Editing breakpoints requires halting delve, skip sending Stop Event to VS Code in such cases
-	private threads: Set<number>;
+	private goroutines: Set<number>;
 	private debugState: DebuggerState;
 	private delve: Delve;
 	private localPathSeparator: string;
@@ -560,7 +560,7 @@ class GoDebugSession extends LoggingDebugSession {
 		super('', debuggerLinesStartAt1, isServer);
 		this._variableHandles = new Handles<DebugVariable>();
 		this.skipStopEventOnce = false;
-		this.threads = new Set<number>();
+		this.goroutines = new Set<number>();
 		this.debugState = null;
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
@@ -706,26 +706,26 @@ class GoDebugSession extends LoggingDebugSession {
 		return pathToConvert.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
 	}
 
-	private updateThreads(goroutines: DebugGoroutine[]): void {
+	private updateGoroutinesList(goroutines: DebugGoroutine[]): void {
 		// Assume we need to stop all the threads we saw before...
 		let needsToBeStopped = new Set<number>();
-		this.threads.forEach(id => needsToBeStopped.add(id));
+		this.goroutines.forEach(id => needsToBeStopped.add(id));
 		for (let goroutine of goroutines) {
 			// ...but delete from list of threads to stop if we still see it
 			needsToBeStopped.delete(goroutine.id);
-			if (!this.threads.has(goroutine.id)) {
+			if (!this.goroutines.has(goroutine.id)) {
 				// Send started event if it's new
 				this.sendEvent(new ThreadEvent('started', goroutine.id));
 			}
-			this.threads.add(goroutine.id);
+			this.goroutines.add(goroutine.id);
 		}
 		// Send existed event if it's no longer there
 		needsToBeStopped.forEach(id => {
 			this.sendEvent(new ThreadEvent('exited', id));
-			this.threads.delete(id);
+			this.goroutines.delete(id);
 		});
 	}
-	
+
 	private setBreakPoints(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Thenable<void> {
 		let file = normalizePath(args.source.path);
 		if (!this.breakpoints.get(file)) {
@@ -823,7 +823,7 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 			const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
 			log('goroutines', goroutines);
-			this.updateThreads(goroutines);
+			this.updateGoroutinesList(goroutines);
 			let threads = goroutines.map(goroutine =>
 				new Thread(
 					goroutine.id,
@@ -1139,7 +1139,7 @@ class GoDebugSession extends LoggingDebugSession {
 					logError('Failed to get threads - ' + err.toString());
 				}
 				const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
-				this.updateThreads(goroutines);
+				this.updateGoroutinesList(goroutines);
 				if (!this.debugState.currentGoroutine && goroutines.length > 0) {
 					this.debugState.currentGoroutine = goroutines[0];
 				}
