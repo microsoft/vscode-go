@@ -143,12 +143,22 @@ interface EvalOut {
 	Variable: DebugVariable;
 }
 
+enum GoVariableFlags {
+	VariableEscaped = 1,
+	VariableShadowed = 2,
+	VariableConstant = 4,
+	VariableArgument = 8,
+	VariableReturnArgument = 16
+}
+
 interface DebugVariable {
 	name: string;
 	addr: number;
 	type: string;
 	realType: string;
 	kind: GoReflectKind;
+	flags: GoVariableFlags;
+	DeclLine: number;
 	value: string;
 	len: number;
 	cap: number;
@@ -534,6 +544,7 @@ class GoDebugSession extends LoggingDebugSession {
 
 	private _variableHandles: Handles<DebugVariable>;
 	private breakpoints: Map<string, DebugBreakpoint[]>;
+	private skipStopEventOnce: boolean; // Editing breakpoints requires halting delve, skip sending Stop Event to VS Code in such cases
 	private threads: Set<number>;
 	private debugState: DebuggerState;
 	private delve: Delve;
@@ -548,6 +559,7 @@ class GoDebugSession extends LoggingDebugSession {
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super('', debuggerLinesStartAt1, isServer);
 		this._variableHandles = new Handles<DebugVariable>();
+		this.skipStopEventOnce = false;
 		this.threads = new Set<number>();
 		this.debugState = null;
 		this.delve = null;
@@ -694,15 +706,34 @@ class GoDebugSession extends LoggingDebugSession {
 		return pathToConvert.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
 	}
 
-	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
-		log('SetBreakPointsRequest');
+	private updateThreads(goroutines: DebugGoroutine[]): void {
+		// Assume we need to stop all the threads we saw before...
+		let needsToBeStopped = new Set<number>();
+		this.threads.forEach(id => needsToBeStopped.add(id));
+		for (let goroutine of goroutines) {
+			// ...but delete from list of threads to stop if we still see it
+			needsToBeStopped.delete(goroutine.id);
+			if (!this.threads.has(goroutine.id)) {
+				// Send started event if it's new
+				this.sendEvent(new ThreadEvent('started', goroutine.id));
+			}
+			this.threads.add(goroutine.id);
+		}
+		// Send existed event if it's no longer there
+		needsToBeStopped.forEach(id => {
+			this.sendEvent(new ThreadEvent('exited', id));
+			this.threads.delete(id);
+		});
+	}
+	
+	private setBreakPoints(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Thenable<void> {
 		let file = normalizePath(args.source.path);
 		if (!this.breakpoints.get(file)) {
 			this.breakpoints.set(file, []);
 		}
 		let remoteFile = this.toDebuggerPath(file);
 
-		Promise.all(this.breakpoints.get(file).map(existingBP => {
+		return Promise.all(this.breakpoints.get(file).map(existingBP => {
 			log('Clearing: ' + existingBP.id);
 			return this.delve.callPromise('ClearBreakpoint', [this.delve.isApiV1 ? existingBP.id : { Id: existingBP.id }]);
 		})).then(() => {
@@ -751,24 +782,24 @@ class GoDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	private updateThreads(goroutines: DebugGoroutine[]): void {
-		// Assume we need to stop all the threads we saw before...
-		let needsToBeStopped = new Set<number>();
-		this.threads.forEach(id => needsToBeStopped.add(id));
-		for (let goroutine of goroutines) {
-			// ...but delete from list of threads to stop if we still see it
-			needsToBeStopped.delete(goroutine.id);
-			if (!this.threads.has(goroutine.id)) {
-				// Send started event if it's new
-				this.sendEvent(new ThreadEvent('started', goroutine.id));
-			}
-			this.threads.add(goroutine.id);
+	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
+		log('SetBreakPointsRequest');
+		if (!this.continueRequestRunning) {
+			this.setBreakPoints(response, args);
+		} else {
+			this.skipStopEventOnce = true;
+			this.delve.callPromise('Command', [{ name: 'halt' }]).then(() => {
+				return this.setBreakPoints(response, args).then(() => {
+					return this.continue(true).then(null, err => {
+						logError(`Failed to continue delve after halting it to set breakpoints: "${err.toString()}"`);
+					});
+				});
+			}, err => {
+				this.skipStopEventOnce = false;
+				logError(err);
+				return this.sendErrorResponse(response, 2008, 'Failed to halt delve before attempting to set breakpoint: "{e}"', { e: err.toString() });
+			});
 		}
-		// Send existed event if it's no longer there
-		needsToBeStopped.forEach(id => {
-			this.sendEvent(new ThreadEvent('exited', id));
-			this.threads.delete(id);
-		});
 	}
 
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
@@ -864,7 +895,35 @@ class GoDebugSession extends LoggingDebugSession {
 				log('functionArgs', args);
 				this.addFullyQualifiedName(args);
 				let vars = args.concat(locals);
-
+				// annotate shadowed variables in parentheses
+				const shadowedVars = new Map<string, Array<number>>();
+				for (let i = 0; i < vars.length; ++i) {
+					if ((vars[i].flags & GoVariableFlags.VariableShadowed) === 0) {
+						continue;
+					}
+					const varName = vars[i].name;
+					if (!shadowedVars.has(varName)) {
+						const indices = new Array<number>();
+						indices.push(i);
+						shadowedVars.set(varName, indices);
+					} else {
+						shadowedVars.get(varName).push(i);
+					}
+				}
+				for (const svIndices of shadowedVars.values()) {
+					// sort by declared line number in descending order
+					svIndices.sort((lhs: number, rhs: number) => {
+						return vars[rhs].DeclLine - vars[lhs].DeclLine;
+					});
+					// enclose in parentheses, one pair per scope
+					for (let scope = 0; scope < svIndices.length; ++scope) {
+						const svIndex = svIndices[scope];
+						// start at -1 so scope of 0 has one pair of parens
+						for (let count = -1; count < scope; ++count) {
+							vars[svIndex].name = `(${vars[svIndex].name})`;
+						}
+					}
+				}
 				let scopes = new Array<Scope>();
 				let localVariables = {
 					name: 'Local',
@@ -872,6 +931,8 @@ class GoDebugSession extends LoggingDebugSession {
 					type: '',
 					realType: '',
 					kind: 0,
+					flags: 0,
+					DeclLine: 0,
 					value: '',
 					len: 0,
 					cap: 0,
@@ -920,6 +981,8 @@ class GoDebugSession extends LoggingDebugSession {
 							type: '',
 							realType: '',
 							kind: 0,
+							flags: 0,
+							DeclLine: 0,
 							value: '',
 							len: 0,
 							cap: 0,
@@ -1081,6 +1144,11 @@ class GoDebugSession extends LoggingDebugSession {
 					this.debugState.currentGoroutine = goroutines[0];
 				}
 
+				if (this.skipStopEventOnce) {
+					this.skipStopEventOnce = false;
+					return;
+				}
+
 				let stoppedEvent = new StoppedEvent(reason, this.debugState.currentGoroutine.id);
 				(<any>stoppedEvent.body).allThreadsStopped = true;
 				this.sendEvent(stoppedEvent);
@@ -1088,25 +1156,39 @@ class GoDebugSession extends LoggingDebugSession {
 			});
 		}
 	}
+
 	private continueEpoch = 0;
 	private continueRequestRunning = false;
-	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
-		log('ContinueRequest');
+	private continue(calledWhenSettingBreakpoint?: boolean): Thenable<void> {
 		this.continueEpoch++;
 		let closureEpoch = this.continueEpoch;
 		this.continueRequestRunning = true;
-		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'continue' }], (err, out) => {
+
+		const callback = (out) => {
 			if (closureEpoch === this.continueEpoch) {
 				this.continueRequestRunning = false;
-			}
-			if (err) {
-				logError('Failed to continue - ' + err.toString());
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			log('continue state', state);
 			this.debugState = state;
 			this.handleReenterDebug('breakpoint');
-		});
+		};
+
+		// If called when setting breakpoint internally, we want the error to bubble up.
+		const errorCallback = calledWhenSettingBreakpoint ? null : (err) => {
+			if (err) {
+				logError('Failed to continue - ' + err.toString());
+			}
+			this.handleReenterDebug('breakpoint');
+			throw err;
+		};
+
+		return this.delve.callPromise('Command', [{ name: 'continue' }]).then(callback, errorCallback);
+	}
+
+	protected continueRequest(response: DebugProtocol.ContinueResponse): void {
+		log('ContinueRequest');
+		this.continue();
 		this.sendResponse(response);
 		log('ContinueResponse');
 	}
