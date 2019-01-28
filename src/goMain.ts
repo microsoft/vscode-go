@@ -332,15 +332,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		testAtCursor(goConfig, isBenchmark, args);
 	}));
 
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.debug', (args) => {
+		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		debugTestAtCursor(goConfig, args);
+	}));
+
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.cursor', (args) => {
 		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		let isBenchmark = true;
 		testAtCursor(goConfig, isBenchmark, args);
-	}));
-
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.debug', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		debugTestAtCursor(goConfig, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', (args) => {
