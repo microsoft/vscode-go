@@ -305,7 +305,6 @@ export function toggleCoverageCurrentPackage() {
 		return goTest(testConfig).then(success => {
 			if (!success) {
 				showTestOutput();
-				return [];
 			}
 			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 		});
