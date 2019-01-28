@@ -545,7 +545,7 @@ class GoDebugSession extends LoggingDebugSession {
 	private _variableHandles: Handles<DebugVariable>;
 	private breakpoints: Map<string, DebugBreakpoint[]>;
 	private skipStopEventOnce: boolean; // Editing breakpoints requires halting delve, skip sending Stop Event to VS Code in such cases
-	private threads: Set<number>;
+	private goroutines: Set<number>;
 	private debugState: DebuggerState;
 	private delve: Delve;
 	private localPathSeparator: string;
@@ -560,7 +560,7 @@ class GoDebugSession extends LoggingDebugSession {
 		super('', debuggerLinesStartAt1, isServer);
 		this._variableHandles = new Handles<DebugVariable>();
 		this.skipStopEventOnce = false;
-		this.threads = new Set<number>();
+		this.goroutines = new Set<number>();
 		this.debugState = null;
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
@@ -706,6 +706,26 @@ class GoDebugSession extends LoggingDebugSession {
 		return pathToConvert.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
 	}
 
+	private updateGoroutinesList(goroutines: DebugGoroutine[]): void {
+		// Assume we need to stop all the threads we saw before...
+		let needsToBeStopped = new Set<number>();
+		this.goroutines.forEach(id => needsToBeStopped.add(id));
+		for (let goroutine of goroutines) {
+			// ...but delete from list of threads to stop if we still see it
+			needsToBeStopped.delete(goroutine.id);
+			if (!this.goroutines.has(goroutine.id)) {
+				// Send started event if it's new
+				this.sendEvent(new ThreadEvent('started', goroutine.id));
+			}
+			this.goroutines.add(goroutine.id);
+		}
+		// Send existed event if it's no longer there
+		needsToBeStopped.forEach(id => {
+			this.sendEvent(new ThreadEvent('exited', id));
+			this.goroutines.delete(id);
+		});
+	}
+
 	private setBreakPoints(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Thenable<void> {
 		let file = normalizePath(args.source.path);
 		if (!this.breakpoints.get(file)) {
@@ -785,12 +805,12 @@ class GoDebugSession extends LoggingDebugSession {
 	protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
 		if (this.continueRequestRunning) {
 			// Thread request to delve is syncronous and will block if a previous async continue request didn't return
-			response.body = { threads: [] };
+			response.body = { threads: [new Thread(1, 'Dummy')] };
 			return this.sendResponse(response);
 		}
 		log('ThreadsRequest');
 		this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [], (err, out) => {
-			if (this.debugState.exited) {
+			if (this.debugState && this.debugState.exited) {
 				// If the program exits very quickly, the initial threadsRequest will complete after it has exited.
 				// A TerminatedEvent has already been sent. Ignore the err returned in this case.
 				response.body = { threads: [] };
@@ -803,6 +823,7 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 			const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
 			log('goroutines', goroutines);
+			this.updateGoroutinesList(goroutines);
 			let threads = goroutines.map(goroutine =>
 				new Thread(
 					goroutine.id,
@@ -1118,23 +1139,10 @@ class GoDebugSession extends LoggingDebugSession {
 					logError('Failed to get threads - ' + err.toString());
 				}
 				const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
-				// Assume we need to stop all the threads we saw before...
-				let needsToBeStopped = new Set<number>();
-				this.threads.forEach(id => needsToBeStopped.add(id));
-				for (let goroutine of goroutines) {
-					// ...but delete from list of threads to stop if we still see it
-					needsToBeStopped.delete(goroutine.id);
-					if (!this.threads.has(goroutine.id)) {
-						// Send started event if it's new
-						this.sendEvent(new ThreadEvent('started', goroutine.id));
-					}
-					this.threads.add(goroutine.id);
+				this.updateGoroutinesList(goroutines);
+				if (!this.debugState.currentGoroutine && goroutines.length > 0) {
+					this.debugState.currentGoroutine = goroutines[0];
 				}
-				// Send existed event if it's no longer there
-				needsToBeStopped.forEach(id => {
-					this.sendEvent(new ThreadEvent('exited', id));
-					this.threads.delete(id);
-				});
 
 				if (this.skipStopEventOnce) {
 					this.skipStopEventOnce = false;
@@ -1239,9 +1247,11 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			log('pause state', state);
-			this.sendResponse(response);
-			log('PauseResponse');
+			this.debugState = state;
+			this.handleReenterDebug('pause');
 		});
+		this.sendResponse(response);
+		log('PauseResponse');
 	}
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
