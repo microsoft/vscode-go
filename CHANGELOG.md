@@ -1,3 +1,71 @@
+## 0.8.1 - Coming Soon
+
+### Debugging improvements
+
+* [@xiphon](https://github.com/xiphon)
+    * Fix the Pause command. Fixes [Bug 978](https://github.com/Microsoft/vscode-go/issues/978) with [PR 2126](https://github.com/Microsoft/vscode-go/pull/2126)
+    * Allow adding/removing breakpoints when debuggee is running. Fixes [Bug 2002](https://github.com/Microsoft/vscode-go/issues/2002) with [PR 2128](https://github.com/Microsoft/vscode-go/pull/2128)
+    * Use unique stack frame ids to be compliant with Debug Adapter Protocol. [PR 2130](https://github.com/Microsoft/vscode-go/pull/2130)
+
+* [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
+    * Display nested content in variables pane. Fixes [Bug 1010](https://github.com/Microsoft/vscode-go/issues/1010) with [PR 2198](https://github.com/Microsoft/vscode-go/pull/2198)
+    * Display shadowed variables in variables pane. Fixes [Bug 1974](https://github.com/Microsoft/vscode-go/issues/1974) with [PR 2254](https://github.com/Microsoft/vscode-go/pull/2254)
+
+* [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
+    * Fix bug that got introduced in the previous release where only the top call stack frame was shown. Fixes [Bug 2187](https://github.com/Microsoft/vscode-go/issues/2187) with [PR 2200](https://github.com/Microsoft/vscode-go/pull/2200)
+
+* [Bryce Kahle (@brycekahle)](https://github.com/brycekahle)
+    * Use `LoggingDebugSession` to show logs from the VS Code debug adapter. [Feature Request 858](https://github.com/Microsoft/vscode-go/issues/858) implemented with [PR 2081](https://github.com/Microsoft/vscode-go/pull/2081)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Trace levels updated to include `log` which would be the old `verbose`. The new `verbose` will include logs from the VS Code debug adapter. 
+    * Avoid showing global variables by default as it affects performance. [PR 2133](https://github.com/Microsoft/vscode-go/pull/2133)
+
+* [Kuntal Majumder (@hellozee)](https://github.com/hellozee)
+    * Use the new respository link for delve. [PR 2277](https://github.com/Microsoft/vscode-go/pull/2277)
+
+* [Jonathan Hernández (@aggressivepixels)](https://github.com/aggressivepixels)
+    * Skip installing delve on 32 bit platforms that dont support it. Fixes [Bug 2191](https://github.com/Microsoft/vscode-go/issues/2191) with [PR 2195](https://github.com/Microsoft/vscode-go/pull/2195)
+
+
+### Others
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * When no folder is opened in VS Code, `Go to definition` feature now works on individual files. Fixes [Bug 2246](https://github.com/Microsoft/vscode-go/issues/2246) with [commit 58817b8](https://github.com/Microsoft/vscode-go/commit/58817b85b1609c3d939f9f6b5429817fafe93c69)
+    * When the main module is opened in VS Code, `Go to definition` feature now works for sub modules as well. Fixes [Bug 2180](https://github.com/Microsoft/vscode-go/issues/2180) with [PR 2262](https://github.com/Microsoft/vscode-go/pull/2262)
+    * Run the on save features only for current file. This will improve performance when multiple files are being saved at once, for eg: after find replace across files. Fixes [Bug 2202](https://github.com/Microsoft/vscode-go/issues/2202) with [commit cf0a61c](https://github.com/Microsoft/vscode-go/commit/cf0a61c20b6b883e57c01e344ec943024cbccad7)
+    * Allow disabling of documentation in the auto-completion widget to solve the perf issue due to multiple `go doc` processes being spawned. Fixes [Bug 2152](https://github.com/Microsoft/vscode-go/issues/2152) with [commit e4522ba1](https://github.com/Microsoft/vscode-go/commit/e4522ba15e8216e2bafd330453bc21ad4ce42771). This is done using the flag `-excludeDocs` in the `go.gocodeFlags` setting.
+    
+* [Catalin Pirvu (@katakonst)](https://github.com/katakonst)
+    * Show test coverage even if the test fails. [Feature Request 2193](https://github.com/Microsoft/vscode-go/issues/2193) implemented with [PR 2263](https://github.com/Microsoft/vscode-go/pull/2263)
+
+* [Karl Goffin (@kagof)](https://github.com/kagof)
+    * Suggest exported member name only at the start of the comment. Fixes [Bug 2063](https://github.com/Microsoft/vscode-go/issues/2063) with [PR 2070](https://github.com/Microsoft/vscode-go/pull/2070)
+
+* [Kaarthik Rao Bekal Radhakrishna (@karthikraobr)](https://github.com/karthikraobr)
+    * Avoid invalidating code coverage when updating single line comments. [PR 1996](https://github.com/Microsoft/vscode-go/pull/1996)
+
+* [Shreyas Karnik (@shreyu86)](https://github.com/shreyu86)
+    * Fix tool descriptions in the dropdown from `Go: Install/Update Tools` command. [PR 2235](https://github.com/
+Microsoft/vscode-go/pull/2235)
+
+* [Sardorbek (@oneslash)](https://github.com/oneslash)
+    * Use `godef` instead of the fork for modules as all changes are merged upstream now. [PR 2234](https://github.com/Microsoft/vscode-go/pull/2234)
+    * Replace use of megacheck with staticcheck as the former is deprecated. Fixes [Bug 2231](https://github.com/Microsoft/vscode-go/issues/2231) with [PR 2232](https://github.com/Microsoft/vscode-go/pull/2232)
+
+* [kerem (@keremgocen)](https://github.com/keremgocen)
+    * Check if the file at the expected tool path is executable before using it. Fixes [Bug 2220](https://github.com/Microsoft/vscode-go/issues/2220) with [PR 2230](https://github.com/Microsoft/vscode-go/pull/2230)
+
+
+* [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
+    * Use the right documentation in auto-completion widget when there are multiple functions of the same name but on different receivers. Fixes [Bug 2107](https://github.com/Microsoft/vscode-go/issues/2107) with [PR 2215](https://github.com/Microsoft/vscode-go/pull/2215)
+
+* [@richardatphilo](https://github.com/richardatphilo)
+    * Fix `Find all references` feature when text is selected. Fixes [Bug 2197](https://github.com/Microsoft/vscode-go/issues/2197) with [PR 2226](https://github.com/Microsoft/vscode-go/pull/2226)
+
+
+
+
 ## 0.8.0 - 12th December, 2018
 
 ### Modules
