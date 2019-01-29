@@ -122,7 +122,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBe
 	isModSupported(editor.document.uri).then(isMod => {
 		testConfig.isMod = isMod;
 		return goTest(testConfig).then(success => {
-			if (success && tmpCoverPath) {
+			if (tmpCoverPath) {
 				return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 			}
 		}, err => {
