@@ -14,6 +14,7 @@ import { outputChannel } from './goStatus';
 import { NearestNeighborDict, Node } from './avlTree';
 import { getCurrentPackage } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { getTestFlags } from './testUtils';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -958,4 +959,12 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 			}
 		});
 	});
+}
+
+export function removeRunFlag(flags: string[]): string[]{
+	const index: number = flags.indexOf("-run");
+	if (index !== -1) {
+		flags.splice(index,2);
+	}
+	return flags
 }

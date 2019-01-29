@@ -10,7 +10,7 @@ import path = require('path');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest, TestConfig, getTestFlags } from './testUtils';
-import { ICheckResult, getBinPath, getTempFilePath } from './util';
+import { ICheckResult, getBinPath, getTempFilePath, removeRunFlag } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
@@ -69,7 +69,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	let testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,
-		flags: getTestFlags(goConfig),
+		flags: removeRunFlag(getTestFlags(goConfig)),
 		background: true
 	};
 

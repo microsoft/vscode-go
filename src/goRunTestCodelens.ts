@@ -10,7 +10,7 @@ import path = require('path');
 import { TextDocument, CancellationToken, CodeLens, Command } from 'vscode';
 import { getTestFunctions, getBenchmarkFunctions, getTestFlags, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { GoDocumentSymbolProvider } from './goOutline';
-import { getCurrentGoPath } from './util';
+import { getCurrentGoPath, removeRunFlag } from './util';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
@@ -92,7 +92,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		const program = path.dirname(document.fileName);
 		const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
 		const envFile = vsConfig['testEnvFile'];
-		const buildFlags = getTestFlags(vsConfig);
+		const buildFlags = removeRunFlag(getTestFlags(vsConfig));
 		if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 			buildFlags.push('-tags');
 			buildFlags.push(`${vsConfig['buildTags']}`);

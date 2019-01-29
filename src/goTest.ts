@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import os = require('os');
-import { getTempFilePath } from './util';
+import { getTempFilePath, removeRunFlag } from './util';
 import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { isModSupported } from './goModules';
@@ -149,7 +149,7 @@ export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any
 	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: workspaceUri.fsPath,
-		flags: getTestFlags(goConfig, args),
+		flags: removeRunFlag(getTestFlags(goConfig, args)),
 		includeSubDirectories: true
 	};
 	// Remember this config as the last executed test.
@@ -187,7 +187,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBench
 			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
-				flags: getTestFlags(goConfig, args),
+				flags: removeRunFlag(getTestFlags(goConfig, args)),
 				functions: testFunctions.map(sym => sym.name),
 				isBenchmark: isBenchmark,
 			};
@@ -225,7 +225,7 @@ export function testPrevious() {
  */
 function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
 	let tmpCoverPath = '';
-	let testFlags = getTestFlags(goConfig, args) || [];
+	let testFlags = removeRunFlag(getTestFlags(goConfig, args) || []);
 	if (goConfig[confFlag] === true) {
 		tmpCoverPath = getTempFilePath('go-code-cover');
 		testFlags.push('-coverprofile=' + tmpCoverPath);
