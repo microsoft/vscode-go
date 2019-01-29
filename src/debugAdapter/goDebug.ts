@@ -1171,7 +1171,14 @@ class GoDebugSession extends LoggingDebugSession {
 		return typeName.substr(i + 1);
 	}
 
+	private cleanupHandles(): void {
+		this._variableHandles.reset();
+		this.stackFrameHandles.reset();
+	}
+
 	private handleReenterDebug(reason: string): void {
+		this.cleanupHandles();
+
 		if (this.debugState.exited) {
 			this.sendEvent(new TerminatedEvent());
 			log('TerminatedEvent');
