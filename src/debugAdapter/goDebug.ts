@@ -1026,7 +1026,9 @@ class GoDebugSession extends LoggingDebugSession {
 					return resolve();
 				}
 				const spaceIndex = stdout.indexOf(' ');
-				resolve(stdout.substr(0, spaceIndex) === 'main' ? 'main' : stdout.substr(spaceIndex).trim());
+				const result = stdout.substr(0, spaceIndex) === 'main' ? 'main' : stdout.substr(spaceIndex).trim();
+				this.packageInfo.set(dir, result);
+				resolve(result);
 			});
 		});
 	}
