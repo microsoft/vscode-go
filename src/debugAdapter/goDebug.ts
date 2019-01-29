@@ -1317,7 +1317,13 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	private evaluateRequestImpl(args: DebugProtocol.EvaluateArguments): Thenable<EvalOut | DebugVariable> {
-		const [goroutineId, frameId] = this.stackFrameHandles.get(args.frameId);
+		// default to the topmost stack frame of the current goroutine
+		let goroutineId = -1;
+		let frameId = 0;
+		// args.frameId won't be specified when evaluating global vars
+		if (args.frameId) {
+			[goroutineId, frameId] = this.stackFrameHandles.get(args.frameId);
+		}
 		const scope = {
 			goroutineID: goroutineId,
 			frame: frameId
