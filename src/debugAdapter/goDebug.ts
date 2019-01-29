@@ -557,7 +557,7 @@ class GoDebugSession extends LoggingDebugSession {
 	private logLevel: Logger.LogLevel = Logger.LogLevel.Error;
 	private readonly initdone = 'initdone·';
 
-	private showGlobalVariables: boolean = false;
+	private showGlobalVariables: boolean = true;
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super('', debuggerLinesStartAt1, isServer);
 		this._variableHandles = new Handles<DebugVariable>();
@@ -1026,7 +1026,9 @@ class GoDebugSession extends LoggingDebugSession {
 					return resolve();
 				}
 				const spaceIndex = stdout.indexOf(' ');
-				resolve(stdout.substr(0, spaceIndex) === 'main' ? 'main' : stdout.substr(spaceIndex).trim());
+				const result = stdout.substr(0, spaceIndex) === 'main' ? 'main' : stdout.substr(spaceIndex).trim();
+				this.packageInfo.set(dir, result);
+				resolve(result);
 			});
 		});
 	}
