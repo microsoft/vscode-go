@@ -102,6 +102,11 @@
         "description": "Runs a benchmark at the cursor."
       },
       {
+        "command": "go.debug.cursor",
+        "title": "Go: Debug Test At Cursor",
+        "description": "Debug test at the cursor."
+      },
+      {
         "command": "go.test.file",
         "title": "Go: Test File",
         "description": "Runs all unit tests in the current file."
@@ -250,11 +255,6 @@
         "command": "go.test.cancel",
         "title": "Go: Cancel Running Tests",
         "description": "Cancels running tests."
-      },
-      {
-        "command": "go.test.debug",
-        "title": "Go: Debug Test At Cursor",
-        "description": "Debug test at the cursor."
       }
     ],
     "debuggers": [
@@ -1320,6 +1320,11 @@
           "group": "Go group 1"
         },
         {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.debugTestAtCursor && resourceLangId == go && !config.editor.codeLens",
+          "command": "go.debug.cursor",
+          "group": "Go group 1"
+        },
+        {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.testFile && resourceLangId == go",
           "command": "go.test.file",
           "group": "Go group 1"
@@ -1358,11 +1363,6 @@
           "when": "editorTextFocus && resourceLangId == go",
           "command": "go.show.commands",
           "group": "Go group 2"
-        },
-        {
-          "when": "editorTextFocus && config.go.editorContextMenuCommands.debugTestAtCursor && resourceLangId == go && !config.editor.codeLens",
-          "command": "go.test.debug",
-          "group": "Go group 1"
         }
       ]
     }
