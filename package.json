@@ -500,7 +500,7 @@
               },
               "showGlobalVariables": {
                 "type": "boolean",
-                "default": false,
+                "default": true,
                 "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not."
               }
             }

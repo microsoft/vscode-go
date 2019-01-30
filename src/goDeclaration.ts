@@ -107,6 +107,14 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 					return reject(missingToolMsg + godefTool);
 				}
 				if (err) {
+					if (input.isMod
+						&& !input.includeDocs
+						&& stderr
+						&& stderr.startsWith(`godef: no declaration found for`)
+					) {
+						promptToUpdateToolForModules('godef', `To get the Go to Definition feature when using Go modules, please update your version of the "godef" tool.`);
+						return reject(stderr);
+					}
 					if (stderr.indexOf('flag provided but not defined: -r') !== -1) {
 						promptForUpdatingTool('godef');
 						p = null;
