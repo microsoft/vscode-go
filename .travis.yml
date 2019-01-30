@@ -49,7 +49,7 @@ install:
   - go get -u -v github.com/cweill/gotests/...
   - go get -u -v github.com/haya14busa/goplay/cmd/goplay
   - go get -u -v github.com/davidrjenni/reftools/cmd/fillstruct
-  - curl -fsSL https://git.io/vp6lP | sh -s -- -b $GOPATH/bin
+  - curl -fsSL https://git.io/vp6lP | sh -s v12.0.12 -- -b $GOPATH/bin
 
 script:
   - npm run lint
