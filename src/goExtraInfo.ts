@@ -10,7 +10,7 @@ import { HoverProvider, Hover, MarkedString, TextDocument, Position, Cancellatio
 import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
-	private goConfig = null;
+	private goConfig: WorkspaceConfiguration = null;
 
 	constructor(goConfig?: WorkspaceConfiguration) {
 		this.goConfig = goConfig;

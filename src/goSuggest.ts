@@ -274,7 +274,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 						return reject();
 					}
 					let results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
-					let suggestions = [];
+					let suggestions: any[] = [];
 					let suggestionSet = new Set<string>();
 
 					let wordAtPosition = document.getWordRangeAtPosition(position);
@@ -473,7 +473,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 		const workSpaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
 		const currentPkgRootPath = (workSpaceFolder ? workSpaceFolder.uri.path : cwd).slice(goWorkSpace.length + 1);
 
-		let completionItems = [];
+		let completionItems: any[] = [];
 		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
 			if (pkgName.startsWith(word) && !suggestionSet.has(pkgName)) {
 
@@ -517,7 +517,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	 * @param input Package name
 	 */
 	private getPackageImportPath(input: string): string[] {
-		let matchingPackages = [];
+		let matchingPackages: any[] = [];
 		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
 			if (input === pkgName) {
 				matchingPackages.push(pkgPath);

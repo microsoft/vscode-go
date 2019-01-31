@@ -36,8 +36,8 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 		}
 
 		const cmd = cp.spawn(gopkgsBinPath, args, { env: getToolsEnvVars() });
-		const chunks = [];
-		const errchunks = [];
+		const chunks: any[] = [];
+		const errchunks: any[] = [];
 		let err: any;
 		cmd.stdout.on('data', d => chunks.push(d));
 		cmd.stderr.on('data', d => errchunks.push(d));
@@ -257,7 +257,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		let childProcess = cp.spawn(goRuntimePath, ['list', '-f', 'ImportPath: {{.ImportPath}} FolderPath: {{.Dir}}', './...'], { cwd: folderPath, env: getToolsEnvVars() });
-		let chunks = [];
+		let chunks: any[] = [];
 		childProcess.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
 		});

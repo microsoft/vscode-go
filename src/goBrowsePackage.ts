@@ -47,9 +47,10 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 		return showPackageList(workDir);
 	}
 
-	const options = {
+	const options: { [key: string]: any } = {
 		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() })
 	};
+
 	if (workDir) {
 		options['cwd'] = workDir;
 	}

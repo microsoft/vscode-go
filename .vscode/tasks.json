@@ -29,5 +29,14 @@
 	"isBackground": true,
 
 	// use the standard tsc in watch mode problem matcher to find compile problems in the output.
-	"problemMatcher": "$tsc-watch"
+	"problemMatcher": "$tsc-watch",
+	"tasks": [
+		{
+			"type": "typescript",
+			"tsconfig": "tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			]
+		}
+	]
 }

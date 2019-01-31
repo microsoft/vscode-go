@@ -30,7 +30,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			return [];
 		}
 		let config = vscode.workspace.getConfiguration('go', document.uri);
-		let codeLensConfig = config.get('enableCodeLens');
+		let codeLensConfig: { [key: string]: any } = config.get('enableCodeLens');
 		let codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
 		if (!codelensEnabled || !document.fileName.endsWith('_test.go')) {
 			return [];
@@ -40,7 +40,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			this.getCodeLensForPackage(document, token),
 			this.getCodeLensForFunctions(config, document, token)
 		]).then(([pkg, fns]) => {
-			let res = [];
+			let res: any[] = [];
 			if (pkg && Array.isArray(pkg)) {
 				res = res.concat(pkg);
 			}

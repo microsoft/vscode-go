@@ -73,7 +73,7 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 	// These defaults are chosen to be distinguishable in nearly any color scheme (even Red)
 	// as well as by people who have difficulties with color perception.
-	decoratorConfig = {
+	let decoratorConfig: { [key: string]: any } = {
 		type: 'highlight',
 		coveredHighlightColor: 'rgba(64,128,128,0.5)',
 		uncoveredHighlightColor: 'rgba(128,64,64,0.25)',
