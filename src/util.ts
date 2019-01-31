@@ -966,5 +966,6 @@ export function removeRunFlag(flags: string[]): string[] {
 	if (index !== -1) {
 		flags.splice(index, 2);
 	}
+	
 	return flags;
 }
