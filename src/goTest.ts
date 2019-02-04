@@ -95,8 +95,8 @@ async function runTestAtCursor(editor: vscode.TextEditor, testFunctionName: stri
 	};
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
-	const success = await goTest(testConfig);
-	if (success && tmpCoverPath) {
+	await goTest(testConfig);
+	if (tmpCoverPath) {
 		return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 	}
 }
