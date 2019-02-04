@@ -132,12 +132,12 @@ suite('Go Extension Tests', () => {
 						assert.equal(res, null);
 						return;
 					}
-					assert.equal(expectedSignature, (<{ language: string; value: string }>res.contents[0]).value);
-					if (expectedDocumentation === null) {
-						return;
+					let expectedHover = '\n```go\n' + expectedSignature + '\n```\n';
+					if (expectedDocumentation != null) {
+						expectedHover += expectedDocumentation;
 					}
-					assert.equal(res.contents.length, 2);
-					assert.equal(expectedDocumentation, <string>(res.contents[1]));
+					assert.equal(res.contents.length, 1);
+					assert.equal((<vscode.MarkdownString>res.contents[0]).value, expectedHover);
 				})
 			);
 			return Promise.all(promises);
@@ -216,7 +216,7 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	}).timeout(10000);
 
-	test('Test Hover Provider using godoc', (done) => {
+	test.only('Test Hover Provider using godoc', (done) => {
 		let printlnDoc = `Println formats using the default formats for its operands and writes to
 standard output. Spaces are always added between operands and a newline is
 appended. It returns the number of bytes written and any write error
@@ -228,10 +228,10 @@ encountered.
 			[new vscode.Position(23, 14), null, null], // inside a string
 			[new vscode.Position(20, 0), null, null], // just a }
 			[new vscode.Position(28, 16), null, null], // inside a number
-			[new vscode.Position(22, 5), 'main func()', null],
+			[new vscode.Position(22, 5), 'main func()', '\n'],
 			[new vscode.Position(40, 23), 'import (math "math")', null],
 			[new vscode.Position(19, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
-			[new vscode.Position(23, 4), 'print func(txt string)', null]
+			[new vscode.Position(23, 4), 'print func(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :( Not\nanymore!!\n']
 		];
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'godoc' }
