@@ -1,6 +1,6 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath, removeRunFlag } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath } from './util';
 import { outputChannel } from './goStatus';
 import os = require('os');
 import { getNonVendorPackages } from './goPackages';
@@ -34,14 +34,14 @@ export function buildCode(buildWorkspace?: boolean) {
 
 	isModSupported(documentUri).then(isMod => {
 		goBuild(documentUri, isMod, goConfig, buildWorkspace)
-		.then(errors => {
-			handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
-			diagnosticsStatusBarItem.hide();
-		})
-		.catch(err => {
-			vscode.window.showInformationMessage('Error: ' + err);
-			diagnosticsStatusBarItem.text = 'Build Failed';
-		});
+			.then(errors => {
+				handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
+				diagnosticsStatusBarItem.hide();
+			})
+			.catch(err => {
+				vscode.window.showInformationMessage('Error: ' + err);
+				diagnosticsStatusBarItem.text = 'Build Failed';
+			});
 	});
 }
 
@@ -77,7 +77,7 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 	const buildEnv = Object.assign({}, getToolsEnvVars());
 	const tmpPath = getTempFilePath('go-code-check');
 	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
-	const buildFlags: string[] = isTestFile ? removeRunFlag(getTestFlags(goConfig)) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
+	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig, false) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
 	const buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
 
 	if (goConfig['installDependenciesWhenBuilding'] === true && !isMod) {

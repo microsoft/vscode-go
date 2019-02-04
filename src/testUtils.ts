@@ -8,7 +8,7 @@ import path = require('path');
 import vscode = require('vscode');
 import util = require('util');
 import { parseEnvFile, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath, getBinPath, removeRunFlag } from './util';
+import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath, getBinPath } from './util';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 import { getCurrentPackage } from './goModules';
@@ -87,7 +87,7 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 	return envVars;
 }
 
-export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args?: any, useRunFlag= true): string[] {
+export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, useRunFlag = true, args?: any): string[] {
 	let testFlags: string[] = goConfig['testFlags'] || goConfig['buildFlags'] || [];
 	testFlags = testFlags.map(x => resolvePath(x)); // Use copy of the flags, dont pass the actual object from config
 	if (useRunFlag === false) {
@@ -388,4 +388,12 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 		params = ['-bench', '.'];
 	}
 	return params;
+}
+
+function removeRunFlag(flags: string[]): string[] {
+	const index: number = flags.indexOf('-run');
+	if (index !== -1) {
+		flags.splice(index, 2);
+	}
+	return flags;
 }

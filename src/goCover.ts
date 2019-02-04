@@ -8,7 +8,7 @@ import vscode = require('vscode');
 import path = require('path');
 import fs = require('fs');
 import rl = require('readline');
-import { getTempFilePath, removeRunFlag } from './util';
+import { getTempFilePath } from './util';
 import { showTestOutput, goTest, TestConfig, getTestFlags } from './testUtils';
 import { isModSupported } from './goModules';
 
@@ -291,7 +291,7 @@ export function toggleCoverageCurrentPackage() {
 	let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let cwd = path.dirname(editor.document.uri.fsPath);
 
-	let args = removeRunFlag(getTestFlags(goConfig));
+	let args = getTestFlags(goConfig, false);
 	let tmpCoverPath = getTempFilePath('go-code-cover');
 	args.push('-coverprofile=' + tmpCoverPath);
 	const testConfig: TestConfig = {
