@@ -102,6 +102,11 @@
         "description": "Runs a benchmark at the cursor."
       },
       {
+        "command": "go.debug.cursor",
+        "title": "Go: Debug Test At Cursor",
+        "description": "Debug test at the cursor."
+      },
+      {
         "command": "go.test.file",
         "title": "Go: Test File",
         "description": "Runs all unit tests in the current file."
@@ -1155,6 +1160,11 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to upload the current file or selection to the Go Playground"
+            },
+            "debugTestAtCursor": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to debug the test under the cursor to the editor context menu"
             }
           },
           "default": {
@@ -1169,7 +1179,8 @@
             "generateTestForPackage": false,
             "addImport": true,
             "testCoverage": true,
-            "playground": true
+            "playground": true,
+            "debugTestAtCursor": true
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor.",
           "scope": "resource"
@@ -1306,6 +1317,11 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.benchmarkAtCursor && resourceLangId == go && !config.editor.codeLens",
           "command": "go.benchmark.cursor",
+          "group": "Go group 1"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.debugTestAtCursor && resourceLangId == go && !config.editor.codeLens",
+          "command": "go.debug.cursor",
           "group": "Go group 1"
         },
         {
