@@ -2,16 +2,17 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
-
 import cp = require('child_process');
 import path = require('path');
-import vscode = require('vscode');
 import util = require('util');
-import { parseEnvFile, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath, getBinPath } from './util';
+import vscode = require('vscode');
+
+import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
-import { getCurrentPackage } from './goModules';
+import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
+import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
+
 
 const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
@@ -126,6 +127,23 @@ export function extractInstanceTestName(symbolName: string): string {
 	return match[2];
 }
 
+/**
+ * Gets the appropriate debug arguments for a debug session on a test function.
+ * @param document  The document containing the tests
+ * @param testFunctionName The test function to get the debug args
+ * @param testFunctions The test functions found in the document
+ */
+export function getTestFunctionDebugArgs(document: vscode.TextDocument, testFunctionName: string, testFunctions: vscode.SymbolInformation[]): string[] {
+	const instanceMethod = extractInstanceTestName(testFunctionName);
+	if (instanceMethod) {
+		const testFns = findAllTestSuiteRuns(document, testFunctions);
+		const testSuiteRuns = ['-test.run', `^${testFns.map(t => t.name).join('|')}$`];
+		const testSuiteTests = ['-testify.m', `^${instanceMethod}$`];
+		return [...testSuiteRuns, ...testSuiteTests];
+	} else {
+		return ['-test.run', `^${testFunctionName}$`];
+	}
+}
 /**
  * Finds test methods containing "suite.Run()" call.
  *

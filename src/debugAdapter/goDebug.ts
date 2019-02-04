@@ -530,13 +530,13 @@ class Delve {
 				}
 			}, err => {
 				const errMsg = err ? err.toString() : '';
+				logError('Failed to halt - ' + errMsg.toString());
 				if (errMsg.endsWith('has exited with status 0')) {
 					if (timeoutToken) {
 						clearTimeout(timeoutToken);
 					}
 					return resolve();
 				}
-				logError('Failed to halt - ' + errMsg.toString());
 			});
 		});
 	}
@@ -593,7 +593,9 @@ class GoDebugSession extends LoggingDebugSession {
 		const logPath = this.logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-go-debug.txt') : undefined;
 		logger.setup(this.logLevel, logPath);
 
-		this.showGlobalVariables = args.showGlobalVariables === true;
+		if (typeof(args.showGlobalVariables) === 'boolean') {
+			this.showGlobalVariables = args.showGlobalVariables;
+		}
 
 		if (!args.program) {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');

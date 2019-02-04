@@ -17,9 +17,9 @@
 	// the command is a shell script
 	"type": "shell",
 
-	// show the output window only if unrecognized errors occur.
+	// don't show the output window, rely on the problem matcher.
 	"presentation": {
-		"reveal": "silent"
+		"reveal": "never"
 	},
 
 	// we run the custom script "compile" as defined in package.json
