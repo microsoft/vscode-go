@@ -461,7 +461,7 @@ It returns the number of bytes written and any write error encountered.
 
 		let diffPromise = new Promise((resolve, reject) => {
 			cp.exec(`diff -u ${file1path} ${file2path}`, (err, stdout, stderr) => {
-				let filePatches: FilePatch[] = getEditsFromUnifiedDiffStr(stdout);
+				const filePatches: FilePatch[] = getEditsFromUnifiedDiffStr(stdout);
 
 				if (!filePatches && filePatches.length !== 1) {
 					assert.fail(null, null, 'Failed to get patches for the test file', '');

@@ -34,6 +34,19 @@ interface GoDefinitionInput {
 	cwd: string;
 }
 
+interface GoGetDocOuput {
+	name: string;
+	import: string;
+	decl: string;
+	doc: string;
+	pos: string;
+}
+
+interface GuruDefinitionOuput {
+	objpos: string;
+	desc: string;
+}
+
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs: boolean, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
 	let adjustedPos = adjustWordPosition(document, position);
 	if (!adjustedPos[0]) {
@@ -202,15 +215,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 				}
 				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(goGetDocOutput.pos);
-				let definitionInfo: {
-					file: string;
-					line: number;
-					column: number;
-					toolUsed: string;
-					declarationlines: string[];
-					doc: string;
-					name: string;
-				} = {
+				let definitionInfo: GoDefinitionInformation = {
 					file: null,
 					line: 0,
 					column: 0,
@@ -260,15 +265,7 @@ function definitionLocation_guru(input: GoDefinitionInput, token: vscode.Cancell
 				}
 				let guruOutput = <GuruDefinitionOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(guruOutput.objpos);
-				let definitionInfo: {
-					file: string;
-					line: number;
-					column: number;
-					toolUsed: string;
-					declarationlines: string[];
-					doc: string;
-					name: string;
-				} = {
+				let definitionInfo: GoDefinitionInformation = {
 					file: null,
 					line: 0,
 					column: 0,
@@ -329,17 +326,4 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 			return Promise.resolve(null);
 		});
 	}
-}
-
-interface GoGetDocOuput {
-	name: string;
-	import: string;
-	decl: string;
-	doc: string;
-	pos: string;
-}
-
-interface GuruDefinitionOuput {
-	objpos: string;
-	desc: string;
 }
