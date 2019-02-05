@@ -10,9 +10,14 @@
 * [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
     * Display nested content in variables pane. Fixes [Bug 1010](https://github.com/Microsoft/vscode-go/issues/1010) with [PR 2198](https://github.com/Microsoft/vscode-go/pull/2198)
     * Display shadowed variables in variables pane. Fixes [Bug 1974](https://github.com/Microsoft/vscode-go/issues/1974) with [PR 2254](https://github.com/Microsoft/vscode-go/pull/2254)
+    * Fix the slowness during debugging that got introduced a few releases ago, by caching the package info used to call `ListPackageVars` command in delve. [PR 2289](https://github.com/Microsoft/vscode-go/pull/2289)
+
+* [Adrian Suwała (@Ashiroq)](https://github.com/Ashiroq) & * [Vlad Barosan (@vladbarosan)](https://github.com/vladbarosan)
+    * New command `Go: Debug Test at Cursor` to debug the test function under the cursor. This provides the same feature as the debug codelens, but in the form of a command. [Feature Request 1088](https://github.com/Microsoft/vscode-go/issues/1088) implemented with [PR 2059](https://github.com/Microsoft/vscode-go/pull/2059)
 
 * [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
     * Fix bug that got introduced in the previous release where only the top call stack frame was shown. Fixes [Bug 2187](https://github.com/Microsoft/vscode-go/issues/2187) with [PR 2200](https://github.com/Microsoft/vscode-go/pull/2200)
+    * Upstream bug fix in VS Code to avoid the frequent jump to `proc.go` file when stepping in/out during debugging. Fixes https://github.com/Microsoft/vscode/issues/65920
 
 * [Bryce Kahle (@brycekahle)](https://github.com/brycekahle)
     * Use `LoggingDebugSession` to show logs from the VS Code debug adapter. [Feature Request 858](https://github.com/Microsoft/vscode-go/issues/858) implemented with [PR 2081](https://github.com/Microsoft/vscode-go/pull/2081)
