@@ -21,6 +21,7 @@ let decorators: {
 	uncoveredHighlightDecorator: vscode.TextEditorDecorationType;
 };
 let decoratorConfig: {
+	[key: string]: any
 	type: string;
 	coveredHighlightColor: string;
 	uncoveredHighlightColor: string;
@@ -74,7 +75,7 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 	// These defaults are chosen to be distinguishable in nearly any color scheme (even Red)
 	// as well as by people who have difficulties with color perception.
-	let decoratorConfig: { [key: string]: any } = {
+	decoratorConfig = {
 		type: 'highlight',
 		coveredHighlightColor: 'rgba(64,128,128,0.5)',
 		uncoveredHighlightColor: 'rgba(128,64,64,0.25)',
