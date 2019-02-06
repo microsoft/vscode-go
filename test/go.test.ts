@@ -44,8 +44,8 @@ suite('Go Extension Tests', () => {
 
 		fs.removeSync(repoPath);
 		fs.removeSync(testPath);
-		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'baseTest', 'test.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'baseTest', 'sample_test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'test.go'), path.join(fixturePath, 'baseTest', 'test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'sample_test.go'), path.join(fixturePath, 'baseTest', 'sample_test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'gogetdocTestData', 'test.go'), path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generateTestsSourcePath, 'generatetests.go'));
