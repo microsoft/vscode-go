@@ -216,7 +216,7 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	}).timeout(10000);
 
-	test.only('Test Hover Provider using godoc', (done) => {
+	test('Test Hover Provider using godoc', (done) => {
 		let printlnDoc = `Println formats using the default formats for its operands and writes to
 standard output. Spaces are always added between operands and a newline is
 appended. It returns the number of bytes written and any write error
