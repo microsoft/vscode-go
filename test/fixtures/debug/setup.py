@@ -20,7 +20,7 @@ for dirpath, dirnames, filenames in os.walk(os.getcwd()):
 	for file in filenames:
 		if file == "setup.py":
 			continue
-		if file == "LICENSE":
+		if file == "LICENSE" or file == "LICENSE.txt":
 			continue
 		if not os.path.isfile(dirpath + "/" + file):
 			continue
