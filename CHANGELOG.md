@@ -8,7 +8,7 @@
     * Use unique stack frame ids to be compliant with Debug Adapter Protocol. [PR 2130](https://github.com/Microsoft/vscode-go/pull/2130)
 
 * [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
-    * Display nested content in variables pane. Fixes [Bug 1010](https://github.com/Microsoft/vscode-go/issues/1010) with [PR 2198](https://github.com/Microsoft/vscode-go/pull/2198)
+    * Display nested content of structs in variables pane. Fixes [Bug 1010](https://github.com/Microsoft/vscode-go/issues/1010) with [PR 2198](https://github.com/Microsoft/vscode-go/pull/2198)
     * Display shadowed variables in variables pane. Fixes [Bug 1974](https://github.com/Microsoft/vscode-go/issues/1974) with [PR 2254](https://github.com/Microsoft/vscode-go/pull/2254)
     * Fix the slowness during debugging that got introduced a few releases ago, by caching the package info used to call `ListPackageVars` command in delve. [PR 2289](https://github.com/Microsoft/vscode-go/pull/2289)
 
