@@ -1,4 +1,4 @@
-## 0.8.1 - Coming Soon
+## 0.9.0 - 6th February, 2019
 
 ### Debugging improvements
 
@@ -60,7 +60,6 @@ Microsoft/vscode-go/pull/2235)
 
 * [kerem (@keremgocen)](https://github.com/keremgocen)
     * Check if the file at the expected tool path is executable before using it. Fixes [Bug 2220](https://github.com/Microsoft/vscode-go/issues/2220) with [PR 2230](https://github.com/Microsoft/vscode-go/pull/2230)
-
 
 * [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
     * Use the right documentation in auto-completion widget when there are multiple functions of the same name but on different receivers. Fixes [Bug 2107](https://github.com/Microsoft/vscode-go/issues/2107) with [PR 2215](https://github.com/Microsoft/vscode-go/pull/2215)
