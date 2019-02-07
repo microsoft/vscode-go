@@ -64,7 +64,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: TestA
 			if (cmd === 'debug') {
 				await debugTestAtCursor(editor, testFunctionName, testFunctions, goConfig);
 			} else if (cmd === 'benchmark' || cmd === 'test') {
-				await runTestAtCursor(editor, testFunctionName, testFunctions, goConfig, args, cmd);
+				await runTestAtCursor(editor, testFunctionName, testFunctions, goConfig, cmd, args);
 			} else {
 				throw 'Unsupported command.';
 			}
