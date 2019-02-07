@@ -451,6 +451,11 @@
                 "description": "Comma separated list of components that should produce debug output.",
                 "default": "debugger"
               },
+              "dlvToolPath": {
+                "type": "string",
+                "description": "Overrides the path to the dlv executable.",
+                "default": ""
+              },
               "dlvLoadConfig": {
                 "type": "object",
                 "properties": {
