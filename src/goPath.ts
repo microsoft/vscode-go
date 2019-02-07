@@ -116,7 +116,7 @@ export function stripBOM(s: string): string {
 }
 
 export function parseEnvFile(path: string): { [key: string]: string } {
-	const env = {};
+	const env: { [key: string]: any } = {};
 	if (!path) {
 		return env;
 	}

@@ -65,7 +65,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	const lintTool = goConfig['lintTool'] || 'golint';
 	const lintFlags: string[] = goConfig['lintFlags'] || [];
 	const lintEnv = Object.assign({}, getToolsEnvVars());
-	const args = [];
+	const args: string[] = [];
 
 	lintFlags.forEach(flag => {
 		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want

@@ -196,6 +196,7 @@ interface DiscardedBreakpoint {
 
 // This interface should always match the schema found in `package.json`.
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
+	[key: string]: any;
 	program: string;
 	stopOnEntry?: boolean;
 	args?: string[];
@@ -578,7 +579,7 @@ class GoDebugSession extends LoggingDebugSession {
 		log('InitializeResponse');
 	}
 
-	protected findPathSeperator(path) {
+	protected findPathSeperator(path: string) {
 		if (/^(\w:[\\/]|\\\\)/.test(path)) return '\\';
 		return path.includes('/') ? '/' : '\\';
 	}
@@ -1217,7 +1218,7 @@ class GoDebugSession extends LoggingDebugSession {
 		let closureEpoch = this.continueEpoch;
 		this.continueRequestRunning = true;
 
-		const callback = (out) => {
+		const callback = (out: any) => {
 			if (closureEpoch === this.continueEpoch) {
 				this.continueRequestRunning = false;
 			}
@@ -1228,7 +1229,7 @@ class GoDebugSession extends LoggingDebugSession {
 		};
 
 		// If called when setting breakpoint internally, we want the error to bubble up.
-		const errorCallback = calledWhenSettingBreakpoint ? null : (err) => {
+		const errorCallback = calledWhenSettingBreakpoint ? null : (err: any) => {
 			if (err) {
 				logError('Failed to continue - ' + err.toString());
 			}

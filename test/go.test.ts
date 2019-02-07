@@ -14,7 +14,7 @@ import { GoDefinitionProvider } from '../src/goDeclaration';
 import { getWorkspaceSymbols } from '../src/goSymbol';
 import { check } from '../src/goCheck';
 import cp = require('child_process');
-import { getEditsFromUnifiedDiffStr, getEdits } from '../src/diffUtils';
+import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../src/diffUtils';
 import { testCurrentFile } from '../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../src/goOutline';
@@ -292,7 +292,7 @@ It returns the number of bytes written and any write error encountered.
 			}
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
-				let sortedDiagnostics = allDiagnostics.sort((a, b) => a.line - b.line);
+				let sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => a.line - b.line);
 				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
 				let matchCount = 0;
 				for (let i in expected) {
@@ -406,52 +406,52 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	// test('Gometalinter error checking', (done) => {
-	// 	getGoVersion().then(version => {
-	// 		if (version && version.major === 1 && version.minor < 6) {
-	// 			// golint in gometalinter is not supported in Go 1.5, so skip the test
-	// 			return Promise.resolve();
-	// 		}
+	test('Gometalinter error checking', (done) => {
+		getGoVersion().then(version => {
+			if (version && version.major === 1 && version.minor < 6) {
+				// golint in gometalinter is not supported in Go 1.5, so skip the test
+				return Promise.resolve();
+			}
 
-	// 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
-	// 			'lintOnSave': { value: 'package' },
-	// 			'lintTool': { value: 'gometalinter' },
-	// 			'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
-	// 			'vetOnSave': { value: 'off' },
-	// 			'buildOnSave': { value: 'off' }
-	// 		});
-	// 		let expected = [
-	// 			{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-	// 			{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
-	// 		];
-	// 		let errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
-	// 		return check(vscode.Uri.file(errorsTestPath), config).then(diagnostics => {
-	// 			const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
-	// 			let sortedDiagnostics = allDiagnostics.sort((a, b) => {
-	// 				if (a.msg < b.msg)
-	// 					return -1;
-	// 				if (a.msg > b.msg)
-	// 					return 1;
-	// 				return 0;
-	// 			});
+			let config = Object.create(vscode.workspace.getConfiguration('go'), {
+				'lintOnSave': { value: 'package' },
+				'lintTool': { value: 'gometalinter' },
+				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
+				'vetOnSave': { value: 'off' },
+				'buildOnSave': { value: 'off' }
+			});
+			let expected = [
+				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
+			];
+			let errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
+			return check(vscode.Uri.file(errorsTestPath), config).then(diagnostics => {
+				const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
+				let sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
+					if (a.msg < b.msg)
+						return -1;
+					if (a.msg > b.msg)
+						return 1;
+					return 0;
+				});
 
-	// 			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
-	// 			let matchCount = 0;
-	// 			for (let i in expected) {
-	// 				for (let j in sortedDiagnostics) {
-	// 					if ((expected[i].line === sortedDiagnostics[j].line)
-	// 						&& (expected[i].severity === sortedDiagnostics[j].severity)
-	// 						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-	// 						matchCount++;
-	// 					}
-	// 				}
-	// 			}
-	// 			assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
+				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+				let matchCount = 0;
+				for (let i in expected) {
+					for (let j in sortedDiagnostics) {
+						if ((expected[i].line === sortedDiagnostics[j].line)
+							&& (expected[i].severity === sortedDiagnostics[j].severity)
+							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							matchCount++;
+						}
+					}
+				}
+				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
 
-	// 			return Promise.resolve();
-	// 		});
-	// 	}).then(() => done(), done);
-	// });
+				return Promise.resolve();
+			});
+		}).then(() => done(), done);
+	});
 
 	test('Test diffUtils.getEditsFromUnifiedDiffStr', (done) => {
 		let file1path = path.join(fixturePath, 'diffTest1Data', 'file1.go');
@@ -460,9 +460,8 @@ It returns the number of bytes written and any write error encountered.
 		let file2contents = fs.readFileSync(file2path, 'utf8');
 
 		let diffPromise = new Promise((resolve, reject) => {
-
 			cp.exec(`diff -u ${file1path} ${file2path}`, (err, stdout, stderr) => {
-				let filePatches = getEditsFromUnifiedDiffStr(stdout);
+				const filePatches: FilePatch[] = getEditsFromUnifiedDiffStr(stdout);
 
 				if (!filePatches && filePatches.length !== 1) {
 					assert.fail(null, null, 'Failed to get patches for the test file', '');
@@ -482,11 +481,11 @@ It returns the number of bytes written and any write error encountered.
 			});
 		});
 
-		diffPromise.then((filePatches) => {
+		diffPromise.then((filePatches: any | FilePatch[]) => {
 			return vscode.workspace.openTextDocument(file1uri).then((textDocument) => {
 				return vscode.window.showTextDocument(textDocument).then(editor => {
 					return editor.edit((editBuilder) => {
-						filePatches[0].edits.forEach(edit => {
+						filePatches[0].edits.forEach((edit: any) => {
 							edit.applyUsingTextEditorEdit(editBuilder);
 						});
 					}).then(() => {
@@ -595,7 +594,7 @@ It returns the number of bytes written and any write error encountered.
 		let uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then(symbols => {
-				let groupedSymbolNames = symbols.reduce(function (map, symbol) {
+				let groupedSymbolNames = symbols.reduce(function (map: any, symbol) {
 					map[symbol.kind] = (map[symbol.kind] || []).concat([symbol.name]);
 					return map;
 				}, {});
@@ -711,7 +710,7 @@ It returns the number of bytes written and any write error encountered.
 		vendorSupportPromise.then((vendorSupport: boolean) => {
 			let gopkgsPromise = new Promise<void>((resolve, reject) => {
 				let cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
-				let chunks = [];
+				let chunks: any[] = [];
 				cmd.stdout.on('data', (d) => chunks.push(d));
 				cmd.on('close', () => {
 					let pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();

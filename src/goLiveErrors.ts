@@ -13,7 +13,7 @@ interface GoLiveErrorsConfig {
 	enabled: boolean;
 }
 
-let runner;
+let runner: NodeJS.Timer;
 
 export function goLiveErrorsEnabled() {
 	let goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['liveErrors'];

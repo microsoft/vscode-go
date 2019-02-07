@@ -71,7 +71,7 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 	const envVars = getToolsEnvVars();
 	const testEnvConfig = config['testEnvVars'] || {};
 
-	let fileEnv = {};
+	let fileEnv: { [key: string]: any } = {};
 	let testEnvFile = config['testEnvFile'];
 	if (testEnvFile) {
 		testEnvFile = resolvePath(testEnvFile);

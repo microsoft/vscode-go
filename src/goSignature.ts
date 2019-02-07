@@ -11,7 +11,7 @@ import { definitionLocation } from './goDeclaration';
 import { getParametersAndReturnType } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
-	private goConfig = null;
+	private goConfig: WorkspaceConfiguration = null;
 
 	constructor(goConfig?: WorkspaceConfiguration) {
 		this.goConfig = goConfig;

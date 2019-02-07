@@ -97,7 +97,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		offerToInstallTools();
 		if (checkLanguageServer()) {
-			const languageServerExperimentalFeatures = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
+			const languageServerExperimentalFeatures: any = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
 			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
 			const c = new LanguageClient(
