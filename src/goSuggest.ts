@@ -132,11 +132,14 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 				// prevent completion when typing in a line comment that doesnt start from the beginning of the line
 				const commentIndex = lineText.indexOf('//');
-				const commentPosition = new vscode.Position(position.line, commentIndex);
-				const inCommentInString = isPositionInString(document, commentPosition);
 
-				if (!inCommentInString && commentIndex >= 0 && position.character > commentIndex) {
-					return resolve([]);
+				if (commentIndex >= 0 && position.character > commentIndex) {
+					const commentPosition = new vscode.Position(position.line, commentIndex);
+					const inCommentInString = isPositionInString(document, commentPosition);
+
+					if (!inCommentInString) {
+						return resolve([]);
+					}
 				}
 
 				let inString = isPositionInString(document, position);
