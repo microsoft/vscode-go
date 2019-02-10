@@ -135,9 +135,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 				if (commentIndex >= 0 && position.character > commentIndex) {
 					const commentPosition = new vscode.Position(position.line, commentIndex);
-					const inCommentInString = isPositionInString(document, commentPosition);
+					const isCommentInString = isPositionInString(document, commentPosition);
 
-					if (!inCommentInString) {
+					if (!isCommentInString) {
 						return resolve([]);
 					}
 				}
