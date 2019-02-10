@@ -24,6 +24,7 @@ import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
 import { goPlay } from '../src/goPlayground';
 import { runFillStruct } from '../src/goFillStruct';
+import { version } from 'punycode';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
@@ -290,6 +291,7 @@ It returns the number of bytes written and any write error encountered.
 				// golint supports only latest 3 versions, so skip the test
 				return Promise.resolve();
 			}
+
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
 				let sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => a.line - b.line);
@@ -317,11 +319,6 @@ It returns the number of bytes written and any write error encountered.
 		}
 
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// gotests is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
 			let uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
@@ -348,11 +345,6 @@ It returns the number of bytes written and any write error encountered.
 		}
 
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// gotests is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
 			let uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then((editor: vscode.TextEditor) => {
@@ -382,11 +374,6 @@ It returns the number of bytes written and any write error encountered.
 		}
 
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// gotests is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
 			let uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
@@ -408,11 +395,6 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Gometalinter error checking', (done) => {
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// golint in gometalinter is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
 			let config = Object.create(vscode.workspace.getConfiguration('go'), {
 				'lintOnSave': { value: 'package' },
 				'lintTool': { value: 'gometalinter' },

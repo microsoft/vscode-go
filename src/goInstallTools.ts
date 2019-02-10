@@ -213,13 +213,13 @@ export function promptForMissingTool(tool: string) {
 		return;
 	}
 	getGoVersion().then((goVersion) => {
-		if (goVersion && goVersion.major === 1 && goVersion.minor < 6) {
+		if (goVersion && goVersion.major === 1 && goVersion.minor < 9) {
 			if (tool === 'golint') {
 				vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
 				return;
 			}
 			if (tool === 'gotests') {
-				vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.6 or higher.');
+				vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.');
 				return;
 			}
 		}
