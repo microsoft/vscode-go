@@ -1115,7 +1115,7 @@ class GoDebugSession extends LoggingDebugSession {
 		// expressions passed to loadChildren defined per https://github.com/derekparker/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
 			variablesPromise = Promise.all(vari.children.map((v, i) => {
-				return loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v).then((): DebugProtocol.Variable => {
+				return loadChildren(`*(*"${v.type}")(${v.addr})`, v).then((): DebugProtocol.Variable => {
 					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
 					return {
 						name: '[' + i + ']',
@@ -1147,7 +1147,7 @@ class GoDebugSession extends LoggingDebugSession {
 				if (v.fullyQualifiedName === undefined) {
 					v.fullyQualifiedName = vari.fullyQualifiedName + '.' + v.name;
 				}
-				return loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v).then((): DebugProtocol.Variable => {
+				return loadChildren(`*(*"${v.type}")(${v.addr})`, v).then((): DebugProtocol.Variable => {
 					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
 					return {
 						name: v.name,
@@ -1163,16 +1163,6 @@ class GoDebugSession extends LoggingDebugSession {
 			this.sendResponse(response);
 			log('VariablesResponse', JSON.stringify(variables, null, ' '));
 		});
-	}
-
-	// removes all parts of the repo path from a type name.
-	// e.g. github.com/some/repo/package.TypeName becomes package.TypeName
-	private removeRepoFromTypeName(typeName: string): string {
-		const i = typeName.lastIndexOf('/');
-		if (i === -1) {
-			return typeName;
-		}
-		return typeName.substr(i + 1);
 	}
 
 	private cleanupHandles(): void {
