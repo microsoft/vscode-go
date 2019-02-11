@@ -21,6 +21,7 @@ let decorators: {
 	uncoveredHighlightDecorator: vscode.TextEditorDecorationType;
 };
 let decoratorConfig: {
+	[key: string]: any
 	type: string;
 	coveredHighlightColor: string;
 	uncoveredHighlightColor: string;

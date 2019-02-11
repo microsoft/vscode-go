@@ -196,6 +196,7 @@ interface DiscardedBreakpoint {
 
 // This interface should always match the schema found in `package.json`.
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
+	[key: string]: any;
 	program: string;
 	stopOnEntry?: boolean;
 	args?: string[];
@@ -578,7 +579,7 @@ class GoDebugSession extends LoggingDebugSession {
 		log('InitializeResponse');
 	}
 
-	protected findPathSeperator(path) {
+	protected findPathSeperator(path: string) {
 		if (/^(\w:[\\/]|\\\\)/.test(path)) return '\\';
 		return path.includes('/') ? '/' : '\\';
 	}
@@ -592,7 +593,7 @@ class GoDebugSession extends LoggingDebugSession {
 		const logPath = this.logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-go-debug.txt') : undefined;
 		logger.setup(this.logLevel, logPath);
 
-		if (typeof(args.showGlobalVariables) === 'boolean') {
+		if (typeof (args.showGlobalVariables) === 'boolean') {
 			this.showGlobalVariables = args.showGlobalVariables;
 		}
 
@@ -1103,8 +1104,7 @@ class GoDebugSession extends LoggingDebugSession {
 		let variablesPromise: Promise<DebugProtocol.Variable[]>;
 		const loadChildren = async (exp: string, v: DebugVariable) => {
 			// from https://github.com/go-delve/delve/blob/master/Documentation/api/ClientHowto.md#looking-into-variables
-			if (((v.kind === GoReflectKind.Array || v.kind === GoReflectKind.Slice || v.kind === GoReflectKind.Struct) && v.len > v.children.length) ||
-				(v.kind === GoReflectKind.Map && v.len > v.children.length / 2) ||
+			if ((v.kind === GoReflectKind.Struct && v.len > v.children.length) ||
 				(v.kind === GoReflectKind.Interface && v.children.length > 0 && v.children[0].onlyAddr === true)) {
 				await this.evaluateRequestImpl({ 'expression': exp }).then(result => {
 					const variable = this.delve.isApiV1 ? <DebugVariable>result : (<EvalOut>result).Variable;
@@ -1115,16 +1115,16 @@ class GoDebugSession extends LoggingDebugSession {
 		// expressions passed to loadChildren defined per https://github.com/derekparker/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
 			variablesPromise = Promise.all(vari.children.map((v, i) => {
-					return loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v).then((): DebugProtocol.Variable => {
-						let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
-						return {
-							name: '[' + i + ']',
-							value: result,
-							evaluateName: vari.fullyQualifiedName + '[' + i + ']',
-							variablesReference
-						};
-					});
-				})
+				return loadChildren(`*(*${this.removeRepoFromTypeName(v.type)})(${v.addr})`, v).then((): DebugProtocol.Variable => {
+					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
+					return {
+						name: '[' + i + ']',
+						value: result,
+						evaluateName: vari.fullyQualifiedName + '[' + i + ']',
+						variablesReference
+					};
+				});
+			})
 			);
 		} else if (vari.kind === GoReflectKind.Map) {
 			variablesPromise = Promise.all(vari.children.map((_, i) => {
@@ -1218,7 +1218,7 @@ class GoDebugSession extends LoggingDebugSession {
 		let closureEpoch = this.continueEpoch;
 		this.continueRequestRunning = true;
 
-		const callback = (out) => {
+		const callback = (out: any) => {
 			if (closureEpoch === this.continueEpoch) {
 				this.continueRequestRunning = false;
 			}
@@ -1229,7 +1229,7 @@ class GoDebugSession extends LoggingDebugSession {
 		};
 
 		// If called when setting breakpoint internally, we want the error to bubble up.
-		const errorCallback = calledWhenSettingBreakpoint ? null : (err) => {
+		const errorCallback = calledWhenSettingBreakpoint ? null : (err: any) => {
 			if (err) {
 				logError('Failed to continue - ' + err.toString());
 			}
@@ -1339,13 +1339,13 @@ class GoDebugSession extends LoggingDebugSession {
 				Expr: args.expression,
 				Scope: scope,
 				Cfg: this.delve.loadConfig
-		};
+			};
 		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
-		err => {
-			logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
-			return Promise.reject(err);
-		});
-		return  returnValue;
+			err => {
+				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
+				return Promise.reject(err);
+			});
+		return returnValue;
 	}
 
 	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {

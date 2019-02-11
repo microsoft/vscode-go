@@ -34,6 +34,19 @@ interface GoDefinitionInput {
 	cwd: string;
 }
 
+interface GoGetDocOuput {
+	name: string;
+	import: string;
+	decl: string;
+	doc: string;
+	pos: string;
+}
+
+interface GuruDefinitionOuput {
+	objpos: string;
+	desc: string;
+}
+
 export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs: boolean, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
 	let adjustedPos = adjustWordPosition(document, position);
 	if (!adjustedPos[0]) {
@@ -55,7 +68,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				includeDocs,
 				isMod: !!modFolderPath,
 				cwd: (modFolderPath && modFolderPath !== getModuleCache())
-				? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
+					? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
 			};
 			if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
 				return definitionLocation_godef(input, token);
@@ -202,7 +215,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 				}
 				let goGetDocOutput = <GoGetDocOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(goGetDocOutput.pos);
-				let definitionInfo = {
+				let definitionInfo: GoDefinitionInformation = {
 					file: null,
 					line: 0,
 					column: 0,
@@ -252,7 +265,7 @@ function definitionLocation_guru(input: GoDefinitionInput, token: vscode.Cancell
 				}
 				let guruOutput = <GuruDefinitionOuput>JSON.parse(stdout.toString());
 				let match = /(.*):(\d+):(\d+)/.exec(guruOutput.objpos);
-				let definitionInfo = {
+				let definitionInfo: GoDefinitionInformation = {
 					file: null,
 					line: 0,
 					column: 0,
@@ -291,7 +304,7 @@ export function parseMissingError(err: any): [boolean, string] {
 }
 
 export class GoDefinitionProvider implements vscode.DefinitionProvider {
-	private goConfig = null;
+	private goConfig: vscode.WorkspaceConfiguration = null;
 
 	constructor(goConfig?: vscode.WorkspaceConfiguration) {
 		this.goConfig = goConfig;
@@ -313,17 +326,4 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 			return Promise.resolve(null);
 		});
 	}
-}
-
-interface GoGetDocOuput {
-	name: string;
-	import: string;
-	decl: string;
-	doc: string;
-	pos: string;
-}
-
-interface GuruDefinitionOuput {
-	objpos: string;
-	desc: string;
 }

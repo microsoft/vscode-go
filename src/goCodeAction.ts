@@ -33,7 +33,7 @@ export class GoCodeActionProvider implements vscode.CodeActionProvider {
 		});
 
 		return Promise.all(promises).then(arrs => {
-			let results = {};
+			let results: { [key: string]: any } = {};
 			for (let segment of arrs) {
 				for (let item of segment) {
 					results[item.title] = item;

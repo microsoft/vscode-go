@@ -140,7 +140,7 @@ export function getCurrentPackage(cwd: string): Promise<string> {
 	}
 	return new Promise<string>(resolve => {
 		let childProcess = cp.spawn(goRuntimePath, ['list'], { cwd, env: getToolsEnvVars() });
-		let chunks = [];
+		let chunks: any[] = [];
 		childProcess.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
 		});

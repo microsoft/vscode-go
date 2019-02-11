@@ -19,6 +19,7 @@ interface GomodifytagsOutput {
 
 // Interface for settings configuration for adding and removing tags
 interface GoTagsConfig {
+	[key: string]: any;
 	tags: string;
 	options: string;
 	promptForTags: boolean;
@@ -103,7 +104,7 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 	let tags = commandArgs && commandArgs.hasOwnProperty('tags') ? commandArgs['tags'] : config['tags'];
 	let options = commandArgs && commandArgs.hasOwnProperty('options') ? commandArgs['options'] : config['options'];
 	let promptForTags = commandArgs && commandArgs.hasOwnProperty('promptForTags') ? commandArgs['promptForTags'] : config['promptForTags'];
-	let transformValue = commandArgs && commandArgs.hasOwnProperty('transform') ? commandArgs['transform'] : config['transform'];
+	let transformValue: string = commandArgs && commandArgs.hasOwnProperty('transform') ? commandArgs['transform'] : config['transform'];
 
 	if (!promptForTags) {
 		return Promise.resolve([tags, options, transformValue]);

@@ -70,8 +70,8 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 
 					let guruOutput = <GuruImplementsOutput>JSON.parse(stdout.toString());
 					let results: vscode.Location[] = [];
-					let addResults = list => {
-						list.forEach(ref => {
+					let addResults = (list: GuruImplementsRef[]) => {
+						list.forEach((ref: GuruImplementsRef) => {
 							let match = /^(.*):(\d+):(\d+)/.exec(ref.pos);
 							if (!match) return;
 							let [_, file, lineStartStr, colStartStr] = match;

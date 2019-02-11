@@ -1,4 +1,4 @@
-## 0.8.1 - Coming Soon
+## 0.9.0 - 6th February, 2019
 
 ### Debugging improvements
 
@@ -8,7 +8,7 @@
     * Use unique stack frame ids to be compliant with Debug Adapter Protocol. [PR 2130](https://github.com/Microsoft/vscode-go/pull/2130)
 
 * [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
-    * Display nested content in variables pane. Fixes [Bug 1010](https://github.com/Microsoft/vscode-go/issues/1010) with [PR 2198](https://github.com/Microsoft/vscode-go/pull/2198)
+    * Display nested content of structs in variables pane. Fixes [Bug 1010](https://github.com/Microsoft/vscode-go/issues/1010) with [PR 2198](https://github.com/Microsoft/vscode-go/pull/2198)
     * Display shadowed variables in variables pane. Fixes [Bug 1974](https://github.com/Microsoft/vscode-go/issues/1974) with [PR 2254](https://github.com/Microsoft/vscode-go/pull/2254)
     * Fix the slowness during debugging that got introduced a few releases ago, by caching the package info used to call `ListPackageVars` command in delve. [PR 2289](https://github.com/Microsoft/vscode-go/pull/2289)
 
@@ -60,7 +60,6 @@ Microsoft/vscode-go/pull/2235)
 
 * [kerem (@keremgocen)](https://github.com/keremgocen)
     * Check if the file at the expected tool path is executable before using it. Fixes [Bug 2220](https://github.com/Microsoft/vscode-go/issues/2220) with [PR 2230](https://github.com/Microsoft/vscode-go/pull/2230)
-
 
 * [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
     * Use the right documentation in auto-completion widget when there are multiple functions of the same name but on different receivers. Fixes [Bug 2107](https://github.com/Microsoft/vscode-go/issues/2107) with [PR 2215](https://github.com/Microsoft/vscode-go/pull/2215)

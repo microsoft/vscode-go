@@ -469,7 +469,7 @@ export function getExtensionCommands(): any[] {
 	if (!pkgJSON.contributes || !pkgJSON.contributes.commands) {
 		return;
 	}
-	let extensionCommands: any[] = vscode.extensions.getExtension(extensionId).packageJSON.contributes.commands.filter(x => x.command !== 'go.show.commands');
+	let extensionCommands: any[] = vscode.extensions.getExtension(extensionId).packageJSON.contributes.commands.filter((x: any) => x.command !== 'go.show.commands');
 	return extensionCommands;
 }
 
@@ -512,7 +512,7 @@ export class LineBuffer {
 	}
 }
 
-export function timeout(millis): Promise<void> {
+export function timeout(millis: number): Promise<void> {
 	return new Promise<void>((resolve, reject) => {
 		setTimeout(() => resolve(), millis);
 	});
@@ -575,7 +575,7 @@ export function getImportPath(text: string): string {
  *
  * @param {string} filePath.
  */
-export function guessPackageNameFromFile(filePath): Promise<string[]> {
+export function guessPackageNameFromFile(filePath: string): Promise<string[]> {
 	return new Promise((resolve, reject) => {
 
 		const goFilename = path.basename(filePath);
@@ -627,7 +627,7 @@ export interface ICheckResult {
  */
 export function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput: boolean, token?: vscode.CancellationToken): Promise<ICheckResult[]> {
 	let goRuntimePath = getBinPath('go');
-	let cmd;
+	let cmd: string;
 	if (toolName) {
 		cmd = getBinPath(toolName);
 	} else {
@@ -857,7 +857,7 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 	};
 }
 
-function rmdirRecursive(dir) {
+function rmdirRecursive(dir: string) {
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(file => {
 			const relPath = path.join(dir, file);

@@ -6,7 +6,15 @@
 		"target": "es6",
 		"lib": [
 			"es2015"
-		]
+		],
+		//"strict": true,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true,
+		"strictBindCallApply": true,
+		"strictFunctionTypes": true,
+		//"strictNullChecks": true,
+		//"strictPropertyInitialization": true,
 	},
 	"exclude": [
 		"node_modules"

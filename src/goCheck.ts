@@ -29,8 +29,8 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 	statusBarItem.text = '';
 }
 
-export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
-	let ctx = this;
+export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEvent) {
+	let ctx: any = this;
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
@@ -65,7 +65,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	let testPromise: Thenable<boolean>;
-	let tmpCoverPath;
+	let tmpCoverPath: string;
 	let testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,

@@ -23,7 +23,7 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		if (!this.enabled) {
 			return [];
 		}
-		let codeLensConfig = vscode.workspace.getConfiguration('go', document.uri).get('enableCodeLens');
+		let codeLensConfig: { [key: string]: any } = vscode.workspace.getConfiguration('go', document.uri).get('enableCodeLens');
 		let codelensEnabled = codeLensConfig ? codeLensConfig['references'] : false;
 		if (!codelensEnabled) {
 			return Promise.resolve([]);
