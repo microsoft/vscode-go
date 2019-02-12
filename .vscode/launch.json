@@ -25,7 +25,7 @@
 			"preLaunchTask": "npm"
 		},
 		{
-			"name": "Launch Tests",
+			"name": "Launch Integration Tests",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
@@ -42,7 +42,7 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Unit Tests",
+			"name": "Launch Unit Tests",
 			"program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
 			"args": [
 				"-u",
