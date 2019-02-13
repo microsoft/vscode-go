@@ -530,7 +530,7 @@ class Delve {
 				}
 			}, err => {
 				const errMsg = err ? err.toString() : '';
-				logError('Failed to halt - ' + errMsg.toString());
+				log('Failed to halt - ' + errMsg.toString());
 				if (errMsg.endsWith('has exited with status 0')) {
 					if (timeoutToken) {
 						clearTimeout(timeoutToken);

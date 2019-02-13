@@ -1,3 +1,11 @@
+## 0.9.2 - 12th February, 2019
+
+* When the program being debugged closes naturally, avoid showing the error from delve when trying to halt it. Fixes [Bug 2313](https://github.com/Microsoft/vscode-go/issues/2313) with [commit fd5a488c2](https://github.com/Microsoft/vscode-go/commit/fd5a488c2d73d27cbe3ce9f32be8bd0b586ef108)
+
+## 0.9.1 - 6th February, 2019
+
+* Fix regression where benchmarks get run without the -bench flag
+
 ## 0.9.0 - 6th February, 2019
 
 ### Debugging improvements
