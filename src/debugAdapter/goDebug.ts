@@ -1348,11 +1348,6 @@ class GoDebugSession extends LoggingDebugSession {
 				Scope: scope,
 				Cfg: this.delve.loadConfig
 			};
-
-		// if (args.context === "Copy") {
-			
-		// }
-		
 		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
 			err => {
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
