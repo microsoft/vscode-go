@@ -493,6 +493,10 @@ class Delve {
 	}
 
 	close(): Thenable<void> {
+		if (this.noDebug) {
+			// delve isn't running so no need to halt
+			return Promise.resolve();
+		}
 		log('HaltRequest');
 
 		return new Promise(resolve => {
