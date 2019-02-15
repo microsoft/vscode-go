@@ -479,12 +479,11 @@ class Delve {
 		});
 	}
 
-	callPromise<T>(command: string, args: any[]): Thenable<T> {
+	public callPromise<T>(command: string, args: any[]): Thenable<T> {
 		return new Promise<T>((resolve, reject) => {
 			this.connection.then(conn => {
-				conn.call<T>('RPCServer.' + command, args, (err, res) => {
-					if (err) return reject(err);
-					resolve(res);
+				conn.call<T>(`RPCServer.${command}`, args, (err, res) => {
+					return err ? reject(err) : resolve(res);
 				});
 			}, err => {
 				reject(err);
@@ -492,56 +491,55 @@ class Delve {
 		});
 	}
 
-	close(): Thenable<void> {
+	public close(): Thenable<void> {
 		if (this.noDebug) {
 			// delve isn't running so no need to halt
 			return Promise.resolve();
 		}
 		log('HaltRequest');
 
-		return new Promise(resolve => {
-			let timeoutToken: NodeJS.Timer;
-			if (this.debugProcess) {
-				timeoutToken = setTimeout(() => {
-					log('Killing debug process manually as we could not halt and detach delve in time');
-					killTree(this.debugProcess.pid);
-					resolve();
-				}, 1000);
+		return new Promise(async resolve => {
+			const timeoutToken: NodeJS.Timer = this.debugProcess && setTimeout(() => {
+				log('Killing debug process manually as we could not halt and detach delve in time');
+				killTree(this.debugProcess.pid);
+				resolve();
+			}, 1000);
+
+			try {
+				await this.callPromise('Command', [{ name: 'halt' }]);
+			}
+			catch (err) {
+				const errMsg = err ? err.toString() : '';
+				log(`Failed to halt - ${errMsg}`);
 			}
 
-			this.callPromise('Command', [{ name: 'halt' }]).then(() => {
-				if (timeoutToken) {
-					clearTimeout(timeoutToken);
+			if (timeoutToken) {
+				clearTimeout(timeoutToken);
+			}
+
+			log('HaltResponse');
+			if (!this.debugProcess) {
+				log('RestartRequest');
+				try {
+					await this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }]);
 				}
-				log('HaltResponse');
-				if (!this.debugProcess) {
-					log('RestartRequest');
-					return this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }])
-						.then(null, err => {
-							log('RestartResponse');
-							logError(`Failed to restart - ${(err || '').toString()}`);
-						})
-						.then(() => resolve());
-				} else {
-					log('DetachRequest');
-					return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }])
-						.then(null, err => {
-							log('DetachResponse');
-							logError(`Killing debug process manually as we failed to detach - ${(err || '').toString()}`);
-							killTree(this.debugProcess.pid);
-						})
-						.then(() => resolve());
+				catch (err) {
+					log('RestartResponse');
+					logError(`Failed to restart - ${(err || '').toString()}`);
 				}
-			}, err => {
-				const errMsg = err ? err.toString() : '';
-				log('Failed to halt - ' + errMsg.toString());
-				if (errMsg.endsWith('has exited with status 0')) {
-					if (timeoutToken) {
-						clearTimeout(timeoutToken);
-					}
-					return resolve();
+				return resolve();
+			} else {
+				log('DetachRequest');
+				try {
+					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
 				}
-			});
+				catch (err) {
+					log('DetachResponse');
+					logError(`Killing debug process manually as we failed to detach - ${(err.toString() || '')}`);
+					killTree(this.debugProcess.pid);
+				}
+				return resolve();
+			}
 		});
 	}
 }
