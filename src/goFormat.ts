@@ -8,6 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import { isModSupported } from './goModules';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './util';
 
@@ -20,7 +21,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 		let filename = document.fileName;
 		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
-		let formatTool = goConfig['formatTool'] || 'goreturns';
+		let formatTool = isModSupported(filename) ? 'goimports' : 'goreturns';
 		let formatFlags = goConfig['formatFlags'].slice() || [];
 
 		// We ignore the -w flag that updates file on disk because that would break undo feature
