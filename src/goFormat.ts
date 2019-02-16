@@ -8,8 +8,8 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { isModSupported } from './goModules';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
+import { isModSupported } from './goModules';
 import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
@@ -21,33 +21,46 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 		let filename = document.fileName;
 		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
-		let formatTool = isModSupported(filename) ? 'goimports' : 'goreturns';
+		let formatTool = goConfig['formatTool'] || 'goreturns';
 		let formatFlags = goConfig['formatFlags'].slice() || [];
 
-		// We ignore the -w flag that updates file on disk because that would break undo feature
-		if (formatFlags.indexOf('-w') > -1) {
-			formatFlags.splice(formatFlags.indexOf('-w'), 1);
-		}
-
-		// Fix for https://github.com/Microsoft/vscode-go/issues/613 and https://github.com/Microsoft/vscode-go/issues/630
-		if (formatTool === 'goimports' || formatTool === 'goreturns') {
-			formatFlags.push('-srcdir', filename);
-		}
-
-		// Since goformat supports the style flag, set tabsize if user has not passed any flags
-		if (formatTool === 'goformat' && formatFlags.length === 0 && options.insertSpaces) {
-			formatFlags.push('-style=indent=' + options.tabSize);
-		}
-
-		return this.runFormatter(formatTool, formatFlags, document, token).then(edits => edits, err => {
-			if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
-				promptForUpdatingTool(formatTool);
-				return Promise.resolve([]);
+		this.getFormatTool(goConfig, document.uri)
+		.then((formatTool) => {
+			// We ignore the -w flag that updates file on disk because that would break undo feature
+			if (formatFlags.indexOf('-w') > -1) {
+				formatFlags.splice(formatFlags.indexOf('-w'), 1);
 			}
-			if (err) {
-				console.log(err);
-				return Promise.reject('Check the console in dev tools to find errors when formatting.');
+
+			// Fix for https://github.com/Microsoft/vscode-go/issues/613 and https://github.com/Microsoft/vscode-go/issues/630
+			if (formatTool === 'goimports' || formatTool === 'goreturns') {
+				formatFlags.push('-srcdir', filename);
 			}
+
+			// Since goformat supports the style flag, set tabsize if user has not passed any flags
+			if (formatTool === 'goformat' && formatFlags.length === 0 && options.insertSpaces) {
+				formatFlags.push('-style=indent=' + options.tabSize);
+			}
+
+			return this.runFormatter(formatTool, formatFlags, document, token).then(edits => edits, err => {
+				if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
+					promptForUpdatingTool(formatTool);
+					return Promise.resolve([]);
+				}
+				if (err) {
+					console.log(err);
+					return Promise.reject('Check the console in dev tools to find errors when formatting.');
+				}
+			});
+		});
+	}
+
+	private getFormatTool(goConfig: vscode.WorkspaceConfiguration, fileUri: vscode.Uri): Thenable<string> {
+		let formatTool = goConfig['formatTool'] || 'goreturns';
+		if (formatTool === 'gofmt' || formatTool === 'goimports') {
+			return Promise.resolve(formatTool);
+		}
+		return isModSupported(fileUri).then(isMod => {
+			return isMod ? 'goimports' : formatTool;
 		});
 	}
 
