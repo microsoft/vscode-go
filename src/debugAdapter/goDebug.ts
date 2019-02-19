@@ -491,6 +491,11 @@ class Delve {
 		});
 	}
 
+	/**
+	 * To close the debugging session we do the following; If its a local process,
+	 * we try to halt and detach within a timeout otherwise we kill the debugger. If its a remote
+	 * process we try to halt and restart the remote target process running under the debugger.
+	 */
 	public close(): Thenable<void> {
 		if (this.noDebug) {
 			// delve isn't running so no need to halt
@@ -513,12 +518,19 @@ class Delve {
 				log(`Failed to halt - ${errMsg}`);
 			}
 
-			if (timeoutToken) {
-				clearTimeout(timeoutToken);
-			}
-
 			log('HaltResponse');
-			if (!this.debugProcess) {
+			if (this.debugProcess) {
+				log('DetachRequest');
+				try {
+					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
+					clearTimeout(timeoutToken);
+				}
+				catch (err) {
+					log('DetachResponse');
+					logError(`The timeout will kill the debug process manually as we failed to detach - ${(err.toString() || '')}`);
+				}
+				return resolve();
+			} else {
 				log('RestartRequest');
 				try {
 					await this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }]);
@@ -526,17 +538,6 @@ class Delve {
 				catch (err) {
 					log('RestartResponse');
 					logError(`Failed to restart - ${(err || '').toString()}`);
-				}
-				return resolve();
-			} else {
-				log('DetachRequest');
-				try {
-					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
-				}
-				catch (err) {
-					log('DetachResponse');
-					logError(`Killing debug process manually as we failed to detach - ${(err.toString() || '')}`);
-					killTree(this.debugProcess.pid);
 				}
 				return resolve();
 			}
