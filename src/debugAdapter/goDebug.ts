@@ -1157,7 +1157,7 @@ class GoDebugSession extends LoggingDebugSession {
 		} else {
 			variablesPromise = Promise.all(vari.children.map((v) => {
 				if (v.fullyQualifiedName === undefined) {
-					v.fullyQualifiedName = vari.name + '.' + v.name;
+					v.fullyQualifiedName = vari.fullyQualifiedName + '.' + v.name;
 				}
 				return loadChildren(`*(*"${v.type}")(${v.addr})`, v).then((): DebugProtocol.Variable => {
 					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
