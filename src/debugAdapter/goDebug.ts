@@ -938,7 +938,7 @@ class GoDebugSession extends LoggingDebugSession {
 					}
 				}
 				let scopes = new Array<Scope>();
-				let localVariables = {
+				let localVariables: DebugVariable = {
 					name: 'Local',
 					addr: 0,
 					type: '',
@@ -989,7 +989,7 @@ class GoDebugSession extends LoggingDebugSession {
 						}
 						log('global vars', globals);
 
-						const globalVariables = {
+						const globalVariables: DebugVariable = {
 							name: 'Global',
 							addr: 0,
 							type: '',
