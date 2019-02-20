@@ -8,31 +8,27 @@
 import vscode = require('vscode');
 import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { getParametersAndReturnType } from './util';
+import { getParametersAndReturnType, isPositionInString } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
-	private goConfig: WorkspaceConfiguration = null;
 
-	constructor(goConfig?: WorkspaceConfiguration) {
-		this.goConfig = goConfig;
+	constructor(private goConfig?: WorkspaceConfiguration) {
 	}
 
-	public provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
-		if (!this.goConfig) {
-			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
-		}
+	public async provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
+		let goConfig = this.goConfig || vscode.workspace.getConfiguration('go', document.uri);
 
-		let theCall = this.walkBackwardsToBeginningOfCall(document, position);
+		const theCall = this.walkBackwardsToBeginningOfCall(document, position);
 		if (theCall == null) {
 			return Promise.resolve(null);
 		}
-		let callerPos = this.previousTokenPosition(document, theCall.openParen);
+		const callerPos = this.previousTokenPosition(document, theCall.openParen);
 		// Temporary fix to fall back to godoc if guru is the set docsTool
-		let goConfig = this.goConfig;
 		if (goConfig['docsTool'] === 'guru') {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
-		return definitionLocation(document, callerPos, goConfig, true, token).then(res => {
+		try {
+			const res = await definitionLocation(document, callerPos, goConfig, true, token);
 			if (!res) {
 				// The definition was not found
 				return null;
@@ -45,37 +41,36 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			if (!declarationText) {
 				return null;
 			}
-			let result = new SignatureHelp();
+			const result = new SignatureHelp();
 			let sig: string;
 			let si: SignatureInformation;
 			if (res.toolUsed === 'godef') {
 				// declaration is of the form "Add func(a int, b int) int"
-				let nameEnd = declarationText.indexOf(' ');
-				let sigStart = nameEnd + 5; // ' func'
-				let funcName = declarationText.substring(0, nameEnd);
+				const nameEnd = declarationText.indexOf(' ');
+				const sigStart = nameEnd + 5; // ' func'
+				const funcName = declarationText.substring(0, nameEnd);
 				sig = declarationText.substring(sigStart);
 				si = new SignatureInformation(funcName + sig, res.doc);
-			} else if (res.toolUsed === 'gogetdoc') {
+			}
+			else if (res.toolUsed === 'gogetdoc') {
 				// declaration is of the form "func Add(a int, b int) int"
 				declarationText = declarationText.substring(5);
-				let funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it
+				const funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it
 				if (funcNameStart > 0) {
 					declarationText = declarationText.substring(funcNameStart);
 				}
 				si = new SignatureInformation(declarationText, res.doc);
 				sig = declarationText.substring(res.name.length);
 			}
-
-			si.parameters = getParametersAndReturnType(sig).params.map(paramText =>
-				new ParameterInformation(paramText)
-			);
+			si.parameters = getParametersAndReturnType(sig).params.map(paramText => new ParameterInformation(paramText));
 			result.signatures = [si];
 			result.activeSignature = 0;
 			result.activeParameter = Math.min(theCall.commas.length, si.parameters.length - 1);
 			return result;
-		}, () => {
+		}
+		catch (e) {
 			return null;
-		});
+		}
 	}
 
 	private previousTokenPosition(document: TextDocument, position: Position): Position {
@@ -89,21 +84,21 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		return null;
 	}
 
-	private walkBackwardsToBeginningOfCall(document: TextDocument, position: Position): { openParen: Position, commas: Position[] } {
+	/**
+	 * Goes through the function params' lines and gets the number of commas and the start position of the call.
+	 */
+	private walkBackwardsToBeginningOfCall(document: TextDocument, position: Position): { openParen: Position, commas: Position[] } | null {
 		let parenBalance = 0;
-		let commas = [];
 		let maxLookupLines = 30;
+		const commas = [];
 
-		for (let line = position.line; line >= 0 && maxLookupLines >= 0; line--, maxLookupLines--) {
-			let currentLine = document.lineAt(line).text;
-			let characterPosition = document.lineAt(line).text.length - 1;
+		for (let lineNr = position.line; lineNr >= 0 && maxLookupLines >= 0; lineNr-- , maxLookupLines--) {
 
-			if (line === position.line) {
-				characterPosition = position.character;
-				currentLine = currentLine.substring(0, position.character);
-			}
-
-			let stringLiteralBoundaries = this.getStringLiteralIndexes(currentLine);
+			const line = document.lineAt(lineNr);
+			// if its current line, get the text until the position given, otherwise get the full line.
+			const [currentLine, characterPosition] = lineNr === position.line
+				? [line.text.substring(0, position.character), position.character]
+				: [line.text, line.text.length - 1];
 
 			for (let char = characterPosition - 1; char >= 0; char--) {
 				switch (currentLine[char]) {
@@ -111,8 +106,8 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 						parenBalance--;
 						if (parenBalance < 0) {
 							return {
-								openParen: new Position(line, char),
-								commas: commas
+								openParen: new Position(lineNr, char),
+								commas
 							};
 						}
 						break;
@@ -120,77 +115,14 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 						parenBalance++;
 						break;
 					case ',':
-						if ((parenBalance === 0) && !stringLiteralBoundaries.IsWithinPairRange(char)) {
-							commas.push(new Position(line, char));
+						const commaPos = new Position(lineNr, char);
+						if ((parenBalance === 0) && !isPositionInString(document, commaPos)) {
+							commas.push(commaPos);
 						}
 						break;
 				}
 			}
 		}
 		return null;
-	}
-
-	private getStringLiteralIndexes(currentLine: string): PairedIndexWrapper {
-		// Index string literal boundaries
-		// This is needed to detect string literals and avoid pushing commas within them
-		let stringLiteralBoundaries = new PairedIndexWrapper();
-		let stringLiteralRegex = RegExp('([\`\'\"])(?:(?!(?:\\\\|\\1)).|\\\\.)*\\1', 'giu');
-		let m: RegExpExecArray | null = null;
-		do {
-			m = stringLiteralRegex.exec(currentLine);
-			if (m) {
-				stringLiteralBoundaries.PushIndex(m.index);
-				stringLiteralBoundaries.PushIndex(stringLiteralRegex.lastIndex);
-			}
-		} while (m);
-
-		// Check for incomplete literals as current line terminators
-		for (let char = stringLiteralBoundaries.LastIndex; char < currentLine.length; char++) {
-			if ((currentLine[char] === '`')
-				|| (currentLine[char] === '\'')
-				|| (currentLine[char] === '"')) {
-				stringLiteralBoundaries.PushIndex(char);
-				break;
-			}
-		}
-
-		return stringLiteralBoundaries;
-	}
-}
-
-/*
-* Array wrapper that contains indexes treated as pairs,
-* assuming an increasing order (going foward)
-* An odd number of elements will consider the last
-* element as the start of a new (incomplete) range
-*/
-class PairedIndexWrapper {
-	LastIndex: number;
-	private Array: Array<number>;
-
-	public constructor() {
-		this.Array = new Array<number>();
-		this.LastIndex = 0;
-	}
-
-	public PushIndex(index: number): void {
-		this.Array.push(index);
-		this.LastIndex = index;
-	}
-
-	// Traverse the index pairs contained in the array
-	// and check whether an index is inside a pair or not
-	public IsWithinPairRange(index: number): boolean {
-		let isEven = (this.Array.length % 2) === 0;
-		if (index > this.LastIndex) return !isEven;
-		let limit = this.Array.length - (isEven ? 1 : 2);
-		for (let i = 0; i < limit; i = i + 2) {
-			if (i <= limit - 1) {
-				if ((index > this.Array[i]) && (index < this.Array[i + 1])) {
-					return true;
-				}
-			}
-		}
-		return false;
 	}
 }
