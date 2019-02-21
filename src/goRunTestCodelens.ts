@@ -29,9 +29,9 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		if (!this.enabled) {
 			return [];
 		}
-		let config = vscode.workspace.getConfiguration('go', document.uri);
-		let codeLensConfig: { [key: string]: any } = config.get('enableCodeLens');
-		let codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
+		const config = vscode.workspace.getConfiguration('go', document.uri);
+		const codeLensConfig: { [key: string]: any } = config.get('enableCodeLens');
+		const codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
 		if (!codelensEnabled || !document.fileName.endsWith('_test.go')) {
 			return [];
 		}
@@ -51,40 +51,35 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		});
 	}
 
-	private getCodeLensForPackage(document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {
-		let documentSymbolProvider = new GoDocumentSymbolProvider();
-		return documentSymbolProvider.provideDocumentSymbols(document, token)
-			.then(symbols => symbols[0].children)
-			.then(symbols => {
-				const pkg = symbols.find(sym => sym.kind === vscode.SymbolKind.Package && !!sym.name);
-				if (!pkg) {
-					return;
-				}
-				const range = pkg.range;
-				const packageCodeLens = [
-					new CodeLens(range, {
-						title: 'run package tests',
-						command: 'go.test.package'
-					}),
-					new CodeLens(range, {
-						title: 'run file tests',
-						command: 'go.test.file'
-					})
-				];
-				if (symbols.some(sym => sym.kind === vscode.SymbolKind.Function && this.benchmarkRegex.test(sym.name))) {
-					packageCodeLens.push(
-						new CodeLens(range, {
-							title: 'run package benchmarks',
-							command: 'go.benchmark.package'
-						}),
-						new CodeLens(range, {
-							title: 'run file benchmarks',
-							command: 'go.benchmark.file'
-						})
-					);
-				}
-				return packageCodeLens;
-			});
+	private async getCodeLensForPackage(document: TextDocument, token: CancellationToken): Promise<CodeLens[]> {
+		const documentSymbolProvider = new GoDocumentSymbolProvider();
+		const symbols = await documentSymbolProvider.provideDocumentSymbols(document, token);
+		const symbols_1 = symbols[0].children;
+		const pkg = symbols_1.find(sym => sym.kind === vscode.SymbolKind.Package && !!sym.name);
+		if (!pkg) {
+			return;
+		}
+		const range = pkg.range;
+		const packageCodeLens = [
+			new CodeLens(range, {
+				title: 'run package tests',
+				command: 'go.test.package'
+			}),
+			new CodeLens(range, {
+				title: 'run file tests',
+				command: 'go.test.file'
+			})
+		];
+		if (symbols_1.some(sym => sym.kind === vscode.SymbolKind.Function && this.benchmarkRegex.test(sym.name))) {
+			packageCodeLens.push(new CodeLens(range, {
+				title: 'run package benchmarks',
+				command: 'go.benchmark.package'
+			}), new CodeLens(range, {
+				title: 'run file benchmarks',
+				command: 'go.benchmark.file'
+			}));
+		}
+		return packageCodeLens;
 	}
 
 	private getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Thenable<CodeLens[]> {

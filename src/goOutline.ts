@@ -58,14 +58,14 @@ export interface GoOutlineOptions {
 	skipRanges?: boolean;
 }
 
-export function documentSymbols(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<vscode.DocumentSymbol[]> {
-	return runGoOutline(options, token).then(decls => {
-		return convertToCodeSymbols(
-			options.document,
-			decls,
-			options.importsOption !== GoOutlineImportsOptions.Exclude,
-			(options.skipRanges || !options.document) ? null : makeMemoizedByteOffsetConverter(new Buffer(options.document.getText())));
-	});
+export async function documentSymbols(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<vscode.DocumentSymbol[]> {
+	const decls = await runGoOutline(options, token);
+	return convertToCodeSymbols(options.document,
+		decls,
+		options.importsOption !== GoOutlineImportsOptions.Exclude,
+		(options.skipRanges || !options.document)
+			? null
+			: makeMemoizedByteOffsetConverter(new Buffer(options.document.getText())));
 }
 
 export function runGoOutline(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<GoOutlineDeclaration[]> {
@@ -149,11 +149,11 @@ function convertToCodeSymbols(
 		let selectionRange = null;
 		let symbolRange = null;
 		if (document && byteOffsetToDocumentOffset) {
-			let start = byteOffsetToDocumentOffset(decl.start - 1);
-			let end = byteOffsetToDocumentOffset(decl.end - 1);
-			let startPosition = document.positionAt(start);
-			let endPosition = document.positionAt(end);
-			symbolRange = new vscode.Range(startPosition, endPosition)
+			const start = byteOffsetToDocumentOffset(decl.start - 1);
+			const end = byteOffsetToDocumentOffset(decl.end - 1);
+			const startPosition = document.positionAt(start);
+			const endPosition = document.positionAt(end);
+			symbolRange = new vscode.Range(startPosition, endPosition);
 			selectionRange = startPosition.line === endPosition.line ?
 				symbolRange :
 				new vscode.Range(startPosition, document.lineAt(startPosition.line).range.end);
@@ -185,10 +185,10 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
 		if (typeof this.includeImports !== 'boolean') {
-			let gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
+			const gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
 			this.includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
 		}
-		let options = { fileName: document.fileName, document: document, importsOption: this.includeImports ? GoOutlineImportsOptions.Include : GoOutlineImportsOptions.Exclude };
+		const options = { fileName: document.fileName, document: document, importsOption: this.includeImports ? GoOutlineImportsOptions.Include : GoOutlineImportsOptions.Exclude };
 		return documentSymbols(options, token);
 	}
 }

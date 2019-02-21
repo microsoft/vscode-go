@@ -22,8 +22,8 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		if (!this.enabled) {
 			return [];
 		}
-		let codeLensConfig: { [key: string]: any } = vscode.workspace.getConfiguration('go', document.uri).get('enableCodeLens');
-		let codelensEnabled = codeLensConfig ? codeLensConfig['references'] : false;
+		const codeLensConfig: { [key: string]: any } = vscode.workspace.getConfiguration('go', document.uri).get('enableCodeLens');
+		const codelensEnabled = codeLensConfig ? codeLensConfig['references'] : false;
 		if (!codelensEnabled) {
 			return Promise.resolve([]);
 		}
@@ -44,16 +44,16 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 	}
 
 	public resolveCodeLens?(inputCodeLens: CodeLens, token: CancellationToken): CodeLens | Thenable<CodeLens> {
-		let codeLens = inputCodeLens as ReferencesCodeLens;
+		const codeLens = inputCodeLens as ReferencesCodeLens;
 
 		if (token.isCancellationRequested) {
 			return Promise.resolve(codeLens);
 		}
 
-		let options = {
+		const options = {
 			includeDeclaration: false
 		};
-		let referenceProvider = new GoReferenceProvider();
+		const referenceProvider = new GoReferenceProvider();
 		return referenceProvider.provideReferences(codeLens.document, codeLens.range.start, options, token).then(references => {
 			codeLens.command = {
 				title: references.length === 1
@@ -73,28 +73,22 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		});
 	}
 
-	private provideDocumentSymbols(document: TextDocument, token: CancellationToken): Thenable<vscode.DocumentSymbol[]> {
-		let symbolProvider = new GoDocumentSymbolProvider();
-		let isTestFile = document.fileName.endsWith('_test.go');
-		return symbolProvider.provideDocumentSymbols(document, token)
-			.then(symbols => symbols[0].children)
-			.then(symbols => {
-				return symbols.filter(symbol => {
-
-					if (symbol.kind === vscode.SymbolKind.Interface) {
-						return true;
-					}
-
-					if (symbol.kind === vscode.SymbolKind.Function) {
-						if (isTestFile && (symbol.name.startsWith('Test') || symbol.name.startsWith('Example') || symbol.name.startsWith('Benchmark'))) {
-							return false;
-						}
-						return true;
-					}
-
+	private async provideDocumentSymbols(document: TextDocument, token: CancellationToken): Promise<vscode.DocumentSymbol[]> {
+		const symbolProvider = new GoDocumentSymbolProvider();
+		const isTestFile = document.fileName.endsWith('_test.go');
+		const symbols = await symbolProvider.provideDocumentSymbols(document, token);
+		const symbols_1 = symbols[0].children;
+		return symbols_1.filter(symbol => {
+			if (symbol.kind === vscode.SymbolKind.Interface) {
+				return true;
+			}
+			if (symbol.kind === vscode.SymbolKind.Function) {
+				if (isTestFile && (symbol.name.startsWith('Test') || symbol.name.startsWith('Example') || symbol.name.startsWith('Benchmark'))) {
 					return false;
 				}
-				);
-			});
+				return true;
+			}
+			return false;
+		});
 	}
 }
