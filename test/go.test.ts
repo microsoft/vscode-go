@@ -355,28 +355,25 @@ It returns the number of bytes written and any write error encountered.
 			return done();
 		}
 
-		getGoVersion().then(version => {
+		getGoVersion().then(async version => {
 			let uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
-			return vscode.workspace.openTextDocument(uri).then(document => {
-				return vscode.window.showTextDocument(document).then(editor => {
-					return generateTestCurrentPackage().then((result: boolean) => {
-						assert.equal(result, true);
-						return Promise.resolve();
-					});
-				});
-			}).then(() => {
-				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-				if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-					return Promise.resolve();
-				} else {
-					return Promise.reject('generatetests_test.go not found');
-				}
-			});
+			const document = await vscode.workspace.openTextDocument(uri);
+			const editor = await vscode.window.showTextDocument(document);
+			const result = await generateTestCurrentPackage();
+			assert.equal(result, true);
+			await Promise.resolve();
+			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+				return Promise.resolve();
+			}
+			else {
+				return Promise.reject('generatetests_test.go not found');
+			}
 		}).then(() => done(), done);
 	});
 
 	test('Gometalinter error checking', (done) => {
-		getGoVersion().then(version => {
+		getGoVersion().then(async version => {
 			let config = Object.create(vscode.workspace.getConfiguration('go'), {
 				'lintOnSave': { value: 'package' },
 				'lintTool': { value: 'gometalinter' },
@@ -384,38 +381,35 @@ It returns the number of bytes written and any write error encountered.
 				'vetOnSave': { value: 'off' },
 				'buildOnSave': { value: 'off' }
 			});
-			let expected = [
+			const expected = [
 				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
 				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
 			let errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
-			return check(vscode.Uri.file(errorsTestPath), config).then(diagnostics => {
-				const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
-				let sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
-					if (a.msg < b.msg)
-						return -1;
-					if (a.msg > b.msg)
-						return 1;
-					return 0;
-				});
-
-				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
-				let matchCount = 0;
-				for (let i in expected) {
-					if (expected.hasOwnProperty(i)) {
-						for (let j in sortedDiagnostics) {
-							if ((expected[i].line === sortedDiagnostics[j].line)
-								&& (expected[i].severity === sortedDiagnostics[j].severity)
-								&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-								matchCount++;
-							}
+			const diagnostics = await check(vscode.Uri.file(errorsTestPath), config);
+			const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
+			let sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
+				if (a.msg < b.msg)
+					return -1;
+				if (a.msg > b.msg)
+					return 1;
+				return 0;
+			});
+			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+			let matchCount = 0;
+			for (let i in expected) {
+				if (expected.hasOwnProperty(i)) {
+					for (let j in sortedDiagnostics) {
+						if ((expected[i].line === sortedDiagnostics[j].line)
+							&& (expected[i].severity === sortedDiagnostics[j].severity)
+							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+							matchCount++;
 						}
 					}
 				}
-				assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
-
-				return Promise.resolve();
-			});
+			}
+			assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
+			return Promise.resolve();
 		}).then(() => done(), done);
 	});
 
@@ -520,39 +514,46 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Outline', (done) => {
-		const filePath = path.join(fixturePath, 'outlineTest', 'test.go');
-		const options = { fileName: filePath, importsOption: GoOutlineImportsOptions.Include, skipRanges: true };
-		documentSymbols(options, null).then(outlines => {
-			const packageSymbols = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
-			const imports = outlines.filter(x => x.kind === vscode.SymbolKind.Namespace);
-			const functions = outlines.filter(x => x.kind === vscode.SymbolKind.Function);
+		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			const options = { document: document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Include };
 
-			assert.equal(packageSymbols.length, 1);
-			assert.equal(packageSymbols[0].name, 'main');
-			assert.equal(imports.length, 1);
-			assert.equal(imports[0].name, '"fmt"');
-			assert.equal(functions.length, 2);
-			assert.equal(functions[0].name, 'print');
-			assert.equal(functions[1].name, 'main');
-			done();
-		}, done);
+			documentSymbols(options, null).then(outlines => {
+				const packageSymbols = outlines.filter((x: any) => x.kind === vscode.SymbolKind.Package);
+				const imports = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Namespace);
+				const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
+
+				assert.equal(packageSymbols.length, 1);
+				assert.equal(packageSymbols[0].name, 'main');
+				assert.equal(imports.length, 1);
+				assert.equal(imports[0].name, '"fmt"');
+				assert.equal(functions.length, 2);
+				assert.equal(functions[0].name, 'print');
+				assert.equal(functions[1].name, 'main');
+				done();
+			}, done);
+		});
+
 	});
 
 	test('Test Outline imports only', (done) => {
-		const filePath = path.join(fixturePath, 'outlineTest', 'test.go');
-		const options = { fileName: filePath, importsOption: GoOutlineImportsOptions.Only, skipRanges: true };
-		documentSymbols(options, null).then(outlines => {
-			const packageSymbols = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
-			const imports = outlines.filter(x => x.kind === vscode.SymbolKind.Namespace);
-			const functions = outlines.filter(x => x.kind === vscode.SymbolKind.Function);
+		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
+		vscode.workspace.openTextDocument(uri).then(document => {
+			const options = { document: document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only };
 
-			assert.equal(packageSymbols.length, 1);
-			assert.equal(packageSymbols[0].name, 'main');
-			assert.equal(imports.length, 1);
-			assert.equal(imports[0].name, '"fmt"');
-			assert.equal(functions.length, 0);
-			done();
-		}, done);
+			documentSymbols(options, null).then(outlines => {
+				const packageSymbols = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
+				const imports = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Namespace);
+				const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
+
+				assert.equal(packageSymbols.length, 1);
+				assert.equal(packageSymbols[0].name, 'main');
+				assert.equal(imports.length, 1);
+				assert.equal(imports[0].name, '"fmt"');
+				assert.equal(functions.length, 0);
+				done();
+			}, done);
+		});
 	});
 
 	test('Test Outline document symbols', (done) => {
@@ -581,13 +582,11 @@ It returns the number of bytes written and any write error encountered.
 	test('Test listPackages', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => vscode.window.showTextDocument(document)
-			.then(editor => {
-				const includeImportedPkgs = listPackages(false);
-				const excludeImportedPkgs = listPackages(true);
-				return Promise.all([includeImportedPkgs, excludeImportedPkgs]).then(([pkgsInclude, pkgsExclude]) => {
-					assert.equal(pkgsInclude.indexOf('fmt') > -1, true);
-					assert.equal(pkgsExclude.indexOf('fmt') > -1, false);
-				});
+			.then(async editor => {
+				const includeImportedPkgs = await listPackages(false);
+				const excludeImportedPkgs = await listPackages(true);
+				assert.equal(includeImportedPkgs.indexOf('fmt') > -1, true);
+				assert.equal(excludeImportedPkgs.indexOf('fmt') > -1, false);
 			})).then(() => done(), done);
 	});
 

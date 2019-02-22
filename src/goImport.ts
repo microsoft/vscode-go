@@ -14,15 +14,15 @@ import { getImportablePackages } from './goPackages';
 
 const missingToolMsg = 'Missing tool: ';
 
-export function listPackages(excludeImportedPkgs: boolean = false): Promise<string[]> {
-	const importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
-	const pkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
-	return Promise.all([pkgsPromise, importsPromise]).then(([pkgMap, importedPkgs]) => {
-		importedPkgs.forEach(pkg => {
-			pkgMap.delete(pkg);
-		});
-		return Array.from(pkgMap.keys()).sort();
-	});
+export async function listPackages(excludeImportedPkgs: boolean = false): Promise<string[]> {
+	const importedPkgs = excludeImportedPkgs && vscode.window.activeTextEditor
+		? await getImports(vscode.window.activeTextEditor.document)
+		: [];
+	const pkgMap = await getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
+
+	return Array.from(pkgMap.keys())
+		.filter(pkg => !importedPkgs.some(imported => imported === pkg))
+		.sort();
 }
 
 /**
@@ -32,13 +32,13 @@ export function listPackages(excludeImportedPkgs: boolean = false): Promise<stri
  * @returns Array of imported package paths wrapped in a promise
  */
 async function getImports(document: vscode.TextDocument): Promise<string[]> {
-	const options = { fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only, document, skipRanges: true };
+	const options = { fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only, document };
 	const symbols = await documentSymbols(options, null);
 	if (!symbols || !symbols.length) {
 		return [];
 	}
 	// import names will be of the form "math", so strip the quotes in the beginning and the end
-	let imports = symbols
+	let imports = symbols[0].children
 		.filter(x => x.kind === vscode.SymbolKind.Namespace)
 		.map(x => x.name.substr(1, x.name.length - 2));
 	return imports;

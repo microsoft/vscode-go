@@ -51,11 +51,6 @@ export interface GoOutlineOptions {
 	 */
 	document?: vscode.TextDocument;
 
-	/**
-	 * Skips range information in the output.
-	 * Calculating ranges is slightly expensive for large files, therefore skip it when not required.
-	 */
-	skipRanges?: boolean;
 }
 
 export async function documentSymbols(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<vscode.DocumentSymbol[]> {
@@ -63,15 +58,13 @@ export async function documentSymbols(options: GoOutlineOptions, token: vscode.C
 	return convertToCodeSymbols(options.document,
 		decls,
 		options.importsOption !== GoOutlineImportsOptions.Exclude,
-		(options.skipRanges || !options.document)
-			? null
-			: makeMemoizedByteOffsetConverter(new Buffer(options.document.getText())));
+		makeMemoizedByteOffsetConverter(Buffer.from(options.document.getText())));
 }
 
 export function runGoOutline(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<GoOutlineDeclaration[]> {
 	return new Promise<GoOutlineDeclaration[]>((resolve, reject) => {
-		let gooutline = getBinPath('go-outline');
-		let gooutlineFlags = ['-f', options.fileName];
+		const gooutline = getBinPath('go-outline');
+		const gooutlineFlags = ['-f', options.fileName];
 		if (options.importsOption === GoOutlineImportsOptions.Only) {
 			gooutlineFlags.push('-imports-only');
 		}
@@ -133,7 +126,7 @@ function convertToCodeSymbols(
 	includeImports: boolean,
 	byteOffsetToDocumentOffset: (byteOffset: number) => number): vscode.DocumentSymbol[] {
 
-	let symbols: vscode.DocumentSymbol[] = [];
+	const symbols: vscode.DocumentSymbol[] = [];
 	(decls || []).forEach(decl => {
 		if (!includeImports && decl.type === 'import') return;
 
@@ -146,26 +139,22 @@ function convertToCodeSymbols(
 		}
 
 
-		let selectionRange = null;
-		let symbolRange = null;
-		if (document && byteOffsetToDocumentOffset) {
-			const start = byteOffsetToDocumentOffset(decl.start - 1);
-			const end = byteOffsetToDocumentOffset(decl.end - 1);
-			const startPosition = document.positionAt(start);
-			const endPosition = document.positionAt(end);
-			symbolRange = new vscode.Range(startPosition, endPosition);
-			selectionRange = startPosition.line === endPosition.line ?
-				symbolRange :
-				new vscode.Range(startPosition, document.lineAt(startPosition.line).range.end);
+		const start = byteOffsetToDocumentOffset(decl.start - 1);
+		const end = byteOffsetToDocumentOffset(decl.end - 1);
+		const startPosition = document.positionAt(start);
+		const endPosition = document.positionAt(end);
+		const symbolRange = new vscode.Range(startPosition, endPosition);
+		const selectionRange = startPosition.line === endPosition.line ?
+			symbolRange :
+			new vscode.Range(startPosition, document.lineAt(startPosition.line).range.end);
 
-			if (decl.type === 'type') {
-				let line = document.lineAt(document.positionAt(start));
-				let regex = new RegExp(`^\\s*type\\s+${decl.label}\\s+struct\\b`);
-				decl.type = regex.test(line.text) ? 'struct' : 'type';
-			}
-
+		if (decl.type === 'type') {
+			let line = document.lineAt(document.positionAt(start));
+			let regex = new RegExp(`^\\s*type\\s+${decl.label}\\s+struct\\b`);
+			decl.type = regex.test(line.text) ? 'struct' : 'type';
 		}
-		let symbolInfo = new vscode.DocumentSymbol(
+
+		const symbolInfo = new vscode.DocumentSymbol(
 			label,
 			decl.type,
 			goKindToCodeKind[decl.type],
@@ -188,7 +177,11 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 			const gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
 			this.includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
 		}
-		const options = { fileName: document.fileName, document: document, importsOption: this.includeImports ? GoOutlineImportsOptions.Include : GoOutlineImportsOptions.Exclude };
+		const options: GoOutlineOptions = {
+			fileName: document.fileName,
+			document,
+			importsOption: this.includeImports ? GoOutlineImportsOptions.Include : GoOutlineImportsOptions.Exclude
+		};
 		return documentSymbols(options, token);
 	}
 }
