@@ -72,6 +72,36 @@
         "aliases": [
           "Go"
         ]
+      },
+      {
+        "id": "go.mod",
+        "extensions": [
+          "go.mod"
+        ],
+        "aliases": [
+          "Go Module File"
+        ]
+      },
+      {
+        "id": "go.sum",
+        "extensions": [
+          "go.sum"
+        ],
+        "aliases": [
+          "Go Sum File"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "go.mod",
+        "scopeName": "go.mod",
+        "path": "./syntaxes/go.mod.tmGrammar.json"
+      },
+      {
+        "language": "go.sum",
+        "scopeName": "go.sum",
+        "path": "./syntaxes/go.sum.tmGrammar.json"
       }
     ],
     "snippets": [
