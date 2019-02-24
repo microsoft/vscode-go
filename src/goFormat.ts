@@ -21,10 +21,9 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 		let filename = document.fileName;
 		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
-		let formatTool = goConfig['formatTool'] || 'goreturns';
 		let formatFlags = goConfig['formatFlags'].slice() || [];
 
-		this.getFormatTool(goConfig, document.uri)
+		return this.getFormatTool(goConfig, document.uri)
 		.then((formatTool) => {
 			// We ignore the -w flag that updates file on disk because that would break undo feature
 			if (formatFlags.indexOf('-w') > -1) {
