@@ -38,7 +38,7 @@ async function getImports(document: vscode.TextDocument): Promise<string[]> {
 		return [];
 	}
 	// import names will be of the form "math", so strip the quotes in the beginning and the end
-	let imports = symbols[0].children
+	const imports = symbols[0].children
 		.filter(x => x.kind === vscode.SymbolKind.Namespace)
 		.map(x => x.name.substr(1, x.name.length - 2));
 	return imports;

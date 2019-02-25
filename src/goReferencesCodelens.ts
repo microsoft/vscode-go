@@ -34,8 +34,8 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 
 				// Add offset for functions as go-outline returns position at the keyword func instead of func name
 				if (symbol.kind === vscode.SymbolKind.Function) {
-					let funcDecl = document.lineAt(position.line).text.substr(position.character);
-					let match = methodRegex.exec(funcDecl);
+					const funcDecl = document.lineAt(position.line).text.substr(position.character);
+					const match = methodRegex.exec(funcDecl);
 					position = position.translate(0, match ? match[0].length : 5);
 				}
 				return new ReferencesCodeLens(document, new vscode.Range(position, position));

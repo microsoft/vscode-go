@@ -91,12 +91,7 @@ export async function generateTestCurrentFunction(): Promise<boolean> {
 
 	const functions = await getFunctions(editor.document);
 	const selection = editor.selection;
-	const currentFunction: vscode.DocumentSymbol = functions.find(func => {
-		if (selection && func.range.contains(selection.start)) {
-			return true;
-		}
-		return false;
-	});
+	const currentFunction: vscode.DocumentSymbol = functions.find(func => selection && func.range.contains(selection.start));
 
 	if (!currentFunction) {
 		vscode.window.showInformationMessage('No function found at cursor.');

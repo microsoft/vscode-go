@@ -97,8 +97,8 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 					});
 				}
 				if (err) return resolve(null);
-				let result = stdout.toString();
-				let decls = <GoOutlineDeclaration[]>JSON.parse(result);
+				const result = stdout.toString();
+				const decls = <GoOutlineDeclaration[]>JSON.parse(result);
 				return resolve(decls);
 			} catch (e) {
 				reject(e);
@@ -130,14 +130,12 @@ function convertToCodeSymbols(
 	(decls || []).forEach(decl => {
 		if (!includeImports && decl.type === 'import') return;
 
-		let label = decl.label;
 
-		if (label === '_' && decl.type === 'variable') return;
+		if (decl.label === '_' && decl.type === 'variable') return;
 
-		if (decl.receiverType) {
-			label = '(' + decl.receiverType + ').' + label;
-		}
-
+		const label = decl.receiverType
+			? `(${decl.receiverType}).${decl.label}`
+			: decl.label;
 
 		const start = byteOffsetToDocumentOffset(decl.start - 1);
 		const end = byteOffsetToDocumentOffset(decl.end - 1);
