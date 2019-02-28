@@ -938,7 +938,7 @@ class GoDebugSession extends LoggingDebugSession {
 					}
 				}
 				let scopes = new Array<Scope>();
-				let localVariables = {
+				let localVariables: DebugVariable = {
 					name: 'Local',
 					addr: 0,
 					type: '',
@@ -989,7 +989,7 @@ class GoDebugSession extends LoggingDebugSession {
 						}
 						log('global vars', globals);
 
-						const globalVariables = {
+						const globalVariables: DebugVariable = {
 							name: 'Global',
 							addr: 0,
 							type: '',
@@ -1059,6 +1059,7 @@ class GoDebugSession extends LoggingDebugSession {
 				};
 			} else {
 				if (v.children[0].children.length > 0) {
+					// Generate correct fullyQualified names for variable expressions
 					v.children[0].fullyQualifiedName = v.fullyQualifiedName;
 					v.children[0].children.forEach(child => {
 						child.fullyQualifiedName = v.fullyQualifiedName + '.' + child.name;
@@ -1095,6 +1096,13 @@ class GoDebugSession extends LoggingDebugSession {
 				variablesReference: 0
 			};
 		} else {
+			// Default case - structs
+			if (v.children.length > 0) {
+				// Generate correct fullyQualified names for variable expressions
+				v.children.forEach(child => {
+					child.fullyQualifiedName = v.fullyQualifiedName + '.' + child.name;
+				});
+			}
 			return {
 				result: v.value || ('<' + v.type + '>'),
 				variablesReference: v.children.length > 0 ? this._variableHandles.create(v) : 0
@@ -1156,11 +1164,9 @@ class GoDebugSession extends LoggingDebugSession {
 			}));
 		} else {
 			variablesPromise = Promise.all(vari.children.map((v) => {
-				if (v.fullyQualifiedName === undefined) {
-					v.fullyQualifiedName = vari.fullyQualifiedName + '.' + v.name;
-				}
 				return loadChildren(`*(*"${v.type}")(${v.addr})`, v).then((): DebugProtocol.Variable => {
 					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
+
 					return {
 						name: v.name,
 						value: result,
@@ -1314,6 +1320,8 @@ class GoDebugSession extends LoggingDebugSession {
 		log('EvaluateRequest');
 		this.evaluateRequestImpl(args).then(out => {
 			const variable = this.delve.isApiV1 ? <DebugVariable>out : (<EvalOut>out).Variable;
+			// #2326: Set the fully qualified name for variable mapping
+			variable.fullyQualifiedName = variable.name;
 			response.body = this.convertDebugVariableToProtocolVariable(variable);
 			this.sendResponse(response);
 			log('EvaluateResponse');
