@@ -398,7 +398,7 @@
               },
               "remotePath": {
                 "type": "string",
-                "description": "If remote debugging, the path to the source code on the remote machine, if different from the local machine.",
+                "description": "Absolute path to the file being debugged on the remote machine in case of remote debugging.",
                 "default": ""
               },
               "port": {
