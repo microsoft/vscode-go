@@ -1225,11 +1225,6 @@
                   "type": "number",
                   "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
                   "default": -1
-                },
-                "showGlobalVariables": {
-                  "type": "boolean",
-                  "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not.",
-                  "default": true
                 }
               },
               "description": "LoadConfig describes to delve, how to load values from target's memory",
@@ -1238,8 +1233,7 @@
                 "maxVariableRecurse": 1,
                 "maxStringLen": 64,
                 "maxArrayValues": 64,
-                "maxStructFields": -1,
-                "showGlobalVariables": false
+                "maxStructFields": -1
               }
             },
             "apiVersion": {
@@ -1250,6 +1244,11 @@
               ],
               "description": "Delve Api Version to use. Default value is 2.",
               "default": 2
+            },
+            "showGlobalVariables": {
+              "type": "boolean",
+              "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not.",
+              "default": true
             }
           },
           "scope": "resource"
