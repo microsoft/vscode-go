@@ -23,7 +23,7 @@ import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
 import { updateGoPathGoRootFromConfig, offerToInstallTools, promptForMissingTool, installTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { initCoverageDecorators, toggleCoverageCurrentPackage, applyCodeCoverage, removeCodeCoverageOnFileChange, updateCodeCoverageDecorators } from './goCover';
+import { initCoverageDecorators, toggleCoverageCurrentPackage, applyCodeCoverage, removeCodeCoverageOnFileChange, updateCodeCoverageDecorators, applyCodeCoverageToAllEditors } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
 import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
@@ -55,6 +55,7 @@ import { installCurrentPackage } from './goInstall';
 import { setGlobalState } from './stateUtils';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
+import path = require('path');
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -520,6 +521,18 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.build.workspace', () => buildCode(true)));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.install.package', installCurrentPackage));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.load.coverprofile', () => {
+		vscode.window.showInputBox({
+			placeHolder: 'coverage.out',
+			prompt: 'Enter the path to the coverage profile'
+		}).then(coverProfilePath => {
+			if (typeof coverProfilePath === 'undefined') {
+				return;
+			}
+			applyCodeCoverageToAllEditors(coverProfilePath, path.dirname(vscode.window.activeTextEditor.document.fileName));
+		});
+	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,

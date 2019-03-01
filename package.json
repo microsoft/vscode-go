@@ -256,6 +256,11 @@
         "command": "go.test.cancel",
         "title": "Go: Cancel Running Tests",
         "description": "Cancels running tests."
+      },
+      {
+        "command": "go.test.load.coverprofile",
+        "title": "Go: Load Cover Profile",
+        "description": "Loads and applies an existing cover profile form file system."
       }
     ],
     "debuggers": [
