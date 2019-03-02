@@ -16,7 +16,7 @@ import { check } from '../src/goCheck';
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../src/diffUtils';
 import { testCurrentFile } from '../src/goTest';
-import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
+import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath } from '../src/util';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../src/goGenerateTests';
@@ -39,6 +39,7 @@ suite('Go Extension Tests', () => {
 	let generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
 	let generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
 	let testPath = path.join(__dirname, 'tests');
+	let toolsGopath = getToolsGopath() || getCurrentGoPath();
 
 	suiteSetup(() => {
 
@@ -596,7 +597,7 @@ It returns the number of bytes written and any write error encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		let vendorSupportPromise = isVendorSupported();
-		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
+		let filePath = path.join(toolsGopath, 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
 		let workDir = path.dirname(filePath);
 		let vendorPkgsFullPath = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
@@ -661,7 +662,7 @@ It returns the number of bytes written and any write error encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		let vendorSupportPromise = isVendorSupported();
-		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'ramya-rao-a', 'go-outline', 'main.go');
+		let filePath = path.join(toolsGopath, 'src', 'github.com', 'ramya-rao-a', 'go-outline', 'main.go');
 		let vendorPkgs = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9',
@@ -708,7 +709,7 @@ It returns the number of bytes written and any write error encountered.
 		// If the extension ever stops depending on godef tool or if godef ever stops having vendor packages, then this test
 		// will fail and will have to be replaced with any other go project with vendor packages
 
-		let workspacePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef');
+		let workspacePath = path.join(toolsGopath, 'src', 'github.com', 'rogpeppe', 'godef');
 		let configWithoutIgnoringFolders = Object.create(vscode.workspace.getConfiguration('go'), {
 			'gotoSymbol': {
 				value: {
