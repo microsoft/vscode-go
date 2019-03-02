@@ -97,6 +97,8 @@ function getTools(goVersion: SemVersion): string[] {
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools.push('godef');
+	} else if (goConfig['docsTool'] === 'gogetdoc') {
+		tools.push('gogetdoc');
 	}
 
 	// Install the formattool that was chosen by the user
@@ -108,30 +110,13 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('goreturns');
 	}
 
-	// Tools not supported in go1.8
-	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 8))) {
-		if (goConfig['lintTool'] === 'golint') {
-			tools.push('golint');
-		}
-		if (goConfig['docsTool'] === 'gogetdoc') {
-			tools.push('gogetdoc');
-		}
-	}
-
-	if (goConfig['lintTool'] === 'gometalinter') {
-		tools.push('gometalinter');
-	}
-
-	if (goConfig['lintTool'] === 'staticcheck') {
-		tools.push('staticcheck');
-	}
-
-	if (goConfig['lintTool'] === 'golangci-lint') {
-		tools.push('golangci-lint');
-	}
-
-	if (goConfig['lintTool'] === 'revive') {
-		tools.push('revive');
+	// Install the linter that was chosen by the user
+	if (goConfig['lintTool'] === 'golint'
+		|| goConfig['lintTool'] === 'gometalinter'
+		|| goConfig['lintTool'] === 'staticcheck'
+		|| goConfig['lintTool'] === 'golangci-lint'
+		|| goConfig['lintTool'] === 'revive') {
+		tools.push(goConfig['lintTool']);
 	}
 
 	if (goConfig['useLanguageServer']) {
@@ -142,12 +127,8 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('gotype-live');
 	}
 
-	// gotests is not supported in go1.5
-	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
-		tools.push('gotests');
-	}
-
 	tools.push(
+		'gotests',
 		'gomodifytags',
 		'impl',
 		'fillstruct',
