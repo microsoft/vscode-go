@@ -152,7 +152,8 @@ function getTools(goVersion: SemVersion): string[] {
 		'gomodifytags',
 		'impl',
 		'fillstruct',
-		'goplay'
+		'goplay',
+		'godoctor'
 	);
 
 	return tools;
