@@ -44,9 +44,9 @@ suite('Go Extension Tests', () => {
 
 		fs.removeSync(repoPath);
 		fs.removeSync(testPath);
-		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'test.go'), path.join(fixturePath, 'baseTest', 'test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'sample_test.go'), path.join(fixturePath, 'baseTest', 'sample_test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'gogetdocTestData', 'test.go'), path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generateTestsSourcePath, 'generatetests.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generateFunctionTestSourcePath, 'generatetests.go'));
@@ -85,7 +85,7 @@ suite('Go Extension Tests', () => {
 
 	function testDefinitionProvider(goConfig: vscode.WorkspaceConfiguration): Thenable<any> {
 		let provider = new GoDefinitionProvider(goConfig);
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
 		let position = new vscode.Position(10, 3);
 		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return provider.provideDefinition(textDocument, position, null).then(definitionInfo => {
@@ -504,7 +504,7 @@ It returns the number of bytes written and any write error encountered.
 			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue', 'dummyNonString': 1 } }
 		});
 
-		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'sample_test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
 				return testCurrentFile(config, false, []).then((result: boolean) => {
@@ -575,7 +575,7 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test listPackages', (done) => {
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
 				let includeImportedPkgs = listPackages(false);
@@ -766,7 +766,7 @@ encountered.
 			[new vscode.Position(7, 4), 'fmt', 'fmt', null],
 			[new vscode.Position(7, 6), 'Println', 'func(a ...interface{}) (n int, err error)', printlnDoc]
 		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 				let promises = testCases.map(([position, expectedLabel, expectedDetail, expectedDoc]) =>
