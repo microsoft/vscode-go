@@ -54,12 +54,9 @@ import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
 import { setGlobalState } from './stateUtils';
-<<<<<<< HEAD
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
-=======
 import { GoRefactorProvider } from './goRefactor';
->>>>>>> Add godoctor extract function command and code action
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
