@@ -9,41 +9,13 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { dirname } from 'path';
-import { resolve } from 'dns';
+import { dirname, isAbsolute } from 'path';
 
 /**
  * Extracts function out of current selection and replaces the current selection with a call to the extracted function.
  */
 export function extractFunction() {
-	let activeEditor = vscode.window.activeTextEditor;
-	if (!activeEditor) {
-		vscode.window.showInformationMessage('No editor is active.');
-		return;
-	}
-	if (activeEditor.selections.length !== 1) {
-		vscode.window.showInformationMessage(
-			'You need to have a single selection for extracting method'
-		);
-		return;
-	}
-	let showInputBoxPromise = vscode.window.showInputBox({
-		placeHolder: 'Please enter a name for the extracted function.'
-	});
-	showInputBoxPromise.then((functionName: string) => {
-		if (typeof functionName === 'string') {
-			runGoDoctor(
-				functionName,
-				activeEditor.selection,
-				activeEditor.document.fileName,
-				'extract'
-			).then(errorMessage => {
-				if (errorMessage) {
-					vscode.window.showErrorMessage(errorMessage);
-				}
-			});
-		}
-	});
+	extract('extract');
 }
 
 /**
@@ -51,6 +23,12 @@ export function extractFunction() {
  * replaces the current selection with the new var.
  */
 export function extractVariable() {
+	extract('var');
+}
+
+type typeOfExtraction = 'var' | 'extract';
+
+async function extract(type: typeOfExtraction): Promise<void> {
 	let activeEditor = vscode.window.activeTextEditor;
 	if (!activeEditor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -58,30 +36,26 @@ export function extractVariable() {
 	}
 	if (activeEditor.selections.length !== 1) {
 		vscode.window.showInformationMessage(
-			'You need to have a single selection for extracting variable'
+			`You need to have a single selection for extracting ${type === 'var' ? 'variable' : 'method'}`
 		);
 		return;
 	}
-	let showInputBoxPromise = vscode.window.showInputBox({
-		placeHolder: 'Plese enter a name for the extracted variable.'
-	});
-	showInputBoxPromise.then((varName: string) => {
-		if (typeof varName === 'string') {
-			runGoDoctor(
-				varName,
-				activeEditor.selection,
-				activeEditor.document.fileName,
-				'var'
-			).then(errorMessage => {
-				if (errorMessage) {
-					vscode.window.showErrorMessage(errorMessage);
-				}
-			});
-		}
-	});
-}
 
-type typeOfExtraction = 'var' | 'extract';
+	const newName = await vscode.window.showInputBox({
+		placeHolder: 'Please enter a name for the extracted variable.'
+	});
+
+	if (!newName) {
+		return;
+	}
+
+	runGoDoctor(
+		newName,
+		activeEditor.selection,
+		activeEditor.document.fileName,
+		type
+	);
+}
 
 /**
  * @param newName name for the extracted method
@@ -94,41 +68,36 @@ function runGoDoctor(
 	selection: vscode.Selection,
 	fileName: string,
 	type: typeOfExtraction
-): Thenable<string> {
-	let godoctor = getBinPath('godoctor');
+): Thenable<void> {
+	const godoctor = getBinPath('godoctor');
 
 	return new Promise((resolve, reject) => {
-		console.log(selection);
-		let args = [
-			'-w',
-			'-pos',
-			`${selection.start.line + 1},${selection.start.character +
-				1}:${selection.end.line + 1},${selection.end.character}`,
-			'-file',
-			fileName,
-			type,
-			newName
-		];
-		console.log(args);
-		let p = cp.execFile(
+		if (!isAbsolute(godoctor)) {
+			promptForMissingTool('godoctor');
+			return resolve();
+		}
+
+		cp.execFile(
 			godoctor,
-			args,
+			[
+				'-w',
+				'-pos',
+				`${selection.start.line + 1},${selection.start.character +
+				1}:${selection.end.line + 1},${selection.end.character}`,
+				'-file',
+				fileName,
+				type,
+				newName
+			],
 			{
 				env: getToolsEnvVars(),
 				cwd: dirname(fileName)
 			},
 			(err, stdout, stderr) => {
-				if (err && (<any>err).code === 'ENOENT') {
-					promptForMissingTool('godoctor');
-					return resolve('Could not find godoctor');
-				}
 				if (err) {
-					return resolve(stderr);
+					vscode.window.showErrorMessage(stderr || err.message);
 				}
 			}
 		);
-		if (p.pid) {
-			p.stdin.end();
-		}
 	});
 }
