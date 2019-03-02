@@ -1251,6 +1251,18 @@
               "default": true
             }
           },
+          "default": {
+            "dlvLoadConfig": {
+              "followPointers": true,
+              "maxVariableRecurse": 1,
+              "maxStringLen": 64,
+              "maxArrayValues": 64,
+              "maxStructFields": -1
+            },
+            "apiVersion": 2,
+            "showGlobalVariables": true
+          },
+          "description": "Delve settings that applies to all debugging sessions. Debug configuration in the launch.json file will override these values.",
           "scope": "resource"
         },
         "go.alternateTools": {
