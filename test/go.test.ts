@@ -24,7 +24,6 @@ import { getAllPackages } from '../src/goPackages';
 import { getImportPath } from '../src/util';
 import { goPlay } from '../src/goPlayground';
 import { runFillStruct } from '../src/goFillStruct';
-import { version } from 'punycode';
 
 suite('Go Extension Tests', () => {
 	let gopath = process.env['GOPATH'];
