@@ -163,12 +163,7 @@ suite('Go Extension Tests', () => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
-		getGoVersion().then(version => {
-			if (!version || version.major > 1 || (version.major === 1 && version.minor > 8)) {
-				return testDefinitionProvider(config);
-			}
-			return Promise.resolve();
-		}).then(() => done(), done);
+		testDefinitionProvider(config).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Test SignatureHelp Provider using godoc', (done) => {
@@ -209,12 +204,7 @@ It returns the number of bytes written and any write error encountered.
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
-		getGoVersion().then(version => {
-			if (!version || version.major > 1 || (version.major === 1 && version.minor > 8)) {
-				return testSignatureHelpProvider(config, testCases);
-			}
-			return Promise.resolve();
-		}).then(() => done(), done);
+		testSignatureHelpProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Test Hover Provider using godoc', (done) => {
@@ -265,12 +255,7 @@ It returns the number of bytes written and any write error encountered.
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
-		getGoVersion().then(version => {
-			if (!version || version.major > 1 || (version.major === 1 && version.minor > 8)) {
-				return testHoverProvider(config, testCases);
-			}
-			return Promise.resolve();
-		}).then(() => done(), done);
+		testHoverProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Error checking', (done) => {
@@ -287,11 +272,6 @@ It returns the number of bytes written and any write error encountered.
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 9) {
-				// golint supports only latest 3 versions, so skip the test
-				return Promise.resolve();
-			}
-
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
 				let sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => a.line - b.line);
