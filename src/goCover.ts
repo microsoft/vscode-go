@@ -88,7 +88,9 @@ export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 		decoratorConfig.type = coverageDecoratorConfig;
 	} else {
 		for (let k in coverageDecoratorConfig) {
-			decoratorConfig[k] = coverageDecoratorConfig[k];
+			if (coverageDecoratorConfig.hasOwnProperty(k)) {
+				decoratorConfig[k] = coverageDecoratorConfig[k];
+			}
 		}
 	}
 	setDecorators();
@@ -150,7 +152,7 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				output: undefined
 			});
 
-			lines.on('line', function (data: string) {
+			lines.on('line', function(data: string) {
 				// go test coverageprofile generates output:
 				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits CoverCount
 				// The first line will be "mode: set" which will be ignored

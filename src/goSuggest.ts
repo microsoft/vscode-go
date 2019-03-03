@@ -127,7 +127,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 					if (memberType && memberType.length === 4) {
 							suggestionItem = new vscode.CompletionItem(memberType[3], vscodeKindFromGoCodeClass(memberType[1], ''));
 						}
-						return resolve(suggestionItem ? [suggestionItem] : []);
+					return resolve(suggestionItem ? [suggestionItem] : []);
 					}
 				// prevent completion when typing in a line comment that doesnt start from the beginning of the line
 				const commentIndex = lineText.indexOf('//');

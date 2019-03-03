@@ -46,7 +46,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	if (runner != null) {
 		clearTimeout(runner);
 	}
-	runner = setTimeout(function () {
+	runner = setTimeout(function() {
 		processFile(e);
 		runner = null;
 	}, vscode.workspace.getConfiguration('go', e.document.uri)['liveErrors']['delay']);

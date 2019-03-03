@@ -70,7 +70,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 				cwd: (modFolderPath && modFolderPath !== getModuleCache())
 					? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
 			};
-			if (toolForDocs === 'godoc' || (ver && (ver.major < 1 || (ver.major === 1 && ver.minor < 6)))) {
+			if (toolForDocs === 'godoc') {
 				return definitionLocation_godef(input, token);
 			} else if (toolForDocs === 'guru') {
 				return definitionLocation_guru(input, token);

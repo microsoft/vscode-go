@@ -16,7 +16,7 @@ import { check } from '../src/goCheck';
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../src/diffUtils';
 import { testCurrentFile } from '../src/goTest';
-import { getBinPath, getGoVersion, isVendorSupported } from '../src/util';
+import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath } from '../src/util';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../src/goGenerateTests';
@@ -39,14 +39,15 @@ suite('Go Extension Tests', () => {
 	let generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
 	let generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
 	let testPath = path.join(__dirname, 'tests');
+	let toolsGopath = getToolsGopath() || getCurrentGoPath();
 
 	suiteSetup(() => {
 
 		fs.removeSync(repoPath);
 		fs.removeSync(testPath);
-		fs.copySync(path.join(fixtureSourcePath, 'test.go'), path.join(fixturePath, 'test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'test.go'), path.join(fixturePath, 'baseTest', 'test.go'));
+		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'sample_test.go'), path.join(fixturePath, 'baseTest', 'sample_test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'errorsTest', 'errors.go'), path.join(fixturePath, 'errorsTest', 'errors.go'));
-		fs.copySync(path.join(fixtureSourcePath, 'sample_test.go'), path.join(fixturePath, 'sample_test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'gogetdocTestData', 'test.go'), path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generateTestsSourcePath, 'generatetests.go'));
 		fs.copySync(path.join(fixtureSourcePath, 'generatetests', 'generatetests.go'), path.join(generateFunctionTestSourcePath, 'generatetests.go'));
@@ -85,7 +86,7 @@ suite('Go Extension Tests', () => {
 
 	function testDefinitionProvider(goConfig: vscode.WorkspaceConfiguration): Thenable<any> {
 		let provider = new GoDefinitionProvider(goConfig);
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
 		let position = new vscode.Position(10, 3);
 		return vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return provider.provideDefinition(textDocument, position, null).then(definitionInfo => {
@@ -162,12 +163,7 @@ suite('Go Extension Tests', () => {
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
-		getGoVersion().then(version => {
-			if (!version || version.major > 1 || (version.major === 1 && version.minor > 8)) {
-				return testDefinitionProvider(config);
-			}
-			return Promise.resolve();
-		}).then(() => done(), done);
+		testDefinitionProvider(config).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Test SignatureHelp Provider using godoc', (done) => {
@@ -208,12 +204,7 @@ It returns the number of bytes written and any write error encountered.
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
-		getGoVersion().then(version => {
-			if (!version || version.major > 1 || (version.major === 1 && version.minor > 8)) {
-				return testSignatureHelpProvider(config, testCases);
-			}
-			return Promise.resolve();
-		}).then(() => done(), done);
+		testSignatureHelpProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Test Hover Provider using godoc', (done) => {
@@ -264,12 +255,7 @@ It returns the number of bytes written and any write error encountered.
 		let config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
-		getGoVersion().then(version => {
-			if (!version || version.major > 1 || (version.major === 1 && version.minor > 8)) {
-				return testHoverProvider(config, testCases);
-			}
-			return Promise.resolve();
-		}).then(() => done(), done);
+		testHoverProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Error checking', (done) => {
@@ -286,22 +272,20 @@ It returns the number of bytes written and any write error encountered.
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 9) {
-				// golint supports only latest 3 versions, so skip the test
-				return Promise.resolve();
-			}
 			return check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config).then(diagnostics => {
 				const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
 				let sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => a.line - b.line);
 				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
 				let matchCount = 0;
 				for (let i in expected) {
-					for (let j in sortedDiagnostics) {
-						if (expected[i].line
-							&& (expected[i].line === sortedDiagnostics[j].line)
-							&& (expected[i].severity === sortedDiagnostics[j].severity)
-							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-							matchCount++;
+					if (expected.hasOwnProperty(i)) {
+						for (let j in sortedDiagnostics) {
+							if (expected[i].line
+								&& (expected[i].line === sortedDiagnostics[j].line)
+								&& (expected[i].severity === sortedDiagnostics[j].severity)
+								&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+								matchCount++;
+							}
 						}
 					}
 				}
@@ -317,11 +301,6 @@ It returns the number of bytes written and any write error encountered.
 		}
 
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// gotests is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
 			let uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
@@ -348,11 +327,6 @@ It returns the number of bytes written and any write error encountered.
 		}
 
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// gotests is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
 			let uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then((editor: vscode.TextEditor) => {
@@ -382,11 +356,6 @@ It returns the number of bytes written and any write error encountered.
 		}
 
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// gotests is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
 			let uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
 			return vscode.workspace.openTextDocument(uri).then(document => {
 				return vscode.window.showTextDocument(document).then(editor => {
@@ -408,11 +377,6 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Gometalinter error checking', (done) => {
 		getGoVersion().then(version => {
-			if (version && version.major === 1 && version.minor < 6) {
-				// golint in gometalinter is not supported in Go 1.5, so skip the test
-				return Promise.resolve();
-			}
-
 			let config = Object.create(vscode.workspace.getConfiguration('go'), {
 				'lintOnSave': { value: 'package' },
 				'lintTool': { value: 'gometalinter' },
@@ -438,11 +402,13 @@ It returns the number of bytes written and any write error encountered.
 				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
 				let matchCount = 0;
 				for (let i in expected) {
-					for (let j in sortedDiagnostics) {
-						if ((expected[i].line === sortedDiagnostics[j].line)
-							&& (expected[i].severity === sortedDiagnostics[j].severity)
-							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-							matchCount++;
+					if (expected.hasOwnProperty(i)) {
+						for (let j in sortedDiagnostics) {
+							if ((expected[i].line === sortedDiagnostics[j].line)
+								&& (expected[i].severity === sortedDiagnostics[j].severity)
+								&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+								matchCount++;
+							}
 						}
 					}
 				}
@@ -543,7 +509,7 @@ It returns the number of bytes written and any write error encountered.
 			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue', 'dummyNonString': 1 } }
 		});
 
-		let uri = vscode.Uri.file(path.join(fixturePath, 'sample_test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'sample_test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
 				return testCurrentFile(config, false, []).then((result: boolean) => {
@@ -594,7 +560,7 @@ It returns the number of bytes written and any write error encountered.
 		let uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then(symbols => {
-				let groupedSymbolNames = symbols.reduce(function (map: any, symbol) {
+				let groupedSymbolNames = symbols.reduce(function(map: any, symbol) {
 					map[symbol.kind] = (map[symbol.kind] || []).concat([symbol.name]);
 					return map;
 				}, {});
@@ -614,7 +580,7 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test listPackages', (done) => {
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
 				let includeImportedPkgs = listPackages(false);
@@ -635,7 +601,7 @@ It returns the number of bytes written and any write error encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		let vendorSupportPromise = isVendorSupported();
-		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
+		let filePath = path.join(toolsGopath, 'src', 'github.com', 'rogpeppe', 'godef', 'go', 'ast', 'ast.go');
 		let workDir = path.dirname(filePath);
 		let vendorPkgsFullPath = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
@@ -700,7 +666,7 @@ It returns the number of bytes written and any write error encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		let vendorSupportPromise = isVendorSupported();
-		let filePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'ramya-rao-a', 'go-outline', 'main.go');
+		let filePath = path.join(toolsGopath, 'src', 'github.com', 'ramya-rao-a', 'go-outline', 'main.go');
 		let vendorPkgs = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9',
@@ -747,7 +713,7 @@ It returns the number of bytes written and any write error encountered.
 		// If the extension ever stops depending on godef tool or if godef ever stops having vendor packages, then this test
 		// will fail and will have to be replaced with any other go project with vendor packages
 
-		let workspacePath = path.join(process.env['GOPATH'], 'src', 'github.com', 'rogpeppe', 'godef');
+		let workspacePath = path.join(toolsGopath, 'src', 'github.com', 'rogpeppe', 'godef');
 		let configWithoutIgnoringFolders = Object.create(vscode.workspace.getConfiguration('go'), {
 			'gotoSymbol': {
 				value: {
@@ -805,7 +771,7 @@ encountered.
 			[new vscode.Position(7, 4), 'fmt', 'fmt', null],
 			[new vscode.Position(7, 6), 'Println', 'func(a ...interface{}) (n int, err error)', printlnDoc]
 		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'test.go'));
+		let uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then((textDocument) => {
 			return vscode.window.showTextDocument(textDocument).then(editor => {
 				let promises = testCases.map(([position, expectedLabel, expectedDetail, expectedDoc]) =>

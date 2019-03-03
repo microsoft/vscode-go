@@ -53,7 +53,11 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 				const goConfig = vscode.workspace.getConfiguration('go', fileuri);
 				if (goConfig['inferGopath'] === true) {
 					goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder);
-					alertDisablingInferGopath();
+					vscode.window.showInformationMessage('The "inferGopath" setting is disabled for this workspace because Go modules are being used.');
+				}
+				if (goConfig['formatTool'] === 'goreturns') {
+					goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.WorkspaceFolder);
+					vscode.window.showInformationMessage('`goreturns` doesnt support auto-importing missing imports when using Go modules yet. So updating the "formatTool" setting to `goimports` for this workspace.');
 				}
 			}
 			packageModCache.set(pkgPath, result);
@@ -62,10 +66,6 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 	});
 }
 
-
-function alertDisablingInferGopath() {
-	vscode.window.showInformationMessage('The "inferGopath" setting is disabled for this workspace because Go modules are being used.');
-}
 
 let moduleUsageLogged = false;
 function logModuleUsage() {
