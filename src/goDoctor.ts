@@ -10,6 +10,7 @@ import cp = require('child_process');
 import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { dirname, isAbsolute } from 'path';
+import { getEditsFromUnifiedDiffStr, Edit } from './diffUtils';
 
 /**
  * Extracts function out of current selection and replaces the current selection with a call to the extracted function.
@@ -54,21 +55,32 @@ async function extract(type: typeOfExtraction): Promise<void> {
 		activeEditor.selection,
 		activeEditor.document.fileName,
 		type
-	);
+	).then(diffs => {
+		const filePatches = getEditsFromUnifiedDiffStr(diffs);
+		if (filePatches.length !== 1) {
+			return;
+		}
+		const patchForCurrentEditor = filePatches[0];
+		activeEditor.edit(editBuilder => {
+			patchForCurrentEditor.edits.forEach((edit: Edit) => {
+				edit.applyUsingTextEditorEdit(editBuilder);
+			});
+		});
+	});
 }
 
 /**
  * @param newName name for the extracted method
  * @param selection the editor selection from which method is to be extracted
  * @param activeEditor the editor that will be used to apply the changes from godoctor
- * @returns errorMessage in case the method fails, null otherwise
+ * @returns Diff string in unified format. http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
  */
 function runGoDoctor(
 	newName: string,
 	selection: vscode.Selection,
 	fileName: string,
 	type: typeOfExtraction
-): Thenable<void> {
+): Thenable<string> {
 	const godoctor = getBinPath('godoctor');
 
 	return new Promise((resolve, reject) => {
@@ -96,7 +108,9 @@ function runGoDoctor(
 			(err, stdout, stderr) => {
 				if (err) {
 					vscode.window.showErrorMessage(stderr || err.message);
+					return reject();
 				}
+				resolve(stdout);
 			}
 		);
 	});
