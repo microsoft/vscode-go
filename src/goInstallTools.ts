@@ -15,7 +15,7 @@ import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
 let installsDeclinedTools: string[] = [];
-const _allTools: { [key: string]: string } = {
+const allToolsWithImportPaths: { [key: string]: string } = {
 	'gocode': 'github.com/mdempsky/gocode',
 	'gocode-gomod': 'github.com/stamblerre/gocode',
 	'gopkgs': 'github.com/uudashr/gopkgs/cmd/gopkgs',
@@ -47,7 +47,7 @@ function getToolImportPath(tool: string, goVersion: SemVersion) {
 	if (tool === 'gocode' && goVersion && goVersion.major < 2 && goVersion.minor < 9) {
 		return 'github.com/nsf/gocode';
 	}
-	return _allTools[tool];
+	return allToolsWithImportPaths[tool];
 }
 
 // Tools used explicitly by the basic features of the extension

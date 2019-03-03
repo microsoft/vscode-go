@@ -357,7 +357,7 @@ class Delve {
 							logError('Process exiting with code: ' + code);
 							if (this.onclose) { this.onclose(code); }
 						});
-						this.debugProcess.on('error', function (err) {
+						this.debugProcess.on('error', function(err) {
 							reject(err);
 						});
 						resolve();
@@ -465,7 +465,7 @@ class Delve {
 				logError('Process exiting with code: ' + code);
 				if (this.onclose) { this.onclose(code); }
 			});
-			this.debugProcess.on('error', function (err) {
+			this.debugProcess.on('error', function(err) {
 				reject(err);
 			});
 		});
@@ -548,7 +548,7 @@ class Delve {
 
 class GoDebugSession extends LoggingDebugSession {
 
-	private _variableHandles: Handles<DebugVariable>;
+	private variableHandles: Handles<DebugVariable>;
 	private breakpoints: Map<string, DebugBreakpoint[]>;
 	private skipStopEventOnce: boolean; // Editing breakpoints requires halting delve, skip sending Stop Event to VS Code in such cases
 	private goroutines: Set<number>;
@@ -565,7 +565,7 @@ class GoDebugSession extends LoggingDebugSession {
 	private showGlobalVariables: boolean = false;
 	public constructor(debuggerLinesStartAt1: boolean, isServer: boolean = false) {
 		super('', debuggerLinesStartAt1, isServer);
-		this._variableHandles = new Handles<DebugVariable>();
+		this.variableHandles = new Handles<DebugVariable>();
 		this.skipStopEventOnce = false;
 		this.goroutines = new Set<number>();
 		this.debugState = null;
@@ -955,7 +955,7 @@ class GoDebugSession extends LoggingDebugSession {
 					fullyQualifiedName: '',
 				};
 
-				scopes.push(new Scope('Local', this._variableHandles.create(localVariables), false));
+				scopes.push(new Scope('Local', this.variableHandles.create(localVariables), false));
 				response.body = { scopes };
 
 				if (!this.showGlobalVariables) {
@@ -1005,7 +1005,7 @@ class GoDebugSession extends LoggingDebugSession {
 							unreadable: '',
 							fullyQualifiedName: '',
 						};
-						scopes.push(new Scope('Global', this._variableHandles.create(globalVariables), false));
+						scopes.push(new Scope('Global', this.variableHandles.create(globalVariables), false));
 						this.sendResponse(response);
 						log('ScopesResponse');
 					});
@@ -1067,23 +1067,23 @@ class GoDebugSession extends LoggingDebugSession {
 				}
 				return {
 					result: `<${v.type}>(0x${v.children[0].addr.toString(16)})`,
-					variablesReference: v.children.length > 0 ? this._variableHandles.create(v) : 0
+					variablesReference: v.children.length > 0 ? this.variableHandles.create(v) : 0
 				};
 			}
 		} else if (v.kind === GoReflectKind.Slice) {
 			return {
 				result: '<' + v.type + '> (length: ' + v.len + ', cap: ' + v.cap + ')',
-				variablesReference: this._variableHandles.create(v)
+				variablesReference: this.variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.Map) {
 			return {
 				result: '<' + v.type + '> (length: ' + v.len + ')',
-				variablesReference: this._variableHandles.create(v)
+				variablesReference: this.variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.Array) {
 			return {
 				result: '<' + v.type + '>',
-				variablesReference: this._variableHandles.create(v)
+				variablesReference: this.variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.String) {
 			let val = v.value;
@@ -1105,14 +1105,14 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 			return {
 				result: v.value || ('<' + v.type + '>'),
-				variablesReference: v.children.length > 0 ? this._variableHandles.create(v) : 0
+				variablesReference: v.children.length > 0 ? this.variableHandles.create(v) : 0
 			};
 		}
 	}
 
 	protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments): void {
 		log('VariablesRequest');
-		let vari = this._variableHandles.get(args.variablesReference);
+		let vari = this.variableHandles.get(args.variablesReference);
 		let variablesPromise: Promise<DebugProtocol.Variable[]>;
 		const loadChildren = async (exp: string, v: DebugVariable) => {
 			// from https://github.com/go-delve/delve/blob/master/Documentation/api/ClientHowto.md#looking-into-variables
@@ -1176,7 +1176,7 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	private cleanupHandles(): void {
-		this._variableHandles.reset();
+		this.variableHandles.reset();
 		this.stackFrameHandles.reset();
 	}
 

@@ -278,12 +278,14 @@ It returns the number of bytes written and any write error encountered.
 				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
 				let matchCount = 0;
 				for (let i in expected) {
-					for (let j in sortedDiagnostics) {
-						if (expected[i].line
-							&& (expected[i].line === sortedDiagnostics[j].line)
-							&& (expected[i].severity === sortedDiagnostics[j].severity)
-							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-							matchCount++;
+					if (expected.hasOwnProperty(i)) {
+						for (let j in sortedDiagnostics) {
+							if (expected[i].line
+								&& (expected[i].line === sortedDiagnostics[j].line)
+								&& (expected[i].severity === sortedDiagnostics[j].severity)
+								&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+								matchCount++;
+							}
 						}
 					}
 				}
@@ -400,11 +402,13 @@ It returns the number of bytes written and any write error encountered.
 				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
 				let matchCount = 0;
 				for (let i in expected) {
-					for (let j in sortedDiagnostics) {
-						if ((expected[i].line === sortedDiagnostics[j].line)
-							&& (expected[i].severity === sortedDiagnostics[j].severity)
-							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-							matchCount++;
+					if (expected.hasOwnProperty(i)) {
+						for (let j in sortedDiagnostics) {
+							if ((expected[i].line === sortedDiagnostics[j].line)
+								&& (expected[i].severity === sortedDiagnostics[j].severity)
+								&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+								matchCount++;
+							}
 						}
 					}
 				}
@@ -556,7 +560,7 @@ It returns the number of bytes written and any write error encountered.
 		let uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then(symbols => {
-				let groupedSymbolNames = symbols.reduce(function (map: any, symbol) {
+				let groupedSymbolNames = symbols.reduce(function(map: any, symbol) {
 					map[symbol.kind] = (map[symbol.kind] || []).concat([symbol.name]);
 					return map;
 				}, {});
