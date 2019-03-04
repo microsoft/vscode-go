@@ -15,7 +15,7 @@ import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
 let installsDeclinedTools: string[] = [];
-const _allTools: { [key: string]: string } = {
+const allToolsWithImportPaths: { [key: string]: string } = {
 	'gocode': 'github.com/mdempsky/gocode',
 	'gocode-gomod': 'github.com/stamblerre/gocode',
 	'gopkgs': 'github.com/uudashr/gopkgs/cmd/gopkgs',
@@ -47,7 +47,7 @@ function getToolImportPath(tool: string, goVersion: SemVersion) {
 	if (tool === 'gocode' && goVersion && goVersion.major < 2 && goVersion.minor < 9) {
 		return 'github.com/nsf/gocode';
 	}
-	return _allTools[tool];
+	return allToolsWithImportPaths[tool];
 }
 
 // Tools used explicitly by the basic features of the extension
@@ -97,6 +97,8 @@ function getTools(goVersion: SemVersion): string[] {
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools.push('godef');
+	} else if (goConfig['docsTool'] === 'gogetdoc') {
+		tools.push('gogetdoc');
 	}
 
 	// Install the formattool that was chosen by the user
@@ -108,30 +110,13 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('goreturns');
 	}
 
-	// Tools not supported in go1.8
-	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 8))) {
-		if (goConfig['lintTool'] === 'golint') {
-			tools.push('golint');
-		}
-		if (goConfig['docsTool'] === 'gogetdoc') {
-			tools.push('gogetdoc');
-		}
-	}
-
-	if (goConfig['lintTool'] === 'gometalinter') {
-		tools.push('gometalinter');
-	}
-
-	if (goConfig['lintTool'] === 'staticcheck') {
-		tools.push('staticcheck');
-	}
-
-	if (goConfig['lintTool'] === 'golangci-lint') {
-		tools.push('golangci-lint');
-	}
-
-	if (goConfig['lintTool'] === 'revive') {
-		tools.push('revive');
+	// Install the linter that was chosen by the user
+	if (goConfig['lintTool'] === 'golint'
+		|| goConfig['lintTool'] === 'gometalinter'
+		|| goConfig['lintTool'] === 'staticcheck'
+		|| goConfig['lintTool'] === 'golangci-lint'
+		|| goConfig['lintTool'] === 'revive') {
+		tools.push(goConfig['lintTool']);
 	}
 
 	if (goConfig['useLanguageServer']) {
@@ -142,12 +127,8 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('gotype-live');
 	}
 
-	// gotests is not supported in go1.5
-	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
-		tools.push('gotests');
-	}
-
 	tools.push(
+		'gotests',
 		'gomodifytags',
 		'impl',
 		'fillstruct',
@@ -213,13 +194,13 @@ export function promptForMissingTool(tool: string) {
 		return;
 	}
 	getGoVersion().then((goVersion) => {
-		if (goVersion && goVersion.major === 1 && goVersion.minor < 6) {
+		if (goVersion && goVersion.major === 1 && goVersion.minor < 9) {
 			if (tool === 'golint') {
 				vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
 				return;
 			}
 			if (tool === 'gotests') {
-				vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.6 or higher.');
+				vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.');
 				return;
 			}
 		}

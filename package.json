@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -31,7 +31,8 @@
     "compile": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "node ./node_modules/vscode/bin/test",
-    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts"
+    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
+    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
   },
   "extensionDependencies": [],
   "dependencies": {
@@ -71,6 +72,36 @@
         "aliases": [
           "Go"
         ]
+      },
+      {
+        "id": "go.mod",
+        "extensions": [
+          "go.mod"
+        ],
+        "aliases": [
+          "Go Module File"
+        ]
+      },
+      {
+        "id": "go.sum",
+        "extensions": [
+          "go.sum"
+        ],
+        "aliases": [
+          "Go Checksum File"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "go.mod",
+        "scopeName": "go.mod",
+        "path": "./syntaxes/go.mod.tmGrammar.json"
+      },
+      {
+        "language": "go.sum",
+        "scopeName": "go.sum",
+        "path": "./syntaxes/go.sum.tmGrammar.json"
       }
     ],
     "snippets": [
@@ -397,7 +428,7 @@
               },
               "remotePath": {
                 "type": "string",
-                "description": "If remote debugging, the path to the source code on the remote machine, if different from the local machine.",
+                "description": "Absolute path to the file being debugged on the remote machine in case of remote debugging.",
                 "default": ""
               },
               "port": {
@@ -534,7 +565,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. ['-ldflags=\"-s\"'])",
+          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. [\"-ldflags='-s'\"])",
           "scope": "resource"
         },
         "go.buildTags": {
@@ -609,7 +640,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])",
+          "description": "Flags to pass to `go tool vet` (e.g. [\"-all\", \"-shadow\"])",
           "scope": "resource"
         },
         "go.formatTool": {
@@ -630,7 +661,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to format tool (e.g. ['-s'])",
+          "description": "Flags to pass to format tool (e.g. [\"-s\"])",
           "scope": "resource"
         },
         "go.inferGopath": {
@@ -1243,8 +1274,25 @@
               ],
               "description": "Delve Api Version to use. Default value is 2.",
               "default": 2
+            },
+            "showGlobalVariables": {
+              "type": "boolean",
+              "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not.",
+              "default": true
             }
           },
+          "default": {
+            "dlvLoadConfig": {
+              "followPointers": true,
+              "maxVariableRecurse": 1,
+              "maxStringLen": 64,
+              "maxArrayValues": 64,
+              "maxStructFields": -1
+            },
+            "apiVersion": 2,
+            "showGlobalVariables": true
+          },
+          "description": "Delve settings that applies to all debugging sessions. Debug configuration in the launch.json file will override these values.",
           "scope": "resource"
         },
         "go.alternateTools": {

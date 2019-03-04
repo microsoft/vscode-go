@@ -9,5 +9,6 @@
 		"**/bower_components": true,
 		"out/": true
 	},
-	"editor.insertSpaces": false
+	"editor.insertSpaces": false,
+	"typescript.tsdk": "node_modules\\typescript\\lib"
 }

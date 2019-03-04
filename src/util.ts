@@ -310,11 +310,7 @@ export function isGoPathSet(): boolean {
 	return true;
 }
 
-export function sendTelemetryEvent(eventName: string, properties?: {
-	[key: string]: string;
-}, measures?: {
-	[key: string]: number;
-}): void {
+export function sendTelemetryEvent(eventName: string, properties?: { [key: string]: string }, measures?: { [key: string]: number }): void {
 
 	telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
 	telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
@@ -410,7 +406,7 @@ export function getToolsEnvVars(): any {
 }
 
 export function substituteEnv(input: string): string {
-	return input.replace(/\${env:([^}]+)}/g, function (match, capture) {
+	return input.replace(/\${env:([^}]+)}/g, function(match, capture) {
 		return process.env[capture.trim()] || '';
 	});
 }
@@ -443,8 +439,7 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 				if (fs.statSync(path.join(currentRoot, 'src')).isDirectory()) {
 					inferredGopath = currentRoot;
 				}
-			}
-			catch (e) {
+			} catch (e) {
 				// No op
 			}
 		}

@@ -54,4 +54,5 @@ install:
 
 script:
   - npm run lint
+  - npm run unit-test
   - npm test --silent
