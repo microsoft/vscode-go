@@ -291,6 +291,7 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 		let paths = toolsGopath.split(path.delimiter);
 		toolsGopath = paths[0];
 		envForTools['GOPATH'] = toolsGopath;
+		envForTools['GOBIN'] = '';
 	} else {
 		vscode.window.showInformationMessage('Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.', 'Open User Settings', 'Open Workspace Settings').then(selected => {
 			if (selected === 'Open User Settings') {
