@@ -189,6 +189,5 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 async function getFunctions(doc: vscode.TextDocument): Promise<vscode.DocumentSymbol[]> {
 	const documentSymbolProvider = new GoDocumentSymbolProvider();
 	const symbols = await documentSymbolProvider.provideDocumentSymbols(doc, null);
-	const symbols_1 = symbols[0].children;
-	return symbols_1.filter(sym => sym.kind === vscode.SymbolKind.Function);
+	return symbols[0].children.filter(sym => sym.kind === vscode.SymbolKind.Function);
 }

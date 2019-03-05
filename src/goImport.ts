@@ -39,8 +39,8 @@ async function getImports(document: vscode.TextDocument): Promise<string[]> {
 	}
 	// import names will be of the form "math", so strip the quotes in the beginning and the end
 	const imports = symbols[0].children
-		.filter(x => x.kind === vscode.SymbolKind.Namespace)
-		.map(x => x.name.substr(1, x.name.length - 2));
+		.filter((x: any) => x.kind === vscode.SymbolKind.Namespace)
+		.map((x: any) => x.name.substr(1, x.name.length - 2));
 	return imports;
 }
 
@@ -48,8 +48,7 @@ async function askUserForImport(): Promise<string> {
 	try {
 		const packages = await listPackages(true);
 		return vscode.window.showQuickPick(packages);
-	}
-	catch (err) {
+	} catch (err) {
 		if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
 			promptForMissingTool(err.substr(missingToolMsg.length));
 		}

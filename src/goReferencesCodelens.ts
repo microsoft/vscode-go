@@ -77,8 +77,7 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		const symbolProvider = new GoDocumentSymbolProvider();
 		const isTestFile = document.fileName.endsWith('_test.go');
 		const symbols = await symbolProvider.provideDocumentSymbols(document, token);
-		const symbols_1 = symbols[0].children;
-		return symbols_1.filter(symbol => {
+		return symbols[0].children.filter(symbol => {
 			if (symbol.kind === vscode.SymbolKind.Interface) {
 				return true;
 			}
