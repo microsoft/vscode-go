@@ -357,7 +357,7 @@ class Delve {
 							logError('Process exiting with code: ' + code);
 							if (this.onclose) { this.onclose(code); }
 						});
-						this.debugProcess.on('error', function(err) {
+						this.debugProcess.on('error', (err) => {
 							reject(err);
 						});
 						resolve();
@@ -465,7 +465,7 @@ class Delve {
 				logError('Process exiting with code: ' + code);
 				if (this.onclose) { this.onclose(code); }
 			});
-			this.debugProcess.on('error', function(err) {
+			this.debugProcess.on('error', (err) => {
 				reject(err);
 			});
 		});
@@ -504,44 +504,43 @@ class Delve {
 		log('HaltRequest');
 
 		return new Promise(async resolve => {
-			const timeoutToken: NodeJS.Timer = this.debugProcess && setTimeout(() => {
-				log('Killing debug process manually as we could not halt and detach delve in time');
+			const timeoutToken: NodeJS.Timer = !this.isRemoteDebugging() && setTimeout(() => {
+				log('Killing debug process manually as we could not halt delve in time');
 				killTree(this.debugProcess.pid);
 				resolve();
 			}, 1000);
 
+			let errMsg;
 			try {
 				await this.callPromise('Command', [{ name: 'halt' }]);
-			}
-			catch (err) {
-				const errMsg = err ? err.toString() : '';
+			} catch (err) {
+				log('HaltResponse');
+				errMsg = err ? err.toString() : '';
 				log(`Failed to halt - ${errMsg}`);
 			}
+			clearTimeout(timeoutToken);
 
-			log('HaltResponse');
-			if (this.debugProcess) {
+			if (this.shouldDetach(errMsg)) {
 				log('DetachRequest');
 				try {
 					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
-					clearTimeout(timeoutToken);
-				}
-				catch (err) {
+				} catch (err) {
 					log('DetachResponse');
 					logError(`The timeout will kill the debug process manually as we failed to detach - ${(err.toString() || '')}`);
 				}
-				return resolve();
-			} else {
-				log('RestartRequest');
-				try {
-					await this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }]);
-				}
-				catch (err) {
-					log('RestartResponse');
-					logError(`Failed to restart - ${(err || '').toString()}`);
-				}
-				return resolve();
 			}
+			return resolve();
 		});
+	}
+
+	private isRemoteDebugging() {
+		return !this.debugProcess;
+	}
+	private targetHasExited(errMsg: string) {
+		return errMsg.endsWith('has exited with status 0');
+	}
+	private shouldDetach(errMsg: string) {
+		return !errMsg || this.targetHasExited(errMsg);
 	}
 }
 
