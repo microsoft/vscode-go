@@ -540,10 +540,10 @@ class Delve {
 	}
 
 	private privateGetLocalDebugeePath(output: string | undefined): string {
-		const configOutput = output || "debug"
+		const configOutput = output || 'debug';
 		return path.isAbsolute(configOutput)
 			? configOutput
-			: path.resolve(this.program, configOutput)
+			: path.resolve(this.program, configOutput);
 	}
 
 	private async ensureDebugeeExecutableIsRemoved(): Promise<void> {
@@ -552,7 +552,7 @@ class Delve {
 				await fs.remove(this.localDebugeePath);
 			}
 		} catch (e) {
-			logError(`Failed to potentially remove leftover debug file ${this.localDebugeePath} - ${e.toString() || ""}`)
+			logError(`Failed to potentially remove leftover debug file ${this.localDebugeePath} - ${e.toString() || ''}`);
 		}
 	}
 
