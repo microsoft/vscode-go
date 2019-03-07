@@ -526,7 +526,7 @@ class Delve {
 					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
 				} catch (err) {
 					log('DetachResponse');
-					logError(`The timeout will kill the debug process manually as we failed to detach - ${(err.toString() || '')}`);
+					logError(`Failed to detach - ${(err.toString() || '')}`);
 				}
 			}
 			return resolve();
