@@ -5,13 +5,14 @@
 
 import * as path from 'path';
 import * as os from 'os';
+import * as fs from 'fs-extra';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles, LoggingDebugSession, Logger, logger } from 'vscode-debugadapter';
 import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 
 // This enum should stay in sync with https://golang.org/pkg/reflect/#Kind
 
@@ -260,6 +261,7 @@ function normalizePath(filePath: string) {
 class Delve {
 	program: string;
 	remotePath: string;
+	localDebugeePath: string | undefined;
 	debugProcess: ChildProcess;
 	loadConfig: LoadConfig;
 	connection: Promise<RPCConnection>;
@@ -391,7 +393,7 @@ class Delve {
 				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
 			}
 
-			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
+			const currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
 			let dlvArgs = [mode || 'debug'];
 			if (mode === 'exec') {
 				dlvArgs = dlvArgs.concat([program]);
@@ -436,6 +438,7 @@ class Delve {
 				env,
 			});
 
+			this.localDebugeePath = this.privateGetLocalDebugeePath(launchArgs.output);
 			function connectClient(port: number, host: string) {
 				// Add a slight delay to avoid issues on Linux with
 				// Delve failing calls made shortly after connection.
@@ -529,8 +532,28 @@ class Delve {
 					logError(`Failed to detach - ${(err.toString() || '')}`);
 				}
 			}
+			if (!this.isRemoteDebugging()) {
+				await this.ensureDebugeeExecutableIsRemoved();
+			}
 			return resolve();
 		});
+	}
+
+	private privateGetLocalDebugeePath(output: string | undefined): string {
+		const configOutput = output || "debug"
+		return path.isAbsolute(configOutput)
+			? configOutput
+			: path.resolve(this.program, configOutput)
+	}
+
+	private async ensureDebugeeExecutableIsRemoved(): Promise<void> {
+		try {
+			if (this.localDebugeePath && await fs.pathExists(this.localDebugeePath)) {
+				await fs.remove(this.localDebugeePath);
+			}
+		} catch (e) {
+			logError(`Failed to potentially remove leftover debug file ${this.localDebugeePath} - ${e.toString() || ""}`)
+		}
 	}
 
 	private isRemoteDebugging() {
