@@ -885,7 +885,7 @@ export function getTempFilePath(name: string): string {
 }
 
 export function cleanupTempDir() {
-	if (!tmpDir) {
+	if (tmpDir) {
 		rmdirRecursive(tmpDir);
 	}
 	tmpDir = undefined;
