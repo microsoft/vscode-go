@@ -5,7 +5,8 @@
 
 import * as path from 'path';
 import * as os from 'os';
-import * as fs from 'fs-extra';
+import * as fs from 'fs';
+import * as util from 'util';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles, LoggingDebugSession, Logger, logger } from 'vscode-debugadapter';
 import { existsSync, lstatSync } from 'fs';
@@ -13,6 +14,10 @@ import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
 import { parseEnvFile, getBinPathWithPreferredGopath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
+
+const access = util.promisify(fs.access);
+const unlink = util.promisify(fs.unlink);
+
 
 // This enum should stay in sync with https://golang.org/pkg/reflect/#Kind
 
@@ -548,8 +553,11 @@ class Delve {
 
 	private async ensureDebugeeExecutableIsRemoved(): Promise<void> {
 		try {
-			if (this.localDebugeePath && await fs.pathExists(this.localDebugeePath)) {
-				await fs.remove(this.localDebugeePath);
+			const fileExists = await access(this.localDebugeePath)
+				.then(() => true)
+				.catch(() => false);
+			if (this.localDebugeePath && fileExists) {
+				await unlink(this.localDebugeePath);
 			}
 		} catch (e) {
 			logError(`Failed to potentially remove leftover debug file ${this.localDebugeePath} - ${e.toString() || ''}`);
