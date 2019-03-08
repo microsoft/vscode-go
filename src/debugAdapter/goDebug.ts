@@ -511,8 +511,10 @@ class Delve {
 		}
 		log('HaltRequest');
 
+		const isLocalDebugging = this.debugProcess;
+
 		return new Promise(async resolve => {
-			const timeoutToken: NodeJS.Timer = !this.isRemoteDebugging() && setTimeout(() => {
+			const timeoutToken: NodeJS.Timer = isLocalDebugging && setTimeout(() => {
 				log('Killing debug process manually as we could not halt delve in time');
 				killTree(this.debugProcess.pid);
 				this.ensureDebugeeExecutableIsRemoved();
@@ -529,7 +531,10 @@ class Delve {
 			}
 			clearTimeout(timeoutToken);
 
-			if (this.shouldDetach(errMsg)) {
+			const targetHasExited = errMsg.endsWith('has exited with status 0');
+			const shouldDetach = !errMsg || targetHasExited;
+
+			if (shouldDetach(errMsg)) {
 				log('DetachRequest');
 				try {
 					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
@@ -538,7 +543,7 @@ class Delve {
 					logError(`Failed to detach - ${(err.toString() || '')}`);
 				}
 			}
-			if (!this.isRemoteDebugging()) {
+			if (isLocalDebugging) {
 				await this.ensureDebugeeExecutableIsRemoved();
 			}
 			return resolve();
@@ -563,16 +568,6 @@ class Delve {
 		} catch (e) {
 			logError(`Failed to potentially remove leftover debug file ${this.localDebugeePath} - ${e.toString() || ''}`);
 		}
-	}
-
-	private isRemoteDebugging() {
-		return !this.debugProcess;
-	}
-	private targetHasExited(errMsg: string) {
-		return errMsg.endsWith('has exited with status 0');
-	}
-	private shouldDetach(errMsg: string) {
-		return !errMsg || this.targetHasExited(errMsg);
 	}
 }
 
