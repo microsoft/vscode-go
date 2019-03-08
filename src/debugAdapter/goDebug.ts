@@ -515,6 +515,7 @@ class Delve {
 			const timeoutToken: NodeJS.Timer = !this.isRemoteDebugging() && setTimeout(() => {
 				log('Killing debug process manually as we could not halt delve in time');
 				killTree(this.debugProcess.pid);
+				this.ensureDebugeeExecutableIsRemoved();
 				resolve();
 			}, 1000);
 
