@@ -1129,14 +1129,10 @@ class GoDebugSession extends LoggingDebugSession {
 			variablesPromise = Promise.all(vari.children.map((v, i) => {
 				return loadChildren(`*(*"${v.type}")(${v.addr})`, v).then((): DebugProtocol.Variable => {
 					let { result, variablesReference } = this.convertDebugVariableToProtocolVariable(v);
-					let fullName = vari.fullyQualifiedName;
-					if (vari.fullyQualifiedName === undefined) {
-						fullName = vari.name;
-					}
 					return {
 						name: '[' + i + ']',
 						value: result,
-						evaluateName: fullName + '[' + i + ']',
+						evaluateName: vari.fullyQualifiedName + '[' + i + ']',
 						variablesReference
 					};
 				});
@@ -1149,14 +1145,10 @@ class GoDebugSession extends LoggingDebugSession {
 					let mapKey = this.convertDebugVariableToProtocolVariable(vari.children[i]);
 					return loadChildren(`${vari.fullyQualifiedName}.${vari.name}[${mapKey.result}]`, vari.children[i + 1]).then(() => {
 						let mapValue = this.convertDebugVariableToProtocolVariable(vari.children[i + 1]);
-						let fullName = vari.fullyQualifiedName;
-						if (vari.fullyQualifiedName === undefined) {
-							fullName = vari.name;
-						}
 						return {
 							name: mapKey.result,
 							value: mapValue.result,
-							evaluateName: fullName + '[' + mapKey.result + ']',
+							evaluateName: vari.fullyQualifiedName + '[' + mapKey.result + ']',
 							variablesReference: mapValue.variablesReference
 						};
 					});
@@ -1350,11 +1342,6 @@ class GoDebugSession extends LoggingDebugSession {
 				Scope: scope,
 				Cfg: this.delve.loadConfig
 			};
-
-		// if (args.context === "Copy") {
-			
-		// }
-		
 		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
 			err => {
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
