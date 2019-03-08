@@ -954,3 +954,14 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 		});
 	});
 }
+
+export function getTimeoutConfiguration(operationType: string, execFileOptions: {[key: string]: any}) {
+	let editor = vscode.window.activeTextEditor;
+	if (editor) {
+		const goConfig = vscode.workspace.getConfiguration('go', editor.document ? editor.document.uri : null);
+		const execTimeout: { [key: string]: any } = goConfig.get('operationTimeout');
+		if (execTimeout.hasOwnProperty(operationType)) {
+			execFileOptions['timeout'] = execTimeout[operationType];
+		}
+	}
+}

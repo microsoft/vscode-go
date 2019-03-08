@@ -5,7 +5,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars } from './util';
+import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, getTimeoutConfiguration } from './util';
 import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
 
@@ -57,8 +57,13 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 	let input = getFileArchive(editor.document);
 	let tabsCount = getTabsCount(editor);
 
+	let options: { [key: string]: any } = {
+		env: getToolsEnvVars(),
+	};
+	getTimeoutConfiguration('onCommandOperation', options);
+
 	return new Promise<void>((resolve, reject) => {
-		let p = cp.execFile(fillstruct, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
+		let p = cp.execFile(fillstruct, args, options, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('fillstruct');

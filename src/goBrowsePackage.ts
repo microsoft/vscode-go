@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getAllPackages } from './goPackages';
-import { getImportPath, getCurrentGoPath, getBinPath } from './util';
+import { getImportPath, getCurrentGoPath, getBinPath, getTimeoutConfiguration } from './util';
 
 export function browsePackages() {
 	let workDir = '';
@@ -54,6 +54,17 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 	if (workDir) {
 		options['cwd'] = workDir;
 	}
+
+	let editor = vscode.window.activeTextEditor;
+	if (editor) {
+		const goConfig = vscode.workspace.getConfiguration('go', editor.document ? editor.document.uri : null);
+		const execTimeout: { [key: string]: any } = goConfig.get('operationTimeout');
+		if (execTimeout.hasOwnProperty('runtimeLongRun')) {
+			options['timeout'] = execTimeout['runtimeLongRun'];
+		}
+	}
+
+	getTimeoutConfiguration('runtimeLongRun', options);
 
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], options, (err, stdout, stderr) => {
 		if (!stdout || stdout.indexOf(':') === -1) {
