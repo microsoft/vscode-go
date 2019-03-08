@@ -9,7 +9,7 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 
-import { getBinPath, getToolsEnvVars } from './util';
+import { getBinPath, getToolsEnvVars, getTimeoutConfiguration } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { outputChannel } from './goStatus';
@@ -142,7 +142,12 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 			args = args.concat(['-all', conf.dir]);
 		}
 
-		cp.execFile(cmd, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
+		let options: { [key: string]: any } = {
+			env: getToolsEnvVars(),
+		};
+		getTimeoutConfiguration('onCommandOperation', options);
+
+		cp.execFile(cmd, args, options, (err, stdout, stderr) => {
 			outputChannel.appendLine('Generating Tests: ' + cmd + ' ' + args.join(' '));
 
 			try {

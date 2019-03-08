@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars } from './util';
+import { getBinPath, getToolsEnvVars, getTimeoutConfiguration } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { dirname, isAbsolute } from 'path';
 
@@ -77,6 +77,12 @@ function runGoDoctor(
 			return resolve();
 		}
 
+		let options: { [key: string]: any } = {
+			env: getToolsEnvVars(),
+			cwd: dirname(fileName)
+		};
+		getTimeoutConfiguration('onCommandOperation', options);
+
 		cp.execFile(
 			godoctor,
 			[
@@ -89,10 +95,7 @@ function runGoDoctor(
 				type,
 				newName
 			],
-			{
-				env: getToolsEnvVars(),
-				cwd: dirname(fileName)
-			},
+			options,
 			(err, stdout, stderr) => {
 				if (err) {
 					vscode.window.showErrorMessage(stderr || err.message);

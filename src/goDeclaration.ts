@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCache } from './util';
+import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCache, getTimeoutConfiguration } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { promptToUpdateToolForModules, getModFolderPath } from './goModules';
@@ -114,6 +114,9 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 		// if (useReceivers) {
 		// 	args.push('-r');
 		// }
+		env['cwd'] = input.cwd;
+		getTimeoutConfiguration('onTypeOperation', env);
+
 		p = cp.execFile(godefPath, args, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
@@ -194,7 +197,11 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 		let gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', input.document.fileName + ':#' + offset.toString()];
 		let buildTags = vscode.workspace.getConfiguration('go', input.document.uri)['buildTags'];
 		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
-		p = cp.execFile(gogetdoc, gogetdocFlags, { env, cwd: input.cwd }, (err, stdout, stderr) => {
+
+		env['cwd'] = input.cwd;
+		getTimeoutConfiguration('onTypeOperation', env);
+
+		p = cp.execFile(gogetdoc, gogetdocFlags, env, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'gogetdoc');
@@ -254,6 +261,9 @@ function definitionLocation_guru(input: GoDefinitionInput, token: vscode.Cancell
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
+
+	getTimeoutConfiguration('onTypeOperation', env);
+
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		p = cp.execFile(guru, ['-json', '-modified', 'definition', input.document.fileName + ':#' + offset.toString()], { env }, (err, stdout, stderr) => {
 			try {
