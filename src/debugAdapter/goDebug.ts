@@ -512,12 +512,14 @@ class Delve {
 		log('HaltRequest');
 
 		const isLocalDebugging = this.debugProcess;
-
+		const forceCleanup = async () => {
+			killTree(this.debugProcess.pid);
+			await removeFile(this.localDebugeePath);
+		};
 		return new Promise(async resolve => {
-			const timeoutToken: NodeJS.Timer = isLocalDebugging && setTimeout(() => {
+			const timeoutToken: NodeJS.Timer = isLocalDebugging && setTimeout(async () => {
 				log('Killing debug process manually as we could not halt delve in time');
-				killTree(this.debugProcess.pid);
-				this.ensureDebugeeExecutableIsRemoved();
+				await forceCleanup();
 				resolve();
 			}, 1000);
 
@@ -531,20 +533,21 @@ class Delve {
 			}
 			clearTimeout(timeoutToken);
 
-			const targetHasExited = errMsg.endsWith('has exited with status 0');
-			const shouldDetach = !errMsg || targetHasExited;
-
-			if (shouldDetach(errMsg)) {
+			const targetHasExited: boolean = errMsg.endsWith('has exited with status 0');
+			const shouldDetach: boolean = !errMsg || targetHasExited;
+			let shouldForceClean: boolean = !shouldDetach;
+			if (shouldDetach) {
 				log('DetachRequest');
 				try {
 					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
 				} catch (err) {
 					log('DetachResponse');
 					logError(`Failed to detach - ${(err.toString() || '')}`);
+					shouldForceClean = true;
 				}
 			}
-			if (isLocalDebugging) {
-				await this.ensureDebugeeExecutableIsRemoved();
+			if (isLocalDebugging && shouldForceClean) {
+				await forceCleanup();
 			}
 			return resolve();
 		});
@@ -555,19 +558,6 @@ class Delve {
 		return path.isAbsolute(configOutput)
 			? configOutput
 			: path.resolve(this.program, configOutput);
-	}
-
-	private async ensureDebugeeExecutableIsRemoved(): Promise<void> {
-		try {
-			const fileExists = await access(this.localDebugeePath)
-				.then(() => true)
-				.catch(() => false);
-			if (this.localDebugeePath && fileExists) {
-				await unlink(this.localDebugeePath);
-			}
-		} catch (e) {
-			logError(`Failed to potentially remove leftover debug file ${this.localDebugeePath} - ${e.toString() || ''}`);
-		}
 	}
 }
 
@@ -1428,6 +1418,19 @@ function killTree(processId: number): void {
 			spawnSync(cmd, [processId.toString()]);
 		} catch (err) {
 		}
+	}
+}
+
+async function removeFile(filePath: string): Promise<void> {
+	try {
+		const fileExists = await access(filePath)
+			.then(() => true)
+			.catch(() => false);
+		if (filePath && fileExists) {
+			await unlink(filePath);
+		}
+	} catch (e) {
+		logError(`Potentially failed remove file: ${filePath} - ${e.toString() || ''}`);
 	}
 }
 
