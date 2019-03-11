@@ -1323,7 +1323,6 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	private evaluateRequestImpl(args: DebugProtocol.EvaluateArguments): Thenable<EvalOut | DebugVariable> {
-		let cancelFullRequest = false;
 		// default to the topmost stack frame of the current goroutine
 		let goroutineId = -1;
 		let frameId = 0;
@@ -1346,7 +1345,7 @@ class GoDebugSession extends LoggingDebugSession {
 
 		// If coming from watch/variables pane via the 'Copy Value' context menu action,
 		// first fetch the return value of the expression and override the loadConfig
-		// to get the complete value in a second, final request (if truncated)
+		// to get the complete value in a second, final request
 		let evalSymbolsConfig = Object.assign({}, this.delve.loadConfig);
 		let fetchReturnValue: EvalOut = null;
 		if (!this.delve.isApiV1 && (/*(args.context === 'watch') || */(args.context === 'variables'))) {
@@ -1364,18 +1363,12 @@ class GoDebugSession extends LoggingDebugSession {
 				if ((fetchReturnValue.Variable.kind === GoReflectKind.Map)
 					|| (fetchReturnValue.Variable.kind === GoReflectKind.Slice)
 					|| (fetchReturnValue.Variable.kind === GoReflectKind.Array)) {
-					if (fetchReturnValue.Variable.len < evalSymbolsConfig.maxArrayValues) {
-						// Values were not truncated, so we cancel the next delve request
-						cancelFullRequest = true;
-					} else {
+					if (fetchReturnValue.Variable.len > evalSymbolsConfig.maxArrayValues) {
 						evalSymbolsConfig.maxArrayValues = fetchReturnValue.Variable.len;
 					}
 				}
 				if (fetchReturnValue.Variable.kind === GoReflectKind.String) {
 					if (fetchReturnValue.Variable.len < evalSymbolsConfig.maxStringLen) {
-						// Values were not truncated, so we cancel the next delve request
-						cancelFullRequest = true;
-					} else {
 						evalSymbolsConfig.maxStringLen = fetchReturnValue.Variable.len;
 					}
 				}
@@ -1383,20 +1376,15 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 
 		evalSymbolArgs.Cfg = evalSymbolsConfig;
-		//logError(JSON.stringify(evalSymbolsConfig));
+		// logError(JSON.stringify(evalSymbolsConfig));
 
-		if (!cancelFullRequest) {
-			log('EvaluateRequest second request');
-			const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
-				err => {
-					logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
-					return Promise.reject(err);
-				});
-			return returnValue;
-		} else {
-			log('EvaluateRequest cached fetch');
-			return fetchReturnValue;
-		}
+		log('EvaluateRequest second request');
+		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
+			err => {
+				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
+				return Promise.reject(err);
+			});
+		return returnValue;
 	}
 
 	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {
