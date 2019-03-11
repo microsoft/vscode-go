@@ -1336,14 +1336,6 @@ class GoDebugSession extends LoggingDebugSession {
 			frame: frameId
 		};
 		let evalSymbolsConfig = Object.assign({}, this.delve.loadConfig);
-		let evalSymbolArgs = this.delve.isApiV1 ? {
-			symbol: args.expression,
-			scope
-		} : {
-				Expr: args.expression,
-				Scope: scope,
-				Cfg: evalSymbolsConfig
-			};
 
 		// If coming from watch/variables pane via the 'Copy Value' context menu action,
 		// first fetch the return value of the expression and override the loadConfig
@@ -1355,20 +1347,34 @@ class GoDebugSession extends LoggingDebugSession {
 				// Don't return on fail, continue to retry a truncated delve request
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
 			});
-			if ((fetchReturnValue.len < evalSymbolsConfig.maxStringLen)
-				&& (fetchReturnValue.len < evalSymbolsConfig.maxArrayValues)) {
-				// Values were not truncated, so we cancel the next delve request
-				cancelFullRequest = true;
-			}
 			if ((fetchReturnValue.kind === GoReflectKind.Map)
 				|| (fetchReturnValue.kind === GoReflectKind.Slice)
 				|| (fetchReturnValue.kind === GoReflectKind.Array)) {
+				if (fetchReturnValue.len < evalSymbolsConfig.maxArrayValues) {
+					// Values were not truncated, so we cancel the next delve request
+					cancelFullRequest = true;
+				} else {
 					evalSymbolsConfig.maxArrayValues = fetchReturnValue.len;
+				}
 			}
 			if (fetchReturnValue.kind === GoReflectKind.String) {
-				evalSymbolsConfig.maxStringLen = fetchReturnValue.len;
+				if (fetchReturnValue.len < evalSymbolsConfig.maxStringLen) {
+					// Values were not truncated, so we cancel the next delve request
+					cancelFullRequest = true;
+				} else {
+					evalSymbolsConfig.maxStringLen = fetchReturnValue.len;
+				}
 			}
 		}
+
+		let evalSymbolArgs = this.delve.isApiV1 ? {
+			symbol: args.expression,
+			scope
+		} : {
+				Expr: args.expression,
+				Scope: scope,
+				Cfg: evalSymbolsConfig
+			};
 
 		if (!cancelFullRequest) {
 			const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
