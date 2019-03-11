@@ -1323,6 +1323,7 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	private evaluateRequestImpl(args: DebugProtocol.EvaluateArguments): Thenable<EvalOut | DebugVariable> {
+		let cancelFullRequest = false;
 		// default to the topmost stack frame of the current goroutine
 		let goroutineId = -1;
 		let frameId = 0;
@@ -1334,20 +1335,51 @@ class GoDebugSession extends LoggingDebugSession {
 			goroutineID: goroutineId,
 			frame: frameId
 		};
+		let evalSymbolsConfig = Object.assign({}, this.delve.loadConfig);
 		let evalSymbolArgs = this.delve.isApiV1 ? {
 			symbol: args.expression,
 			scope
 		} : {
 				Expr: args.expression,
 				Scope: scope,
-				Cfg: this.delve.loadConfig
+				Cfg: evalSymbolsConfig
 			};
-		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
+
+		// If coming from watch/variables pane via the 'Copy Value' context menu action,
+		// first fetch the return value of the expression and override the loadConfig
+		// to get the complete value in a second, final request (if truncated)
+		let fetchReturnValue = <EvalOut & DebugVariable>{};
+		if (!this.delve.isApiV1 && (args.context === 'watch') || (args.context === 'variables')) {
+			fetchReturnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
 			err => {
+				// Don't return on fail, continue to retry a truncated delve request
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
-				return Promise.reject(err);
 			});
-		return returnValue;
+			if ((fetchReturnValue.len < evalSymbolsConfig.maxStringLen)
+				&& (fetchReturnValue.len < evalSymbolsConfig.maxArrayValues)) {
+				// Values were not truncated, so we cancel the next delve request
+				cancelFullRequest = true;
+			}
+			if ((fetchReturnValue.kind === GoReflectKind.Map)
+				|| (fetchReturnValue.kind === GoReflectKind.Slice)
+				|| (fetchReturnValue.kind === GoReflectKind.Array)) {
+					evalSymbolsConfig.maxArrayValues = fetchReturnValue.len;
+			}
+			if (fetchReturnValue.kind === GoReflectKind.String) {
+				evalSymbolsConfig.maxStringLen = fetchReturnValue.len;
+			}
+		}
+
+		if (!cancelFullRequest) {
+			const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
+				err => {
+					logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
+					return Promise.reject(err);
+				});
+			return returnValue;
+		} else {
+			return fetchReturnValue;
+		}
 	}
 
 	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {
