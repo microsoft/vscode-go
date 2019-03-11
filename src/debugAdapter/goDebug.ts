@@ -1335,48 +1335,58 @@ class GoDebugSession extends LoggingDebugSession {
 			goroutineID: goroutineId,
 			frame: frameId
 		};
-		let evalSymbolsConfig = Object.assign({}, this.delve.loadConfig);
-
-		// If coming from watch/variables pane via the 'Copy Value' context menu action,
-		// first fetch the return value of the expression and override the loadConfig
-		// to get the complete value in a second, final request (if truncated)
-		let fetchReturnValue = <EvalOut & DebugVariable>{};
-		if (!this.delve.isApiV1 && (args.context === 'watch') || (args.context === 'variables')) {
-			fetchReturnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
-			err => {
-				// Don't return on fail, continue to retry a truncated delve request
-				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
-			});
-			if ((fetchReturnValue.kind === GoReflectKind.Map)
-				|| (fetchReturnValue.kind === GoReflectKind.Slice)
-				|| (fetchReturnValue.kind === GoReflectKind.Array)) {
-				if (fetchReturnValue.len < evalSymbolsConfig.maxArrayValues) {
-					// Values were not truncated, so we cancel the next delve request
-					cancelFullRequest = true;
-				} else {
-					evalSymbolsConfig.maxArrayValues = fetchReturnValue.len;
-				}
-			}
-			if (fetchReturnValue.kind === GoReflectKind.String) {
-				if (fetchReturnValue.len < evalSymbolsConfig.maxStringLen) {
-					// Values were not truncated, so we cancel the next delve request
-					cancelFullRequest = true;
-				} else {
-					evalSymbolsConfig.maxStringLen = fetchReturnValue.len;
-				}
-			}
-		}
-
 		let evalSymbolArgs = this.delve.isApiV1 ? {
 			symbol: args.expression,
 			scope
 		} : {
 				Expr: args.expression,
 				Scope: scope,
-				Cfg: evalSymbolsConfig
+				Cfg: this.delve.loadConfig
 			};
 
+		// If coming from watch/variables pane via the 'Copy Value' context menu action,
+		// first fetch the return value of the expression and override the loadConfig
+		// to get the complete value in a second, final request (if truncated)
+		let evalSymbolsConfig = Object.assign({}, this.delve.loadConfig);
+		let fetchReturnValue: EvalOut = null;
+		if (!this.delve.isApiV1 && (/*(args.context === 'watch') || */(args.context === 'variables'))) {
+			log('EvaluateRequest fetch');
+			this.delve.call<EvalOut>('Eval', [{
+				Expr: args.expression,
+				Scope: scope,
+				Cfg: this.delve.loadConfig
+			}], (err, val) => {
+				fetchReturnValue = val;
+				if (err) {
+					logError('Failed to fetch eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval fetch error:', err.toString());
+					return;
+				}
+				if ((fetchReturnValue.Variable.kind === GoReflectKind.Map)
+					|| (fetchReturnValue.Variable.kind === GoReflectKind.Slice)
+					|| (fetchReturnValue.Variable.kind === GoReflectKind.Array)) {
+					if (fetchReturnValue.Variable.len < evalSymbolsConfig.maxArrayValues) {
+						// Values were not truncated, so we cancel the next delve request
+						cancelFullRequest = true;
+					} else {
+						evalSymbolsConfig.maxArrayValues = fetchReturnValue.Variable.len;
+					}
+				}
+				if (fetchReturnValue.Variable.kind === GoReflectKind.String) {
+					if (fetchReturnValue.Variable.len < evalSymbolsConfig.maxStringLen) {
+						// Values were not truncated, so we cancel the next delve request
+						cancelFullRequest = true;
+					} else {
+						evalSymbolsConfig.maxStringLen = fetchReturnValue.Variable.len;
+					}
+				}
+			});
+		}
+
+		evalSymbolArgs.Cfg = evalSymbolsConfig;
+		//logError(JSON.stringify(evalSymbolsConfig));
+
 		if (!cancelFullRequest) {
+			log('EvaluateRequest second request');
 			const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
 				err => {
 					logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
@@ -1384,6 +1394,7 @@ class GoDebugSession extends LoggingDebugSession {
 				});
 			return returnValue;
 		} else {
+			log('EvaluateRequest cached fetch');
 			return fetchReturnValue;
 		}
 	}
