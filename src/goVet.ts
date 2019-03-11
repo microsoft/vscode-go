@@ -75,6 +75,8 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			vetArgs = ['tool', 'vet', ...vetFlags, ...tagsArg, '.'];
 		}
 
+		outputChannel.appendLine(`Starting "go vet" under the folder ${cwd}`);
+
 		running = true;
 		return runTool(
 			vetArgs,

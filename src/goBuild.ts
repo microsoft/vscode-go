@@ -94,6 +94,7 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 	}
 
 	if (buildWorkspace && currentWorkspace && !isTestFile) {
+		outputChannel.appendLine(`Starting building the current workspace at ${currentWorkspace}`);
 		return getNonVendorPackages(currentWorkspace).then(pkgs => {
 			running = true;
 			return runTool(
@@ -116,6 +117,7 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 	let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
 	let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
 	running = true;
+	outputChannel.appendLine(`Starting building the current package at ${cwd}`);
 	return runTool(
 		buildArgs.concat('-o', tmpPath, importPath),
 		cwd,
