@@ -15,9 +15,8 @@ import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_proces
 import { Client, RPCConnection } from 'json-rpc2';
 import { parseEnvFile, getBinPathWithPreferredGopath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 
-const access = util.promisify(fs.access);
-const unlink = util.promisify(fs.unlink);
-
+const fsAccess = util.promisify(fs.access);
+const fsUnlink = util.promisify(fs.unlink);
 
 // This enum should stay in sync with https://golang.org/pkg/reflect/#Kind
 
@@ -443,7 +442,7 @@ class Delve {
 				env,
 			});
 
-			this.localDebugeePath = this.privateGetLocalDebugeePath(launchArgs.output);
+			this.localDebugeePath = this.getLocalDebugeePath(launchArgs.output);
 			function connectClient(port: number, host: string) {
 				// Add a slight delay to avoid issues on Linux with
 				// Delve failing calls made shortly after connection.
@@ -511,7 +510,7 @@ class Delve {
 		}
 		log('HaltRequest');
 
-		const isLocalDebugging = this.debugProcess;
+		const isLocalDebugging: boolean = !!this.debugProcess;
 		const forceCleanup = async () => {
 			killTree(this.debugProcess.pid);
 			await removeFile(this.localDebugeePath);
@@ -523,18 +522,18 @@ class Delve {
 				resolve();
 			}, 1000);
 
-			let errMsg;
+			let haltErrMsg;
 			try {
 				await this.callPromise('Command', [{ name: 'halt' }]);
 			} catch (err) {
 				log('HaltResponse');
-				errMsg = err ? err.toString() : '';
-				log(`Failed to halt - ${errMsg}`);
+				haltErrMsg = err ? err.toString() : '';
+				log(`Failed to halt - ${haltErrMsg}`);
 			}
 			clearTimeout(timeoutToken);
 
-			const targetHasExited: boolean = errMsg.endsWith('has exited with status 0');
-			const shouldDetach: boolean = !errMsg || targetHasExited;
+			const targetHasExited: boolean = haltErrMsg.endsWith('has exited with status 0');
+			const shouldDetach: boolean = !haltErrMsg || targetHasExited;
 			let shouldForceClean: boolean = !shouldDetach;
 			if (shouldDetach) {
 				log('DetachRequest');
@@ -553,7 +552,7 @@ class Delve {
 		});
 	}
 
-	private privateGetLocalDebugeePath(output: string | undefined): string {
+	private getLocalDebugeePath(output: string | undefined): string {
 		const configOutput = output || 'debug';
 		return path.isAbsolute(configOutput)
 			? configOutput
@@ -1423,11 +1422,11 @@ function killTree(processId: number): void {
 
 async function removeFile(filePath: string): Promise<void> {
 	try {
-		const fileExists = await access(filePath)
+		const fileExists = await fsAccess(filePath)
 			.then(() => true)
 			.catch(() => false);
 		if (filePath && fileExists) {
-			await unlink(filePath);
+			await fsUnlink(filePath);
 		}
 	} catch (e) {
 		logError(`Potentially failed remove file: ${filePath} - ${e.toString() || ''}`);
