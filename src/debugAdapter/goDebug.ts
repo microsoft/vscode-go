@@ -479,7 +479,7 @@ class Delve {
 		});
 	}
 
-	callPromise<T>(command: string, args: any[]): Thenable<T> {
+	async callPromise<T>(command: string, args: any[]): Promise<T> {
 		return new Promise<T>((resolve, reject) => {
 			this.connection.then(conn => {
 				conn.call<T>('RPCServer.' + command, args, (err, res) => {
@@ -492,7 +492,7 @@ class Delve {
 		});
 	}
 
-	close(): Thenable<void> {
+	close(): Promise<void> {
 		if (this.noDebug) {
 			// delve isn't running so no need to halt
 			return Promise.resolve();
@@ -736,7 +736,7 @@ class GoDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	private setBreakPoints(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Thenable<void> {
+	private setBreakPoints(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): Promise<void> {
 		let file = normalizePath(args.source.path);
 		if (!this.breakpoints.get(file)) {
 			this.breakpoints.set(file, []);
@@ -1014,7 +1014,7 @@ class GoDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	private getPackageInfo(debugState: DebuggerState): Thenable<string> {
+	private getPackageInfo(debugState: DebuggerState): Promise<string> {
 		if (!debugState.currentThread || !debugState.currentThread.file) {
 			return Promise.resolve(null);
 		}
@@ -1213,7 +1213,7 @@ class GoDebugSession extends LoggingDebugSession {
 
 	private continueEpoch = 0;
 	private continueRequestRunning = false;
-	private continue(calledWhenSettingBreakpoint?: boolean): Thenable<void> {
+	private continue(calledWhenSettingBreakpoint?: boolean): Promise<void> {
 		this.continueEpoch++;
 		let closureEpoch = this.continueEpoch;
 		this.continueRequestRunning = true;
@@ -1322,7 +1322,7 @@ class GoDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	private evaluateRequestImpl(args: DebugProtocol.EvaluateArguments): Thenable<EvalOut | DebugVariable> {
+	private async evaluateRequestImpl(args: DebugProtocol.EvaluateArguments): Promise<EvalOut | DebugVariable> {
 		// default to the topmost stack frame of the current goroutine
 		let goroutineId = -1;
 		let frameId = 0;
@@ -1348,18 +1348,14 @@ class GoDebugSession extends LoggingDebugSession {
 		// to get the complete value in a second, final request
 		let evalSymbolsConfig = Object.assign({}, this.delve.loadConfig);
 		let fetchReturnValue: EvalOut = null;
-		if (!this.delve.isApiV1 && (/*(args.context === 'watch') || */(args.context === 'variables'))) {
+		if (!this.delve.isApiV1 && (args.context === 'variables')) {
 			log('EvaluateRequest fetch');
-			this.delve.call<EvalOut>('Eval', [{
+			await this.delve.callPromise<EvalOut>('Eval', [{
 				Expr: args.expression,
 				Scope: scope,
 				Cfg: this.delve.loadConfig
-			}], (err, val) => {
-				fetchReturnValue = val;
-				if (err) {
-					logError('Failed to fetch eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval fetch error:', err.toString());
-					return;
-				}
+			}]).then(result => {
+				fetchReturnValue = result;
 				if ((fetchReturnValue.Variable.kind === GoReflectKind.Map)
 					|| (fetchReturnValue.Variable.kind === GoReflectKind.Slice)
 					|| (fetchReturnValue.Variable.kind === GoReflectKind.Array)) {
@@ -1368,15 +1364,18 @@ class GoDebugSession extends LoggingDebugSession {
 					}
 				}
 				if (fetchReturnValue.Variable.kind === GoReflectKind.String) {
-					if (fetchReturnValue.Variable.len < evalSymbolsConfig.maxStringLen) {
+					if (fetchReturnValue.Variable.len > evalSymbolsConfig.maxStringLen) {
 						evalSymbolsConfig.maxStringLen = fetchReturnValue.Variable.len;
 					}
 				}
+			}, err => {
+				logError('Failed to fetch eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval fetch error:', err.toString());
+				return Promise.reject(err);
 			});
 		}
 
 		evalSymbolArgs.Cfg = evalSymbolsConfig;
-		// logError(JSON.stringify(evalSymbolsConfig));
+		logError(JSON.stringify(evalSymbolsConfig));
 
 		log('EvaluateRequest second request');
 		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
