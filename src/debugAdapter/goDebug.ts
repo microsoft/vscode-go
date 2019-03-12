@@ -395,7 +395,7 @@ class Delve {
 			let dlvArgs = [mode || 'debug'];
 			if (mode === 'exec') {
 				dlvArgs = dlvArgs.concat([program]);
-			} else if (currentGOWorkspace) {
+			} else if (currentGOWorkspace && env['GO111MODULE'] !== 'on') {
 				dlvArgs = dlvArgs.concat([dirname.substr(currentGOWorkspace.length + 1)]);
 			}
 			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
