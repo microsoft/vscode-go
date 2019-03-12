@@ -357,10 +357,10 @@ export function cancelRunningTests(): Thenable<boolean> {
 	});
 }
 
-function expandFilePathInOutput(output: string, cwd: string): string {
+export function expandFilePathInOutput(output: string, cwd: string): string {
 	let lines = output.split('\n');
 	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\s*([(\.\/)?\w+\s*]+.go):(\d+):/);
+		let matches = lines[i].match(/^\s*([(\.\/\\)?\w+\s*]+.go):(\d+):/);
 		if (matches && matches[1] && !path.isAbsolute(matches[1])) {
 			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
 		}
