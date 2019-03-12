@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars } from './util';
+import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars, sendTelemetryEvent } from './util';
 import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
@@ -99,9 +99,15 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	}
 }
 
-export function addImport(arg: string) {
-	const p = arg ? Promise.resolve(arg) : askUserForImport();
+export function addImport(arg: {importPath: string, from: string}) {
+	const p = (arg && arg.importPath) ? Promise.resolve(arg.importPath) : askUserForImport();
 	p.then(imp => {
+		/* __GDPR__
+		"addImportCmd" : {
+			"from" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+		}
+		*/
+		sendTelemetryEvent('addImportCmd', { from: (arg && arg.from) || 'cmd'});
 		const edits = getTextEditForAddImport(imp);
 		if (edits && edits.length > 0) {
 			const edit = new vscode.WorkspaceEdit();
