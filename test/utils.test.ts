@@ -1,3 +1,4 @@
+
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
@@ -6,6 +7,8 @@
 import { guessPackageNameFromFile } from '../src/util';
 import * as assert from 'assert';
 import { substituteEnv } from '../src/util';
+import { expandFilePathInOutput } from '../src/testUtils';
+import path = require('path');
 
 suite('utils Tests', () => {
 	test('substituteEnv: default', () => {
@@ -63,3 +66,33 @@ suite('GuessPackageNameFromFile Tests', () => {
 	});
 });
 
+suite('expandFilePathInOutput tests', () => {
+	test('expand path test' , () => {
+		const testMessage = 'demo_test.go:11: No';
+		const testDir = '/home/user/expand/path/';
+		const expectedTestMessage = path.join(testDir, testMessage);
+		const outputMessage = expandFilePathInOutput(testMessage, testDir);
+
+		// Check the validity of the expected output
+		assert.equal(outputMessage, expectedTestMessage);
+	});
+
+	test('windows compile error expand path test' , () => {
+		const sampleErrorMessage = '.\\sample.go:11:3: syntax error';
+		const testDir = 'D:/Test/Expand Path/';
+		const expectedPathMessage = path.join(testDir, sampleErrorMessage);
+		const outputMessage = expandFilePathInOutput(sampleErrorMessage, testDir);
+
+		// Check the validity of the expected output
+		assert.equal(outputMessage, expectedPathMessage);
+	});
+	test('*nix compile error expand path test' , () => {
+		const sampleErrorMessage = './sample.go:11:3: syntax error';
+		const testDir = '/home/user/expand/path/';
+		const expectedPathMessage = path.join(testDir, sampleErrorMessage);
+		const outputMessage = expandFilePathInOutput(sampleErrorMessage, testDir);
+
+		// Check the validity of the expected output
+		assert.equal(outputMessage, expectedPathMessage);
+	});
+});
