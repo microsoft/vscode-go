@@ -7,22 +7,22 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars } from './util';
+import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars, sendTelemetryEvent } from './util';
 import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
 
 const missingToolMsg = 'Missing tool: ';
 
-export function listPackages(excludeImportedPkgs: boolean = false): Thenable<string[]> {
-	let importsPromise = excludeImportedPkgs && vscode.window.activeTextEditor ? getImports(vscode.window.activeTextEditor.document) : Promise.resolve([]);
-	let pkgsPromise = getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
-	return Promise.all([pkgsPromise, importsPromise]).then(([pkgMap, importedPkgs]) => {
-		importedPkgs.forEach(pkg => {
-			pkgMap.delete(pkg);
-		});
-		return Array.from(pkgMap.keys()).sort();
-	});
+export async function listPackages(excludeImportedPkgs: boolean = false): Promise<string[]> {
+	const importedPkgs = excludeImportedPkgs && vscode.window.activeTextEditor
+		? await getImports(vscode.window.activeTextEditor.document)
+		: [];
+	const pkgMap = await getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
+
+	return Array.from(pkgMap.keys())
+		.filter(pkg => !importedPkgs.some(imported => imported === pkg))
+		.sort();
 }
 
 /**
@@ -31,26 +31,28 @@ export function listPackages(excludeImportedPkgs: boolean = false): Thenable<str
  * @param document TextDocument whose imports need to be returned
  * @returns Array of imported package paths wrapped in a promise
  */
-function getImports(document: vscode.TextDocument): Promise<string[]> {
-	let options = { fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only, document, skipRanges: true };
-	return documentSymbols(options, null).then(symbols => {
-		if (!symbols || !symbols.length) {
-			return [];
-		}
-		// import names will be of the form "math", so strip the quotes in the beginning and the end
-		let imports = symbols.filter(x => x.kind === vscode.SymbolKind.Namespace).map(x => x.name.substr(1, x.name.length - 2));
-		return imports;
-	});
+async function getImports(document: vscode.TextDocument): Promise<string[]> {
+	const options = { fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only, document };
+	const symbols = await documentSymbols(options, null);
+	if (!symbols || !symbols.length) {
+		return [];
+	}
+	// import names will be of the form "math", so strip the quotes in the beginning and the end
+	const imports = symbols[0].children
+		.filter((x: any) => x.kind === vscode.SymbolKind.Namespace)
+		.map((x: any) => x.name.substr(1, x.name.length - 2));
+	return imports;
 }
 
-function askUserForImport(): Thenable<string> {
-	return listPackages(true).then(packages => {
+async function askUserForImport(): Promise<string> {
+	try {
+		const packages = await listPackages(true);
 		return vscode.window.showQuickPick(packages);
-	}, err => {
+	} catch (err) {
 		if (typeof err === 'string' && err.startsWith(missingToolMsg)) {
 			promptForMissingTool(err.substr(missingToolMsg.length));
 		}
-	});
+	}
 }
 
 export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
@@ -97,10 +99,16 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	}
 }
 
-export function addImport(arg: string) {
-	let p = arg ? Promise.resolve(arg) : askUserForImport();
+export function addImport(arg: {importPath: string, from: string}) {
+	const p = (arg && arg.importPath) ? Promise.resolve(arg.importPath) : askUserForImport();
 	p.then(imp => {
-		let edits = getTextEditForAddImport(imp);
+		/* __GDPR__
+		"addImportCmd" : {
+			"from" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+		}
+		*/
+		sendTelemetryEvent('addImportCmd', { from: (arg && arg.from) || 'cmd'});
+		const edits = getTextEditForAddImport(imp);
 		if (edits && edits.length > 0) {
 			const edit = new vscode.WorkspaceEdit();
 			edit.set(vscode.window.activeTextEditor.document.uri, edits);
@@ -132,7 +140,7 @@ export function addImportToWorkspace() {
 
 	if (importPath === '') {
 		// Failing that use the current line
-		let selectedText = editor.document.lineAt(selection.active.line).text;
+		const selectedText = editor.document.lineAt(selection.active.line).text;
 		importPath = getImportPath(selectedText);
 	}
 
@@ -145,7 +153,7 @@ export function addImportToWorkspace() {
 	const env = getToolsEnvVars();
 
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
-		let dirs = (stdout || '').split('\n');
+		const dirs = (stdout || '').split('\n');
 		if (!dirs.length || !dirs[0].trim()) {
 			vscode.window.showErrorMessage(`Could not find package ${importPath}`);
 			return;

@@ -1,7 +1,9 @@
 'use strict';
 
 import vscode = require('vscode');
-import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent } from './util';
+import path = require('path');
+import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent, getBinPath } from './util';
+import { promptForMissingTool } from './goInstallTools';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -67,7 +69,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			}
 		});
 
-		const dlvConfig = goConfig.get('delveConfig');
+		const dlvConfig: { [key: string]: any } = goConfig.get('delveConfig');
 		if (!debugConfiguration.hasOwnProperty('useApiV1') && dlvConfig.hasOwnProperty('useApiV1')) {
 			debugConfiguration['useApiV1'] = dlvConfig['useApiV1'];
 		}
@@ -77,10 +79,20 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		if (!debugConfiguration.hasOwnProperty('dlvLoadConfig') && dlvConfig.hasOwnProperty('dlvLoadConfig')) {
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
 		}
+		if (!debugConfiguration.hasOwnProperty('showGlobalVariables') && dlvConfig.hasOwnProperty('showGlobalVariables')) {
+			debugConfiguration['showGlobalVariables'] = dlvConfig['showGlobalVariables'];
+		}
+
+		debugConfiguration['dlvToolPath'] = getBinPath('dlv');
+		if (!path.isAbsolute(debugConfiguration['dlvToolPath'])) {
+			promptForMissingTool('dlv');
+			return;
+		}
 
 		if (debugConfiguration['mode'] === 'auto') {
 			debugConfiguration['mode'] = (activeEditor && activeEditor.document.fileName.endsWith('_test.go')) ? 'test' : 'debug';
 		}
+		debugConfiguration['currentFile'] = activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
 
 		return debugConfiguration;
 	}

@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getFileArchive, getToolsEnvVars } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getFileArchive, getToolsEnvVars, killTree } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
@@ -33,7 +33,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 			let filename = canonicalizeGOPATHPrefix(document.fileName);
 			let cwd = path.dirname(filename);
-			let offset = byteOffsetAt(document, position);
+			let offset = byteOffsetAt(document, wordRange.start);
 			let env = getToolsEnvVars();
 			let buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
 			let args = buildTags ? ['-tags', buildTags] : [];
@@ -79,7 +79,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 				process.stdin.end(getFileArchive(document));
 			}
 			token.onCancellationRequested(() =>
-				process.kill()
+				killTree(process.pid)
 			);
 		});
 	}

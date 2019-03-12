@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.6.93",
+  "version": "0.9.2",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -31,30 +31,29 @@
     "compile": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "node ./node_modules/vscode/bin/test",
-    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts"
+    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
+    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
   },
   "extensionDependencies": [],
   "dependencies": {
-    "console-stamp": "^0.2.2",
-    "diff": "~3.3.0",
+    "diff": "^3.5.0",
     "json-rpc2": "^1.0.2",
-    "vscode-debug-logger": "^0.0.4",
-    "vscode-debugadapter": "^1.30.0",
-    "vscode-debugprotocol": "^1.11.0",
+    "vscode-debugadapter": "^1.32.1",
+    "vscode-debugprotocol": "^1.32.0",
     "vscode-extension-telemetry": "^0.1.0",
     "vscode-languageclient": "~4.3.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "0.0.35",
-    "@types/mocha": "^2.2.33",
-    "@types/node": "^6.0.50",
-    "fs-extra": "^1.0.0",
-    "tslint": "^4.0.2",
-    "typescript": "^2.1.5",
-    "vscode": "^1.1.21"
+    "@types/fs-extra": "^5.0.4",
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^6.14.0",
+    "fs-extra": "^7.0.0",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.3",
+    "vscode": "^1.1.26"
   },
   "engines": {
-    "vscode": "^1.22.0"
+    "vscode": "^1.25.0"
   },
   "activationEvents": [
     "onLanguage:go",
@@ -73,6 +72,36 @@
         "aliases": [
           "Go"
         ]
+      },
+      {
+        "id": "go.mod",
+        "extensions": [
+          "go.mod"
+        ],
+        "aliases": [
+          "Go Module File"
+        ]
+      },
+      {
+        "id": "go.sum",
+        "extensions": [
+          "go.sum"
+        ],
+        "aliases": [
+          "Go Checksum File"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "go.mod",
+        "scopeName": "go.mod",
+        "path": "./syntaxes/go.mod.tmGrammar.json"
+      },
+      {
+        "language": "go.sum",
+        "scopeName": "go.sum",
+        "path": "./syntaxes/go.sum.tmGrammar.json"
       }
     ],
     "snippets": [
@@ -102,6 +131,11 @@
         "command": "go.benchmark.cursor",
         "title": "Go: Benchmark Function At Cursor",
         "description": "Runs a benchmark at the cursor."
+      },
+      {
+        "command": "go.debug.cursor",
+        "title": "Go: Debug Test At Cursor",
+        "description": "Debug test at the cursor."
       },
       {
         "command": "go.test.file",
@@ -394,7 +428,7 @@
               },
               "remotePath": {
                 "type": "string",
-                "description": "If remote debugging, the path to the source code on the remote machine, if different from the local machine.",
+                "description": "Absolute path to the file being debugged on the remote machine in case of remote debugging.",
                 "default": ""
               },
               "port": {
@@ -408,16 +442,14 @@
                 "default": "127.0.0.1"
               },
               "trace": {
-                "type": [
-                  "boolean",
-                  "string"
-                ],
+                "type": "string",
                 "enum": [
+                  "log",
                   "verbose",
-                  true
+                  "error"
                 ],
-                "default": true,
-                "description": "When 'true', the extension will log diagnostic info to a file. When 'verbose', it will also show logs in the console."
+                "default": "error",
+                "description": "Various levels of logging shown in the debug console. When set to 'log' or 'verbose', the logs will also be written to a file."
               },
               "envFile": {
                 "type": "string",
@@ -496,6 +528,16 @@
                 ],
                 "description": "Delve Api Version to use. Default value is 2.",
                 "default": 2
+              },
+              "stackTraceDepth": {
+                "type": "number",
+                "description": "Maximum depth of stack trace collected from Delve",
+                "default": 50
+              },
+              "showGlobalVariables": {
+                "type": "boolean",
+                "default": true,
+                "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not."
               }
             }
           }
@@ -523,7 +565,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. ['-ldflags=\"-s\"'])",
+          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. [\"-ldflags='-s'\"])",
           "scope": "resource"
         },
         "go.buildTags": {
@@ -567,9 +609,9 @@
           "enum": [
             "golint",
             "gometalinter",
-            "megacheck",
             "golangci-lint",
-            "revive"
+            "revive",
+            "staticcheck"
           ]
         },
         "go.lintFlags": {
@@ -598,7 +640,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])",
+          "description": "Flags to pass to `go tool vet` (e.g. [\"-all\", \"-shadow\"])",
           "scope": "resource"
         },
         "go.formatTool": {
@@ -619,7 +661,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to format tool (e.g. ['-s'])",
+          "description": "Flags to pass to format tool (e.g. [\"-s\"])",
           "scope": "resource"
         },
         "go.inferGopath": {
@@ -800,6 +842,19 @@
           "description": "Environment variables that will passed to the processes that run the Go tools (e.g. CGO_CFLAGS)",
           "scope": "resource"
         },
+        "go.gocodeFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "-builtin",
+            "-ignore-case",
+            "-unimported-packages"
+          ],
+          "description": "Additional flags to pass to gocode.",
+          "scope": "resource"
+        },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": false,
@@ -849,7 +904,7 @@
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
-          "description": "Experimental: Not available in Windows. Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features instead of tools like guru, godef, go-outline and go-symbol"
+          "description": "Experimental: Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features instead of tools like guru, godef, go-outline and go-symbol"
         },
         "go.languageServerFlags": {
           "type": "array",
@@ -868,11 +923,60 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the language server will provide code completion results."
+            },
+            "rename": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Rename feature."
+            },
+            "goToDefinition": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Go to/Peek Definition feature."
+            },
+            "goToTypeDefinition": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Go to/Peek Type Definition feature."
+            },
+            "hover": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the hover feature."
+            },
+            "findReferences": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Find/Peek References feature."
+            },
+            "signatureHelp": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Signature Help/Parameter Hints feature."
+            },
+            "documentSymbols": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Go to Document Symbols/Outline/Breadcrumbs feature."
+            },
+            "workspaceSymbols": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will be used for the Go to Workspace Symbols feature."
             }
           },
           "default": {
             "format": false,
-            "autoComplete": false
+            "autoComplete": false,
+            "rename": true,
+            "goToDefinition": true,
+            "hover": true,
+            "signatureHelp": true,
+            "goToTypeDefinition": true,
+            "goToImplementation": true,
+            "documentSymbols": true,
+            "workspaceSymbols": true,
+            "findReferences": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
@@ -1087,6 +1191,11 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to upload the current file or selection to the Go Playground"
+            },
+            "debugTestAtCursor": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to debug the test under the cursor to the editor context menu"
             }
           },
           "default": {
@@ -1101,7 +1210,8 @@
             "generateTestForPackage": false,
             "addImport": true,
             "testCoverage": true,
-            "playground": true
+            "playground": true,
+            "debugTestAtCursor": true
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor.",
           "scope": "resource"
@@ -1164,8 +1274,25 @@
               ],
               "description": "Delve Api Version to use. Default value is 2.",
               "default": 2
+            },
+            "showGlobalVariables": {
+              "type": "boolean",
+              "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not.",
+              "default": true
             }
           },
+          "default": {
+            "dlvLoadConfig": {
+              "followPointers": true,
+              "maxVariableRecurse": 1,
+              "maxStringLen": 64,
+              "maxArrayValues": 64,
+              "maxStructFields": -1
+            },
+            "apiVersion": 2,
+            "showGlobalVariables": true
+          },
+          "description": "Delve settings that applies to all debugging sessions. Debug configuration in the launch.json file will override these values.",
           "scope": "resource"
         },
         "go.alternateTools": {
@@ -1193,11 +1320,6 @@
               "type": "string",
               "default": "gopkgs",
               "description": "Alternate tool to use instead of the gopkgs binary or alternate path to use for the gopkgs binary."
-            },
-            "godoc": {
-              "type": "string",
-              "default": "godoc",
-              "description": "Alternate tool to use instead of the godoc binary or alternate path to use for the godoc binary."
             },
             "go-outline": {
               "type": "string",
@@ -1243,6 +1365,11 @@
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.benchmarkAtCursor && resourceLangId == go && !config.editor.codeLens",
           "command": "go.benchmark.cursor",
+          "group": "Go group 1"
+        },
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.debugTestAtCursor && resourceLangId == go && !config.editor.codeLens",
+          "command": "go.debug.cursor",
           "group": "Go group 1"
         },
         {

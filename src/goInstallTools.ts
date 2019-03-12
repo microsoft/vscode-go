@@ -15,7 +15,7 @@ import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
 let installsDeclinedTools: string[] = [];
-const allTools: { [key: string]: string } = {
+const allToolsWithImportPaths: { [key: string]: string } = {
 	'gocode': 'github.com/mdempsky/gocode',
 	'gocode-gomod': 'github.com/stamblerre/gocode',
 	'gopkgs': 'github.com/uudashr/gopkgs/cmd/gopkgs',
@@ -28,7 +28,6 @@ const allTools: { [key: string]: string } = {
 	'impl': 'github.com/josharian/impl',
 	'gotype-live': 'github.com/tylerb/gotype-live',
 	'godef': 'github.com/rogpeppe/godef',
-	'godef-gomod': 'github.com/ianthehat/godef',
 	'gogetdoc': 'github.com/zmb3/gogetdoc',
 	'goimports': 'golang.org/x/tools/cmd/goimports',
 	'goreturns': 'github.com/sqs/goreturns',
@@ -36,13 +35,21 @@ const allTools: { [key: string]: string } = {
 	'golint': 'golang.org/x/lint/golint',
 	'gotests': 'github.com/cweill/gotests/...',
 	'gometalinter': 'github.com/alecthomas/gometalinter',
-	'megacheck': 'honnef.co/go/tools/...',
+	'staticcheck': 'honnef.co/go/tools/...',
 	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
-	'dlv': 'github.com/derekparker/delve/cmd/dlv',
+	'dlv': 'github.com/go-delve/delve/cmd/dlv',
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct',
+	'godoctor': 'github.com/godoctor/godoctor',
 };
+
+function getToolImportPath(tool: string, goVersion: SemVersion) {
+	if (tool === 'gocode' && goVersion && goVersion.major < 2 && goVersion.minor < 9) {
+		return 'github.com/nsf/gocode';
+	}
+	return allToolsWithImportPaths[tool];
+}
 
 // Tools used explicitly by the basic features of the extension
 const importantTools = [
@@ -54,13 +61,12 @@ const importantTools = [
 	'guru',
 	'gorename',
 	'godef',
-	'godef-gomod',
 	'gogetdoc',
 	'goreturns',
 	'goimports',
 	'golint',
 	'gometalinter',
-	'megacheck',
+	'staticcheck',
 	'golangci-lint',
 	'revive',
 	'dlv'
@@ -74,9 +80,15 @@ function getTools(goVersion: SemVersion): string[] {
 		'go-outline',
 		'go-symbols',
 		'guru',
-		'gorename',
-		'dlv'
+		'gorename'
 	];
+
+	// Check if the system supports dlv (e.g. is 64-bit)
+	// There doesn't seem to be a good way to check if the mips and s390
+	// families are 64-bit, so just try to install it and hope for the best
+	if (process.arch.match(/^(arm64|mips|mipsel|ppc64|s390|s390x|x64)$/)) {
+		tools.push('dlv');
+	}
 
 	// gocode-gomod needed in go 1.11 & higher
 	if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
@@ -86,10 +98,6 @@ function getTools(goVersion: SemVersion): string[] {
 	// Install the doc/def tool that was chosen by the user
 	if (goConfig['docsTool'] === 'godoc') {
 		tools.push('godef');
-		// godef-gomod needed in go 1.11 & higher
-		if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
-			tools.push('godef-gomod');
-		}
 	} else if (goConfig['docsTool'] === 'gogetdoc') {
 		tools.push('gogetdoc');
 	}
@@ -103,28 +111,16 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('goreturns');
 	}
 
-	// golint is not supported in go1.5
-	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
-		tools.push('golint');
+	// Install the linter that was chosen by the user
+	if (goConfig['lintTool'] === 'golint'
+		|| goConfig['lintTool'] === 'gometalinter'
+		|| goConfig['lintTool'] === 'staticcheck'
+		|| goConfig['lintTool'] === 'golangci-lint'
+		|| goConfig['lintTool'] === 'revive') {
+		tools.push(goConfig['lintTool']);
 	}
 
-	if (goConfig['lintTool'] === 'gometalinter') {
-		tools.push('gometalinter');
-	}
-
-	if (goConfig['lintTool'] === 'megacheck') {
-		tools.push('megacheck');
-	}
-
-	if (goConfig['lintTool'] === 'golangci-lint') {
-		tools.push('golangci-lint');
-	}
-
-	if (goConfig['lintTool'] === 'revive') {
-		tools.push('revive');
-	}
-
-	if (goConfig['useLanguageServer'] && process.platform !== 'win32') {
+	if (goConfig['useLanguageServer']) {
 		tools.push('go-langserver');
 	}
 
@@ -132,16 +128,13 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push('gotype-live');
 	}
 
-	// gotests is not supported in go1.5
-	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
-		tools.push('gotests');
-	}
-
 	tools.push(
+		'gotests',
 		'gomodifytags',
 		'impl',
 		'fillstruct',
-		'goplay'
+		'goplay',
+		'godoctor'
 	);
 
 	return tools;
@@ -159,23 +152,22 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'gomodifytags': '(Modify tags on structs)',
 		'goplay': '\t\t(The Go playground)',
 		'impl': '\t\t(Stubs for interfaces)',
-		'gotype-live': 'Show errors as you type)',
+		'gotype-live': '\t(Show errors as you type)',
 		'godef': '\t\t(Go to definition)',
-		'godef-gomod': '\t(Go to definition, works with Modules)',
-		'godoc': '\t\t(For text shown on hover)',
 		'gogetdoc': '\t(Go to definition & text shown on hover)',
 		'goimports': '\t(Formatter)',
 		'goreturns': '\t(Formatter)',
 		'goformat': '\t(Formatter)',
 		'golint': '\t\t(Linter)',
 		'gotests': '\t\t(Generate unit tests)',
-		'gometalinter': 'Linter)',
-		'megacheck': '\t(Linter)',
-		'golangci-lint': 'Linter)',
+		'gometalinter': '\t(Linter)',
+		'golangci-lint': '\t(Linter)',
 		'revive': '\t\t(Linter)',
+		'staticcheck': '\t(Linter)',
 		'go-langserver': '(Language Server)',
 		'dlv': '\t\t\t(Debugging)',
-		'fillstruct': '\t\t(Fill structs with defaults)'
+		'fillstruct': '\t\t(Fill structs with defaults)',
+		'godoctor': '\t\t(Extract to functions and variables)'
 	};
 
 	getGoVersion().then((goVersion) => {
@@ -184,7 +176,7 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 			installTools(allTools.filter(tool => {
 				const toolPath = getBinPath(tool);
 				return toolPath && path.isAbsolute(toolPath);
-			}));
+			}), goVersion);
 			return;
 		}
 		vscode.window.showQuickPick(allTools.map(x => `${x} ${allToolsDescription[x]}`), {
@@ -194,7 +186,7 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 			if (!selectedTools) {
 				return;
 			}
-			installTools(selectedTools.map(x => x.substr(0, x.indexOf(' '))));
+			installTools(selectedTools.map(x => x.substr(0, x.indexOf(' '))), goVersion);
 		});
 	});
 }
@@ -205,13 +197,13 @@ export function promptForMissingTool(tool: string) {
 		return;
 	}
 	getGoVersion().then((goVersion) => {
-		if (goVersion && goVersion.major === 1 && goVersion.minor < 6) {
+		if (goVersion && goVersion.major === 1 && goVersion.minor < 9) {
 			if (tool === 'golint') {
-				vscode.window.showInformationMessage('golint no longer supports go1.5, update your settings to use gometalinter as go.lintTool and install gometalinter');
+				vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
 				return;
 			}
 			if (tool === 'gotests') {
-				vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.6 or higher.');
+				vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.');
 				return;
 			}
 		}
@@ -226,22 +218,20 @@ export function promptForMissingTool(tool: string) {
 				items.push('Install All');
 			}
 
-			let msg = `The "${tool}" command is not available.  Use "go get -v ${allTools[tool]}" to install.`;
+			let msg = `The "${tool}" command is not available.  Use "go get -v ${getToolImportPath(tool, goVersion)}" to install.`;
 			if (tool === 'gocode-gomod') {
-				msg = `To provide auto-completions when using Go modules, we are testing a fork(${allTools[tool]}) of "gocode" and an updated version of "gopkgs". Please press the Install button to install them.`;
-			} else if (tool === 'godef-gomod') {
-				msg = `To provide the Go to definition feature when using Go modules, we are testing a fork(${allTools[tool]}) of "godef". Please press the Install button to install it.`;
+				msg = `To provide auto-completions when using Go modules, we are testing a fork(${getToolImportPath(tool, goVersion)}) of "gocode" and an updated version of "gopkgs". Please press the Install button to install them.`;
 			}
 			vscode.window.showInformationMessage(msg, ...items).then(selected => {
 				if (selected === 'Install') {
 					if (tool === 'gocode-gomod') {
-						installTools(['gocode-gomod', 'gopkgs']);
+						installTools(['gocode-gomod', 'gopkgs'], goVersion);
 					} else {
-						installTools([tool]);
+						installTools([tool], goVersion);
 					}
 
 				} else if (selected === 'Install All') {
-					installTools(missing);
+					installTools(missing, goVersion);
 					hideGoStatus();
 				} else {
 					installsDeclinedTools.push(tool);
@@ -257,9 +247,9 @@ export function promptForUpdatingTool(tool: string) {
 		return;
 	}
 	getGoVersion().then((goVersion) => {
-		vscode.window.showInformationMessage(`The Go extension is better with the latest version of "${tool}". Use "go get -u -v ${allTools[tool]}" to update`, 'Update').then(selected => {
+		vscode.window.showInformationMessage(`The Go extension is better with the latest version of "${tool}". Use "go get -u -v ${getToolImportPath(tool, goVersion)}" to update`, 'Update').then(selected => {
 			if (selected === 'Update') {
-				installTools([tool]);
+				installTools([tool], goVersion);
 			} else {
 				updatesDeclinedTools.push(tool);
 			}
@@ -272,7 +262,7 @@ export function promptForUpdatingTool(tool: string) {
  *
  * @param string[] array of tool names to be installed
  */
-export function installTools(missing: string[]) {
+export function installTools(missing: string[], goVersion: SemVersion) {
 	let goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -327,11 +317,11 @@ export function installTools(missing: string[]) {
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
-					outputChannel.appendLine('Installing ' + allTools[tool] + ' FAILED');
+					outputChannel.appendLine('Installing ' + getToolImportPath(tool, goVersion) + ' FAILED');
 					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
 					resolve([...sofar, failureReason]);
 				} else {
-					outputChannel.appendLine('Installing ' + allTools[tool] + ' SUCCEEDED');
+					outputChannel.appendLine('Installing ' + getToolImportPath(tool, goVersion) + ' SUCCEEDED');
 					if (tool === 'gometalinter') {
 						// Gometalinter needs to install all the linters it uses.
 						outputChannel.appendLine('Installing all linters used by gometalinter....');
@@ -374,14 +364,14 @@ export function installTools(missing: string[]) {
 				if (tool.endsWith('-gomod')) {
 					args.push('-d');
 				}
-				args.push(allTools[tool]);
+				args.push(getToolImportPath(tool, goVersion));
 				cp.execFile(goRuntimePath, args, { env: envForTools }, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
 						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
 						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
-					} else if (tool.endsWith('-gomod')) {
+					} else if (!err && tool.endsWith('-gomod')) {
 						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
-						cp.execFile(goRuntimePath, ['build', '-o', outputFile, allTools[tool]], { env: envForTools }, callback);
+						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], { env: envForTools }, callback);
 					} else {
 						callback(err, stdout, stderr);
 					}
@@ -449,19 +439,19 @@ export function offerToInstallTools() {
 			if (missing.length > 0) {
 				showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
 				vscode.commands.registerCommand('go.promptforinstall', () => {
-					promptForInstall(missing);
+					promptForInstall(missing, goVersion);
 				});
 			}
 		});
 	});
 
 
-	function promptForInstall(missing: string[]) {
+	function promptForInstall(missing: string[], goVersion: SemVersion) {
 		let installItem = {
 			title: 'Install',
 			command() {
 				hideGoStatus();
-				installTools(missing);
+				installTools(missing, goVersion);
 			}
 		};
 		let showItem = {
@@ -501,10 +491,6 @@ export function checkLanguageServer(): boolean {
 	let latestGoConfig = vscode.workspace.getConfiguration('go');
 	if (!latestGoConfig['useLanguageServer']) return false;
 
-	if (process.platform === 'win32') {
-		vscode.window.showInformationMessage('The Go language server is not supported on Windows yet.');
-		return false;
-	}
 	if (!allFoldersHaveSameGopath()) {
 		vscode.window.showInformationMessage('The Go language server is not supported in a multi root set up with different GOPATHs.');
 		return false;

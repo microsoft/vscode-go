@@ -197,7 +197,7 @@
 		},
 		"goroutine anonymous function": {
 			"prefix": "go",
-			"body": "go func($1) {\n\t$2\n}($0)",
+			"body": "go func($1) {\n\t$0\n}($2)",
 			"description": "Snippet for anonymous goroutine declaration"
 		},
 		"goroutine function": {

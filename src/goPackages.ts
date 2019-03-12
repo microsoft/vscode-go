@@ -14,12 +14,12 @@ interface Cache {
 let gopkgsNotified: boolean = false;
 let cacheTimeout: number = 5000;
 
-let gopkgsSubscriptions: Map<string, GopkgsDone[]> = new Map<string, GopkgsDone[]>();
-let gopkgsRunning: Set<string> = new Set<string>();
+const gopkgsSubscriptions: Map<string, GopkgsDone[]> = new Map<string, GopkgsDone[]>();
+const gopkgsRunning: Set<string> = new Set<string>();
 
-let allPkgsCache: Map<string, Cache> = new Map<string, Cache>();
+const allPkgsCache: Map<string, Cache> = new Map<string, Cache>();
 
-let pkgRootDirs = new Map<string, string>();
+const pkgRootDirs = new Map<string, string>();
 
 function gopkgs(workDir?: string): Promise<Map<string, string>> {
 	const gopkgsBinPath = getBinPath('gopkgs');
@@ -36,8 +36,8 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 		}
 
 		const cmd = cp.spawn(gopkgsBinPath, args, { env: getToolsEnvVars() });
-		const chunks = [];
-		const errchunks = [];
+		const chunks: any[] = [];
+		const errchunks: any[] = [];
 		let err: any;
 		cmd.stdout.on('data', d => chunks.push(d));
 		cmd.stderr.on('data', d => errchunks.push(d));
@@ -81,7 +81,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 				pkgs.set(pkgPath, pkgName);
 			});
 
-			let timeTaken = Date.now() - t0;
+			const timeTaken = Date.now() - t0;
 			/* __GDPR__
 				"gopkgs" : {
 					"tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
@@ -98,7 +98,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 function getAllPackagesNoCache(workDir: string): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
-		let callback = function (pkgMap: Map<string, string>) {
+		let callback = function(pkgMap: Map<string, string>) {
 			resolve(pkgMap);
 		};
 
@@ -127,28 +127,26 @@ function getAllPackagesNoCache(workDir: string): Promise<Map<string, string>> {
  * @argument workDir. The workspace directory of the project.
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function getAllPackages(workDir: string): Promise<Map<string, string>> {
-	let cache = allPkgsCache.get(workDir);
-	let useCache = cache && (new Date().getTime() - cache.lastHit) < cacheTimeout;
+export async function getAllPackages(workDir: string): Promise<Map<string, string>> {
+	const cache = allPkgsCache.get(workDir);
+	const useCache = cache && (new Date().getTime() - cache.lastHit) < cacheTimeout;
 	if (useCache) {
 		cache.lastHit = new Date().getTime();
 		return Promise.resolve(cache.entry);
 	}
 
-	return getAllPackagesNoCache(workDir).then((pkgs) => {
-		if (!pkgs || pkgs.size === 0) {
-			if (!gopkgsNotified) {
-				vscode.window.showInformationMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
-				gopkgsNotified = true;
-			}
+	const pkgs = await getAllPackagesNoCache(workDir);
+	if (!pkgs || pkgs.size === 0) {
+		if (!gopkgsNotified) {
+			vscode.window.showInformationMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
+			gopkgsNotified = true;
 		}
-
-		allPkgsCache.set(workDir, {
-			entry: pkgs,
-			lastHit: new Date().getTime()
-		});
-		return pkgs;
+	}
+	allPkgsCache.set(workDir, {
+		entry: pkgs,
+		lastHit: new Date().getTime()
 	});
+	return pkgs;
 }
 
 /**
@@ -160,31 +158,27 @@ export function getAllPackages(workDir: string): Promise<Map<string, string>> {
  */
 export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, string>> {
 	filePath = fixDriveCasingInWindows(filePath);
-	let getAllPackagesPromise: Promise<Map<string, string>>;
-	let fileDirPath = path.dirname(filePath);
+	const fileDirPath = path.dirname(filePath);
 
 	let foundPkgRootDir = pkgRootDirs.get(fileDirPath);
-	let workDir = foundPkgRootDir || fileDirPath;
-	let cache = allPkgsCache.get(workDir);
+	const workDir = foundPkgRootDir || fileDirPath;
+	const cache = allPkgsCache.get(workDir);
 
-	if (useCache && cache) {
-		getAllPackagesPromise = Promise.race([getAllPackages(workDir), cache.entry]);
-	} else {
-		getAllPackagesPromise = getAllPackages(workDir);
-	}
+	const getAllPackagesPromise: Promise<Map<string, string>> = useCache && cache
+		? Promise.race([getAllPackages(workDir), cache.entry])
+		: getAllPackages(workDir);
 
 	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {
-		let pkgMap = new Map<string, string>();
+		const pkgMap = new Map<string, string>();
 		if (!pkgs) {
 			return pkgMap;
 		}
 
-		let currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
+		const currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
 		pkgs.forEach((pkgName, pkgPath) => {
 			if (pkgName === 'main') {
 				return;
 			}
-
 
 			if (!vendorSupported || !currentWorkspace) {
 				pkgMap.set(pkgPath, pkgName);
@@ -193,19 +187,19 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 
 			if (!foundPkgRootDir) {
 				// try to guess package root dir
-				let vendorIndex = pkgPath.indexOf('/vendor/');
+				const vendorIndex = pkgPath.indexOf('/vendor/');
 				if (vendorIndex !== -1) {
 					foundPkgRootDir = path.join(currentWorkspace, pkgPath.substring(0, vendorIndex).replace('/', path.sep));
 					pkgRootDirs.set(fileDirPath, foundPkgRootDir);
 				}
 			}
 
-			let relativePkgPath = getRelativePackagePath(fileDirPath, currentWorkspace, pkgPath);
+			const relativePkgPath = getRelativePackagePath(fileDirPath, currentWorkspace, pkgPath);
 			if (!relativePkgPath) {
 				return;
 			}
 
-			let allowToImport = isAllowToImportPackage(fileDirPath, currentWorkspace, relativePkgPath);
+			const allowToImport = isAllowToImportPackage(fileDirPath, currentWorkspace, relativePkgPath);
 			if (allowToImport) {
 				pkgMap.set(relativePkgPath, pkgName);
 			}
@@ -257,7 +251,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		let childProcess = cp.spawn(goRuntimePath, ['list', '-f', 'ImportPath: {{.ImportPath}} FolderPath: {{.Dir}}', './...'], { cwd: folderPath, env: getToolsEnvVars() });
-		let chunks = [];
+		let chunks: any[] = [];
 		childProcess.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
 		});

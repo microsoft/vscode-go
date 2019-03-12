@@ -9,7 +9,7 @@ import path = require('path');
 import fs = require('fs');
 import rl = require('readline');
 import { getTempFilePath } from './util';
-import { showTestOutput, goTest, TestConfig } from './testUtils';
+import { showTestOutput, goTest, TestConfig, getTestFlags } from './testUtils';
 import { isModSupported } from './goModules';
 
 let gutterSvgs: { [key: string]: string };
@@ -21,6 +21,7 @@ let decorators: {
 	uncoveredHighlightDecorator: vscode.TextEditorDecorationType;
 };
 let decoratorConfig: {
+	[key: string]: any
 	type: string;
 	coveredHighlightColor: string;
 	uncoveredHighlightColor: string;
@@ -49,8 +50,9 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 		verticalyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
 	};
 
+	let editor = vscode.window.activeTextEditor;
 	// Update the coverageDecorator in User config, if they are using the old style.
-	const goConfig = vscode.workspace.getConfiguration('go');
+	const goConfig = vscode.workspace.getConfiguration('go', editor ? editor.document.uri : null);
 	const inspectResult = goConfig.inspect('coverageDecorator');
 	if (typeof inspectResult.globalValue === 'string') {
 		goConfig.update('coverageDecorator', { type: inspectResult.globalValue }, vscode.ConfigurationTarget.Global);
@@ -86,14 +88,16 @@ export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 		decoratorConfig.type = coverageDecoratorConfig;
 	} else {
 		for (let k in coverageDecoratorConfig) {
-			decoratorConfig[k] = coverageDecoratorConfig[k];
+			if (coverageDecoratorConfig.hasOwnProperty(k)) {
+				decoratorConfig[k] = coverageDecoratorConfig[k];
+			}
 		}
 	}
-	disposeDecorators();
 	setDecorators();
 }
 
 function setDecorators() {
+	disposeDecorators();
 	decorators = {
 		type: decoratorConfig.type,
 		coveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutterSvgs[decoratorConfig.coveredGutterStyle] }),
@@ -148,7 +152,7 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				output: undefined
 			});
 
-			lines.on('line', function (data: string) {
+			lines.on('line', function(data: string) {
 				// go test coverageprofile generates output:
 				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits CoverCount
 				// The first line will be "mode: set" which will be ignored
@@ -257,12 +261,18 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
  * @param e TextDocumentChangeEvent
  */
 export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent) {
-	if (e.document.languageId !== 'go') {
+	if (e.document.languageId !== 'go' || !e.contentChanges.length || !isCoverageApplied) {
 		return;
 	}
+
 	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e.document)) {
 		return;
 	}
+
+	if (isPartOfComment(e)) {
+		return;
+	}
+
 	clearCoverage();
 }
 
@@ -285,9 +295,9 @@ export function toggleCoverageCurrentPackage() {
 	let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
 	let cwd = path.dirname(editor.document.uri.fsPath);
 
-	let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
+	let args = getTestFlags(goConfig);
 	let tmpCoverPath = getTempFilePath('go-code-cover');
-	let args = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
+	args.push('-coverprofile=' + tmpCoverPath);
 	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,
@@ -299,9 +309,22 @@ export function toggleCoverageCurrentPackage() {
 		return goTest(testConfig).then(success => {
 			if (!success) {
 				showTestOutput();
-				return [];
 			}
 			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 		});
+	});
+}
+
+export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
+	return e.contentChanges.every(change => {
+		// We cannot be sure with using just regex on individual lines whether a multi line change is part of a comment or not
+		// So play it safe and treat it as not a comment
+		if (!change.range.isSingleLine || change.text.includes('\n')) {
+			return false;
+		}
+
+		const text = e.document.lineAt(change.range.start).text;
+		const idx = text.search('//');
+		return (idx > -1 && idx <= change.range.start.character);
 	});
 }

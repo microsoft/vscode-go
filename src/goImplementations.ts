@@ -3,7 +3,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath } from './util';
+import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath, killTree } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getToolsEnvVars } from './util';
 
@@ -29,8 +29,8 @@ interface GuruImplementsOutput {
 
 export class GoImplementationProvider implements vscode.ImplementationProvider {
 	public provideImplementation(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Definition> {
-		// To keep `guru implements` fast we want to restrict the scope of the search to current workpsace
-		// If no workpsace is open, then no-op
+		// To keep `guru implements` fast we want to restrict the scope of the search to current workspace
+		// If no workspace is open, then no-op
 		const root = getWorkspaceFolderPath(document.uri);
 		if (!root) {
 			vscode.window.showInformationMessage('Cannot find implementations when there is no workspace open.');
@@ -70,8 +70,8 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 
 					let guruOutput = <GuruImplementsOutput>JSON.parse(stdout.toString());
 					let results: vscode.Location[] = [];
-					let addResults = list => {
-						list.forEach(ref => {
+					let addResults = (list: GuruImplementsRef[]) => {
+						list.forEach((ref: GuruImplementsRef) => {
 							let match = /^(.*):(\d+):(\d+)/.exec(ref.pos);
 							if (!match) return;
 							let [_, file, lineStartStr, colStartStr] = match;
@@ -96,9 +96,9 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 
 					return resolve(results);
 				});
-				token.onCancellationRequested(() => guruProcess.kill());
+				token.onCancellationRequested(() => killTree(guruProcess.pid));
 			});
-			token.onCancellationRequested(() => listProcess.kill());
+			token.onCancellationRequested(() => killTree(listProcess.pid));
 		});
 	}
 }

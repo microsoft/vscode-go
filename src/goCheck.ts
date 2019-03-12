@@ -9,12 +9,13 @@ import vscode = require('vscode');
 import path = require('path');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
-import { goTest, TestConfig } from './testUtils';
+import { goTest, TestConfig, getTestFlags } from './testUtils';
 import { ICheckResult, getBinPath, getTempFilePath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
 import { isModSupported } from './goModules';
+import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -28,8 +29,8 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 	statusBarItem.text = '';
 }
 
-export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
-	let ctx = this;
+export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEvent) {
+	let ctx: any = this;
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
@@ -46,7 +47,12 @@ export function notifyIfGeneratedFile(e: vscode.TextDocumentChangeEvent) {
 	}
 }
 
-export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<ICheckResult[]> {
+interface IToolCheckResults {
+	diagnosticCollection: vscode.DiagnosticCollection;
+	errors: ICheckResult[];
+}
+
+export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<IToolCheckResults[]> {
 	diagnosticsStatusBarItem.hide();
 	outputChannel.clear();
 	let runningToolsPromises = [];
@@ -59,11 +65,11 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	let testPromise: Thenable<boolean>;
-	let tmpCoverPath;
+	let tmpCoverPath: string;
 	let testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,
-		flags: [],
+		flags: getTestFlags(goConfig),
 		background: true
 	};
 
@@ -72,13 +78,9 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			return testPromise;
 		}
 
-		let buildFlags = goConfig['testFlags'] || goConfig['buildFlags'] || [];
-
 		if (goConfig['coverOnSave']) {
 			tmpCoverPath = getTempFilePath('go-code-cover');
-			testConfig.flags = ['-coverprofile=' + tmpCoverPath, ...buildFlags];
-		} else {
-			testConfig.flags = [...buildFlags];
+			testConfig.flags.push('-coverprofile=' + tmpCoverPath);
 		}
 
 		testPromise = isModSupported(fileUri).then(isMod => {
@@ -89,7 +91,9 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	};
 
 	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
-		runningToolsPromises.push(isModSupported(fileUri).then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace')));
+		runningToolsPromises.push(isModSupported(fileUri)
+			.then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace'))
+			.then(errors => ({ diagnosticCollection: buildDiagnosticCollection, errors })));
 	}
 
 	if (!!goConfig['testOnSave']) {
@@ -108,11 +112,13 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
-		runningToolsPromises.push(goLint(fileUri, goConfig, (goConfig['lintOnSave'])));
+		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'])
+			.then(errors => ({diagnosticCollection: lintDiagnosticCollection, errors: errors})));
 	}
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
-		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace'));
+		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace')
+			.then(errors => ({diagnosticCollection: vetDiagnosticCollection, errors: errors})));
 	}
 
 	if (!!goConfig['coverOnSave']) {
@@ -125,7 +131,5 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		});
 	}
 
-	return Promise.all(runningToolsPromises).then(function (resultSets) {
-		return [].concat.apply([], resultSets);
-	});
+	return Promise.all(runningToolsPromises);
 }

@@ -1,7 +1,6 @@
 language: go
 
 go:
-  - 1.8.x
   - 1.9.x
   - 1.10.x
   - 1.11.x
@@ -25,7 +24,7 @@ before_install:
     fi
 
 install:
-  - TRAVIS_NODE_VERSION="6";
+  - TRAVIS_NODE_VERSION="6"; GOMETALINTER_RELEASE_TAG="v2.0.12"; GOMETALIMTER_INSTALL_SCRIPT_COMMIT="83891259ab664a6d96066685f7f07431375ca8e5";
       # Clear out whatever version of NVM Travis has as it is old.
   - rm -rf ~/.nvm;
       # Grab NVM.
@@ -38,10 +37,10 @@ install:
   -  nvm install $TRAVIS_NODE_VERSION;
   - npm install
   - npm run vscode:prepublish
-  - go get -u -v github.com/mdempsky/gocode
+  - if [[ "$(go version)" =~ "go version go1.8" ]]; then go get -u -v github.com/nsf/gocode; else go get -u -v github.com/mdempsky/gocode; fi
   - go get -u -v github.com/rogpeppe/godef
-  - go get -u -v github.com/zmb3/gogetdoc
-  - go get -u -v golang.org/x/lint/golint
+  - if [[ "$(go version)" =~ "go version go1.8" ]]; then echo skipping gogetdoc; else go get -u -v github.com/zmb3/gogetdoc; fi
+  - if [[ "$(go version)" =~ "go version go1.8" ]]; then echo skipping golint; else go get -u -v golang.org/x/lint/golint; fi
   - go get -u -v github.com/ramya-rao-a/go-outline
   - go get -u -v github.com/sqs/goreturns
   - go get -u -v golang.org/x/tools/cmd/gorename
@@ -50,9 +49,10 @@ install:
   - go get -u -v github.com/cweill/gotests/...
   - go get -u -v github.com/haya14busa/goplay/cmd/goplay
   - go get -u -v github.com/davidrjenni/reftools/cmd/fillstruct
-  - go get -u -v github.com/alecthomas/gometalinter
-  - gometalinter --install
+  # The latest script at https://git.io/vp6lP seems to have broken us as some checkers have been removed. Locking to previous version.
+  - curl -fsSL https://raw.githubusercontent.com/alecthomas/gometalinter/$GOMETALIMTER_INSTALL_SCRIPT_COMMIT/scripts/install.sh | sh -s $GOMETALINTER_RELEASE_TAG -- -b $GOPATH/bin
 
 script:
   - npm run lint
+  - npm run unit-test
   - npm test --silent

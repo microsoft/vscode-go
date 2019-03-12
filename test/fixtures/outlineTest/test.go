@@ -12,3 +12,7 @@ func print(txt string) {
 func main() {
 	print("Hello")
 }
+
+type foo struct {
+	bar int
+}

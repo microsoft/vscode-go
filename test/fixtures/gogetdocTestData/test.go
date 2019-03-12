@@ -6,16 +6,16 @@ import (
 	"net"
 )
 
-// ABC is a struct, you coudnt use Goto Definition or Hover info on this before
-// Now you can due to gogetdoc
+// ABC is a struct, you coudn't use Goto Definition or Hover info on this before
+// Now you can due to gogetdoc and go doc
 type ABC struct {
 	a int
 	b int
 	c int
 }
 
-// This is an unexported function so couldnt get this comment on hover :(
-// Not anymore!! gogetdoc to the rescue
+// This is an unexported function so couldn't get this comment on hover :(
+// Not anymore!!
 func print(txt string) {
 	fmt.Println(txt)
 }
@@ -39,5 +39,12 @@ func (abcd *ABC) Hello(s string, exclaim bool) string {
 // Greetings is an exported function. So all is good.
 func Greetings() string {
 	xyz := ABC{1, 2, int(math.Abs(-1))}
-	return xyz.Hello("World", false)
+	return xyz.Hello("World", false) + EmptyLine("Why")
+}
+
+// EmptyLine has docs
+//
+// with a blank line in the middle
+func EmptyLine(s string) string {
+	return s + "this is not an empty line"
 }

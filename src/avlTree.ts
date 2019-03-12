@@ -132,21 +132,21 @@ export class NearestNeighborDict<K, V> {
 	public static NUMERIC_DISTANCE_FUNCTION = (a: number, b: number) => a > b ? a - b : b - a;
 	public static DEFAULT_COMPARE_FUNCTION = (a: any, b: any) => a > b ? 1 : a < b ? -1 : 0;
 
-	protected _root: Node<K, V> = null;
+	protected root: Node<K, V> = null;
 
 	/**
 	 * Creates a new AVL Tree.
 	 */
 	constructor(
 		start: Node<K, V>,
-		private _distance: DistanceFunction<K>,
-		private _compare: CompareFunction<K> = NearestNeighborDict.DEFAULT_COMPARE_FUNCTION
+		private distance: DistanceFunction<K>,
+		private compare: CompareFunction<K> = NearestNeighborDict.DEFAULT_COMPARE_FUNCTION
 	) {
 		this.insert(start.key, start.value);
 	}
 
 	public height() {
-		return this._root.height;
+		return this.root.height;
 	}
 
 	/**
@@ -155,7 +155,7 @@ export class NearestNeighborDict<K, V> {
 	 * @param value The value being inserted.
 	 */
 	public insert(key: K, value?: V): void {
-		this._root = this._insert(key, value, this._root);
+		this.root = this._insert(key, value, this.root);
 	}
 
 	/**
@@ -170,9 +170,9 @@ export class NearestNeighborDict<K, V> {
 			return new Node(key, value);
 		}
 
-		if (this._compare(key, root.key) < 0) {
+		if (this.compare(key, root.key) < 0) {
 			root.left = this._insert(key, value, root.left);
-		} else if (this._compare(key, root.key) > 0) {
+		} else if (this.compare(key, root.key) > 0) {
 			root.right = this._insert(key, value, root.right);
 		} else {
 			return root;
@@ -183,7 +183,7 @@ export class NearestNeighborDict<K, V> {
 		const balanceState = this._getBalanceState(root);
 
 		if (balanceState === BalanceState.UNBALANCED_LEFT) {
-			if (this._compare(key, root.left.key) < 0) {
+			if (this.compare(key, root.left.key) < 0) {
 				// Left left case
 				root = root.rotateRight();
 			} else {
@@ -194,7 +194,7 @@ export class NearestNeighborDict<K, V> {
 		}
 
 		if (balanceState === BalanceState.UNBALANCED_RIGHT) {
-			if (this._compare(key, root.right.key) > 0) {
+			if (this.compare(key, root.right.key) > 0) {
 				// Right right case
 				root = root.rotateLeft();
 			} else {
@@ -210,10 +210,10 @@ export class NearestNeighborDict<K, V> {
 	/**
 	 * Gets a node within the tree with a specific key, or the nearest neighbor to that node if it does not exist.
 	 * @param key The key being searched for.
-	 * @return The (key, value) pair of the node with key nearset the given key in value.
+	 * @return The (key, value) pair of the node with key nearest the given key in value.
 	 */
 	public getNearest(key: K): Node<K, V> {
-		return this._getNearest(key, this._root, this._root);
+		return this._getNearest(key, this.root, this.root);
 	}
 
 	/**
@@ -221,15 +221,15 @@ export class NearestNeighborDict<K, V> {
 	 * @param key The key being searched for.
 	 * @param root The root of the tree to search in.
 	 * @param closest The current best estimate of the node closest to the node being searched for, as measured by this._distance
-	 * @return The (key, value) pair of the node with key nearset the given key in value.
+	 * @return The (key, value) pair of the node with key nearest the given key in value.
 	 */
 	private _getNearest(key: K, root: Node<K, V>, closest: Node<K, V>): Node<K, V> {
-		const result = this._compare(key, root.key);
+		const result = this.compare(key, root.key);
 		if (result === 0) {
 			return root;
 		}
 
-		closest = this._distance(key, root.key) < this._distance(key, closest.key) ? root : closest;
+		closest = this.distance(key, root.key) < this.distance(key, closest.key) ? root : closest;
 
 		if (result < 0) {
 			return root.left ? this._getNearest(key, root.left, closest) : closest;

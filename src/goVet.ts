@@ -3,6 +3,7 @@ import vscode = require('vscode');
 import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
+import { vetDiagnosticCollection } from './goMain';
 
 /**
  * Runs go vet in the current package or workspace.
@@ -27,7 +28,7 @@ export function vetCode(vetWorkspace?: boolean) {
 
 	goVet(documentUri, goConfig, vetWorkspace)
 		.then(warnings => {
-			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
+			handleDiagnosticErrors(editor ? editor.document : null, warnings, vetDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
 		})
 		.catch(err => {
@@ -73,6 +74,8 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		if (version && version.major === 1 && version.minor <= 9 && vetFlags.length) {
 			vetArgs = ['tool', 'vet', ...vetFlags, ...tagsArg, '.'];
 		}
+
+		outputChannel.appendLine(`Starting "go vet" under the folder ${cwd}`);
 
 		running = true;
 		return runTool(

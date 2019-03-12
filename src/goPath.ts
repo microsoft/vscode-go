@@ -87,11 +87,16 @@ function correctBinname(toolName: string) {
 }
 
 function fileExists(filePath: string): boolean {
+	let exists = true;
 	try {
-		return fs.statSync(filePath).isFile();
+		exists = fs.statSync(filePath).isFile();
+		if (exists) {
+			fs.accessSync(filePath, fs.constants.F_OK | fs.constants.X_OK);
+		}
 	} catch (e) {
-		return false;
+		exists = false;
 	}
+	return exists;
 }
 
 export function clearCacheForTools() {
@@ -114,7 +119,7 @@ export function stripBOM(s: string): string {
 }
 
 export function parseEnvFile(path: string): { [key: string]: string } {
-	const env = {};
+	const env: { [key: string]: any } = {};
 	if (!path) {
 		return env;
 	}
@@ -133,7 +138,7 @@ export function parseEnvFile(path: string): { [key: string]: string } {
 		});
 		return env;
 	} catch (e) {
-		throw (`Cannot load environment variables from file ${path}`);
+		throw new Error(`Cannot load environment variables from file ${path}`);
 	}
 }
 

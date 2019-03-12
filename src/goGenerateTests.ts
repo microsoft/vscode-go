@@ -65,7 +65,7 @@ export function toggleTestFile(): void {
 	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath));
 }
 
-export function generateTestCurrentPackage(): Thenable<boolean> {
+export function generateTestCurrentPackage(): Promise<boolean> {
 	let editor = checkActiveEditor();
 	if (!editor) {
 		return;
@@ -74,7 +74,7 @@ export function generateTestCurrentPackage(): Thenable<boolean> {
 		vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
-export function generateTestCurrentFile(): Thenable<boolean> {
+export function generateTestCurrentFile(): Promise<boolean> {
 	let editor = checkActiveEditor();
 	if (!editor) {
 		return;
@@ -83,32 +83,25 @@ export function generateTestCurrentFile(): Thenable<boolean> {
 		vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
-export function generateTestCurrentFunction(): Thenable<boolean> {
-	let editor = checkActiveEditor();
+export async function generateTestCurrentFunction(): Promise<boolean> {
+	const editor = checkActiveEditor();
 	if (!editor) {
 		return;
 	}
 
-	return getFunctions(editor.document).then(functions => {
-		let currentFunction: vscode.SymbolInformation;
-		for (let func of functions) {
-			let selection = editor.selection;
-			if (selection && func.location.range.contains(selection.start)) {
-				currentFunction = func;
-				break;
-			}
-		};
-		if (!currentFunction) {
-			vscode.window.showInformationMessage('No function found at cursor.');
-			return Promise.resolve(false);
-		}
-		let funcName = currentFunction.name;
-		if (funcName.includes('.')) {
-			funcName = funcName.split('.')[1];
-		}
-		return generateTests({ dir: editor.document.uri.fsPath, func: funcName },
-			vscode.workspace.getConfiguration('go', editor.document.uri));
-	});
+	const functions = await getFunctions(editor.document);
+	const selection = editor.selection;
+	const currentFunction: vscode.DocumentSymbol = functions.find(func => selection && func.range.contains(selection.start));
+
+	if (!currentFunction) {
+		vscode.window.showInformationMessage('No function found at cursor.');
+		return Promise.resolve(false);
+	}
+	let funcName = currentFunction.name;
+	if (funcName.includes('.')) {
+		funcName = funcName.split('.')[1];
+	}
+	return generateTests({ dir: editor.document.uri.fsPath, func: funcName }, vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
 /**
@@ -120,12 +113,12 @@ interface Config {
 	 */
 	dir: string;
 	/**
-	 * Specific function names to generate tests squeleton.
+	 * Specific function names to generate tests skeleton.
 	 */
 	func?: string;
 }
 
-function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
+function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): Promise<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		let cmd = getBinPath('gotests');
 		let args = ['-w'];
@@ -193,12 +186,8 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): T
 	});
 }
 
-function getFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
-	let documentSymbolProvider = new GoDocumentSymbolProvider();
-	return documentSymbolProvider
-		.provideDocumentSymbols(doc, null)
-		.then(symbols =>
-			symbols.filter(sym =>
-				sym.kind === vscode.SymbolKind.Function)
-		);
+async function getFunctions(doc: vscode.TextDocument): Promise<vscode.DocumentSymbol[]> {
+	const documentSymbolProvider = new GoDocumentSymbolProvider();
+	const symbols = await documentSymbolProvider.provideDocumentSymbols(doc, null);
+	return symbols[0].children.filter(sym => sym.kind === vscode.SymbolKind.Function);
 }

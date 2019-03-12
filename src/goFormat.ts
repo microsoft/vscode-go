@@ -13,7 +13,11 @@ import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './uti
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
-	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
+	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TextEdit[]> {
+		if (vscode.window.visibleTextEditors.every(e => e.document.fileName !== document.fileName)) {
+			return [];
+		}
+
 		let filename = document.fileName;
 		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
 		let formatTool = goConfig['formatTool'] || 'goreturns';
@@ -57,11 +61,12 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 			let t0 = Date.now();
 			let env = getToolsEnvVars();
+			let cwd = path.dirname(document.fileName);
 			let stdout = '';
 			let stderr = '';
 
 			// Use spawn instead of exec to avoid maxBufferExceeded error
-			const p = cp.spawn(formatCommandBinPath, formatFlags, { env });
+			const p = cp.spawn(formatCommandBinPath, formatFlags, { env, cwd });
 			token.onCancellationRequested(() => !p.killed && killTree(p.pid));
 			p.stdout.setEncoding('utf8');
 			p.stdout.on('data', data => stdout += data);

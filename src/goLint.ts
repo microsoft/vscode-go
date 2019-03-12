@@ -1,8 +1,9 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath } from './util';
+import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getToolsGopath } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
+import { lintDiagnosticCollection } from './goMain';
 /**
  * Runs linter on the current file, package or workspace.
  */
@@ -26,7 +27,7 @@ export function lintCode(scope?: string) {
 
 	goLint(documentUri, goConfig, scope)
 		.then(warnings => {
-			handleDiagnosticErrors(editor ? editor.document : null, warnings, vscode.DiagnosticSeverity.Warning);
+			handleDiagnosticErrors(editor ? editor.document : null, warnings, lintDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
 		})
 		.catch(err => {
@@ -64,7 +65,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	const lintTool = goConfig['lintTool'] || 'golint';
 	const lintFlags: string[] = goConfig['lintFlags'] || [];
 	const lintEnv = Object.assign({}, getToolsEnvVars());
-	const args = [];
+	const args: string[] = [];
 
 	lintFlags.forEach(flag => {
 		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
@@ -89,7 +90,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		if (goConfig['toolsGopath']) {
 			// gometalinter will expect its linters to be in the GOPATH
 			// So add the toolsGopath to GOPATH
-			lintEnv['GOPATH'] += path.delimiter + goConfig['toolsGopath'];
+			lintEnv['GOPATH'] += path.delimiter + getToolsGopath();
 		}
 	}
 	if (lintTool === 'golangci-lint') {
@@ -104,10 +105,12 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 
 	if (scope === 'workspace' && currentWorkspace) {
 		args.push('./...');
-	}
-
-	if (scope === 'file') {
+		outputChannel.appendLine(`Starting linting the current workspace at ${currentWorkspace}`);
+	} else if (scope === 'file') {
 		args.push(fileUri.fsPath);
+		outputChannel.appendLine(`Starting linting the current file at ${fileUri.fsPath}`);
+	} else {
+		outputChannel.appendLine(`Starting linting the current package at ${cwd}`);
 	}
 
 	running = true;

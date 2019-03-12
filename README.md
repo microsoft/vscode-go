@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/Microsoft/vscode-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/vscode-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/Microsoft/vscode-go.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-go)
 
-This extension adds rich language support for the Go language to VS Code.
+This extension adds rich language support for the [Go language](https://golang.org/) to VS Code.
 
 Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Notes) to know what has changed over the last few versions of this extension.
 
@@ -11,12 +11,12 @@ Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Not
 ### IntelliSense
 
 - Auto Completion of symbols as you type (using `gocode`)
-- Signature Help for functions as you type (using `gogetdoc` or `godef`+`godoc`)
-- Quick Info on the symbol as you hover over it (using `gogetdoc` or `godef`+`godoc`)
+- Signature Help for functions as you type (using `gogetdoc` or `godef`+`go doc`)
+- Quick Info on the symbol as you hover over it (using `gogetdoc` or `godef`+`go doc`)
 
 ### Code Navigation
 
-- Go to or Peek Definition of symbols (using `gogetdoc` or `godef`+`godoc`)
+- Go to or Peek Definition of symbols (using `gogetdoc` or `godef`+`go doc`)
 - Find References of symbols and Implementations of interfaces (using `guru`)
 - Go to symbol in file or see the file outline (using `go-outline`)
 - Go to symbol in workspace (using `go-symbols`)
@@ -36,7 +36,7 @@ Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Not
 
 - Build-on-save to compile code and show build errors. (using `go build` and `go test`)
 - Vet-on-save to run `go vet` and show errors as warnings
-- Lint-on-save to show linting errors as warnings (using `golint`, `gometalinter`, `megacheck`, `golangci-lint` or `revive`)
+- Lint-on-save to show linting errors as warnings (using `golint`, `gometalinter`, `staticcheck`, `golangci-lint` or `revive`)
 - Semantic/Syntactic error reporting as you type (using `gotype-live`)
 
 ### Testing
@@ -79,7 +79,6 @@ The Go extension is ready to use on the get go. If you want to customize the fea
 The Go extension uses a host of Go tools to provide the various language features. An alternative is to use a single language server that provides the same feature.  
 
 Set `go.useLanguageServer` to `true` to use the Go language server from [Sourcegraph](https://github.com/sourcegraph/go-langserver) for features like Hover, Definition, Find All References, Signature Help, Go to Symbol in File and Workspace.
-* This is an experimental feature and is not available in Windows yet.
 * Since only a single language server is spun up for given VS Code instance, having multi-root setup where the folders have different GOPATH is not supported.
 * If set to true, you will be prompted to install the Go language server. Once installed, you will have to reload VS Code window. The language server will then be run by the Go extension in the background to provide services needed for the above mentioned features.
 * Every time you change the value of the setting `go.useLanguageServer`, you need to reload the VS Code window for it to take effect.
@@ -95,7 +94,7 @@ By default this extension uses the official [golint](https://github.com/golang/l
 You can change the default linter and use the more advanced [Go Meta Linter](https://github.com/alecthomas/gometalinter)
 by setting `go.lintTool` to "gometalinter" in your settings.
 
-Go meta linter uses a collection of various linters which will be installed for you by the extension.
+Go Meta Linter uses a collection of various linters which will be installed for you by the extension.
 
 Some of the very useful linter tools:
 * [errcheck](https://github.com/kisielk/errcheck) checks for unchecked errors in your code.
@@ -108,7 +107,7 @@ If you want to run only specific linters (some linters are slow), you can modify
   "go.lintFlags": ["--disable=all", "--enable=errcheck"],
 ```
 
-Alternatively, you can use [megacheck](https://github.com/dominikh/go-tools/tree/master/cmd/megacheck) which 
+Alternatively, you can use [staticcheck](https://github.com/dominikh/go-tools/tree/master/cmd/staticcheck) which 
 may have significantly better performance than `gometalinter`, while only supporting a subset of the tools.
 
 Another alternative is [golangci-lint](https://github.com/golangci/golangci-lint) which shares some of the performance
@@ -153,12 +152,12 @@ In addition to integrated editing features, the extension also provides several 
 
 You can access all of the above commands from the command palette (`Cmd+Shift+P` or `Ctrl+Shift+P`).
 
-Few of these are available in the editor context menu as an experimental feature as well. To control which of these commands show up in the editor context menu, update the setting `go.editorContextMenuCommands`.
+A few of these are available in the editor context menu as an experimental feature as well. To control which of these commands show up in the editor context menu, update the setting `go.editorContextMenuCommands`.
 
 
 ### _Optional_: Debugging
 
-To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation) for full details.  On OS X it requires creating a self-signed cert to sign the `dlv` binary.
+To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation) for full details.  On MacOS it requires creating a self-signed cert to sign the `dlv` binary.
 
 For more read [Debugging Go Code Using VS Code](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code).
 
@@ -168,7 +167,7 @@ To remote debug using VS Code, read [Remote Debugging](https://github.com/Micros
 
 ## Install or update all dependencies
 
-To quickly get all dependencies installed (or updated) see the [Go Tools wiki page](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on)
+To quickly get all dependencies installed (or updated) see the [Go Tools wiki page](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on).
 
 ## Building and Debugging the Extension
 
@@ -178,6 +177,10 @@ Read more at [Building, Debugging and Sideloading the extension in Visual Studio
 ## Tools this extension depends on
 
 This extension uses a host of Go tools to provide the various rich features. These tools are installed in your GOPATH by default. If you wish to have the extension use a separate GOPATH for its tools, provide the desired location in the setting `go.toolsGopath`. Read more about this and the tools at [Go tools that the Go extension depends on](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on).
+
+## Frequently Asked Questions (FAQ)
+
+Please see our wiki on [Frequently Asked Questions](https://github.com/Microsoft/vscode-go/wiki/Go-with-VS-Code-FAQ-and-Troubleshooting) to get answers to your questions or get started with troubleshooting.
 
 ## Contributing
 

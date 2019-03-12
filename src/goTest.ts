@@ -2,29 +2,40 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
-
 'use strict';
 
 import path = require('path');
 import vscode = require('vscode');
-import os = require('os');
-import { getTempFilePath } from './util';
-import { goTest, TestConfig, getTestFlags, getTestFunctions, getBenchmarkFunctions, extractInstanceTestName, findAllTestSuiteRuns } from './testUtils';
+
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { isModSupported } from './goModules';
+import {
+	extractInstanceTestName,
+	findAllTestSuiteRuns,
+	getBenchmarkFunctions,
+	getTestFlags,
+	getTestFunctionDebugArgs,
+	getTestFunctions,
+	goTest,
+	TestConfig,
+} from './testUtils';
+import { getTempFilePath } from './util';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
 // the last test to be easily re-executed.
 let lastTestConfig: TestConfig;
+
+export type TestAtCursorCmd = 'debug' | 'test' | 'benchmark';
 
 /**
 * Executes the unit test at the primary cursor using `go test`. Output
 * is sent to the 'Go' channel.
 *
 * @param goConfig Configuration for the Go extension.
+* @param cmd Whether the command is test , benchmark or debug.
 */
-export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
-	let editor = vscode.window.activeTextEditor;
+export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: TestAtCursorCmd, args: any) {
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
@@ -34,66 +45,80 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, isBenchmar
 		return;
 	}
 
-	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
+	const getFunctions = cmd === 'benchmark' ? getBenchmarkFunctions : getTestFunctions;
 
-	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
-
-	editor.document.save().then(() => {
-		return getFunctions(editor.document, null).then(testFunctions => {
-			let testFunctionName: string;
-
+	editor.document.save().then(async () => {
+		try {
+			const testFunctions = await getFunctions(editor.document, null);
 			// We use functionName if it was provided as argument
 			// Otherwise find any test function containing the cursor.
-			if (args && args.functionName) {
-				testFunctionName = args.functionName;
-			} else {
-				for (let func of testFunctions) {
-					let selection = editor.selection;
-					if (selection && func.location.range.contains(selection.start)) {
-						testFunctionName = func.name;
-						break;
-					}
-				};
-			}
-
+			const testFunctionName = args && args.functionName
+				? args.functionName
+				: testFunctions.filter(func => func.range.contains(editor.selection.start))
+					.map(el => el.name)[0];
 			if (!testFunctionName) {
 				vscode.window.showInformationMessage('No test function found at cursor.');
 				return;
 			}
 
-			let testConfigFns = [testFunctionName];
-
-			if (!isBenchmark && extractInstanceTestName(testFunctionName)) {
-				// find test function with corresponding suite.Run
-				const testFns = findAllTestSuiteRuns(editor.document, testFunctions);
-				if (testFns) {
-					testConfigFns = testConfigFns.concat(testFns.map(t => t.name));
-				}
+			if (cmd === 'debug') {
+				await debugTestAtCursor(editor, testFunctionName, testFunctions, goConfig);
+			} else if (cmd === 'benchmark' || cmd === 'test') {
+				await runTestAtCursor(editor, testFunctionName, testFunctions, goConfig, cmd, args);
+			} else {
+				throw new Error('Unsupported command.');
 			}
-
-			const testConfig: TestConfig = {
-				goConfig: goConfig,
-				dir: path.dirname(editor.document.fileName),
-				flags: testFlags,
-				functions: testConfigFns,
-				isBenchmark: isBenchmark,
-			};
-
-			// Remember this config as the last executed test.
-			lastTestConfig = testConfig;
-
-			return isModSupported(editor.document.uri).then(isMod => {
-				testConfig.isMod = isMod;
-				return goTest(testConfig).then(success => {
-					if (success && tmpCoverPath) {
-						return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
-					}
-				});
-			});
-		});
-	}).then(null, err => {
-		console.error(err);
+		} catch (err) {
+			console.error(err);
+		}
 	});
+}
+
+/**
+ * Runs the test at cursor.
+ */
+async function runTestAtCursor(editor: vscode.TextEditor, testFunctionName: string, testFunctions: vscode.DocumentSymbol[], goConfig: vscode.WorkspaceConfiguration, cmd: TestAtCursorCmd, args: any) {
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
+
+	const testConfigFns = cmd !== 'benchmark' && extractInstanceTestName(testFunctionName)
+		? [testFunctionName, ...findAllTestSuiteRuns(editor.document, testFunctions).map(t => t.name)]
+		: [testFunctionName];
+
+	const isMod = await isModSupported(editor.document.uri);
+	const testConfig: TestConfig = {
+		goConfig: goConfig,
+		dir: path.dirname(editor.document.fileName),
+		flags: testFlags,
+		functions: testConfigFns,
+		isBenchmark: cmd === 'benchmark',
+		isMod
+	};
+	// Remember this config as the last executed test.
+	lastTestConfig = testConfig;
+	await goTest(testConfig);
+	if (tmpCoverPath) {
+		return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
+	}
+}
+
+/**
+ * Debugs the test at cursor.
+ */
+async function debugTestAtCursor(editor: vscode.TextEditor, testFunctionName: string, testFunctions: vscode.DocumentSymbol[], goConfig: vscode.WorkspaceConfiguration) {
+
+	const args = getTestFunctionDebugArgs(editor.document, testFunctionName, testFunctions);
+	const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
+	const debugConfig: vscode.DebugConfiguration = {
+		name: 'Debug Test',
+		type: 'go',
+		request: 'launch',
+		mode: 'auto',
+		program: editor.document.fileName,
+		env: goConfig.get('testEnvVars', {}),
+		envFile: goConfig.get('testEnvFile'),
+		args
+	};
+	return await vscode.debug.startDebugging(workspaceFolder, debugConfig);
 }
 
 /**
@@ -122,7 +147,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBe
 	isModSupported(editor.document.uri).then(isMod => {
 		testConfig.isMod = isMod;
 		return goTest(testConfig).then(success => {
-			if (success && tmpCoverPath) {
+			if (tmpCoverPath) {
 				return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 			}
 		}, err => {
