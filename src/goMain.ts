@@ -394,8 +394,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		cancelRunningTests();
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg: string) => {
-		return addImport(typeof arg === 'string' ? arg : null);
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.import.add', (arg) => {
+		return addImport(arg);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.add.package.workspace', () => {
