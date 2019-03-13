@@ -682,57 +682,36 @@
         "go.operationTimeout": {
           "type": "object",
           "properties": {
-            "buildOnSave": {
+            "onSave": {
               "type": "number",
               "default": 60000,
-              "description": "Timeout of go build process after file save operation.",
+              "description": "Timeout of build, lint, vet, test and cover processes on save file operation.",
               "scope": "resource"
             },
-            "buildOnCommand": {
+            "onType": {
+              "type": "number",
+              "default": 5000,
+              "description": "Timeout of process executed on type events (completion and live errors).",
+              "scope": "resource"
+            },
+            "onHover": {
+              "type": "number",
+              "default": 5000,
+              "description": "Timeout of process executed on hover events.",
+              "scope": "resource"
+            },
+            "onCommand": {
               "type": "number",
               "default": 60000,
-              "description": "Timeout of go build process after command trigger.",
-              "scope": "resource"
-            },
-            "runtimeDefault": {
-              "type": "number",
-              "default": 5000,
-              "description": "Default timeout of go tool processes (version, env, doc).",
-              "scope": "resource"
-            },
-            "runtimeLongRun": {
-              "type": "number",
-              "default": 60000,
-              "description": "Default timeout of go tool processes that may run for a longer time than default (build, test, get, install and list).",
-              "scope": "resource"
-            },
-            "onSaveOperation": {
-              "type": "number",
-              "default": 5000,
-              "description": "Timeout of processes executed after save file operation.",
-              "scope": "resource"
-            },
-            "onCommandOperation": {
-              "type": "number",
-              "default": 5000,
-              "description": "Timeout of processes after command trigger.",
-              "scope": "resource"
-            },
-            "onTypeOperation": {
-              "type": "number",
-              "default": 5000,
-              "description": "Timeout of processes after typing events.",
+              "description": "Default timeout for processes launched by extension commands.",
               "scope": "resource"
             }
           },
           "default": {
-            "buildOnSave": 60000,
-            "buildOnCommand": 60000,
-            "runtimeDefault": 5000,
-            "runtimeLongRun": 60000,
-            "onSaveOperation": 5000,
-            "onCommandOperation": 5000,
-            "onTypeOperation": 5000
+            "onSave": 60000,
+            "onType": 5000,
+            "onHover": 5000,
+            "onCommand": 60000
           },
           "scope": "resource"
         },

@@ -60,7 +60,8 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 	let options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 	};
-	getTimeoutConfiguration('onCommandOperation', options);
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	options['timeout'] = getTimeoutConfiguration(goConfig, 'onCommand');
 
 	return new Promise<void>((resolve, reject) => {
 		let p = cp.execFile(fillstruct, args, options, (err, stdout, stderr) => {

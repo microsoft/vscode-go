@@ -55,16 +55,8 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 		options['cwd'] = workDir;
 	}
 
-	let editor = vscode.window.activeTextEditor;
-	if (editor) {
-		const goConfig = vscode.workspace.getConfiguration('go', editor.document ? editor.document.uri : null);
-		const execTimeout: { [key: string]: any } = goConfig.get('operationTimeout');
-		if (execTimeout.hasOwnProperty('runtimeLongRun')) {
-			options['timeout'] = execTimeout['runtimeLongRun'];
-		}
-	}
-
-	getTimeoutConfiguration('runtimeLongRun', options);
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	options['timeout'] = getTimeoutConfiguration(goConfig, 'onSave');
 
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], options, (err, stdout, stderr) => {
 		if (!stdout || stdout.indexOf(':') === -1) {

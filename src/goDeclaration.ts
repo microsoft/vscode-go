@@ -102,11 +102,16 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 		return Promise.reject(missingToolMsg + godefTool);
 	}
 	let offset = byteOffsetAt(input.document, input.position);
-	let env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
+
+	// Set up execFile parameters
+	let env = getToolsEnvVars();
+	env['cwd'] = input.cwd;
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	env['timeout'] = getTimeoutConfiguration(goConfig, 'onSave');
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
@@ -114,8 +119,6 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 		// if (useReceivers) {
 		// 	args.push('-r');
 		// }
-		env['cwd'] = input.cwd;
-		getTimeoutConfiguration('onTypeOperation', env);
 
 		p = cp.execFile(godefPath, args, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
@@ -186,11 +189,16 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 		return Promise.reject(missingToolMsg + 'gogetdoc');
 	}
 	let offset = byteOffsetAt(input.document, input.position);
-	let env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
+
+	// Set up execFile parameters
+	let env = getToolsEnvVars();
+	env['cwd'] = input.cwd;
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	env['timeout'] = getTimeoutConfiguration(goConfig, 'onSave');
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
@@ -198,8 +206,6 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 		let buildTags = vscode.workspace.getConfiguration('go', input.document.uri)['buildTags'];
 		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
 
-		env['cwd'] = input.cwd;
-		getTimeoutConfiguration('onTypeOperation', env);
 
 		p = cp.execFile(gogetdoc, gogetdocFlags, env, (err, stdout, stderr) => {
 			try {
@@ -256,13 +262,16 @@ function definitionLocation_guru(input: GoDefinitionInput, token: vscode.Cancell
 		return Promise.reject(missingToolMsg + 'guru');
 	}
 	let offset = byteOffsetAt(input.document, input.position);
-	let env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
 
-	getTimeoutConfiguration('onTypeOperation', env);
+	// Set up execFile parameters
+	let env = getToolsEnvVars();
+	env['cwd'] = input.cwd;
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	env['timeout'] = getTimeoutConfiguration(goConfig, 'onSave');
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		p = cp.execFile(guru, ['-json', '-modified', 'definition', input.document.fileName + ':#' + offset.toString()], { env }, (err, stdout, stderr) => {
