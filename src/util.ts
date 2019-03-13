@@ -960,5 +960,5 @@ export function getTimeoutConfiguration(goConfig: vscode.WorkspaceConfiguration,
 	if (execTimeout.hasOwnProperty(operationType) && (typeof execTimeout[operationType] === 'number')) {
 		return execTimeout[operationType];
 	}
-	return 0;
+	return 60000;
 }
