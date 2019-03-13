@@ -23,7 +23,7 @@ export class GoCodeActionProvider implements vscode.CodeActionProvider {
 							return {
 								title: 'import "' + pkg + '"',
 								command: 'go.import.add',
-								arguments: [pkg]
+								arguments: [{ importPath: pkg, from: 'codeAction' }]
 							};
 						});
 					return commands;

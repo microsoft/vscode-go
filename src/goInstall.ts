@@ -1,11 +1,12 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, getCurrentGoPath, getBinPath } from './util';
+import { getToolsEnvVars, getCurrentGoPath, getBinPath, getModuleCache } from './util';
 import { outputChannel } from './goStatus';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import cp = require('child_process');
+import { isModSupported } from './goModules';
 
-export function installCurrentPackage() {
+export async function installCurrentPackage(): Promise<void> {
 	let editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active, cannot find current package to install');
@@ -24,6 +25,13 @@ export function installCurrentPackage() {
 
 	const env = Object.assign({}, getToolsEnvVars());
 	const cwd = path.dirname(editor.document.uri.fsPath);
+	const isMod = await isModSupported(editor.document.uri);
+
+	// Skip installing if cwd is in the module cache
+	if (isMod && cwd.startsWith(getModuleCache())) {
+		return;
+	}
+
 	const goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
 	const buildFlags = goConfig['buildFlags'] || [];
 	const args = ['install', ...buildFlags];
@@ -34,7 +42,7 @@ export function installCurrentPackage() {
 
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
 	const currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
-	const importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+	let importPath = (currentGoWorkspace && !isMod) ? cwd.substr(currentGoWorkspace.length + 1) : '.';
 	args.push(importPath);
 
 	outputChannel.clear();

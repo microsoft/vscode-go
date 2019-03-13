@@ -105,10 +105,12 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 
 	if (scope === 'workspace' && currentWorkspace) {
 		args.push('./...');
-	}
-
-	if (scope === 'file') {
+		outputChannel.appendLine(`Starting linting the current workspace at ${currentWorkspace}`);
+	} else if (scope === 'file') {
 		args.push(fileUri.fsPath);
+		outputChannel.appendLine(`Starting linting the current file at ${fileUri.fsPath}`);
+	} else {
+		outputChannel.appendLine(`Starting linting the current package at ${cwd}`);
 	}
 
 	running = true;
