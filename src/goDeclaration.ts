@@ -108,10 +108,12 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 	}
 
 	// Set up execFile parameters
-	let env = getToolsEnvVars();
-	env['cwd'] = input.cwd;
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	env['timeout'] = getTimeoutConfiguration(goConfig, 'onSave');
+	const options = {
+		env: getToolsEnvVars(),
+		cwd: input.cwd,
+		timeout: getTimeoutConfiguration(goConfig, 'onSave')
+	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
@@ -120,7 +122,7 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 		// 	args.push('-r');
 		// }
 
-		p = cp.execFile(godefPath, args, { env, cwd: input.cwd }, (err, stdout, stderr) => {
+		p = cp.execFile(godefPath, args, options, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + godefTool);
@@ -195,10 +197,12 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 	}
 
 	// Set up execFile parameters
-	let env = getToolsEnvVars();
-	env['cwd'] = input.cwd;
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	env['timeout'] = getTimeoutConfiguration(goConfig, 'onSave');
+	const options = {
+		env: getToolsEnvVars(),
+		cwd: input.cwd,
+		timeout: getTimeoutConfiguration(goConfig, 'onSave')
+	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
@@ -207,7 +211,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 		let gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
 
 
-		p = cp.execFile(gogetdoc, gogetdocFlags, env, (err, stdout, stderr) => {
+		p = cp.execFile(gogetdoc, gogetdocFlags, options, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'gogetdoc');
@@ -268,13 +272,15 @@ function definitionLocation_guru(input: GoDefinitionInput, token: vscode.Cancell
 	}
 
 	// Set up execFile parameters
-	let env = getToolsEnvVars();
-	env['cwd'] = input.cwd;
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	env['timeout'] = getTimeoutConfiguration(goConfig, 'onSave');
+	const options = {
+		env: getToolsEnvVars(),
+		cwd: input.cwd,
+		timeout: getTimeoutConfiguration(goConfig, 'onSave')
+	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
-		p = cp.execFile(guru, ['-json', '-modified', 'definition', input.document.fileName + ':#' + offset.toString()], { env }, (err, stdout, stderr) => {
+		p = cp.execFile(guru, ['-json', '-modified', 'definition', input.document.fileName + ':#' + offset.toString()], options, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'guru');
