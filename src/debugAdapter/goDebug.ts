@@ -5,13 +5,18 @@
 
 import * as path from 'path';
 import * as os from 'os';
+import * as fs from 'fs';
+import * as util from 'util';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles, LoggingDebugSession, Logger, logger } from 'vscode-debugadapter';
 import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
+import { parseEnvFile, getBinPathWithPreferredGopath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
+
+const fsAccess = util.promisify(fs.access);
+const fsUnlink = util.promisify(fs.unlink);
 
 // This enum should stay in sync with https://golang.org/pkg/reflect/#Kind
 
@@ -260,6 +265,7 @@ function normalizePath(filePath: string) {
 class Delve {
 	program: string;
 	remotePath: string;
+	localDebugeePath: string | undefined;
 	debugProcess: ChildProcess;
 	loadConfig: LoadConfig;
 	connection: Promise<RPCConnection>;
@@ -357,7 +363,7 @@ class Delve {
 							logError('Process exiting with code: ' + code);
 							if (this.onclose) { this.onclose(code); }
 						});
-						this.debugProcess.on('error', function(err) {
+						this.debugProcess.on('error', (err) => {
 							reject(err);
 						});
 						resolve();
@@ -391,7 +397,7 @@ class Delve {
 				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
 			}
 
-			let currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
+			const currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
 			let dlvArgs = [mode || 'debug'];
 			if (mode === 'exec') {
 				dlvArgs = dlvArgs.concat([program]);
@@ -436,6 +442,7 @@ class Delve {
 				env,
 			});
 
+			this.localDebugeePath = this.getLocalDebugeePath(launchArgs.output);
 			function connectClient(port: number, host: string) {
 				// Add a slight delay to avoid issues on Linux with
 				// Delve failing calls made shortly after connection.
@@ -465,7 +472,7 @@ class Delve {
 				logError('Process exiting with code: ' + code);
 				if (this.onclose) { this.onclose(code); }
 			});
-			this.debugProcess.on('error', function(err) {
+			this.debugProcess.on('error', (err) => {
 				reject(err);
 			});
 		});
@@ -479,12 +486,11 @@ class Delve {
 		});
 	}
 
-	callPromise<T>(command: string, args: any[]): Thenable<T> {
+	public callPromise<T>(command: string, args: any[]): Thenable<T> {
 		return new Promise<T>((resolve, reject) => {
 			this.connection.then(conn => {
-				conn.call<T>('RPCServer.' + command, args, (err, res) => {
-					if (err) return reject(err);
-					resolve(res);
+				conn.call<T>(`RPCServer.${command}`, args, (err, res) => {
+					return err ? reject(err) : resolve(res);
 				});
 			}, err => {
 				reject(err);
@@ -492,57 +498,72 @@ class Delve {
 		});
 	}
 
-	close(): Thenable<void> {
+	/**
+	 * Closing a debugging session follows different approaches for local vs remote delve process.
+	 *
+	 * For local process, since the extension starts the delve process, the extension should close it as well.
+	 * To gracefully clean up the assets created by delve, we send the Detach request with kill option set to true.
+	 *
+	 * For remote process, since the extension doesnt start the delve process, we only detach from it without killing it.
+	 *
+	 * The only way to detach from delve when it is running a program is to send a Halt request first.
+	 * Since the Halt request might sometimes take too long to complete, we have a timer in place to forcefully kill
+	 * the debug process and clean up the assets in case of local debugging
+	 */
+	public close(): Thenable<void> {
 		if (this.noDebug) {
 			// delve isn't running so no need to halt
 			return Promise.resolve();
 		}
 		log('HaltRequest');
 
-		return new Promise(resolve => {
-			let timeoutToken: NodeJS.Timer;
-			if (this.debugProcess) {
-				timeoutToken = setTimeout(() => {
-					log('Killing debug process manually as we could not halt and detach delve in time');
-					killTree(this.debugProcess.pid);
-					resolve();
-				}, 1000);
-			}
+		const isLocalDebugging: boolean = !!this.debugProcess;
+		const forceCleanup = async () => {
+			killTree(this.debugProcess.pid);
+			await removeFile(this.localDebugeePath);
+		};
+		return new Promise(async resolve => {
+			const timeoutToken: NodeJS.Timer = isLocalDebugging && setTimeout(async () => {
+				log('Killing debug process manually as we could not halt delve in time');
+				await forceCleanup();
+				resolve();
+			}, 1000);
 
-			this.callPromise('Command', [{ name: 'halt' }]).then(() => {
-				if (timeoutToken) {
-					clearTimeout(timeoutToken);
-				}
+			let haltErrMsg;
+			try {
+				await this.callPromise('Command', [{ name: 'halt' }]);
+			} catch (err) {
 				log('HaltResponse');
-				if (!this.debugProcess) {
-					log('RestartRequest');
-					return this.callPromise('Restart', this.isApiV1 ? [] : [{ position: '', resetArgs: false, newArgs: [] }])
-						.then(null, err => {
-							log('RestartResponse');
-							logError(`Failed to restart - ${(err || '').toString()}`);
-						})
-						.then(() => resolve());
-				} else {
-					log('DetachRequest');
-					return this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }])
-						.then(null, err => {
-							log('DetachResponse');
-							logError(`Killing debug process manually as we failed to detach - ${(err || '').toString()}`);
-							killTree(this.debugProcess.pid);
-						})
-						.then(() => resolve());
+				haltErrMsg = err ? err.toString() : '';
+				log(`Failed to halt - ${haltErrMsg}`);
+			}
+			clearTimeout(timeoutToken);
+
+			const targetHasExited: boolean = haltErrMsg && haltErrMsg.endsWith('has exited with status 0');
+			const shouldDetach: boolean = !haltErrMsg || targetHasExited;
+			let shouldForceClean: boolean = !shouldDetach && isLocalDebugging;
+			if (shouldDetach) {
+				log('DetachRequest');
+				try {
+					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: isLocalDebugging }]);
+				} catch (err) {
+					log('DetachResponse');
+					logError(`Failed to detach - ${(err.toString() || '')}`);
+					shouldForceClean = isLocalDebugging;
 				}
-			}, err => {
-				const errMsg = err ? err.toString() : '';
-				log('Failed to halt - ' + errMsg.toString());
-				if (errMsg.endsWith('has exited with status 0')) {
-					if (timeoutToken) {
-						clearTimeout(timeoutToken);
-					}
-					return resolve();
-				}
-			});
+			}
+			if (shouldForceClean) {
+				await forceCleanup();
+			}
+			return resolve();
 		});
+	}
+
+	private getLocalDebugeePath(output: string | undefined): string {
+		const configOutput = output || 'debug';
+		return path.isAbsolute(configOutput)
+			? configOutput
+			: path.resolve(this.program, configOutput);
 	}
 }
 
@@ -1403,6 +1424,19 @@ function killTree(processId: number): void {
 			spawnSync(cmd, [processId.toString()]);
 		} catch (err) {
 		}
+	}
+}
+
+async function removeFile(filePath: string): Promise<void> {
+	try {
+		const fileExists = await fsAccess(filePath)
+			.then(() => true)
+			.catch(() => false);
+		if (filePath && fileExists) {
+			await fsUnlink(filePath);
+		}
+	} catch (e) {
+		logError(`Potentially failed remove file: ${filePath} - ${e.toString() || ''}`);
 	}
 }
 
