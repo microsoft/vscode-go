@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars, sendTelemetryEvent } from './util';
+import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars, sendTelemetryEvent, getTimeoutConfiguration } from './util';
 import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
@@ -120,6 +120,8 @@ export function addImport(arg: {importPath: string, from: string}) {
 export function addImportToWorkspace() {
 	const editor = vscode.window.activeTextEditor;
 	const selection = editor.selection;
+	const goRuntimePath = getBinPath('go');
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 
 	let importPath = '';
 	if (!selection.isEmpty) {
@@ -149,10 +151,12 @@ export function addImportToWorkspace() {
 		return;
 	}
 
-	const goRuntimePath = getBinPath('go');
-	const env = getToolsEnvVars();
+	let options: { [key: string]: any } = {
+		env: getToolsEnvVars(),
+		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+	};
 
-	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
+	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], options, (err, stdout, stderr) => {
 		const dirs = (stdout || '').split('\n');
 		if (!dirs.length || !dirs[0].trim()) {
 			vscode.window.showErrorMessage(`Could not find package ${importPath}`);

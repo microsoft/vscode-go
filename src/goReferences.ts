@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getFileArchive, getToolsEnvVars, killTree } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getFileArchive, getToolsEnvVars, killTree, getTimeoutConfiguration } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
@@ -19,6 +19,8 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 	private doFindReferences(document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return new Promise<vscode.Location[]>((resolve, reject) => {
+			const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+
 			// get current word
 			let wordRange = document.getWordRangeAtPosition(position);
 			if (!wordRange) {
@@ -39,7 +41,12 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			let args = buildTags ? ['-tags', buildTags] : [];
 			args.push('-modified', 'referrers', `${filename}:#${offset.toString()}`);
 
-			let process = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
+			let options: { [key: string]: any } = {
+				env: getToolsEnvVars(),
+				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+			};
+
+			let process = cp.execFile(goGuru, args, options, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');

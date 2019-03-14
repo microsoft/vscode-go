@@ -53,15 +53,15 @@ function getTabsCount(editor: vscode.TextEditor): number {
 }
 
 function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void> {
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	let fillstruct = getBinPath('fillstruct');
 	let input = getFileArchive(editor.document);
 	let tabsCount = getTabsCount(editor);
 
 	let options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
+		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 	};
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	options['timeout'] = getTimeoutConfiguration(goConfig, 'onCommand');
 
 	return new Promise<void>((resolve, reject) => {
 		let p = cp.execFile(fillstruct, args, options, (err, stdout, stderr) => {

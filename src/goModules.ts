@@ -1,4 +1,4 @@
-import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModuleCache } from './util';
+import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModuleCache, getTimeoutConfiguration } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
@@ -11,8 +11,14 @@ function runGoModEnv(folderPath: string): Promise<string> {
 	if (!goExecutable) {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
 	}
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	let options: { [key: string]: any } = {
+		env: getToolsEnvVars(),
+		cwd: folderPath,
+		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+	};
 	return new Promise(resolve => {
-		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
+		cp.execFile(goExecutable, ['env', 'GOMOD'], options, (err, stdout) => {
 			if (err) {
 				console.warn(`Error when running go env GOMOD: ${err}`);
 				return resolve();

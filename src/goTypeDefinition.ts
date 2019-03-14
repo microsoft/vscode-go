@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getFileArchive, killTree, goBuiltinTypes, isPositionInString, goKeywords } from './util';
+import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getFileArchive, killTree, goBuiltinTypes, getTimeoutConfiguration } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getToolsEnvVars } from './util';
 import { definitionLocation, parseMissingError, adjustWordPosition } from './goDeclaration';
@@ -41,6 +41,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 		position = adjustedPos[2];
 
 		return new Promise<vscode.Definition>((resolve, reject) => {
+			const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 			let goGuru = getBinPath('guru');
 			if (!path.isAbsolute(goGuru)) {
 				promptForMissingTool('guru');
@@ -54,7 +55,12 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			let args = buildTags ? ['-tags', buildTags] : [];
 			args.push('-json', '-modified', 'describe', `${filename}:#${offset.toString()}`);
 
-			let process = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
+			let options: { [key: string]: any } = {
+				env: getToolsEnvVars(),
+				timeout: getTimeoutConfiguration(goConfig, 'onHover')
+			};
+
+			let process = cp.execFile(goGuru, args, options, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');

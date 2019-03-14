@@ -3,7 +3,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath, killTree } from './util';
+import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath, killTree, getTimeoutConfiguration } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getToolsEnvVars } from './util';
 
@@ -37,12 +37,20 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 			return;
 		}
 
+		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+
 		return new Promise<vscode.Definition>((resolve, reject) => {
 			if (token.isCancellationRequested) {
 				return resolve(null);
 			}
-			let env = getToolsEnvVars();
-			let listProcess = cp.execFile(getBinPath('go'), ['list', '-e', '-json'], { cwd: root, env }, (err, stdout, stderr) => {
+
+			let options: { [key: string]: any } = {
+				cwd: root,
+				env: getToolsEnvVars(),
+				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+			};
+
+			let listProcess = cp.execFile(getBinPath('go'), ['list', '-e', '-json'], options, (err, stdout, stderr) => {
 				if (err) {
 					return reject(err);
 				}
@@ -58,7 +66,15 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				}
 				args.push('-json', 'implements', `${filename}:#${offset.toString()}`);
 
-				let guruProcess = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
+				// Do not override cwd for guru call
+				const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+				let guruOptions: { [key: string]: any } = {
+					cwd: root,
+					env: getToolsEnvVars(),
+					timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+				};
+
+				let guruProcess = cp.execFile(goGuru, args, guruOptions, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
 						return resolve(null);

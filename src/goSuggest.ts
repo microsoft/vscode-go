@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, getTimeoutConfiguration } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -408,12 +408,13 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	private ensureGoCodeConfigured(fileuri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Thenable<void> {
 		const currentFile = fileuri.fsPath;
 		let checkModSupport = Promise.resolve(this.isGoMod);
+		let setPkgsList = getImportablePackages(currentFile, true).then(pkgMap => { this.pkgsList = pkgMap; });
+
 		if (this.previousFile !== currentFile && this.previousFileDir !== path.dirname(currentFile)) {
 			this.previousFile = currentFile;
 			this.previousFileDir = path.dirname(currentFile);
 			checkModSupport = isModSupported(fileuri).then(result => this.isGoMod = result);
 		}
-		let setPkgsList = getImportablePackages(currentFile, true).then(pkgMap => { this.pkgsList = pkgMap; });
 
 		if (!this.setGocodeOptions) {
 			return Promise.all([checkModSupport, setPkgsList]).then(() => { return; });
@@ -421,9 +422,12 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
-			let env = getToolsEnvVars();
+			let options: { [key: string]: any } = {
+				env: getToolsEnvVars(),
+				timeout: getTimeoutConfiguration(goConfig, 'onHover')
+			};
 
-			cp.execFile(gocode, ['set'], { env }, (err, stdout, stderr) => {
+			cp.execFile(gocode, ['set'], options, (err, stdout, stderr) => {
 				if (err && stdout.startsWith('gocode: unknown subcommand:')) {
 					if (goConfig['gocodePackageLookupMode'] === 'gb' && this.globalState && !this.globalState.get(gocodeNoSupportForgbMsgKey)) {
 						vscode.window.showInformationMessage('The go.gocodePackageLookupMode setting for gb will not be honored as github.com/mdempskey/gocode doesnt support it yet.', 'Don\'t show again').then(selected => {
@@ -440,7 +444,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 				const optionsToSet: string[][] = [];
 				const setOption = () => {
 					const [name, value] = optionsToSet.pop();
-					cp.execFile(gocode, ['set', name, value], { env }, (err, stdout, stderr) => {
+					cp.execFile(gocode, ['set', name, value], options, (err, stdout, stderr) => {
 						if (optionsToSet.length) {
 							setOption();
 						} else {

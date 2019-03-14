@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedByteOffsetConverter } from './util';
+import { getBinPath, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedByteOffsetConverter, getTimeoutConfiguration } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with https://github.com/ramya-rao-a/go-outline
@@ -63,6 +63,7 @@ export async function documentSymbols(options: GoOutlineOptions, token: vscode.C
 
 export function runGoOutline(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<GoOutlineDeclaration[]> {
 	return new Promise<GoOutlineDeclaration[]>((resolve, reject) => {
+		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		const gooutline = getBinPath('go-outline');
 		const gooutlineFlags = ['-f', options.fileName];
 		if (options.importsOption === GoOutlineImportsOptions.Only) {
@@ -77,8 +78,13 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 			token.onCancellationRequested(() => killProcess(p));
 		}
 
+		let goOutlineOptions: { [key: string]: any } = {
+			env: getToolsEnvVars(),
+			timeout: getTimeoutConfiguration(goConfig, 'onType')
+		};
+
 		// Spawn `go-outline` process
-		p = cp.execFile(gooutline, gooutlineFlags, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
+		p = cp.execFile(gooutline, gooutlineFlags, goOutlineOptions, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('go-outline');
@@ -118,7 +124,6 @@ const goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
 	'function': vscode.SymbolKind.Function,
 	'struct': vscode.SymbolKind.Struct,
 };
-
 
 function convertToCodeSymbols(
 	document: vscode.TextDocument,

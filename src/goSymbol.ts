@@ -6,7 +6,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars, killProcess } from './util';
+import { getBinPath, getToolsEnvVars, killProcess, getTimeoutConfiguration } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with github.com/acroca/go-symbols'
@@ -99,6 +99,7 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, token:
 }
 
 function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise<GoSymbolDeclaration[]> {
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	let gosyms = getBinPath('go-symbols');
 	let env = getToolsEnvVars();
 	let p: cp.ChildProcess;
@@ -107,8 +108,14 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 		token.onCancellationRequested(() => killProcess(p));
 	}
 
+	let options: { [key: string]: any } = {
+		env: getToolsEnvVars(),
+		timeout: getTimeoutConfiguration(goConfig, 'onType'),
+		maxBuffer: 1024 * 1024
+	};
+
 	return new Promise((resolve, reject) => {
-		p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024, env }, (err, stdout, stderr) => {
+		p = cp.execFile(gosyms, args, options, (err, stdout, stderr) => {
 			if (err && stderr && stderr.startsWith('flag provided but not defined: -ignore')) {
 				return reject(new Error(stderr));
 			} else if (err) {
@@ -126,8 +133,14 @@ function getGoroot(): Promise<string> {
 	if (!goExecutable) {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
+
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	let options: { [key: string]: any } = {
+		timeout: getTimeoutConfiguration(goConfig, 'onType')
+	};
+
 	return new Promise((resolve, reject) => {
-		cp.execFile(goExecutable, ['env', 'GOROOT'], (err, stdout) => {
+		cp.execFile(goExecutable, ['env', 'GOROOT'], options, (err, stdout) => {
 			if (err) {
 				reject(err);
 				return;

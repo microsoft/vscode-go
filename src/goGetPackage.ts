@@ -2,7 +2,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getImportPath, getCurrentGoPath, getBinPath } from './util';
+import { getImportPath, getCurrentGoPath, getBinPath, getTimeoutConfiguration } from './util';
 import { outputChannel } from './goStatus';
 import { buildCode } from './goBuild';
 
@@ -23,8 +23,13 @@ export function goGetPackage() {
 	}
 
 	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	let options: { [key: string]: any } = {
+		env: env,
+		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+	};
 
-	cp.execFile(goRuntimePath, ['get', '-v', importPath], { env }, (err, stdout, stderr) => {
+	cp.execFile(goRuntimePath, ['get', '-v', importPath], options, (err, stdout, stderr) => {
 		// go get -v uses stderr to write output regardless of success or failure
 		if (stderr !== '') {
 			outputChannel.show();

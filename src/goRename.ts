@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess, getTimeoutConfiguration } from './util';
 import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 import { outputChannel } from './goStatus';
@@ -22,6 +22,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 
 	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
 		return new Promise<vscode.WorkspaceEdit>((resolve, reject) => {
+			const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 			let filename = canonicalizeGOPATHPrefix(document.fileName);
 			let range = document.getWordRangeAtPosition(position);
 			let pos = range ? range.start : position;
@@ -43,7 +44,12 @@ export class GoRenameProvider implements vscode.RenameProvider {
 				token.onCancellationRequested(() => killProcess(p));
 			}
 
-			p = cp.execFile(gorename, gorenameArgs, {env}, (err, stdout, stderr) => {
+			let options: { [key: string]: any } = {
+				env: getToolsEnvVars(),
+				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+			};
+
+			p = cp.execFile(gorename, gorenameArgs, options, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gorename');

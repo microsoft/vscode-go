@@ -239,8 +239,14 @@ export function getGoVersion(): Promise<SemVersion> {
 		sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
 		return Promise.resolve(goVersion);
 	}
+
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	let options: { [key: string]: any } = {
+		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+	};
+
 	return new Promise<SemVersion>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['version'], options, (err, stdout, stderr) => {
 			let matches = /go version go(\d).(\d+).*/.exec(stdout);
 			if (matches) {
 				goVersion = {
@@ -640,9 +646,14 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 			}
 		});
 	}
-	cwd = fixDriveCasingInWindows(cwd);
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	let options: { [key: string]: any } = {
+		env,
+		cwd: fixDriveCasingInWindows(cwd),
+		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+	};
 	return new Promise((resolve, reject) => {
-		p = cp.execFile(cmd, args, { env: env, cwd: cwd }, (err, stdout, stderr) => {
+		p = cp.execFile(cmd, args, options, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					// Since the tool is run on save which can be frequent

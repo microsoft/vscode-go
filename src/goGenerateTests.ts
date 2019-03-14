@@ -144,8 +144,8 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 
 		let options: { [key: string]: any } = {
 			env: getToolsEnvVars(),
+			timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 		};
-		options['timeout'] = getTimeoutConfiguration(goConfig, 'onCommand');
 
 		cp.execFile(cmd, args, options, (err, stdout, stderr) => {
 			outputChannel.appendLine('Generating Tests: ' + cmd + ' ' + args.join(' '));
