@@ -532,13 +532,13 @@ class Delve {
 			}
 			clearTimeout(timeoutToken);
 
-			const targetHasExited: boolean = haltErrMsg.endsWith('has exited with status 0');
+			const targetHasExited: boolean = haltErrMsg && haltErrMsg.endsWith('has exited with status 0');
 			const shouldDetach: boolean = !haltErrMsg || targetHasExited;
 			let shouldForceClean: boolean = !shouldDetach;
 			if (shouldDetach) {
 				log('DetachRequest');
 				try {
-					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: true }]);
+					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: isLocalDebugging }]);
 				} catch (err) {
 					log('DetachResponse');
 					logError(`Failed to detach - ${(err.toString() || '')}`);
