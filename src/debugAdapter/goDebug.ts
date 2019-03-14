@@ -541,7 +541,7 @@ class Delve {
 
 			const targetHasExited: boolean = haltErrMsg && haltErrMsg.endsWith('has exited with status 0');
 			const shouldDetach: boolean = !haltErrMsg || targetHasExited;
-			let shouldForceClean: boolean = !shouldDetach;
+			let shouldForceClean: boolean = !shouldDetach && isLocalDebugging;
 			if (shouldDetach) {
 				log('DetachRequest');
 				try {
@@ -549,10 +549,10 @@ class Delve {
 				} catch (err) {
 					log('DetachResponse');
 					logError(`Failed to detach - ${(err.toString() || '')}`);
-					shouldForceClean = true;
+					shouldForceClean = isLocalDebugging;
 				}
 			}
-			if (isLocalDebugging && shouldForceClean) {
+			if (shouldForceClean) {
 				await forceCleanup();
 			}
 			return resolve();
