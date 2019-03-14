@@ -499,9 +499,16 @@ class Delve {
 	}
 
 	/**
-	 * To close the debugging session we do the following; If its a local process,
-	 * we try to halt and detach within a timeout otherwise we kill the debugger. If its a remote
-	 * process we try to halt and restart the remote target process running under the debugger.
+	 * Closing a debugging session follows different approaches for local vs remote delve process.
+	 *
+	 * For local process, since the extension starts the delve process, the extension should close it as well.
+	 * To gracefully clean up the assets created by delve, we send the Detach request with kill option set to true.
+	 *
+	 * For remote process, since the extension doesnt start the delve process, we only detach from it without killing it.
+	 *
+	 * The only way to detach from delve when it is running a program is to send a Halt request first.
+	 * Since the Halt request might sometimes take too long to complete, we have a timer in place to forcefully kill
+	 * the debug process and clean up the assets in case of local debugging
 	 */
 	public close(): Thenable<void> {
 		if (this.noDebug) {
