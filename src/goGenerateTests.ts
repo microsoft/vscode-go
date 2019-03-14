@@ -142,6 +142,7 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 			args = args.concat(['-all', conf.dir]);
 		}
 
+		// Set up execFile parameters
 		let options: { [key: string]: any } = {
 			env: getToolsEnvVars(),
 			timeout: getTimeoutConfiguration(goConfig, 'onCommand')

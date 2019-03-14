@@ -129,6 +129,7 @@ function runGomodifytags(args: string[]) {
 	const goConfig = vscode.workspace.getConfiguration('go', editor ? editor.document.uri : null);
 	let input = getFileArchive(editor.document);
 
+	// Set up execFile parameters
 	let options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		timeout: getTimeoutConfiguration(goConfig, 'onCommand')

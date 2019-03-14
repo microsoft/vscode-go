@@ -108,6 +108,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 		token.onCancellationRequested(() => killProcess(p));
 	}
 
+	// Set up execFile parameters
 	let options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		timeout: getTimeoutConfiguration(goConfig, 'onType'),
@@ -134,6 +135,7 @@ function getGoroot(): Promise<string> {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
 
+	// Set up execFile parameters
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	let options: { [key: string]: any } = {
 		timeout: getTimeoutConfiguration(goConfig, 'onType')

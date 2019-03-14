@@ -422,6 +422,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 		let setGocodeProps = new Promise<void>((resolve, reject) => {
 			let gocode = getBinPath('gocode');
+
+			// Set up execFile parameters
 			let options: { [key: string]: any } = {
 				env: getToolsEnvVars(),
 				timeout: getTimeoutConfiguration(goConfig, 'onHover')

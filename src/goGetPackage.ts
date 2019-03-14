@@ -22,6 +22,7 @@ export function goGetPackage() {
 		return vscode.window.showErrorMessage('Could not locate Go binaries. Make sure you have Go installed');
 	}
 
+	// Set up execFile parameters
 	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	let options: { [key: string]: any } = {

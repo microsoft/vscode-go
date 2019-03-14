@@ -64,6 +64,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 	let fileName = e.document.fileName;
 	let args = ['-e', '-a', '-lf=' + fileName, path.dirname(fileName)];
 
+	// Set up execFile parameters
 	let options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		timeout: getTimeoutConfiguration(goConfig, 'onType')

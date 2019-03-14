@@ -44,6 +44,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				return resolve(null);
 			}
 
+			// Set up execFile parameters
 			let options: { [key: string]: any } = {
 				cwd: root,
 				env: getToolsEnvVars(),

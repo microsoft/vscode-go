@@ -49,6 +49,7 @@ export async function installCurrentPackage(): Promise<void> {
 	outputChannel.show();
 	outputChannel.appendLine(`Installing ${importPath === '.' ? 'current package' : importPath}`);
 
+	// Set up execFile parameters
 	let options: { [key: string]: any } = {
 		env,
 		cwd,

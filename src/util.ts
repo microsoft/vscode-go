@@ -240,6 +240,7 @@ export function getGoVersion(): Promise<SemVersion> {
 		return Promise.resolve(goVersion);
 	}
 
+	// Set up execFile parameters
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	let options: { [key: string]: any } = {
 		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
@@ -646,12 +647,15 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 			}
 		});
 	}
+
+	// Set up execFile parameters
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	let options: { [key: string]: any } = {
 		env,
 		cwd: fixDriveCasingInWindows(cwd),
 		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 	};
+
 	return new Promise((resolve, reject) => {
 		p = cp.execFile(cmd, args, options, (err, stdout, stderr) => {
 			try {

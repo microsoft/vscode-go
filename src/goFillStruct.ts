@@ -58,6 +58,7 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 	let input = getFileArchive(editor.document);
 	let tabsCount = getTabsCount(editor);
 
+	// Set up execFile parameters
 	let options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		timeout: getTimeoutConfiguration(goConfig, 'onCommand')

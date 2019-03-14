@@ -78,6 +78,7 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 			token.onCancellationRequested(() => killProcess(p));
 		}
 
+		// Set up execFile parameters
 		let goOutlineOptions: { [key: string]: any } = {
 			env: getToolsEnvVars(),
 			timeout: getTimeoutConfiguration(goConfig, 'onType')

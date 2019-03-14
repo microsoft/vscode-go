@@ -305,6 +305,8 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 	}
 
 	envForTools['GO111MODULE'] = 'off';
+
+	// Set up execFile parameters
 	let toolInstallOptions: { [key: string]: any } = {
 		env: envForTools,
 		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
