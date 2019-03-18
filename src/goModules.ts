@@ -59,6 +59,17 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 					goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.WorkspaceFolder);
 					vscode.window.showInformationMessage('`goreturns` doesnt support auto-importing missing imports when using Go modules yet. So updating the "formatTool" setting to `goimports` for this workspace.');
 				}
+				if (goConfig['useLanguageServer'] === false) {
+					const promptMsg = 'To get better performance during code completion, please update to use the language server from Google';
+					promptToUpdateToolForModules('gopls', promptMsg).then(choseToUpdate => {
+						if (choseToUpdate) {
+							const alternateTools: any = goConfig['alternateTools'] || {};
+							alternateTools['go-langserver'] = 'gopls';
+							goConfig.update('alternateTools', alternateTools, vscode.ConfigurationTarget.Global);
+							goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.Global);
+						}
+					});
+				}
 			}
 			packageModCache.set(pkgPath, result);
 			return result;
@@ -80,38 +91,40 @@ function logModuleUsage() {
 }
 
 const promptedToolsForCurrentSession = new Set<string>();
-export function promptToUpdateToolForModules(tool: string, promptMsg: string) {
+export async function promptToUpdateToolForModules(tool: string, promptMsg: string): Promise<boolean> {
 	if (promptedToolsForCurrentSession.has(tool)) {
-		return;
+		return false;
 	}
 	const promptedToolsForModules = getFromGlobalState('promptedToolsForModules', {});
 	if (promptedToolsForModules[tool]) {
-		return;
+		return false;
 	}
-	getGoVersion().then(goVersion => {
-		vscode.window.showInformationMessage(
-			promptMsg,
-			'Update',
-			'Later',
-			`Don't show again`)
-			.then(selected => {
-				switch (selected) {
-					case 'Update':
-						installTools([tool], goVersion);
-						promptedToolsForModules[tool] = true;
-						updateGlobalState('promptedToolsForModules', promptedToolsForModules);
-						break;
-					case `Don't show again`:
-						promptedToolsForModules[tool] = true;
-						updateGlobalState('promptedToolsForModules', promptedToolsForModules);
-						break;
-					case 'Later':
-					default:
-						promptedToolsForCurrentSession.add(tool);
-						break;
-				}
-			});
-	});
+	const goVersion = await getGoVersion();
+	const selected = await vscode.window.showInformationMessage(
+		promptMsg,
+		'Update',
+		'Later',
+		`Don't show again`);
+
+	let choseToUpdate = false;
+	switch (selected) {
+		case 'Update':
+			installTools([tool], goVersion);
+			promptedToolsForModules[tool] = true;
+			choseToUpdate = true;
+			updateGlobalState('promptedToolsForModules', promptedToolsForModules);
+			break;
+		case `Don't show again`:
+			promptedToolsForModules[tool] = true;
+			updateGlobalState('promptedToolsForModules', promptedToolsForModules);
+			break;
+		case 'Later':
+		default:
+			promptedToolsForCurrentSession.add(tool);
+			break;
+	}
+	return choseToUpdate;
+
 }
 
 const folderToPackageMapping: { [key: string]: string } = {};
