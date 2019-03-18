@@ -10,7 +10,7 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, getAlternateLanguageServer } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 let updatesDeclinedTools: string[] = [];
@@ -39,6 +39,7 @@ const allToolsWithImportPaths: { [key: string]: string } = {
 	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
+	'gopls': 'golang.org/x/tools/cmd/gopls',
 	'dlv': 'github.com/go-delve/delve/cmd/dlv',
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct',
 	'godoctor': 'github.com/godoctor/godoctor',
@@ -121,7 +122,7 @@ function getTools(goVersion: SemVersion): string[] {
 	}
 
 	if (goConfig['useLanguageServer']) {
-		tools.push('go-langserver');
+		tools.push(getAlternateLanguageServer(goConfig) === 'gopls' ? 'gopls' : 'go-langserver');
 	}
 
 	if (goLiveErrorsEnabled()) {
@@ -164,7 +165,8 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'golangci-lint': '\t(Linter)',
 		'revive': '\t\t(Linter)',
 		'staticcheck': '\t(Linter)',
-		'go-langserver': '(Language Server)',
+		'go-langserver': '(Language Server from Sourcegraph)',
+		'gopls': '\t\t(Language Server from Google)',
 		'dlv': '\t\t\t(Debugging)',
 		'fillstruct': '\t\t(Fill structs with defaults)',
 		'godoctor': '\t\t(Extract to functions and variables)'
@@ -382,7 +384,7 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 		outputChannel.appendLine(''); // Blank line for spacing
 		let failures = res.filter(x => x != null);
 		if (failures.length === 0) {
-			if (missing.indexOf('go-langserver') > -1) {
+			if (missing.indexOf('go-langserver') > -1 || missing.indexOf('gopls') > -1) {
 				outputChannel.appendLine('Reload VS Code window to use the Go language server');
 			}
 			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
@@ -443,6 +445,21 @@ export function offerToInstallTools() {
 				});
 			}
 		});
+
+		const goConfig = vscode.workspace.getConfiguration('go');
+		const usingSourceGraph = goConfig['useLanguageServer'] === true && !getAlternateLanguageServer(goConfig);
+		if (usingSourceGraph) {
+			const promptMsg = 'The language server from Sourcegraph is no longer under active development. Please update to use the language server from Google or disable the use of language servers altogether.';
+			vscode.window.showInformationMessage(promptMsg, 'Update', 'Later')
+				.then(selected => {
+					if (selected === 'Update') {
+						const alternateTools: any = goConfig['alternateTools'] || {};
+						alternateTools['go-langserver'] = 'gopls';
+						goConfig.update('alternateTools', alternateTools, vscode.ConfigurationTarget.Global);
+						installTools(['gopls'], goVersion);
+					}
+				});
+		}
 	});
 
 
@@ -496,9 +513,10 @@ export function checkLanguageServer(): boolean {
 		return false;
 	}
 
-	let langServerAvailable = getBinPath('go-langserver') !== 'go-langserver';
+	const languageServerOfChoice = getAlternateLanguageServer(latestGoConfig) || 'go-langserver';
+	const langServerAvailable = path.isAbsolute(getBinPath('go-langserver'));
 	if (!langServerAvailable) {
-		promptForMissingTool('go-langserver');
+		promptForMissingTool(languageServerOfChoice);
 		vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
 	}
 	return langServerAvailable;

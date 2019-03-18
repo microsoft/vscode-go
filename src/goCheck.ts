@@ -10,7 +10,7 @@ import path = require('path');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest, TestConfig, getTestFlags } from './testUtils';
-import { ICheckResult, getBinPath, getTempFilePath } from './util';
+import { ICheckResult, getBinPath, getTempFilePath, getAlternateLanguageServer } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
@@ -58,6 +58,13 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	let runningToolsPromises = [];
 	let cwd = path.dirname(fileUri.fsPath);
 	let goRuntimePath = getBinPath('go');
+	const alternateLS = getAlternateLanguageServer(goConfig);
+	let languageServerFlags: string[] = goConfig.get('languageServerFlags');
+	if (!Array.isArray(languageServerFlags)) {
+		languageServerFlags = [];
+	}
+	const disableBuild = alternateLS === 'gopls' || (alternateLS === 'bingo'
+		&& languageServerFlags.indexOf('-diagnostics-style=none') === -1);
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -90,7 +97,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		return testPromise;
 	};
 
-	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
+	if (!disableBuild && !!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
 		runningToolsPromises.push(isModSupported(fileUri)
 			.then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace'))
 			.then(errors => ({ diagnosticCollection: buildDiagnosticCollection, errors })));
@@ -113,12 +120,12 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
 		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'])
-			.then(errors => ({diagnosticCollection: lintDiagnosticCollection, errors: errors})));
+			.then(errors => ({ diagnosticCollection: lintDiagnosticCollection, errors: errors })));
 	}
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace')
-			.then(errors => ({diagnosticCollection: vetDiagnosticCollection, errors: errors})));
+			.then(errors => ({ diagnosticCollection: vetDiagnosticCollection, errors: errors })));
 	}
 
 	if (!!goConfig['coverOnSave']) {

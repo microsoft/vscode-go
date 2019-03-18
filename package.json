@@ -966,8 +966,8 @@
             }
           },
           "default": {
-            "format": false,
-            "autoComplete": false,
+            "format": true,
+            "autoComplete": true,
             "rename": true,
             "goToDefinition": true,
             "hover": true,
