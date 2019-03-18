@@ -65,6 +65,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 	const disableBuild = alternateLS === 'gopls' || (alternateLS === 'bingo'
 		&& languageServerFlags.indexOf('-diagnostics-style=none') === -1);
+	const disableVet = alternateLS === 'gopls';
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -123,7 +124,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			.then(errors => ({ diagnosticCollection: lintDiagnosticCollection, errors: errors })));
 	}
 
-	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
+	if (!disableVet && !!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace')
 			.then(errors => ({ diagnosticCollection: vetDiagnosticCollection, errors: errors })));
 	}
