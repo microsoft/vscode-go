@@ -449,7 +449,7 @@ export function offerToInstallTools() {
 		const goConfig = vscode.workspace.getConfiguration('go');
 		const usingSourceGraph = goConfig['useLanguageServer'] === true && !getAlternateLanguageServer(goConfig);
 		if (usingSourceGraph) {
-			const promptMsg = 'The language server from Sourcegraph is no longer under active development. Please update to use the language server from Google or disable the use of language servers altogether.';
+			const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please update to use the language server from Google or disable the use of language servers altogether.';
 			vscode.window.showInformationMessage(promptMsg, 'Update', 'Later')
 				.then(selected => {
 					if (selected === 'Update') {
