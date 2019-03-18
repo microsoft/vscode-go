@@ -19,7 +19,7 @@ function runGoModEnv(folderPath: string): Promise<string> {
 		cwd: folderPath,
 		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 	};
-	
+
 	return new Promise(resolve => {
 		cp.execFile(goExecutable, ['env', 'GOMOD'], options, (err, stdout) => {
 			if (err) {
