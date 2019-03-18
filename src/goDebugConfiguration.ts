@@ -34,7 +34,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			sendTelemetryEvent('debugConfiguration', {
 				request: debugConfiguration.request,
 				mode: debugConfiguration.mode,
-				useApiV1: debugConfiguration.useApiV1,
+				apiVersion: debugConfiguration.apiVersion,
 				stopOnEntry: debugConfiguration.stopOnEntry
 			});
 		}
@@ -71,7 +71,9 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 
 		const dlvConfig: { [key: string]: any } = goConfig.get('delveConfig');
 		if (!debugConfiguration.hasOwnProperty('useApiV1') && dlvConfig.hasOwnProperty('useApiV1')) {
-			debugConfiguration['useApiV1'] = dlvConfig['useApiV1'];
+			if (typeof dlvConfig['useApiV1'] === 'boolean' && dlvConfig['useApiV1'] === true) {
+				debugConfiguration['apiVersion'] = 1;
+			}
 		}
 		if (!debugConfiguration.hasOwnProperty('apiVersion') && dlvConfig.hasOwnProperty('apiVersion')) {
 			debugConfiguration['apiVersion'] = dlvConfig['apiVersion'];
@@ -81,6 +83,9 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 		if (!debugConfiguration.hasOwnProperty('showGlobalVariables') && dlvConfig.hasOwnProperty('showGlobalVariables')) {
 			debugConfiguration['showGlobalVariables'] = dlvConfig['showGlobalVariables'];
+		}
+		if (!debugConfiguration['cwd']) {
+			debugConfiguration['cwd'] = '${workspaceFolder}';
 		}
 
 		debugConfiguration['dlvToolPath'] = getBinPath('dlv');
