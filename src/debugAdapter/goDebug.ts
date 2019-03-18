@@ -498,7 +498,7 @@ class Delve {
 		});
 	}
 
-    /**
+	/**
 	 * Closing a debugging session follows different approaches for local vs remote delve process.
 	 *
 	 * For local process, since the extension starts the delve process, the extension should close it as well.
