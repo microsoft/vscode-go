@@ -544,22 +544,18 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Outline document symbols', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
-			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then(symbols => {
-				const groupedSymbolNames = symbols.reduce((map: any, symbol) => {
-					map[symbol.kind] = (map[symbol.kind] || []).concat([symbol.name]);
-					return map;
-				}, {});
+			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then(outlines => {
+				const packages = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
+				const variables = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Variable);
+				const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
+				const structs = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Struct);
 
-				const packageNames = groupedSymbolNames[vscode.SymbolKind.Package];
-				const variableNames = groupedSymbolNames[vscode.SymbolKind.Variable];
-				const functionNames = groupedSymbolNames[vscode.SymbolKind.Function];
-				const structs = groupedSymbolNames[vscode.SymbolKind.Struct];
-				assert.equal(packageNames[0], 'main');
-				assert.equal(variableNames, undefined);
-				assert.equal(functionNames[0], 'print');
-				assert.equal(functionNames[1], 'main');
+				assert.equal(packages[0].name, 'main');
+				assert.equal(variables.length, 0);
+				assert.equal(functions[0].name, 'print');
+				assert.equal(functions[1].name, 'main');
 				assert.equal(structs.length, 1);
-				assert.equal(structs[0], 'foo');
+				assert.equal(structs[0].name, 'foo');
 			});
 		}).then(() => done(), done);
 	});
