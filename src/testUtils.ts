@@ -6,6 +6,7 @@ import cp = require('child_process');
 import path = require('path');
 import util = require('util');
 import vscode = require('vscode');
+import process = require('process');
 
 import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
@@ -260,7 +261,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			// ensure that user provided flags are appended last (allow use of -args ...)
 			args.push(...testconfig.flags);
 
-			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
+			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir, detached: true });
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
@@ -349,7 +350,7 @@ export function showTestOutput() {
 export function cancelRunningTests(): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		runningTestProcesses.forEach(tp => {
-			tp.kill(sendSignal);
+			process.kill(-tp.pid, sendSignal);
 		});
 		// All processes are now dead. Empty the array to prepare for the next run.
 		runningTestProcesses.splice(0, runningTestProcesses.length);
