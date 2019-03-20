@@ -14,7 +14,7 @@ import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
 import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
 
-const sendSignal = 'SIGKILL';
+const sendSignal = 'SIGTERM';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.cancel';
