@@ -114,7 +114,7 @@
 		// 		"named-imports-order": "case-insensitive"
 		// 	}
 		// },
-		// "prefer-const": true,
+		"prefer-const": true,
 		// "prefer-for-of": true,
 		"quotemark": [
 			true,

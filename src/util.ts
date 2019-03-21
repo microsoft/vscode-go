@@ -82,8 +82,8 @@ let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
-	let offset = document.offsetAt(position);
-	let text = document.getText();
+	const offset = document.offsetAt(position);
+	const text = document.getText();
 	return Buffer.byteLength(text.substr(0, offset));
 }
 
@@ -93,11 +93,11 @@ export interface Prelude {
 }
 
 export function parseFilePrelude(text: string): Prelude {
-	let lines = text.split('\n');
-	let ret: Prelude = { imports: [], pkg: null };
+	const lines = text.split('\n');
+	const ret: Prelude = { imports: [], pkg: null };
 	for (let i = 0; i < lines.length; i++) {
-		let line = lines[i];
-		let pkgMatch = line.match(/^(\s)*package(\s)+(\w+)/);
+		const line = lines[i];
+		const pkgMatch = line.match(/^(\s)*package(\s)+(\w+)/);
 		if (pkgMatch) {
 			ret.pkg = { start: i, end: i, name: pkgMatch[3] };
 		}
@@ -134,7 +134,7 @@ export function parseFilePrelude(text: string): Prelude {
 // Takes care of balancing parens so to not get confused by signatures like:
 //     (pattern string, handler func(ResponseWriter, *Request)) {
 export function getParametersAndReturnType(signature: string): { params: string[], returnType: string } {
-	let params: string[] = [];
+	const params: string[] = [];
 	let parenCount = 0;
 	let lastStart = 1;
 	for (let i = 1; i < signature.length; i++) {
@@ -166,15 +166,15 @@ export function getParametersAndReturnType(signature: string): { params: string[
 }
 
 export function canonicalizeGOPATHPrefix(filename: string): string {
-	let gopath: string = getCurrentGoPath();
+	const gopath: string = getCurrentGoPath();
 	if (!gopath) return filename;
-	let workspaces = gopath.split(path.delimiter);
-	let filenameLowercase = filename.toLowerCase();
+	const workspaces = gopath.split(path.delimiter);
+	const filenameLowercase = filename.toLowerCase();
 
 	// In case of multiple workspaces, find current workspace by checking if current file is
 	// under any of the workspaces in $GOPATH
 	let currentWorkspace: string = null;
-	for (let workspace of workspaces) {
+	for (const workspace of workspaces) {
 		// In case of nested workspaces, (example: both /Users/me and /Users/me/a/b/c are in $GOPATH)
 		// both parent & child workspace in the nested workspaces pair can make it inside the above if block
 		// Therefore, the below check will take longer (more specific to current file) of the two
@@ -223,7 +223,7 @@ export function getUserNameHash() {
  * Returns null if go is being used from source/tip in which case `go version` will not return release tag like go1.6.3
  */
 export function getGoVersion(): Promise<SemVersion> {
-	let goRuntimePath = getBinPath('go');
+	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -241,7 +241,7 @@ export function getGoVersion(): Promise<SemVersion> {
 	}
 	return new Promise<SemVersion>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
-			let matches = /go version go(\d).(\d+).*/.exec(stdout);
+			const matches = /go version go(\d).(\d+).*/.exec(stdout);
 			if (matches) {
 				goVersion = {
 					major: parseInt(matches[1]),
@@ -324,12 +324,12 @@ export function disposeTelemetryReporter(): Promise<any> {
 }
 
 export function isPositionInString(document: vscode.TextDocument, position: vscode.Position): boolean {
-	let lineText = document.lineAt(position.line).text;
-	let lineTillCurrentPosition = lineText.substr(0, position.character);
+	const lineText = document.lineAt(position.line).text;
+	const lineTillCurrentPosition = lineText.substr(0, position.character);
 
 	// Count the number of double quotes in the line till current position. Ignore escaped double quotes
 	let doubleQuotesCnt = (lineTillCurrentPosition.match(/\"/g) || []).length;
-	let escapedDoubleQuotesCnt = (lineTillCurrentPosition.match(/\\\"/g) || []).length;
+	const escapedDoubleQuotesCnt = (lineTillCurrentPosition.match(/\\\"/g) || []).length;
 
 	doubleQuotesCnt -= escapedDoubleQuotesCnt;
 	return doubleQuotesCnt % 2 === 1;
@@ -375,7 +375,7 @@ export function getBinPath(tool: string): string {
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {
-	let fileContents = document.getText();
+	const fileContents = document.getText();
 	return document.fileName + '\n' + Buffer.byteLength(fileContents, 'utf8') + '\n' + fileContents;
 }
 
@@ -448,7 +448,7 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 		}
 	}
 
-	let configGopath = config['gopath'] ? resolvePath(substituteEnv(config['gopath']), currentRoot) : '';
+	const configGopath = config['gopath'] ? resolvePath(substituteEnv(config['gopath']), currentRoot) : '';
 	currentGopath = inferredGopath ? inferredGopath : (configGopath || process.env['GOPATH']);
 	return currentGopath;
 }
@@ -460,11 +460,11 @@ export function getModuleCache(): string {
 }
 
 export function getExtensionCommands(): any[] {
-	let pkgJSON = vscode.extensions.getExtension(extensionId).packageJSON;
+	const pkgJSON = vscode.extensions.getExtension(extensionId).packageJSON;
 	if (!pkgJSON.contributes || !pkgJSON.contributes.commands) {
 		return;
 	}
-	let extensionCommands: any[] = vscode.extensions.getExtension(extensionId).packageJSON.contributes.commands.filter((x: any) => x.command !== 'go.show.commands');
+	const extensionCommands: any[] = vscode.extensions.getExtension(extensionId).packageJSON.contributes.commands.filter((x: any) => x.command !== 'go.show.commands');
 	return extensionCommands;
 }
 
@@ -539,13 +539,13 @@ export function resolvePath(inputPath: string, workspaceFolder?: string): string
  */
 export function getImportPath(text: string): string {
 	// Catch cases like `import alias "importpath"` and `import "importpath"`
-	let singleLineImportMatches = text.match(/^\s*import\s+([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
+	const singleLineImportMatches = text.match(/^\s*import\s+([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
 	if (singleLineImportMatches) {
 		return singleLineImportMatches[2];
 	}
 
 	// Catch cases like `alias "importpath"` and "importpath"
-	let groupImportMatches = text.match(/^\s*([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
+	const groupImportMatches = text.match(/^\s*([a-z,A-Z,_,\.]\w*\s+)?\"([^\"]+)\"/);
 	if (groupImportMatches) {
 		return groupImportMatches[2];
 	}
@@ -621,7 +621,7 @@ export interface ICheckResult {
  * @param printUnexpectedOutput If true, then output that doesnt match expected format is printed to the output channel
  */
 export function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput: boolean, token?: vscode.CancellationToken): Promise<ICheckResult[]> {
-	let goRuntimePath = getBinPath('go');
+	const goRuntimePath = getBinPath('go');
 	let cmd: string;
 	if (toolName) {
 		cmd = getBinPath(toolName);
@@ -655,10 +655,10 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 					outputChannel.appendLine(stderr);
 					return resolve([]);
 				}
-				let lines = (useStdErr ? stderr : stdout).toString().split('\n');
+				const lines = (useStdErr ? stderr : stdout).toString().split('\n');
 				outputChannel.appendLine([cwd + '>Finished running tool:', cmd, ...args].join(' '));
 
-				let ret: ICheckResult[] = [];
+				const ret: ICheckResult[] = [];
 				let unexpectedOutput = false;
 				let atleastSingleMatch = false;
 				for (let i = 0; i < lines.length; i++) {
@@ -666,15 +666,15 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 						ret[ret.length - 1].msg += '\n' + lines[i];
 						continue;
 					}
-					let match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+)?)?:(?:\w+:)? (.*)$/.exec(lines[i]);
+					const match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+)?)?:(?:\w+:)? (.*)$/.exec(lines[i]);
 					if (!match) {
 						if (printUnexpectedOutput && useStdErr && stderr) unexpectedOutput = true;
 						continue;
 					}
 					atleastSingleMatch = true;
 					let [_, __, file, ___, lineStr, ____, colStr, msg] = match;
-					let line = +lineStr;
-					let col = +colStr;
+					const line = +lineStr;
+					const col = +colStr;
 
 					// Building skips vendor folders,
 					// But vet and lint take in directories and not import paths, so no way to skip them
@@ -712,15 +712,15 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 
 	diagnosticCollection.clear();
 
-	let diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
+	const diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
 	errors.forEach(error => {
-		let canonicalFile = vscode.Uri.file(error.file).toString();
+		const canonicalFile = vscode.Uri.file(error.file).toString();
 		let startColumn = 0;
 		let endColumn = 1;
 		if (document && document.uri.toString() === canonicalFile) {
-			let range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1);
-			let text = document.getText(range);
-			let [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
+			const range = new vscode.Range(error.line - 1, 0, error.line - 1, document.lineAt(error.line - 1).range.end.character + 1);
+			const text = document.getText(range);
+			const [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
 			if (!error.col) {
 				startColumn = leading.length;
 			} else {
@@ -728,9 +728,9 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 			}
 			endColumn = text.length - trailing.length;
 		}
-		let range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
-		let severity = mapSeverityToVSCodeSeverity(error.severity);
-		let diagnostic = new vscode.Diagnostic(range, error.msg, severity);
+		const range = new vscode.Range(error.line - 1, startColumn, error.line - 1, endColumn);
+		const severity = mapSeverityToVSCodeSeverity(error.severity);
+		const diagnostic = new vscode.Diagnostic(range, error.msg, severity);
 		diagnostic.source = diagnosticCollection.name;
 		let diagnostics = diagnosticMap.get(canonicalFile);
 		if (!diagnostics) {
@@ -775,14 +775,14 @@ function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {
 
 export function getWorkspaceFolderPath(fileUri?: vscode.Uri): string {
 	if (fileUri) {
-		let workspace = vscode.workspace.getWorkspaceFolder(fileUri);
+		const workspace = vscode.workspace.getWorkspaceFolder(fileUri);
 		if (workspace) {
 			return workspace.uri.fsPath;
 		}
 	}
 
 	// fall back to the first workspace
-	let folders = vscode.workspace.workspaceFolders;
+	const folders = vscode.workspace.workspaceFolders;
 	if (folders && folders.length) {
 		return folders[0].uri.fsPath;
 	}
@@ -795,7 +795,7 @@ export function killProcess(p: cp.ChildProcess) {
 		} catch (e) {
 			console.log('Error killing process: ' + e);
 			if (e && e.message && e.stack) {
-				let matches = e.stack.match(/(src.go[a-z,A-Z]+\.js)/g);
+				const matches = e.stack.match(/(src.go[a-z,A-Z]+\.js)/g);
 				if (matches) {
 					/* __GDPR__
 					   "errorKillingProcess" : {
@@ -832,11 +832,11 @@ export function killTree(processId: number): void {
 }
 
 export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: number) => number {
-	let defaultValue = new Node<number, number>(0, 0); // 0 bytes will always be 0 characters
-	let memo = new NearestNeighborDict(defaultValue, NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
+	const defaultValue = new Node<number, number>(0, 0); // 0 bytes will always be 0 characters
+	const memo = new NearestNeighborDict(defaultValue, NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
 	return (byteOffset: number) => {
-		let nearest = memo.getNearest(byteOffset);
-		let byteDelta = byteOffset - nearest.key;
+		const nearest = memo.getNearest(byteOffset);
+		const byteDelta = byteOffset - nearest.key;
 
 		if (byteDelta === 0)
 			return nearest.value;

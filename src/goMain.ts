@@ -100,7 +100,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		offerToInstallTools();
 		if (checkLanguageServer()) {
 			const languageServerExperimentalFeatures: any = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
-			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
+			const langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
 			const c = new LanguageClient(
 				'go-langserver',
@@ -268,8 +268,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	initCoverageDecorators(ctx);
 
-	let testCodeLensProvider = new GoRunTestCodeLensProvider();
-	let referencesCodeLensProvider = new GoReferencesCodeLensProvider();
+	const testCodeLensProvider = new GoRunTestCodeLensProvider();
+	const referencesCodeLensProvider = new GoReferencesCodeLensProvider();
 
 
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
@@ -293,9 +293,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
-		let gopath = getCurrentGoPath();
+		const gopath = getCurrentGoPath();
 		let msg = `${gopath} is the current GOPATH.`;
-		let wasInfered = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['inferGopath'];
+		const wasInfered = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['inferGopath'];
 		let root = vscode.workspace.rootPath;
 		if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
 			root = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
@@ -350,31 +350,31 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		let isBenchmark = false;
+		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const isBenchmark = false;
 		testCurrentPackage(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.package', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		let isBenchmark = true;
+		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const isBenchmark = true;
 		testCurrentPackage(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		let isBenchmark = false;
+		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const isBenchmark = false;
 		testCurrentFile(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.file', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-		let isBenchmark = true;
+		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const isBenchmark = true;
 		testCurrentFile(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.workspace', (args) => {
-		let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		testWorkspace(goConfig, args);
 	}));
 
@@ -420,7 +420,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		if (!e.affectsConfiguration('go')) {
 			return;
 		}
-		let updatedGoConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const updatedGoConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		sendTelemetryEventForConfig(updatedGoConfig);
 		updateGoPathGoRootFromConfig();
 
@@ -485,7 +485,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.show.commands', () => {
-		let extCommands = getExtensionCommands();
+		const extCommands = getExtensionCommands();
 		extCommands.push({
 			command: 'editor.action.goToDeclaration',
 			title: 'Go to Definition'
@@ -503,7 +503,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			title: 'Go to Symbol in Workspace...'
 		});
 		vscode.window.showQuickPick(extCommands.map(x => x.title)).then(cmd => {
-			let selectedCmd = extCommands.find(x => x.title === cmd);
+			const selectedCmd = extCommands.find(x => x.title === cmd);
 			if (selectedCmd) {
 				vscode.commands.executeCommand(selectedCmd.command);
 			}
@@ -663,7 +663,7 @@ function checkToolExists(tool: string) {
 }
 
 function registerCompletionProvider(ctx: vscode.ExtensionContext) {
-	let provider = new GoCompletionItemProvider(ctx.globalState);
+	const provider = new GoCompletionItemProvider(ctx.globalState);
 	ctx.subscriptions.push(provider);
 	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '\"'));
 }

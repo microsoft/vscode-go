@@ -12,7 +12,7 @@ import { buildDiagnosticCollection } from './goMain';
  * Builds current package or workspace.
  */
 export function buildCode(buildWorkspace?: boolean) {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!buildWorkspace) {
 		if (!editor) {
 			vscode.window.showInformationMessage('No editor is active, cannot find current package to build');
@@ -24,8 +24,8 @@ export function buildCode(buildWorkspace?: boolean) {
 		}
 	}
 
-	let documentUri = editor ? editor.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const documentUri = editor ? editor.document.uri : null;
+	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
 
 	outputChannel.clear(); // Ensures stale output from build on save is cleared
 	diagnosticsStatusBarItem.show();
@@ -54,7 +54,7 @@ export function buildCode(buildWorkspace?: boolean) {
  */
 export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
 	epoch++;
-	let closureEpoch = epoch;
+	const closureEpoch = epoch;
 	if (tokenSource) {
 		if (running) {
 			tokenSource.cancel();
@@ -62,7 +62,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 		tokenSource.dispose();
 	}
 	tokenSource = new vscode.CancellationTokenSource();
-	let updateRunning = () => {
+	const updateRunning = () => {
 		if (closureEpoch === epoch)
 			running = false;
 	};
@@ -118,8 +118,8 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 	}
 
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
-	let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
-	let importPath = (currentGoWorkspace && !isMod) ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+	const currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
+	const importPath = (currentGoWorkspace && !isMod) ? cwd.substr(currentGoWorkspace.length + 1) : '.';
 	running = true;
 	outputChannel.appendLine(`Starting building the current package at ${cwd}`);
 	return runTool(
