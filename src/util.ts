@@ -406,7 +406,7 @@ export function getToolsEnvVars(): any {
 }
 
 export function substituteEnv(input: string): string {
-	return input.replace(/\${env:([^}]+)}/g, function(match, capture) {
+	return input.replace(/\${env:([^}]+)}/g, (match, capture) => {
 		return process.env[capture.trim()] || '';
 	});
 }
@@ -660,7 +660,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 
 				const ret: ICheckResult[] = [];
 				let unexpectedOutput = false;
-				let atleastSingleMatch = false;
+				let atLeastSingleMatch = false;
 				for (let i = 0; i < lines.length; i++) {
 					if (lines[i][0] === '\t' && ret.length > 0) {
 						ret[ret.length - 1].msg += '\n' + lines[i];
@@ -671,23 +671,23 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 						if (printUnexpectedOutput && useStdErr && stderr) unexpectedOutput = true;
 						continue;
 					}
-					atleastSingleMatch = true;
-					let [_, __, file, ___, lineStr, ____, colStr, msg] = match;
+					atLeastSingleMatch = true;
+					const [, , file, , lineStr, , colStr, msg] = match;
 					const line = +lineStr;
 					const col = +colStr;
 
 					// Building skips vendor folders,
 					// But vet and lint take in directories and not import paths, so no way to skip them
-					// So prune out the results from vendor folders herehere.
+					// So prune out the results from vendor folders here.
 					if (!path.isAbsolute(file) && (file.startsWith(`vendor${path.sep}`) || file.indexOf(`${path.sep}vendor${path.sep}`) > -1)) {
 						continue;
 					}
 
-					file = path.resolve(cwd, file);
-					ret.push({ file, line, col, msg, severity });
-					outputChannel.appendLine(`${file}:${line}: ${msg}`);
+					const filePath = path.resolve(cwd, file);
+					ret.push({ file: filePath, line, col, msg, severity });
+					outputChannel.appendLine(`${filePath}:${line}: ${msg}`);
 				}
-				if (!atleastSingleMatch && unexpectedOutput && vscode.window.activeTextEditor) {
+				if (!atLeastSingleMatch && unexpectedOutput && vscode.window.activeTextEditor) {
 					outputChannel.appendLine(stderr);
 					if (err) {
 						ret.push({

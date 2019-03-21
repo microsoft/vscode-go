@@ -46,7 +46,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	if (runner != null) {
 		clearTimeout(runner);
 	}
-	runner = setTimeout(function() {
+	runner = setTimeout(() => {
 		processFile(e);
 		runner = null;
 	}, vscode.workspace.getConfiguration('go', e.document.uri)['liveErrors']['delay']);
@@ -81,19 +81,16 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 					return;
 				}
 				// extract the line, column and error message from the gotype output
-				let [_, file, line, column, message] = /^(.+):(\d+):(\d+):\s+(.+)/.exec(error);
+				const [_, file, line, column, message] = /^(.+):(\d+):(\d+):\s+(.+)/.exec(error);
 				// get canonical file path
-				file = vscode.Uri.file(file).toString();
+				const canonicalFilePath = vscode.Uri.file(file).toString();
 				const range = new vscode.Range(+line - 1, +column, +line - 1, +column);
 				const diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
 				diagnostic.source = 'go';
 
-				let diagnostics = diagnosticMap.get(file);
-				if (!diagnostics) {
-					diagnostics = [];
-				}
+				const diagnostics = diagnosticMap.get(canonicalFilePath) || [];
 				diagnostics.push(diagnostic);
-				diagnosticMap.set(file, diagnostics);
+				diagnosticMap.set(canonicalFilePath, diagnostics);
 			});
 
 			diagnosticMap.forEach((diagnostics, file) => {
