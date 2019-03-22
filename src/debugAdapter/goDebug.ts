@@ -317,7 +317,7 @@ class Delve {
 			// read env from disk and merge into env variables
 			let fileEnv = {};
 			try {
-				if (typeof launchArgs.envFile === "string") {
+				if (typeof launchArgs.envFile === 'string') {
 					fileEnv = parseEnvFiles([launchArgs.envFile]);
 				}
 
