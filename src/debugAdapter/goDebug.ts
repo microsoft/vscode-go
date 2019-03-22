@@ -315,20 +315,23 @@ class Delve {
 			}
 
 			// read env from disk and merge into env variables
-			let fileEnv = {};
+			let envs = [process.env];
+
 			try {
 				if (typeof launchArgs.envFile === 'string') {
-					fileEnv = parseEnvFiles([launchArgs.envFile]);
+					envs.push(...parseEnvFiles([launchArgs.envFile]));
 				}
 
 				if (launchArgs.envFile instanceof Array) {
-					fileEnv = parseEnvFiles(launchArgs.envFile);
+					envs.push(...parseEnvFiles(launchArgs.envFile));
 				}
 			} catch (e) {
 				return reject(e);
 			}
 
-			const env = Object.assign({}, process.env, fileEnv, launchArgsEnv);
+			envs.push(launchArgsEnv);
+
+			const env = Object.assign({}, ...envs);
 
 			const dirname = isProgramDirectory ? program : path.dirname(program);
 			if (!env['GOPATH'] && (mode === 'debug' || mode === 'test')) {
