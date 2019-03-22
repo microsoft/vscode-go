@@ -12,7 +12,7 @@ import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCa
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { promptToUpdateToolForModules, getModFolderPath } from './goModules';
-import godocToMarkdown from './godocToMarkdown';
+import { godocToMarkdown } from './godocToMarkdown';
 
 const missingToolMsg = 'Missing tool: ';
 

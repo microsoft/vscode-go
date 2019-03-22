@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import godocToMarkdown from '../../src/godocToMarkdown';
+import { godocToMarkdown } from '../../src/godocToMarkdown';
 
 suite('godocToMarkdown Tests', () => {
 	test('Single line comment', () => {

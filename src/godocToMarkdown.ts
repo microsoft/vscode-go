@@ -3,24 +3,26 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
+// Implementation is based on https://github.com/golang/go/blob/master/src/go/doc/comment.go
+
 import * as XRegExp from 'xregexp';
 
-function markdownEscape(text: string): string {
+// Regex is based on https://github.com/kemitchell/markdown-escape.js/blob/master/index.js
+const markdownEscape = (text: string): string => {
 	return text.replace(/([\\`*{}[\]()#+-.!_>~|\n"$%&',\/:;<=?@^])/g, '\\$1');
-}
+};
 
 // Escape comment text for Markdown. If nice is set,
 // also turn `` into '“' and '' into '”'.
-function commentEscape(text: string, nice: boolean): string {
-	if (nice) {
-		return markdownEscape(convertQuotes(text));
-	}
-	return markdownEscape(text);
-}
+const commentEscape = (text: string, nice: boolean): string => {
+	return nice
+		? markdownEscape(convertQuotes(text))
+		: markdownEscape(text);
+};
 
-function convertQuotes(text: string): string {
+const convertQuotes = (text: string): string => {
 	return text.replace('``', '“').replace('\'\'', '”');
-}
+};
 
 // Regexp for Go identifiers
 const identRx = '[\\p{L}_][\\p{L}_0-9]*';
@@ -50,24 +52,25 @@ const matchRx = '(' + urlRx + ')|(' + identRx + ')';
 // and the word is converted into a link. If nice is set, the remaining text's
 // appearance is improved where it makes sense (e.g., `` is turned into &ldquo;
 // and '' into &rdquo;).
-function emphasize(line: string, words: {string: string}, nice: boolean): string {
+const emphasize = (line: string, words: { [key: string]: string }, nice: boolean): string => {
 	const parts = [];
 
 	const regexp = XRegExp(matchRx, 'gu');
 	while (true) {
 		let m = XRegExp.exec(line, regexp);
-		if (m == null) {
+		if (m === null) {
 			break;
 		}
 		// m >= 3 (two parenthesized sub-regexps in matchRx, 1st one is urlRx)
 
 		// Write text before match
-		parts.push(commentEscape(line.slice(0, m.index)	, nice));
+		parts.push(commentEscape(line.slice(0, m.index), nice));
 
 		// Adjust match for URLs
 		let match = m[0];
 		if (match.includes('://')) {
-			let m0 = m.index, m1 = m[0].length;
+			const m0 = m.index;
+			let m1 = m[0].length;
 			for (const s of [['(', ')'], ['{', '}'], ['[', ']']]) {
 				const open = s[0], close = s[1];
 				// Require opening parentheses before closing parentheses (#22285)
@@ -83,7 +86,7 @@ function emphasize(line: string, words: {string: string}, nice: boolean): string
 					let prevMatch2 = null;
 					while (true) {
 						const match2 = XRegExp.exec(shortenedLine, parenRegex);
-						if (match2 == null) {
+						if (match2 === null) {
 							m1 = prevMatch2.index;
 							break;
 						}
@@ -137,29 +140,29 @@ function emphasize(line: string, words: {string: string}, nice: boolean): string
 	parts.push(commentEscape(line, nice));
 
 	return parts.join('');
-}
+};
 
-function indentLen(s: string): number {
+const indentLen = (s: string): number => {
 	let i = 0;
 	while (i < s.length && (s[i] === ' ' || s[i] === '\t')) {
 		i++;
 	}
 	return i;
-}
+};
 
-function isBlank(s: string): boolean {
+const isBlank = (s: string): boolean => {
 	return s.length === 0 || (s.length === 1 && s[0] === '\n');
-}
+};
 
-function commonPrefix(a: string, b: string): string {
+const commonPrefix = (a: string, b: string): string => {
 	let i = 0;
 	while (i < a.length && i < b.length && a[i] === b[i]) {
 		i++;
 	}
 	return a.slice(0, i);
-}
+};
 
-function unindent(block: string[]) {
+const unindent = (block: string[]) => {
 	if (block.length === 0) {
 		return;
 	}
@@ -180,18 +183,18 @@ function unindent(block: string[]) {
 			block[i] = line.slice(n);
 		}
 	}
-}
+};
 
 // heading returns the trimmed line if it passes as a section heading;
 // otherwise it returns the empty string.
-function heading(line: string): string {
+const heading = (line: string): string => {
 	line = line.trim();
 	if (line.length === 0) {
 		return '';
 	}
 
 	// A heading must start with an uppercase letter
-	let r = line.charAt(0);
+	let r = line[0];
 	if (!XRegExp('\\p{Lu}', 'u').test(r)) {
 		return '';
 	}
@@ -221,7 +224,7 @@ function heading(line: string): string {
 
 	// allow "." when followed by non-space
 	for (let b = line; ;) {
-		let i = b.indexOf('.');
+		const i = b.indexOf('.');
 		if (i < 0) {
 			break;
 		}
@@ -232,7 +235,7 @@ function heading(line: string): string {
 	}
 
 	return line;
-}
+};
 
 enum Op {
 	Para,
@@ -246,20 +249,19 @@ interface Block {
 }
 
 function* blocks(text: string): IterableIterator<Block> {
-	let block: Block;
-	let para = [];
+	let para: any[] | string[] = [];
 	let lastWasBlank = false;
 	let lastWasHeading = false;
 
-	function close() {
+	const close = () => {
 		if (para.length > 0) {
-			const block = {op: Op.Para, lines: para};
+			const block = { op: Op.Para, lines: para };
 			para = [];
 			return block;
 		}
 
-		return null;
-	}
+		return undefined;
+	};
 
 	const lines = text.split('\n');
 	unindent(lines);
@@ -267,7 +269,8 @@ function* blocks(text: string): IterableIterator<Block> {
 		const line = lines[i];
 		if (isBlank(line)) {
 			// Close paragraph
-			if ((block = close()) != null) {
+			const block = close();
+			if (block) {
 				yield block;
 			}
 			i++;
@@ -276,7 +279,8 @@ function* blocks(text: string): IterableIterator<Block> {
 		}
 		if (indentLen(line) > 0) {
 			// Close paragraph
-			if ((block = close()) != null) {
+			const block = close();
+			if (block) {
 				yield block;
 			}
 
@@ -295,7 +299,7 @@ function* blocks(text: string): IterableIterator<Block> {
 			unindent(pre);
 
 			// Put those lines in a pre block
-			yield {op: Op.Pre, lines: pre};
+			yield { op: Op.Pre, lines: pre };
 			lastWasHeading = false;
 			continue;
 		}
@@ -307,10 +311,11 @@ function* blocks(text: string): IterableIterator<Block> {
 			// might be a heading.
 			const head = heading(line);
 			if (head !== '') {
-				if ((block = close()) != null) {
+				const block = close();
+				if (block) {
 					yield block;
 				}
-				yield {op: Op.Head, lines: [head]};
+				yield { op: Op.Head, lines: [head] };
 				i += 2;
 				lastWasHeading = true;
 				continue;
@@ -323,50 +328,51 @@ function* blocks(text: string): IterableIterator<Block> {
 		para.push(lines[i]);
 		i++;
 	}
-	if ((block = close()) != null) {
+	const block = close();
+	if (block) {
 		yield block;
 	}
 }
 
-export default function godocToMarkdown(text: string, words: {string: string}): string {
+export const godocToMarkdown = (text: string, words: { string: string }): string => {
 	const parts = [];
 	let printed = false;
 
 	for (const b of blocks(text)) {
 		switch (b.op) {
-		case Op.Para:
-			if (printed) {
-				parts.push('\n');
-			}
-			for (const line of b.lines) {
-				parts.push(emphasize(line, words, true) + '\n');
-			}
-			break;
-		case Op.Head:
-			parts.push('\n');
-			if (printed) {
-				parts.push('\n');
-			}
-			for (const line of b.lines) {
-				parts.push('### ' + commentEscape(line, true) + '\n');
-			}
-			break;
-		case Op.Pre:
-			parts.push('\n');
-			if (printed) {
-				parts.push('\n');
-			}
-			for (const line of b.lines) {
-				if (isBlank(line)) {
+			case Op.Para:
+				if (printed) {
 					parts.push('\n');
-				} else {
-					parts.push('    ' + line + '\n');
 				}
-			}
-			break;
+				for (const line of b.lines) {
+					parts.push(emphasize(line, words, true) + '\n');
+				}
+				break;
+			case Op.Head:
+				parts.push('\n');
+				if (printed) {
+					parts.push('\n');
+				}
+				for (const line of b.lines) {
+					parts.push('### ' + commentEscape(line, true) + '\n');
+				}
+				break;
+			case Op.Pre:
+				parts.push('\n');
+				if (printed) {
+					parts.push('\n');
+				}
+				for (const line of b.lines) {
+					if (isBlank(line)) {
+						parts.push('\n');
+					} else {
+						parts.push('    ' + line + '\n');
+					}
+				}
+				break;
 		}
 		printed = true;
 	}
 
 	return parts.join('');
-}
+};
