@@ -190,9 +190,9 @@ encountered\\.
 		}
 
 		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output\\.
-		Spaces are always added between operands and a newline is appended\\.
-		It returns the number of bytes written and any write error encountered\\.
-		`;
+Spaces are always added between operands and a newline is appended\\.
+It returns the number of bytes written and any write error encountered\\.
+`;
 		const testCases: [vscode.Position, string, string, string[]][] = [
 			[new vscode.Position(19, 13), 'Println(a ...interface{}) (n int, err error)', printlnDoc, ['a ...interface{}']],
 			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldn\\\'t get this comment on hover \\:\\(\nNot anymore\\!\\!\n', ['txt string']],
@@ -207,17 +207,17 @@ encountered\\.
 
 	test('Test Hover Provider using godoc', (done) => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
-		standard output\\.Spaces are always added between operands and a newline is
-		appended\\.It returns the number of bytes written and any write error
-		encountered\\.
-		`;
+standard output\\. Spaces are always added between operands and a newline is
+appended\\. It returns the number of bytes written and any write error
+encountered\\.
+`;
 		const testCases: [vscode.Position, string, string][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
 			[new vscode.Position(0, 3), null, null], // keyword
 			[new vscode.Position(23, 14), null, null], // inside a string
 			[new vscode.Position(20, 0), null, null], // just a }
 			[new vscode.Position(28, 16), null, null], // inside a number
-			[new vscode.Position(22, 5), 'main func()', '\n'],
+			[new vscode.Position(22, 5), 'main func()', null],
 			[new vscode.Position(40, 23), 'import (math "math")', null],
 			[new vscode.Position(19, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
 			[new vscode.Position(23, 4), 'print func(txt string)', 'This is an unexported function so couldn\\\'t get this comment on hover \\:\\( Not\nanymore\\!\\!\n']
@@ -235,9 +235,9 @@ encountered\\.
 		}
 
 		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output\\.
-		Spaces are always added between operands and a newline is appended\\.
-		It returns the number of bytes written and any write error encountered\\.
-		`;
+Spaces are always added between operands and a newline is appended\\.
+It returns the number of bytes written and any write error encountered\\.
+`;
 
 		const testCases: [vscode.Position, string, string][] = [
 			[new vscode.Position(0, 3), null, null], // keyword

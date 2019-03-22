@@ -58,7 +58,7 @@ const emphasize = (line: string, words: { [key: string]: string }, nice: boolean
 	const regexp = XRegExp(matchRx, 'gu');
 	while (true) {
 		let m = XRegExp.exec(line, regexp);
-		if (m === null) {
+		if (m == null) {
 			break;
 		}
 		// m >= 3 (two parenthesized sub-regexps in matchRx, 1st one is urlRx)
@@ -86,7 +86,7 @@ const emphasize = (line: string, words: { [key: string]: string }, nice: boolean
 					let prevMatch2 = null;
 					while (true) {
 						const match2 = XRegExp.exec(shortenedLine, parenRegex);
-						if (match2 === null) {
+						if (match2 == null) {
 							m1 = prevMatch2.index;
 							break;
 						}
@@ -194,7 +194,7 @@ const heading = (line: string): string => {
 	}
 
 	// A heading must start with an uppercase letter
-	let r = line[0];
+	let r = line.charAt(0);
 	if (!XRegExp('\\p{Lu}', 'u').test(r)) {
 		return '';
 	}
