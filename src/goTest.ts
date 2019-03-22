@@ -127,7 +127,7 @@ async function debugTestAtCursor(editor: vscode.TextEditor, testFunctionName: st
  * @param goConfig Configuration for the Go extension.
  */
 export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
@@ -195,7 +195,7 @@ export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any
  * @param isBenchmark Boolean flag indicating if these are benchmark tests or not.
  */
 export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: string[]): Thenable<boolean> {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
@@ -250,7 +250,7 @@ export function testPrevious() {
  */
 function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
 	let tmpCoverPath = '';
-	let testFlags = getTestFlags(goConfig, args) || [];
+	const testFlags = getTestFlags(goConfig, args) || [];
 	if (goConfig[confFlag] === true) {
 		tmpCoverPath = getTempFilePath('go-code-cover');
 		testFlags.push('-coverprofile=' + tmpCoverPath);

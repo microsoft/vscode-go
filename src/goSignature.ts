@@ -74,7 +74,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 	private previousTokenPosition(document: TextDocument, position: Position): Position {
 		while (position.character > 0) {
-			let word = document.getWordRangeAtPosition(position);
+			const word = document.getWordRangeAtPosition(position);
 			if (word) {
 				return word.start;
 			}

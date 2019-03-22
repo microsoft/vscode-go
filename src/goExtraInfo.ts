@@ -28,17 +28,17 @@ export class GoHoverProvider implements HoverProvider {
 		}
 		return definitionLocation(document, position, goConfig, true, token).then(definitionInfo => {
 			if (definitionInfo == null) return null;
-			let lines = definitionInfo.declarationlines
+			const lines = definitionInfo.declarationlines
 				.filter(line => line !== '')
 				.map(line => line.replace(/\t/g, '    '));
 			let text;
 			text = lines.join('\n').replace(/\n+$/, '');
-			let hoverTexts = new vscode.MarkdownString();
+			const hoverTexts = new vscode.MarkdownString();
 			hoverTexts.appendCodeblock(text, 'go');
 			if (definitionInfo.doc != null) {
 				hoverTexts.appendMarkdown(definitionInfo.doc);
 			}
-			let hover = new Hover(hoverTexts);
+			const hover = new Hover(hoverTexts);
 			return hover;
 		}, () => {
 			return null;

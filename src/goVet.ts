@@ -9,7 +9,7 @@ import { vetDiagnosticCollection } from './goMain';
  * Runs go vet in the current package or workspace.
  */
 export function vetCode(vetWorkspace?: boolean) {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor && !vetWorkspace) {
 		vscode.window.showInformationMessage('No editor is active, cannot find current package to vet');
 		return;
@@ -19,8 +19,8 @@ export function vetCode(vetWorkspace?: boolean) {
 		return;
 	}
 
-	let documentUri = editor ? editor.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const documentUri = editor ? editor.document.uri : null;
+	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
 
 	outputChannel.clear(); // Ensures stale output from vet on save is cleared
 	diagnosticsStatusBarItem.show();
@@ -46,7 +46,7 @@ export function vetCode(vetWorkspace?: boolean) {
  */
 export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace?: boolean): Promise<ICheckResult[]> {
 	epoch++;
-	let closureEpoch = epoch;
+	const closureEpoch = epoch;
 	if (tokenSource) {
 		if (running) {
 			tokenSource.cancel();
