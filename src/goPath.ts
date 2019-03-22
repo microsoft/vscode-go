@@ -142,6 +142,19 @@ export function parseEnvFile(path: string): { [key: string]: string } {
 	}
 }
 
+export function parseEnvFiles(paths: string[]): { [key: string]: string } {
+	let mergedEnv: { [key: string]: any } = {};
+
+	for (let i = 0; i < paths.length; i++) {
+		const path = paths[i];
+		let env = parseEnvFile(path);
+
+		mergedEnv = Object.assign(mergedEnv, env);
+	}
+
+	return mergedEnv;
+}
+
 // Walks up given folder path to return the closest ancestor that has `src` as a child
 export function getInferredGopath(folderPath: string): string {
 	if (!folderPath) {

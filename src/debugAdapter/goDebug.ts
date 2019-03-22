@@ -13,7 +13,7 @@ import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
+import { parseEnvFiles, getBinPathWithPreferredGopath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 
 const fsAccess = util.promisify(fs.access);
 const fsUnlink = util.promisify(fs.unlink);
@@ -217,7 +217,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	init?: string;
 	trace?: 'verbose' | 'log' | 'error';
 	/** Optional path to .env file. */
-	envFile?: string;
+	envFile?: string | string[];
 	backend?: string;
 	output?: string;
 	/** Delve LoadConfig parameters **/
@@ -317,7 +317,13 @@ class Delve {
 			// read env from disk and merge into env variables
 			let fileEnv = {};
 			try {
-				fileEnv = parseEnvFile(launchArgs.envFile);
+				if (typeof launchArgs.envFile === "string") {
+					fileEnv = parseEnvFiles([launchArgs.envFile]);
+				}
+
+				if (launchArgs.envFile instanceof Array) {
+					fileEnv = parseEnvFiles(launchArgs.envFile);
+				}
 			} catch (e) {
 				return reject(e);
 			}
