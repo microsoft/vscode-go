@@ -1364,47 +1364,49 @@ class GoDebugSession extends LoggingDebugSession {
 				Cfg: this.delve.loadConfig
 			};
 
-		// If coming from watch/variables pane via the 'Copy Value' context menu action,
-		// first fetch the return value of the expression and override the loadConfig
-		// to get the complete value in a second, final request
-		let evalSymbolsConfig = Object.assign({}, this.delve.loadConfig);
-		let fetchReturnValue: EvalOut = null;
-		if (!this.delve.isApiV1 && (args.context === 'variables')) {
-			log('EvaluateRequest fetch');
-			await this.delve.callPromise<EvalOut>('Eval', [{
-				Expr: args.expression,
-				Scope: scope,
-				Cfg: this.delve.loadConfig
-			}]).then(result => {
-				fetchReturnValue = result;
-				if ((fetchReturnValue.Variable.kind === GoReflectKind.Map)
-					|| (fetchReturnValue.Variable.kind === GoReflectKind.Slice)
-					|| (fetchReturnValue.Variable.kind === GoReflectKind.Array)) {
-					if (fetchReturnValue.Variable.len > evalSymbolsConfig.maxArrayValues) {
-						evalSymbolsConfig.maxArrayValues = fetchReturnValue.Variable.len;
-					}
-				}
-				if (fetchReturnValue.Variable.kind === GoReflectKind.String) {
-					if (fetchReturnValue.Variable.len > evalSymbolsConfig.maxStringLen) {
-						evalSymbolsConfig.maxStringLen = fetchReturnValue.Variable.len;
-					}
-				}
-			}, err => {
-				logError('Failed to fetch eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval fetch error:', err.toString());
-				return Promise.reject(err);
-			});
-		}
+		// If coming from variables pane via the 'Copy Value' context menu action,
+		// first synchronously fetch the return value of the expression,
+		// and override the loadConfig to get the complete value in a second async request
+		evalSymbolArgs.Cfg = await this.evaluateRequestFetch(args, scope, this.delve.loadConfig).catch(err => {
+			logError('Failed to eval fetch expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval fetch error:', err.toString());
+			return Promise.reject(err);
+		});
 
-		evalSymbolArgs.Cfg = evalSymbolsConfig;
-		logError(JSON.stringify(evalSymbolsConfig));
-
-		log('EvaluateRequest second request');
+		log('EvaluateRequest');
 		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
 			err => {
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
 				return Promise.reject(err);
 			});
 		return returnValue;
+	}
+
+	private async evaluateRequestFetch(args: DebugProtocol.EvaluateArguments, scope: any, delveLoadConfig: any): Promise<LoadConfig> {
+		if (!(!this.delve.isApiV1 && (args.context === 'variables'))) {
+			return Promise.resolve(delveLoadConfig);
+		}
+
+		log('EvaluateRequest fetch');
+
+		let fetchReturnValue: EvalOut;
+		let evalSymbolsConfig: LoadConfig = Object.assign({}, delveLoadConfig);
+		fetchReturnValue = await this.delve.callPromise<EvalOut>('Eval', [{
+			Expr: args.expression,
+			Scope: scope,
+			Cfg: this.delve.loadConfig
+		}]).catch((err) => {
+			if (err) {
+				return Promise.reject(err);
+			}
+		});
+
+		if (fetchReturnValue.Variable.kind === GoReflectKind.String) {
+			if (fetchReturnValue.Variable.len > evalSymbolsConfig.maxStringLen) {
+				evalSymbolsConfig.maxStringLen = fetchReturnValue.Variable.len;
+			}
+		}
+
+		return Promise.resolve(evalSymbolsConfig);
 	}
 
 	protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments): void {
