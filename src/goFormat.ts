@@ -18,10 +18,10 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			return [];
 		}
 
-		let filename = document.fileName;
-		let goConfig = vscode.workspace.getConfiguration('go', document.uri);
-		let formatTool = goConfig['formatTool'] || 'goreturns';
-		let formatFlags = goConfig['formatFlags'].slice() || [];
+		const filename = document.fileName;
+		const goConfig = vscode.workspace.getConfiguration('go', document.uri);
+		const formatTool = goConfig['formatTool'] || 'goreturns';
+		const formatFlags = goConfig['formatFlags'].slice() || [];
 
 		// We ignore the -w flag that updates file on disk because that would break undo feature
 		if (formatFlags.indexOf('-w') > -1) {
@@ -51,7 +51,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 	}
 
 	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
-		let formatCommandBinPath = getBinPath(formatTool);
+		const formatCommandBinPath = getBinPath(formatTool);
 
 		return new Promise<vscode.TextEdit[]>((resolve, reject) => {
 			if (!path.isAbsolute(formatCommandBinPath)) {
@@ -59,9 +59,9 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 				return reject();
 			}
 
-			let t0 = Date.now();
-			let env = getToolsEnvVars();
-			let cwd = path.dirname(document.fileName);
+			const t0 = Date.now();
+			const env = getToolsEnvVars();
+			const cwd = path.dirname(document.fileName);
 			let stdout = '';
 			let stderr = '';
 
@@ -88,7 +88,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 				const fileEnd = document.lineAt(document.lineCount - 1).range.end;
 				const textEdits: vscode.TextEdit[] = [new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)];
 
-				let timeTaken = Date.now() - t0;
+				const timeTaken = Date.now() - t0;
 				/* __GDPR__
 				   "format" : {
 					  "tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },

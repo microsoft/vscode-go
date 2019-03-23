@@ -28,7 +28,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 		return Promise.resolve(new Map<string, string>());
 	}
 
-	let t0 = Date.now();
+	const t0 = Date.now();
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const args = ['-format', '{{.Name}};{{.ImportPath}}'];
 		if (workDir) {
@@ -43,7 +43,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 		cmd.stderr.on('data', d => errchunks.push(d));
 		cmd.on('error', e => err = e);
 		cmd.on('close', () => {
-			let pkgs = new Map<string, string>();
+			const pkgs = new Map<string, string>();
 			if (err && err.code === 'ENOENT') {
 				return promptForMissingTool('gopkgs');
 			}
@@ -68,8 +68,8 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 					if (!pkgPath || !pkgPath.trim()) {
 						return;
 					}
-					let index = pkgPath.lastIndexOf('/');
-					let pkgName = index === -1 ? pkgPath : pkgPath.substr(index + 1);
+					const index = pkgPath.lastIndexOf('/');
+					const pkgName = index === -1 ? pkgPath : pkgPath.substr(index + 1);
 					pkgs.set(pkgPath, pkgName);
 				});
 				return resolve(pkgs);
@@ -77,7 +77,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 
 			output.split('\n').forEach((pkgDetail) => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
-				let [pkgName, pkgPath] = pkgDetail.trim().split(';');
+				const [pkgName, pkgPath] = pkgDetail.trim().split(';');
 				pkgs.set(pkgPath, pkgName);
 			});
 
@@ -98,7 +98,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 function getAllPackagesNoCache(workDir: string): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
-		let callback = function(pkgMap: Map<string, string>) {
+		const callback = function(pkgMap: Map<string, string>) {
 			resolve(pkgMap);
 		};
 
@@ -225,9 +225,9 @@ function getRelativePackagePath(currentFileDirPath: string, currentWorkspace: st
 	// If yes, then vendor pkg can be replaced with its relative path to the "vendor" folder
 	// If not, then the vendor pkg should not be allowed to be imported.
 	if (vendorIndex > -1) {
-		let rootProjectForVendorPkg = path.join(currentWorkspace, pkgPath.substr(0, vendorIndex));
-		let relativePathForVendorPkg = pkgPath.substring(vendorIndex + magicVendorString.length);
-		let subVendor = relativePathForVendorPkg.indexOf('/vendor/') !== -1;
+		const rootProjectForVendorPkg = path.join(currentWorkspace, pkgPath.substr(0, vendorIndex));
+		const relativePathForVendorPkg = pkgPath.substring(vendorIndex + magicVendorString.length);
+		const subVendor = relativePathForVendorPkg.indexOf('/vendor/') !== -1;
 
 		if (relativePathForVendorPkg && currentFileDirPath.startsWith(rootProjectForVendorPkg) && !subVendor) {
 			return relativePathForVendorPkg;
@@ -243,21 +243,21 @@ const pkgToFolderMappingRegex = /ImportPath: (.*) FolderPath: (.*)/;
  * Returns mapping between import paths and folder paths for all packages under given folder (vendor will be excluded)
  */
 export function getNonVendorPackages(folderPath: string): Promise<Map<string, string>> {
-	let goRuntimePath = getBinPath('go');
+	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return Promise.resolve(null);
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		let childProcess = cp.spawn(goRuntimePath, ['list', '-f', 'ImportPath: {{.ImportPath}} FolderPath: {{.Dir}}', './...'], { cwd: folderPath, env: getToolsEnvVars() });
-		let chunks: any[] = [];
+		const childProcess = cp.spawn(goRuntimePath, ['list', '-f', 'ImportPath: {{.ImportPath}} FolderPath: {{.Dir}}', './...'], { cwd: folderPath, env: getToolsEnvVars() });
+		const chunks: any[] = [];
 		childProcess.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
 		});
 
 		childProcess.on('close', (status) => {
-			let lines = chunks.join('').toString().split('\n');
+			const lines = chunks.join('').toString().split('\n');
 
 			getGoVersion().then((ver: SemVersion) => {
 				const result = new Map<string, string>();
@@ -267,7 +267,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 					if (!matches || matches.length !== 3) {
 						return;
 					}
-					let [_, pkgPath, folderPath] = matches;
+					const [_, pkgPath, folderPath] = matches;
 					if (!pkgPath || (!vendorAlreadyExcluded && pkgPath.includes('/vendor/'))) {
 						return;
 					}
@@ -289,9 +289,9 @@ function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkg
 		return false;
 	}
 
-	let internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
+	const internalPkgFound = pkgPath.match(/\/internal\/|\/internal$/);
 	if (internalPkgFound) {
-		let rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));
+		const rootProjectForInternalPkg = path.join(currentWorkspace, pkgPath.substr(0, internalPkgFound.index));
 		return toDirPath.startsWith(rootProjectForInternalPkg + path.sep) || toDirPath === rootProjectForInternalPkg;
 	}
 	return true;

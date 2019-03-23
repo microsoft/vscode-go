@@ -17,7 +17,7 @@ import { goBuild } from './goBuild';
 import { isModSupported } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 
-let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
 const neverAgain = { title: 'Don\'t Show Again' };
 
@@ -30,13 +30,13 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 }
 
 export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEvent) {
-	let ctx: any = this;
+	const ctx: any = this;
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
 
-	let documentUri = e ? e.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const documentUri = e ? e.document.uri : null;
+	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
 
 	if ((ctx.globalState.get('ignoreGeneratedCodeWarning') !== true) && e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
 		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then(result => {
@@ -55,9 +55,9 @@ interface IToolCheckResults {
 export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<IToolCheckResults[]> {
 	diagnosticsStatusBarItem.hide();
 	outputChannel.clear();
-	let runningToolsPromises = [];
-	let cwd = path.dirname(fileUri.fsPath);
-	let goRuntimePath = getBinPath('go');
+	const runningToolsPromises = [];
+	const cwd = path.dirname(fileUri.fsPath);
+	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -66,14 +66,14 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;
-	let testConfig: TestConfig = {
+	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,
 		flags: getTestFlags(goConfig),
 		background: true
 	};
 
-	let runTest = () => {
+	const runTest = () => {
 		if (testPromise) {
 			return testPromise;
 		}
