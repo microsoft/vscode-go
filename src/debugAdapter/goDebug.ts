@@ -1383,13 +1383,18 @@ class GoDebugSession extends LoggingDebugSession {
 
 	private async evaluateRequestFetch(args: DebugProtocol.EvaluateArguments, scope: any, delveLoadConfig: any): Promise<LoadConfig> {
 		if (!(!this.delve.isApiV1 && (args.context === 'variables'))) {
+			// Delve v1 does not support load configurations on apicalls
 			return Promise.resolve(delveLoadConfig);
 		}
+
+		// Upper bound for fetch operations, since arbitrarily large values
+		// can cause delve and vscode to become slow or unresponsive
+		const upperMaxStringLen: number = 4000;
 
 		log('EvaluateRequest fetch');
 
 		let fetchReturnValue: EvalOut;
-		let evalSymbolsConfig: LoadConfig = Object.assign({}, delveLoadConfig);
+		const evalSymbolsConfig: LoadConfig = Object.assign({}, delveLoadConfig);
 		fetchReturnValue = await this.delve.callPromise<EvalOut>('Eval', [{
 			Expr: args.expression,
 			Scope: scope,
@@ -1402,7 +1407,7 @@ class GoDebugSession extends LoggingDebugSession {
 
 		if (fetchReturnValue.Variable.kind === GoReflectKind.String) {
 			if (fetchReturnValue.Variable.len > evalSymbolsConfig.maxStringLen) {
-				evalSymbolsConfig.maxStringLen = fetchReturnValue.Variable.len;
+				evalSymbolsConfig.maxStringLen = fetchReturnValue.Variable.len % upperMaxStringLen;
 			}
 		}
 
