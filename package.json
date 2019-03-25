@@ -963,6 +963,11 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the language server will be used for the Go to Workspace Symbols feature."
+            },
+            "diagnostics": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will provide build, vet errors and the extension will ignore the `buildOnSave`, `vetOnSave` settings."
             }
           },
           "default": {
@@ -976,7 +981,8 @@
             "goToImplementation": true,
             "documentSymbols": true,
             "workspaceSymbols": true,
-            "findReferences": true
+            "findReferences": true,
+            "diagnostics": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },

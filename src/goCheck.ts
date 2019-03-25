@@ -61,13 +61,18 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	let cwd = path.dirname(fileUri.fsPath);
 	let goRuntimePath = getBinPath('go');
 	const languageServerTool = getToolFromToolPath(getLanguageServerToolPath());
+	const languageServerOptions: any = goConfig.get('languageServerExperimentalFeatures');
 	let languageServerFlags: string[] = goConfig.get('languageServerFlags');
 	if (!Array.isArray(languageServerFlags)) {
 		languageServerFlags = [];
 	}
-	const disableBuild = languageServerTool === 'gopls' || (languageServerTool === 'bingo'
-		&& languageServerFlags.indexOf('-diagnostics-style=none') === -1);
-	const disableVet = languageServerTool === 'gopls';
+
+	let disableBuild = languageServerOptions['diagnostics'] === true && (languageServerTool === 'gopls' || languageServerTool === 'bingo');
+	let disableVet = languageServerOptions['diagnostics'] === true && languageServerTool === 'gopls';
+
+	if (disableBuild && languageServerTool === 'bingo' && languageServerFlags.indexOf('-diagnostics-style=none') > -1) {
+		disableBuild = true;
+	}
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');

@@ -36,7 +36,7 @@ import {
 import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
 	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
-	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature
+	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature, HandleDiagnosticsSignature
 } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows, getToolFromToolPath } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -192,6 +192,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 							}
 							return null;
 						},
+						handleDiagnostics: (uri: vscode.Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
+							if (languageServerExperimentalFeatures['diagnostics'] === true) {
+								return next(uri, diagnostics);
+							}
+							return null;
+						}
 					}
 				}
 			);
