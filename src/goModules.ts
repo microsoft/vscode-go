@@ -41,8 +41,8 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 		return Promise.resolve(moduleCache);
 	}
 
-	return getGoVersion().then(goVersion => {
-		if (goVersion && (goVersion.major !== 1 || goVersion.minor < 11)) {
+	return getGoVersion().then(value => {
+		if (value && (value.major !== 1 || value.minor < 11)) {
 			return;
 		}
 
@@ -61,15 +61,7 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 				}
 				if (goConfig['useLanguageServer'] === false) {
 					const promptMsg = 'To get better performance during code completion, please update to use the language server from Google';
-					promptToUpdateToolForModules('gopls', promptMsg).then(choseToUpdate => {
-						if (choseToUpdate) {
-							installTools(['gopls'], goVersion)
-								.then(() => {
-									goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.Global);
-									vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
-								});
-						}
-					});
+					promptToUpdateToolForModules('gopls', promptMsg);
 				}
 			}
 			packageModCache.set(pkgPath, result);
@@ -92,40 +84,50 @@ function logModuleUsage() {
 }
 
 const promptedToolsForCurrentSession = new Set<string>();
-export async function promptToUpdateToolForModules(tool: string, promptMsg: string): Promise<boolean> {
+export function promptToUpdateToolForModules(tool: string, promptMsg: string) {
 	if (promptedToolsForCurrentSession.has(tool)) {
-		return false;
+		return;
 	}
 	const promptedToolsForModules = getFromGlobalState('promptedToolsForModules', {});
 	if (promptedToolsForModules[tool]) {
-		return false;
+		return;
 	}
-	const goVersion = await getGoVersion();
-	const selected = await vscode.window.showInformationMessage(
-		promptMsg,
-		'Update',
-		'Later',
-		`Don't show again`);
-
-	let choseToUpdate = false;
-	switch (selected) {
-		case 'Update':
-			installTools([tool], goVersion);
-			promptedToolsForModules[tool] = true;
-			choseToUpdate = true;
-			updateGlobalState('promptedToolsForModules', promptedToolsForModules);
-			break;
-		case `Don't show again`:
-			promptedToolsForModules[tool] = true;
-			updateGlobalState('promptedToolsForModules', promptedToolsForModules);
-			break;
-		case 'Later':
-		default:
-			promptedToolsForCurrentSession.add(tool);
-			break;
-	}
-	return choseToUpdate;
-
+	getGoVersion().then(goVersion => {
+		vscode.window.showInformationMessage(
+			promptMsg,
+			'Update',
+			'Later',
+			`Don't show again`)
+			.then(selected => {
+				switch (selected) {
+					case 'Update':
+						installTools([tool], goVersion)
+							.then(() => {
+								if (tool === 'gopls') {
+									const goConfig = vscode.workspace.getConfiguration('go');
+									if (goConfig.get('useLanguageServer') === false) {
+										goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.Global);
+									}
+									if (goConfig.inspect('useLanguageServer').workspaceFolderValue === false) {
+										goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.WorkspaceFolder);
+									}
+									vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
+								}
+							});
+						promptedToolsForModules[tool] = true;
+						updateGlobalState('promptedToolsForModules', promptedToolsForModules);
+						break;
+					case `Don't show again`:
+						promptedToolsForModules[tool] = true;
+						updateGlobalState('promptedToolsForModules', promptedToolsForModules);
+						break;
+					case 'Later':
+					default:
+						promptedToolsForCurrentSession.add(tool);
+						break;
+				}
+			});
+	});
 }
 
 const folderToPackageMapping: { [key: string]: string } = {};
