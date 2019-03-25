@@ -9,8 +9,7 @@
 			"stopOnEntry": false,
 			"args": ["--server=4711"],
 			"sourceMaps": true,
-			"outFiles": ["${workspaceFolder}/../../out/src/debugAdapter"],
-			"trace": true
+			"outFiles": ["${workspaceFolder}/../../out/src/debugAdapter"]
 		}
 	]
 }
