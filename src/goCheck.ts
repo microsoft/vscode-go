@@ -19,7 +19,7 @@ import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticColle
 import { getLanguageServerToolPath } from './goInstallTools';
 import { getToolFromToolPath } from './goPath';
 
-let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
 const neverAgain = { title: 'Don\'t Show Again' };
 
@@ -32,13 +32,13 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 }
 
 export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEvent) {
-	let ctx: any = this;
+	const ctx: any = this;
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
 
-	let documentUri = e ? e.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const documentUri = e ? e.document.uri : null;
+	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
 
 	if ((ctx.globalState.get('ignoreGeneratedCodeWarning') !== true) && e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
 		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then(result => {
@@ -57,9 +57,9 @@ interface IToolCheckResults {
 export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration): Promise<IToolCheckResults[]> {
 	diagnosticsStatusBarItem.hide();
 	outputChannel.clear();
-	let runningToolsPromises = [];
-	let cwd = path.dirname(fileUri.fsPath);
-	let goRuntimePath = getBinPath('go');
+	const runningToolsPromises = [];
+	const cwd = path.dirname(fileUri.fsPath);
+	const goRuntimePath = getBinPath('go');
 	const languageServerTool = getToolFromToolPath(getLanguageServerToolPath());
 	const languageServerOptions: any = goConfig.get('languageServerExperimentalFeatures');
 	let languageServerFlags: string[] = goConfig.get('languageServerFlags');
@@ -68,7 +68,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	let disableBuild = languageServerOptions['diagnostics'] === true && (languageServerTool === 'gopls' || languageServerTool === 'bingo');
-	let disableVet = languageServerOptions['diagnostics'] === true && languageServerTool === 'gopls';
+	const disableVet = languageServerOptions['diagnostics'] === true && languageServerTool === 'gopls';
 
 	if (disableBuild && languageServerTool === 'bingo' && languageServerFlags.indexOf('-diagnostics-style=none') > -1) {
 		disableBuild = true;
@@ -81,14 +81,14 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;
-	let testConfig: TestConfig = {
+	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,
 		flags: getTestFlags(goConfig),
 		background: true
 	};
 
-	let runTest = () => {
+	const runTest = () => {
 		if (testPromise) {
 			return testPromise;
 		}

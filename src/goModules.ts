@@ -7,7 +7,7 @@ import { installTools } from './goInstallTools';
 import { fixDriveCasingInWindows } from './goPath';
 
 function runGoModEnv(folderPath: string): Promise<string> {
-	let goExecutable = getBinPath('go');
+	const goExecutable = getBinPath('go');
 	if (!goExecutable) {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
 	}
@@ -17,7 +17,7 @@ function runGoModEnv(folderPath: string): Promise<string> {
 				console.warn(`Error when running go env GOMOD: ${err}`);
 				return resolve();
 			}
-			let [goMod] = stdout.split('\n');
+			const [goMod] = stdout.split('\n');
 			resolve(goMod);
 		});
 	});
@@ -146,22 +146,22 @@ export function getCurrentPackage(cwd: string): Promise<string> {
 		return Promise.resolve(importPath);
 	}
 
-	let goRuntimePath = getBinPath('go');
+	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return Promise.resolve(null);
 	}
 	return new Promise<string>(resolve => {
-		let childProcess = cp.spawn(goRuntimePath, ['list'], { cwd, env: getToolsEnvVars() });
-		let chunks: any[] = [];
+		const childProcess = cp.spawn(goRuntimePath, ['list'], { cwd, env: getToolsEnvVars() });
+		const chunks: any[] = [];
 		childProcess.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
 		});
 
 		childProcess.on('close', () => {
 			// Ignore lines that are empty or those that have logs about updating the module cache
-			let pkgs = chunks.join('').toString().split('\n').filter(line => line && line.indexOf(' ') === -1);
+			const pkgs = chunks.join('').toString().split('\n').filter(line => line && line.indexOf(' ') === -1);
 			if (pkgs.length !== 1) {
 				resolve();
 				return;

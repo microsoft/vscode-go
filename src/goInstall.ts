@@ -7,7 +7,7 @@ import cp = require('child_process');
 import { isModSupported } from './goModules';
 
 export async function installCurrentPackage(): Promise<void> {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active, cannot find current package to install');
 		return;
@@ -17,7 +17,7 @@ export async function installCurrentPackage(): Promise<void> {
 		return;
 	}
 
-	let goRuntimePath = getBinPath('go');
+	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return;
@@ -42,7 +42,7 @@ export async function installCurrentPackage(): Promise<void> {
 
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
 	const currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
-	let importPath = (currentGoWorkspace && !isMod) ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+	const importPath = (currentGoWorkspace && !isMod) ? cwd.substr(currentGoWorkspace.length + 1) : '.';
 	args.push(importPath);
 
 	outputChannel.clear();

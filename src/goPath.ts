@@ -19,9 +19,9 @@ export const envPath = process.env['PATH'] || (process.platform === 'win32' ? pr
 export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appendBinToPath: boolean): string {
 	toolName = correctBinname(toolName);
 	if (envVarValue) {
-		let paths = envVarValue.split(path.delimiter);
+		const paths = envVarValue.split(path.delimiter);
 		for (let i = 0; i < paths.length; i++) {
-			let binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', toolName);
+			const binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', toolName);
 			if (fileExists(binpath)) {
 				return binpath;
 			}
@@ -43,7 +43,7 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 	for (let i = 0; i < preferredGopaths.length; i++) {
 		if (typeof preferredGopaths[i] === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder
-			let pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferredGopaths[i], true);
+			const pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferredGopaths[i], true);
 			if (pathFrompreferredGoPath) {
 				binPathCache[toolName] = pathFrompreferredGoPath;
 				return pathFrompreferredGoPath;
@@ -52,14 +52,14 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 	}
 
 	// Check GOROOT (go, gofmt, godoc would be found here)
-	let pathFromGoRoot = getBinPathFromEnvVar(binname, process.env['GOROOT'], true);
+	const pathFromGoRoot = getBinPathFromEnvVar(binname, process.env['GOROOT'], true);
 	if (pathFromGoRoot) {
 		binPathCache[toolName] = pathFromGoRoot;
 		return pathFromGoRoot;
 	}
 
 	// Finally search PATH parts
-	let pathFromPath = getBinPathFromEnvVar(binname, envPath, false);
+	const pathFromPath = getBinPathFromEnvVar(binname, envPath, false);
 	if (pathFromPath) {
 		binPathCache[toolName] = pathFromPath;
 		return pathFromPath;
@@ -67,7 +67,7 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 
 	// Check default path for go
 	if (toolName === 'go') {
-		let defaultPathForGo = process.platform === 'win32' ? 'C:\\Go\\bin\\go.exe' : '/usr/local/go/bin/go';
+		const defaultPathForGo = process.platform === 'win32' ? 'C:\\Go\\bin\\go.exe' : '/usr/local/go/bin/go';
 		if (fileExists(defaultPathForGo)) {
 			binPathCache[toolName] = defaultPathForGo;
 			return defaultPathForGo;
@@ -148,10 +148,10 @@ export function getInferredGopath(folderPath: string): string {
 		return;
 	}
 
-	let dirs = folderPath.toLowerCase().split(path.sep);
+	const dirs = folderPath.toLowerCase().split(path.sep);
 
 	// find src directory closest to given folder path
-	let srcIdx = dirs.lastIndexOf('src');
+	const srcIdx = dirs.lastIndexOf('src');
 	if (srcIdx > 0) {
 		return folderPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
 	}
@@ -166,7 +166,7 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 	if (!gopath) {
 		return;
 	}
-	let workspaces: string[] = gopath.split(path.delimiter);
+	const workspaces: string[] = gopath.split(path.delimiter);
 	let currentWorkspace = '';
 	currentFileDirPath = fixDriveCasingInWindows(currentFileDirPath);
 

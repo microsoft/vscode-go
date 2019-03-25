@@ -14,8 +14,8 @@ import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath } from './goPath';
 
-let updatesDeclinedTools: string[] = [];
-let installsDeclinedTools: string[] = [];
+const updatesDeclinedTools: string[] = [];
+const installsDeclinedTools: string[] = [];
 const allToolsWithImportPaths: { [key: string]: string } = {
 	'gocode': 'github.com/mdempsky/gocode',
 	'gocode-gomod': 'github.com/stamblerre/gocode',
@@ -75,8 +75,8 @@ const importantTools = [
 ];
 
 function getTools(goVersion: SemVersion): string[] {
-	let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	let tools: string[] = [
+	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	const tools: string[] = [
 		'gocode',
 		'gopkgs',
 		'go-outline',
@@ -267,7 +267,7 @@ export function promptForUpdatingTool(tool: string) {
  * @param string[] array of tool names to be installed
  */
 export function installTools(missing: string[], goVersion: SemVersion): Promise<void> {
-	let goRuntimePath = getBinPath('go');
+	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return;
@@ -277,7 +277,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 	}
 
 	// http.proxy setting takes precedence over environment variables
-	let httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
+	const httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
 	let envForTools = Object.assign({}, process.env);
 	if (httpProxy) {
 		envForTools = Object.assign({}, process.env, {
@@ -292,7 +292,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 	// Else use the Current Gopath
 	let toolsGopath = getToolsGopath() || getCurrentGoPath();
 	if (toolsGopath) {
-		let paths = toolsGopath.split(path.delimiter);
+		const paths = toolsGopath.split(path.delimiter);
 		toolsGopath = paths[0];
 		envForTools['GOPATH'] = toolsGopath;
 	} else {
@@ -322,20 +322,20 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + getToolImportPath(tool, goVersion) + ' FAILED');
-					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
+					const failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
 					resolve([...sofar, failureReason]);
 				} else {
 					outputChannel.appendLine('Installing ' + getToolImportPath(tool, goVersion) + ' SUCCEEDED');
 					if (tool === 'gometalinter') {
 						// Gometalinter needs to install all the linters it uses.
 						outputChannel.appendLine('Installing all linters used by gometalinter....');
-						let gometalinterBinPath = getBinPath('gometalinter');
+						const gometalinterBinPath = getBinPath('gometalinter');
 						cp.execFile(gometalinterBinPath, ['--install'], { env: envForTools }, (err, stdout, stderr) => {
 							if (!err) {
 								outputChannel.appendLine('Installing all linters used by gometalinter SUCCEEDED.');
 								resolve([...sofar, null]);
 							} else {
-								let failureReason = `Error while running gometalinter --install;; ${stderr}`;
+								const failureReason = `Error while running gometalinter --install;; ${stderr}`;
 								resolve([...sofar, failureReason]);
 							}
 						});
@@ -364,7 +364,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 					resolve([...sofar, null]);
 					return;
 				}
-				let args = ['get', '-u', '-v'];
+				const args = ['get', '-u', '-v'];
 				if (tool.endsWith('-gomod')) {
 					args.push('-d');
 				}
@@ -384,7 +384,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 		}));
 	}, Promise.resolve([])).then(res => {
 		outputChannel.appendLine(''); // Blank line for spacing
-		let failures = res.filter(x => x != null);
+		const failures = res.filter(x => x != null);
 		if (failures.length === 0) {
 			if (missing.indexOf('go-langserver') > -1 || missing.indexOf('gopls') > -1) {
 				outputChannel.appendLine('Reload VS Code window to use the Go language server');
@@ -395,7 +395,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 
 		outputChannel.appendLine(failures.length + ' tools failed to install.\n');
 		failures.forEach((failure, index, failures) => {
-			let reason = failure.split(';;');
+			const reason = failure.split(';;');
 			outputChannel.appendLine(reason[0] + ':');
 			outputChannel.appendLine(reason[1]);
 		});
@@ -403,7 +403,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 }
 
 export function updateGoPathGoRootFromConfig(): Promise<void> {
-	let goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
+	const goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
@@ -413,7 +413,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	}
 
 	// If GOPATH is still not set, then use the one from `go env`
-	let goRuntimePath = getBinPath('go');
+	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
@@ -422,7 +422,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 			if (err) {
 				return reject();
 			}
-			let envOutput = stdout.split('\n');
+			const envOutput = stdout.split('\n');
 			if (!process.env['GOPATH'] && envOutput[0].trim()) {
 				process.env['GOPATH'] = envOutput[0].trim();
 			}
@@ -479,14 +479,14 @@ export function offerToInstallTools() {
 
 
 	function promptForInstall(missing: string[], goVersion: SemVersion) {
-		let installItem = {
+		const installItem = {
 			title: 'Install',
 			command() {
 				hideGoStatus();
 				installTools(missing, goVersion);
 			}
 		};
-		let showItem = {
+		const showItem = {
 			title: 'Show',
 			command() {
 				outputChannel.clear();
@@ -505,9 +505,9 @@ export function offerToInstallTools() {
 }
 
 function getMissingTools(goVersion: SemVersion): Promise<string[]> {
-	let keys = getTools(goVersion);
+	const keys = getTools(goVersion);
 	return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
-		let toolPath = getBinPath(tool);
+		const toolPath = getBinPath(tool);
 		fs.exists(toolPath, exists => {
 			resolve(exists ? null : tool);
 		});
@@ -523,7 +523,7 @@ function getMissingTools(goVersion: SemVersion): Promise<string[]> {
  * former getting a precedence over the latter
  */
 export function getLanguageServerToolPath(): string {
-	let latestGoConfig = vscode.workspace.getConfiguration('go');
+	const latestGoConfig = vscode.workspace.getConfiguration('go');
 	if (!latestGoConfig['useLanguageServer']) return;
 
 	if (!allFoldersHaveSameGopath()) {
@@ -564,6 +564,6 @@ function allFoldersHaveSameGopath(): boolean {
 		return true;
 	}
 
-	let tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
+	const tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
 	return vscode.workspace.workspaceFolders.find(x => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
 }
