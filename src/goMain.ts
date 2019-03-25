@@ -672,10 +672,6 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 	});
 }
 
-function didLangServerConfigChange(e: vscode.ConfigurationChangeEvent): boolean {
-	return e.affectsConfiguration('go.useLanguageServer') || e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures');
-}
-
 function checkToolExists(tool: string) {
 	if (tool === getBinPath(tool)) {
 		promptForMissingTool(tool);
