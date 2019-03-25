@@ -954,23 +954,3 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 		});
 	});
 }
-
-/**
- * Returns the alternate language server being used
- * @param goConfig Workspace configuration
- */
-export function getAlternateLanguageServer(goConfig: vscode.WorkspaceConfiguration): string {
-	if (goConfig['useLanguageServer'] === true
-		&& goConfig['alternateTools']
-		&& goConfig['alternateTools']['go-langserver']
-		&& typeof goConfig['alternateTools']['go-langserver'] === 'string') {
-		let alternateTool: string = goConfig['alternateTools']['go-langserver'];
-		if (path.isAbsolute(alternateTool)) {
-			alternateTool = path.basename(alternateTool);
-		}
-		if (alternateTool.endsWith('.exe') && process.platform === 'win32') {
-			alternateTool = alternateTool.substr(0, alternateTool.length - 4);
-		}
-		return alternateTool;
-	}
-}

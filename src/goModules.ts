@@ -41,8 +41,8 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 		return Promise.resolve(moduleCache);
 	}
 
-	return getGoVersion().then(value => {
-		if (value && (value.major !== 1 || value.minor < 11)) {
+	return getGoVersion().then(goVersion => {
+		if (goVersion && (goVersion.major !== 1 || goVersion.minor < 11)) {
 			return;
 		}
 
@@ -63,10 +63,11 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 					const promptMsg = 'To get better performance during code completion, please update to use the language server from Google';
 					promptToUpdateToolForModules('gopls', promptMsg).then(choseToUpdate => {
 						if (choseToUpdate) {
-							const alternateTools: any = goConfig['alternateTools'] || {};
-							alternateTools['go-langserver'] = 'gopls';
-							goConfig.update('alternateTools', alternateTools, vscode.ConfigurationTarget.Global);
-							goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.Global);
+							installTools(['gopls'], goVersion)
+								.then(() => {
+									goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.Global);
+									vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
+								});
 						}
 					});
 				}

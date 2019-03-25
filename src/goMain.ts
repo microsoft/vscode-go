@@ -28,7 +28,7 @@ import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWo
 import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport, addImportToWorkspace } from './goImport';
-import { installAllTools, checkLanguageServer } from './goInstallTools';
+import { installAllTools, getLanguageServerToolPath } from './goInstallTools';
 import {
 	isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath,
 	getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars, cleanupTempDir
@@ -38,7 +38,7 @@ import {
 	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
 	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature
 } from 'vscode-languageclient';
-import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
+import { clearCacheForTools, fixDriveCasingInWindows, getToolFromToolPath } from './goPath';
 import { addTags, removeTags } from './goModifytags';
 import { runFillStruct } from './goFillStruct';
 import { parseLiveFile } from './goLiveErrors';
@@ -98,14 +98,16 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		ctx.globalState.update('goroot', currentGoroot);
 
 		offerToInstallTools();
-		if (checkLanguageServer()) {
+		const languageServerToolPath = getLanguageServerToolPath();
+		if (languageServerToolPath) {
+			const languageServerTool = getToolFromToolPath(languageServerToolPath);
 			const languageServerExperimentalFeatures: any = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
 			let langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
 			const c = new LanguageClient(
-				'go-langserver',
+				languageServerTool,
 				{
-					command: getBinPath('go-langserver'),
+					command: languageServerToolPath,
 					args: ['-mode=stdio', ...langServerFlags],
 					options: {
 						env: getToolsEnvVars()
@@ -424,10 +426,22 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		sendTelemetryEventForConfig(updatedGoConfig);
 		updateGoPathGoRootFromConfig();
 
+		let reloadMessage: string;
+		if (e.affectsConfiguration('go.useLanguageServer')) {
+			if (updatedGoConfig['useLanguageServer']) {
+				if (getLanguageServerToolPath()) {
+					reloadMessage = 'Reload VS Code window to enable the use of language server';
+				}
+			} else {
+				reloadMessage = 'Reload VS Code window to disable the use of language server';
+			}
+		} else if (e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures')) {
+			reloadMessage = 'Reload VS Code window for the changes in language server settings to take effect';
+		}
+
 		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
-		if (didLangServerConfigChange(e)
-			&& (!updatedGoConfig['useLanguageServer'] || checkLanguageServer())) {
-			vscode.window.showInformationMessage('Reload VS Code window for the change in usage of language server to take effect', 'Reload').then(selected => {
+		if (reloadMessage) {
+			vscode.window.showInformationMessage(reloadMessage, 'Reload').then(selected => {
 				if (selected === 'Reload') {
 					vscode.commands.executeCommand('workbench.action.reloadWindow');
 				}

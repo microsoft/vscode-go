@@ -10,12 +10,14 @@ import path = require('path');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest, TestConfig, getTestFlags } from './testUtils';
-import { ICheckResult, getBinPath, getTempFilePath, getAlternateLanguageServer } from './util';
+import { ICheckResult, getBinPath, getTempFilePath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
 import { isModSupported } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { getLanguageServerToolPath } from './goInstallTools';
+import { getToolFromToolPath } from './goPath';
 
 let statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -58,14 +60,14 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	let runningToolsPromises = [];
 	let cwd = path.dirname(fileUri.fsPath);
 	let goRuntimePath = getBinPath('go');
-	const alternateLS = getAlternateLanguageServer(goConfig);
+	const languageServerTool = getToolFromToolPath(getLanguageServerToolPath());
 	let languageServerFlags: string[] = goConfig.get('languageServerFlags');
 	if (!Array.isArray(languageServerFlags)) {
 		languageServerFlags = [];
 	}
-	const disableBuild = alternateLS === 'gopls' || (alternateLS === 'bingo'
+	const disableBuild = languageServerTool === 'gopls' || (languageServerTool === 'bingo'
 		&& languageServerFlags.indexOf('-diagnostics-style=none') === -1);
-	const disableVet = alternateLS === 'gopls';
+	const disableVet = languageServerTool === 'gopls';
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
