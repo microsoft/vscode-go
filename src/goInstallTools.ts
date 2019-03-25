@@ -461,9 +461,9 @@ export function offerToInstallTools() {
 				.then(selected => {
 					if (selected === 'Install') {
 						installTools(['gopls'], goVersion)
-						.then(() => {
-							vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
-						});
+							.then(() => {
+								vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
+							});
 					} else if (selected === 'Disable language server') {
 						const goConfig = vscode.workspace.getConfiguration('go');
 						const inspectLanguageServerSetting = goConfig.inspect('useLanguageServer');
@@ -531,32 +531,38 @@ export function getLanguageServerToolPath(): string {
 		return;
 	}
 
+	// Get the path to gopls or any alternative that the user might have set for gopls
 	const goplsBinaryPath = getBinPath('gopls');
-	const golangserverBinaryPath = getBinPath('go-langserver');
-
 	if (path.isAbsolute(goplsBinaryPath)) {
 		return goplsBinaryPath;
-	} else if (path.isAbsolute(golangserverBinaryPath)) {
+	}
+
+	// Get the path to go-langserver or any alternative that the user might have set for gopls
+	const golangserverBinaryPath = getBinPath('go-langserver');
+	if (path.isAbsolute(golangserverBinaryPath)) {
 		return golangserverBinaryPath;
-	} else {
-		let languageServerOfChoice = 'gopls';
-		if (latestGoConfig['alternateTools']) {
-			const goplsAlternate = latestGoConfig['alternateTools']['gopls'];
-			const golangserverAlternate = latestGoConfig['alternateTools']['go-langserver'];
-			if (typeof goplsAlternate === 'string') {
-				languageServerOfChoice = getToolFromToolPath(goplsAlternate);
-			} else if (typeof golangserverAlternate === 'string') {
-				languageServerOfChoice = getToolFromToolPath(golangserverAlternate);
-			}
+	}
+
+	// Notify the user about the unavailability of the language server
+	let languageServerOfChoice = 'gopls';
+	if (latestGoConfig['alternateTools']) {
+		const goplsAlternate = latestGoConfig['alternateTools']['gopls'];
+		const golangserverAlternate = latestGoConfig['alternateTools']['go-langserver'];
+		if (typeof goplsAlternate === 'string') {
+			languageServerOfChoice = getToolFromToolPath(goplsAlternate);
+		} else if (typeof golangserverAlternate === 'string') {
+			languageServerOfChoice = getToolFromToolPath(golangserverAlternate);
 		}
 
 		if (languageServerOfChoice !== 'gopls' && languageServerOfChoice !== 'go-langserver') {
 			vscode.window.showErrorMessage(`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window`);
-		} else {
-			promptForMissingTool(languageServerOfChoice);
-			vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
+			return;
 		}
 	}
+
+	promptForMissingTool(languageServerOfChoice);
+	vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
+
 }
 
 function allFoldersHaveSameGopath(): boolean {
