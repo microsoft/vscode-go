@@ -983,7 +983,7 @@
             "documentSymbols": true,
             "workspaceSymbols": true,
             "findReferences": true,
-            "diagnostics": true
+            "diagnostics": false
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
