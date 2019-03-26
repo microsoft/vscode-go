@@ -143,11 +143,11 @@ export function parseEnvFile(path: string): { [key: string]: string } {
 }
 
 export function parseEnvFiles(paths: string[]): { [key: string]: string }[] {
-	let envs: { [key: string]: any }[] = [];
+	const envs: { [key: string]: any }[] = [];
 
 	for (let i = 0; i < paths.length; i++) {
 		const path = paths[i];
-		let env = parseEnvFile(path);
+		const env = parseEnvFile(path);
 
 		envs.push(env);
 	}

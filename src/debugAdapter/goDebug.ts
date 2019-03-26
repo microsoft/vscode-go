@@ -315,7 +315,7 @@ class Delve {
 			}
 
 			// read env from disk and merge into env variables
-			let envs = [process.env];
+			const envs = [process.env];
 
 			try {
 				if (typeof launchArgs.envFile === 'string') {
