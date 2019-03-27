@@ -6,7 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { GoCompletionItemProvider } from './goSuggest';
+import { GoCompletionItemProvider, getCompletionsWithoutGoCode } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoReferenceProvider } from './goReferences';
@@ -134,7 +134,20 @@ export function activate(ctx: vscode.ExtensionContext): void {
 						},
 						provideCompletionItem: (document: vscode.TextDocument, position: vscode.Position, context: vscode.CompletionContext, token: vscode.CancellationToken, next: ProvideCompletionItemsSignature) => {
 							if (languageServerExperimentalFeatures['autoComplete'] === true) {
-								return next(document, position, context, token);
+								const promiseFromLanguageServer = Promise.resolve(next(document, position, context, token));
+								const promiseWithoutGoCode = getCompletionsWithoutGoCode(document, position);
+								return Promise.all([promiseFromLanguageServer, promiseWithoutGoCode]).then(([resultFromLanguageServer, resultWithoutGoCode]) => {
+									if (!resultWithoutGoCode || !resultWithoutGoCode.length) {
+										return resultFromLanguageServer;
+									}
+									const completionItemsFromLanguageServer = Array.isArray(resultFromLanguageServer) ? resultFromLanguageServer : resultFromLanguageServer.items;
+									resultWithoutGoCode.forEach(x => {
+										if (x.kind !== vscode.CompletionItemKind.Module || !completionItemsFromLanguageServer.some(y => y.label === x.label)) {
+											completionItemsFromLanguageServer.push(x);
+										}
+									});
+									return resultFromLanguageServer;
+								});
 							}
 							return [];
 						},
