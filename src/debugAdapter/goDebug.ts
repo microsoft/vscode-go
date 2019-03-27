@@ -51,7 +51,7 @@ enum GoReflectKind {
 }
 
 // These types should stay in sync with:
-// https://github.com/derekparker/delve/blob/master/service/api/types.go
+// https://github.com/go-delve/delve/blob/master/service/api/types.go
 
 interface CommandOut {
 	State: DebuggerState;
@@ -201,7 +201,7 @@ interface DiscardedBreakpoint {
 
 // This interface should always match the schema found in `package.json`.
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
-	kind: 'launch';
+	request: 'launch';
 	[key: string]: any;
 	program: string;
 	stopOnEntry?: boolean;
@@ -234,7 +234,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 }
 
 interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
-	kind: 'attach';
+	request: 'attach';
 	processId?: number;
 	stopOnEntry?: boolean;
 	showLog?: boolean;
@@ -302,10 +302,10 @@ class Delve {
 	isApiV1: boolean;
 	dlvEnv: any;
 	stackTraceDepth: number;
-	kind: 'attach' | 'launch';
+	request: 'attach' | 'launch';
 
 	constructor(launchArgs: LaunchRequestArguments | AttachRequestArguments, program: string) {
-		this.kind = launchArgs.kind;
+		this.request = launchArgs.request;
 		this.program = normalizePath(program);
 		this.remotePath = launchArgs.remotePath;
 		this.isApiV1 = false;
@@ -325,7 +325,7 @@ class Delve {
 				return;
 			}
 			let env: NodeJS.ProcessEnv;
-			if (launchArgs.kind === 'launch') {
+			if (launchArgs.request === 'launch') {
 				let isProgramDirectory = false;
 				// Validations on the program
 				if (!program) {
@@ -410,8 +410,8 @@ class Delve {
 				this.noDebug = false;
 
 				// Get default LoadConfig values according to delve API:
-				// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
-				// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
+				// https://github.com/go-delve/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
+				// https://github.com/go-delve/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
 				this.loadConfig = launchArgs.dlvLoadConfig || {
 					followPointers: true,
 					maxVariableRecurse: 1,
@@ -432,7 +432,7 @@ class Delve {
 				} else if (currentGOWorkspace && env['GO111MODULE'] !== 'on') {
 					dlvArgs.push(dirname.substr(currentGOWorkspace.length + 1));
 				}
-				dlvArgs.push('--headless=true', '--listen=' + launchArgs.host + ':' + launchArgs.port.toString());
+				dlvArgs.push('--headless=true', `--listen=${launchArgs.host}:${launchArgs.port}`);
 				if (!this.isApiV1) {
 					dlvArgs.push('--api-version=2');
 				}
@@ -462,13 +462,13 @@ class Delve {
 					dlvArgs.push('--', ...launchArgs.args);
 				}
 				this.localDebugeePath = this.getLocalDebugeePath(launchArgs.output);
-			} else if (launchArgs.kind === 'attach') {
+			} else if (launchArgs.request === 'attach') {
 				if (!launchArgs.processId) {
 					return reject(`Missing process ID`);
 				}
 
 				if (!existsSync(launchArgs.dlvToolPath)) {
-					return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
+					return reject(`Cannot find Delve debugger. Install from https://github.com/go-delve/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
 				}
 
 				dlvArgs.push('attach', `${launchArgs.processId}`);
@@ -575,7 +575,7 @@ class Delve {
 		}
 		log('HaltRequest');
 
-		const isLocalDebugging: boolean = this.kind === 'launch' && !!this.debugProcess;
+		const isLocalDebugging: boolean = this.request === 'launch' && !!this.debugProcess;
 		const forceCleanup = async () => {
 			killTree(this.debugProcess.pid);
 			await removeFile(this.localDebugeePath);
@@ -691,9 +691,9 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 
 		let localPath: string;
-		if (args.kind === 'attach') {
+		if (args.request === 'attach') {
 			localPath = args.cwd;
-		} else if (args.kind === 'launch') {
+		} else if (args.request === 'launch') {
 			localPath = args.program;
 		}
 		if (!args.remotePath) {
@@ -762,7 +762,6 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
-		args.kind = 'launch';
 		if (!args.program) {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
 			return;
@@ -771,7 +770,6 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	protected attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments): void {
-		args.kind = 'attach';
 		if (args.mode === 'attach' && !args.processId) {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: the processId attribute is missing in the debug configuration in launch.json');
 		} else if (args.mode === 'connect' && !args.port) {
@@ -1233,7 +1231,7 @@ class GoDebugSession extends LoggingDebugSession {
 				}, err => logError('Failed to evaluate expression - ' + err.toString()));
 			}
 		};
-		// expressions passed to loadChildren defined per https://github.com/derekparker/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
+		// expressions passed to loadChildren defined per https://github.com/go-delve/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
 			variablesPromise = Promise.all(vari.children.map((v, i) => {
 				return loadChildren(`*(*"${v.type}")(${v.addr})`, v).then((): DebugProtocol.Variable => {
