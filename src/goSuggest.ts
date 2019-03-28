@@ -256,7 +256,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 					}
 					const results = <[number, GoCodeSuggestion[]]>JSON.parse(stdout.toString());
 					let suggestions: vscode.CompletionItem[] = [];
-					const packageSuggestions = [];
+					const packageSuggestions: string[] = [];
 
 					const wordAtPosition = document.getWordRangeAtPosition(position);
 

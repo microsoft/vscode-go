@@ -67,11 +67,13 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		languageServerFlags = [];
 	}
 
+	// If diagnostics are enabled via a language server, then we disable running build or vet to avoid duplicate errors & warnings.
 	let disableBuild = languageServerOptions['diagnostics'] === true && (languageServerTool === 'gopls' || languageServerTool === 'bingo');
 	const disableVet = languageServerOptions['diagnostics'] === true && languageServerTool === 'gopls';
 
+	// Some bingo users have disabled diagnostics using the -diagnostics-style=none flag, so respect that choice
 	if (disableBuild && languageServerTool === 'bingo' && languageServerFlags.indexOf('-diagnostics-style=none') > -1) {
-		disableBuild = true;
+		disableBuild = false;
 	}
 
 	if (!goRuntimePath) {

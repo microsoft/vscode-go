@@ -457,14 +457,16 @@ export function offerToInstallTools() {
 		const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
 		if (usingSourceGraph) {
 			const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
-			vscode.window.showInformationMessage(promptMsg, 'Install', 'Disable language server')
+			const disableLabel = 'Disable language server';
+			const installLabel = 'Install';
+			vscode.window.showInformationMessage(promptMsg, installLabel, disableLabel)
 				.then(selected => {
-					if (selected === 'Install') {
+					if (selected === installLabel) {
 						installTools(['gopls'], goVersion)
 							.then(() => {
 								vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
 							});
-					} else if (selected === 'Disable language server') {
+					} else if (selected === disableLabel) {
 						const goConfig = vscode.workspace.getConfiguration('go');
 						const inspectLanguageServerSetting = goConfig.inspect('useLanguageServer');
 						if (inspectLanguageServerSetting.globalValue === true) {
@@ -522,7 +524,7 @@ function getMissingTools(goVersion: SemVersion): Promise<string[]> {
  * This supports the language servers from both Google and Sourcegraph with the
  * former getting a precedence over the latter
  */
-export function getLanguageServerToolPath(): string {
+export function getLanguageServerToolPath(): string | undefined {
 	const latestGoConfig = vscode.workspace.getConfiguration('go');
 	if (!latestGoConfig['useLanguageServer']) return;
 
@@ -537,7 +539,7 @@ export function getLanguageServerToolPath(): string {
 		return goplsBinaryPath;
 	}
 
-	// Get the path to go-langserver or any alternative that the user might have set for gopls
+	// Get the path to go-langserver or any alternative that the user might have set for go-langserver
 	const golangserverBinaryPath = getBinPath('go-langserver');
 	if (path.isAbsolute(golangserverBinaryPath)) {
 		return golangserverBinaryPath;
