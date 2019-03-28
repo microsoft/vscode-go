@@ -905,7 +905,7 @@
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
-          "description": "Experimental: Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features instead of tools like guru, godef, go-outline and go-symbol"
+          "description": "Experimental: Use Go language server from Google or Sourcegraph for Hover, Definition, Signature Help, Auto Completion and Formatting features instead of tools like godef, gocode and goreturns"
         },
         "go.languageServerFlags": {
           "type": "array",
@@ -964,11 +964,16 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the language server will be used for the Go to Workspace Symbols feature."
+            },
+            "diagnostics": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will provide build, vet errors and the extension will ignore the `buildOnSave`, `vetOnSave` settings."
             }
           },
           "default": {
-            "format": false,
-            "autoComplete": false,
+            "format": true,
+            "autoComplete": true,
             "rename": true,
             "goToDefinition": true,
             "hover": true,
@@ -977,7 +982,8 @@
             "goToImplementation": true,
             "documentSymbols": true,
             "workspaceSymbols": true,
-            "findReferences": true
+            "findReferences": true,
+            "diagnostics": false
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },

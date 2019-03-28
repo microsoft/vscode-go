@@ -191,3 +191,18 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 export function fixDriveCasingInWindows(pathToFix: string): string {
 	return (process.platform === 'win32' && pathToFix) ? pathToFix.substr(0, 1).toUpperCase() + pathToFix.substr(1) : pathToFix;
 }
+
+/**
+ * Returns the tool name from the given path to the tool
+ * @param toolPath
+ */
+export function getToolFromToolPath(toolPath: string): string | undefined {
+	if (!toolPath) {
+		return;
+	}
+	let tool = path.basename(toolPath);
+	if (process.platform === 'win32' && tool.endsWith('.exe')) {
+		tool = tool.substr(0, tool.length - 4);
+	}
+	return tool;
+}

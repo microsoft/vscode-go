@@ -16,6 +16,8 @@ import { goVet } from './goVet';
 import { goBuild } from './goBuild';
 import { isModSupported } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { getLanguageServerToolPath } from './goInstallTools';
+import { getToolFromToolPath } from './goPath';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -58,6 +60,21 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	const runningToolsPromises = [];
 	const cwd = path.dirname(fileUri.fsPath);
 	const goRuntimePath = getBinPath('go');
+	const languageServerTool = getToolFromToolPath(getLanguageServerToolPath());
+	const languageServerOptions: any = goConfig.get('languageServerExperimentalFeatures');
+	let languageServerFlags: string[] = goConfig.get('languageServerFlags');
+	if (!Array.isArray(languageServerFlags)) {
+		languageServerFlags = [];
+	}
+
+	// If diagnostics are enabled via a language server, then we disable running build or vet to avoid duplicate errors & warnings.
+	let disableBuild = languageServerOptions['diagnostics'] === true && (languageServerTool === 'gopls' || languageServerTool === 'bingo');
+	const disableVet = languageServerOptions['diagnostics'] === true && languageServerTool === 'gopls';
+
+	// Some bingo users have disabled diagnostics using the -diagnostics-style=none flag, so respect that choice
+	if (disableBuild && languageServerTool === 'bingo' && languageServerFlags.indexOf('-diagnostics-style=none') > -1) {
+		disableBuild = false;
+	}
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -90,7 +107,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		return testPromise;
 	};
 
-	if (!!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
+	if (!disableBuild && !!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
 		runningToolsPromises.push(isModSupported(fileUri)
 			.then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace'))
 			.then(errors => ({ diagnosticCollection: buildDiagnosticCollection, errors })));
@@ -113,12 +130,12 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
 		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'])
-			.then(errors => ({diagnosticCollection: lintDiagnosticCollection, errors: errors})));
+			.then(errors => ({ diagnosticCollection: lintDiagnosticCollection, errors: errors })));
 	}
 
-	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
+	if (!disableVet && !!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace')
-			.then(errors => ({diagnosticCollection: vetDiagnosticCollection, errors: errors})));
+			.then(errors => ({ diagnosticCollection: vetDiagnosticCollection, errors: errors })));
 	}
 
 	if (!!goConfig['coverOnSave']) {

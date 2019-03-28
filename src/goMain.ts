@@ -6,7 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { GoCompletionItemProvider } from './goSuggest';
+import { GoCompletionItemProvider, getCompletionsWithoutGoCode } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoReferenceProvider } from './goReferences';
@@ -28,7 +28,7 @@ import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWo
 import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
 import { addImport, addImportToWorkspace } from './goImport';
-import { installAllTools, checkLanguageServer } from './goInstallTools';
+import { installAllTools, getLanguageServerToolPath } from './goInstallTools';
 import {
 	isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath,
 	getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars, cleanupTempDir
@@ -36,9 +36,9 @@ import {
 import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
 	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
-	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature
+	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature, HandleDiagnosticsSignature
 } from 'vscode-languageclient';
-import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
+import { clearCacheForTools, fixDriveCasingInWindows, getToolFromToolPath } from './goPath';
 import { addTags, removeTags } from './goModifytags';
 import { runFillStruct } from './goFillStruct';
 import { parseLiveFile } from './goLiveErrors';
@@ -107,14 +107,16 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		ctx.globalState.update('toolsGoInfo', toolsGoInfo);
 
 		offerToInstallTools();
-		if (checkLanguageServer()) {
+		const languageServerToolPath = getLanguageServerToolPath();
+		if (languageServerToolPath) {
+			const languageServerTool = getToolFromToolPath(languageServerToolPath);
 			const languageServerExperimentalFeatures: any = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
 			const langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
 			const c = new LanguageClient(
-				'go-langserver',
+				languageServerTool,
 				{
-					command: getBinPath('go-langserver'),
+					command: languageServerToolPath,
 					args: ['-mode=stdio', ...langServerFlags],
 					options: {
 						env: getToolsEnvVars()
@@ -139,9 +141,21 @@ export function activate(ctx: vscode.ExtensionContext): void {
 							}
 							return [];
 						},
-						provideCompletionItem: (document: vscode.TextDocument, position: vscode.Position, context: vscode.CompletionContext, token: vscode.CancellationToken, next: ProvideCompletionItemsSignature) => {
+						provideCompletionItem: async (document: vscode.TextDocument, position: vscode.Position, context: vscode.CompletionContext, token: vscode.CancellationToken, next: ProvideCompletionItemsSignature) => {
 							if (languageServerExperimentalFeatures['autoComplete'] === true) {
-								return next(document, position, context, token);
+								const promiseFromLanguageServer = Promise.resolve(next(document, position, context, token));
+								const promiseWithoutGoCode = getCompletionsWithoutGoCode(document, position);
+								const [resultFromLanguageServer, resultWithoutGoCode] = await Promise.all([promiseFromLanguageServer, promiseWithoutGoCode]);
+								if (!resultWithoutGoCode || !resultWithoutGoCode.length) {
+									return resultFromLanguageServer;
+								}
+								const completionItemsFromLanguageServer = Array.isArray(resultFromLanguageServer) ? resultFromLanguageServer : resultFromLanguageServer.items;
+								resultWithoutGoCode.forEach(x => {
+									if (x.kind !== vscode.CompletionItemKind.Module || !completionItemsFromLanguageServer.some(y => y.label === x.label)) {
+										completionItemsFromLanguageServer.push(x);
+									}
+								});
+								return resultFromLanguageServer;
 							}
 							return [];
 						},
@@ -199,6 +213,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 							}
 							return null;
 						},
+						handleDiagnostics: (uri: vscode.Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
+							if (languageServerExperimentalFeatures['diagnostics'] === true) {
+								return next(uri, diagnostics);
+							}
+							return null;
+						}
 					}
 				}
 			);
@@ -433,10 +453,22 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		sendTelemetryEventForConfig(updatedGoConfig);
 		updateGoPathGoRootFromConfig();
 
+		let reloadMessage: string;
+		if (e.affectsConfiguration('go.useLanguageServer')) {
+			if (updatedGoConfig['useLanguageServer']) {
+				if (getLanguageServerToolPath()) {
+					reloadMessage = 'Reload VS Code window to enable the use of language server';
+				}
+			} else {
+				reloadMessage = 'Reload VS Code window to disable the use of language server';
+			}
+		} else if (e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures')) {
+			reloadMessage = 'Reload VS Code window for the changes in language server settings to take effect';
+		}
+
 		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
-		if (didLangServerConfigChange(e)
-			&& (!updatedGoConfig['useLanguageServer'] || checkLanguageServer())) {
-			vscode.window.showInformationMessage('Reload VS Code window for the change in usage of language server to take effect', 'Reload').then(selected => {
+		if (reloadMessage) {
+			vscode.window.showInformationMessage(reloadMessage, 'Reload').then(selected => {
 				if (selected === 'Reload') {
 					vscode.commands.executeCommand('workbench.action.reloadWindow');
 				}
@@ -659,10 +691,6 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		codeLens: JSON.stringify(goConfig['enableCodeLens']),
 		alternateTools: JSON.stringify(goConfig['alternateTools'])
 	});
-}
-
-function didLangServerConfigChange(e: vscode.ConfigurationChangeEvent): boolean {
-	return e.affectsConfiguration('go.useLanguageServer') || e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures');
 }
 
 function checkToolExists(tool: string) {

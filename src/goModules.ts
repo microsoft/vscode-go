@@ -59,6 +59,10 @@ export function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 					goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.WorkspaceFolder);
 					vscode.window.showInformationMessage('`goreturns` doesnt support auto-importing missing imports when using Go modules yet. So updating the "formatTool" setting to `goimports` for this workspace.');
 				}
+				if (goConfig['useLanguageServer'] === false) {
+					const promptMsg = 'To get better performance during code completion, please update to use the language server from Google';
+					promptToUpdateToolForModules('gopls', promptMsg);
+				}
 			}
 			packageModCache.set(pkgPath, result);
 			return result;
@@ -97,7 +101,19 @@ export function promptToUpdateToolForModules(tool: string, promptMsg: string) {
 			.then(selected => {
 				switch (selected) {
 					case 'Update':
-						installTools([tool], goVersion);
+						installTools([tool], goVersion)
+							.then(() => {
+								if (tool === 'gopls') {
+									const goConfig = vscode.workspace.getConfiguration('go');
+									if (goConfig.get('useLanguageServer') === false) {
+										goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.Global);
+									}
+									if (goConfig.inspect('useLanguageServer').workspaceFolderValue === false) {
+										goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.WorkspaceFolder);
+									}
+									vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
+								}
+							});
 						promptedToolsForModules[tool] = true;
 						updateGlobalState('promptedToolsForModules', promptedToolsForModules);
 						break;
