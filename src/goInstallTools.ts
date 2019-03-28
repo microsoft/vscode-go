@@ -286,7 +286,13 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 
 	// If the go.toolsGopath is set, use its value as the GOPATH for the "go get" child process.
 	// Else use the Current Gopath
-	let toolsGopath = getToolsGopath() || getCurrentGoPath();
+	let toolsGopath = getToolsGopath();
+	if (toolsGopath) {
+		// User has explicitly chosen to use toolsGopath, so ignore GOBIN
+		envForTools['GOBIN'] = '';
+	} else {
+		toolsGopath = getCurrentGoPath();
+	}
 	if (toolsGopath) {
 		const paths = toolsGopath.split(path.delimiter);
 		toolsGopath = paths[0];
