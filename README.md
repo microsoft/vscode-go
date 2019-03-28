@@ -94,6 +94,16 @@ Below are the settings you can use to control the use of the language server. Yo
 - Set `"go.languageServerFlags": ["-trace"]` to collect traces in the output panel. 
 - Set `"go.languageServerFlags": ["-trace", "-logfile", "path to a text file that exists"]` to collect traces in a log file.
 
+#### Setting to change the language server being used
+
+If you want to try out other language servers, for example, [bingo](https://github.com/saibing/bingo), then install it and add the below setting
+```json
+"go.alternateTools": {
+  "gopls": "bingo"
+}
+```
+This will tell the Go extension to use `bingo` in place of `gopls`.
+
 
 ### Linter
 
