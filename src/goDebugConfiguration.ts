@@ -70,10 +70,14 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		});
 
 		const dlvConfig: { [key: string]: any } = goConfig.get('delveConfig');
-		if (!debugConfiguration.hasOwnProperty('useApiV1') && dlvConfig.hasOwnProperty('useApiV1')) {
-			if (typeof dlvConfig['useApiV1'] === 'boolean' && dlvConfig['useApiV1'] === true) {
-				debugConfiguration['apiVersion'] = 1;
-			}
+		let useApiV1 = false;
+		if (debugConfiguration.hasOwnProperty('useApiV1')) {
+			useApiV1  = debugConfiguration['useApiV1'] === true;
+		} else if (dlvConfig.hasOwnProperty('useApiV1')) {
+			useApiV1  = dlvConfig['useApiV1'] === true;
+		}
+		if (useApiV1) {
+			debugConfiguration['apiVersion'] = 1;
 		}
 		if (!debugConfiguration.hasOwnProperty('apiVersion') && dlvConfig.hasOwnProperty('apiVersion')) {
 			debugConfiguration['apiVersion'] = dlvConfig['apiVersion'];
