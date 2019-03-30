@@ -1365,12 +1365,22 @@ class GoDebugSession extends LoggingDebugSession {
 			};
 
 		// If coming from variables pane via the 'Copy Value' context menu action,
-		// first synchronously fetch the return value of the expression,
-		// and override the loadConfig to get the complete value in a second async request
-		evalSymbolArgs.Cfg = await this.evaluateRequestFetch(args, scope, this.delve.loadConfig).catch(err => {
-			logError('Failed to eval fetch expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval fetch error:', err.toString());
-			return Promise.reject(err);
-		});
+		// first synchronously fetch the value of the expression,
+		// and then return either the overriden LoadConfig or the complete value
+		if (args.context === 'variables') {
+			const fetchResult: LoadConfig | EvalOut = await this.evaluateRequestFetch(args, scope, this.delve.loadConfig).catch(err => {
+				logError('Failed to eval fetch expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval fetch error:', err.toString());
+				return Promise.reject(err);
+			});
+
+			// If fetched value is already complete, return it and skip the second Eval call
+			if ((<EvalOut>fetchResult).Variable) {
+				log('EvaluateRequest fetch - Returned full value, skipping second call');
+				return <EvalOut>fetchResult;
+			} else if ((<LoadConfig>fetchResult).followPointers) {
+				evalSymbolArgs.Cfg = <LoadConfig>fetchResult;
+			}
+		}
 
 		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
 			err => {
@@ -1380,8 +1390,8 @@ class GoDebugSession extends LoggingDebugSession {
 		return returnValue;
 	}
 
-	private async evaluateRequestFetch(args: DebugProtocol.EvaluateArguments, scope: any, delveLoadConfig: any): Promise<LoadConfig> {
-		if (this.delve.isApiV1 || args.context !== 'variables') {
+	private async evaluateRequestFetch(args: DebugProtocol.EvaluateArguments, scope: any, delveLoadConfig: any): Promise<LoadConfig | EvalOut> {
+		if (this.delve.isApiV1) {
 			// Delve v1 does not support load configurations on apicalls
 			return Promise.resolve(delveLoadConfig);
 		}
@@ -1404,10 +1414,11 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 		});
 
-		if (fetchReturnValue.Variable.kind === GoReflectKind.String) {
-			if (fetchReturnValue.Variable.len > evalSymbolsConfig.maxStringLen) {
-				evalSymbolsConfig.maxStringLen = fetchReturnValue.Variable.len % upperMaxStringLen;
-			}
+		if ((fetchReturnValue.Variable.kind === GoReflectKind.String)
+			&& (fetchReturnValue.Variable.len > evalSymbolsConfig.maxStringLen)) {
+			evalSymbolsConfig.maxStringLen = fetchReturnValue.Variable.len % upperMaxStringLen;
+		} else {
+			return Promise.resolve(fetchReturnValue);
 		}
 
 		return Promise.resolve(evalSymbolsConfig);
