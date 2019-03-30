@@ -23,9 +23,9 @@ The project on the debugAdapter folder level doesn´t have this task included, b
 ```shell
 npm install -g typescript
 ```
-2. In the debugAdapter directory, start `tsc` in watch mode:
+2. In the debugAdapter directory, start `tsc` in watch mode, using this extension's Typescript configuration rules:
 ```shell
-tsc -w
+tsc -w -p ../../
 ```
 
 ## Debugging the Go Debug Adapter
