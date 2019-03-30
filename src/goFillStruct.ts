@@ -17,7 +17,7 @@ interface GoFillStructOutput {
 }
 
 export function runFillStruct(editor: vscode.TextEditor): Promise<void> {
-	let args = getCommonArgs(editor);
+	const args = getCommonArgs(editor);
 	if (!args) {
 		return Promise.reject('No args');
 	}
@@ -34,9 +34,9 @@ function getCommonArgs(editor: vscode.TextEditor): string[] {
 		vscode.window.showInformationMessage('Current file is not a Go file.');
 		return;
 	}
-	let args = ['-modified', '-file', editor.document.fileName];
+	const args = ['-modified', '-file', editor.document.fileName];
 	if (editor.selection.isEmpty) {
-		let offset = byteOffsetAt(editor.document, editor.selection.start);
+		const offset = byteOffsetAt(editor.document, editor.selection.start);
 		args.push('-offset');
 		args.push(offset.toString());
 	} else {
@@ -47,25 +47,25 @@ function getCommonArgs(editor: vscode.TextEditor): string[] {
 }
 
 function getTabsCount(editor: vscode.TextEditor): number {
-	let startline = editor.selection.start.line;
-	let tabs = editor.document.lineAt(startline).text.match('^\t*');
+	const startline = editor.selection.start.line;
+	const tabs = editor.document.lineAt(startline).text.match('^\t*');
 	return tabs.length;
 }
 
 function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void> {
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	let fillstruct = getBinPath('fillstruct');
-	let input = getFileArchive(editor.document);
-	let tabsCount = getTabsCount(editor);
+	const fillstruct = getBinPath('fillstruct');
+	const input = getFileArchive(editor.document);
+	const tabsCount = getTabsCount(editor);
 
 	// Set up execFile parameters
-	let options: { [key: string]: any } = {
+	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 	};
 
 	return new Promise<void>((resolve, reject) => {
-		let p = cp.execFile(fillstruct, args, options, (err, stdout, stderr) => {
+		const p = cp.execFile(fillstruct, args, options, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('fillstruct');
@@ -76,14 +76,14 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 					return reject();
 				}
 
-				let output = <GoFillStructOutput[]>JSON.parse(stdout);
+				const output = <GoFillStructOutput[]>JSON.parse(stdout);
 
 				if (output.length === 0) {
 					vscode.window.showInformationMessage(`Got empty fillstruct output`);
 					return reject();
 				}
 
-				let indent = '\t'.repeat(tabsCount);
+				const indent = '\t'.repeat(tabsCount);
 
 				editor.edit(editBuilder => {
 					output.forEach((structToFill) => {

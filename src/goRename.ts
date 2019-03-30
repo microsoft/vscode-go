@@ -23,18 +23,18 @@ export class GoRenameProvider implements vscode.RenameProvider {
 	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
 		return new Promise<vscode.WorkspaceEdit>((resolve, reject) => {
 			const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-			let filename = canonicalizeGOPATHPrefix(document.fileName);
-			let range = document.getWordRangeAtPosition(position);
-			let pos = range ? range.start : position;
-			let offset = byteOffsetAt(document, pos);
-			let env = getToolsEnvVars();
-			let gorename = getBinPath('gorename');
+			const filename = canonicalizeGOPATHPrefix(document.fileName);
+			const range = document.getWordRangeAtPosition(position);
+			const pos = range ? range.start : position;
+			const offset = byteOffsetAt(document, pos);
+			const env = getToolsEnvVars();
+			const gorename = getBinPath('gorename');
 			const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'] ;
-			let gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName];
+			const gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName];
 			if (buildTags) {
 				gorenameArgs.push('-tags', buildTags);
 			}
-			let canRenameToolUseDiff = isDiffToolAvailable();
+			const canRenameToolUseDiff = isDiffToolAvailable();
 			if (canRenameToolUseDiff) {
 				gorenameArgs.push('-d');
 			}
@@ -57,19 +57,19 @@ export class GoRenameProvider implements vscode.RenameProvider {
 						return resolve(null);
 					}
 					if (err) {
-						let errMsg = stderr ? 'Rename failed: ' + stderr.replace(/\n/g, ' ') : 'Rename failed';
+						const errMsg = stderr ? 'Rename failed: ' + stderr.replace(/\n/g, ' ') : 'Rename failed';
 						console.log(errMsg);
 						outputChannel.appendLine(errMsg);
 						outputChannel.show();
 						return reject();
 					}
 
-					let result = new vscode.WorkspaceEdit();
+					const result = new vscode.WorkspaceEdit();
 
 					if (canRenameToolUseDiff) {
-						let filePatches = getEditsFromUnifiedDiffStr(stdout);
+						const filePatches = getEditsFromUnifiedDiffStr(stdout);
 						filePatches.forEach((filePatch: FilePatch) => {
-							let fileUri = vscode.Uri.file(filePatch.fileName);
+							const fileUri = vscode.Uri.file(filePatch.fileName);
 							filePatch.edits.forEach((edit: Edit) => {
 								edit.applyUsingWorkspaceEdit(result, fileUri);
 							});

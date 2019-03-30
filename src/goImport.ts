@@ -61,12 +61,12 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 		return null;
 	}
 
-	let { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
+	const { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
 	if (imports.some(block => block.pkgs.some(pkgpath => pkgpath === arg))) {
 		return [];
 	}
 
-	let multis = imports.filter(x => x.kind === 'multi');
+	const multis = imports.filter(x => x.kind === 'multi');
 	if (multis.length > 0) {
 		// There is a multiple import declaration, add to the last one
 		const lastImportSection = multis[multis.length - 1];

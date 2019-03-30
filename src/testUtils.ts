@@ -101,7 +101,7 @@ export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args?: any
  * @return test function symbols for the source file.
  */
 export function getTestFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
-	let documentSymbolProvider = new GoDocumentSymbolProvider(true);
+	const documentSymbolProvider = new GoDocumentSymbolProvider(true);
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
 		.then(symbols => symbols[0].children)
@@ -165,7 +165,7 @@ export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.
  * @return benchmark function symbols for the source file.
  */
 export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
-	let documentSymbolProvider = new GoDocumentSymbolProvider();
+	const documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
 		.then(symbols => symbols[0].children)
@@ -194,9 +194,9 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			outputChannel.show(true);
 		}
 
-		let testTags: string = testconfig.goConfig['testTags'] !== null ? testconfig.goConfig['testTags'] : testconfig.goConfig['buildTags'];
-		let args: Array<string> = ['test'];
-		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
+		const testTags: string = testconfig.goConfig['testTags'] !== null ? testconfig.goConfig['testTags'] : testconfig.goConfig['buildTags'];
+		const args: Array<string> = ['test'];
+		const testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
 
 		if (testconfig.isBenchmark) {
 			args.push('-benchmem', '-run=^$');
@@ -207,17 +207,17 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			args.push('-tags', testTags);
 		}
 
-		let testEnvVars = getTestEnvVars(testconfig.goConfig);
-		let goRuntimePath = getBinPath('go');
+		const testEnvVars = getTestEnvVars(testconfig.goConfig);
+		const goRuntimePath = getBinPath('go');
 
 		if (!goRuntimePath) {
 			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 			return Promise.resolve();
 		}
 
-		let currentGoWorkspace = testconfig.isMod ? '' : getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
+		const currentGoWorkspace = testconfig.isMod ? '' : getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
 		let targets = targetArgs(testconfig);
-		let getCurrentPackagePromise = testconfig.isMod ? getCurrentPackage(testconfig.dir) : Promise.resolve(currentGoWorkspace ? testconfig.dir.substr(currentGoWorkspace.length + 1) : '');
+		const getCurrentPackagePromise = testconfig.isMod ? getCurrentPackage(testconfig.dir) : Promise.resolve(currentGoWorkspace ? testconfig.dir.substr(currentGoWorkspace.length + 1) : '');
 		let pkgMapPromise: Promise<Map<string, string> | null> = Promise.resolve(null);
 		if (testconfig.includeSubDirectories) {
 			if (testconfig.isMod) {
@@ -246,7 +246,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				targets.splice(0, 0, currentPackage);
 			}
 
-			let outTargets = args.slice(0);
+			const outTargets = args.slice(0);
 			if (targets.length > 4) {
 				outTargets.push('<long arguments omitted>');
 			} else {
@@ -260,7 +260,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			// ensure that user provided flags are appended last (allow use of -args ...)
 			args.push(...testconfig.flags);
 
-			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
+			const tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
@@ -314,7 +314,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
 
-				let index = runningTestProcesses.indexOf(tp, 0);
+				const index = runningTestProcesses.indexOf(tp, 0);
 				if (index > -1) {
 					runningTestProcesses.splice(index, 1);
 				}
@@ -358,9 +358,9 @@ export function cancelRunningTests(): Thenable<boolean> {
 }
 
 function expandFilePathInOutput(output: string, cwd: string): string {
-	let lines = output.split('\n');
+	const lines = output.split('\n');
 	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\s*(.+.go):(\d+):/);
+		const matches = lines[i].match(/^\s*(.+.go):(\d+):/);
 		if (matches && matches[1] && !path.isAbsolute(matches[1])) {
 			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
 		}

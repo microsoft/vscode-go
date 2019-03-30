@@ -29,7 +29,7 @@ export function extractVariable() {
 type typeOfExtraction = 'var' | 'extract';
 
 async function extract(type: typeOfExtraction): Promise<void> {
-	let activeEditor = vscode.window.activeTextEditor;
+	const activeEditor = vscode.window.activeTextEditor;
 	if (!activeEditor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;

@@ -153,8 +153,8 @@ function convertToCodeSymbols(
 			new vscode.Range(startPosition, document.lineAt(startPosition.line).range.end);
 
 		if (decl.type === 'type') {
-			let line = document.lineAt(document.positionAt(start));
-			let regex = new RegExp(`^\\s*type\\s+${decl.label}\\s+struct\\b`);
+			const line = document.lineAt(document.positionAt(start));
+			const regex = new RegExp(`^\\s*type\\s+${decl.label}\\s+struct\\b`);
 			decl.type = regex.test(line.text) ? 'struct' : 'type';
 		}
 

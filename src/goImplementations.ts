@@ -45,23 +45,23 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 			}
 
 			// Set up execFile parameters
-			let options: { [key: string]: any } = {
+			const options: { [key: string]: any } = {
 				cwd: root,
 				env: getToolsEnvVars(),
 				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 			};
 
-			let listProcess = cp.execFile(getBinPath('go'), ['list', '-e', '-json'], options, (err, stdout, stderr) => {
+			const listProcess = cp.execFile(getBinPath('go'), ['list', '-e', '-json'], options, (err, stdout, stderr) => {
 				if (err) {
 					return reject(err);
 				}
-				let listOutput = <GoListOutput>JSON.parse(stdout.toString());
-				let filename = canonicalizeGOPATHPrefix(document.fileName);
-				let cwd = path.dirname(filename);
-				let offset = byteOffsetAt(document, position);
-				let goGuru = getBinPath('guru');
+				const listOutput = <GoListOutput>JSON.parse(stdout.toString());
+				const filename = canonicalizeGOPATHPrefix(document.fileName);
+				const cwd = path.dirname(filename);
+				const offset = byteOffsetAt(document, position);
+				const goGuru = getBinPath('guru');
 				const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
-				let args = buildTags ? ['-tags', buildTags] : [];
+				const args = buildTags ? ['-tags', buildTags] : [];
 				if (listOutput.Root && listOutput.ImportPath) {
 					args.push('-scope', `${listOutput.ImportPath}/...`);
 				}
@@ -69,13 +69,13 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 
 				// Do not override cwd for guru call
 				const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-				let guruOptions: { [key: string]: any } = {
+				const guruOptions: { [key: string]: any } = {
 					cwd: root,
 					env: getToolsEnvVars(),
 					timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 				};
 
-				let guruProcess = cp.execFile(goGuru, args, guruOptions, (err, stdout, stderr) => {
+				const guruProcess = cp.execFile(goGuru, args, guruOptions, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
 						return resolve(null);
@@ -85,15 +85,15 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 						return reject(err);
 					}
 
-					let guruOutput = <GuruImplementsOutput>JSON.parse(stdout.toString());
-					let results: vscode.Location[] = [];
-					let addResults = (list: GuruImplementsRef[]) => {
+					const guruOutput = <GuruImplementsOutput>JSON.parse(stdout.toString());
+					const results: vscode.Location[] = [];
+					const addResults = (list: GuruImplementsRef[]) => {
 						list.forEach((ref: GuruImplementsRef) => {
-							let match = /^(.*):(\d+):(\d+)/.exec(ref.pos);
+							const match = /^(.*):(\d+):(\d+)/.exec(ref.pos);
 							if (!match) return;
-							let [_, file, lineStartStr, colStartStr] = match;
-							let referenceResource = vscode.Uri.file(path.resolve(cwd, file));
-							let range = new vscode.Range(
+							const [_, file, lineStartStr, colStartStr] = match;
+							const referenceResource = vscode.Uri.file(path.resolve(cwd, file));
+							const range = new vscode.Range(
 								+lineStartStr - 1, +colStartStr - 1, +lineStartStr - 1, +colStartStr
 							);
 							results.push(new vscode.Location(referenceResource, range));

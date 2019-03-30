@@ -34,7 +34,7 @@ interface GuruDefinitionOutput {
 
 export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 	provideTypeDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Definition> {
-		let adjustedPos = adjustWordPosition(document, position);
+		const adjustedPos = adjustWordPosition(document, position);
 		if (!adjustedPos[0]) {
 			return Promise.resolve(null);
 		}
@@ -42,17 +42,17 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 
 		return new Promise<vscode.Definition>((resolve, reject) => {
 			const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-			let goGuru = getBinPath('guru');
+			const goGuru = getBinPath('guru');
 			if (!path.isAbsolute(goGuru)) {
 				promptForMissingTool('guru');
 				return reject('Cannot find tool "guru" to find type definitions.');
 			}
 
-			let filename = canonicalizeGOPATHPrefix(document.fileName);
-			let offset = byteOffsetAt(document, position);
-			let env = getToolsEnvVars();
-			let buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
-			let args = buildTags ? ['-tags', buildTags] : [];
+			const filename = canonicalizeGOPATHPrefix(document.fileName);
+			const offset = byteOffsetAt(document, position);
+			const env = getToolsEnvVars();
+			const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
+			const args = buildTags ? ['-tags', buildTags] : [];
 			args.push('-json', '-modified', 'describe', `${filename}:#${offset.toString()}`);
 
 			// Set up execFile parameters
@@ -61,7 +61,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 				timeout: getTimeoutConfiguration(goConfig, 'onHover')
 			};
 
-			let process = cp.execFile(goGuru, args, options, (err, stdout, stderr) => {
+			const process = cp.execFile(goGuru, args, options, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
@@ -72,7 +72,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 						return reject(err);
 					}
 
-					let guruOutput = <GuruDescribeOutput>JSON.parse(stdout.toString());
+					const guruOutput = <GuruDescribeOutput>JSON.parse(stdout.toString());
 					if (!guruOutput.value || !guruOutput.value.typespos) {
 						if (guruOutput.value
 							&& guruOutput.value.type
@@ -84,11 +84,11 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 						// Fall back to position of declaration
 						return definitionLocation(document, position, null, false, token).then(definitionInfo => {
 							if (definitionInfo == null || definitionInfo.file == null) return null;
-							let definitionResource = vscode.Uri.file(definitionInfo.file);
-							let pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
+							const definitionResource = vscode.Uri.file(definitionInfo.file);
+							const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
 							resolve(new vscode.Location(definitionResource, pos));
 						}, err => {
-							let miss = parseMissingError(err);
+							const miss = parseMissingError(err);
 							if (miss[0]) {
 								promptForMissingTool(miss[1]);
 							} else if (err) {
@@ -98,15 +98,15 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 						});
 					}
 
-					let results: vscode.Location[] = [];
+					const results: vscode.Location[] = [];
 					guruOutput.value.typespos.forEach(ref => {
-						let match = /^(.*):(\d+):(\d+)/.exec(ref.objpos);
+						const match = /^(.*):(\d+):(\d+)/.exec(ref.objpos);
 						if (!match)  {
 							return;
 						}
-						let [_, file, line, col] = match;
-						let referenceResource = vscode.Uri.file(file);
-						let pos = new vscode.Position(parseInt(line) - 1, parseInt(col) - 1);
+						const [_, file, line, col] = match;
+						const referenceResource = vscode.Uri.file(file);
+						const pos = new vscode.Position(parseInt(line) - 1, parseInt(col) - 1);
 						results.push(new vscode.Location(referenceResource, pos));
 					});
 

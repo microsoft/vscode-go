@@ -16,13 +16,13 @@ interface GoLiveErrorsConfig {
 let runner: NodeJS.Timer;
 
 export function goLiveErrorsEnabled() {
-	let goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['liveErrors'];
+	const goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['liveErrors'];
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
-	let files = vscode.workspace.getConfiguration('files');
-	let autoSave = files['autoSave'];
-	let autoSaveDelay = files['autoSaveDelay'];
+	const files = vscode.workspace.getConfiguration('files');
+	const autoSave = files['autoSave'];
+	const autoSaveDelay = files['autoSaveDelay'];
 	if (autoSave !== null && autoSave !== undefined &&
 		autoSave === 'afterDelay' && autoSaveDelay < goConfig.delay * 1.5) {
 		return false;
@@ -46,7 +46,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	if (runner != null) {
 		clearTimeout(runner);
 	}
-	runner = setTimeout(function() {
+	runner = setTimeout(() => {
 		processFile(e);
 		runner = null;
 	}, vscode.workspace.getConfiguration('go', e.document.uri)['liveErrors']['delay']);
@@ -60,17 +60,17 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 		return promptForMissingTool('gotype-live');
 	}
 
-	let fileContents = e.document.getText();
-	let fileName = e.document.fileName;
-	let args = ['-e', '-a', '-lf=' + fileName, path.dirname(fileName)];
+	const fileContents = e.document.getText();
+	const fileName = e.document.fileName;
+	const args = ['-e', '-a', '-lf=' + fileName, path.dirname(fileName)];
 
 	// Set up execFile parameters
-	let options: { [key: string]: any } = {
+	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		timeout: getTimeoutConfiguration(goConfig, 'onType')
 	};
 
-	let p = cp.execFile(gotypeLive, args, options, (err, stdout, stderr) => {
+	const p = cp.execFile(gotypeLive, args, options, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gotype-live');
 			return;
@@ -81,26 +81,23 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 		if (err) {
 			// we want to take the error path here because the command we are calling
 			// returns a non-zero exit status if the checks fail
-			let diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
+			const diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
 
 			stderr.split('\n').forEach(error => {
 				if (error === null || error.length === 0) {
 					return;
 				}
 				// extract the line, column and error message from the gotype output
-				let [_, file, line, column, message] = /^(.+):(\d+):(\d+):\s+(.+)/.exec(error);
+				const [_, file, line, column, message] = /^(.+):(\d+):(\d+):\s+(.+)/.exec(error);
 				// get canonical file path
-				file = vscode.Uri.file(file).toString();
-				let range = new vscode.Range(+line - 1, +column, +line - 1, +column);
-				let diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
+				const canonicalFilePath = vscode.Uri.file(file).toString();
+				const range = new vscode.Range(+line - 1, +column, +line - 1, +column);
+				const diagnostic = new vscode.Diagnostic(range, message, vscode.DiagnosticSeverity.Error);
 				diagnostic.source = 'go';
 
-				let diagnostics = diagnosticMap.get(file);
-				if (!diagnostics) {
-					diagnostics = [];
-				}
+				const diagnostics = diagnosticMap.get(canonicalFilePath) || [];
 				diagnostics.push(diagnostic);
-				diagnosticMap.set(file, diagnostics);
+				diagnosticMap.set(canonicalFilePath, diagnostics);
 			});
 
 			diagnosticMap.forEach((diagnostics, file) => {

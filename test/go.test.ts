@@ -26,20 +26,20 @@ import { goPlay } from '../src/goPlayground';
 import { runFillStruct } from '../src/goFillStruct';
 
 suite('Go Extension Tests', () => {
-	let gopath = process.env['GOPATH'];
+	const gopath = process.env['GOPATH'];
 	if (!gopath) {
 		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
 		return;
 	}
 
-	let repoPath = path.join(gopath, 'src', 'test');
-	let fixturePath = path.join(repoPath, 'testfixture');
-	let fixtureSourcePath = path.join(__dirname, '..', '..', 'test', 'fixtures');
-	let generateTestsSourcePath = path.join(repoPath, 'generatetests');
-	let generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
-	let generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
-	let testPath = path.join(__dirname, 'tests');
-	let toolsGopath = getToolsGopath() || getCurrentGoPath();
+	const repoPath = path.join(gopath, 'src', 'test');
+	const fixturePath = path.join(repoPath, 'testfixture');
+	const fixtureSourcePath = path.join(__dirname, '..', '..', 'test', 'fixtures');
+	const generateTestsSourcePath = path.join(repoPath, 'generatetests');
+	const generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
+	const generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
+	const testPath = path.join(__dirname, 'tests');
+	const toolsGopath = getToolsGopath() || getCurrentGoPath();
 
 	suiteSetup(() => {
 
@@ -158,26 +158,26 @@ suite('Go Extension Tests', () => {
 		if (gogetdocPath === 'gogetdoc') {
 			return done();
 		}
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
 		testDefinitionProvider(config).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Test SignatureHelp Provider using godoc', (done) => {
-		let printlnDoc = `Println formats using the default formats for its operands and writes to
+		const printlnDoc = `Println formats using the default formats for its operands and writes to
 standard output. Spaces are always added between operands and a newline is
 appended. It returns the number of bytes written and any write error
 encountered.
 `;
 
-		let testCases: [vscode.Position, string, string, string[]][] = [
+		const testCases: [vscode.Position, string, string, string[]][] = [
 			[new vscode.Position(19, 13), 'Println(a ...interface{}) (n int, err error)', printlnDoc, ['a ...interface{}']],
 			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :( Not\nanymore!!\n', ['txt string']],
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this\ncorrectly\n', ['s string', 'exclaim bool']],
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'godoc' }
 		});
 		testSignatureHelpProvider(config, testCases).then(() => done(), done);
@@ -189,29 +189,29 @@ encountered.
 			return done();
 		}
 
-		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
+		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
 Spaces are always added between operands and a newline is appended.
 It returns the number of bytes written and any write error encountered.
 `;
-		let testCases: [vscode.Position, string, string, string[]][] = [
+		const testCases: [vscode.Position, string, string, string[]][] = [
 			[new vscode.Position(19, 13), 'Println(a ...interface{}) (n int, err error)', printlnDoc, ['a ...interface{}']],
 			[new vscode.Position(23, 7), 'print(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :(\nNot anymore!!\n', ['txt string']],
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this correctly\n', ['s string', 'exclaim bool']],
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
 		testSignatureHelpProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Test Hover Provider using godoc', (done) => {
-		let printlnDoc = `Println formats using the default formats for its operands and writes to
+		const printlnDoc = `Println formats using the default formats for its operands and writes to
 standard output. Spaces are always added between operands and a newline is
 appended. It returns the number of bytes written and any write error
 encountered.
 `;
-		let testCases: [vscode.Position, string, string][] = [
+		const testCases: [vscode.Position, string, string][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
 			[new vscode.Position(0, 3), null, null], // keyword
 			[new vscode.Position(23, 14), null, null], // inside a string
@@ -222,7 +222,7 @@ encountered.
 			[new vscode.Position(19, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
 			[new vscode.Position(23, 4), 'print func(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :( Not\nanymore!!\n']
 		];
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'godoc' }
 		});
 		testHoverProvider(config, testCases).then(() => done(), done);
@@ -234,11 +234,11 @@ encountered.
 			return done();
 		}
 
-		let printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
+		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
 Spaces are always added between operands and a newline is appended.
 It returns the number of bytes written and any write error encountered.
 `;
-		let testCases: [vscode.Position, string, string][] = [
+		const testCases: [vscode.Position, string, string][] = [
 			[new vscode.Position(0, 3), null, null], // keyword
 			[new vscode.Position(23, 11), null, null], // inside a string
 			[new vscode.Position(20, 0), null, null], // just a }
@@ -250,14 +250,14 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(27, 14), 'type ABC struct {\n    a int\n    b int\n    c int\n}', 'ABC is a struct, you coudn\'t use Goto Definition or Hover info on this before\nNow you can due to gogetdoc and go doc\n'],
 			[new vscode.Position(28, 6), 'func CIDRMask(ones, bits int) IPMask', 'CIDRMask returns an IPMask consisting of `ones\' 1 bits\nfollowed by 0s up to a total length of `bits\' bits.\nFor a mask of this form, CIDRMask is the inverse of IPMask.Size.\n']
 		];
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
 		testHoverProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Error checking', (done) => {
-		let config = Object.create(vscode.workspace.getConfiguration('go'), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'package' },
 			'vetFlags': { value: ['-all'] },
 			'lintOnSave': { value: 'package' },
@@ -265,7 +265,7 @@ It returns the number of bytes written and any write error encountered.
 			'lintFlags': { value: [] },
 			'buildOnSave': { value: 'package' },
 		});
-		let expected = [
+		const expected = [
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
@@ -293,7 +293,7 @@ It returns the number of bytes written and any write error encountered.
 		}
 
 		getGoVersion().then(async version => {
-			let uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
+			const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
 			const document = await vscode.workspace.openTextDocument(uri);
 			const editor = await vscode.window.showTextDocument(document);
 			const result = await generateTestCurrentFile();
@@ -316,11 +316,11 @@ It returns the number of bytes written and any write error encountered.
 		}
 
 		getGoVersion().then(async version => {
-			let uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
+			const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
 			const document = await vscode.workspace.openTextDocument(uri);
 			const editor = await vscode.window.showTextDocument(document);
 			assert(vscode.window.activeTextEditor, 'No active editor');
-			let selection = new vscode.Selection(5, 0, 6, 0);
+			const selection = new vscode.Selection(5, 0, 6, 0);
 			editor.selection = selection;
 			const result = await generateTestCurrentFunction();
 			assert.equal(result, true);
@@ -342,7 +342,7 @@ It returns the number of bytes written and any write error encountered.
 		}
 
 		getGoVersion().then(async version => {
-			let uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
+			const uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
 			const document = await vscode.workspace.openTextDocument(uri);
 			const editor = await vscode.window.showTextDocument(document);
 			const result = await generateTestCurrentPackage();
@@ -360,7 +360,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Gometalinter error checking', (done) => {
 		getGoVersion().then(async version => {
-			let config = Object.create(vscode.workspace.getConfiguration('go'), {
+			const config = Object.create(vscode.workspace.getConfiguration('go'), {
 				'lintOnSave': { value: 'package' },
 				'lintTool': { value: 'gometalinter' },
 				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
@@ -371,10 +371,10 @@ It returns the number of bytes written and any write error encountered.
 				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
 				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
 			];
-			let errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
+			const errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
 			const diagnostics = await check(vscode.Uri.file(errorsTestPath), config);
 			const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
-			let sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
+			const sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
 				if (a.msg < b.msg)
 					return -1;
 				if (a.msg > b.msg)
@@ -383,9 +383,9 @@ It returns the number of bytes written and any write error encountered.
 			});
 			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
 			let matchCount = 0;
-			for (let i in expected) {
+			for (const i in expected) {
 				if (expected.hasOwnProperty(i)) {
-					for (let j in sortedDiagnostics) {
+					for (const j in sortedDiagnostics) {
 						if ((expected[i].line === sortedDiagnostics[j].line)
 							&& (expected[i].severity === sortedDiagnostics[j].severity)
 							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
@@ -894,7 +894,7 @@ encountered.
 			const promises = testCases.map(([position, expected]) => provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
 				const labels = items.map(x => x.label);
-				for (let entry of expected) {
+				for (const entry of expected) {
 					assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
 				}
 			}));
@@ -926,7 +926,7 @@ encountered.
 			const editor = await vscode.window.showTextDocument(textDocument);
 			let items = await provider.provideCompletionItemsInternal(editor.document, position, null, config);
 			items = items instanceof vscode.CompletionList ? items.items : items;
-			let labels = items.map(x => x.label);
+			const labels = items.map(x => x.label);
 			expectedItems.forEach(expectedItem => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
 				const actualItem: vscode.CompletionItem = items.filter(item => item.label === expectedItem.label)[0];
@@ -956,7 +956,7 @@ encountered.
 			[new vscode.Position(17, 5), ['HelloParams']],
 			[new vscode.Position(26, 5), ['Abs']],
 		];
-		let uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
+		const uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'exportedMemberDocs.go'));
 
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
@@ -1148,7 +1148,7 @@ encountered.
 			'testTags': { value: '' }
 		});
 
-		let uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
+		const uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
 				return testCurrentFile(config1, false, []).then((result: boolean) => {
@@ -1169,7 +1169,7 @@ encountered.
 	});
 
 	test('Add imports when no imports', (done) => {
-		let uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'noimports.go'));
+		const uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'noimports.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
 			return vscode.window.showTextDocument(document).then(editor => {
 				const expectedText = document.getText() + '\n' + 'import (\n\t"bytes"\n)\n';

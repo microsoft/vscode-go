@@ -15,7 +15,7 @@ import { dirname } from 'path';
 const inputRegex = /^(\w+\ \*?\w+\ )?([\w./]+)$/;
 
 export function implCursor() {
-	let cursor = vscode.window.activeTextEditor.selection;
+	const cursor = vscode.window.activeTextEditor.selection;
 	return vscode.window.showInputBox({
 		placeHolder: 'f *File io.Closer',
 		prompt: 'Enter receiver and interface to implement.'
@@ -38,17 +38,17 @@ export function implCursor() {
 }
 
 function runGoImpl(args: string[], insertPos: vscode.Position) {
+	const goimpl = getBinPath('impl');
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	let goimpl = getBinPath('impl');
 
 	// Set up execFile parameters
-	let options: { [key: string]: any } = {
+	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		cwd: dirname(vscode.window.activeTextEditor.document.fileName),
 		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 	};
 
-	let p = cp.execFile(goimpl, args, options, (err, stdout, stderr) => {
+	const p = cp.execFile(goimpl, args, options, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('impl');
 			return;
