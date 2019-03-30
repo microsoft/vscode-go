@@ -1372,7 +1372,6 @@ class GoDebugSession extends LoggingDebugSession {
 			return Promise.reject(err);
 		});
 
-		log('EvaluateRequest');
 		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
 			err => {
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
@@ -1382,7 +1381,7 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	private async evaluateRequestFetch(args: DebugProtocol.EvaluateArguments, scope: any, delveLoadConfig: any): Promise<LoadConfig> {
-		if (!(!this.delve.isApiV1 && (args.context === 'variables'))) {
+		if (this.delve.isApiV1 || args.context !== 'variables') {
 			// Delve v1 does not support load configurations on apicalls
 			return Promise.resolve(delveLoadConfig);
 		}
