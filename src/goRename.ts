@@ -45,7 +45,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			}
 
 			// Set up execFile parameters
-			let options: { [key: string]: any } = {
+			const options: { [key: string]: any } = {
 				env: getToolsEnvVars(),
 				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 			};

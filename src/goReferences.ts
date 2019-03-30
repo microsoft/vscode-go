@@ -42,7 +42,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			args.push('-modified', 'referrers', `${filename}:#${offset.toString()}`);
 
 			// Set up execFile parameters
-			let options: { [key: string]: any } = {
+			const options: { [key: string]: any } = {
 				env: getToolsEnvVars(),
 				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 			};

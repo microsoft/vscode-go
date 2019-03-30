@@ -56,7 +56,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			args.push('-json', '-modified', 'describe', `${filename}:#${offset.toString()}`);
 
 			// Set up execFile parameters
-			let options: { [key: string]: any } = {
+			const options: { [key: string]: any } = {
 				env: getToolsEnvVars(),
 				timeout: getTimeoutConfiguration(goConfig, 'onHover')
 			};

@@ -79,7 +79,7 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 		}
 
 		// Set up execFile parameters
-		let goOutlineOptions: { [key: string]: any } = {
+		const goOutlineOptions: { [key: string]: any } = {
 			env: getToolsEnvVars(),
 			timeout: getTimeoutConfiguration(goConfig, 'onType')
 		};

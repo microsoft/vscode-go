@@ -109,7 +109,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 	}
 
 	// Set up execFile parameters
-	let options: { [key: string]: any } = {
+	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		timeout: getTimeoutConfiguration(goConfig, 'onType'),
 		maxBuffer: 1024 * 1024
@@ -137,7 +137,7 @@ function getGoroot(): Promise<string> {
 
 	// Set up execFile parameters
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	let options: { [key: string]: any } = {
+	const options: { [key: string]: any } = {
 		timeout: getTimeoutConfiguration(goConfig, 'onType')
 	};
 
