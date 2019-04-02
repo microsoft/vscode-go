@@ -557,7 +557,7 @@
             "off"
           ],
           "default": "package",
-          "description": "Compiles code on file save using 'go build -i' or 'go test -c -i'. Options are 'workspace', 'package or 'off'.",
+          "description": "Compiles code on file save using 'go build -i' or 'go test -c -i'. Options are 'workspace', 'package', or 'off'.",
           "scope": "resource"
         },
         "go.buildFlags": {
