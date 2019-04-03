@@ -14,6 +14,9 @@ export class GoRefactorProvider implements vscode.CodeActionProvider {
 		context: vscode.CodeActionContext,
 		token: vscode.CancellationToken
 	): vscode.ProviderResult<vscode.CodeAction[]> {
+		if (range.isEmpty) {
+			return [];
+		}
 		const extractFunction = new vscode.CodeAction(
 			'Extract to function in package scope',
 			vscode.CodeActionKind.RefactorExtract
