@@ -401,6 +401,8 @@ class Delve {
 			let dlvArgs = [mode || 'debug'];
 			if (mode === 'exec') {
 				dlvArgs = dlvArgs.concat([program]);
+			} else if (mode === 'replay') {
+				dlvArgs = dlvArgs.concat(launchArgs.traceDirectory);
 			} else if (currentGOWorkspace && env['GO111MODULE'] !== 'on') {
 				dlvArgs = dlvArgs.concat([dirname.substr(currentGOWorkspace.length + 1)]);
 			}
@@ -431,7 +433,9 @@ class Delve {
 				dlvArgs = dlvArgs.concat(['--output=' + launchArgs.output]);
 			}
 			if (launchArgs.args) {
-				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
+				if (launchArgs.args.length > 0) {
+					dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
+				}
 			}
 
 			log(`Current working directory: ${dlvCwd}`);
