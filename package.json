@@ -124,6 +124,11 @@
         "description": "See the currently set GOPATH."
       },
       {
+        "command": "go.gopath",
+        "title": "Go: Current GOPATH",
+        "description": "See the currently set GOPATH."
+      },
+      {
         "command": "go.test.cursor",
         "title": "Go: Test Function At Cursor",
         "description": "Runs a unit test at the cursor."
@@ -1203,6 +1208,11 @@
               "type": "boolean",
               "default": true,
               "description": "If true, adds command to debug the test under the cursor to the editor context menu"
+            },
+            "goToImplementation": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, adds command to go to the implementation of the currently selected method to the editor context menu"
             }
           },
           "default": {
@@ -1218,7 +1228,8 @@
             "addImport": true,
             "testCoverage": true,
             "playground": true,
-            "debugTestAtCursor": true
+            "debugTestAtCursor": true,
+            "goToImplementation": false
           },
           "description": "Experimental Feature: Enable/Disable entries from the context menu in the editor.",
           "scope": "resource"
@@ -1344,6 +1355,11 @@
     },
     "menus": {
       "editor/context": [
+        {
+          "when": "editorTextFocus && config.go.editorContextMenuCommands.goToImplementation && resourceLangId == go",
+          "command": "editor.action.goToImplementation",
+          "group": "Go group 1"
+        },
         {
           "when": "editorTextFocus && config.go.editorContextMenuCommands.toggleTestFile && resourceLangId == go",
           "command": "go.toggle.test.file",
