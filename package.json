@@ -124,11 +124,6 @@
         "description": "See the currently set GOPATH."
       },
       {
-        "command": "go.gopath",
-        "title": "Go: Current GOPATH",
-        "description": "See the currently set GOPATH."
-      },
-      {
         "command": "go.test.cursor",
         "title": "Go: Test Function At Cursor",
         "description": "Runs a unit test at the cursor."
