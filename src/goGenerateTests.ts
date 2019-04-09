@@ -20,7 +20,7 @@ const generatedWord = 'Generated ';
  * If current active editor has a Go file, returns the editor.
  */
 function checkActiveEditor(): vscode.TextEditor {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('Cannot generate unit tests. No editor selected.');
 		return;
@@ -40,12 +40,12 @@ function checkActiveEditor(): vscode.TextEditor {
  * Toggles between file in current active editor and the corresponding test file.
  */
 export function toggleTestFile(): void {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('Cannot toggle test file. No editor selected.');
 		return;
 	}
-	let currentFilePath = editor.document.fileName;
+	const currentFilePath = editor.document.fileName;
 	if (!currentFilePath.endsWith('.go')) {
 		vscode.window.showInformationMessage('Cannot toggle test file. File in the editor is not a Go file.');
 		return;
@@ -56,7 +56,7 @@ export function toggleTestFile(): void {
 	} else {
 		targetFilePath = currentFilePath.substr(0, currentFilePath.lastIndexOf('.go')) + '_test.go';
 	}
-	for (let doc of vscode.window.visibleTextEditors) {
+	for (const doc of vscode.window.visibleTextEditors) {
 		if (doc.document.fileName === targetFilePath) {
 			vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath), doc.viewColumn);
 			return;
@@ -65,8 +65,8 @@ export function toggleTestFile(): void {
 	vscode.commands.executeCommand('vscode.open', vscode.Uri.file(targetFilePath));
 }
 
-export function generateTestCurrentPackage(): Thenable<boolean> {
-	let editor = checkActiveEditor();
+export function generateTestCurrentPackage(): Promise<boolean> {
+	const editor = checkActiveEditor();
 	if (!editor) {
 		return;
 	}
@@ -74,8 +74,8 @@ export function generateTestCurrentPackage(): Thenable<boolean> {
 		vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
-export function generateTestCurrentFile(): Thenable<boolean> {
-	let editor = checkActiveEditor();
+export function generateTestCurrentFile(): Promise<boolean> {
+	const editor = checkActiveEditor();
 	if (!editor) {
 		return;
 	}
@@ -83,32 +83,25 @@ export function generateTestCurrentFile(): Thenable<boolean> {
 		vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
-export function generateTestCurrentFunction(): Thenable<boolean> {
-	let editor = checkActiveEditor();
+export async function generateTestCurrentFunction(): Promise<boolean> {
+	const editor = checkActiveEditor();
 	if (!editor) {
 		return;
 	}
 
-	return getFunctions(editor.document).then(functions => {
-		let currentFunction: vscode.SymbolInformation;
-		for (let func of functions) {
-			let selection = editor.selection;
-			if (selection && func.location.range.contains(selection.start)) {
-				currentFunction = func;
-				break;
-			}
-		}
-		if (!currentFunction) {
-			vscode.window.showInformationMessage('No function found at cursor.');
-			return Promise.resolve(false);
-		}
-		let funcName = currentFunction.name;
-		if (funcName.includes('.')) {
-			funcName = funcName.split('.')[1];
-		}
-		return generateTests({ dir: editor.document.uri.fsPath, func: funcName },
-			vscode.workspace.getConfiguration('go', editor.document.uri));
-	});
+	const functions = await getFunctions(editor.document);
+	const selection = editor.selection;
+	const currentFunction: vscode.DocumentSymbol = functions.find(func => selection && func.range.contains(selection.start));
+
+	if (!currentFunction) {
+		vscode.window.showInformationMessage('No function found at cursor.');
+		return Promise.resolve(false);
+	}
+	let funcName = currentFunction.name;
+	if (funcName.includes('.')) {
+		funcName = funcName.split('.')[1];
+	}
+	return generateTests({ dir: editor.document.uri.fsPath, func: funcName }, vscode.workspace.getConfiguration('go', editor.document.uri));
 }
 
 /**
@@ -120,16 +113,16 @@ interface Config {
 	 */
 	dir: string;
 	/**
-	 * Specific function names to generate tests squeleton.
+	 * Specific function names to generate tests skeleton.
 	 */
 	func?: string;
 }
 
-function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): Thenable<boolean> {
+function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): Promise<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		let cmd = getBinPath('gotests');
+		const cmd = getBinPath('gotests');
 		let args = ['-w'];
-		let goGenerateTestsFlags: string[] = goConfig['generateTestsFlags'] || [];
+		const goGenerateTestsFlags: string[] = goConfig['generateTestsFlags'] || [];
 
 		for (let i = 0; i < goGenerateTestsFlags.length; i++) {
 			const flag = goGenerateTestsFlags[i];
@@ -168,7 +161,7 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): T
 
 				// Expected stdout is of the format "Generated TestMain\nGenerated Testhello\n"
 				if (stdout.startsWith(generatedWord)) {
-					let lines = stdout.split('\n').filter(element => {
+					const lines = stdout.split('\n').filter(element => {
 						return element.startsWith(generatedWord);
 					}).map((element) => {
 						return element.substr(generatedWord.length);
@@ -193,12 +186,8 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): T
 	});
 }
 
-function getFunctions(doc: vscode.TextDocument): Thenable<vscode.SymbolInformation[]> {
-	let documentSymbolProvider = new GoDocumentSymbolProvider();
-	return documentSymbolProvider
-		.provideDocumentSymbols(doc, null)
-		.then(symbols =>
-			symbols.filter(sym =>
-				sym.kind === vscode.SymbolKind.Function)
-		);
+async function getFunctions(doc: vscode.TextDocument): Promise<vscode.DocumentSymbol[]> {
+	const documentSymbolProvider = new GoDocumentSymbolProvider();
+	const symbols = await documentSymbolProvider.provideDocumentSymbols(doc, null);
+	return symbols[0].children.filter(sym => sym.kind === vscode.SymbolKind.Function);
 }

@@ -50,7 +50,7 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 		verticalyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
 	};
 
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	// Update the coverageDecorator in User config, if they are using the old style.
 	const goConfig = vscode.workspace.getConfiguration('go', editor ? editor.document.uri : null);
 	const inspectResult = goConfig.inspect('coverageDecorator');
@@ -87,8 +87,10 @@ export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 	if (typeof (coverageDecoratorConfig) === 'string') {
 		decoratorConfig.type = coverageDecoratorConfig;
 	} else {
-		for (let k in coverageDecoratorConfig) {
-			decoratorConfig[k] = coverageDecoratorConfig[k];
+		for (const k in coverageDecoratorConfig) {
+			if (coverageDecoratorConfig.hasOwnProperty(k)) {
+				decoratorConfig[k] = coverageDecoratorConfig[k];
+			}
 		}
 	}
 	setDecorators();
@@ -145,21 +147,21 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 			// Clear existing coverage files
 			clearCoverage();
 
-			let lines = rl.createInterface({
+			const lines = rl.createInterface({
 				input: fs.createReadStream(coverProfilePath),
 				output: undefined
 			});
 
-			lines.on('line', function (data: string) {
+			lines.on('line', function(data: string) {
 				// go test coverageprofile generates output:
 				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits CoverCount
 				// The first line will be "mode: set" which will be ignored
-				let fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
+				const fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
 				if (!fileRange) return;
 
-				let filePath = path.join(packageDirPath, path.basename(fileRange[1]));
-				let coverage = getCoverageData(filePath);
-				let range = new vscode.Range(
+				const filePath = path.join(packageDirPath, path.basename(fileRange[1]));
+				const coverage = getCoverageData(filePath);
+				const range = new vscode.Range(
 					// Start Line converted to zero based
 					parseInt(fileRange[2]) - 1,
 					// Start Column converted to zero based
@@ -238,7 +240,7 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 	const coverageOptions = cfg['coverageOptions'];
 	setDecorators();
 
-	for (let filename in coverageFiles) {
+	for (const filename in coverageFiles) {
 		if (editor.document.uri.fsPath.endsWith(filename)) {
 			isCoverageApplied = true;
 			const coverageData = coverageFiles[filename];
@@ -279,7 +281,7 @@ export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent
  * Else run tests to get the coverage and apply.
  */
 export function toggleCoverageCurrentPackage() {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
@@ -290,11 +292,11 @@ export function toggleCoverageCurrentPackage() {
 		return;
 	}
 
-	let goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
-	let cwd = path.dirname(editor.document.uri.fsPath);
+	const goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
+	const cwd = path.dirname(editor.document.uri.fsPath);
 
-	let args = getTestFlags(goConfig);
-	let tmpCoverPath = getTempFilePath('go-code-cover');
+	const args = getTestFlags(goConfig);
+	const tmpCoverPath = getTempFilePath('go-code-cover');
 	args.push('-coverprofile=' + tmpCoverPath);
 	const testConfig: TestConfig = {
 		goConfig: goConfig,

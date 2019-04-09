@@ -67,15 +67,14 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			result.activeSignature = 0;
 			result.activeParameter = Math.min(theCall.commas.length, si.parameters.length - 1);
 			return result;
-		}
-		catch (e) {
+		} catch (e) {
 			return null;
 		}
 	}
 
 	private previousTokenPosition(document: TextDocument, position: Position): Position {
 		while (position.character > 0) {
-			let word = document.getWordRangeAtPosition(position);
+			const word = document.getWordRangeAtPosition(position);
 			if (word) {
 				return word.start;
 			}

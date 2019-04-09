@@ -54,7 +54,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: TestA
 			// Otherwise find any test function containing the cursor.
 			const testFunctionName = args && args.functionName
 				? args.functionName
-				: testFunctions.filter(func => func.location.range.contains(editor.selection.start))
+				: testFunctions.filter(func => func.range.contains(editor.selection.start))
 					.map(el => el.name)[0];
 			if (!testFunctionName) {
 				vscode.window.showInformationMessage('No test function found at cursor.');
@@ -66,7 +66,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: TestA
 			} else if (cmd === 'benchmark' || cmd === 'test') {
 				await runTestAtCursor(editor, testFunctionName, testFunctions, goConfig, cmd, args);
 			} else {
-				throw 'Unsupported command.';
+				throw new Error('Unsupported command.');
 			}
 		} catch (err) {
 			console.error(err);
@@ -77,7 +77,7 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: TestA
 /**
  * Runs the test at cursor.
  */
-async function runTestAtCursor(editor: vscode.TextEditor, testFunctionName: string, testFunctions: vscode.SymbolInformation[], goConfig: vscode.WorkspaceConfiguration, cmd: TestAtCursorCmd, args: any) {
+async function runTestAtCursor(editor: vscode.TextEditor, testFunctionName: string, testFunctions: vscode.DocumentSymbol[], goConfig: vscode.WorkspaceConfiguration, cmd: TestAtCursorCmd, args: any) {
 	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTest', args);
 
 	const testConfigFns = cmd !== 'benchmark' && extractInstanceTestName(testFunctionName)
@@ -104,7 +104,7 @@ async function runTestAtCursor(editor: vscode.TextEditor, testFunctionName: stri
 /**
  * Debugs the test at cursor.
  */
-async function debugTestAtCursor(editor: vscode.TextEditor, testFunctionName: string, testFunctions: vscode.SymbolInformation[], goConfig: vscode.WorkspaceConfiguration) {
+async function debugTestAtCursor(editor: vscode.TextEditor, testFunctionName: string, testFunctions: vscode.DocumentSymbol[], goConfig: vscode.WorkspaceConfiguration) {
 
 	const args = getTestFunctionDebugArgs(editor.document, testFunctionName, testFunctions);
 	const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
@@ -127,7 +127,7 @@ async function debugTestAtCursor(editor: vscode.TextEditor, testFunctionName: st
  * @param goConfig Configuration for the Go extension.
  */
 export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: any) {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
@@ -195,7 +195,7 @@ export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any
  * @param isBenchmark Boolean flag indicating if these are benchmark tests or not.
  */
 export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBenchmark: boolean, args: string[]): Thenable<boolean> {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
@@ -250,7 +250,7 @@ export function testPrevious() {
  */
 function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
 	let tmpCoverPath = '';
-	let testFlags = getTestFlags(goConfig, args) || [];
+	const testFlags = getTestFlags(goConfig, args) || [];
 	if (goConfig[confFlag] === true) {
 		tmpCoverPath = getTempFilePath('go-code-cover');
 		testFlags.push('-coverprofile=' + tmpCoverPath);

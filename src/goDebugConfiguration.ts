@@ -79,6 +79,9 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		if (!debugConfiguration.hasOwnProperty('dlvLoadConfig') && dlvConfig.hasOwnProperty('dlvLoadConfig')) {
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
 		}
+		if (!debugConfiguration.hasOwnProperty('showGlobalVariables') && dlvConfig.hasOwnProperty('showGlobalVariables')) {
+			debugConfiguration['showGlobalVariables'] = dlvConfig['showGlobalVariables'];
+		}
 
 		debugConfiguration['dlvToolPath'] = getBinPath('dlv');
 		if (!path.isAbsolute(debugConfiguration['dlvToolPath'])) {

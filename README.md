@@ -61,7 +61,7 @@ Install and open [Visual Studio Code](https://code.visualstudio.com). Press `Ctr
 
 This extension uses a set of Go tools to provide the various rich features. These tools are installed in your GOPATH by default. If you wish to have these tools in a separate location, provide the desired location in the setting `go.toolsGopath`. Read more about this and the tools at [Go tools that the Go extension depends on](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on).
 
-You will see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the dependent Go tools. You can also run the command `Go: Install/Update tools` to install/update the same.
+You will see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the dependent Go tools. You can also run the [command](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette) `Go: Install/Update tools` to install/update the same.
 
 **Note 1**: Read [GOPATH in the VS Code Go extension](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension) to learn about the different ways you can get the extension to set GOPATH.
 
@@ -76,15 +76,34 @@ The Go extension is ready to use on the get go. If you want to customize the fea
 
 ### Go Language Server (Experimental)
 
-The Go extension uses a host of Go tools to provide the various language features. An alternative is to use a single language server that provides the same feature.  
+The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) to provide the various language features. An alternative is to use a single language server that provides the same features.  
 
-Set `go.useLanguageServer` to `true` to use the Go language server from [Sourcegraph](https://github.com/sourcegraph/go-langserver) for features like Hover, Definition, Find All References, Signature Help, Go to Symbol in File and Workspace.
-* Since only a single language server is spun up for given VS Code instance, having multi-root setup where the folders have different GOPATH is not supported.
-* If set to true, you will be prompted to install the Go language server. Once installed, you will have to reload VS Code window. The language server will then be run by the Go extension in the background to provide services needed for the above mentioned features.
-* Every time you change the value of the setting `go.useLanguageServer`, you need to reload the VS Code window for it to take effect.
-* To collect traces, set `"go.languageServerFlags": ["-trace"]`
-* To collect errors from language server in a logfile, set `"go.languageServerFlags": ["-trace", "-logfile", "path to a text file that exists"]`
-* Use the new setting `go.languageServerExperimentalFeatures` to opt-in to try new features like Code Completion and Formatting from the language server that might not be feature complete yet. 
+Previously, we added support to use the [language server from Sourcegraph](https://github.com/sourcegraph/go-langserver). Since there is no
+active development for it anymore and because it doesn't support Go modules, we are now switching to use the [language server from Google](https://github.com/golang/go/wiki/gopls). 
+
+- If you are using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules.
+- Since the language server from Google provides much better support for Go modules, you will be prompted about it when the extension detects that you are working on a project that uses Go modules.
+- If you have never used language server before, and now opt to use it, you will be prompted to install and use the language server from Google.
+
+#### Settings to control the use of the Go language server
+
+Below are the settings you can use to control the use of the language server. You need to reload the VS Code window for any changes in these settings to take effect.
+
+- Set `go.useLanguageServer` to `true` to enable the use of language server
+- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server.
+- Set `"go.languageServerFlags": ["-trace"]` to collect traces in the output panel. 
+- Set `"go.languageServerFlags": ["-trace", "-logfile", "path to a text file that exists"]` to collect traces in a log file.
+
+#### Setting to change the language server being used
+
+If you want to try out other language servers, for example, [bingo](https://github.com/saibing/bingo), then install it and add the below setting
+```json
+"go.alternateTools": {
+  "gopls": "bingo"
+}
+```
+This will tell the Go extension to use `bingo` in place of `gopls`.
+
 
 ### Linter
 
@@ -177,6 +196,10 @@ Read more at [Building, Debugging and Sideloading the extension in Visual Studio
 ## Tools this extension depends on
 
 This extension uses a host of Go tools to provide the various rich features. These tools are installed in your GOPATH by default. If you wish to have the extension use a separate GOPATH for its tools, provide the desired location in the setting `go.toolsGopath`. Read more about this and the tools at [Go tools that the Go extension depends on](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on).
+
+## Frequently Asked Questions (FAQ)
+
+Please see our wiki on [Frequently Asked Questions](https://github.com/Microsoft/vscode-go/wiki/Go-with-VS-Code-FAQ-and-Troubleshooting) to get answers to your questions or get started with troubleshooting.
 
 ## Contributing
 

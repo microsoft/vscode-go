@@ -1,8 +1,7 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath, getModuleCache } from './util';
 import { outputChannel } from './goStatus';
-import os = require('os');
 import { getNonVendorPackages } from './goPackages';
 import { getTestFlags } from './testUtils';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
@@ -13,7 +12,7 @@ import { buildDiagnosticCollection } from './goMain';
  * Builds current package or workspace.
  */
 export function buildCode(buildWorkspace?: boolean) {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!buildWorkspace) {
 		if (!editor) {
 			vscode.window.showInformationMessage('No editor is active, cannot find current package to build');
@@ -25,8 +24,8 @@ export function buildCode(buildWorkspace?: boolean) {
 		}
 	}
 
-	let documentUri = editor ? editor.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const documentUri = editor ? editor.document.uri : null;
+	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
 
 	outputChannel.clear(); // Ensures stale output from build on save is cleared
 	diagnosticsStatusBarItem.show();
@@ -53,9 +52,9 @@ export function buildCode(buildWorkspace?: boolean) {
  * @param goConfig Configuration for the Go extension.
  * @param buildWorkspace If true builds code in all workspace.
  */
-export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
+export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
 	epoch++;
-	let closureEpoch = epoch;
+	const closureEpoch = epoch;
 	if (tokenSource) {
 		if (running) {
 			tokenSource.cancel();
@@ -63,7 +62,7 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 		tokenSource.dispose();
 	}
 	tokenSource = new vscode.CancellationTokenSource();
-	let updateRunning = () => {
+	const updateRunning = () => {
 		if (closureEpoch === epoch)
 			running = false;
 	};
@@ -72,6 +71,11 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 	const cwd = (buildWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
 	if (!path.isAbsolute(cwd)) {
 		return Promise.resolve([]);
+	}
+
+	// Skip building if cwd is in the module cache
+	if (isMod && cwd.startsWith(getModuleCache())) {
+		return [];
 	}
 
 	const buildEnv = Object.assign({}, getToolsEnvVars());
@@ -94,6 +98,7 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 	}
 
 	if (buildWorkspace && currentWorkspace && !isTestFile) {
+		outputChannel.appendLine(`Starting building the current workspace at ${currentWorkspace}`);
 		return getNonVendorPackages(currentWorkspace).then(pkgs => {
 			running = true;
 			return runTool(
@@ -113,9 +118,10 @@ export function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.Wo
 	}
 
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
-	let currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
-	let importPath = currentGoWorkspace ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+	const currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
+	const importPath = (currentGoWorkspace && !isMod) ? cwd.substr(currentGoWorkspace.length + 1) : '.';
 	running = true;
+	outputChannel.appendLine(`Starting building the current package at ${cwd}`);
 	return runTool(
 		buildArgs.concat('-o', tmpPath, importPath),
 		cwd,
