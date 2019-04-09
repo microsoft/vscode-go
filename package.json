@@ -385,15 +385,16 @@
                   "remote",
                   "test",
                   "exec",
+                  "record",
                   "replay"
                 ],
-                "description": "One of 'auto', 'debug', 'remote', 'test', 'exec', 'replay'.",
+                "description": "One of 'auto', 'debug', 'remote', 'test', 'exec', 'record', replay'.",
                 "default": "auto"
               },
               "traceDirectory": {
                 "type": "string",
                 "description": "Directory in which the record trace is located. For use on 'replay' mode only",
-                "default": "."
+                "default": ""
               },
               "stopOnEntry": {
                 "type": "boolean",

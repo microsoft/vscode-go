@@ -604,6 +604,7 @@ class GoDebugSession extends LoggingDebugSession {
 		// This debug adapter implements the configurationDoneRequest.
 		response.body.supportsConfigurationDoneRequest = true;
 		response.body.supportsSetVariable = true;
+		response.body.supportsStepBack = true;
 		this.sendResponse(response);
 		log('InitializeResponse');
 	}
@@ -819,15 +820,21 @@ class GoDebugSession extends LoggingDebugSession {
 
 	protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
 		log('SetBreakPointsRequest');
-		if (!this.continueRequestRunning) {
+		if (!this.continueRequestRunning && !this.rewindRequestRunning) {
 			this.setBreakPoints(response, args);
 		} else {
 			this.skipStopEventOnce = true;
 			this.delve.callPromise('Command', [{ name: 'halt' }]).then(() => {
 				return this.setBreakPoints(response, args).then(() => {
-					return this.continue(true).then(null, err => {
-						logError(`Failed to continue delve after halting it to set breakpoints: "${err.toString()}"`);
-					});
+					if (this.continueRequestRunning) {
+						return this.continue(true).then(null, err => {
+							logError(`Failed to continue delve after halting it to set breakpoints: "${err.toString()}"`);
+						});
+					} else if (this.rewindRequestRunning) {
+						return this.rewind(true).then(null, err => {
+							logError(`Failed to rewind delve after halting it to set breakpoints: "${err.toString()}"`);
+						});
+					}
 				});
 			}, err => {
 				this.skipStopEventOnce = false;
@@ -1331,6 +1338,47 @@ class GoDebugSession extends LoggingDebugSession {
 		});
 		this.sendResponse(response);
 		log('PauseResponse');
+	}
+
+	protected stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments): void {
+		logError('Step back is not currently supported by Delve');
+		this.sendResponse(response);
+	}
+
+	protected reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments): void {
+		log('ReverseContinueRequest');
+		this.rewind();
+		this.sendResponse(response);
+		log('ReverseContinueResponse');
+	}
+
+	private rewindEpoch = 0;
+	private rewindRequestRunning = false;
+	private rewind(calledWhenSettingBreakpoint?: boolean): Thenable<void> {
+		this.rewindEpoch++;
+		const closureEpoch = this.rewindEpoch;
+		this.rewindRequestRunning = true;
+
+		const callback = (out: any) => {
+			if (closureEpoch === this.rewindEpoch) {
+				this.rewindRequestRunning = false;
+			}
+			const state: DebuggerState = <DebuggerState>out;
+			log('rewind state', state);
+			this.debugState = state;
+			this.handleReenterDebug('breakpoint');
+		};
+
+		// If called when setting breakpoint internally, we want the error to bubble up.
+		const errorCallback = calledWhenSettingBreakpoint ? null : (err: any) => {
+			if (err) {
+				logError('Failed to rewind - ' + err.toString());
+			}
+			this.handleReenterDebug('breakpoint');
+			throw err;
+		};
+
+		return this.delve.callPromise('Rewind', []).then(callback, errorCallback);
 	}
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
