@@ -432,10 +432,8 @@ class Delve {
 			if (launchArgs.output && mode === 'debug') {
 				dlvArgs = dlvArgs.concat(['--output=' + launchArgs.output]);
 			}
-			if (launchArgs.args) {
-				if (launchArgs.args.length > 0) {
-					dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
-				}
+			if (launchArgs.args && (launchArgs.args.length > 0)) {
+				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
 			}
 
 			log(`Current working directory: ${dlvCwd}`);
