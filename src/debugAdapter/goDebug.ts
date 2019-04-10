@@ -402,7 +402,7 @@ class Delve {
 			if (mode === 'exec') {
 				dlvArgs = dlvArgs.concat([program]);
 			} else if (mode === 'replay') {
-				if ((launchArgs.backend) && (launchArgs.backend !== 'rr')) {
+				if (launchArgs.backend !== 'rr') {
 					return reject('Invalid debugger backend. Only rr is supported for replay mode');
 				}
 				dlvArgs = dlvArgs.concat(launchArgs.traceDirectory);
