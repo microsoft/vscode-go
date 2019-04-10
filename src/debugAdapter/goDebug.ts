@@ -402,6 +402,9 @@ class Delve {
 			if (mode === 'exec') {
 				dlvArgs = dlvArgs.concat([program]);
 			} else if (mode === 'replay') {
+				if ((launchArgs.backend) && (launchArgs.backend !== 'rr')) {
+					return reject('Invalid debugger backend. Only rr is supported for replay mode');
+				}
 				dlvArgs = dlvArgs.concat(launchArgs.traceDirectory);
 			} else if (currentGOWorkspace && env['GO111MODULE'] !== 'on') {
 				dlvArgs = dlvArgs.concat([dirname.substr(currentGOWorkspace.length + 1)]);
@@ -603,7 +606,7 @@ class GoDebugSession extends LoggingDebugSession {
 		response.body.supportsConfigurationDoneRequest = true;
 		response.body.supportsSetVariable = true;
 
-		// rr is only supported on linux and for certain Intel architectures
+		// rr which is required for reverse continue is only supported on linux and for certain Intel architectures
 		// See https://github.com/mozilla/rr/wiki/Building-And-Installing#supported-hardware
 		const cpuModel: string = os.cpus()[0].model;
 		if ((process.platform === 'linux') && (cpuModel.toLowerCase().includes('intel'))) {
