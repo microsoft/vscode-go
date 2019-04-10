@@ -385,7 +385,6 @@
                   "remote",
                   "test",
                   "exec",
-                  "record",
                   "replay"
                 ],
                 "description": "One of 'auto', 'debug', 'remote', 'test', 'exec', 'record', replay'.",

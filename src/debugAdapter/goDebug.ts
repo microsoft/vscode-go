@@ -602,7 +602,14 @@ class GoDebugSession extends LoggingDebugSession {
 		// This debug adapter implements the configurationDoneRequest.
 		response.body.supportsConfigurationDoneRequest = true;
 		response.body.supportsSetVariable = true;
-		response.body.supportsStepBack = true;
+
+		// rr is only supported on linux and for certain Intel architectures
+		// See https://github.com/mozilla/rr/wiki/Building-And-Installing#supported-hardware
+		const cpuModel: string = os.cpus()[0].model;
+		if ((process.platform === 'linux') && (cpuModel.toLowerCase().includes('intel'))) {
+			response.body.supportsStepBack = true;
+		}
+
 		this.sendResponse(response);
 		log('InitializeResponse');
 	}
