@@ -63,7 +63,6 @@ export let lintDiagnosticCollection: vscode.DiagnosticCollection;
 export let vetDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
-	let useLangServer = vscode.workspace.getConfiguration('go')['useLanguageServer'];
 	setGlobalState(ctx.globalState);
 
 	updateGoPathGoRootFromConfig().then(async () => {
@@ -453,10 +452,16 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		sendTelemetryEventForConfig(updatedGoConfig);
 		updateGoPathGoRootFromConfig();
 
+		// If there was a change in "toolsGopath" setting, then clear cache for go tools
+		if (getToolsGopath() !== getToolsGopath(false)) {
+			clearCacheForTools();
+		}
+
+		const languageServerToolPathBeingUsed = getLanguageServerToolPath();
 		let reloadMessage: string;
 		if (e.affectsConfiguration('go.useLanguageServer')) {
 			if (updatedGoConfig['useLanguageServer']) {
-				if (getLanguageServerToolPath()) {
+				if (languageServerToolPathBeingUsed) {
 					reloadMessage = 'Reload VS Code window to enable the use of language server';
 				}
 			} else {
@@ -474,19 +479,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				}
 			});
 		}
-		useLangServer = updatedGoConfig['useLanguageServer'];
 
-		// If there was a change in "toolsGopath" setting, then clear cache for go tools
-		if (getToolsGopath() !== getToolsGopath(false)) {
-			clearCacheForTools();
-		}
 
 		if (updatedGoConfig['enableCodeLens']) {
 			testCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['runtest']);
 			referencesCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['references']);
 		}
 
-		if (e.affectsConfiguration('go.formatTool')) {
+		const languageServerExperimentalFeatures: any = updatedGoConfig.get('languageServerExperimentalFeatures');
+		if (e.affectsConfiguration('go.formatTool') && (!languageServerToolPathBeingUsed || languageServerExperimentalFeatures['format'] === false)) {
 			checkToolExists(updatedGoConfig['formatTool']);
 		}
 		if (e.affectsConfiguration('go.lintTool')) {

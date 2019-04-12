@@ -50,6 +50,8 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 		logModuleUsage();
 		goModEnvResult = path.dirname(goModEnvResult);
 		const goConfig = vscode.workspace.getConfiguration('go', fileuri);
+		let promptFormatTool = goConfig['formatTool'] === 'goreturns';
+
 		if (goConfig['inferGopath'] === true) {
 			goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder);
 			vscode.window.showInformationMessage('The "inferGopath" setting is disabled for this workspace because Go modules are being used.');
@@ -57,10 +59,15 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 		if (goConfig['useLanguageServer'] === false) {
 			const promptMsg = 'To get better performance during code completion, please update to use the language server from Google';
 			const choseToUpdateLS = await promptToUpdateToolForModules('gopls', promptMsg);
-			if (!choseToUpdateLS && goConfig['formatTool'] === 'goreturns') {
-				goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.WorkspaceFolder);
-				vscode.window.showInformationMessage('`goreturns` doesnt support auto-importing missing imports when using Go modules yet. So updating the "formatTool" setting to `goimports` for this workspace.');
-			}
+			promptFormatTool = promptFormatTool && !choseToUpdateLS;
+		} else if (promptFormatTool) {
+			const languageServerExperimentalFeatures: any = goConfig.get('languageServerExperimentalFeatures');
+			promptFormatTool = languageServerExperimentalFeatures['format'] === false;
+		}
+
+		if (promptFormatTool) {
+			goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.WorkspaceFolder);
+			vscode.window.showInformationMessage('`goreturns` doesnt support auto-importing missing imports when using Go modules yet. So updating the "formatTool" setting to `goimports` for this workspace.');
 		}
 	}
 	packageModCache.set(pkgPath, goModEnvResult);
