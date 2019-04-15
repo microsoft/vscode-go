@@ -249,6 +249,11 @@
 			"prefix": "helloweb",
 			"body": "package main\n\nimport (\n\t\"fmt\"\n\t\"net/http\"\n\t\"time\"\n)\n\nfunc greet(w http.ResponseWriter, r *http.Request) {\n\tfmt.Fprintf(w, \"Hello World! %s\", time.Now())\n}\n\nfunc main() {\n\thttp.HandleFunc(\"/\", greet)\n\thttp.ListenAndServe(\":8080\", nil)\n}",
 			"description": "Snippet for sample hello world webapp"
+		},
+		"sort implementation": {
+			"prefix": "sort",
+			"body": "type ${1:SortBy} []${2:Type}\n\nfunc (a $1) Len() int           { return len(a) }\nfunc (a $1) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }\nfunc (a $1) Less(i, j int) bool { ${3:return a[i] < a[j]} }",
+			"description": "Snippet for a custom sort.Sort interface implementation, for a given slice type."
 		}
 	}
 }
