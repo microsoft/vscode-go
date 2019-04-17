@@ -54,7 +54,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private async getCodeLensForPackage(document: TextDocument, token: CancellationToken): Promise<CodeLens[]> {
 		const documentSymbolProvider = new GoDocumentSymbolProvider();
 		const symbols = await documentSymbolProvider.provideDocumentSymbols(document, token);
-		const pkg = symbols[0].children.find(sym => sym.kind === vscode.SymbolKind.Package && !!sym.name);
+		const pkg = symbols[0];
 		if (!pkg) {
 			return;
 		}
