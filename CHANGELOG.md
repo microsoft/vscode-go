@@ -1,4 +1,4 @@
-## 0.10.0 - Coming Soon...
+## 0.10.0 - 17th April, 2019
 
 ### Go Modules support improvements
 
@@ -6,9 +6,9 @@
     * Add grammar for `go.mod` and `go.sum` files, thus providing syntax highlighting for them. [Feature Request 1886](https://github.com/Microsoft/vscode-go/issues/1886) implemented with [PR 2344](https://github.com/Microsoft/vscode-go/pull/2344)
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+  * Support `gopls`, the language server from Google as the one from Sourcegraph is no longer under active development. Also because `gopls` supports Go modules. [PR 2383](https://github.com/Microsoft/vscode-go/pull/2383). Please read our [updated README on language servers](https://github.com/Microsoft/vscode-go/tree/8ea6e4708dfd141ab65b4c7eb4f71e55d098a222#go-language-server-experimental) for the latest on what we recommend.
   * Use `goimports` for formatting when using Go modules without the language server because `goreturns`(the default formatting tool) doesn't work with modules yet. Fixes [Bug 2309](https://github.com/Microsoft/vscode-go/issues/2309)
   * Fix build on save, install and debug features when `GO111MODULE` is set to `on` inside the GOPATH. Fixes [Bug 2238](https://github.com/Microsoft/vscode-go/issues/2238) with [commit 15f571e4](https://github.com/Microsoft/vscode-go/commit/15f571e490e35a4c531aca6585aae7d07dfaae93)
-  * Support `gopls`, the language server from Google as the one from Sourcegraph is no longer under active development. Also because `gopls` supports Go modules. [PR 2383](https://github.com/Microsoft/vscode-go/pull/2383). Please read our [updated README on language servers](https://github.com/Microsoft/vscode-go/tree/8ea6e4708dfd141ab65b4c7eb4f71e55d098a222#go-language-server-experimental) for the latest on what we recommend.
     
 
 ### New features
