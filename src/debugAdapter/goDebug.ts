@@ -687,7 +687,7 @@ class GoDebugSession extends LoggingDebugSession {
 					}
 					const clientVersion = this.delve.isApiV1 ? 1 : 2;
 					if (out.APIVersion !== clientVersion) {
-						const errorMessage = `The remote server is running on delve v${out.APIVersion} API and the client is running v${clientVersion} API. Change the version used on the client by using the setting "apiVersion" to true or false as appropriate.`;
+						const errorMessage = `The remote server is running on delve v${out.APIVersion} API and the client is running v${clientVersion} API. Change the version used on the client by using the property "apiVersion" in your launch.json file.`;
 						logError(errorMessage);
 						return this.sendErrorResponse(response,
 							3000,
