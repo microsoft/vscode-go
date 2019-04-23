@@ -1,4 +1,4 @@
-## 0.10.0 - 17th April, 2019
+## 0.10.0 - 23rd April, 2019
 
 ### Go Modules support improvements
 
@@ -15,6 +15,8 @@
 
 * [Aswin M Prabhu (@aswinmprabhu)](https://github.com/aswinmprabhu)
     * Refactor commands to extract functions and variables using [godoctor](https://github.com/godoctor/godoctor). [Feature Request 588](https://github.com/Microsoft/vscode-go/issues/588) implemented with [PR 2139](https://github.com/Microsoft/vscode-go/pull/2139)
+        - `Go: Extract to function`
+        - `Go: Extract to variable`
 
 
 ### Debugging improvements
