@@ -4,7 +4,7 @@
 
 This extension adds rich language support for the [Go language](https://golang.org/) to VS Code.
 
-Read the [Release Notes](https://github.com/Microsoft/vscode-go/wiki/Release-Notes) to know what has changed over the last few versions of this extension.
+Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
 
 ## Language Features
 
