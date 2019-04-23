@@ -103,6 +103,10 @@ If you want to try out other language servers, for example, [bingo](https://gith
 ```
 This will tell the Go extension to use `bingo` in place of `gopls`.
 
+#### Provide feedback on gopls
+
+If you find any problems using the `gopls` language server, please first check the [list of existing issues for gopls](https://github.com/golang/go/issues?q=is%3Aissue+is%3Aopen+label%3Agopls) and update the relevant ones with your case before logging a new one at https://github.com/golang/go/issues
+
 
 ### Linter
 
