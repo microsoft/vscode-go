@@ -287,6 +287,16 @@
         "command": "go.test.cancel",
         "title": "Go: Cancel Running Tests",
         "description": "Cancels running tests."
+      },
+      {
+        "command": "go.godoctor.extract",
+        "title": "Go: Extract to function",
+        "description": "Extract to function using godoctor."
+      },
+      {
+        "command": "go.godoctor.var",
+        "title": "Go: Extract to variable",
+        "description": "Extract to variable using godoctor."
       }
     ],
     "debuggers": [
