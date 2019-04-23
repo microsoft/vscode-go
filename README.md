@@ -74,7 +74,7 @@ You will see `Analysis Tools Missing` in the bottom right, clicking this will of
 The Go extension is ready to use on the get go. If you want to customize the features, you can edit the settings in your User or Workspace settings. Read [All Settings & Commands in Visual Studio Code Go extension](https://github.com/Microsoft/vscode-go/wiki/All-Settings-&-Commands-in-Visual-Studio-Code-Go-extension) for the full list of options and their descriptions.
 
 
-### Go Language Server (Experimental)
+### Go Language Server
 
 The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) to provide the various language features. An alternative is to use a single language server that provides the same features.  
 
@@ -91,8 +91,7 @@ Below are the settings you can use to control the use of the language server. Yo
 
 - Set `go.useLanguageServer` to `true` to enable the use of language server
 - Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server.
-- Set `"go.languageServerFlags": ["-trace"]` to collect traces in the output panel. 
-- Set `"go.languageServerFlags": ["-trace", "-logfile", "path to a text file that exists"]` to collect traces in a log file.
+- Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect traces in a log file.
 
 #### Setting to change the language server being used
 
