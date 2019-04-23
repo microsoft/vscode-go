@@ -56,7 +56,6 @@ import { installCurrentPackage } from './goInstall';
 import { setGlobalState } from './stateUtils';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
-import { GoRefactorProvider } from './goRefactor';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -301,7 +300,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
-	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoRefactorProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, referencesCodeLensProvider));
 	ctx.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('go', new GoDebugConfigurationProvider()));
