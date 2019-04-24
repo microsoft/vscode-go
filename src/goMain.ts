@@ -111,6 +111,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			const languageServerExperimentalFeatures: any = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
 			const langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
 
+			// `-trace was a flag for `go-langserver` which is replaced with `-rpc.trace` for gopls to avoid crash
+			const traceFlagIndex = langServerFlags.indexOf('-trace');
+			if (traceFlagIndex > -1 && languageServerTool === 'gopls') {
+				langServerFlags[traceFlagIndex] = '-rpc.trace';
+			}
+
 			const c = new LanguageClient(
 				languageServerTool,
 				{

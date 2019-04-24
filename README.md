@@ -91,7 +91,8 @@ Below are the settings you can use to control the use of the language server. Yo
 
 - Set `go.useLanguageServer` to `true` to enable the use of language server
 - Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server.
-- Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect traces in a log file.
+- Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect logs in a log file.
+- Set `"go.languageServerFlags": ["-rpc.trace"]` to see the complete rpc trace in the output panel (`View` -> `Output` -> `gopls`)
 
 #### Setting to change the language server being used
 
