@@ -39,13 +39,12 @@ export function implCursor() {
 
 function runGoImpl(args: string[], insertPos: vscode.Position) {
 	const goimpl = getBinPath('impl');
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		cwd: dirname(vscode.window.activeTextEditor.document.fileName),
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+		timeout: getTimeoutConfiguration('onCommand')
 	};
 
 	const p = cp.execFile(goimpl, args, options, (err, stdout, stderr) => {

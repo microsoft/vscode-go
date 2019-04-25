@@ -26,7 +26,7 @@ export function vetCode(vetWorkspace?: boolean) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Vetting...';
 
-	goVet(documentUri, goConfig, vetWorkspace, getTimeoutConfiguration(goConfig, 'onCommand'))
+	goVet(documentUri, goConfig, vetWorkspace, getTimeoutConfiguration('onCommand', goConfig))
 		.then(warnings => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vetDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();

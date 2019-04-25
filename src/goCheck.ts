@@ -81,7 +81,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		return Promise.resolve([]);
 	}
 
-	const timeout = getTimeoutConfiguration(goConfig, 'onSave');
+	const timeout = getTimeoutConfiguration('onSave', goConfig);
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;
 	const testConfig: TestConfig = {

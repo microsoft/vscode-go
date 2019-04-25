@@ -77,13 +77,11 @@ function runGoDoctor(
 			return resolve();
 		}
 
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-
 		// Set up execFile parameters
 		const options: { [key: string]: any } = {
 			env: getToolsEnvVars(),
 			cwd: dirname(fileName),
-			timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+			timeout: getTimeoutConfiguration('onCommand')
 		};
 
 		cp.execFile(

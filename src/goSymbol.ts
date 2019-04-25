@@ -100,8 +100,6 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, token:
 
 function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise<GoSymbolDeclaration[]> {
 	const gosyms = getBinPath('go-symbols');
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 
 	if (token) {
@@ -111,7 +109,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand'),
+		timeout: getTimeoutConfiguration('onCommand'),
 		maxBuffer: 1024 * 1024
 	};
 
@@ -134,15 +132,8 @@ function getGoroot(): Promise<string> {
 	if (!goExecutable) {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
-
-	// Set up execFile parameters
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	const options: { [key: string]: any } = {
-		timeout: getTimeoutConfiguration(goConfig, 'onType')
-	};
-
 	return new Promise((resolve, reject) => {
-		cp.execFile(goExecutable, ['env', 'GOROOT'], options, (err, stdout) => {
+		cp.execFile(goExecutable, ['env', 'GOROOT'], (err, stdout) => {
 			if (err) {
 				reject(err);
 				return;

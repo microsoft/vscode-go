@@ -339,7 +339,7 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 	}
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		const timeout = getTimeoutConfiguration(this.goConfig, 'onCommand');
+		const timeout = getTimeoutConfiguration('onCommand', this.goConfig);
 		return definitionLocation(document, position, this.goConfig, false, timeout, token).then(definitionInfo => {
 			if (definitionInfo == null || definitionInfo.file == null) return null;
 			const definitionResource = vscode.Uri.file(definitionInfo.file);

@@ -19,8 +19,6 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 	private doFindReferences(document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
 		return new Promise<vscode.Location[]>((resolve, reject) => {
-			const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-
 			// get current word
 			const wordRange = document.getWordRangeAtPosition(position);
 			if (!wordRange) {
@@ -44,7 +42,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			// Set up execFile parameters
 			const options: { [key: string]: any } = {
 				env: getToolsEnvVars(),
-				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+				timeout: getTimeoutConfiguration('onCommand')
 			};
 
 			const process = cp.execFile(goGuru, args, options, (err, stdout, stderr) => {

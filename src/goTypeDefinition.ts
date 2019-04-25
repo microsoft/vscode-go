@@ -41,7 +41,6 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 		position = adjustedPos[2];
 
 		return new Promise<vscode.Definition>((resolve, reject) => {
-			const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 			const goGuru = getBinPath('guru');
 			if (!path.isAbsolute(goGuru)) {
 				promptForMissingTool('guru');
@@ -58,7 +57,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			// Set up execFile parameters
 			const options: { [key: string]: any } = {
 				env: getToolsEnvVars(),
-				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+				timeout: getTimeoutConfiguration('onCommand')
 			};
 
 			const process = cp.execFile(goGuru, args, options, (err, stdout, stderr) => {

@@ -22,7 +22,7 @@ export class GoHoverProvider implements HoverProvider {
 			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
 		}
 		let goConfig = this.goConfig;
-		const timeout = getTimeoutConfiguration(this.goConfig, 'onHover');
+		const timeout = getTimeoutConfiguration('onHover', this.goConfig);
 
 		// Temporary fix to fall back to godoc if guru is the set docsTool
 		if (goConfig['docsTool'] === 'guru') {

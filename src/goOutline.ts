@@ -63,7 +63,6 @@ export async function documentSymbols(options: GoOutlineOptions, token: vscode.C
 
 export function runGoOutline(options: GoOutlineOptions, token: vscode.CancellationToken): Promise<GoOutlineDeclaration[]> {
 	return new Promise<GoOutlineDeclaration[]>((resolve, reject) => {
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 		const gooutline = getBinPath('go-outline');
 		const gooutlineFlags = ['-f', options.fileName];
 		if (options.importsOption === GoOutlineImportsOptions.Only) {
@@ -81,7 +80,7 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 		// Set up execFile parameters
 		const goOutlineOptions: { [key: string]: any } = {
 			env: getToolsEnvVars(),
-			timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+			timeout: getTimeoutConfiguration('onCommand')
 		};
 
 		// Spawn `go-outline` process

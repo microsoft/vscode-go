@@ -121,7 +121,6 @@ export function addImportToWorkspace() {
 	const editor = vscode.window.activeTextEditor;
 	const selection = editor.selection;
 	const goRuntimePath = getBinPath('go');
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 
 	let importPath = '';
 	if (!selection.isEmpty) {
@@ -154,7 +153,7 @@ export function addImportToWorkspace() {
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+		timeout: getTimeoutConfiguration('onCommand')
 	};
 
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], options, (err, stdout, stderr) => {

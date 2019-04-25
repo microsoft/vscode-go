@@ -39,7 +39,6 @@ export function browsePackages() {
 
 function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDir: string) {
 	const goRuntimePath = getBinPath('go');
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	if (!goRuntimePath) {
 		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
 	}
@@ -51,7 +50,7 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() }),
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+		timeout: getTimeoutConfiguration('onCommand')
 	};
 
 	if (workDir) {

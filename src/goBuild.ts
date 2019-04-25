@@ -32,7 +32,7 @@ export function buildCode(buildWorkspace?: boolean) {
 	diagnosticsStatusBarItem.text = 'Building...';
 
 	isModSupported(documentUri).then(isMod => {
-		goBuild(documentUri, isMod, goConfig, buildWorkspace, getTimeoutConfiguration(goConfig, 'onCommand'))
+		goBuild(documentUri, isMod, goConfig, buildWorkspace, getTimeoutConfiguration('onCommand', goConfig))
 		.then(errors => {
 			handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();

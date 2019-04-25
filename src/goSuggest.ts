@@ -207,7 +207,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
 			const waitTimer = setTimeout(() => {
 				resolve([]);
-			}, getTimeoutConfiguration(config, 'onType'));
+			}, getTimeoutConfiguration('onType', config));
 			const gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
 			const gocode = getBinPath(gocodeName);
 			if (!path.isAbsolute(gocode)) {

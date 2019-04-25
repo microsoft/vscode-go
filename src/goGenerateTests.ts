@@ -145,7 +145,7 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 		// Set up execFile parameters
 		const options: { [key: string]: any } = {
 			env: getToolsEnvVars(),
-			timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+			timeout: getTimeoutConfiguration('onCommand', goConfig)
 		};
 
 		cp.execFile(cmd, args, options, (err, stdout, stderr) => {

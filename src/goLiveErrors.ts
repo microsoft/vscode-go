@@ -54,7 +54,6 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 
 // processFile does the actual work once the timeout has fired
 function processFile(e: vscode.TextDocumentChangeEvent) {
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const gotypeLive = getBinPath('gotype-live');
 	if (!path.isAbsolute(gotypeLive)) {
 		return promptForMissingTool('gotype-live');
@@ -67,7 +66,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
-		timeout: getTimeoutConfiguration(goConfig, 'onType')
+		timeout: getTimeoutConfiguration('onType')
 	};
 
 	const p = cp.execFile(gotypeLive, args, options, (err, stdout, stderr) => {

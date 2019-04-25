@@ -25,7 +25,7 @@ export function lintCode(scope?: string) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Linting...';
 
-	goLint(documentUri, goConfig, scope, getTimeoutConfiguration(goConfig, 'onCommand'))
+	goLint(documentUri, goConfig, scope, getTimeoutConfiguration('onCommand', goConfig))
 		.then(warnings => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, lintDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();

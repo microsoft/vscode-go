@@ -22,12 +22,10 @@ export class GoRenameProvider implements vscode.RenameProvider {
 
 	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
 		return new Promise<vscode.WorkspaceEdit>((resolve, reject) => {
-			const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 			const filename = canonicalizeGOPATHPrefix(document.fileName);
 			const range = document.getWordRangeAtPosition(position);
 			const pos = range ? range.start : position;
 			const offset = byteOffsetAt(document, pos);
-			const env = getToolsEnvVars();
 			const gorename = getBinPath('gorename');
 			const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'] ;
 			const gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName];
@@ -47,7 +45,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			// Set up execFile parameters
 			const options: { [key: string]: any } = {
 				env: getToolsEnvVars(),
-				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+				timeout: getTimeoutConfiguration('onCommand')
 			};
 
 			p = cp.execFile(gorename, gorenameArgs, options, (err, stdout, stderr) => {

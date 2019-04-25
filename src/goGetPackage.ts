@@ -23,11 +23,9 @@ export function goGetPackage() {
 	}
 
 	// Set up execFile parameters
-	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const options: { [key: string]: any } = {
-		env: env,
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });,
+		timeout: getTimeoutConfiguration('onCommand')
 	};
 
 	cp.execFile(goRuntimePath, ['get', '-v', importPath], options, (err, stdout, stderr) => {

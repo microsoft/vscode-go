@@ -37,8 +37,6 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 			return;
 		}
 
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-
 		return new Promise<vscode.Definition>((resolve, reject) => {
 			if (token.isCancellationRequested) {
 				return resolve(null);
@@ -48,7 +46,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 			const options: { [key: string]: any } = {
 				cwd: root,
 				env: getToolsEnvVars(),
-				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+				timeout: getTimeoutConfiguration('onCommand')
 			};
 
 			const listProcess = cp.execFile(getBinPath('go'), ['list', '-e', '-json'], options, (err, stdout, stderr) => {

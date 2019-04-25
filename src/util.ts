@@ -239,15 +239,8 @@ export function getGoVersion(): Promise<SemVersion> {
 		sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
 		return Promise.resolve(goVersion);
 	}
-
-	// Set up execFile parameters
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	const options: { [key: string]: any } = {
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
-	};
-
 	return new Promise<SemVersion>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['version'], options, (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
 			const matches = /go version go(\d).(\d+).*/.exec(stdout);
 			if (matches) {
 				goVersion = {
@@ -980,7 +973,10 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 
 export const defaultTimeoutForChildProcess = 60000;
 
-export function getTimeoutConfiguration(goConfig: vscode.WorkspaceConfiguration, operationType: string): number {
+export function getTimeoutConfiguration(operationType: string, goConfig?: vscode.WorkspaceConfiguration ): number {
+	if (!goConfig) {
+		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	}
 	const execTimeout: { [key: string]: any } = goConfig.get('operationTimeout');
 	if (execTimeout.hasOwnProperty(operationType) && (typeof execTimeout[operationType] === 'number')) {
 		return execTimeout[operationType];

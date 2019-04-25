@@ -126,13 +126,12 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 function runGomodifytags(args: string[]) {
 	const gomodifytags = getBinPath('gomodifytags');
 	const editor = vscode.window.activeTextEditor;
-	const goConfig = vscode.workspace.getConfiguration('go', editor ? editor.document.uri : null);
 	const input = getFileArchive(editor.document);
 
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+		timeout: getTimeoutConfiguration('onCommand')
 	};
 
 	const p = cp.execFile(gomodifytags, args, options, (err, stdout, stderr) => {
