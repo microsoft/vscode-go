@@ -1,6 +1,6 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, getCurrentGoPath, getBinPath, getModuleCache, getTimeoutConfiguration } from './util';
+import { getToolsEnvVars, getCurrentGoPath, getBinPath, getModuleCache } from './util';
 import { outputChannel } from './goStatus';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import cp = require('child_process');
@@ -23,6 +23,7 @@ export async function installCurrentPackage(): Promise<void> {
 		return;
 	}
 
+	const env = Object.assign({}, getToolsEnvVars());
 	const cwd = path.dirname(editor.document.uri.fsPath);
 	const isMod = await isModSupported(editor.document.uri);
 
@@ -48,14 +49,7 @@ export async function installCurrentPackage(): Promise<void> {
 	outputChannel.show();
 	outputChannel.appendLine(`Installing ${importPath === '.' ? 'current package' : importPath}`);
 
-	// Set up execFile parameters
-	const options: { [key: string]: any } = {
-		env: getToolsEnvVars(),
-		cwd,
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
-	};
-
-	cp.execFile(goRuntimePath, args, options, (err, stdout, stderr) => {
+	cp.execFile(goRuntimePath, args, { env, cwd }, (err, stdout, stderr) => {
 		outputChannel.appendLine(err ? `Installation failed: ${stderr}` : `Installation successful`);
 	});
 }
