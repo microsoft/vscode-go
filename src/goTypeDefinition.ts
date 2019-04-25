@@ -58,7 +58,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			// Set up execFile parameters
 			const options: { [key: string]: any } = {
 				env: getToolsEnvVars(),
-				timeout: getTimeoutConfiguration(goConfig, 'onHover')
+				timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 			};
 
 			const process = cp.execFile(goGuru, args, options, (err, stdout, stderr) => {
@@ -82,7 +82,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 						}
 
 						// Fall back to position of declaration
-						return definitionLocation(document, position, null, false, token).then(definitionInfo => {
+						return definitionLocation(document, position, null, false, options.timeout, token).then(definitionInfo => {
 							if (definitionInfo == null || definitionInfo.file == null) return null;
 							const definitionResource = vscode.Uri.file(definitionInfo.file);
 							const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);

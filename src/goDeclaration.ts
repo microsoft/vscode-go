@@ -47,7 +47,13 @@ interface GuruDefinitionOuput {
 	desc: string;
 }
 
-export function definitionLocation(document: vscode.TextDocument, position: vscode.Position, goConfig: vscode.WorkspaceConfiguration, includeDocs: boolean, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
+export function definitionLocation(
+	document: vscode.TextDocument, 
+	position: vscode.Position, 
+	goConfig: vscode.WorkspaceConfiguration, 
+	includeDocs: boolean, 
+	timeout: number,
+	token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
 	const adjustedPos = adjustWordPosition(document, position);
 	if (!adjustedPos[0]) {
 		return Promise.resolve(null);
@@ -71,11 +77,11 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 					? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
 			};
 			if (toolForDocs === 'godoc') {
-				return definitionLocation_godef(input, token);
+				return definitionLocation_godef(input, timeout, token);
 			} else if (toolForDocs === 'guru') {
-				return definitionLocation_guru(input, token);
+				return definitionLocation_guru(input, timeout, token);
 			}
-			return definitionLocation_gogetdoc(input, token, true);
+			return definitionLocation_gogetdoc(input, timeout, token, true);
 		});
 	});
 }
@@ -95,7 +101,7 @@ export function adjustWordPosition(document: vscode.TextDocument, position: vsco
 }
 
 const godefImportDefinitionRegex = /^import \(.* ".*"\)$/;
-function definitionLocation_godef(input: GoDefinitionInput, token: vscode.CancellationToken, useReceivers: boolean = true): Promise<GoDefinitionInformation> {
+function definitionLocation_godef(input: GoDefinitionInput, timeout: number, token: vscode.CancellationToken, useReceivers: boolean = true): Promise<GoDefinitionInformation> {
 	const godefTool = 'godef';
 	const godefPath = getBinPath(godefTool);
 	if (!path.isAbsolute(godefPath)) {
@@ -108,11 +114,10 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 	}
 
 	// Set up execFile parameters
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const options = {
 		env: getToolsEnvVars(),
 		cwd: input.cwd,
-		timeout: getTimeoutConfiguration(goConfig, 'onSave')
+		timeout: timeout
 	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -139,7 +144,7 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 					if (stderr.indexOf('flag provided but not defined: -r') !== -1) {
 						promptForUpdatingTool('godef');
 						p = null;
-						return definitionLocation_godef(input, token, false).then(resolve, reject);
+						return definitionLocation_godef(input, timeout, token, false).then(resolve, reject);
 					}
 					return reject(err.message || stderr);
 				}
@@ -185,7 +190,7 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 	});
 }
 
-function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.CancellationToken, useTags: boolean): Promise<GoDefinitionInformation> {
+function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, token: vscode.CancellationToken, useTags: boolean): Promise<GoDefinitionInformation> {
 	const gogetdoc = getBinPath('gogetdoc');
 	if (!path.isAbsolute(gogetdoc)) {
 		return Promise.reject(missingToolMsg + 'gogetdoc');
@@ -197,11 +202,10 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 	}
 
 	// Set up execFile parameters
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const options = {
 		env: getToolsEnvVars(),
 		cwd: input.cwd,
-		timeout: getTimeoutConfiguration(goConfig, 'onSave')
+		timeout: timeout
 	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -218,7 +222,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 				}
 				if (stderr && stderr.startsWith('flag provided but not defined: -tags')) {
 					p = null;
-					return definitionLocation_gogetdoc(input, token, false).then(resolve, reject);
+					return definitionLocation_gogetdoc(input, timeout, token, false).then(resolve, reject);
 				}
 				if (err) {
 					if (input.isMod
@@ -260,7 +264,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 	});
 }
 
-function definitionLocation_guru(input: GoDefinitionInput, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
+function definitionLocation_guru(input: GoDefinitionInput, timeout: number, token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
 	const guru = getBinPath('guru');
 	if (!path.isAbsolute(guru)) {
 		return Promise.reject(missingToolMsg + 'guru');
@@ -272,11 +276,10 @@ function definitionLocation_guru(input: GoDefinitionInput, token: vscode.Cancell
 	}
 
 	// Set up execFile parameters
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const options = {
 		env: getToolsEnvVars(),
 		cwd: input.cwd,
-		timeout: getTimeoutConfiguration(goConfig, 'onSave')
+		timeout: timeout
 	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -336,7 +339,8 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 	}
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		return definitionLocation(document, position, this.goConfig, false, token).then(definitionInfo => {
+		const timeout = getTimeoutConfiguration(this.goConfig, 'onCommand');
+		return definitionLocation(document, position, this.goConfig, false, timeout, token).then(definitionInfo => {
 			if (definitionInfo == null || definitionInfo.file == null) return null;
 			const definitionResource = vscode.Uri.file(definitionInfo.file);
 			const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);

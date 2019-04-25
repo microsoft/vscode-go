@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { getParametersAndReturnType, isPositionInString } from './util';
+import { getParametersAndReturnType, isPositionInString, getTimeoutConfiguration } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
@@ -17,6 +17,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 	public async provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
 		let goConfig = this.goConfig || vscode.workspace.getConfiguration('go', document.uri);
+		const timeout = getTimeoutConfiguration(this.goConfig, 'onHover');
 
 		const theCall = this.walkBackwardsToBeginningOfCall(document, position);
 		if (theCall == null) {
@@ -28,7 +29,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
 		try {
-			const res = await definitionLocation(document, callerPos, goConfig, true, token);
+			const res = await definitionLocation(document, callerPos, goConfig, true, timeout, token);
 			if (!res) {
 				// The definition was not found
 				return null;

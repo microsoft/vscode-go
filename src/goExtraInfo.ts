@@ -8,6 +8,7 @@
 import vscode = require('vscode');
 import { HoverProvider, Hover, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
+import { getTimeoutConfiguration } from './util';
 
 export class GoHoverProvider implements HoverProvider {
 	private goConfig: WorkspaceConfiguration = null;
@@ -21,12 +22,13 @@ export class GoHoverProvider implements HoverProvider {
 			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
 		}
 		let goConfig = this.goConfig;
+		const timeout = getTimeoutConfiguration(this.goConfig, 'onHover');
 
 		// Temporary fix to fall back to godoc if guru is the set docsTool
 		if (goConfig['docsTool'] === 'guru') {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
-		return definitionLocation(document, position, goConfig, true, token).then(definitionInfo => {
+		return definitionLocation(document, position, goConfig, true, timeout, token).then(definitionInfo => {
 			if (definitionInfo == null) return null;
 			const lines = definitionInfo.declarationlines
 				.filter(line => line !== '')
