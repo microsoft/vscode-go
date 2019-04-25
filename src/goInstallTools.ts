@@ -10,7 +10,7 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, getTimeoutConfiguration } from './util';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, defaultTimeoutForChildProcess } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath } from './goPath';
 
@@ -276,8 +276,6 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 		return;
 	}
 
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-
 	// http.proxy setting takes precedence over environment variables
 	const httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
 	let envForTools = Object.assign({}, process.env);
@@ -316,12 +314,6 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 
 	envForTools['GO111MODULE'] = 'off';
 
-	// Set up execFile parameters
-	const toolInstallOptions: { [key: string]: any } = {
-		env: envForTools,
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
-	};
-
 	outputChannel.show();
 	outputChannel.clear();
 	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${path.sep}bin`);
@@ -344,7 +336,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 						// Gometalinter needs to install all the linters it uses.
 						outputChannel.appendLine('Installing all linters used by gometalinter....');
 						const gometalinterBinPath = getBinPath('gometalinter');
-						cp.execFile(gometalinterBinPath, ['--install'], toolInstallOptions, (err, stdout, stderr) => {
+						cp.execFile(gometalinterBinPath, ['--install'], { env: envForTools }, (err, stdout, stderr) => {
 							if (!err) {
 								outputChannel.appendLine('Installing all linters used by gometalinter SUCCEEDED.');
 								resolve([...sofar, null]);
@@ -363,7 +355,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 			const toolBinPath = getBinPath(tool);
 			if (path.isAbsolute(toolBinPath) && (tool === 'gocode' || tool === 'gocode-gomod')) {
 				closeToolPromise = new Promise<boolean>((innerResolve) => {
-					cp.execFile(toolBinPath, ['close'], { timeout: getTimeoutConfiguration(goConfig, 'onCommand') }, (err, stdout, stderr) => {
+					cp.execFile(toolBinPath, ['close'], { timeout: defaultTimeoutForChildProcess }, (err, stdout, stderr) => {
 						if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
 							outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
 							return innerResolve(false);
@@ -383,13 +375,13 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 					args.push('-d');
 				}
 				args.push(getToolImportPath(tool, goVersion));
-				cp.execFile(goRuntimePath, args, toolInstallOptions, (err, stdout, stderr) => {
+				cp.execFile(goRuntimePath, args, { env: envForTools }, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
 						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-						cp.execFile(goRuntimePath, args, toolInstallOptions, callback);
+						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
 					} else if (!err && tool.endsWith('-gomod')) {
 						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
-						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], toolInstallOptions, callback);
+						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], { env: envForTools }, callback);
 					} else {
 						callback(err, stdout, stderr);
 					}
@@ -418,8 +410,6 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 
 export function updateGoPathGoRootFromConfig(): Promise<void> {
 	const goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-
 	if (goroot) {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
@@ -434,7 +424,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
 	return new Promise<void>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], { timeout: getTimeoutConfiguration(goConfig, 'onCommand') }, (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
 			if (err) {
 				return reject();
 			}
