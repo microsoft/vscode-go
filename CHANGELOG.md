@@ -1,3 +1,12 @@
+## 0.10.1 - 25th April, 2019
+
+This patch release has fixes for the below bugs
+
+- [Bug 2459](https://github.com/Microsoft/vscode-go/issues/2459): `gopls` crashes when `-trace` is set in the `go.languageServerFlags` setting
+- [Bug 2461](https://github.com/Microsoft/vscode-go/issues/2461): Extension uses high CPU due to being stuck in an infinite loop when `go.useLanguageServer` is set to `true`, but no language server can be found
+- [Bug 2458](https://github.com/Microsoft/vscode-go/issues/2458): Reference to GOPATH when dependent tools are missing misleads users to think that they need GOPATH for the extension to work
+
+
 ## 0.10.0 - 23rd April, 2019
 
 ### Go Modules support improvements
