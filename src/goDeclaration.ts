@@ -48,10 +48,10 @@ interface GuruDefinitionOuput {
 }
 
 export function definitionLocation(
-	document: vscode.TextDocument, 
-	position: vscode.Position, 
-	goConfig: vscode.WorkspaceConfiguration, 
-	includeDocs: boolean, 
+	document: vscode.TextDocument,
+	position: vscode.Position,
+	goConfig: vscode.WorkspaceConfiguration,
+	includeDocs: boolean,
 	timeout: number,
 	token: vscode.CancellationToken): Promise<GoDefinitionInformation> {
 	const adjustedPos = adjustWordPosition(document, position);
