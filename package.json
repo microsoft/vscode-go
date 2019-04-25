@@ -714,7 +714,8 @@
             "onHover": 5000,
             "onCommand": 60000
           },
-          "scope": "resource"
+          "scope": "resource",
+          "description": "Configure timeouts for various operations."
         },
         "go.toolsGopath": {
           "type": "string",
