@@ -1,6 +1,6 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath, getModuleCache } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath, getModuleCache, getTimeoutConfiguration } from './util';
 import { outputChannel } from './goStatus';
 import { getNonVendorPackages } from './goPackages';
 import { getTestFlags } from './testUtils';
@@ -32,7 +32,7 @@ export function buildCode(buildWorkspace?: boolean) {
 	diagnosticsStatusBarItem.text = 'Building...';
 
 	isModSupported(documentUri).then(isMod => {
-		goBuild(documentUri, isMod, goConfig, buildWorkspace)
+		goBuild(documentUri, isMod, goConfig, buildWorkspace, getTimeoutConfiguration(goConfig, 'onCommand'))
 		.then(errors => {
 			handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
@@ -52,7 +52,7 @@ export function buildCode(buildWorkspace?: boolean) {
  * @param goConfig Configuration for the Go extension.
  * @param buildWorkspace If true builds code in all workspace.
  */
-export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
+export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.WorkspaceConfiguration, buildWorkspace: boolean, timeout: number): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;
 	if (tokenSource) {
@@ -109,6 +109,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 				null,
 				buildEnv,
 				true,
+				timeout,
 				tokenSource.token
 			).then(v => {
 				updateRunning();
@@ -130,6 +131,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 		null,
 		buildEnv,
 		true,
+		timeout,
 		tokenSource.token
 	).then(v => {
 		updateRunning();

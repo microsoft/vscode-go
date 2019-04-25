@@ -10,7 +10,7 @@ import path = require('path');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest, TestConfig, getTestFlags } from './testUtils';
-import { ICheckResult, getBinPath, getTempFilePath } from './util';
+import { ICheckResult, getBinPath, getTempFilePath, getTimeoutConfiguration } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
@@ -81,6 +81,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		return Promise.resolve([]);
 	}
 
+	const timeout = getTimeoutConfiguration(goConfig, 'onSave');
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;
 	const testConfig: TestConfig = {
@@ -109,7 +110,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!disableBuild && !!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
 		runningToolsPromises.push(isModSupported(fileUri)
-			.then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace'))
+			.then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace', timeout))
 			.then(errors => ({ diagnosticCollection: buildDiagnosticCollection, errors })));
 	}
 
@@ -129,12 +130,12 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
-		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'])
+		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'], timeout)
 			.then(errors => ({ diagnosticCollection: lintDiagnosticCollection, errors: errors })));
 	}
 
 	if (!disableVet && !!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
-		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace')
+		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace', timeout)
 			.then(errors => ({ diagnosticCollection: vetDiagnosticCollection, errors: errors })));
 	}
 

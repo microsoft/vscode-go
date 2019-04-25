@@ -1,6 +1,6 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion, getTimeoutConfiguration } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
 import { vetDiagnosticCollection } from './goMain';
@@ -26,7 +26,7 @@ export function vetCode(vetWorkspace?: boolean) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Vetting...';
 
-	goVet(documentUri, goConfig, vetWorkspace)
+	goVet(documentUri, goConfig, vetWorkspace, getTimeoutConfiguration(goConfig, 'onCommand'))
 		.then(warnings => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vetDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
@@ -44,7 +44,7 @@ export function vetCode(vetWorkspace?: boolean) {
  * @param goConfig Configuration for the Go extension.
  * @param vetWorkspace If true vets code in all workspace.
  */
-export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace?: boolean): Promise<ICheckResult[]> {
+export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace: boolean, timeout: number): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;
 	if (tokenSource) {
@@ -86,6 +86,7 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			null,
 			vetEnv,
 			false,
+			timeout,
 			tokenSource.token
 		).then((result) => {
 			if (closureEpoch === epoch)

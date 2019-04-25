@@ -627,7 +627,16 @@ export interface ICheckResult {
  * @param toolName The name of the Go tool to run. If none is provided, the go runtime itself is used
  * @param printUnexpectedOutput If true, then output that doesnt match expected format is printed to the output channel
  */
-export function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput: boolean, token?: vscode.CancellationToken): Promise<ICheckResult[]> {
+export function runTool(
+	args: string[],
+	cwd: string,
+	severity: string,
+	useStdErr: boolean,
+	toolName: string,
+	env: any,
+	printUnexpectedOutput: boolean,
+	timeout: number,
+	token?: vscode.CancellationToken): Promise<ICheckResult[]> {
 	const goRuntimePath = getBinPath('go');
 	let cmd: string;
 	if (toolName) {
@@ -649,11 +658,10 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 	}
 
 	// Set up execFile parameters
-	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const options: { [key: string]: any } = {
 		env,
 		cwd: fixDriveCasingInWindows(cwd),
-		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+		timeout
 	};
 
 	return new Promise((resolve, reject) => {
@@ -970,10 +978,12 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 	});
 }
 
+export const defaultTimeoutForChildProcess = 60000;
+
 export function getTimeoutConfiguration(goConfig: vscode.WorkspaceConfiguration, operationType: string): number {
 	const execTimeout: { [key: string]: any } = goConfig.get('operationTimeout');
 	if (execTimeout.hasOwnProperty(operationType) && (typeof execTimeout[operationType] === 'number')) {
 		return execTimeout[operationType];
 	}
-	return 60000;
+	return defaultTimeoutForChildProcess;
 }
