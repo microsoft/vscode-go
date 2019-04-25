@@ -686,25 +686,25 @@
             "onSave": {
               "type": "number",
               "default": 60000,
-              "description": "Timeout of build, lint, vet, test and cover processes on save file operation.",
+              "description": "Timeout for operations run on each file save like build, lint, vet, test and code coverage.",
               "scope": "resource"
             },
             "onType": {
               "type": "number",
               "default": 5000,
-              "description": "Timeout of process executed on type events (completion and live errors).",
+              "description": "Timeout for operations run on type (completion and live errors).",
               "scope": "resource"
             },
             "onHover": {
               "type": "number",
               "default": 5000,
-              "description": "Timeout of process executed on hover events.",
+              "description": "Timeout for operations run on hover",
               "scope": "resource"
             },
             "onCommand": {
               "type": "number",
               "default": 60000,
-              "description": "Default timeout for processes launched by extension commands.",
+              "description": "Timeout for features that are run using commands",
               "scope": "resource"
             }
           },
