@@ -123,8 +123,7 @@ function getTools(goVersion: SemVersion): string[] {
 	}
 
 	if (goConfig['useLanguageServer']) {
-		const languageServer = getToolFromToolPath(getLanguageServerToolPath());
-		tools.push(languageServer === 'go-langserver' ? 'go-langserver' : 'gopls');
+		tools.push('gopls');
 	}
 
 	if (goLiveErrorsEnabled()) {
