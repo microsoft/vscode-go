@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, getTimeoutConfiguration } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -205,6 +205,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
+			const waitTimer = setTimeout(() => {
+				resolve([]);
+			}, getTimeoutConfiguration(config, 'onType'));
 			const gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
 			const gocode = getBinPath(gocodeName);
 			if (!path.isAbsolute(gocode)) {
@@ -233,9 +236,16 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 			// Spawn `gocode` process
 			const p = cp.spawn(gocode, [...this.gocodeFlags, 'autocomplete', filename, '' + offset], { env });
-			p.stdout.on('data', data => stdout += data);
-			p.stderr.on('data', data => stderr += data);
+			p.stdout.on('data', data => {
+				stdout += data;
+				clearTimeout(waitTimer);
+			});
+			p.stderr.on('data', data => {
+				stderr += data;
+				clearTimeout(waitTimer);
+			});
 			p.on('error', err => {
+				clearTimeout(waitTimer);
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool(gocodeName);
 					return reject();
@@ -243,6 +253,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 				return reject(err);
 			});
 			p.on('close', code => {
+				clearTimeout(waitTimer);
 				try {
 					if (code !== 0) {
 						if (stderr.indexOf('rpc: can\'t find service Server.AutoComplete') > -1 && !this.killMsgShown) {
