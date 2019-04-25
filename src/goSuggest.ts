@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, getTimeoutConfiguration } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -398,13 +398,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 			const gocode = getBinPath('gocode');
 			const env = getToolsEnvVars();
 
-			// Set up execFile parameters
-			const options: { [key: string]: any } = {
-				env: getToolsEnvVars(),
-				timeout: getTimeoutConfiguration(goConfig, 'onHover')
-			};
-
-			cp.execFile(gocode, ['set'], options, (err, stdout, stderr) => {
+			cp.execFile(gocode, ['set'], { env }, (err, stdout, stderr) => {
 				if (err && stdout.startsWith('gocode: unknown subcommand:')) {
 					if (goConfig['gocodePackageLookupMode'] === 'gb' && this.globalState && !this.globalState.get(gocodeNoSupportForgbMsgKey)) {
 						vscode.window.showInformationMessage('The go.gocodePackageLookupMode setting for gb will not be honored as github.com/mdempskey/gocode doesnt support it yet.', 'Don\'t show again').then(selected => {
@@ -421,7 +415,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 				const optionsToSet: string[][] = [];
 				const setOption = () => {
 					const [name, value] = optionsToSet.pop();
-					cp.execFile(gocode, ['set', name, value], options, (err, stdout, stderr) => {
+					cp.execFile(gocode, ['set', name, value], { env }, (err, stdout, stderr) => {
 						if (optionsToSet.length) {
 							setOption();
 						} else {
