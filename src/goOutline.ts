@@ -81,7 +81,7 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 		// Set up execFile parameters
 		const goOutlineOptions: { [key: string]: any } = {
 			env: getToolsEnvVars(),
-			timeout: getTimeoutConfiguration(goConfig, 'onType')
+			timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 		};
 
 		// Spawn `go-outline` process
@@ -125,6 +125,7 @@ const goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
 	'function': vscode.SymbolKind.Function,
 	'struct': vscode.SymbolKind.Struct,
 };
+
 
 function convertToCodeSymbols(
 	document: vscode.TextDocument,

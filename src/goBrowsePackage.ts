@@ -51,7 +51,7 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() }),
-		timeout: getTimeoutConfiguration(goConfig, 'onSave')
+		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 	};
 
 	if (workDir) {

@@ -23,7 +23,6 @@ export async function installCurrentPackage(): Promise<void> {
 		return;
 	}
 
-	const env = Object.assign({}, getToolsEnvVars());
 	const cwd = path.dirname(editor.document.uri.fsPath);
 	const isMod = await isModSupported(editor.document.uri);
 
@@ -51,7 +50,7 @@ export async function installCurrentPackage(): Promise<void> {
 
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
-		env,
+		env: getToolsEnvVars(),
 		cwd,
 		timeout: getTimeoutConfiguration(goConfig, 'onCommand')
 	};

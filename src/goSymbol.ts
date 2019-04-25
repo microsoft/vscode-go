@@ -111,7 +111,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
-		timeout: getTimeoutConfiguration(goConfig, 'onType'),
+		timeout: getTimeoutConfiguration(goConfig, 'onCommand'),
 		maxBuffer: 1024 * 1024
 	};
 

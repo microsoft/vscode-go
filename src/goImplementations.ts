@@ -68,11 +68,9 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				args.push('-json', 'implements', `${filename}:#${offset.toString()}`);
 
 				// Do not override cwd for guru call
-				const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-				const guruOptions: { [key: string]: any } = {
-					cwd: root,
-					env: getToolsEnvVars(),
-					timeout: getTimeoutConfiguration(goConfig, 'onCommand')
+				const guruOptions = {
+					env: options.env,
+					timeout: options.timeout
 				};
 
 				const guruProcess = cp.execFile(goGuru, args, guruOptions, (err, stdout, stderr) => {
