@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, getTimeoutConfiguration } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, getTimeoutConfiguration, killProcess } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -205,9 +205,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 	private runGoCode(document: vscode.TextDocument, filename: string, inputText: string, offset: number, inString: boolean, position: vscode.Position, lineText: string, currentWord: string, includeUnimportedPkgs: boolean, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[]> {
 		return new Promise<vscode.CompletionItem[]>((resolve, reject) => {
-			const waitTimer = setTimeout(() => {
-				resolve([]);
-			}, getTimeoutConfiguration('onType', config));
 			const gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
 			const gocode = getBinPath(gocodeName);
 			if (!path.isAbsolute(gocode)) {
@@ -236,6 +233,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 			// Spawn `gocode` process
 			const p = cp.spawn(gocode, [...this.gocodeFlags, 'autocomplete', filename, '' + offset], { env });
+			const waitTimer = setTimeout(() => {
+				killProcess(p);
+				resolve([]);
+			}, getTimeoutConfiguration('onType', config));
 			p.stdout.on('data', data => {
 				stdout += data;
 				clearTimeout(waitTimer);
