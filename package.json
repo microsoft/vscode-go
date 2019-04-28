@@ -114,7 +114,8 @@
     "configurationDefaults": {
       "[go]": {
         "editor.insertSpaces": false,
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "editor.tabSize": 8
       }
     },
     "commands": [
