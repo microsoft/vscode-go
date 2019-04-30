@@ -90,9 +90,24 @@ active development for it anymore and because it doesn't support Go modules, we 
 Below are the settings you can use to control the use of the language server. You need to reload the VS Code window for any changes in these settings to take effect.
 
 - Set `go.useLanguageServer` to `true` to enable the use of language server
-- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server.
+- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server. Diagnostics from the language server is the only feature that is not enabled by default. If you want to try this feature from the language server, add the below in your settings
+```json
+"go.languageServerExperimentalFeatures": {
+  "diagnostics": true
+}
+```
 - Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect logs in a log file.
 - Set `"go.languageServerFlags": ["-rpc.trace"]` to see the complete rpc trace in the output panel (`View` -> `Output` -> `gopls`)
+- To enable adding missing imports or removing unused imports on file save, add the below to your settings
+```json
+"[go]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+    }
+}
+
+```
 
 #### Setting to change the language server being used
 
