@@ -1,3 +1,10 @@
+## 0.10.2 - 30th April, 2019
+
+This patch release has fixes for the below bugs
+- [Bug 2469](https://github.com/Microsoft/vscode-go/issues/2469): When the setting `go.autocompleteUnimportedPackages` is enabled,
+packages show up in completion list when typing `.` after a variable or existing package.
+- [Bug 2473](https://github.com/Microsoft/vscode-go/issues/2473): Adding of missing imports and removal of unused imports don't work on saving file after using `gopls`.
+
 ## 0.10.1 - 25th April, 2019
 
 This patch release has fixes for the below bugs
