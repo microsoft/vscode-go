@@ -259,7 +259,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 					const packageSuggestions: string[] = [];
 
 					const wordAtPosition = document.getWordRangeAtPosition(position);
-
+					let areCompletionsForPackageSymbols = false;
 					if (results && results[1]) {
 						for (const suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
@@ -269,6 +269,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 							item.receiver = suggest.receiver;
 							item.fileName = document.fileName;
 							item.detail = suggest.type;
+							if (!areCompletionsForPackageSymbols && item.package && item.package !== 'builtin') {
+								areCompletionsForPackageSymbols = true;
+							}
 							if (suggest.class === 'package') {
 								const possiblePackageImportPaths = this.getPackageImportPath(item.label);
 								if (possiblePackageImportPaths.length === 1) {
@@ -350,7 +353,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 					}
 
 					// Add importable packages matching currentword to suggestions
-					if (includeUnimportedPkgs && !this.isGoMod) {
+					if (includeUnimportedPkgs && !this.isGoMod && !areCompletionsForPackageSymbols) {
 						suggestions = suggestions.concat(getPackageCompletions(document, currentWord, this.pkgsList, packageSuggestions));
 					}
 
