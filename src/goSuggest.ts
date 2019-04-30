@@ -141,7 +141,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 				let offset = byteOffsetAt(document, position);
 				let inputText = document.getText();
-				const includeUnimportedPkgs = autocompleteUnimportedPackages && !inString;
+				const includeUnimportedPkgs = autocompleteUnimportedPackages && !inString && currentWord.length > 0;
 
 				return this.runGoCode(document, filename, inputText, offset, inString, position, lineText, currentWord, includeUnimportedPkgs, config).then(suggestions => {
 					// gocode does not suggest keywords, so we have to do it
