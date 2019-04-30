@@ -98,14 +98,6 @@ Below are the settings you can use to control the use of the language server. Yo
 ```
 - Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect logs in a log file.
 - Set `"go.languageServerFlags": ["-rpc.trace"]` to see the complete rpc trace in the output panel (`View` -> `Output` -> `gopls`)
-- To enable adding missing imports or removing unused imports on file save, add the below to your settings
-```json
-"[go]": {
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-        "source.organizeImports": true
-    }
-}
 
 ```
 
