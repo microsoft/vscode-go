@@ -96,7 +96,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			const line = document.lineAt(lineNr);
 
 			// Stop processing if the line is a comment
-			if (line.text.indexOf('//') > -1) {
+			if (line.text.trim().indexOf('//') === 0) {
 				return null;
 			}
 
