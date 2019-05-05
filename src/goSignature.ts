@@ -94,6 +94,12 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		for (let lineNr = position.line; lineNr >= 0 && maxLookupLines >= 0; lineNr-- , maxLookupLines--) {
 
 			const line = document.lineAt(lineNr);
+
+			// Stop processing if the line is a comment
+			if (line.text.indexOf('//') > -1) {
+				return null;
+			}
+
 			// if its current line, get the text until the position given, otherwise get the full line.
 			const [currentLine, characterPosition] = lineNr === position.line
 				? [line.text.substring(0, position.character), position.character]
