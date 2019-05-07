@@ -105,7 +105,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				? [line.text.substring(0, position.character), position.character]
 				: [line.text, line.text.length - 1];
 
-			for (let char = characterPosition - 1; char >= 0; char--) {
+			for (let char = characterPosition; char >= 0; char--) {
 				switch (currentLine[char]) {
 					case '(':
 						parenBalance--;
