@@ -962,8 +962,6 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
  */
 export function isPositionInComment(document: vscode.TextDocument, position: vscode.Position): boolean {
 	const lineText = document.lineAt(position.line).text;
-
-	// prevent completion when typing in a line comment that doesnt start from the beginning of the line
 	const commentIndex = lineText.indexOf('//');
 
 	if (commentIndex >= 0 && position.character > commentIndex) {
