@@ -13,7 +13,7 @@ import { existsSync, lstatSync } from 'fs';
 import { basename, dirname, extname } from 'path';
 import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFiles, getBinPathWithPreferredGopath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
+import { parseEnvFile, parseEnvFiles, getBinPathWithPreferredGopath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
 
 const fsAccess = util.promisify(fs.access);
 const fsUnlink = util.promisify(fs.unlink);
@@ -319,10 +319,10 @@ class Delve {
 
 			try {
 				if (typeof launchArgs.envFile === 'string') {
-					envs.push(...parseEnvFiles([launchArgs.envFile]));
+					envs.push(parseEnvFile(launchArgs.envFile));
 				}
 
-				if (launchArgs.envFile instanceof Array) {
+				if (Array.isArray(launchArgs.envFile)) {
 					envs.push(...parseEnvFiles(launchArgs.envFile));
 				}
 			} catch (e) {

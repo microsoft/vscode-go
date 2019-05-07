@@ -473,7 +473,7 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "Absolute path to a file containing environment variable definitions.",
+                "description": "Absolute path to a file containing environment variable definitions. Multiple files can be specified by provided an array of absolute paths",
                 "default": "${workspaceFolder}/.env"
               },
               "backend": {
