@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { getParametersAndReturnType, isPositionInString } from './util';
+import { getParametersAndReturnType, isPositionInString, isPositionInComment } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
@@ -95,8 +95,8 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 			const line = document.lineAt(lineNr);
 
-			// Stop processing if the line is a comment
-			if (line.text.trim().indexOf('//') === 0) {
+			// Stop processing if we're inside a comment
+			if (isPositionInComment(document, position)) {
 				return null;
 			}
 
