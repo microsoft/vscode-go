@@ -954,3 +954,21 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 		});
 	});
 }
+
+/**
+ * Returns a boolean whether the current position lies within a comment or not
+ * @param document
+ * @param position
+ */
+export function isPositionInComment(document: vscode.TextDocument, position: vscode.Position): boolean {
+	const lineText = document.lineAt(position.line).text;
+	const commentIndex = lineText.indexOf('//');
+
+	if (commentIndex >= 0 && position.character > commentIndex) {
+		const commentPosition = new vscode.Position(position.line, commentIndex);
+		const isCommentInString = isPositionInString(document, commentPosition);
+
+		return !isCommentInString;
+	}
+	return false;
+}

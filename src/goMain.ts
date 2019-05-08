@@ -56,7 +56,6 @@ import { installCurrentPackage } from './goInstall';
 import { setGlobalState } from './stateUtils';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
-import { GoRefactorProvider } from './goRefactor';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -111,6 +110,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			const languageServerTool = getToolFromToolPath(languageServerToolPath);
 			const languageServerExperimentalFeatures: any = vscode.workspace.getConfiguration('go').get('languageServerExperimentalFeatures') || {};
 			const langServerFlags: string[] = vscode.workspace.getConfiguration('go')['languageServerFlags'] || [];
+
+			// `-trace was a flag for `go-langserver` which is replaced with `-rpc.trace` for gopls to avoid crash
+			const traceFlagIndex = langServerFlags.indexOf('-trace');
+			if (traceFlagIndex > -1 && languageServerTool === 'gopls') {
+				langServerFlags[traceFlagIndex] = '-rpc.trace';
+			}
 
 			const c = new LanguageClient(
 				languageServerTool,
@@ -301,7 +306,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
-	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoRefactorProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, referencesCodeLensProvider));
 	ctx.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('go', new GoDebugConfigurationProvider()));
