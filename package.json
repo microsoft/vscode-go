@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.10.0",
+  "version": "0.10.2",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -114,7 +114,10 @@
     "configurationDefaults": {
       "[go]": {
         "editor.insertSpaces": false,
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        }
       }
     },
     "commands": [
@@ -287,6 +290,16 @@
         "command": "go.test.cancel",
         "title": "Go: Cancel Running Tests",
         "description": "Cancels running tests."
+      },
+      {
+        "command": "go.godoctor.extract",
+        "title": "Go: Extract to function",
+        "description": "Extract to function using godoctor."
+      },
+      {
+        "command": "go.godoctor.var",
+        "title": "Go: Extract to variable",
+        "description": "Extract to variable using godoctor."
       }
     ],
     "debuggers": [
@@ -557,7 +570,7 @@
             "off"
           ],
           "default": "package",
-          "description": "Compiles code on file save using 'go build -i' or 'go test -c -i'. Options are 'workspace', 'package or 'off'.",
+          "description": "Compiles code on file save using 'go build -i' or 'go test -c -i'. Options are 'workspace', 'package', or 'off'.",
           "scope": "resource"
         },
         "go.buildFlags": {
@@ -647,7 +660,7 @@
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format.",
+          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format. Not applicable when using the language server. Choosing 'goimport' or 'goreturns' will add missing imports and remove unused imports.",
           "scope": "resource",
           "enum": [
             "gofmt",
@@ -890,13 +903,13 @@
             "-ignore-case",
             "-unimported-packages"
           ],
-          "description": "Additional flags to pass to gocode.",
+          "description": "Additional flags to pass to gocode. Not applicable when using the language server.",
           "scope": "resource"
         },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": false,
-          "description": "Enable gocode's autobuild feature",
+          "description": "Enable gocode's autobuild feature. Not applicable when using the language server.",
           "scope": "resource"
         },
         "go.gocodePackageLookupMode": {
@@ -907,7 +920,7 @@
             "bzl"
           ],
           "default": "go",
-          "description": "Used to determine the Go package lookup rules for completions by gocode. Only applies when using nsf/gocode. Latest versions of the Go extension uses mdempsky/gocode by default.",
+          "description": "Used to determine the Go package lookup rules for completions by gocode. Only applies when using nsf/gocode. Latest versions of the Go extension uses mdempsky/gocode by default. Not applicable when using the language server.",
           "scope": "resource"
         },
         "go.useCodeSnippetsOnFunctionSuggest": {
@@ -931,7 +944,7 @@
         "go.docsTool": {
           "type": "string",
           "default": "godoc",
-          "description": "Pick 'godoc' or 'gogetdoc' to get documentation. In Go 1.5, godoc is used regardless of the choice here.",
+          "description": "Pick 'godoc' or 'gogetdoc' to get documentation. Not applicable when using the language server.",
           "scope": "resource",
           "enum": [
             "godoc",

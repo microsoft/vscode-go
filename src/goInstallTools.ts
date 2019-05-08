@@ -123,8 +123,7 @@ function getTools(goVersion: SemVersion): string[] {
 	}
 
 	if (goConfig['useLanguageServer']) {
-		const languageServer = getToolFromToolPath(getLanguageServerToolPath());
-		tools.push(languageServer === 'go-langserver' ? 'go-langserver' : 'gopls');
+		tools.push('gopls');
 	}
 
 	if (goLiveErrorsEnabled()) {
@@ -502,7 +501,7 @@ export function offerToInstallTools() {
 				missing.forEach(x => outputChannel.appendLine(x));
 			}
 		};
-		vscode.window.showInformationMessage('Some Go analysis tools are missing from your GOPATH.  Would you like to install them?', installItem, showItem).then(selection => {
+		vscode.window.showInformationMessage('Failed to find some of the Go analysis tools. Would you like to install them?', installItem, showItem).then(selection => {
 			if (selection) {
 				selection.command();
 			} else {

@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { getParametersAndReturnType, isPositionInString, getTimeoutConfiguration } from './util';
+import { getParametersAndReturnType, isPositionInString, isPositionInComment, getTimeoutConfiguration } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
@@ -95,12 +95,18 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		for (let lineNr = position.line; lineNr >= 0 && maxLookupLines >= 0; lineNr-- , maxLookupLines--) {
 
 			const line = document.lineAt(lineNr);
+
+			// Stop processing if we're inside a comment
+			if (isPositionInComment(document, position)) {
+				return null;
+			}
+
 			// if its current line, get the text until the position given, otherwise get the full line.
 			const [currentLine, characterPosition] = lineNr === position.line
 				? [line.text.substring(0, position.character), position.character]
 				: [line.text, line.text.length - 1];
 
-			for (let char = characterPosition - 1; char >= 0; char--) {
+			for (let char = characterPosition; char >= 0; char--) {
 				switch (currentLine[char]) {
 					case '(':
 						parenBalance--;
