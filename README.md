@@ -25,7 +25,7 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 ### Code Editing
 
 - Code Snippets for quick coding
-- Format code on file save as well as format manually (using `goreturns` or `goimports` or `gofmt`)
+- Format code on file save as well as format manually (using `goreturns` or `goimports` which also remove unused imports or `gofmt`)
 - Symbol Rename (using `gorename`. Note: For Undo after rename to work in Windows you need to have `diff` tool in your path)
 - Add Imports to current file (using `gopkgs`)
 - Add/Remove Tags on struct fields (using `gomodifytags`)
@@ -90,8 +90,16 @@ active development for it anymore and because it doesn't support Go modules, we 
 Below are the settings you can use to control the use of the language server. You need to reload the VS Code window for any changes in these settings to take effect.
 
 - Set `go.useLanguageServer` to `true` to enable the use of language server
-- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server.
-- Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect traces in a log file.
+- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server. Diagnostics from the language server is the only feature that is not enabled by default. If you want to try this feature from the language server, add the below in your settings
+```json
+"go.languageServerExperimentalFeatures": {
+  "diagnostics": true
+}
+```
+- Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect logs in a log file.
+- Set `"go.languageServerFlags": ["-rpc.trace"]` to see the complete rpc trace in the output panel (`View` -> `Output` -> `gopls`)
+
+```
 
 #### Setting to change the language server being used
 
