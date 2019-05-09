@@ -129,9 +129,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				{
 					initializationOptions: {
 						funcSnippetEnabled: vscode.workspace.getConfiguration('go')['useCodeSnippetsOnFunctionSuggest'],
-						gocodeCompletionEnabled: languageServerExperimentalFeatures['autoComplete']
+						gocodeCompletionEnabled: languageServerExperimentalFeatures['autoComplete'],
+						incrementalSync: languageServerExperimentalFeatures['incrementalSync']
 					},
-					documentSelector: ['go'],
+					documentSelector: ['go', 'go.mod', 'go.sum'],
 					uriConverters: {
 						// Apply file:/// scheme to all file paths.
 						code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
