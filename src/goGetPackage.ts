@@ -24,7 +24,7 @@ export function goGetPackage() {
 
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
-		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });,
+		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() }),
 		timeout: getTimeoutConfiguration('onCommand')
 	};
 
