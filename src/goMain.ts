@@ -36,7 +36,8 @@ import {
 import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
 	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
-	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature, HandleDiagnosticsSignature
+	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature, HandleDiagnosticsSignature,
+	Disposable
 } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows, getToolFromToolPath } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -60,6 +61,7 @@ import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implem
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
 export let vetDiagnosticCollection: vscode.DiagnosticCollection;
+export let documentFormatterRegistration: Disposable | undefined;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	setGlobalState(ctx.globalState);
@@ -238,7 +240,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				}
 
 				if (languageServerExperimentalFeatures['format'] !== true || !capabilities.documentFormattingProvider) {
-					ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
+					documentFormatterRegistration = vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider());
+					ctx.subscriptions.push(documentFormatterRegistration);
 				}
 
 				if (languageServerExperimentalFeatures['rename'] !== true || !capabilities.renameProvider) {
@@ -289,7 +292,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
 			ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
 			ctx.subscriptions.push(vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider()));
-			ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
+			documentFormatterRegistration = vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider());
+			ctx.subscriptions.push(documentFormatterRegistration);
 			ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
 			ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 		}
@@ -484,7 +488,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			});
 		}
 
-
 		if (updatedGoConfig['enableCodeLens']) {
 			testCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['runtest']);
 			referencesCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['references']);
@@ -493,7 +496,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		const languageServerExperimentalFeatures: any = updatedGoConfig.get('languageServerExperimentalFeatures');
 		if (e.affectsConfiguration('go.formatTool') && (!languageServerToolPathBeingUsed || languageServerExperimentalFeatures['format'] === false)) {
 			checkToolExists(updatedGoConfig['formatTool']);
+		} else if (languageServerExperimentalFeatures['format'] === true) {
+			// Unregister non-lsp provider
+			documentFormatterRegistration.dispose();
 		}
+
 		if (e.affectsConfiguration('go.lintTool')) {
 			checkToolExists(updatedGoConfig['lintTool']);
 		}
