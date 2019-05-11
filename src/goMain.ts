@@ -493,12 +493,17 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			referencesCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['references']);
 		}
 
+		// Toggle registrations between language server and native formatters
 		const languageServerExperimentalFeatures: any = updatedGoConfig.get('languageServerExperimentalFeatures');
 		if (e.affectsConfiguration('go.formatTool') && (!languageServerToolPathBeingUsed || languageServerExperimentalFeatures['format'] === false)) {
 			checkToolExists(updatedGoConfig['formatTool']);
+			if (documentFormatterRegistration === undefined) {
+				documentFormatterRegistration = vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider());
+				ctx.subscriptions.push(documentFormatterRegistration);
+			}
 		} else if (languageServerExperimentalFeatures['format'] === true) {
-			// Unregister non-lsp provider
 			documentFormatterRegistration.dispose();
+			documentFormatterRegistration = undefined;
 		}
 
 		if (e.affectsConfiguration('go.lintTool')) {
