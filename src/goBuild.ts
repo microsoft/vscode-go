@@ -126,9 +126,9 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 	if (currentGoWorkspace && !isMod) {
 		importPath = cwd.substr(currentGoWorkspace.length + 1);
 	} else {
-		outputChannel.appendLine(`Not able to determine import path of current package by using cwd: ${cwd} and Go workspace: ${currentGoWorkspace}`)
+		outputChannel.appendLine(`Not able to determine import path of current package by using cwd: ${cwd} and Go workspace: ${currentGoWorkspace}`);
 	}
-	
+
 	running = true;
 	return runTool(
 		buildArgs.concat('-o', tmpPath, importPath),
