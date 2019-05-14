@@ -2,7 +2,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent, killProcess, getTimeoutConfiguration } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 type GopkgsDone = (res: Map<string, string>) => void;
@@ -35,14 +35,29 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 			args.push('-workDir', workDir);
 		}
 
-		const cmd = cp.spawn(gopkgsBinPath, args, { env: getToolsEnvVars() });
+		const p = cp.spawn(gopkgsBinPath, args, { env: getToolsEnvVars() });
 		const chunks: any[] = [];
 		const errchunks: any[] = [];
 		let err: any;
-		cmd.stdout.on('data', d => chunks.push(d));
-		cmd.stderr.on('data', d => errchunks.push(d));
-		cmd.on('error', e => err = e);
-		cmd.on('close', () => {
+		const waitTimer = setTimeout(() => {
+			killProcess(p);
+			reject(new Error('Timeout executing task - gopkgs'));
+		}, getTimeoutConfiguration('onCommand'));
+
+		p.stdout.on('data', d => {
+			chunks.push(d);
+			clearTimeout(waitTimer);
+		});
+		p.stderr.on('data', d => {
+			errchunks.push(d);
+			clearTimeout(waitTimer);
+		});
+		p.on('error', e => {
+			err = e;
+			clearTimeout(waitTimer);
+		});
+		p.on('close', () => {
+			clearTimeout(waitTimer);
 			const pkgs = new Map<string, string>();
 			if (err && err.code === 'ENOENT') {
 				return promptForMissingTool('gopkgs');
@@ -250,13 +265,20 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 		return Promise.resolve(null);
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
-		const childProcess = cp.spawn(goRuntimePath, ['list', '-f', 'ImportPath: {{.ImportPath}} FolderPath: {{.Dir}}', './...'], { cwd: folderPath, env: getToolsEnvVars() });
+		const p = cp.spawn(goRuntimePath, ['list', '-f', 'ImportPath: {{.ImportPath}} FolderPath: {{.Dir}}', './...'], { cwd: folderPath, env: getToolsEnvVars() });
 		const chunks: any[] = [];
-		childProcess.stdout.on('data', (stdout) => {
+		const waitTimer = setTimeout(() => {
+			killProcess(p);
+			reject(new Error('Timeout executing task - list'));
+		}, getTimeoutConfiguration('onCommand'));
+
+		p.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
+			clearTimeout(waitTimer);
 		});
 
-		childProcess.on('close', (status) => {
+		p.on('close', (status) => {
+			clearTimeout(waitTimer);
 			const lines = chunks.join('').toString().split('\n');
 
 			getGoVersion().then((ver: SemVersion) => {

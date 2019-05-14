@@ -1,7 +1,14 @@
-import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModuleCache } from './util';
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
+'use strict';
+
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
+import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModuleCache, killProcess, getTimeoutConfiguration } from './util';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
 import { installTools } from './goInstallTools';
 import { fixDriveCasingInWindows } from './goPath';
@@ -158,14 +165,21 @@ export function getCurrentPackage(cwd: string): Promise<string> {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
 		return Promise.resolve(null);
 	}
-	return new Promise<string>(resolve => {
-		const childProcess = cp.spawn(goRuntimePath, ['list'], { cwd, env: getToolsEnvVars() });
+	return new Promise<string>((resolve, reject) => {
+		const p = cp.spawn(goRuntimePath, ['list'], { cwd, env: getToolsEnvVars() });
 		const chunks: any[] = [];
-		childProcess.stdout.on('data', (stdout) => {
+		const waitTimer = setTimeout(() => {
+			killProcess(p);
+			reject(new Error('Timeout executing task - list'));
+		}, getTimeoutConfiguration('onCommand'));
+
+		p.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
+			clearTimeout(waitTimer);
 		});
 
-		childProcess.on('close', () => {
+		p.on('close', () => {
+			clearTimeout(waitTimer);
 			// Ignore lines that are empty or those that have logs about updating the module cache
 			const pkgs = chunks.join('').toString().split('\n').filter(line => line && line.indexOf(' ') === -1);
 			if (pkgs.length !== 1) {

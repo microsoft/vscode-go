@@ -199,7 +199,10 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 		const gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
 		const gocode = getBinPath(gocodeName);
 		if (path.isAbsolute(gocode)) {
-			cp.spawn(gocode, ['close'], { env: getToolsEnvVars() });
+			const p = cp.spawn(gocode, ['close'], { env: getToolsEnvVars(), });
+			setTimeout(() => {
+				killProcess(p);
+			}, getTimeoutConfiguration('onCommand'));
 		}
 	}
 
@@ -235,7 +238,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 			const p = cp.spawn(gocode, [...this.gocodeFlags, 'autocomplete', filename, '' + offset], { env });
 			const waitTimer = setTimeout(() => {
 				killProcess(p);
-				reject(new Error('Timeout executing task - autocomplete'));
+				reject(new Error('Timeout executing task - gocode'));
 			}, getTimeoutConfiguration('onType', config));
 			p.stdout.on('data', data => {
 				stdout += data;

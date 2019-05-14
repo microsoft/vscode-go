@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './util';
+import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree, killProcess, getTimeoutConfiguration } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
@@ -67,17 +67,30 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 
 			// Use spawn instead of exec to avoid maxBufferExceeded error
 			const p = cp.spawn(formatCommandBinPath, formatFlags, { env, cwd });
+			const waitTimer = setTimeout(() => {
+				killProcess(p);
+				reject(new Error('Timeout executing task - format'));
+			}, getTimeoutConfiguration('onCommand'));
 			token.onCancellationRequested(() => !p.killed && killTree(p.pid));
+
 			p.stdout.setEncoding('utf8');
-			p.stdout.on('data', data => stdout += data);
-			p.stderr.on('data', data => stderr += data);
+			p.stdout.on('data', data => {
+				stdout += data;
+				clearTimeout(waitTimer);
+			});
+			p.stderr.on('data', data => {
+				stderr += data;
+				clearTimeout(waitTimer);
+			});
 			p.on('error', err => {
+				clearTimeout(waitTimer);
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool(formatTool);
 					return reject();
 				}
 			});
 			p.on('close', code => {
+				clearTimeout(waitTimer);
 				if (code !== 0) {
 					return reject(stderr);
 				}
