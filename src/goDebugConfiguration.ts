@@ -69,7 +69,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			}
 		});
 
-		const dlvConfig = goConfig.get('delveConfig');
+		const dlvConfig: { [key: string]: any } = goConfig.get('delveConfig');
 		if (!debugConfiguration.hasOwnProperty('useApiV1') && dlvConfig.hasOwnProperty('useApiV1')) {
 			debugConfiguration['useApiV1'] = dlvConfig['useApiV1'];
 		}
@@ -78,6 +78,9 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 		if (!debugConfiguration.hasOwnProperty('dlvLoadConfig') && dlvConfig.hasOwnProperty('dlvLoadConfig')) {
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
+		}
+		if (!debugConfiguration.hasOwnProperty('showGlobalVariables') && dlvConfig.hasOwnProperty('showGlobalVariables')) {
+			debugConfiguration['showGlobalVariables'] = dlvConfig['showGlobalVariables'];
 		}
 
 		debugConfiguration['dlvToolPath'] = getBinPath('dlv');

@@ -19,13 +19,14 @@ interface GomodifytagsOutput {
 
 // Interface for settings configuration for adding and removing tags
 interface GoTagsConfig {
+	[key: string]: any;
 	tags: string;
 	options: string;
 	promptForTags: boolean;
 }
 
 export function addTags(commandArgs: GoTagsConfig) {
-	let args = getCommonArgs();
+	const args = getCommonArgs();
 	if (!args) {
 		return;
 	}
@@ -52,7 +53,7 @@ export function addTags(commandArgs: GoTagsConfig) {
 }
 
 export function removeTags(commandArgs: GoTagsConfig) {
-	let args = getCommonArgs();
+	const args = getCommonArgs();
 	if (!args) {
 		return;
 	}
@@ -75,7 +76,7 @@ export function removeTags(commandArgs: GoTagsConfig) {
 }
 
 function getCommonArgs(): string[] {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
@@ -84,10 +85,10 @@ function getCommonArgs(): string[] {
 		vscode.window.showInformationMessage('Current file is not a Go file.');
 		return;
 	}
-	let args = ['-modified', '-file', editor.document.fileName, '-format', 'json'];
+	const args = ['-modified', '-file', editor.document.fileName, '-format', 'json'];
 	if (editor.selection.start.line === editor.selection.end.line && editor.selection.start.character === editor.selection.end.character) {
 		// Add tags to the whole struct
-		let offset = byteOffsetAt(editor.document, editor.selection.start);
+		const offset = byteOffsetAt(editor.document, editor.selection.start);
 		args.push('-offset');
 		args.push(offset.toString());
 	} else if (editor.selection.start.line <= editor.selection.end.line) {
@@ -100,10 +101,10 @@ function getCommonArgs(): string[] {
 }
 
 function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): Thenable<string[]> {
-	let tags = commandArgs && commandArgs.hasOwnProperty('tags') ? commandArgs['tags'] : config['tags'];
-	let options = commandArgs && commandArgs.hasOwnProperty('options') ? commandArgs['options'] : config['options'];
-	let promptForTags = commandArgs && commandArgs.hasOwnProperty('promptForTags') ? commandArgs['promptForTags'] : config['promptForTags'];
-	let transformValue = commandArgs && commandArgs.hasOwnProperty('transform') ? commandArgs['transform'] : config['transform'];
+	const tags = commandArgs && commandArgs.hasOwnProperty('tags') ? commandArgs['tags'] : config['tags'];
+	const options = commandArgs && commandArgs.hasOwnProperty('options') ? commandArgs['options'] : config['options'];
+	const promptForTags = commandArgs && commandArgs.hasOwnProperty('promptForTags') ? commandArgs['promptForTags'] : config['promptForTags'];
+	const transformValue: string = commandArgs && commandArgs.hasOwnProperty('transform') ? commandArgs['transform'] : config['transform'];
 
 	if (!promptForTags) {
 		return Promise.resolve([tags, options, transformValue]);
@@ -123,10 +124,10 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 }
 
 function runGomodifytags(args: string[]) {
-	let gomodifytags = getBinPath('gomodifytags');
-	let editor = vscode.window.activeTextEditor;
-	let input = getFileArchive(editor.document);
-	let p = cp.execFile(gomodifytags, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
+	const gomodifytags = getBinPath('gomodifytags');
+	const editor = vscode.window.activeTextEditor;
+	const input = getFileArchive(editor.document);
+	const p = cp.execFile(gomodifytags, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gomodifytags');
 			return;
@@ -135,7 +136,7 @@ function runGomodifytags(args: string[]) {
 			vscode.window.showInformationMessage(`Cannot modify tags: ${stderr}`);
 			return;
 		}
-		let output = <GomodifytagsOutput>JSON.parse(stdout);
+		const output = <GomodifytagsOutput>JSON.parse(stdout);
 		vscode.window.activeTextEditor.edit(editBuilder => {
 			editBuilder.replace(new vscode.Range(output.start - 1, 0, output.end, 0), output.lines.join('\n') + '\n');
 		});

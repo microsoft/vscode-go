@@ -8,7 +8,7 @@ import { lintDiagnosticCollection } from './goMain';
  * Runs linter on the current file, package or workspace.
  */
 export function lintCode(scope?: string) {
-	let editor = vscode.window.activeTextEditor;
+	const editor = vscode.window.activeTextEditor;
 	if (!editor && scope !== 'workspace') {
 		vscode.window.showInformationMessage('No editor is active, cannot find current package to lint');
 		return;
@@ -18,8 +18,8 @@ export function lintCode(scope?: string) {
 		return;
 	}
 
-	let documentUri = editor ? editor.document.uri : null;
-	let goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const documentUri = editor ? editor.document.uri : null;
+	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
 
 	outputChannel.clear(); // Ensures stale output from lint on save is cleared
 	diagnosticsStatusBarItem.show();
@@ -45,7 +45,7 @@ export function lintCode(scope?: string) {
  */
 export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, scope?: string): Promise<ICheckResult[]> {
 	epoch++;
-	let closureEpoch = epoch;
+	const closureEpoch = epoch;
 	if (tokenSource) {
 		if (running) {
 			tokenSource.cancel();
@@ -65,7 +65,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	const lintTool = goConfig['lintTool'] || 'golint';
 	const lintFlags: string[] = goConfig['lintFlags'] || [];
 	const lintEnv = Object.assign({}, getToolsEnvVars());
-	const args = [];
+	const args: string[] = [];
 
 	lintFlags.forEach(flag => {
 		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
@@ -105,10 +105,12 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 
 	if (scope === 'workspace' && currentWorkspace) {
 		args.push('./...');
-	}
-
-	if (scope === 'file') {
+		outputChannel.appendLine(`Starting linting the current workspace at ${currentWorkspace}`);
+	} else if (scope === 'file') {
 		args.push(fileUri.fsPath);
+		outputChannel.appendLine(`Starting linting the current file at ${fileUri.fsPath}`);
+	} else {
+		outputChannel.appendLine(`Starting linting the current package at ${cwd}`);
 	}
 
 	running = true;

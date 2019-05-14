@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.8.0",
+  "version": "0.10.2",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -31,7 +31,9 @@
     "compile": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "node ./node_modules/vscode/bin/test",
-    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts"
+    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
+    "fix-lint": "node ./node_modules/tslint/bin/tslint --fix ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
+    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
   },
   "extensionDependencies": [],
   "dependencies": {
@@ -40,19 +42,19 @@
     "vscode-debugadapter": "^1.32.1",
     "vscode-debugprotocol": "^1.32.0",
     "vscode-extension-telemetry": "^0.1.0",
-    "vscode-languageclient": "~4.3.0"
+    "vscode-languageclient": "~4.4.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",
     "@types/mocha": "^5.2.5",
-    "@types/node": "^6.14.0",
-    "fs-extra": "^7.0.0",
+    "@types/node": "^8.10.43",
+    "fs-extra": "^7.0.1",
     "tslint": "^5.11.0",
     "typescript": "^3.1.3",
-    "vscode": "^1.1.26"
+    "vscode": "^1.1.33"
   },
   "engines": {
-    "vscode": "^1.23.0"
+    "vscode": "^1.25.0"
   },
   "activationEvents": [
     "onLanguage:go",
@@ -71,6 +73,36 @@
         "aliases": [
           "Go"
         ]
+      },
+      {
+        "id": "go.mod",
+        "extensions": [
+          "go.mod"
+        ],
+        "aliases": [
+          "Go Module File"
+        ]
+      },
+      {
+        "id": "go.sum",
+        "extensions": [
+          "go.sum"
+        ],
+        "aliases": [
+          "Go Checksum File"
+        ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "go.mod",
+        "scopeName": "go.mod",
+        "path": "./syntaxes/go.mod.tmGrammar.json"
+      },
+      {
+        "language": "go.sum",
+        "scopeName": "go.sum",
+        "path": "./syntaxes/go.sum.tmGrammar.json"
       }
     ],
     "snippets": [
@@ -82,7 +114,10 @@
     "configurationDefaults": {
       "[go]": {
         "editor.insertSpaces": false,
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        }
       }
     },
     "commands": [
@@ -255,6 +290,16 @@
         "command": "go.test.cancel",
         "title": "Go: Cancel Running Tests",
         "description": "Cancels running tests."
+      },
+      {
+        "command": "go.godoctor.extract",
+        "title": "Go: Extract to function",
+        "description": "Extract to function using godoctor."
+      },
+      {
+        "command": "go.godoctor.var",
+        "title": "Go: Extract to variable",
+        "description": "Extract to variable using godoctor."
       }
     ],
     "debuggers": [
@@ -397,7 +442,7 @@
               },
               "remotePath": {
                 "type": "string",
-                "description": "If remote debugging, the path to the source code on the remote machine, if different from the local machine.",
+                "description": "Absolute path to the file being debugged on the remote machine in case of remote debugging.",
                 "default": ""
               },
               "port": {
@@ -525,7 +570,7 @@
             "off"
           ],
           "default": "package",
-          "description": "Compiles code on file save using 'go build -i' or 'go test -c -i'. Options are 'workspace', 'package or 'off'.",
+          "description": "Compiles code on file save using 'go build -i' or 'go test -c -i'. Options are 'workspace', 'package', or 'off'.",
           "scope": "resource"
         },
         "go.buildFlags": {
@@ -534,7 +579,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. ['-ldflags=\"-s\"'])",
+          "description": "Flags to `go build`/`go test` used during build-on-save or running tests. (e.g. [\"-ldflags='-s'\"])",
           "scope": "resource"
         },
         "go.buildTags": {
@@ -609,13 +654,13 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to `go tool vet` (e.g. ['-all', '-shadow'])",
+          "description": "Flags to pass to `go tool vet` (e.g. [\"-all\", \"-shadow\"])",
           "scope": "resource"
         },
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format.",
+          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format. Not applicable when using the language server. Choosing 'goimport' or 'goreturns' will add missing imports and remove unused imports.",
           "scope": "resource",
           "enum": [
             "gofmt",
@@ -630,7 +675,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Flags to pass to format tool (e.g. ['-s'])",
+          "description": "Flags to pass to format tool (e.g. [\"-s\"])",
           "scope": "resource"
         },
         "go.inferGopath": {
@@ -821,13 +866,13 @@
             "-ignore-case",
             "-unimported-packages"
           ],
-          "description": "Additional flags to pass to gocode.",
+          "description": "Additional flags to pass to gocode. Not applicable when using the language server.",
           "scope": "resource"
         },
         "go.gocodeAutoBuild": {
           "type": "boolean",
           "default": false,
-          "description": "Enable gocode's autobuild feature",
+          "description": "Enable gocode's autobuild feature. Not applicable when using the language server.",
           "scope": "resource"
         },
         "go.gocodePackageLookupMode": {
@@ -838,7 +883,7 @@
             "bzl"
           ],
           "default": "go",
-          "description": "Used to determine the Go package lookup rules for completions by gocode. Only applies when using nsf/gocode. Latest versions of the Go extension uses mdempsky/gocode by default.",
+          "description": "Used to determine the Go package lookup rules for completions by gocode. Only applies when using nsf/gocode. Latest versions of the Go extension uses mdempsky/gocode by default. Not applicable when using the language server.",
           "scope": "resource"
         },
         "go.useCodeSnippetsOnFunctionSuggest": {
@@ -862,7 +907,7 @@
         "go.docsTool": {
           "type": "string",
           "default": "godoc",
-          "description": "Pick 'godoc' or 'gogetdoc' to get documentation. In Go 1.5, godoc is used regardless of the choice here.",
+          "description": "Pick 'godoc' or 'gogetdoc' to get documentation. Not applicable when using the language server.",
           "scope": "resource",
           "enum": [
             "godoc",
@@ -873,7 +918,7 @@
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
-          "description": "Experimental: Use Go language server from Sourcegraph for Hover, Definition, Find All References, Signature Help, File Outline and Workspace Symbol features instead of tools like guru, godef, go-outline and go-symbol"
+          "description": "Experimental: Use Go language server from Google or Sourcegraph for Hover, Definition, Signature Help, Auto Completion and Formatting features instead of tools like godef, gocode and goreturns"
         },
         "go.languageServerFlags": {
           "type": "array",
@@ -932,11 +977,21 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the language server will be used for the Go to Workspace Symbols feature."
+            },
+            "diagnostics": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will provide build, vet errors and the extension will ignore the `buildOnSave`, `vetOnSave` settings."
+            },
+            "incrementalSync": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will accept incremental document synchronization."
             }
           },
           "default": {
-            "format": false,
-            "autoComplete": false,
+            "format": true,
+            "autoComplete": true,
             "rename": true,
             "goToDefinition": true,
             "hover": true,
@@ -945,7 +1000,8 @@
             "goToImplementation": true,
             "documentSymbols": true,
             "workspaceSymbols": true,
-            "findReferences": true
+            "findReferences": true,
+            "diagnostics": false
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
@@ -1243,8 +1299,25 @@
               ],
               "description": "Delve Api Version to use. Default value is 2.",
               "default": 2
+            },
+            "showGlobalVariables": {
+              "type": "boolean",
+              "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not.",
+              "default": true
             }
           },
+          "default": {
+            "dlvLoadConfig": {
+              "followPointers": true,
+              "maxVariableRecurse": 1,
+              "maxStringLen": 64,
+              "maxArrayValues": 64,
+              "maxStructFields": -1
+            },
+            "apiVersion": 2,
+            "showGlobalVariables": true
+          },
+          "description": "Delve settings that applies to all debugging sessions. Debug configuration in the launch.json file will override these values.",
           "scope": "resource"
         },
         "go.alternateTools": {
