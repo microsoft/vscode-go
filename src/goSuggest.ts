@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, isPositionInComment } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -495,21 +495,6 @@ function getCommentCompletion(document: vscode.TextDocument, position: vscode.Po
 		}
 		return suggestionItem;
 	}
-}
-
-function isPositionInComment(document: vscode.TextDocument, position: vscode.Position): boolean {
-	const lineText = document.lineAt(position.line).text;
-
-	// prevent completion when typing in a line comment that doesnt start from the beginning of the line
-	const commentIndex = lineText.indexOf('//');
-
-	if (commentIndex >= 0 && position.character > commentIndex) {
-		const commentPosition = new vscode.Position(position.line, commentIndex);
-		const isCommentInString = isPositionInString(document, commentPosition);
-
-		return !isCommentInString;
-	}
-	return false;
 }
 
 function getCurrentWord(document: vscode.TextDocument, position: vscode.Position): string {

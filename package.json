@@ -982,6 +982,11 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the language server will provide build, vet errors and the extension will ignore the `buildOnSave`, `vetOnSave` settings."
+            },
+            "incrementalSync": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will accept incremental document synchronization."
             }
           },
           "default": {
