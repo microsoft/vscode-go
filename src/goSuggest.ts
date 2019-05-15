@@ -238,7 +238,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 			const p = cp.spawn(gocode, [...this.gocodeFlags, 'autocomplete', filename, '' + offset], { env });
 			const waitTimer = setTimeout(() => {
 				killProcess(p);
-				reject(new Error('Timeout executing task - gocode'));
+				reject(new Error('Timeout executing tool - gocode'));
 			}, getTimeoutConfiguration('onType', config));
 			p.stdout.on('data', data => {
 				stdout += data;

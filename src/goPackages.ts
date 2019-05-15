@@ -41,7 +41,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 		let err: any;
 		const waitTimer = setTimeout(() => {
 			killProcess(p);
-			reject(new Error('Timeout executing task - gopkgs'));
+			reject(new Error('Timeout executing tool - gopkgs'));
 		}, getTimeoutConfiguration('onCommand'));
 
 		p.stdout.on('data', d => {
@@ -269,7 +269,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 		const chunks: any[] = [];
 		const waitTimer = setTimeout(() => {
 			killProcess(p);
-			reject(new Error('Timeout executing task - list'));
+			reject(new Error('Timeout executing tool - go list'));
 		}, getTimeoutConfiguration('onCommand'));
 
 		p.stdout.on('data', (stdout) => {

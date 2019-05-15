@@ -654,7 +654,6 @@ export function runTool(
 	const options: { [key: string]: any } = {
 		env,
 		cwd: fixDriveCasingInWindows(cwd),
-		timeout
 	};
 
 	return new Promise((resolve, reject) => {
@@ -721,6 +720,10 @@ export function runTool(
 				reject(e);
 			}
 		});
+		setTimeout(() => {
+			killProcess(p);
+			reject(new Error(`Timeout executing tool - ${toolName ? toolName : goRuntimePath}`));
+		}, getTimeoutConfiguration('onCommand'));
 	});
 }
 

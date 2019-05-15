@@ -46,7 +46,6 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 			const options: { [key: string]: any } = {
 				cwd: root,
 				env: getToolsEnvVars(),
-				timeout: getTimeoutConfiguration('onCommand')
 			};
 
 			const listProcess = cp.execFile(getBinPath('go'), ['list', '-e', '-json'], options, (err, stdout, stderr) => {
@@ -110,8 +109,14 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 					return resolve(results);
 				});
 				token.onCancellationRequested(() => killTree(guruProcess.pid));
+				setTimeout(() => {
+					killTree(guruProcess.pid);
+				}, getTimeoutConfiguration('onCommand'));
 			});
 			token.onCancellationRequested(() => killTree(listProcess.pid));
+			setTimeout(() => {
+				killTree(listProcess.pid);
+			}, getTimeoutConfiguration('onCommand'));
 		});
 	}
 }

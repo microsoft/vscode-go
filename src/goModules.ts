@@ -170,7 +170,7 @@ export function getCurrentPackage(cwd: string): Promise<string> {
 		const chunks: any[] = [];
 		const waitTimer = setTimeout(() => {
 			killProcess(p);
-			reject(new Error('Timeout executing task - list'));
+			reject(new Error('Timeout executing tool - list'));
 		}, getTimeoutConfiguration('onCommand'));
 
 		p.stdout.on('data', (stdout) => {

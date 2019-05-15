@@ -2,7 +2,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getImportPath, getCurrentGoPath, getBinPath, getTimeoutConfiguration } from './util';
+import { getImportPath, getCurrentGoPath, getBinPath, getTimeoutConfiguration, killProcess } from './util';
 import { outputChannel } from './goStatus';
 import { buildCode } from './goBuild';
 
@@ -25,10 +25,9 @@ export function goGetPackage() {
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() }),
-		timeout: getTimeoutConfiguration('onCommand')
 	};
 
-	cp.execFile(goRuntimePath, ['get', '-v', importPath], options, (err, stdout, stderr) => {
+	const p = cp.execFile(goRuntimePath, ['get', '-v', importPath], options, (err, stdout, stderr) => {
 		// go get -v uses stderr to write output regardless of success or failure
 		if (stderr !== '') {
 			outputChannel.show();
@@ -41,4 +40,7 @@ export function goGetPackage() {
 		// go get -v doesn't write anything when the package already exists
 		vscode.window.showInformationMessage(`Package already exists: ${importPath}`);
 	});
+	setTimeout(() => {
+		killProcess(p);
+	}, getTimeoutConfiguration('onCommand'));
 }

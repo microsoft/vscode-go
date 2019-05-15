@@ -1,7 +1,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { getBinPath, getToolsEnvVars, getTimeoutConfiguration } from './util';
+import { getBinPath, getToolsEnvVars, getTimeoutConfiguration, killProcess } from './util';
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
@@ -66,7 +66,6 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
-		timeout: getTimeoutConfiguration('onType')
 	};
 
 	const p = cp.execFile(gotypeLive, args, options, (err, stdout, stderr) => {
@@ -107,4 +106,7 @@ function processFile(e: vscode.TextDocumentChangeEvent) {
 	if (p.pid) {
 		p.stdin.end(fileContents);
 	}
+	setTimeout(() => {
+		killProcess(p);
+	}, getTimeoutConfiguration('onType'));
 }

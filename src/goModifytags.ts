@@ -6,7 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, getTimeoutConfiguration } from './util';
+import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, getTimeoutConfiguration, killProcess } from './util';
 import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
 
@@ -131,7 +131,6 @@ function runGomodifytags(args: string[]) {
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
-		timeout: getTimeoutConfiguration('onCommand')
 	};
 
 	const p = cp.execFile(gomodifytags, args, options, (err, stdout, stderr) => {
@@ -151,4 +150,7 @@ function runGomodifytags(args: string[]) {
 	if (p.pid) {
 		p.stdin.end(input);
 	}
+	setTimeout(() => {
+		killProcess(p);
+	}, getTimeoutConfiguration('onCommand'));
 }

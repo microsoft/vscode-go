@@ -8,10 +8,10 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCache, getTimeoutConfiguration } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { promptToUpdateToolForModules, getModFolderPath } from './goModules';
+import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCache, getTimeoutConfiguration } from './util';
+import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -187,6 +187,10 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 		if (p.pid) {
 			p.stdin.end(input.document.getText());
 		}
+		setTimeout(() => {
+			killProcess(p);
+			reject(new Error('Timeout executing tool - godef'));
+		}, timeout);
 	});
 }
 
@@ -261,6 +265,10 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, 
 		if (p.pid) {
 			p.stdin.end(getFileArchive(input.document));
 		}
+		setTimeout(() => {
+			killProcess(p);
+			reject(new Error('Timeout executing tool - gogetdoc'));
+		}, timeout);
 	});
 }
 
@@ -317,6 +325,10 @@ function definitionLocation_guru(input: GoDefinitionInput, timeout: number, toke
 		if (p.pid) {
 			p.stdin.end(getFileArchive(input.document));
 		}
+		setTimeout(() => {
+			killProcess(p);
+			reject(new Error('Timeout executing tool - guru'));
+		}, timeout);
 	});
 }
 

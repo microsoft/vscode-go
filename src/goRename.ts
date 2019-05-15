@@ -45,7 +45,6 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			// Set up execFile parameters
 			const options: { [key: string]: any } = {
 				env: getToolsEnvVars(),
-				timeout: getTimeoutConfiguration('onCommand')
 			};
 
 			p = cp.execFile(gorename, gorenameArgs, options, (err, stdout, stderr) => {
@@ -79,6 +78,10 @@ export class GoRenameProvider implements vscode.RenameProvider {
 					reject(e);
 				}
 			});
+			setTimeout(() => {
+				killProcess(p);
+				reject(new Error('Timeout executing tool - gorename'));
+			}, getTimeoutConfiguration('onCommand'));
 		});
 	}
 

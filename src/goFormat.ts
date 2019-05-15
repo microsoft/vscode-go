@@ -69,7 +69,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			const p = cp.spawn(formatCommandBinPath, formatFlags, { env, cwd });
 			const waitTimer = setTimeout(() => {
 				killProcess(p);
-				reject(new Error('Timeout executing task - format'));
+				reject(new Error('Timeout executing tool - format'));
 			}, getTimeoutConfiguration('onCommand'));
 			token.onCancellationRequested(() => !p.killed && killTree(p.pid));
 

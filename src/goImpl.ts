@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars, getTimeoutConfiguration } from './util';
+import { getBinPath, getToolsEnvVars, getTimeoutConfiguration, killProcess } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { dirname } from 'path';
 
@@ -44,7 +44,6 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
 		cwd: dirname(vscode.window.activeTextEditor.document.fileName),
-		timeout: getTimeoutConfiguration('onCommand')
 	};
 
 	const p = cp.execFile(goimpl, args, options, (err, stdout, stderr) => {
@@ -65,4 +64,7 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 	if (p.pid) {
 		p.stdin.end();
 	}
+	setTimeout(() => {
+		killProcess(p);
+	}, getTimeoutConfiguration('onCommand'));
 }

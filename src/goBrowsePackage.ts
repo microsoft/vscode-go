@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getAllPackages } from './goPackages';
-import { getImportPath, getCurrentGoPath, getBinPath, getTimeoutConfiguration } from './util';
+import { getImportPath, getCurrentGoPath, getBinPath, getTimeoutConfiguration, killProcess } from './util';
 
 export function browsePackages() {
 	let workDir = '';
@@ -50,14 +50,13 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() }),
-		timeout: getTimeoutConfiguration('onCommand')
 	};
 
 	if (workDir) {
 		options['cwd'] = workDir;
 	}
 
-	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], options, (err, stdout, stderr) => {
+	const p = cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], options, (err, stdout, stderr) => {
 		if (!stdout || stdout.indexOf(':') === -1) {
 			if (showAllPkgsIfPkgNotFound) {
 				return showPackageList(workDir);
@@ -85,6 +84,9 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 			});
 		}
 	});
+	setTimeout(() => {
+		killProcess(p);
+	}, getTimeoutConfiguration('onCommand'));
 }
 
 function showPackageList(workDir: string) {
