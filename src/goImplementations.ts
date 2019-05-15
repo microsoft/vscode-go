@@ -67,7 +67,6 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				// Do not override cwd for guru call
 				const guruOptions = {
 					env: options.env,
-					timeout: options.timeout
 				};
 
 				const guruProcess = cp.execFile(goGuru, args, guruOptions, (err, stdout, stderr) => {

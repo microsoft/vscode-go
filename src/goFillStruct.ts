@@ -5,7 +5,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, getTimeoutConfiguration } from './util';
+import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, getTimeoutConfiguration, killProcess } from './util';
 import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
 
@@ -60,7 +60,6 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 	// Set up execFile parameters
 	const options: { [key: string]: any } = {
 		env: getToolsEnvVars(),
-		timeout: getTimeoutConfiguration('onCommand')
 	};
 
 	return new Promise<void>((resolve, reject) => {
@@ -99,5 +98,9 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 		if (p.pid) {
 			p.stdin.end(input);
 		}
+		setTimeout(() => {
+			killProcess(p);
+			reject(new Error('Timeout executing tool - fillstruct'));
+		}, getTimeoutConfiguration('onCommand'));
 	});
 }

@@ -117,7 +117,6 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 	const options = {
 		env: getToolsEnvVars(),
 		cwd: input.cwd,
-		timeout: timeout
 	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -209,7 +208,6 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, 
 	const options = {
 		env: getToolsEnvVars(),
 		cwd: input.cwd,
-		timeout: timeout
 	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -287,7 +285,6 @@ function definitionLocation_guru(input: GoDefinitionInput, timeout: number, toke
 	const options = {
 		env: getToolsEnvVars(),
 		cwd: input.cwd,
-		timeout: timeout
 	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {

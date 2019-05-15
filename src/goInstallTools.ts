@@ -10,7 +10,7 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, defaultTimeoutForChildProcess } from './util';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, defaultTimeoutForChildProcess, killProcess, killTree } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath } from './goPath';
 
@@ -354,13 +354,16 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 			const toolBinPath = getBinPath(tool);
 			if (path.isAbsolute(toolBinPath) && (tool === 'gocode' || tool === 'gocode-gomod')) {
 				closeToolPromise = new Promise<boolean>((innerResolve) => {
-					cp.execFile(toolBinPath, ['close'], { timeout: defaultTimeoutForChildProcess }, (err, stdout, stderr) => {
+					const p = cp.execFile(toolBinPath, ['close'], { }, (err, stdout, stderr) => {
 						if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
 							outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
 							return innerResolve(false);
 						}
 						innerResolve(true);
 					});
+					setTimeout(() => {
+						killTree(p.pid);
+					}, defaultTimeoutForChildProcess);
 				});
 			}
 
@@ -374,7 +377,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 					args.push('-d');
 				}
 				args.push(getToolImportPath(tool, goVersion));
-				cp.execFile(goRuntimePath, args, { env: envForTools }, (err, stdout, stderr) => {
+				const p = cp.execFile(goRuntimePath, args, { env: envForTools }, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
 						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
 						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
@@ -385,6 +388,9 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 						callback(err, stdout, stderr);
 					}
 				});
+				setTimeout(() => {
+					killTree(p.pid);
+				}, defaultTimeoutForChildProcess);
 			});
 		}));
 	}, Promise.resolve([])).then(res => {
