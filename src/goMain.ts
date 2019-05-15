@@ -36,7 +36,8 @@ import {
 import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
 	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
-	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature, HandleDiagnosticsSignature
+	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature,
+	HandleDiagnosticsSignature, ProvideDocumentLinksSignature,
 } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows, getToolFromToolPath } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -221,6 +222,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 						handleDiagnostics: (uri: vscode.Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
 							if (languageServerExperimentalFeatures['diagnostics'] === true) {
 								return next(uri, diagnostics);
+							}
+							return null;
+						},
+						provideDocumentLinks: (document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentLinksSignature) => {
+							if (languageServerExperimentalFeatures['documentLink'] === true) {
+								return next(document, token);
 							}
 							return null;
 						}

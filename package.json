@@ -980,8 +980,13 @@
             },
             "diagnostics": {
               "type": "boolean",
-              "default": false,
+              "default": true,
               "description": "If true, the language server will provide build, vet errors and the extension will ignore the `buildOnSave`, `vetOnSave` settings."
+            },
+            "documentLink": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, the language server's document link feature will be enabled."
             },
             "incrementalSync": {
               "type": "boolean",
@@ -1001,7 +1006,8 @@
             "documentSymbols": true,
             "workspaceSymbols": true,
             "findReferences": true,
-            "diagnostics": false
+            "diagnostics": true,
+            "documentLink": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
