@@ -78,7 +78,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 		return [];
 	}
 
-	const buildEnv = Object.assign({}, getToolsEnvVars());
+	const buildEnv = Object.assign({}, getToolsEnvVars(), goConfig.get('buildEnvVars', {}));
 	const tmpPath = getTempFilePath('go-code-check');
 	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
 	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
