@@ -817,6 +817,12 @@
           "description": "Specifies the timeout for go test in ParseDuration format.",
           "scope": "resource"
         },
+        "go.buildEnvVars": {
+          "type": "object",
+          "default": {},
+          "description": "Environment variables that will passed to the process that runs the Go build",
+          "scope": "resource"
+        },
         "go.testEnvVars": {
           "type": "object",
           "default": {},
