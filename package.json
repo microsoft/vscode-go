@@ -31,8 +31,8 @@
     "compile": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "node ./node_modules/vscode/bin/test",
-    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
-    "fix-lint": "node ./node_modules/tslint/bin/tslint --fix ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
+    "lint": "node ./node_modules/tslint/bin/tslint --project tsconfig.json",
+    "fix-lint": "node ./node_modules/tslint/bin/tslint --fix --project tsconfig.json",
     "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
   },
   "extensionDependencies": [],
