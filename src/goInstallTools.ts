@@ -422,6 +422,24 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	if (!goRuntimePath) {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
+	const goRuntimeBasePath = path.basename(goRuntimePath);
+
+	// cgo and a few other Go tools expect Go binary to be in the path
+	let pathEnvVar: string;
+	if (process.env.hasOwnProperty('PATH')) {
+		pathEnvVar = 'PATH';
+	} else if (process.platform === 'win32' && process.env.hasOwnProperty('Path')) {
+		pathEnvVar = 'Path';
+	}
+	if (goRuntimeBasePath
+		&& pathEnvVar
+		&& process.env[pathEnvVar]
+		&& (<string>process.env[pathEnvVar]).split(path.delimiter).indexOf(goRuntimeBasePath) === -1
+	) {
+		process.env[pathEnvVar] += path.delimiter + goRuntimeBasePath;
+	}
+
+
 	return new Promise<void>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
 			if (err) {
