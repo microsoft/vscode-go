@@ -986,7 +986,7 @@
             "documentLink": {
               "type": "boolean",
               "default": true,
-              "description": "If true, the language server's document link feature will be enabled."
+              "description": "If true, the language server will provide clickable Godoc links for import statements."
             },
             "incrementalSync": {
               "type": "boolean",
