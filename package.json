@@ -300,6 +300,11 @@
         "command": "go.godoctor.var",
         "title": "Go: Extract to variable",
         "description": "Extract to variable using godoctor."
+      },
+      {
+        "command": "go.languageserver.restart",
+        "title": "Go: Restart Language Server",
+        "description": "Restart the running instance of the language server"
       }
     ],
     "debuggers": [
