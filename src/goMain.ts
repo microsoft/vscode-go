@@ -288,6 +288,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			});
 
 			ctx.subscriptions.push(c.start());
+
+			if (languageServerTool !== 'gopls' || !languageServerExperimentalFeatures['diagnostics']) {
+				vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
+			}
 		} else {
 			registerCompletionProvider(ctx);
 			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
@@ -300,6 +304,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 			ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
 			ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
+			vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 		}
 
 		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'go' && isGoPathSet()) {
@@ -328,7 +333,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
-	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
