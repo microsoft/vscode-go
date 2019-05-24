@@ -83,7 +83,9 @@ active development for it anymore and because it doesn't support Go modules, we 
 
 - If you are using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules.
 - Since the language server from Google provides much better support for Go modules, you will be prompted about it when the extension detects that you are working on a project that uses Go modules.
-- If you have never used language server before, and now opt to use it, you will be prompted to install and use the language server from Google.
+- If you have never used language server before, and now opt to use it, you will be prompted to install and use the language server from Google as long as you are using a Go version > 1.10
+
+> Note: The language server from Google supports Go version > 1.10 only
 
 #### Settings to control the use of the Go language server
 
