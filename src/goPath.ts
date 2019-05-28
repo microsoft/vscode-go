@@ -11,6 +11,7 @@
 import fs = require('fs');
 import path = require('path');
 import os = require('os');
+import util = require('./util');
 
 let binPathCache: { [bin: string]: string; } = {};
 
@@ -33,7 +34,7 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths: string[], alternateTools?: { [key: string]: string; }) {
 	if (binPathCache[toolName]) return binPathCache[toolName];
 
-	const alternateTool = (alternateTools && alternateTools[toolName]) ? resolveHomeDir(alternateTools[toolName]) : null;
+	const alternateTool = (alternateTools && alternateTools[toolName]) ? util.resolvePath(alternateTools[toolName]) : null;
 	if (alternateTool && path.isAbsolute(alternateTool) && fileExists(alternateTool)) {
 		binPathCache[toolName] = alternateTool;
 		return alternateTool;
