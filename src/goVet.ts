@@ -1,6 +1,6 @@
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion, resolvePath } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
 import { vetDiagnosticCollection } from './goMain';
@@ -61,8 +61,23 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		return Promise.resolve([]);
 	}
 
-	const vetFlags = goConfig['vetFlags'] || [];
+	const vetFlags: string[] = goConfig['vetFlags'] || [];
 	const vetEnv = Object.assign({}, getToolsEnvVars());
+	const args: string[] = [];
+
+	vetFlags.forEach(flag => {
+		if (flag.startsWith('--vettool=') || flag.startsWith('-vettool=')) {
+			let vetToolPath = flag.substr(flag.indexOf('=') + 1).trim();
+			if (!vetToolPath) {
+				return;
+			}
+			vetToolPath = resolvePath(vetToolPath);
+			args.push(`${flag.substr(0, flag.indexOf('=') + 1)}${vetToolPath}`);
+			return;
+		}
+		args.push(flag);
+	});
+
 	const vetPromise = getGoVersion().then((version: SemVersion) => {
 		const tagsArg = [];
 		if (goConfig['buildTags'] && vetFlags.indexOf('-tags') === -1) {
@@ -70,9 +85,9 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			tagsArg.push(goConfig['buildTags']);
 		}
 
-		let vetArgs = ['vet', ...vetFlags, ...tagsArg, './...'];
-		if (version && version.major === 1 && version.minor <= 9 && vetFlags.length) {
-			vetArgs = ['tool', 'vet', ...vetFlags, ...tagsArg, '.'];
+		let vetArgs = ['vet', ...args, ...tagsArg, './...'];
+		if (version && version.major === 1 && version.minor <= 9 && args.length) {
+			vetArgs = ['tool', 'vet', ...args, ...tagsArg, '.'];
 		}
 
 		outputChannel.appendLine(`Starting "go vet" under the folder ${cwd}`);
