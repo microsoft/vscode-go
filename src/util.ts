@@ -390,18 +390,6 @@ export function getToolsEnvVars(): any {
 		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof toolsEnvVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : toolsEnvVars[key]);
 	}
 
-	// cgo expects go to be in the path
-	const goroot: string = envVars['GOROOT'];
-	let pathEnvVar: string;
-	if (envVars.hasOwnProperty('PATH')) {
-		pathEnvVar = 'PATH';
-	} else if (process.platform === 'win32' && envVars.hasOwnProperty('Path')) {
-		pathEnvVar = 'Path';
-	}
-	if (goroot && pathEnvVar && envVars[pathEnvVar] && (<string>envVars[pathEnvVar]).split(path.delimiter).indexOf(goroot) === -1) {
-		envVars[pathEnvVar] += path.delimiter + path.join(goroot, 'bin');
-	}
-
 	return envVars;
 }
 

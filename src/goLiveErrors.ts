@@ -6,6 +6,7 @@ import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
 import { buildDiagnosticCollection } from './goMain';
+import { isModSupported } from './goModules';
 
 // Interface for settings configuration for adding and removing tags
 interface GoLiveErrorsConfig {
@@ -53,7 +54,12 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 }
 
 // processFile does the actual work once the timeout has fired
-function processFile(e: vscode.TextDocumentChangeEvent) {
+async function processFile(e: vscode.TextDocumentChangeEvent) {
+	const isMod = await isModSupported(e.document.uri);
+	if (isMod) {
+		return;
+	}
+
 	const gotypeLive = getBinPath('gotype-live');
 	if (!path.isAbsolute(gotypeLive)) {
 		return promptForMissingTool('gotype-live');

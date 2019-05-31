@@ -105,7 +105,18 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 		});
 	}
 
-	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
+	public async provideCompletionItemsInternal(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken,
+		config: vscode.WorkspaceConfiguration
+	): Promise<vscode.CompletionItem[] | vscode.CompletionList> {
+		// Completions for the package statement based on the file name
+		const pkgStatementCompletions = await getPackageStatementCompletions(document);
+		if (pkgStatementCompletions && pkgStatementCompletions.length) {
+			return pkgStatementCompletions;
+		}
+
 		this.excludeDocs = false;
 		this.gocodeFlags = ['-f=json'];
 		if (Array.isArray(config['gocodeFlags'])) {
@@ -372,20 +383,6 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 						suggestions = suggestions.concat(getPackageCompletions(document, currentWord, this.pkgsList, packageSuggestions));
 					}
 
-					// 'Smart Snippet' for package clause
-					// TODO: Factor this out into a general mechanism
-					if (!inputText.match(/package\s+(\w+)/)) {
-						return guessPackageNameFromFile(filename).then((pkgNames: string[]) => {
-							pkgNames.forEach(pkgName => {
-								const packageItem = new vscode.CompletionItem('package ' + pkgName);
-								packageItem.kind = vscode.CompletionItemKind.Snippet;
-								packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
-								suggestions.push(packageItem);
-							});
-							resolve(suggestions);
-						}, () => resolve(suggestions));
-					}
-
 					resolve(suggestions);
 				} catch (e) {
 					reject(e);
@@ -576,7 +573,30 @@ function getPackageCompletions(document: vscode.TextDocument, currentWord: strin
 	return completionItems;
 }
 
+async function getPackageStatementCompletions(document: vscode.TextDocument): Promise<vscode.CompletionItem[]> {
+	// 'Smart Snippet' for package clause
+	const inputText = document.getText();
+	if (inputText.match(/package\s+(\w+)/)) {
+		return [];
+	}
+
+	const pkgNames = await guessPackageNameFromFile(document.fileName);
+	const suggestions = pkgNames.map(pkgName => {
+		const packageItem = new vscode.CompletionItem('package ' + pkgName);
+		packageItem.kind = vscode.CompletionItemKind.Snippet;
+		packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
+		return packageItem;
+	});
+	return suggestions;
+}
+
 export async function getCompletionsWithoutGoCode(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.CompletionItem[]> {
+	// Completions for the package statement based on the file name
+	const pkgStatementCompletions = await getPackageStatementCompletions(document);
+	if (pkgStatementCompletions && pkgStatementCompletions.length) {
+		return pkgStatementCompletions;
+	}
+
 	const lineText = document.lineAt(position.line).text;
 	const config = vscode.workspace.getConfiguration('go', document.uri);
 	const autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);

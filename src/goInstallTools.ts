@@ -122,7 +122,7 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push(goConfig['lintTool']);
 	}
 
-	if (goConfig['useLanguageServer']) {
+	if (goConfig['useLanguageServer'] && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 		tools.push('gopls');
 	}
 
@@ -428,6 +428,24 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	if (!goRuntimePath) {
 		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 	}
+	const goRuntimeBasePath = path.basename(goRuntimePath);
+
+	// cgo and a few other Go tools expect Go binary to be in the path
+	let pathEnvVar: string;
+	if (process.env.hasOwnProperty('PATH')) {
+		pathEnvVar = 'PATH';
+	} else if (process.platform === 'win32' && process.env.hasOwnProperty('Path')) {
+		pathEnvVar = 'Path';
+	}
+	if (goRuntimeBasePath
+		&& pathEnvVar
+		&& process.env[pathEnvVar]
+		&& (<string>process.env[pathEnvVar]).split(path.delimiter).indexOf(goRuntimeBasePath) === -1
+	) {
+		process.env[pathEnvVar] += path.delimiter + goRuntimeBasePath;
+	}
+
+
 	return new Promise<void>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
 			if (err) {
@@ -466,7 +484,7 @@ export function offerToInstallTools() {
 		});
 
 		const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
-		if (usingSourceGraph) {
+		if (usingSourceGraph && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 			const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 			const disableLabel = 'Disable language server';
 			const installLabel = 'Install';
