@@ -1,0 +1,252 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"version": "https://github.com/atom/language-go/commit/b6fd68f74efa109679e31fe6f4a41ac105262d0e",
+	"name": "Go",
+	"scopeName": "source.go",
+	"comment": "Go language",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"comment": "Interpreted string literals",
+			"begin": "\"",
+			"end": "\"",
+			"name": "string.quoted.double.go",
+			"patterns": [
+				{
+					"include": "#string_escaped_char"
+				},
+				{
+					"include": "#string_placeholder"
+				}
+			]
+		},
+		{
+			"comment": "Raw string literals",
+			"begin": "`",
+			"end": "`",
+			"name": "string.quoted.raw.go",
+			"patterns": [
+				{
+					"include": "#string_placeholder"
+				}
+			]
+		},
+		{
+			"comment": "Syntax error receiving channels",
+			"match": "<\\-([\\t ]+)chan\\b",
+			"captures": {
+				"1": {
+					"name": "invalid.illegal.receive-channel.go"
+				}
+			}
+		},
+		{
+			"comment": "Syntax error sending channels",
+			"match": "\\bchan([\\t ]+)<-",
+			"captures": {
+				"1": {
+					"name": "invalid.illegal.send-channel.go"
+				}
+			}
+		},
+		{
+			"comment": "Syntax error using slices",
+			"match": "\\[\\](\\s+)",
+			"captures": {
+				"1": {
+					"name": "invalid.illegal.slice.go"
+				}
+			}
+		},
+		{
+			"comment": "Floating-point literals",
+			"match": "(\\.\\d+([Ee][-+]\\d+)?i?)\\b|\\b\\d+\\.\\d*(([Ee][-+]\\d+)?i?\\b)?",
+			"name": "constant.numeric.floating-point.go"
+		},
+		{
+			"comment": "Integers",
+			"match": "\\b((0x[0-9a-fA-F]+)|(0[0-7]+i?)|(\\d+([Ee]\\d+)?i?)|(\\d+[Ee][-+]\\d+i?))\\b",
+			"name": "constant.numeric.integer.go"
+		},
+		{
+			"comment": "Language constants",
+			"match": "\\b(true|false|nil|iota)\\b",
+			"name": "constant.numeric.language.go"
+		},
+		{
+			"comment": "Terminators",
+			"match": ";",
+			"name": "keyword.other.semi.go"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#operators"
+		},
+		{
+			"include": "#runes"
+		}
+	],
+	"repository": {
+		"comments": {
+			"patterns": [
+				{
+					"begin": "/\\*",
+					"end": "\\*/",
+					"name": "comment.block.go"
+				},
+				{
+					"begin": "//",
+					"end": "$",
+					"name": "comment.line.double-slash.go"
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"comment": "Flow control keywords",
+					"match": "\\b(break|case|continue|default|defer|panic|recover|else|fallthrough|for|go|goto|if|range|return|select|switch)\\b",
+					"name": "keyword.control.go"
+				},
+				{
+					"match": "\\bchan\\b",
+					"name": "keyword.channel.go"
+				},
+				{
+					"match": "\\bconst\\b",
+					"name": "keyword.const.go"
+				},
+				{
+					"match": "\\bfunc\\b",
+					"name": "keyword.function.go"
+				},
+				{
+					"match": "\\binterface\\b",
+					"name": "keyword.interface.go"
+				},
+				{
+					"match": "\\bmap\\b",
+					"name": "keyword.map.go"
+				},
+				{
+					"match": "\\bstruct\\b",
+					"name": "keyword.struct.go"
+				},
+				{
+					"comment": "Syntax error numeric literals",
+					"match": "\\b0[0-7]*[89]\\d*\\b",
+					"name": "invalid.illegal.numeric.go"
+				},
+				{
+					"comment": "Functions",
+					"match": "\\bfunc\\b",
+					"name": "keyword.function.go"
+				},
+				{
+					"match": "\\bpackage\\b",
+					"name": "keyword.package.go"
+				},
+				{
+					"match": "\\btype\\b",
+					"name": "keyword.type.go"
+				},
+				{
+					"match": "\\bimport\\b",
+					"name": "keyword.import.go"
+				},
+				{
+					"match": "\\bvar\\b",
+					"name": "keyword.var.go"
+				}
+			]
+		},
+		"operators": {
+			"comment": "Note that the order here is very important!",
+			"patterns": [
+				{
+					"match": "(\\*|&)(?=\\w)",
+					"name": "keyword.operator.address.go"
+				},
+				{
+					"match": "<\\-",
+					"name": "keyword.operator.channel.go"
+				},
+				{
+					"match": "\\-\\-",
+					"name": "keyword.operator.decrement.go"
+				},
+				{
+					"match": "\\+\\+",
+					"name": "keyword.operator.increment.go"
+				},
+				{
+					"match": "(==|!=|<=|>=|<(?!<)|>(?!>))",
+					"name": "keyword.operator.comparison.go"
+				},
+				{
+					"match": "(&&|\\|\\||!)",
+					"name": "keyword.operator.logical.go"
+				},
+				{
+					"match": "(=|\\+=|\\-=|\\|=|\\^=|\\*=|/=|:=|%=|<<=|>>=|&\\^=|&=)",
+					"name": "keyword.operator.assignment.go"
+				},
+				{
+					"match": "(\\+|\\-|\\*|/|%)",
+					"name": "keyword.operator.arithmetic.go"
+				},
+				{
+					"match": "(&(?!\\^)|\\||\\^|&\\^|<<|>>)",
+					"name": "keyword.operator.arithmetic.bitwise.go"
+				},
+				{
+					"match": "\\.\\.\\.",
+					"name": "keyword.operator.ellipsis.go"
+				}
+			]
+		},
+		"runes": {
+			"patterns": [
+				{
+					"begin": "'",
+					"end": "'",
+					"name": "string.quoted.rune.go",
+					"patterns": [
+						{
+							"match": "\\G(\\\\([0-7]{3}|[abfnrtv\\\\'\"]|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8})|.)(?=')",
+							"name": "constant.other.rune.go"
+						},
+						{
+							"match": "[^']+",
+							"name": "invalid.illegal.unknown-rune.go"
+						}
+					]
+				}
+			]
+		},
+		"string_escaped_char": {
+			"patterns": [
+				{
+					"match": "\\\\([0-7]{3}|[abfnrtv\\\\'\"]|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8})",
+					"name": "constant.character.escape.go"
+				},
+				{
+					"match": "\\\\[^0-7xuUabfnrtv\\'\"]",
+					"name": "invalid.illegal.unknown-escape.go"
+				}
+			]
+		},
+		"string_placeholder": {
+			"patterns": [
+				{
+					"match": "%(\\[\\d+\\])?([\\+#\\-0\\x20]{,2}((\\d+|\\*)?(\\.?(\\d+|\\*|(\\[\\d+\\])\\*?)?(\\[\\d+\\])?)?))?[vT%tbcdoqxXUbeEfFgGsp]",
+					"name": "constant.other.placeholder.go"
+				}
+			]
+		}
+	}
+}

@@ -35,6 +35,9 @@ import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
 import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
 import { GO111MODULE } from './goModules';
+import { activate as activateTreeSitter } from 'vscode-tree-sitter';
+import { color } from './treeSitter';
+import * as path from 'path';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -359,6 +362,32 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	});
 
 	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null));
+	// Parse .go files incrementally using tree-sitter
+	const parserPath = path.join(ctx.extensionPath, 'parsers', 'tree-sitter-go.wasm');
+	activateTreeSitter(ctx, {'go': {wasm: parserPath}}).then(colorAll);
+	function colorAll() {
+		for (const editor of vscode.window.visibleTextEditors) {
+			color(editor);
+		}
+	}
+	function colorEdited(evt: vscode.TextDocumentChangeEvent) {
+		for (const editor of vscode.window.visibleTextEditors) {
+			if (editor.document.uri.toString() === evt.document.uri.toString()) {
+				color(editor);
+			}
+		}
+	}
+	function onChangeConfiguration(event: vscode.ConfigurationChangeEvent) {
+		const colorizationNeedsReload: boolean = event.affectsConfiguration('workbench.colorTheme')
+			|| event.affectsConfiguration('editor.tokenColorCustomizations');
+		if (colorizationNeedsReload) {
+			colorAll();
+		}
+	}
+	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(onChangeConfiguration));
+	ctx.subscriptions.push(vscode.window.onDidChangeVisibleTextEditors(colorAll));
+	ctx.subscriptions.push(vscode.window.onDidChangeTextEditorVisibleRanges(change => color(change.textEditor)));
+	ctx.subscriptions.push(vscode.workspace.onDidChangeTextDocument(colorEdited));
 }
 
 export function deactivate() {

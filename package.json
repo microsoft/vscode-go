@@ -34,7 +34,8 @@
     "test": "node ./out/test/runTest.js",
     "lint": "node ./node_modules/tslint/bin/tslint --project tsconfig.json",
     "fix-lint": "node ./node_modules/tslint/bin/tslint --fix --project tsconfig.json",
-    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
+    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
+    "gen-parser": "tree-sitter build-wasm ./node_modules/tree-sitter-go"
   },
   "extensionDependencies": [],
   "dependencies": {
@@ -46,7 +47,9 @@
     "vscode-debugprotocol": "^1.36.0",
     "vscode-extension-telemetry": "^0.1.2",
     "vscode-languageclient": "~5.2.1",
-    "web-request": "^1.0.7"
+    "vscode-tree-sitter": "^0.1.24",
+    "web-request": "^1.0.7",
+    "web-tree-sitter": "^0.15.5"
   },
   "devDependencies": {
     "@types/fs-extra": "^8.0.0",
@@ -56,6 +59,8 @@
     "@types/semver": "^6.0.1",
     "@types/vscode": "^1.25.0",
     "fs-extra": "^8.1.0",
+    "tree-sitter-cli": "^0.15.2",
+    "tree-sitter-go": "^0.13.3",
     "glob": "^7.1.4",
     "mocha": "^6.2.0",
     "tslint": "^5.19.0",
@@ -104,6 +109,11 @@
       }
     ],
     "grammars": [
+      {
+        "language": "go",
+        "scopeName": "source.go",
+        "path": "./syntaxes/go.tmGrammar.json"
+      },
       {
         "language": "go.mod",
         "scopeName": "go.mod",
