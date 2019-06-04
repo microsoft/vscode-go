@@ -34,7 +34,7 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths: string[], alternateTools?: { [key: string]: string; }) {
 	if (binPathCache[toolName]) return binPathCache[toolName];
 
-	const alternateTool = (alternateTools && alternateTools[toolName]) ? util.resolvePath(alternateTools[toolName]) : null;
+	const alternateTool = (alternateTools && alternateTools[toolName]) || null;
 	if (alternateTool && path.isAbsolute(alternateTool) && fileExists(alternateTool)) {
 		binPathCache[toolName] = alternateTool;
 		return alternateTool;
