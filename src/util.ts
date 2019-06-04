@@ -371,12 +371,13 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	const alternateTools: { [key: string]: string; } = vscode.workspace.getConfiguration('go', null).get('alternateTools');
+	const alternateTools: {[key: string]: string} = vscode.workspace.getConfiguration('go', null).get('alternateTools');
+	const alternateToolPath: string = alternateTools[tool];
 
 	return getBinPathWithPreferredGopath(
 		tool,
 		(tool === 'go') ? [] : [getToolsGopath(), getCurrentGoPath()],
-		resolveObjectPaths(alternateTools),
+		resolvePath(alternateToolPath),
 	);
 }
 
@@ -505,21 +506,6 @@ export function timeout(millis: number): Promise<void> {
 	return new Promise<void>((resolve, reject) => {
 		setTimeout(() => resolve(), millis);
 	});
-}
-
-
-/**
- * Given an object with path attributes, resolve the paths of all attributes and return the new object.
- */
-export function resolveObjectPaths(obj: {
-	[key: string]: string;
-}): {
-	[key: string]: string;
-} {
-	return Object.keys(obj).reduce(
-		(acc, key, idx) => ({ ...acc, [key]: resolvePath(obj[key]) }),
-		{}
-	);
 }
 
 /**
