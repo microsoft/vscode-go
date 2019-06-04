@@ -287,13 +287,14 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 			});
 
-			ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', () => {
-				const thing = c.stop().then(() => {
-					c.start();
-				});
-			}));
+			let languageServerDisposable = c.start();
+			ctx.subscriptions.push(languageServerDisposable);
 
-			ctx.subscriptions.push(c.start());
+			ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', async () => {
+				await c.stop();
+				languageServerDisposable = c.start();
+				ctx.subscriptions.push(languageServerDisposable);
+			}));
 		} else {
 			registerCompletionProvider(ctx);
 			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
