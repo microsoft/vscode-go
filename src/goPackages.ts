@@ -2,7 +2,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent, killProcess, getTimeoutConfiguration, defaultTimeoutForChildProcess } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent, killProcess, getTimeoutConfiguration, timeoutForLongRunningProcess } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 type GopkgsDone = (res: Map<string, string>) => void;
@@ -44,7 +44,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 			killProcess(p);
 			console.log(`Running gopkgs failed due to timeout.`);
 			resolve(pkgs);
-		}, defaultTimeoutForChildProcess);
+		}, timeoutForLongRunningProcess);
 
 		p.stdout.on('data', d => {
 			chunks.push(d);

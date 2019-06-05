@@ -10,7 +10,7 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, defaultTimeoutForChildProcess, killProcess, killTree } from './util';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, timeoutForLongRunningProcess, killProcess, killTree, getTimeoutConfiguration } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath } from './goPath';
 
@@ -363,7 +363,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 					});
 					setTimeout(() => {
 						killTree(p.pid);
-					}, defaultTimeoutForChildProcess);
+					}, getTimeoutConfiguration());
 				});
 			}
 
@@ -390,7 +390,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 				});
 				setTimeout(() => {
 					killTree(p.pid);
-				}, defaultTimeoutForChildProcess);
+				}, timeoutForLongRunningProcess);
 			});
 		}));
 	}, Promise.resolve([])).then(res => {

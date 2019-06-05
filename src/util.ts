@@ -956,9 +956,13 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 	});
 }
 
-export const defaultTimeoutForChildProcess = 60000;
+export const timeoutForLongRunningProcess = 120000;
 
-export function getTimeoutConfiguration(operationType: string, goConfig?: vscode.WorkspaceConfiguration ): number {
+export function getTimeoutConfiguration(operationType?: string, goConfig?: vscode.WorkspaceConfiguration ): number {
+	const defaultTimeout = 60000;
+	if (!operationType) {
+		return defaultTimeout;
+	}
 	if (!goConfig) {
 		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	}
@@ -966,7 +970,7 @@ export function getTimeoutConfiguration(operationType: string, goConfig?: vscode
 	if (execTimeout.hasOwnProperty(operationType) && (typeof execTimeout[operationType] === 'number' && execTimeout[operationType] > 0)) {
 		return execTimeout[operationType];
 	}
-	return defaultTimeoutForChildProcess;
+	return defaultTimeout;
 }
 
 /**
