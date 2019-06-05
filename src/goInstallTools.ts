@@ -439,7 +439,6 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		process.env[pathEnvVar] += path.delimiter + goRuntimeBasePath;
 	}
 
-
 	return new Promise<void>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
 			if (err) {
@@ -501,7 +500,6 @@ export function offerToInstallTools() {
 				});
 		}
 	});
-
 
 	function promptForInstall(missing: string[], goVersion: SemVersion) {
 		const installItem = {

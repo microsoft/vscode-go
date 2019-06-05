@@ -62,4 +62,3 @@ suite('GuessPackageNameFromFile Tests', () => {
 			.then(() => done(), done);
 	});
 });
-

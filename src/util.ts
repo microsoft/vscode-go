@@ -371,7 +371,7 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	const alternateTools: {[key: string]: string} = vscode.workspace.getConfiguration('go', null).get('alternateTools');
+	const alternateTools: { [key: string]: string } = vscode.workspace.getConfiguration('go', null).get('alternateTools');
 	const alternateToolPath: string = alternateTools[tool];
 
 	return getBinPathWithPreferredGopath(
