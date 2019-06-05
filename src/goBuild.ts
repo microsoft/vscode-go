@@ -99,7 +99,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 
 	if (buildWorkspace && currentWorkspace && !isTestFile) {
 		outputChannel.appendLine(`Starting building the current workspace at ${currentWorkspace}`);
-		return getNonVendorPackages(currentWorkspace).then(pkgs => {
+		return getNonVendorPackages(currentWorkspace, timeout).then(pkgs => {
 			running = true;
 			return runTool(
 				buildArgs.concat(Array.from(pkgs.keys())),

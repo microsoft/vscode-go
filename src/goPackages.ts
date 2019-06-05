@@ -257,8 +257,11 @@ const pkgToFolderMappingRegex = /ImportPath: (.*) FolderPath: (.*)/;
 /**
  * Returns mapping between import paths and folder paths for all packages under given folder (vendor will be excluded)
  */
-export function getNonVendorPackages(folderPath: string): Promise<Map<string, string>> {
+export function getNonVendorPackages(folderPath: string, timeout?: number): Promise<Map<string, string>> {
 	const goRuntimePath = getBinPath('go');
+	if (!timeout) {
+		timeout = getTimeoutConfiguration('onCommand');
+	}
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
@@ -270,7 +273,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 		const waitTimer = setTimeout(() => {
 			killProcess(p);
 			reject(new Error('Timeout executing tool - go list'));
-		}, getTimeoutConfiguration('onCommand'));
+		}, timeout);
 
 		p.stdout.on('data', (stdout) => {
 			chunks.push(stdout);
