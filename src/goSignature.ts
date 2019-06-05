@@ -17,7 +17,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
 	public async provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
 		let goConfig = this.goConfig || vscode.workspace.getConfiguration('go', document.uri);
-		const timeout = getTimeoutConfiguration('onHover', this.goConfig);
+		const timeout = getTimeoutConfiguration('onType', this.goConfig);
 
 		const theCall = this.walkBackwardsToBeginningOfCall(document, position);
 		if (theCall == null) {

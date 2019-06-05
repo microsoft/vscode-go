@@ -108,16 +108,11 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 		return Promise.reject(missingToolMsg + godefTool);
 	}
 	const offset = byteOffsetAt(input.document, input.position);
+	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
-
-	// Set up execFile parameters
-	const options = {
-		env: getToolsEnvVars(),
-		cwd: input.cwd,
-	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		// Spawn `godef` process
@@ -125,8 +120,7 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 		// if (useReceivers) {
 		// 	args.push('-r');
 		// }
-
-		p = cp.execFile(godefPath, args, options, (err, stdout, stderr) => {
+		p = cp.execFile(godefPath, args, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + godefTool);
@@ -199,25 +193,18 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, 
 		return Promise.reject(missingToolMsg + 'gogetdoc');
 	}
 	const offset = byteOffsetAt(input.document, input.position);
+	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
-
-	// Set up execFile parameters
-	const options = {
-		env: getToolsEnvVars(),
-		cwd: input.cwd,
-	};
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		const gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', input.document.fileName + ':#' + offset.toString()];
 		const buildTags = vscode.workspace.getConfiguration('go', input.document.uri)['buildTags'];
 		const gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
-
-
-		p = cp.execFile(gogetdoc, gogetdocFlags, options, (err, stdout, stderr) => {
+		p = cp.execFile(gogetdoc, gogetdocFlags, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'gogetdoc');
@@ -276,19 +263,13 @@ function definitionLocation_guru(input: GoDefinitionInput, timeout: number, toke
 		return Promise.reject(missingToolMsg + 'guru');
 	}
 	const offset = byteOffsetAt(input.document, input.position);
+	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 	if (token) {
 		token.onCancellationRequested(() => killProcess(p));
 	}
-
-	// Set up execFile parameters
-	const options = {
-		env: getToolsEnvVars(),
-		cwd: input.cwd,
-	};
-
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
-		p = cp.execFile(guru, ['-json', '-modified', 'definition', input.document.fileName + ':#' + offset.toString()], options, (err, stdout, stderr) => {
+		p = cp.execFile(guru, ['-json', '-modified', 'definition', input.document.fileName + ':#' + offset.toString()], { env }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'guru');

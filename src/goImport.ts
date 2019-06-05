@@ -120,7 +120,6 @@ export function addImport(arg: {importPath: string, from: string}) {
 export function addImportToWorkspace() {
 	const editor = vscode.window.activeTextEditor;
 	const selection = editor.selection;
-	const goRuntimePath = getBinPath('go');
 
 	let importPath = '';
 	if (!selection.isEmpty) {
@@ -150,12 +149,10 @@ export function addImportToWorkspace() {
 		return;
 	}
 
-	// Set up execFile parameters
-	const options: { [key: string]: any } = {
-		env: getToolsEnvVars(),
-	};
+	const goRuntimePath = getBinPath('go');
+	const env = getToolsEnvVars();
 
-	const p = cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], options, (err, stdout, stderr) => {
+	const p = cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
 		const dirs = (stdout || '').split('\n');
 		if (!dirs.length || !dirs[0].trim()) {
 			vscode.window.showErrorMessage(`Could not find package ${importPath}`);

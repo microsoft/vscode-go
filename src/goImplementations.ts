@@ -41,14 +41,8 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 			if (token.isCancellationRequested) {
 				return resolve(null);
 			}
-
-			// Set up execFile parameters
-			const options: { [key: string]: any } = {
-				cwd: root,
-				env: getToolsEnvVars(),
-			};
-
-			const listProcess = cp.execFile(getBinPath('go'), ['list', '-e', '-json'], options, (err, stdout, stderr) => {
+			const env = getToolsEnvVars();
+			const listProcess = cp.execFile(getBinPath('go'), ['list', '-e', '-json'], { cwd: root, env }, (err, stdout, stderr) => {
 				if (err) {
 					return reject(err);
 				}
@@ -64,12 +58,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				}
 				args.push('-json', 'implements', `${filename}:#${offset.toString()}`);
 
-				// Do not override cwd for guru call
-				const guruOptions = {
-					env: options.env,
-				};
-
-				const guruProcess = cp.execFile(goGuru, args, guruOptions, (err, stdout, stderr) => {
+				const guruProcess = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
 						return resolve(null);

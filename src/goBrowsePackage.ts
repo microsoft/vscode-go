@@ -47,9 +47,8 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 		return showPackageList(workDir);
 	}
 
-	// Set up execFile parameters
 	const options: { [key: string]: any } = {
-		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() }),
+		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() })
 	};
 
 	if (workDir) {
@@ -104,4 +103,5 @@ function showPackageList(workDir: string) {
 				showPackageFiles(pkgFromDropdown, false, workDir);
 			});
 	});
+	
 }

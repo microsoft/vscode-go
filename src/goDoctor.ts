@@ -77,12 +77,6 @@ function runGoDoctor(
 			return resolve();
 		}
 
-		// Set up execFile parameters
-		const options: { [key: string]: any } = {
-			env: getToolsEnvVars(),
-			cwd: dirname(fileName),
-		};
-
 		const p = cp.execFile(
 			godoctor,
 			[
@@ -95,7 +89,10 @@ function runGoDoctor(
 				type,
 				newName
 			],
-			options,
+			{
+				env: getToolsEnvVars(),
+				cwd: dirname(fileName)
+			},
 			(err, stdout, stderr) => {
 				if (err) {
 					vscode.window.showErrorMessage(stderr || err.message);

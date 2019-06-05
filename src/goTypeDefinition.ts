@@ -54,12 +54,8 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			const args = buildTags ? ['-tags', buildTags] : [];
 			args.push('-json', '-modified', 'describe', `${filename}:#${offset.toString()}`);
 
-			// Set up execFile parameters
-			const options: { [key: string]: any } = {
-				env: getToolsEnvVars(),
-			};
-
-			const p = cp.execFile(goGuru, args, options, (err, stdout, stderr) => {
+			const timeout = getTimeoutConfiguration('onCommand');
+			const p = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
@@ -80,7 +76,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 						}
 
 						// Fall back to position of declaration
-						return definitionLocation(document, position, null, false, options.timeout, token).then(definitionInfo => {
+						return definitionLocation(document, position, null, false, timeout, token).then(definitionInfo => {
 							if (definitionInfo == null || definitionInfo.file == null) return null;
 							const definitionResource = vscode.Uri.file(definitionInfo.file);
 							const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
@@ -121,7 +117,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			});
 			setTimeout(() => {
 				killTree(p.pid);
-			}, getTimeoutConfiguration('onCommand'));
+			}, timeout);
 		});
 	}
 }

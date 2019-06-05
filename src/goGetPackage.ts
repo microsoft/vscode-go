@@ -22,12 +22,9 @@ export function goGetPackage() {
 		return vscode.window.showErrorMessage('Could not locate Go binaries. Make sure you have Go installed');
 	}
 
-	// Set up execFile parameters
-	const options: { [key: string]: any } = {
-		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() }),
-	};
+	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
 
-	const p = cp.execFile(goRuntimePath, ['get', '-v', importPath], options, (err, stdout, stderr) => {
+	const p = cp.execFile(goRuntimePath, ['get', '-v', importPath], { env }, (err, stdout, stderr) => {
 		// go get -v uses stderr to write output regardless of success or failure
 		if (stderr !== '') {
 			outputChannel.show();

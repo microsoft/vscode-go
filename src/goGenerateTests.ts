@@ -142,12 +142,7 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 			args = args.concat(['-all', conf.dir]);
 		}
 
-		// Set up execFile parameters
-		const options: { [key: string]: any } = {
-			env: getToolsEnvVars(),
-		};
-
-		const p = cp.execFile(cmd, args, options, (err, stdout, stderr) => {
+		const p = cp.execFile(cmd, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
 			outputChannel.appendLine('Generating Tests: ' + cmd + ' ' + args.join(' '));
 
 			try {

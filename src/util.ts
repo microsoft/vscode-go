@@ -637,15 +637,9 @@ export function runTool(
 			}
 		});
 	}
-
-	// Set up execFile parameters
-	const options: { [key: string]: any } = {
-		env,
-		cwd: fixDriveCasingInWindows(cwd),
-	};
-
+	cwd = fixDriveCasingInWindows(cwd);
 	return new Promise((resolve, reject) => {
-		p = cp.execFile(cmd, args, options, (err, stdout, stderr) => {
+		p = cp.execFile(cmd, args, { env: env, cwd: cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					// Since the tool is run on save which can be frequent
@@ -711,7 +705,7 @@ export function runTool(
 		setTimeout(() => {
 			killProcess(p);
 			reject(new Error(`Timeout executing tool - ${toolName ? toolName : goRuntimePath}`));
-		}, getTimeoutConfiguration('onCommand'));
+		}, timeout);
 	});
 }
 
@@ -969,7 +963,7 @@ export function getTimeoutConfiguration(operationType: string, goConfig?: vscode
 		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	}
 	const execTimeout: { [key: string]: any } = goConfig.get('operationTimeout');
-	if (execTimeout.hasOwnProperty(operationType) && (typeof execTimeout[operationType] === 'number')) {
+	if (execTimeout.hasOwnProperty(operationType) && (typeof execTimeout[operationType] === 'number' && execTimeout[operationType] > 0)) {
 		return execTimeout[operationType];
 	}
 	return defaultTimeoutForChildProcess;

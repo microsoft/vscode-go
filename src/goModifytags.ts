@@ -127,13 +127,7 @@ function runGomodifytags(args: string[]) {
 	const gomodifytags = getBinPath('gomodifytags');
 	const editor = vscode.window.activeTextEditor;
 	const input = getFileArchive(editor.document);
-
-	// Set up execFile parameters
-	const options: { [key: string]: any } = {
-		env: getToolsEnvVars(),
-	};
-
-	const p = cp.execFile(gomodifytags, args, options, (err, stdout, stderr) => {
+	const p = cp.execFile(gomodifytags, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gomodifytags');
 			return;

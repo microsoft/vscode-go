@@ -39,14 +39,7 @@ export function implCursor() {
 
 function runGoImpl(args: string[], insertPos: vscode.Position) {
 	const goimpl = getBinPath('impl');
-
-	// Set up execFile parameters
-	const options: { [key: string]: any } = {
-		env: getToolsEnvVars(),
-		cwd: dirname(vscode.window.activeTextEditor.document.fileName),
-	};
-
-	const p = cp.execFile(goimpl, args, options, (err, stdout, stderr) => {
+	const p = cp.execFile(goimpl, args, { env: getToolsEnvVars(), cwd: dirname(vscode.window.activeTextEditor.document.fileName) }, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('impl');
 			return;

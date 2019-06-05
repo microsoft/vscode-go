@@ -26,6 +26,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			const range = document.getWordRangeAtPosition(position);
 			const pos = range ? range.start : position;
 			const offset = byteOffsetAt(document, pos);
+			const env = getToolsEnvVars();
 			const gorename = getBinPath('gorename');
 			const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'] ;
 			const gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName];
@@ -42,12 +43,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 				token.onCancellationRequested(() => killProcess(p));
 			}
 
-			// Set up execFile parameters
-			const options: { [key: string]: any } = {
-				env: getToolsEnvVars(),
-			};
-
-			p = cp.execFile(gorename, gorenameArgs, options, (err, stdout, stderr) => {
+			p = cp.execFile(gorename, gorenameArgs, {env}, (err, stdout, stderr) => {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gorename');

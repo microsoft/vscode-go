@@ -68,13 +68,8 @@ async function processFile(e: vscode.TextDocumentChangeEvent) {
 	const fileContents = e.document.getText();
 	const fileName = e.document.fileName;
 	const args = ['-e', '-a', '-lf=' + fileName, path.dirname(fileName)];
-
-	// Set up execFile parameters
-	const options: { [key: string]: any } = {
-		env: getToolsEnvVars(),
-	};
-
-	const p = cp.execFile(gotypeLive, args, options, (err, stdout, stderr) => {
+	const env = getToolsEnvVars();
+	const p = cp.execFile(gotypeLive, args, { env }, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gotype-live');
 			return;

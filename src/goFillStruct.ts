@@ -57,13 +57,8 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 	const input = getFileArchive(editor.document);
 	const tabsCount = getTabsCount(editor);
 
-	// Set up execFile parameters
-	const options: { [key: string]: any } = {
-		env: getToolsEnvVars(),
-	};
-
 	return new Promise<void>((resolve, reject) => {
-		const p = cp.execFile(fillstruct, args, options, (err, stdout, stderr) => {
+		const p = cp.execFile(fillstruct, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('fillstruct');
