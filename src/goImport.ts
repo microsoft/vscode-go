@@ -171,5 +171,6 @@ export function addImportToWorkspace() {
 	});
 	setTimeout(() => {
 		killProcess(p);
+		vscode.window.showErrorMessage('Timout executing - go list');
 	}, getTimeoutConfiguration('onCommand'));
 }

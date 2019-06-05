@@ -117,6 +117,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			});
 			setTimeout(() => {
 				killTree(p.pid);
+				reject('Timeout executing tool - guru');
 			}, timeout);
 		});
 	}

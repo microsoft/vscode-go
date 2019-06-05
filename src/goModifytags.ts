@@ -146,5 +146,6 @@ function runGomodifytags(args: string[]) {
 	}
 	setTimeout(() => {
 		killProcess(p);
+		vscode.window.showErrorMessage('Timout executing - gomodifytags');
 	}, getTimeoutConfiguration('onCommand'));
 }

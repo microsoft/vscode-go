@@ -59,5 +59,6 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 	}
 	setTimeout(() => {
 		killProcess(p);
+		vscode.window.showInformationMessage('Timeout executing tool - impl');
 	}, getTimeoutConfiguration('onCommand'));
 }

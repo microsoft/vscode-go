@@ -85,6 +85,7 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 	});
 	setTimeout(() => {
 		killProcess(p);
+		vscode.window.showErrorMessage('Timeout executing - go list');
 	}, getTimeoutConfiguration('onCommand'));
 }
 
@@ -103,5 +104,4 @@ function showPackageList(workDir: string) {
 				showPackageFiles(pkgFromDropdown, false, workDir);
 			});
 	});
-	
 }

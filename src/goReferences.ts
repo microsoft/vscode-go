@@ -83,6 +83,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			});
 			setTimeout(() => {
 				killTree(p.pid);
+				reject('Timeout executing tool - guru');
 			}, getTimeoutConfiguration('onCommand'));
 		});
 	}

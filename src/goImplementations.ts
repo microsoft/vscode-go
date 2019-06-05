@@ -99,11 +99,13 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				token.onCancellationRequested(() => killTree(guruProcess.pid));
 				setTimeout(() => {
 					killTree(guruProcess.pid);
+					reject('Timout executing tool - guru');
 				}, getTimeoutConfiguration('onCommand'));
 			});
 			token.onCancellationRequested(() => killTree(listProcess.pid));
 			setTimeout(() => {
 				killTree(listProcess.pid);
+				reject('Timout executing - go list');
 			}, getTimeoutConfiguration('onCommand'));
 		});
 	}
