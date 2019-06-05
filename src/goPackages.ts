@@ -2,7 +2,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent, killProcess, getTimeoutConfiguration } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent, killProcess, getTimeoutConfiguration, defaultTimeoutForChildProcess } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 type GopkgsDone = (res: Map<string, string>) => void;
@@ -35,14 +35,16 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 			args.push('-workDir', workDir);
 		}
 
+		const pkgs = new Map<string, string>();
 		const p = cp.spawn(gopkgsBinPath, args, { env: getToolsEnvVars() });
 		const chunks: any[] = [];
 		const errchunks: any[] = [];
 		let err: any;
 		const waitTimer = setTimeout(() => {
 			killProcess(p);
-			reject(new Error('Timeout executing tool - gopkgs'));
-		}, getTimeoutConfiguration('onCommand'));
+			console.log(`Running gopkgs failed due to timeout.`);
+			resolve(pkgs);
+		}, defaultTimeoutForChildProcess);
 
 		p.stdout.on('data', d => {
 			chunks.push(d);
@@ -58,7 +60,6 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 		});
 		p.on('close', () => {
 			clearTimeout(waitTimer);
-			const pkgs = new Map<string, string>();
 			if (err && err.code === 'ENOENT') {
 				return promptForMissingTool('gopkgs');
 			}
