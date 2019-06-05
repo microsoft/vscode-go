@@ -11,7 +11,6 @@
 import fs = require('fs');
 import path = require('path');
 import os = require('os');
-import util = require('./util');
 
 let binPathCache: { [bin: string]: string; } = {};
 
