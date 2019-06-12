@@ -4,6 +4,7 @@ import vscode = require('vscode');
 import path = require('path');
 import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
+import { getFromGlobalState, updateGlobalState } from './stateUtils';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -103,6 +104,16 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 		debugConfiguration['currentFile'] = activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
 
+		const neverAgain = { title: 'Don\'t Show Again' };
+		const ignoreWarningKey = 'ignoreDebugLaunchRemoteWarning';
+		const ignoreWarning = getFromGlobalState(ignoreWarningKey);
+		if (ignoreWarning !== true && debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
+			vscode.window.showWarningMessage('Request type of \'launch\' with mode \'remote\' is deprecated, please use request type \'attach\' with mode \'remote\' instead.', neverAgain).then(result => {
+				if (result === neverAgain) {
+					updateGlobalState(ignoreWarningKey, true);
+				}
+			});
+		}
 		return debugConfiguration;
 	}
 
