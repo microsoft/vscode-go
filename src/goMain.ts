@@ -325,7 +325,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	const testCodeLensProvider = new GoRunTestCodeLensProvider();
 	const referencesCodeLensProvider = new GoReferencesCodeLensProvider();
 
-
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, referencesCodeLensProvider));
@@ -503,7 +502,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				}
 			});
 		}
-
 
 		if (updatedGoConfig['enableCodeLens']) {
 			testCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['runtest']);

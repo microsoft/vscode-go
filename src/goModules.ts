@@ -74,7 +74,6 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 	return goModEnvResult;
 }
 
-
 let moduleUsageLogged = false;
 function logModuleUsage() {
 	if (moduleUsageLogged) {

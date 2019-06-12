@@ -19,4 +19,3 @@ export function updateGlobalState(key: string, value: any) {
 export function setGlobalState(state: vscode.Memento) {
 	globalState = state;
 }
-
