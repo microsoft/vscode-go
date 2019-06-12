@@ -371,13 +371,13 @@
             }
           },
           {
-            "label": "Go: Attach to process",
+            "label": "Go: Attach to local process",
             "description": "Attach to an existing process by process ID",
             "body": {
               "name": "${1:Attach to Process}",
               "type": "go",
               "request": "attach",
-              "mode": "attach",
+              "mode": "local",
               "processId": 0
             }
           },
@@ -388,7 +388,7 @@
               "name": "${1:Connect to server}",
               "type": "go",
               "request": "attach",
-              "mode": "connect",
+              "mode": "remote",
               "remotePath": "^\"\\${workspaceFolder}\"",
               "port": 2345,
               "host": "127.0.0.1"
@@ -577,11 +577,11 @@
               },
               "mode": {
                 "enum": [
-                  "attach",
-                  "connect"
+                  "local",
+                  "remote"
                 ],
-                "description": "One of 'auto', 'debug', 'remote', 'test', 'exec'.",
-                "default": "auto"
+                "description": "Indicates local or remote debugging.  Local maps to the dlv 'attach' command, remote maps to 'connect'.",
+                "default": "local"
               },
               "stopOnEntry": {
                 "type": "boolean",

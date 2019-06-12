@@ -210,7 +210,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	logOutput?: string;
 	cwd?: string;
 	env?: { [key: string]: string; };
-	mode?: string;
+	mode?: 'auto' | 'debug' | 'remote' | 'test' | 'exec';
 	remotePath?: string;
 	port?: number;
 	host?: string;
@@ -240,7 +240,7 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 	showLog?: boolean;
 	logOutput?: string;
 	cwd?: string;
-	mode?: string;
+	mode?: 'local' | 'remote';
 	remotePath?: string;
 	port?: number;
 	host?: string;
@@ -318,7 +318,7 @@ class Delve {
 			let dlvCwd = dirname(program);
 			let serverRunning = false;
 			const dlvArgs = new Array<string>();
-			if (mode === 'remote' || mode === 'connect') {
+			if (mode === 'remote') {
 				this.debugProcess = null;
 				serverRunning = true;  // assume server is running when in remote mode
 				connectClient(launchArgs.port, launchArgs.host);
@@ -560,9 +560,9 @@ class Delve {
 	 * For launch debugging, since the extension starts the delve process, the extension should close it as well.
 	 * To gracefully clean up the assets created by delve, we send the Detach request with kill option set to true.
 	 *
-	 * For attach debugging there are two scenarios; attaching to an existing process by ID or connecting to an
-	 * existing delve server.  For debug-attach we start the delve process so will also terminate it however we
-	 * detach from the debugee without killing it.  For debug-connect we only detach from delve.
+	 * For attach debugging there are two scenarios; attaching to a local process by ID or connecting to a
+	 * remote delve server.  For attach-local we start the delve process so will also terminate it however we
+	 * detach from the debugee without killing it.  For attach-remote we only detach from delve.
 	 *
 	 * The only way to detach from delve when it is running a program is to send a Halt request first.
 	 * Since the Halt request might sometimes take too long to complete, we have a timer in place to forcefully kill
@@ -770,9 +770,9 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	protected attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments): void {
-		if (args.mode === 'attach' && !args.processId) {
+		if (args.mode === 'local' && !args.processId) {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: the processId attribute is missing in the debug configuration in launch.json');
-		} else if (args.mode === 'connect' && !args.port) {
+		} else if (args.mode === 'remote' && !args.port) {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: the port attribute is missing in the debug configuration in launch.json');
 		}
 		this.initLaunchAttachRequest(response, args);
