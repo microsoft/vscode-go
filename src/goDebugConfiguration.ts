@@ -5,6 +5,7 @@ import path = require('path');
 import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
+import { debug } from 'util';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -89,7 +90,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		if (!debugConfiguration.hasOwnProperty('showGlobalVariables') && dlvConfig.hasOwnProperty('showGlobalVariables')) {
 			debugConfiguration['showGlobalVariables'] = dlvConfig['showGlobalVariables'];
 		}
-		if (!debugConfiguration['cwd']) {
+		if (debugConfiguration.request === 'attach' && !debugConfiguration['cwd']) {
 			debugConfiguration['cwd'] = '${workspaceFolder}';
 		}
 
