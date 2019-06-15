@@ -1,13 +1,13 @@
-## 0.11.0 - Coming Soon...
+## 0.11.0 - 15th June, 2019
 
 * [@BetaXOi](https://github.com/BetaXOi) & [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
-    * Support attach/detach to a remote headless server without killing the process. [Feature Request 1599](https://github.com/Microsoft/vscode-go/issues/1599) implemented with [PR 2125](https://github.com/Microsoft/vscode-go/pull/2125)
+    * When debugging, support attaching to a remote Go program and detaching gracefully. [Feature Request 1599](https://github.com/Microsoft/vscode-go/issues/1599) implemented with [PR 2125](https://github.com/Microsoft/vscode-go/pull/2125)
 
 * [Caleb Doxsey (@calebdoxsey )](https://github.com/calebdoxsey)
     * Improve syntax highlighting in `go.mod` files. Fixes [Bug 2423](https://github.com/Microsoft/vscode-go/issues/2423) with [PR 2424](https://github.com/Microsoft/vscode-go/pull/2424)
 
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
-    * Enable diagnostics feature from `gopls` by default and add the feature to provide to cliclable Godoc links for import statements. [PR 2518](https://github.com/microsoft/vscode-go/pull/2518)
+    * Enable diagnostics feature from `gopls` by default and add the feature to provide to clickable Godoc links for import statements. [PR 2518](https://github.com/microsoft/vscode-go/pull/2518)
 
 * [Ian Cottrell (@ianthehat)](https://github.com/ianthehat)
     * Add a new option `incrementalSync` to `go.languageServerExperimentalFeatures` setting. If true, the language server will accept incremental document synchronization. [PR 2493](https://github.com/Microsoft/vscode-go/pull/2493)
