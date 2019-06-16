@@ -44,6 +44,7 @@ const allToolsWithImportPaths: { [key: string]: string } = {
 	'dlv': 'github.com/go-delve/delve/cmd/dlv',
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct',
 	'godoctor': 'github.com/godoctor/godoctor',
+	'gointerfaces': 'github.com/ackar/gointerfaces',
 };
 
 function getToolImportPath(tool: string, goVersion: SemVersion) {
@@ -136,7 +137,8 @@ function getTools(goVersion: SemVersion): string[] {
 		'impl',
 		'fillstruct',
 		'goplay',
-		'godoctor'
+		'godoctor',
+		'gointerfaces'
 	);
 
 	return tools;
@@ -170,7 +172,8 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		'gopls': '\t\t(Language Server from Google)',
 		'dlv': '\t\t\t(Debugging)',
 		'fillstruct': '\t\t(Fill structs with defaults)',
-		'godoctor': '\t\t(Extract to functions and variables)'
+		'godoctor': '\t\t(Extract to functions and variables)',
+		'gointerfaces': '\t\t(Extract package interfaces)'
 	};
 
 	getGoVersion().then((goVersion) => {
