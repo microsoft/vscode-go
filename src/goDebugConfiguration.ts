@@ -30,12 +30,14 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 					"request" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 					"mode" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 					"useApiV<NUMBER>": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+					"apiVersion": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 					"stopOnEntry": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 				}
 			*/
 			sendTelemetryEvent('debugConfiguration', {
 				request: debugConfiguration.request,
 				mode: debugConfiguration.mode,
+				useApiV1: debugConfiguration.useApiV1,
 				apiVersion: debugConfiguration.apiVersion,
 				stopOnEntry: debugConfiguration.stopOnEntry
 			});
