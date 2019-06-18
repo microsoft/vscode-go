@@ -1,10 +1,15 @@
-## 0.11.0 - 15th June, 2019
+## 0.11.0 - 17th June, 2019
 
 * [@BetaXOi](https://github.com/BetaXOi) & [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
-    * When debugging, support attaching to a remote Go program and detaching gracefully. [Feature Request 1599](https://github.com/Microsoft/vscode-go/issues/1599) implemented with [PR 2125](https://github.com/Microsoft/vscode-go/pull/2125)
+    * When debugging, support attaching to a local/remote Go process and detaching gracefully without killing the process.
+    This uses the [attach](https://github.com/go-delve/delve/blob/master/Documentation/usage/dlv_attach.md) and 
+    [connect](https://github.com/go-delve/delve/blob/master/Documentation/usage/dlv_connect.md) commands of 
+    [delve](https://github.com/go-delve/delve). [Feature Request 1599](https://github.com/Microsoft/vscode-go/issues/1599) implemented with [PR 2125](https://github.com/Microsoft/vscode-go/pull/2125).
 
-* [Caleb Doxsey (@calebdoxsey )](https://github.com/calebdoxsey)
-    * Improve syntax highlighting in `go.mod` files. Fixes [Bug 2423](https://github.com/Microsoft/vscode-go/issues/2423) with [PR 2424](https://github.com/Microsoft/vscode-go/pull/2424)
+    Please note the feature of attaching to a local process using process id only works when the process is started by running the compiled code i.e the executable and not by using the command `go run`. This is a limitation from delve.
+
+* [@SteelPhase](https://github.com/SteelPhase)
+    * A new command `Go: Restart Language Server` to restart the language server which previously was possible only by reloading the VS Code window. [Feature Request 2500](https://github.com/Microsoft/vscode-go/issues/2500) implemented with [PR 2530](https://github.com/Microsoft/vscode-go/pull/2530)
 
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
     * Enable diagnostics feature from `gopls` by default and add the feature to provide to clickable Godoc links for import statements. [PR 2518](https://github.com/microsoft/vscode-go/pull/2518)
@@ -14,6 +19,9 @@
 
 * [Luis GG (@lggomez)](https://github.com/lggomez)
     * Fix issues with signature help getting triggered at wrong times. Fixes [Bug 2481](https://github.com/Microsoft/vscode-go/issues/2481) with [PR 2496](https://github.com/Microsoft/vscode-go/pull/2496)
+
+* [Caleb Doxsey (@calebdoxsey )](https://github.com/calebdoxsey)
+    * Improve syntax highlighting in `go.mod` files. Fixes [Bug 2423](https://github.com/Microsoft/vscode-go/issues/2423) with [PR 2424](https://github.com/Microsoft/vscode-go/pull/2424)
 
 * [@tamayika](https://github.com/tamayika)
     * Resolve `${workspaceRoot}` and `${workspaceFolder}` for the `-vetTtool` flag provided in `go.vetFlags` setting. [Feature Request 2527](https://github.com/Microsoft/vscode-go/issues/2527) implemented with [PR 2528](https://github.com/Microsoft/vscode-go/pull/2528)
