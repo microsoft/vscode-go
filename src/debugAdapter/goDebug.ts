@@ -51,7 +51,7 @@ enum GoReflectKind {
 }
 
 // These types should stay in sync with:
-// https://github.com/derekparker/delve/blob/master/service/api/types.go
+// https://github.com/go-delve/delve/blob/master/service/api/types.go
 
 interface CommandOut {
 	State: DebuggerState;
@@ -201,6 +201,7 @@ interface DiscardedBreakpoint {
 
 // This interface should always match the schema found in `package.json`.
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
+	request: 'launch';
 	[key: string]: any;
 	program: string;
 	stopOnEntry?: boolean;
@@ -209,7 +210,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	logOutput?: string;
 	cwd?: string;
 	env?: { [key: string]: string; };
-	mode?: string;
+	mode?: 'auto' | 'debug' | 'remote' | 'test' | 'exec';
 	remotePath?: string;
 	port?: number;
 	host?: string;
@@ -220,6 +221,31 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	envFile?: string;
 	backend?: string;
 	output?: string;
+	/** Delve LoadConfig parameters **/
+	dlvLoadConfig?: LoadConfig;
+	dlvToolPath: string;
+	/** Delve Version */
+	apiVersion: number;
+	/** Delve maximum stack trace depth */
+	stackTraceDepth: number;
+
+	showGlobalVariables?: boolean;
+	currentFile: string;
+}
+
+interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
+	request: 'attach';
+	processId?: number;
+	stopOnEntry?: boolean;
+	showLog?: boolean;
+	logOutput?: string;
+	cwd?: string;
+	mode?: 'local' | 'remote';
+	remotePath?: string;
+	port?: number;
+	host?: string;
+	trace?: 'verbose' | 'log' | 'error';
+	backend?: string;
 	/** Delve LoadConfig parameters **/
 	dlvLoadConfig?: LoadConfig;
 	dlvToolPath: string;
@@ -276,162 +302,193 @@ class Delve {
 	isApiV1: boolean;
 	dlvEnv: any;
 	stackTraceDepth: number;
+	request: 'attach' | 'launch';
 
-	constructor(remotePath: string, port: number, host: string, program: string, launchArgs: LaunchRequestArguments) {
+	constructor(launchArgs: LaunchRequestArguments | AttachRequestArguments, program: string) {
+		this.request = launchArgs.request;
 		this.program = normalizePath(program);
-		this.remotePath = remotePath;
+		this.remotePath = launchArgs.remotePath;
 		this.isApiV1 = false;
 		if (typeof launchArgs.apiVersion === 'number') {
 			this.isApiV1 = launchArgs.apiVersion === 1;
-		} else if (typeof launchArgs['useApiV1'] === 'boolean') {
-			this.isApiV1 = launchArgs['useApiV1'];
 		}
 		this.stackTraceDepth = typeof launchArgs.stackTraceDepth === 'number' ? launchArgs.stackTraceDepth : 50;
-		const mode = launchArgs.mode;
-		let dlvCwd = dirname(program);
-		let isProgramDirectory = false;
-		const launchArgsEnv = launchArgs.env || {};
 		this.connection = new Promise((resolve, reject) => {
-			// Validations on the program
-			if (!program) {
-				return reject('The program attribute is missing in the debug configuration in launch.json');
-			}
-			try {
-				const pstats = lstatSync(program);
-				if (pstats.isDirectory()) {
-					if (mode === 'exec') {
-						logError(`The program "${program}" must not be a directory in exec mode`);
-						return reject('The program attribute must be an executable in exec mode');
-					}
-					dlvCwd = program;
-					isProgramDirectory = true;
-				} else if (mode !== 'exec' && extname(program) !== '.go') {
-					logError(`The program "${program}" must be a valid go file in debug mode`);
-					return reject('The program attribute must be a directory or .go file in debug mode');
-				}
-			} catch (e) {
-				logError(`The program "${program}" does not exist: ${e}`);
-				return reject('The program attribute must point to valid directory, .go file or executable.');
-			}
-
-			// read env from disk and merge into env variables
-			let fileEnv = {};
-			try {
-				fileEnv = parseEnvFile(launchArgs.envFile);
-			} catch (e) {
-				return reject(e);
-			}
-
-			const env = Object.assign({}, process.env, fileEnv, launchArgsEnv);
-
-			const dirname = isProgramDirectory ? program : path.dirname(program);
-			if (!env['GOPATH'] && (mode === 'debug' || mode === 'test')) {
-				// If no GOPATH is set, then infer it from the file/package path
-				// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
-				env['GOPATH'] = getInferredGopath(dirname) || env['GOPATH'];
-			}
-			this.dlvEnv = env;
-			log(`Using GOPATH: ${env['GOPATH']}`);
-
-			if (!!launchArgs.noDebug) {
-				if (mode === 'debug') {
-					if (isProgramDirectory && launchArgs.currentFile) {
-						program = launchArgs.currentFile;
-						isProgramDirectory = false;
-					}
-
-					if (!isProgramDirectory) {
-						this.noDebug = true;
-						const runArgs = ['run'];
-						if (launchArgs.buildFlags) {
-							runArgs.push(launchArgs.buildFlags);
-						}
-						runArgs.push(program);
-						if (launchArgs.args) {
-							runArgs.push(...launchArgs.args);
-						}
-						this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), runArgs, { env });
-						this.debugProcess.stderr.on('data', chunk => {
-							const str = chunk.toString();
-							if (this.onstderr) { this.onstderr(str); }
-						});
-						this.debugProcess.stdout.on('data', chunk => {
-							const str = chunk.toString();
-							if (this.onstdout) { this.onstdout(str); }
-						});
-						this.debugProcess.on('close', (code) => {
-							logError('Process exiting with code: ' + code);
-							if (this.onclose) { this.onclose(code); }
-						});
-						this.debugProcess.on('error', (err) => {
-							reject(err);
-						});
-						resolve();
-						return;
-					}
-				}
-			}
-			this.noDebug = false;
+			const mode = launchArgs.mode;
+			let dlvCwd = dirname(program);
 			let serverRunning = false;
-
-			// Get default LoadConfig values according to delve API:
-			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
-			// https://github.com/derekparker/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
-			this.loadConfig = launchArgs.dlvLoadConfig || {
-				followPointers: true,
-				maxVariableRecurse: 1,
-				maxStringLen: 64,
-				maxArrayValues: 64,
-				maxStructFields: -1
-			};
-
+			const dlvArgs = new Array<string>();
 			if (mode === 'remote') {
 				this.debugProcess = null;
 				serverRunning = true;  // assume server is running when in remote mode
-				connectClient(port, host);
+				connectClient(launchArgs.port, launchArgs.host);
 				return;
 			}
+			let env: NodeJS.ProcessEnv;
+			if (launchArgs.request === 'launch') {
+				let isProgramDirectory = false;
+				// Validations on the program
+				if (!program) {
+					return reject('The program attribute is missing in the debug configuration in launch.json');
+				}
+				try {
+					const pstats = lstatSync(program);
+					if (pstats.isDirectory()) {
+						if (mode === 'exec') {
+							logError(`The program "${program}" must not be a directory in exec mode`);
+							return reject('The program attribute must be an executable in exec mode');
+						}
+						dlvCwd = program;
+						isProgramDirectory = true;
+					} else if (mode !== 'exec' && extname(program) !== '.go') {
+						logError(`The program "${program}" must be a valid go file in debug mode`);
+						return reject('The program attribute must be a directory or .go file in debug mode');
+					}
+				} catch (e) {
+					logError(`The program "${program}" does not exist: ${e}`);
+					return reject('The program attribute must point to valid directory, .go file or executable.');
+				}
 
-			if (!existsSync(launchArgs.dlvToolPath)) {
-				log(`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
-				return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
-			}
+				// read env from disk and merge into env variables
+				let fileEnv = {};
+				try {
+					fileEnv = parseEnvFile(launchArgs.envFile);
+				} catch (e) {
+					return reject(e);
+				}
 
-			const currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
-			let dlvArgs = [mode || 'debug'];
-			if (mode === 'exec') {
-				dlvArgs = dlvArgs.concat([program]);
-			} else if (currentGOWorkspace && env['GO111MODULE'] !== 'on') {
-				dlvArgs = dlvArgs.concat([dirname.substr(currentGOWorkspace.length + 1)]);
-			}
-			dlvArgs = dlvArgs.concat(['--headless=true', '--listen=' + host + ':' + port.toString()]);
-			if (!this.isApiV1) {
-				dlvArgs.push('--api-version=2');
-			}
+				const launchArgsEnv = launchArgs.env || {};
+				env = Object.assign({}, process.env, fileEnv, launchArgsEnv);
 
-			if (launchArgs.showLog) {
-				dlvArgs = dlvArgs.concat(['--log=' + launchArgs.showLog.toString()]);
-			}
-			if (launchArgs.logOutput) {
-				dlvArgs = dlvArgs.concat(['--log-output=' + launchArgs.logOutput]);
-			}
-			if (launchArgs.cwd) {
-				dlvArgs = dlvArgs.concat(['--wd=' + launchArgs.cwd]);
-			}
-			if (launchArgs.buildFlags) {
-				dlvArgs = dlvArgs.concat(['--build-flags=' + launchArgs.buildFlags]);
-			}
-			if (launchArgs.init) {
-				dlvArgs = dlvArgs.concat(['--init=' + launchArgs.init]);
-			}
-			if (launchArgs.backend) {
-				dlvArgs = dlvArgs.concat(['--backend=' + launchArgs.backend]);
-			}
-			if (launchArgs.output && mode === 'debug') {
-				dlvArgs = dlvArgs.concat(['--output=' + launchArgs.output]);
-			}
-			if (launchArgs.args && (launchArgs.args.length > 0)) {
-				dlvArgs = dlvArgs.concat(['--', ...launchArgs.args]);
+				const dirname = isProgramDirectory ? program : path.dirname(program);
+				if (!env['GOPATH'] && (mode === 'debug' || mode === 'test')) {
+					// If no GOPATH is set, then infer it from the file/package path
+					// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
+					env['GOPATH'] = getInferredGopath(dirname) || env['GOPATH'];
+				}
+				this.dlvEnv = env;
+				log(`Using GOPATH: ${env['GOPATH']}`);
+
+				if (!!launchArgs.noDebug) {
+					if (mode === 'debug') {
+						if (isProgramDirectory && launchArgs.currentFile) {
+							program = launchArgs.currentFile;
+							isProgramDirectory = false;
+						}
+
+						if (!isProgramDirectory) {
+							this.noDebug = true;
+							const runArgs = ['run'];
+							if (launchArgs.buildFlags) {
+								runArgs.push(launchArgs.buildFlags);
+							}
+							runArgs.push(program);
+							if (launchArgs.args) {
+								runArgs.push(...launchArgs.args);
+							}
+							this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), runArgs, { env });
+							this.debugProcess.stderr.on('data', chunk => {
+								const str = chunk.toString();
+								if (this.onstderr) { this.onstderr(str); }
+							});
+							this.debugProcess.stdout.on('data', chunk => {
+								const str = chunk.toString();
+								if (this.onstdout) { this.onstdout(str); }
+							});
+							this.debugProcess.on('close', (code) => {
+								logError('Process exiting with code: ' + code);
+								if (this.onclose) { this.onclose(code); }
+							});
+							this.debugProcess.on('error', (err) => {
+								reject(err);
+							});
+							resolve();
+							return;
+						}
+					}
+				}
+				this.noDebug = false;
+
+				// Get default LoadConfig values according to delve API:
+				// https://github.com/go-delve/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc1/server.go#L13
+				// https://github.com/go-delve/delve/blob/c5c41f635244a22d93771def1c31cf1e0e9a2e63/service/rpc2/server.go#L423
+				this.loadConfig = launchArgs.dlvLoadConfig || {
+					followPointers: true,
+					maxVariableRecurse: 1,
+					maxStringLen: 64,
+					maxArrayValues: 64,
+					maxStructFields: -1
+				};
+
+				if (!existsSync(launchArgs.dlvToolPath)) {
+					log(`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${env['GOPATH'] ? ', ' + env['GOPATH'] : ''} or ${envPath}`);
+					return reject(`Cannot find Delve debugger. Install from https://github.com/derekparker/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
+				}
+
+				const currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
+				dlvArgs.push(mode || 'debug');
+				if (mode === 'exec') {
+					dlvArgs.push(program);
+				} else if (currentGOWorkspace && env['GO111MODULE'] !== 'on') {
+					dlvArgs.push(dirname.substr(currentGOWorkspace.length + 1));
+				}
+				dlvArgs.push('--headless=true', `--listen=${launchArgs.host}:${launchArgs.port}`);
+				if (!this.isApiV1) {
+					dlvArgs.push('--api-version=2');
+				}
+
+				if (launchArgs.showLog) {
+					dlvArgs.push('--log=' + launchArgs.showLog.toString());
+				}
+				if (launchArgs.logOutput) {
+					dlvArgs.push('--log-output=' + launchArgs.logOutput);
+				}
+				if (launchArgs.cwd) {
+					dlvArgs.push('--wd=' + launchArgs.cwd);
+				}
+				if (launchArgs.buildFlags) {
+					dlvArgs.push('--build-flags=' + launchArgs.buildFlags);
+				}
+				if (launchArgs.init) {
+					dlvArgs.push('--init=' + launchArgs.init);
+				}
+				if (launchArgs.backend) {
+					dlvArgs.push('--backend=' + launchArgs.backend);
+				}
+				if (launchArgs.output && mode === 'debug') {
+					dlvArgs.push('--output=' + launchArgs.output);
+				}
+				if (launchArgs.args && launchArgs.args.length > 0) {
+					dlvArgs.push('--', ...launchArgs.args);
+				}
+				this.localDebugeePath = this.getLocalDebugeePath(launchArgs.output);
+			} else if (launchArgs.request === 'attach') {
+				if (!launchArgs.processId) {
+					return reject(`Missing process ID`);
+				}
+
+				if (!existsSync(launchArgs.dlvToolPath)) {
+					return reject(`Cannot find Delve debugger. Install from https://github.com/go-delve/delve & ensure it is in your Go tools path, "GOPATH/bin" or "PATH".`);
+				}
+
+				dlvArgs.push('attach', `${launchArgs.processId}`);
+				dlvArgs.push('--headless=true', '--listen=' + launchArgs.host + ':' + launchArgs.port.toString());
+				if (!this.isApiV1) {
+					dlvArgs.push('--api-version=2');
+				}
+
+				if (launchArgs.showLog) {
+					dlvArgs.push('--log=' + launchArgs.showLog.toString());
+				}
+				if (launchArgs.logOutput) {
+					dlvArgs.push('--log-output=' + launchArgs.logOutput);
+				}
+				if (launchArgs.cwd) {
+					dlvArgs.push('--wd=' + launchArgs.cwd);
+				}
+				if (launchArgs.backend) {
+					dlvArgs.push('--backend=' + launchArgs.backend);
+				}
 			}
 
 			log(`Current working directory: ${dlvCwd}`);
@@ -442,7 +499,6 @@ class Delve {
 				env,
 			});
 
-			this.localDebugeePath = this.getLocalDebugeePath(launchArgs.output);
 			function connectClient(port: number, host: string) {
 				// Add a slight delay to avoid issues on Linux with
 				// Delve failing calls made shortly after connection.
@@ -464,7 +520,7 @@ class Delve {
 				if (this.onstdout) { this.onstdout(str); }
 				if (!serverRunning) {
 					serverRunning = true;
-					connectClient(port, host);
+					connectClient(launchArgs.port, launchArgs.host);
 				}
 			});
 			this.debugProcess.on('close', (code) => {
@@ -478,7 +534,7 @@ class Delve {
 		});
 	}
 
-	call<T>(command: string, args: any[], callback: (err: Error, results: T) => void) {
+	public call<T>(command: string, args: any[], callback: (err: Error, results: T) => void) {
 		this.connection.then(conn => {
 			conn.call('RPCServer.' + command, args, callback);
 		}, err => {
@@ -499,12 +555,14 @@ class Delve {
 	}
 
 	/**
-	 * Closing a debugging session follows different approaches for local vs remote delve process.
+	 * Closing a debugging session follows different approaches for launch vs attach debugging.
 	 *
-	 * For local process, since the extension starts the delve process, the extension should close it as well.
+	 * For launch debugging, since the extension starts the delve process, the extension should close it as well.
 	 * To gracefully clean up the assets created by delve, we send the Detach request with kill option set to true.
 	 *
-	 * For remote process, since the extension doesnt start the delve process, we only detach from it without killing it.
+	 * For attach debugging there are two scenarios; attaching to a local process by ID or connecting to a
+	 * remote delve server.  For attach-local we start the delve process so will also terminate it however we
+	 * detach from the debugee without killing it.  For attach-remote we only detach from delve.
 	 *
 	 * The only way to detach from delve when it is running a program is to send a Halt request first.
 	 * Since the Halt request might sometimes take too long to complete, we have a timer in place to forcefully kill
@@ -517,7 +575,7 @@ class Delve {
 		}
 		log('HaltRequest');
 
-		const isLocalDebugging: boolean = !!this.debugProcess;
+		const isLocalDebugging: boolean = this.request === 'launch' && !!this.debugProcess;
 		const forceCleanup = async () => {
 			killTree(this.debugProcess.pid);
 			await removeFile(this.localDebugeePath);
@@ -529,7 +587,7 @@ class Delve {
 				resolve();
 			}, 1000);
 
-			let haltErrMsg;
+			let haltErrMsg: string;
 			try {
 				await this.callPromise('Command', [{ name: 'halt' }]);
 			} catch (err) {
@@ -579,7 +637,7 @@ class GoDebugSession extends LoggingDebugSession {
 	private remotePathSeparator: string;
 	private stackFrameHandles: Handles<[number, number]>;
 	private packageInfo = new Map<string, string>();
-	private launchArgs: LaunchRequestArguments;
+	private stopOnEntry: boolean;
 	private logLevel: Logger.LogLevel = Logger.LogLevel.Error;
 	private readonly initdone = 'initdone·';
 
@@ -588,6 +646,7 @@ class GoDebugSession extends LoggingDebugSession {
 		super('', debuggerLinesStartAt1, isServer);
 		this.variableHandles = new Handles<DebugVariable>();
 		this.skipStopEventOnce = false;
+		this.stopOnEntry = false;
 		this.goroutines = new Set<number>();
 		this.debugState = null;
 		this.delve = null;
@@ -609,8 +668,8 @@ class GoDebugSession extends LoggingDebugSession {
 		return path.includes('/') ? '/' : '\\';
 	}
 
-	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
-		this.launchArgs = args;
+	// contains common code for launch and attach debugging initialization
+	private initLaunchAttachRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments | AttachRequestArguments) {
 		this.logLevel = args.trace === 'verbose' ?
 			Logger.LogLevel.Verbose :
 			args.trace === 'log' ? Logger.LogLevel.Log :
@@ -621,36 +680,46 @@ class GoDebugSession extends LoggingDebugSession {
 		if (typeof (args.showGlobalVariables) === 'boolean') {
 			this.showGlobalVariables = args.showGlobalVariables;
 		}
-
-		if (!args.program) {
-			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
-			return;
+		if (args.stopOnEntry) {
+			this.stopOnEntry = args.stopOnEntry;
+		}
+		if (!args.port) {
+			args.port = random(2000, 50000);
+		}
+		if (!args.host) {
+			args.host = '127.0.0.1';
 		}
 
-		// Launch the Delve debugger on the program
-		let localPath = args.program;
-		let remotePath = args.remotePath || '';
-		const port = args.port || random(2000, 50000);
-		const host = args.host || '127.0.0.1';
+		let localPath: string;
+		if (args.request === 'attach') {
+			localPath = args.cwd;
+		} else if (args.request === 'launch') {
+			localPath = args.program;
+		}
+		if (!args.remotePath) {
+			// too much code relies on remotePath never being null
+			args.remotePath = '';
+		}
 
-		if (remotePath.length > 0) {
+		if (args.remotePath.length > 0) {
 			this.localPathSeparator = this.findPathSeperator(localPath);
-			this.remotePathSeparator = this.findPathSeperator(remotePath);
+			this.remotePathSeparator = this.findPathSeperator(args.remotePath);
 
 			const llist = localPath.split(/\/|\\/).reverse();
-			const rlist = remotePath.split(/\/|\\/).reverse();
+			const rlist = args.remotePath.split(/\/|\\/).reverse();
 			let i = 0;
 			for (; i < llist.length; i++) if (llist[i] !== rlist[i] || llist[i] === 'src') break;
 
 			if (i) {
 				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
-				remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
-			} else if ((remotePath.endsWith('\\')) || (remotePath.endsWith('/'))) {
-				remotePath = remotePath.substring(0, remotePath.length - 1);
+				args.remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
+			} else if ((args.remotePath.endsWith('\\')) || (args.remotePath.endsWith('/'))) {
+				args.remotePath = args.remotePath.substring(0, args.remotePath.length - 1);
 			}
 		}
 
-		this.delve = new Delve(remotePath, port, host, localPath, args);
+		// Launch the Delve debugger on the program
+		this.delve = new Delve(args, localPath);
 		this.delve.onstdout = (str: string) => {
 			this.sendEvent(new OutputEvent(str, 'stdout'));
 		};
@@ -692,6 +761,23 @@ class GoDebugSession extends LoggingDebugSession {
 		});
 	}
 
+	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
+		if (!args.program) {
+			this.sendErrorResponse(response, 3000, 'Failed to continue: The program attribute is missing in the debug configuration in launch.json');
+			return;
+		}
+		this.initLaunchAttachRequest(response, args);
+	}
+
+	protected attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments): void {
+		if (args.mode === 'local' && !args.processId) {
+			this.sendErrorResponse(response, 3000, 'Failed to continue: the processId attribute is missing in the debug configuration in launch.json');
+		} else if (args.mode === 'remote' && !args.port) {
+			this.sendErrorResponse(response, 3000, 'Failed to continue: the port attribute is missing in the debug configuration in launch.json');
+		}
+		this.initLaunchAttachRequest(response, args);
+	}
+
 	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
 		log('DisconnectRequest');
 		this.delve.close().then(() => {
@@ -704,7 +790,7 @@ class GoDebugSession extends LoggingDebugSession {
 	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
 		log('ConfigurationDoneRequest');
 
-		if (this.launchArgs.stopOnEntry) {
+		if (this.stopOnEntry) {
 			this.sendEvent(new StoppedEvent('breakpoint', 0));
 			log('StoppedEvent("breakpoint")');
 			this.sendResponse(response);
@@ -1145,7 +1231,7 @@ class GoDebugSession extends LoggingDebugSession {
 				}, err => logError('Failed to evaluate expression - ' + err.toString()));
 			}
 		};
-		// expressions passed to loadChildren defined per https://github.com/derekparker/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
+		// expressions passed to loadChildren defined per https://github.com/go-delve/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
 		if (vari.kind === GoReflectKind.Array || vari.kind === GoReflectKind.Slice) {
 			variablesPromise = Promise.all(vari.children.map((v, i) => {
 				return loadChildren(`*(*"${v.type}")(${v.addr})`, v).then((): DebugProtocol.Variable => {

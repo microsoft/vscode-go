@@ -70,7 +70,7 @@
 		"new-parens": true,
 		"no-arg": true,
 		"no-conditional-assignment": true,
-		// "no-consecutive-blank-lines": true,
+		"no-consecutive-blank-lines": true,
 		"no-construct": true,
 		"no-debugger": true,
 		"no-duplicate-super": true,
