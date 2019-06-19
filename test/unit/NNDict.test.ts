@@ -8,8 +8,8 @@ import { Node, NearestNeighborDict } from '../../src/avlTree';
 
 suite('NearestNeighborDict Tests', () => {
 	test('basic insert/get: random', () => {
-		let dict = new NearestNeighborDict(new Node(0, 0), NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
-		let entries = [5, 2, 9, 23, 3, 0, 1, -4, -2];
+		const dict = new NearestNeighborDict(new Node(0, 0), NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
+		const entries = [5, 2, 9, 23, 3, 0, 1, -4, -2];
 		entries.forEach(x => dict.insert(x));
 		assert(dict.height() < 4);
 
@@ -23,8 +23,8 @@ suite('NearestNeighborDict Tests', () => {
 	});
 
 	test('basic insert/get: increasing', () => {
-		let dict = new NearestNeighborDict(new Node(0, 0), NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
-		let entries = [-10, -5, -4, -1, 0, 1, 5, 10, 23];
+		const dict = new NearestNeighborDict(new Node(0, 0), NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
+		const entries = [-10, -5, -4, -1, 0, 1, 5, 10, 23];
 		entries.forEach(x => dict.insert(x));
 		assert(dict.height() < 4);
 
@@ -38,8 +38,8 @@ suite('NearestNeighborDict Tests', () => {
 	});
 
 	test('basic insert/get: decreasing', () => {
-		let dict = new NearestNeighborDict(new Node(0, 0), NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
-		let entries = [-10, -5, -4, -1, 0, 1, 5, 10, 23].reverse();
+		const dict = new NearestNeighborDict(new Node(0, 0), NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);
+		const entries = [-10, -5, -4, -1, 0, 1, 5, 10, 23].reverse();
 		entries.forEach(x => dict.insert(x));
 		assert(dict.height() < 4);
 

@@ -289,7 +289,15 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 			});
 
-			ctx.subscriptions.push(c.start());
+			let languageServerDisposable = c.start();
+			ctx.subscriptions.push(languageServerDisposable);
+
+			ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', async () => {
+				await c.stop();
+				languageServerDisposable.dispose();
+				languageServerDisposable = c.start();
+				ctx.subscriptions.push(languageServerDisposable);
+			}));
 
 			if (languageServerTool !== 'gopls' || !languageServerExperimentalFeatures['diagnostics']) {
 				vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
@@ -319,7 +327,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	const testCodeLensProvider = new GoRunTestCodeLensProvider();
 	const referencesCodeLensProvider = new GoReferencesCodeLensProvider();
-
 
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
