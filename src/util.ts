@@ -371,7 +371,14 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, (tool === 'go') ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
+	const alternateTools: { [key: string]: string } = vscode.workspace.getConfiguration('go', null).get('alternateTools');
+	const alternateToolPath: string = alternateTools[tool];
+
+	return getBinPathWithPreferredGopath(
+		tool,
+		(tool === 'go') ? [] : [getToolsGopath(), getCurrentGoPath()],
+		resolvePath(alternateToolPath),
+	);
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {
@@ -388,18 +395,6 @@ export function getToolsEnvVars(): any {
 
 	if (toolsEnvVars && typeof toolsEnvVars === 'object') {
 		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof toolsEnvVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : toolsEnvVars[key]);
-	}
-
-	// cgo expects go to be in the path
-	const goroot: string = envVars['GOROOT'];
-	let pathEnvVar: string;
-	if (envVars.hasOwnProperty('PATH')) {
-		pathEnvVar = 'PATH';
-	} else if (process.platform === 'win32' && envVars.hasOwnProperty('Path')) {
-		pathEnvVar = 'Path';
-	}
-	if (goroot && pathEnvVar && envVars[pathEnvVar] && (<string>envVars[pathEnvVar]).split(path.delimiter).indexOf(goroot) === -1) {
-		envVars[pathEnvVar] += path.delimiter + path.join(goroot, 'bin');
 	}
 
 	return envVars;

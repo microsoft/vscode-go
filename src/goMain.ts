@@ -36,7 +36,8 @@ import {
 import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
 	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
-	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature, HandleDiagnosticsSignature
+	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature,
+	HandleDiagnosticsSignature, ProvideDocumentLinksSignature,
 } from 'vscode-languageclient';
 import { clearCacheForTools, fixDriveCasingInWindows, getToolFromToolPath } from './goPath';
 import { addTags, removeTags } from './goModifytags';
@@ -223,6 +224,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 								return next(uri, diagnostics);
 							}
 							return null;
+						},
+						provideDocumentLinks: (document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentLinksSignature) => {
+							if (languageServerExperimentalFeatures['documentLink'] === true) {
+								return next(document, token);
+							}
+							return null;
 						}
 					}
 				}
@@ -280,7 +287,19 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 			});
 
-			ctx.subscriptions.push(c.start());
+			let languageServerDisposable = c.start();
+			ctx.subscriptions.push(languageServerDisposable);
+
+			ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', async () => {
+				await c.stop();
+				languageServerDisposable.dispose();
+				languageServerDisposable = c.start();
+				ctx.subscriptions.push(languageServerDisposable);
+			}));
+
+			if (languageServerTool !== 'gopls' || !languageServerExperimentalFeatures['diagnostics']) {
+				vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
+			}
 		} else {
 			registerCompletionProvider(ctx);
 			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
@@ -293,6 +312,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 			ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
 			ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
+			vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 		}
 
 		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'go' && isGoPathSet()) {
@@ -304,7 +324,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	const testCodeLensProvider = new GoRunTestCodeLensProvider();
 	const referencesCodeLensProvider = new GoReferencesCodeLensProvider();
-
 
 	ctx.subscriptions.push(vscode.languages.registerCodeActionsProvider(GO_MODE, new GoCodeActionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerCodeLensProvider(GO_MODE, testCodeLensProvider));
@@ -321,7 +340,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
-	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
 	startBuildOnSaveWatcher(ctx.subscriptions);
 
@@ -484,7 +502,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				}
 			});
 		}
-
 
 		if (updatedGoConfig['enableCodeLens']) {
 			testCodeLensProvider.setEnabled(updatedGoConfig['enableCodeLens']['runtest']);

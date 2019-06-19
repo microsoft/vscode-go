@@ -6,6 +6,9 @@
 		},
 		{
 			"include": "#directive"
+		},
+		{
+			"include": "#invalid"
 		}
 	],
 	"repository": {
@@ -13,7 +16,7 @@
 			"patterns": [
 				{
 					"comment": "Multi-Line directive",
-					"begin": "(\\w+)\\s+\\(",
+					"begin": "(\\w+)\\s*\\(",
 					"beginCaptures": {
 						"1": {
 							"name": "keyword.go.mod"
@@ -28,7 +31,7 @@
 				},
 				{
 					"comment": "Single-Line directive",
-					"match": "(\\w+)\\s+(.*)",
+					"match": "(\\w+)\\s*(.*)",
 					"captures": {
 						"1": {
 							"name": "keyword.go.mod"
@@ -86,7 +89,7 @@
 		},
 		"unquoted_string": {
 			"comment": "Unquoted string",
-			"match": "[^\\s]+",
+			"match": "([^\\s/]|/(?!/))+",
 			"name": "string.unquoted.go.mod"
 		},
 		"double_quoted_string": {
@@ -158,6 +161,11 @@
 					"name": "constant.other.placeholder.go.mod"
 				}
 			]
+		},
+		"invalid": {
+			"comment": "invalid",
+			"match": ".*",
+			"name": "invalid.illegal.unknown.go.mod"
 		}
 	}
 }
