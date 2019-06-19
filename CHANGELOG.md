@@ -1,3 +1,42 @@
+## 0.11.0 - 17th June, 2019
+
+* [@BetaXOi](https://github.com/BetaXOi) & [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
+    * When debugging, support attaching to a local/remote Go process and detaching gracefully without killing the process.
+    This uses the [attach](https://github.com/go-delve/delve/blob/master/Documentation/usage/dlv_attach.md) and 
+    [connect](https://github.com/go-delve/delve/blob/master/Documentation/usage/dlv_connect.md) commands of 
+    [delve](https://github.com/go-delve/delve). [Feature Request 1599](https://github.com/Microsoft/vscode-go/issues/1599) implemented with [PR 2125](https://github.com/Microsoft/vscode-go/pull/2125).
+
+    Please note the feature of attaching to a local process using process id only works when the process is started by running the compiled code i.e the executable and not by using the command `go run`. This is a limitation from delve.
+
+* [@SteelPhase](https://github.com/SteelPhase)
+    * A new command `Go: Restart Language Server` to restart the language server which previously was possible only by reloading the VS Code window. [Feature Request 2500](https://github.com/Microsoft/vscode-go/issues/2500) implemented with [PR 2530](https://github.com/Microsoft/vscode-go/pull/2530)
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Enable diagnostics feature from `gopls` by default and add the feature to provide to clickable Godoc links for import statements. [PR 2518](https://github.com/microsoft/vscode-go/pull/2518)
+
+* [Ian Cottrell (@ianthehat)](https://github.com/ianthehat)
+    * Add a new option `incrementalSync` to `go.languageServerExperimentalFeatures` setting. If true, the language server will accept incremental document synchronization. [PR 2493](https://github.com/Microsoft/vscode-go/pull/2493)
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+    * Fix issues with signature help getting triggered at wrong times. Fixes [Bug 2481](https://github.com/Microsoft/vscode-go/issues/2481) with [PR 2496](https://github.com/Microsoft/vscode-go/pull/2496)
+
+* [Caleb Doxsey (@calebdoxsey )](https://github.com/calebdoxsey)
+    * Improve syntax highlighting in `go.mod` files. Fixes [Bug 2423](https://github.com/Microsoft/vscode-go/issues/2423) with [PR 2424](https://github.com/Microsoft/vscode-go/pull/2424)
+
+* [@tamayika](https://github.com/tamayika)
+    * Resolve `${workspaceRoot}` and `${workspaceFolder}` for the `-vetTtool` flag provided in `go.vetFlags` setting. [Feature Request 2527](https://github.com/Microsoft/vscode-go/issues/2527) implemented with [PR 2528](https://github.com/Microsoft/vscode-go/pull/2528)
+
+* [John (@pseudo-su)](https://github.com/pseudo-su)
+    * Resolve `${workspaceRoot}` and `${workspaceFolder}` for the values provided to the `go.alternateTools` setting. [Feature Request 2543](https://github.com/Microsoft/vscode-go/issues/2543) implemented with [PR 2544](https://github.com/Microsoft/vscode-go/pull/2544)
+
+* [Stuart Grigg (@stuartgrigg)](https://github.com/stuartgrigg)
+    * Improve linting in the vscode-go project. [PR 2524](https://github.com/Microsoft/vscode-go/pull/2524) and [PR 2568](https://github.com/Microsoft/vscode-go/pull/2568)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Ensure Go binary is in the PATH when running Go tools. Fixes [Bug 2514](https://github.com/Microsoft/vscode-go/issues/2514) with [commit d93a0aec](https://github.com/microsoft/vscode-go/commit/d93a0aec2a1a57e820cff3a9511cedbc7f13b61c)
+    * Use `gotype-live` to provide diagnostics as you type only when the user is not using `gopls` and is not in module mode. This is because `gopls` supports this feature out of the box and the tool doesnt support modules. Fixes [Bug 1950](https://github.com/Microsoft/vscode-go/issues/1950) with [commit d1bf95c5](https://github.com/microsoft/vscode-go/commit/d1bf95c51d4bf3e730689045ef8c78de85d21152)
+
+
 ## 0.10.2 - 30th April, 2019
 
 This patch release has fixes for the below bugs
@@ -45,6 +84,7 @@ This patch release has fixes for the below bugs
 
 * [Alex Schade (@aschade92)](https://github.com/aschade92)
     * You can now control whether global variables are shown or not in the variable pane while debugging by tweaking the `showGlobalVariables` property in the `go.delveConfig` setting. [Feature Request 2323](https://github.com/Microsoft/vscode-go/issues/2323) implemented with [PR 2351](https://github.com/Microsoft/vscode-go/pull/2351)
+
 
 
 ### Others

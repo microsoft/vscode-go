@@ -123,7 +123,6 @@ const goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
 	'struct': vscode.SymbolKind.Struct,
 };
 
-
 function convertToCodeSymbols(
 	document: vscode.TextDocument,
 	decls: GoOutlineDeclaration[],
@@ -133,7 +132,6 @@ function convertToCodeSymbols(
 	const symbols: vscode.DocumentSymbol[] = [];
 	(decls || []).forEach(decl => {
 		if (!includeImports && decl.type === 'import') return;
-
 
 		if (decl.label === '_' && decl.type === 'variable') return;
 
