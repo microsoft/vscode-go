@@ -256,6 +256,27 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 }
 
 /**
+ * Listener for file save
+ * A change in a Go file means the coverage data is stale. Therefore it should be cleared.
+ * Instead of clearing it on every edit this clears code coverage on every save.
+ * @param e TextDocumentChangeEvent
+ */
+export function removeCodeCoverageOnFileSave(e: vscode.TextDocument) {
+	if (e.languageId !== 'go'  || !isCoverageApplied) {
+		return;
+	}
+
+	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e)) {
+		return;
+	}
+
+	clearCoverage();
+}
+
+
+
+
+/**
  * Listener for change in the editor.
  * A change in a Go file means the coverage data is stale. Therefore it should be cleared.
  * @param e TextDocumentChangeEvent

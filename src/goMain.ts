@@ -23,7 +23,7 @@ import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
 import { updateGoPathGoRootFromConfig, offerToInstallTools, promptForMissingTool, installTools } from './goInstallTools';
 import { GO_MODE } from './goMode';
 import { showHideStatus } from './goStatus';
-import { initCoverageDecorators, toggleCoverageCurrentPackage, applyCodeCoverage, removeCodeCoverageOnFileChange, updateCodeCoverageDecorators } from './goCover';
+import { initCoverageDecorators, toggleCoverageCurrentPackage, applyCodeCoverage, removeCodeCoverageOnFileSave, updateCodeCoverageDecorators } from './goCover';
 import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
 import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
@@ -336,7 +336,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(lintDiagnosticCollection);
 	vetDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-vet');
 	ctx.subscriptions.push(vetDiagnosticCollection);
-	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
+	vscode.workspace.onDidSaveTextDocument(removeCodeCoverageOnFileSave, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
