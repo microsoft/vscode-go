@@ -80,7 +80,7 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 			console.log(e);
 		}
 	}
-	
+
 	Object.keys(fileEnv).forEach(key => envVars[key] = typeof fileEnv[key] === 'string' ? resolvePath(fileEnv[key]) : fileEnv[key]);
 	Object.keys(testEnvConfig).forEach(key => envVars[key] = typeof testEnvConfig[key] === 'string' ? resolvePath(testEnvConfig[key]) : testEnvConfig[key]);
 
