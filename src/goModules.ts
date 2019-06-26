@@ -58,7 +58,7 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 		}
 		if (goConfig['useLanguageServer'] === false) {
 			const promptMsg = 'To get better performance during code completion, please update to use the language server from Google';
-			const choseToUpdateLS = await promptToUpdateToolForModules('gopls', promptMsg);
+			const choseToUpdateLS = await promptToUpdateToolForModules('gopls', promptMsg, goConfig);
 			promptFormatTool = promptFormatTool && !choseToUpdateLS;
 		} else if (promptFormatTool) {
 			const languageServerExperimentalFeatures: any = goConfig.get('languageServerExperimentalFeatures');
@@ -66,8 +66,8 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 		}
 
 		if (promptFormatTool) {
-			goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.WorkspaceFolder);
-			vscode.window.showInformationMessage('`goreturns` doesnt support auto-importing missing imports when using Go modules yet. So updating the "formatTool" setting to `goimports` for this workspace.');
+			const promptMsgForFormatTool = '`goreturns` doesnt support auto-importing missing imports when using Go modules yet. Please update the "formatTool" setting to `goimports`.';
+			await promptToUpdateToolForModules('switchFormatToolToGoimports', promptMsgForFormatTool, goConfig);
 		}
 	}
 	packageModCache.set(pkgPath, goModEnvResult);
@@ -87,7 +87,7 @@ function logModuleUsage() {
 }
 
 const promptedToolsForCurrentSession = new Set<string>();
-export async function promptToUpdateToolForModules(tool: string, promptMsg: string): Promise<boolean> {
+export async function promptToUpdateToolForModules(tool: string, promptMsg: string, goConfig?: vscode.WorkspaceConfiguration): Promise<boolean> {
 	if (promptedToolsForCurrentSession.has(tool)) {
 		return false;
 	}
@@ -105,10 +105,15 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 	switch (selected) {
 		case 'Update':
 			choseToUpdate = true;
+			if (!goConfig) {
+				goConfig = vscode.workspace.getConfiguration('go');
+			}
+			if (tool === 'switchFormatToolToGoimports') {
+				goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.Global);
+			} else {
 			installTools([tool], goVersion)
 				.then(() => {
 					if (tool === 'gopls') {
-						const goConfig = vscode.workspace.getConfiguration('go');
 						if (goConfig.get('useLanguageServer') === false) {
 							goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.Global);
 						}
@@ -118,6 +123,7 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 						vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
 					}
 				});
+			}
 			promptedToolsForModules[tool] = true;
 			updateGlobalState('promptedToolsForModules', promptedToolsForModules);
 			break;
