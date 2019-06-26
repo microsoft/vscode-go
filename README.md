@@ -24,7 +24,7 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 
 ### Code Editing
 
-- Code Snippets for quick coding
+- [Code Snippets](https://github.com/microsoft/vscode-go/blob/master/snippets/go.json) for quick coding
 - Format code on file save as well as format manually (using `goreturns` or `goimports` which also remove unused imports or `gofmt`)
 - Symbol Rename (using `gorename`. Note: For Undo after rename to work in Windows you need to have `diff` tool in your path)
 - Add Imports to current file (using `gopkgs`)
