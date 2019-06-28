@@ -5,7 +5,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars } from './util';
+import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, makeMemoizedByteOffsetConverter } from './util';
 import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
 
@@ -77,12 +77,13 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 				}
 
 				const indent = '\t'.repeat(tabsCount);
+				const offsetConverter = makeMemoizedByteOffsetConverter(Buffer.from(editor.document.getText()))
 
 				editor.edit(editBuilder => {
 					output.forEach((structToFill) => {
 						const out = structToFill.code.replace(/\n/g, '\n' + indent);
-						const rangeToReplace = new vscode.Range(editor.document.positionAt(structToFill.start),
-							editor.document.positionAt(structToFill.end));
+						const rangeToReplace = new vscode.Range(editor.document.positionAt(offsetConverter(structToFill.start)),
+							editor.document.positionAt(offsetConverter(structToFill.end)));
 						editBuilder.replace(rangeToReplace, out);
 					});
 				}).then(() => resolve());
