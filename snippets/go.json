@@ -254,6 +254,16 @@
 			"prefix": "sort",
 			"body": "type ${1:SortBy} []${2:Type}\n\nfunc (a $1) Len() int           { return len(a) }\nfunc (a $1) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }\nfunc (a $1) Less(i, j int) bool { ${3:return a[i] < a[j]} }",
 			"description": "Snippet for a custom sort.Sort interface implementation, for a given slice type."
+		},
+		"test got want error": {
+			"prefix": "gwe",
+			"body": "t.Errorf(\"${1:funcName}(${2:args}) = ${3:got}, want ${4:want}\",${5:vars})",
+			"description": "Snippet for a failing test output. E.g. t.Errorf(\"sum(%d, %d) = %d, want %d\", a, b, got, want)"
+		},
+		"test got want fatal": {
+			"prefix": "gwf",
+			"body": "t.Fatalf(\"${1:funcName}(${2:args}) = ${3:got}, want ${4:want}\",${5:vars})",
+			"description": "Snippet for a fatal test output. E.g. t.Fatalf(\"sum(%d, %d) = %d, want %d\", a, b, got, want)"
 		}
 	}
 }
