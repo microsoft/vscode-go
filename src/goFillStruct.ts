@@ -77,7 +77,7 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 				}
 
 				const indent = '\t'.repeat(tabsCount);
-				const offsetConverter = makeMemoizedByteOffsetConverter(Buffer.from(editor.document.getText()))
+				const offsetConverter = makeMemoizedByteOffsetConverter(Buffer.from(editor.document.getText()));
 
 				editor.edit(editBuilder => {
 					output.forEach((structToFill) => {
