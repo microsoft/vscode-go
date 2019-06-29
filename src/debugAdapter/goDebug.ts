@@ -455,7 +455,7 @@ class Delve {
 				if (launchArgs.backend) {
 					dlvArgs.push('--backend=' + launchArgs.backend);
 				}
-				if (launchArgs.output && mode === 'debug') {
+				if (launchArgs.output && (mode === 'debug' || mode === 'test')) {
 					dlvArgs.push('--output=' + launchArgs.output);
 				}
 				if (launchArgs.args && launchArgs.args.length > 0) {
