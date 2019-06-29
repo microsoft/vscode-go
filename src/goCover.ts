@@ -94,6 +94,7 @@ export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 		}
 	}
 	setDecorators();
+	vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
 }
 
 function setDecorators() {
