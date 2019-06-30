@@ -4,12 +4,13 @@ import cp = require('child_process');
 import vscode = require('vscode');
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
 import { installTools } from './goInstallTools';
-import { fixDriveCasingInWindows } from './goPath';
+import { fixDriveCasingInWindows, envPath } from './goPath';
 
-function runGoModEnv(folderPath: string): Promise<string> {
+async function runGoModEnv(folderPath: string): Promise<string> {
 	const goExecutable = getBinPath('go');
 	if (!goExecutable) {
-		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately.'));
+		console.warn(`Failed to run "go env GOMOD" to find mod file as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return;
 	}
 	return new Promise(resolve => {
 		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
@@ -140,9 +141,9 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 }
 
 const folderToPackageMapping: { [key: string]: string } = {};
-export function getCurrentPackage(cwd: string): Promise<string> {
+export async function getCurrentPackage(cwd: string): Promise<string> {
 	if (folderToPackageMapping[cwd]) {
-		return Promise.resolve(folderToPackageMapping[cwd]);
+		return folderToPackageMapping[cwd];
 	}
 
 	const moduleCache = getModuleCache();
@@ -154,14 +155,13 @@ export function getCurrentPackage(cwd: string): Promise<string> {
 		}
 
 		folderToPackageMapping[cwd] = importPath;
-		return Promise.resolve(importPath);
+		return importPath;
 	}
 
 	const goRuntimePath = getBinPath('go');
-
 	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-		return Promise.resolve(null);
+		console.warn(`Failed to run "go list" to find current package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return;
 	}
 	return new Promise<string>(resolve => {
 		const childProcess = cp.spawn(goRuntimePath, ['list'], { cwd, env: getToolsEnvVars() });
