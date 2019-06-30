@@ -10,7 +10,7 @@ import vscode = require('vscode');
 import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
-import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
+import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile, envPath } from './goPath';
 import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
 const sendSignal = 'SIGKILL';
@@ -210,7 +210,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		const goRuntimePath = getBinPath('go');
 
 		if (!goRuntimePath) {
-			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+			vscode.window.showErrorMessage(`Failed to run "go test" as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 			return Promise.resolve();
 		}
 
