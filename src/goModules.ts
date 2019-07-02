@@ -58,7 +58,7 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 			vscode.window.showInformationMessage('The "inferGopath" setting is disabled for this workspace because Go modules are being used.');
 		}
 		if (goConfig['useLanguageServer'] === false) {
-			const promptMsg = 'To get better performance during code completion, please update to use the language server from Google';
+			const promptMsg = 'For better performance, you can try the experimental Go language server, gopls.';
 			const choseToUpdateLS = await promptToUpdateToolForModules('gopls', promptMsg, goConfig);
 			promptFormatTool = promptFormatTool && !choseToUpdateLS;
 		} else if (promptFormatTool) {
