@@ -1,6 +1,15 @@
-## 0.11.1 - Coming Soon...
+## 0.11.1 - 2nd July, 2019
 
 ### Bug Fixes
+
+* [Daniel Mundt (@dmundt)](https://github.com/dmundt)
+    * Update the extension to use new Go logo! [PR 2582](https://github.com/Microsoft/vscode-go/pull/2582)
+
+* [Cooper Maruyama (@coopermaruyama)](https://github.com/coopermaruyama)
+    * The values in the `go.testEnvVars` setting should override the ones in the file specified in the `go.testEnvFile` setting rather than the other way around. Fixes [Bug 2398](https://github.com/Microsoft/vscode-go/issues/2398) with [PR 2585](https://github.com/Microsoft/vscode-go/pull/2585)
+
+* [Benjamin Kane (@bbkane)](https://github.com/bbkane)
+    * Add link to all the code snippets provided by the extension in the README. [PR 2603](https://github.com/Microsoft/vscode-go/pull/2603)
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Support the `output` attribute in the debug configuration when `mode` is set to `test`. Fixes [Bug 2445](https://github.com/Microsoft/vscode-go/issues/2445) with [commit 373f0743](https://github.com/microsoft/vscode-go/commit/373f07436b81da8f0da5696e53f29f4b2a50c069) 
@@ -10,19 +19,13 @@
     has the option to not be shown again for cases when you don't want to use `goimports`. Fixes [Bug 2578](https://github.com/Microsoft/vscode-go/issues/2578) with [commit 658db8d4](https://github.com/microsoft/vscode-go/commit/658db8d45f3a38eafcf536e73326ad98946c133c)
     * Avoid unwanted prompt to re-compile tools when current goroot is different from the previous only in terms of casing. Fixes [Bug 2606](https://github.com/Microsoft/vscode-go/issues/2606) with [commit b0a2d2d](https://github.com/microsoft/vscode-go/commit/b0a2d2debb5c1e32f09184060572cb86ad900a81)
     * Preserve text highlighting as part of code coverage in multiple editor groups. Fixes [Bug 2608](https://github.com/Microsoft/vscode-go/issues/2608) with [commit 0de7e94e](https://github.com/microsoft/vscode-go/commit/0de7e94e4d313b06ab63dcd484aa85405941e771)
-    * Update code coverage decorators int he visible editor immediately after corresponding setting is changed rather than wait for focusing on the editor. [commit 86df86fd6](https://github.com/microsoft/vscode-go/commit/86df86fd65b9c360b033c4b58af6fd8c0125c17e)
-
-
-* [Cooper Maruyama (@coopermaruyama)](https://github.com/coopermaruyama)
-    * The values in the `go.testEnvVars` setting should override the ones in the file specified in the `go.testEnvFile` setting rather than the other way around. Fixes [Bug 2398](https://github.com/Microsoft/vscode-go/issues/2398) with [PR 2585](https://github.com/Microsoft/vscode-go/pull/2585)
-
+    * Update code coverage decorators in the visible editor immediately after corresponding setting is changed rather than wait for focusing on the editor. [commit 86df86fd6](https://github.com/microsoft/vscode-go/commit/86df86fd65b9c360b033c4b58af6fd8c0125c17e)
 
 ## 0.11.0 - 17th June, 2019
 
 * [@BetaXOi](https://github.com/BetaXOi) & [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
-    * When debugging, support attaching to a local/remote Go process and detaching gracefully without killing the process.
-    This uses the [attach](https://github.com/go-delve/delve/blob/master/Documentation/usage/dlv_attach.md) and 
-    [connect](https://github.com/go-delve/delve/blob/master/Documentation/usage/dlv_connect.md) commands of 
+    * When debugging, support attaching to a local Go process and detaching gracefully without killing the process.
+    This uses the [attach](https://github.com/go-delve/delve/blob/master/Documentation/usage/dlv_attach.md) command 
     [delve](https://github.com/go-delve/delve). [Feature Request 1599](https://github.com/Microsoft/vscode-go/issues/1599) implemented with [PR 2125](https://github.com/Microsoft/vscode-go/pull/2125).
 
     Please note the feature of attaching to a local process using process id only works when the process is started by running the compiled code i.e the executable and not by using the command `go run`. This is a limitation from delve.
