@@ -43,7 +43,7 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 	if (!goRuntimePath) {
 		return vscode.window.showErrorMessage(`Failed to run "go list" to fetch packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 	}
-	
+
 	if (!pkg && showAllPkgsIfPkgNotFound) {
 		return showPackageList(workDir);
 	}

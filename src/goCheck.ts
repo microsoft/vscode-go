@@ -74,7 +74,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	if (disableBuild && languageServerTool === 'bingo' && languageServerFlags.indexOf('-diagnostics-style=none') > -1) {
 		disableBuild = false;
 	}
-	
+
 	const timeout = getTimeoutConfiguration('onSave', goConfig);
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;
