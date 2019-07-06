@@ -29,6 +29,7 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 - [Tools this extension depends on](#tools-this-extension-depends-on)
 - [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
 - [Contributing](#contributing)
+- [Code of Conduct](#code-of-conduct)
 - [License](#license)
 
 ## Language Features
