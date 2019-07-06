@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows } from './goPath';
+import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows, envPath } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -226,7 +226,7 @@ export function getGoVersion(): Promise<SemVersion> {
 	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		console.warn(`Failed to run "go version" as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 		return Promise.resolve(null);
 	}
 
@@ -630,6 +630,7 @@ export function runTool(
 	if (toolName) {
 		cmd = getBinPath(toolName);
 	} else {
+		const goRuntimePath = getBinPath('go');
 		if (!goRuntimePath) {
 			return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 		}
@@ -651,7 +652,7 @@ export function runTool(
 				if (err && (<any>err).code === 'ENOENT') {
 					// Since the tool is run on save which can be frequent
 					// we avoid sending explicit notification if tool is missing
-					console.log(`Cannot find ${toolName ? toolName : goRuntimePath}`);
+					console.log(`Cannot find ${toolName ? toolName : 'go'}`);
 					return resolve([]);
 				}
 				if (err && stderr && !useStdErr) {

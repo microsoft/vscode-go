@@ -80,8 +80,8 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, token:
 	calls.push(callGoSymbols([...baseArgs, workspacePath, query], token));
 
 	if (gotoSymbolConfig.includeGoroot) {
-		const gorootCall = getGoroot()
-			.then(goRoot => callGoSymbols([...baseArgs, goRoot, query], token));
+		const goRoot = process.env['GOROOT'];
+		const gorootCall = callGoSymbols([...baseArgs, goRoot, query], token);
 		calls.push(gorootCall);
 	}
 

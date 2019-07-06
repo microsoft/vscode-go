@@ -10,7 +10,7 @@ import path = require('path');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest, TestConfig, getTestFlags } from './testUtils';
-import { ICheckResult, getBinPath, getTempFilePath, getTimeoutConfiguration } from './util';
+import { ICheckResult, getBinPath, getTempFilePath } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
@@ -59,7 +59,6 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	outputChannel.clear();
 	const runningToolsPromises = [];
 	const cwd = path.dirname(fileUri.fsPath);
-	const goRuntimePath = getBinPath('go');
 	const languageServerTool = getToolFromToolPath(getLanguageServerToolPath());
 	const languageServerOptions: any = goConfig.get('languageServerExperimentalFeatures');
 	let languageServerFlags: string[] = goConfig.get('languageServerFlags');
@@ -75,6 +74,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	if (disableBuild && languageServerTool === 'bingo' && languageServerFlags.indexOf('-diagnostics-style=none') > -1) {
 		disableBuild = false;
 	}
+	
 
 	if (!goRuntimePath) {
 		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');

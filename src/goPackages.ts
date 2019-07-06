@@ -1,6 +1,8 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows, envPath } from './goPath';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent,  from './util';
 import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent, killProcess, getTimeoutConfiguration, timeoutForLongRunningProcess } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
@@ -265,8 +267,8 @@ export function getNonVendorPackages(folderPath: string, timeout?: number): Prom
 	}
 
 	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-		return Promise.resolve(null);
+		console.warn(`Failed to run "go list" to find packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return;
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const p = cp.spawn(goRuntimePath, ['list', '-f', 'ImportPath: {{.ImportPath}} FolderPath: {{.Dir}}', './...'], { cwd: folderPath, env: getToolsEnvVars() });

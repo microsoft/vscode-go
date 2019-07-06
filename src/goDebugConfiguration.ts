@@ -30,7 +30,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 					"request" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 					"mode" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 					"useApiV<NUMBER>": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"apiVersion": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+					"apiVersion": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 					"stopOnEntry": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 				}
 			*/
@@ -76,9 +76,9 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		const dlvConfig: { [key: string]: any } = goConfig.get('delveConfig');
 		let useApiV1 = false;
 		if (debugConfiguration.hasOwnProperty('useApiV1')) {
-			useApiV1  = debugConfiguration['useApiV1'] === true;
+			useApiV1 = debugConfiguration['useApiV1'] === true;
 		} else if (dlvConfig.hasOwnProperty('useApiV1')) {
-			useApiV1  = dlvConfig['useApiV1'] === true;
+			useApiV1 = dlvConfig['useApiV1'] === true;
 		}
 		if (useApiV1) {
 			debugConfiguration['apiVersion'] = 1;
