@@ -839,13 +839,13 @@
           ],
           "default": null,
           "description": "Specify GOPATH here to override the one that is set as environment variable. The inferred GOPATH from workspace root overrides this, if go.inferGopath is set to true.",
-          "scope": "machine"
+          "scope": "resource"
         },
         "go.toolsGopath": {
           "type": "string",
           "default": "",
           "description": "Location to install the Go tools that the extension depends on if you don't want them in your GOPATH.",
-          "scope": "machine"
+          "scope": "resource"
         },
         "go.goroot": {
           "type": [
@@ -854,7 +854,7 @@
           ],
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set.",
-          "scope": "machine"
+          "scope": "resource"
         },
         "go.testOnSave": {
           "type": "boolean",
