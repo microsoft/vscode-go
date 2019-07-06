@@ -854,7 +854,7 @@
           ],
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set.",
-          "scope": "resource"
+          "scope": "machine"
         },
         "go.testOnSave": {
           "type": "boolean",
