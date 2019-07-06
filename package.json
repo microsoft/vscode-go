@@ -1,12 +1,12 @@
 {
   "name": "Go",
-  "version": "0.11.0",
+  "version": "0.11.2",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
     "name": "Microsoft Corporation - Development Labs"
   },
-  "icon": "images/goIcon.png",
+  "icon": "images/go-logo-blue.png",
   "categories": [
     "Programming Languages",
     "Snippets",
@@ -15,7 +15,7 @@
     "Formatters"
   ],
   "galleryBanner": {
-    "color": "#CFB69A",
+    "color": "#F2F2F2",
     "theme": "light"
   },
   "private": true,
@@ -854,7 +854,7 @@
           ],
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set.",
-          "scope": "resource"
+          "scope": "machine"
         },
         "go.testOnSave": {
           "type": "boolean",
