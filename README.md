@@ -6,6 +6,31 @@ This extension adds rich language support for the [Go language](https://golang.o
 
 Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
 
+## Contents
+
+- [Language Features](#language-features)
+	- [IntelliSense](#intellisense)
+	- [Code Navigation](#code-navigation)
+	- [Code Editing](#code-editing)
+	- [Diagnostics](#diagnostics)
+	- [Testing](#testing)
+	- [Debugging](#debugging)
+	- [Others](#others)
+- [How to use this extension?](#how-to-use-this-extension)
+	- [Go Language Server](#go-language-server)
+		- [Settings to control the use of the Go language server](#settings-to-control-the-use-of-the-go-language-server)
+		- [Provide feedback on gopls](#provide-feedback-on-gopls)
+	- [Linter](#linter)
+	- [Commands](#commands)
+	- [Optional: Debugging](#optional-debugging)
+		- [Remote Debugging](#remote-debugging)
+- [Install or update all dependencies](#install-or-update-all-dependencies)
+- [Building and Debugging the Extension](#building-and-debugging-the-extension)
+- [Tools this extension depends on](#tools-this-extension-depends-on)
+- [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Language Features
 
 ### IntelliSense
