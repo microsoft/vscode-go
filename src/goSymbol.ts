@@ -120,4 +120,3 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 		});
 	});
 }
-

@@ -337,7 +337,6 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	vetDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-vet');
 	ctx.subscriptions.push(vetDiagnosticCollection);
 
-	
 	addOnChangeTextDocumentListeners(ctx);
 	addOnChangeActiveTextEditorListeners(ctx);
 	addOnSaveTextDocumentListeners(ctx);
@@ -631,7 +630,7 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
 			runBuilds(document, vscode.workspace.getConfiguration('go', document.uri));
 		}
-		
+
 	}, null, ctx.subscriptions);
 }
 
