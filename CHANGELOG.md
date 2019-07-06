@@ -1,3 +1,11 @@
+## 0.11.2 - 5th July, 2019
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Mark only `go.goroot` and not `go.gopath`, `go.toolsGopath` setting to be of scope `machine` in order to support the latter two to be configured at worksapce level. More in this is discussed at [2576](https://github.com/microsoft/vscode-go/issues/2576).
+
+* [Daniel Mundt (@dmundt)](https://github.com/dmundt)
+    * Update the banner color to have a beter color contrast witht he new logo in the marketplace. [PR 2631](https://github.com/Microsoft/vscode-go/pull/2631)
+
 ## 0.11.1 - 2nd July, 2019
 
 ### Bug Fixes
@@ -20,6 +28,8 @@
     * Avoid unwanted prompt to re-compile tools when current goroot is different from the previous only in terms of casing. Fixes [Bug 2606](https://github.com/Microsoft/vscode-go/issues/2606) with [commit b0a2d2d](https://github.com/microsoft/vscode-go/commit/b0a2d2debb5c1e32f09184060572cb86ad900a81)
     * Preserve text highlighting as part of code coverage in multiple editor groups. Fixes [Bug 2608](https://github.com/Microsoft/vscode-go/issues/2608) with [commit 0de7e94e](https://github.com/microsoft/vscode-go/commit/0de7e94e4d313b06ab63dcd484aa85405941e771)
     * Update code coverage decorators in the visible editor immediately after corresponding setting is changed rather than wait for focusing on the editor. [commit 86df86fd6](https://github.com/microsoft/vscode-go/commit/86df86fd65b9c360b033c4b58af6fd8c0125c17e)
+    * Mark `go.goroot`, `go.gopath` and `go.toolsGopath` settings to be of scope `machine` as per upstream request
+    [2576](https://github.com/microsoft/vscode-go/issues/2576) from VS Code to better support remote scenarios.
 
 ## 0.11.0 - 17th June, 2019
 
