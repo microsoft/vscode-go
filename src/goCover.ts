@@ -94,6 +94,7 @@ export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 		}
 	}
 	setDecorators();
+	vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
 }
 
 function setDecorators() {
@@ -182,6 +183,7 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				setCoverageData(filePath, coverage);
 			});
 			lines.on('close', () => {
+				setDecorators();
 				vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
 				resolve();
 			});
@@ -238,8 +240,6 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 
 	const cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
 	const coverageOptions = cfg['coverageOptions'];
-	setDecorators();
-
 	for (const filename in coverageFiles) {
 		if (editor.document.uri.fsPath.endsWith(filename)) {
 			isCoverageApplied = true;

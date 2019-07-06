@@ -11,6 +11,7 @@ import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars, sendTelem
 import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
 import { getImportablePackages } from './goPackages';
+import { envPath } from './goPath';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -150,6 +151,10 @@ export function addImportToWorkspace() {
 	}
 
 	const goRuntimePath = getBinPath('go');
+	if (!goRuntimePath) {
+		vscode.window.showErrorMessage(`Failed to run "go list" to find the package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return;
+	}
 	const env = getToolsEnvVars();
 
 	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {

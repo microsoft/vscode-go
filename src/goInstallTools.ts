@@ -12,7 +12,7 @@ import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
-import { getToolFromToolPath } from './goPath';
+import { getToolFromToolPath, envPath } from './goPath';
 
 const updatesDeclinedTools: string[] = [];
 const installsDeclinedTools: string[] = [];
@@ -268,7 +268,7 @@ export function promptForUpdatingTool(tool: string) {
 export function installTools(missing: string[], goVersion: SemVersion): Promise<void> {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		vscode.window.showErrorMessage(`Failed to run "go get" to install the packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 		return;
 	}
 	if (!missing) {
@@ -420,9 +420,10 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	// If GOPATH is still not set, then use the one from `go env`
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
+		vscode.window.showErrorMessage(`Failed to run "go env" to find GOPATH as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return;
 	}
-	const goRuntimeBasePath = path.basename(goRuntimePath);
+	const goRuntimeBasePath = path.dirname(goRuntimePath);
 
 	// cgo and a few other Go tools expect Go binary to be in the path
 	let pathEnvVar: string;
