@@ -76,12 +76,12 @@ The Go extension is ready to use on the get go. If you want to customize the fea
 
 ### Go Language Server
 
-The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) to provide the various language features. An alternative is to use a single language server that provides the same features.  
+The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) to provide the various language features. An alternative is to use a single language server that provides the same features using the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) 
 
-Previously, we added support to use the [language server from Sourcegraph](https://github.com/sourcegraph/go-langserver). Since there is no
-active development for it anymore and because it doesn't support Go modules, we are now switching to use the [language server from Google](https://github.com/golang/go/wiki/gopls). 
+Previously, we added support to use `go-langserver`, the [language server from Sourcegraph](https://github.com/sourcegraph/go-langserver). There is no active development for it anymore and it doesn't support Go modules. Therefore, we are now switching to use `gopls`, the [language server from Google](https://github.com/golang/go/wiki/gopls) which is currently in active development.
 
-- If you are using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules.
+- If you are already using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules. We do suggest you to move to using `gopls` though.
+    - To do so, delete the `go-langserver` binary/executable in your machine and this extension will prompt you to install `gopls` after a reload of the VS Code window.
 - Since the language server from Google provides much better support for Go modules, you will be prompted about it when the extension detects that you are working on a project that uses Go modules.
 - If you have never used language server before, and now opt to use it, you will be prompted to install and use the language server from Google as long as you are using a Go version > 1.10
 
@@ -92,31 +92,34 @@ active development for it anymore and because it doesn't support Go modules, we 
 Below are the settings you can use to control the use of the language server. You need to reload the VS Code window for any changes in these settings to take effect.
 
 - Set `go.useLanguageServer` to `true` to enable the use of language server
-- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server. Diagnostics from the language server is the only feature that is not enabled by default. If you want to try this feature from the language server, add the below in your settings
-```json
-"go.languageServerExperimentalFeatures": {
-  "diagnostics": true
-}
-```
+- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server.
 - Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect logs in a log file.
 - Set `"go.languageServerFlags": ["-rpc.trace"]` to see the complete rpc trace in the output panel (`View` -> `Output` -> `gopls`)
 
-```
 
 #### Setting to change the language server being used
 
 If you want to try out other language servers, for example, [bingo](https://github.com/saibing/bingo), then install it and add the below setting
+
 ```json
 "go.alternateTools": {
   "gopls": "bingo"
 }
 ```
+
 This will tell the Go extension to use `bingo` in place of `gopls`.
 
 #### Provide feedback on gopls
 
 If you find any problems using the `gopls` language server, please first check the [list of existing issues for gopls](https://github.com/golang/go/issues?q=is%3Aissue+is%3Aopen+label%3Agopls) and update the relevant ones with your case before logging a new one at https://github.com/golang/go/issues
 
+
+#### Helpful links for gopls
+
+- [Wiki for gopls](https://github.com/golang/go/wiki/gopls)
+- [Troubleshooting for gopls](https://github.com/golang/go/wiki/gopls#troubleshooting)
+- [Known bugs with gopls](https://github.com/golang/go/wiki/gopls#known-issues)
+- [Github issues for gopls](https://github.com/golang/go/issues?q=is%3Aissue+is%3Aopen+label%3Agopls)
 
 ### Linter
 

@@ -129,24 +129,3 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 		}, getTimeoutConfiguration('onCommand'));
 	});
 }
-
-function getGoroot(): Promise<string> {
-	const goExecutable = getBinPath('go');
-	if (!goExecutable) {
-		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
-	}
-	return new Promise((resolve, reject) => {
-		const p = cp.execFile(goExecutable, ['env', 'GOROOT'], (err, stdout) => {
-			if (err) {
-				reject(err);
-				return;
-			}
-			const [goRoot] = stdout.split('\n');
-			resolve(goRoot.trim());
-		});
-		setTimeout(() => {
-			killProcess(p);
-			reject(new Error('Timeout executing tool - go env'));
-		}, getTimeoutConfiguration('onCommand'));
-	});
-}

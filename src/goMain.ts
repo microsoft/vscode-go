@@ -336,12 +336,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(lintDiagnosticCollection);
 	vetDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-vet');
 	ctx.subscriptions.push(vetDiagnosticCollection);
-	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
-	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
-	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
-	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
-	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
-	startBuildOnSaveWatcher(ctx.subscriptions);
+
+	addOnChangeTextDocumentListeners(ctx);
+	addOnChangeActiveTextEditorListeners(ctx);
+	addOnSaveTextDocumentListeners(ctx);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
 		const gopath = getCurrentGoPath();
@@ -624,7 +622,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 		});
 }
 
-function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
+function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidSaveTextDocument(document => {
 		if (document.languageId !== 'go') {
 			return;
@@ -632,7 +630,19 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
 			runBuilds(document, vscode.workspace.getConfiguration('go', document.uri));
 		}
-	}, null, subscriptions);
+
+	}, null, ctx.subscriptions);
+}
+
+function addOnChangeTextDocumentListeners(ctx: vscode.ExtensionContext) {
+	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
+}
+
+function addOnChangeActiveTextEditorListeners(ctx: vscode.ExtensionContext) {
+	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
+	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
 }
 
 function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {

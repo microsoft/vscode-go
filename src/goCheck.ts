@@ -10,7 +10,7 @@ import path = require('path');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest, TestConfig, getTestFlags } from './testUtils';
-import { ICheckResult, getBinPath, getTempFilePath } from './util';
+import { ICheckResult, getTempFilePath, getTimeoutConfiguration } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
@@ -75,12 +75,6 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		disableBuild = false;
 	}
 	
-
-	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-		return Promise.resolve([]);
-	}
-
 	const timeout = getTimeoutConfiguration('onSave', goConfig);
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;
