@@ -6,7 +6,7 @@ This extension adds rich language support for the [Go language](https://golang.o
 
 Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
 
-## Contents
+## Table of Contents
 
 - [Language Features](#language-features)
 	- [IntelliSense](#intellisense)
