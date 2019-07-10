@@ -1,4 +1,4 @@
-## 0.11.3 - 7th July, 2019
+## 0.11.4 - 9th July, 2019
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Revert marking `go.goroot` setting to be of scope `machine` in order to support it to be configured at worksapce level. More in this is discussed at [2576](https://github.com/microsoft/vscode-go/issues/2576).
