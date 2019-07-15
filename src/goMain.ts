@@ -57,6 +57,7 @@ import { installCurrentPackage } from './goInstall';
 import { setGlobalState } from './stateUtils';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
+import { DebugSession } from 'vscode-debugadapter';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -625,6 +626,11 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidSaveTextDocument(document => {
 		if (document.languageId !== 'go') {
+			return;
+		}
+		if (vscode.debug.activeDebugSession) {
+			vscode.window.showWarningMessage('Changes are not allowed while code is running');
+
 			return;
 		}
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
