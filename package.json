@@ -1500,6 +1500,11 @@
               "default": "gopkgs",
               "description": "Alternate tool to use instead of the gopkgs binary or alternate path to use for the gopkgs binary."
             },
+            "gopls": {
+              "type": "string",
+              "default": "gopls",
+              "description": "Alternate tool to use instead of the gopls binary or alternate path to use for the gopls binary."
+            },
             "go-outline": {
               "type": "string",
               "default": "go-outline",
