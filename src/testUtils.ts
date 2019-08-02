@@ -27,6 +27,9 @@ const runningTestProcesses: cp.ChildProcess[] = [];
 const testFuncRegex = /^Test.*|^Example.*/;
 const testMethodRegex = /^\(([^)]+)\)\.(Test.*)$/;
 const benchmarkRegex = /^Benchmark.*/;
+const goCheckPkg = '"gopkg.in/check.v1"';
+const testifyPkg = '"github.com/stretchr/testify/suite"';
+const thirdPartyTestPkgs = [testifyPkg, goCheckPkg];
 
 /**
  * Input to goTest.
@@ -105,12 +108,23 @@ export function getTestFunctions(doc: vscode.TextDocument, token: vscode.Cancell
 		.provideDocumentSymbols(doc, token)
 		.then(symbols => symbols[0].children)
 		.then(symbols => {
-			const testify = symbols.some(sym => sym.kind === vscode.SymbolKind.Namespace && sym.name === '"github.com/stretchr/testify/suite"');
+			const isThirdPartyTest = containsThirdPartyTestPackages(doc, token, thirdPartyTestPkgs);
 			return symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
-				&& (testFuncRegex.test(sym.name) || (testify && testMethodRegex.test(sym.name)))
+				&& (testFuncRegex.test(sym.name) || (isThirdPartyTest && testMethodRegex.test(sym.name)))
 			);
 		});
+}
+
+export async function containsThirdPartyTestPackages(doc: vscode.TextDocument, token: vscode.CancellationToken, pkgs: string[]): Promise<boolean> {
+	const documentSymbolProvider = new GoDocumentSymbolProvider(true);
+	const allPackages = await documentSymbolProvider
+		.provideDocumentSymbols(doc, token)
+		.then(symbols => symbols[0].children)
+		.then(symbols => {
+			return symbols.filter(sym => sym.kind === vscode.SymbolKind.Namespace && pkgs.some(pkg => sym.name === pkg));
+		});
+	return allPackages.length > 0;
 }
 
 /**
@@ -373,6 +387,16 @@ function expandFilePathInOutput(output: string, cwd: string): string {
  * @param testconfig Configuration for the Go extension.
  */
 function targetArgs(testconfig: TestConfig): Array<string> {
+	const editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage('No editor is active.');
+		return;
+	}
+	if (!editor.document.fileName.endsWith('_test.go')) {
+		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
+		return;
+	}
+
 	let params: string[] = [];
 
 	if (testconfig.functions) {
@@ -380,21 +404,25 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 			params = ['-bench', util.format('^(%s)$', testconfig.functions.join('|'))];
 		} else {
 			let testFunctions = testconfig.functions;
-			let testifyMethods = testFunctions.filter(fn => testMethodRegex.test(fn));
-			if (testifyMethods.length > 0) {
-				// filter out testify methods
+			let testMethods = testFunctions.filter(fn => testMethodRegex.test(fn));
+			if (testMethods.length > 0) {
+				// filter out testify or check methods
 				testFunctions = testFunctions.filter(fn => !testMethodRegex.test(fn));
-				testifyMethods = testifyMethods.map(extractInstanceTestName);
+				testMethods = testMethods.map(extractInstanceTestName);
 			}
 
-			// we might skip the '-run' param when running only testify methods, which will result
+			// we might skip the '-run' param when running only test methods, which will result
 			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
-			// which will result in the correct thing to happen
+			// or check's `suite.Setup<>(...)` which will result in the correct thing to happen
 			if (testFunctions.length > 0) {
 				params = params.concat(['-run', util.format('^(%s)$', testFunctions.join('|'))]);
 			}
-			if (testifyMethods.length > 0) {
-				params = params.concat(['-testify.m', util.format('^(%s)$', testifyMethods.join('|'))]);
+			if (testMethods.length > 0) {
+				if (containsThirdPartyTestPackages(editor.document, null, [goCheckPkg])) {
+					params = params.concat(['-check.f', util.format('^(%s)$', testMethods.join('|'))]);
+				} else if (containsThirdPartyTestPackages(editor.document, null, [testifyPkg])) {
+					params = params.concat(['-testify.m', util.format('^(%s)$', testMethods.join('|'))]);
+				}
 			}
 		}
 		return params;
