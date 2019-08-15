@@ -81,6 +81,11 @@ let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
+// Assumes the Go version is always 1.x.
+export function isBelow(goVersion: SemVersion, minor: number): boolean {
+	return goVersion && goVersion.major === 1 && goVersion.minor < minor;
+}
+
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
 	const offset = document.offsetAt(position);
 	const text = document.getText();

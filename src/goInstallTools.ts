@@ -6,11 +6,12 @@
 'use strict';
 
 import vscode = require('vscode');
+import os = require('os');
 import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, isBelow } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath, envPath } from './goPath';
 
@@ -40,7 +41,7 @@ const allToolsWithImportPaths: { [key: string]: string } = {
 	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
-	'gopls': 'golang.org/x/tools/cmd/gopls',
+	'gopls': 'golang.org/x/tools/gopls',
 	'dlv': 'github.com/go-delve/delve/cmd/dlv',
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct',
 	'godoctor': 'github.com/godoctor/godoctor',
@@ -311,7 +312,18 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 		return;
 	}
 
-	envForTools['GO111MODULE'] = 'off';
+	// If the user is on Go >= 1.11, tools should be installed with modules enabled.
+	// This ensures that users get the latest tagged version, rather than master,
+	// which may be unstable.
+	let modulesOn = false;
+	if (isBelow(goVersion, 11)) {
+		envForTools['GO111MODULE'] = 'off';
+		// Explicitly disable the proxy, as older versions of Go will not understand it.
+		envForTools['GOPROXY'] = '';
+	} else {
+		envForTools['GO111MODULE'] = 'on';
+		modulesOn = true;
+	}
 
 	outputChannel.show();
 	outputChannel.clear();
@@ -323,7 +335,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 	outputChannel.appendLine(''); // Blank line for spacing.
 
 	return missing.reduce((res: Promise<string[]>, tool: string) => {
-		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+		return res.then(sofar => new Promise<string[]>((resolve) => {
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + getToolImportPath(tool, goVersion) + ' FAILED');
@@ -369,21 +381,36 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 					resolve([...sofar, null]);
 					return;
 				}
-				const args = ['get', '-u', '-v'];
-				if (tool.endsWith('-gomod')) {
-					args.push('-d');
-				}
-				args.push(getToolImportPath(tool, goVersion));
-				cp.execFile(goRuntimePath, args, { env: envForTools }, (err, stdout, stderr) => {
-					if (stderr.indexOf('unexpected directory layout:') > -1) {
-						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
-					} else if (!err && tool.endsWith('-gomod')) {
-						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
-						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], { env: envForTools }, callback);
-					} else {
-						callback(err, stdout, stderr);
+				// Install tools in a temporary directory, to avoid altering go.mod files.
+				fs.mkdtemp(path.join(os.tmpdir(), 'go-tools-'), (err, toolsTmpDir) => {
+					if (err) {
+						resolve([...sofar, null]);
+						return;
 					}
+					const args = ['get', '-v'];
+					// Only get tools at master if we are not using modules.
+					if (!modulesOn) {
+						args.push('-u');
+					}
+					if (tool.endsWith('-gomod')) {
+						args.push('-d');
+					}
+					let opts = {
+						env: envForTools,
+						cwd: toolsTmpDir,
+					};
+					args.push(getToolImportPath(tool, goVersion));
+					cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
+						if (stderr.indexOf('unexpected directory layout:') > -1) {
+							outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
+							cp.execFile(goRuntimePath, args, opts, callback);
+						} else if (!err && tool.endsWith('-gomod')) {
+							const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
+							cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], opts, callback);
+						} else {
+							callback(err, stdout, stderr);
+						}
+					});
 				});
 			});
 		}));
