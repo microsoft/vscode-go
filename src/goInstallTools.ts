@@ -315,14 +315,9 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 	// If the user is on Go >= 1.11, tools should be installed with modules enabled.
 	// This ensures that users get the latest tagged version, rather than master,
 	// which may be unstable.
-	let modulesOn = false;
+	let modulesOff = false;
 	if (isBelow(goVersion, 11)) {
-		envForTools['GO111MODULE'] = 'off';
-		// Explicitly disable the proxy, as older versions of Go will not understand it.
-		envForTools['GOPROXY'] = '';
-	} else {
-		envForTools['GO111MODULE'] = 'on';
-		modulesOn = true;
+		modulesOff = true;
 	}
 
 	outputChannel.show();
@@ -335,6 +330,14 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 	outputChannel.appendLine(''); // Blank line for spacing.
 
 	return missing.reduce((res: Promise<string[]>, tool: string) => {
+		// Disable modules for staticcheck and gotests,
+		// which are installed with the "..." wildcard.
+		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
+		if (modulesOff || tool === "staticcheck" || tool === "gotests") {
+			envForTools['GO111MODULE'] = 'off';
+		} else {
+			envForTools['GO111MODULE'] = 'on';
+		}
 		return res.then(sofar => new Promise<string[]>((resolve) => {
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
@@ -389,7 +392,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 					}
 					const args = ['get', '-v'];
 					// Only get tools at master if we are not using modules.
-					if (!modulesOn) {
+					if (modulesOff) {
 						args.push('-u');
 					}
 					if (tool.endsWith('-gomod')) {
