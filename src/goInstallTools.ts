@@ -23,7 +23,6 @@ const declinedInstalls: Tool[] = [];
 export function installAllTools(updateExistingToolsOnly: boolean = false) {
 	getGoVersion().then((goVersion) => {
 		const allTools = getConfiguredTools(goVersion);
-		console.log(allTools);
 
 		// Update existing tools by finding all tools the user has already installed.
 		if (updateExistingToolsOnly) {
@@ -38,17 +37,17 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 		vscode.window.showQuickPick(allTools.map(x => {
 			// This doesn't correctly align the descriptions.
 			// TODO: Fix.
-			return `${x.name}: ${x.description}`;	
+			return `${x.name}: ${x.description}`;
 		}), {
-			canPickMany: true,
-			placeHolder: 'Select the tool to install/update.'
-		}).then(selectedTools => {
-			if (!selectedTools) {
-				return;
-			}
-			// TODO: This feels really hacky. Is there really not a better way to do this?
-			installTools(selectedTools.map(x => getTool(x.substr(0, x.indexOf(': ')))), goVersion);
-		});
+				canPickMany: true,
+				placeHolder: 'Select the tool to install/update.'
+			}).then(selectedTools => {
+				if (!selectedTools) {
+					return;
+				}
+				// TODO: This feels really hacky. Is there really not a better way to do this?
+				installTools(selectedTools.map(x => getTool(x.substr(0, x.indexOf(': ')))), goVersion);
+			});
 	});
 }
 
@@ -96,10 +95,10 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 		let msg = 'Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.';
 		vscode.window.showInformationMessage(msg, 'Open User Settings', 'Open Workspace Settings').then(selected => {
 			switch (selected) {
-			case 'Open User Settings':
-				vscode.commands.executeCommand('workbench.action.openGlobalSettings');
-			case 'Open Workspace Settings':
-				vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
+				case 'Open User Settings':
+					vscode.commands.executeCommand('workbench.action.openGlobalSettings');
+				case 'Open Workspace Settings':
+					vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
 			}
 		});
 		return;
@@ -238,19 +237,19 @@ export function promptForMissingTool(toolName: string) {
 			}
 			vscode.window.showInformationMessage(msg, ...installOptions).then(selected => {
 				switch (selected) {
-				case 'Install':
-					// If we are installing module-aware gocode, also install gopkgs.
-					if (tool.name === 'gocode-gomod') {
-						installTools([tool, getTool('gopkgs')], goVersion);
-					} else {
-						installTools([tool], goVersion);
-					}
-				case 'Install All':
+					case 'Install':
+						// If we are installing module-aware gocode, also install gopkgs.
+						if (tool.name === 'gocode-gomod') {
+							installTools([tool, getTool('gopkgs')], goVersion);
+						} else {
+							installTools([tool], goVersion);
+						}
+					case 'Install All':
 						installTools(missing, goVersion);
 						hideGoStatus();
-				default:
-					// The user has declined to install this tool.
-					declinedInstalls.push(tool);
+					default:
+						// The user has declined to install this tool.
+						declinedInstalls.push(tool);
 				}
 			});
 		});
@@ -268,10 +267,10 @@ export function promptForUpdatingTool(toolName: string) {
 		let updateMsg = `The Go extension is better with the latest version of "${tool.name}". Use "go get -u -v ${getImportPath(tool, goVersion)}" to update`;
 		vscode.window.showInformationMessage(updateMsg, 'Update').then(selected => {
 			switch (selected) {
-			case 'Update':
-				installTools([tool], goVersion);
-			default:
-				declinedUpdates.push(tool);
+				case 'Update':
+					installTools([tool], goVersion);
+				default:
+					declinedUpdates.push(tool);
 			}
 		});
 	});

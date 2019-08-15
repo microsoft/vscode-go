@@ -99,7 +99,7 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 	if (goLiveErrorsEnabled()) {
 		tools.push('gotype-live');
 	}
-	
+
 	return tools.map(name => allToolsInformation[name]);
 }
 
@@ -130,7 +130,7 @@ const allToolsInformation: { [key: string]: Tool } = {
 	},
 	'go-symbols': {
 		name: 'go-symbols',
-		importPath:	'github.com/acroca/go-symbols',
+		importPath: 'github.com/acroca/go-symbols',
 		isImportant: true,
 		description: "Go to symbol in workspace",
 	},
