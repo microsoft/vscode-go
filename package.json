@@ -1063,6 +1063,71 @@
             "guru"
           ]
         },
+        "go.languageServer": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "flags": {
+              "type": "array",
+              "default": [],
+              "description": "Enable additional logging by adding -rpc.trace. Run `gopls -h` for more information on available flags."
+            },
+            "features": {
+              "type": "object",
+              "properties": {
+                "format": {
+                  "type": "boolean"
+                },
+                "completion": {
+                  "type": "boolean"
+                },
+                "hover": {
+                  "type": "boolean"
+                },
+                "definition": {
+                  "type": "boolean"
+                },
+                "typeDefinition": {
+                  "type": "boolean"
+                },
+                "signatureHelp": {
+                  "type": "boolean"
+                },
+                "references": {
+                  "type": "boolean"
+                },
+                "rename": {
+                  "type": "boolean"
+                },
+                "implementation": {
+                  "type": "boolean"
+                },
+                "documentSymbols": {
+                  "type": "boolean"
+                },
+                "workspaceSymbols": {
+                  "type": "boolean"
+                },
+                "documentLink": {
+                  "type": "boolean"
+                },
+                "diagnostics": {
+                  "type": "boolean"
+                }
+              },
+              "description": "Enable or disable certain features."
+            }
+          },
+          "default": {
+            "enabled": false,
+            "flags": [],
+            "features": {}
+          },
+          "description": "Use gopls, the Go language server, for language features."
+        },
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
@@ -1071,7 +1136,7 @@
         "go.languageServerFlags": {
           "type": "array",
           "default": [],
-          "description": "Flags like -trace and -logfile to be used while running the language server."
+          "description": "Flags like -rpc.trace and -logfile to be used while running the language server."
         },
         "go.languageServerExperimentalFeatures": {
           "type": "object",
