@@ -81,6 +81,25 @@ let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
+// Add a major version when Go 2 is released.
+export function lessThan(goVersion: SemVersion, minor: number): boolean {
+	return goVersion && goVersion.major === 1 && goVersion.minor < minor;
+}
+
+// Add a major version when Go 2 is released.
+export function greaterThan(goVersion: SemVersion, minor: number): boolean {
+	return goVersion && goVersion.major === 1 && goVersion.minor > minor;
+}
+
+// Add a major version when Go 2 is released.
+export function equalTo(goVersion: SemVersion, minor: number): boolean {
+	return goVersion && goVersion.major === 1 && goVersion.minor === minor;
+}
+
+export function getConfig(name: string): vscode.WorkspaceConfiguration {
+	return vscode.workspace.getConfiguration(name, vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+}
+
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
 	const offset = document.offsetAt(position);
 	const text = document.getText();
