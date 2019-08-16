@@ -252,16 +252,7 @@ export function maybeRegisterLanguageServer(ctx: vscode.ExtensionContext) {
 			}
 		}
 
-
-		if (e.affectsConfiguration('go.useLanguageServer')) {
-			if (updatedGoConfig['useLanguageServer']) {
-				if (languageServerToolPathBeingUsed) {
-
-				}
-			} else {
-
-			}
-		} else if (e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures')) {
+		if (e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures')) {
 			reloadMessage = 'Reload VS Code window for the changes in language server settings to take effect';
 		}
 
