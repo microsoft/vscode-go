@@ -81,9 +81,8 @@ let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
-// Assumes the Go version is always 1.x.
-export function isBelow(goVersion: SemVersion, minor: number): boolean {
-	return goVersion && goVersion.major === 1 && goVersion.minor < minor;
+export function isBelow(goVersion: SemVersion, major: number, minor: number): boolean {
+	return goVersion && goVersion.major <= major && goVersion.minor < minor;
 }
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
@@ -852,7 +851,7 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 	};
 }
 
-function rmdirRecursive(dir: string) {
+export function rmdirRecursive(dir: string) {
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(file => {
 			const relPath = path.join(dir, file);

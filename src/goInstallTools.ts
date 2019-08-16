@@ -11,7 +11,10 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath, isBelow } from './util';
+import {
+	getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath,
+	resolvePath, isBelow, rmdirRecursive
+} from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath, envPath } from './goPath';
 
@@ -316,7 +319,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 	// This ensures that users get the latest tagged version, rather than master,
 	// which may be unstable.
 	let modulesOff = false;
-	if (isBelow(goVersion, 11)) {
+	if (isBelow(goVersion, 1, 11)) {
 		modulesOff = true;
 	}
 
@@ -414,6 +417,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 							callback(err, stdout, stderr);
 						}
 					});
+					rmdirRecursive(toolsTmpDir);
 				});
 			});
 		}));
