@@ -1079,43 +1079,56 @@
               "type": "object",
               "properties": {
                 "format": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "completion": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "hover": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "definition": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "typeDefinition": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "signatureHelp": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "references": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "rename": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "implementation": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "documentSymbols": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "workspaceSymbols": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "documentLink": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 },
                 "diagnostics": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": true
                 }
               },
               "description": "Enable or disable certain features."

@@ -477,7 +477,7 @@ export function offerToInstallTools() {
 			}
 		});
 
-		const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
+		const usingSourceGraph = false;
 		if (usingSourceGraph && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 			const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 			const disableLabel = 'Disable language server';

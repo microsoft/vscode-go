@@ -16,7 +16,6 @@ import { goVet } from './goVet';
 import { goBuild } from './goBuild';
 import { isModSupported } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
-import { getLanguageServerToolPath } from './goInstallTools';
 import { getToolFromToolPath } from './goPath';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
@@ -59,21 +58,15 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	outputChannel.clear();
 	const runningToolsPromises = [];
 	const cwd = path.dirname(fileUri.fsPath);
-	const languageServerTool = getToolFromToolPath(getLanguageServerToolPath());
+	const languageServerTool = "";
 	const languageServerOptions: any = goConfig.get('languageServerExperimentalFeatures');
 	let languageServerFlags: string[] = goConfig.get('languageServerFlags');
 	if (!Array.isArray(languageServerFlags)) {
 		languageServerFlags = [];
 	}
 
-	// If diagnostics are enabled via a language server, then we disable running build or vet to avoid duplicate errors & warnings.
-	let disableBuild = languageServerOptions['diagnostics'] === true && (languageServerTool === 'gopls' || languageServerTool === 'bingo');
-	const disableVet = languageServerOptions['diagnostics'] === true && languageServerTool === 'gopls';
-
-	// Some bingo users have disabled diagnostics using the -diagnostics-style=none flag, so respect that choice
-	if (disableBuild && languageServerTool === 'bingo' && languageServerFlags.indexOf('-diagnostics-style=none') > -1) {
-		disableBuild = false;
-	}
+	let disableBuild = true;
+	let disableVet = true;
 
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;

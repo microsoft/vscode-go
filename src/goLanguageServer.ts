@@ -39,7 +39,7 @@ interface LanguageServerConfig {
 	features: {[key: string]: boolean};
 }
 
-export function maybeRegisterLanguageServer(ctx: vscode.ExtensionContext) {
+export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	let config = parseLanguageServerConfig();
 	if (!config.enabled) {
 		registerUsualProviders(ctx);
