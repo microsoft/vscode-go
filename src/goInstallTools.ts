@@ -336,7 +336,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 		// Disable modules for staticcheck and gotests,
 		// which are installed with the "..." wildcard.
 		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
-		if (modulesOff || tool === "staticcheck" || tool === "gotests") {
+		if (modulesOff || tool === 'staticcheck' || tool === 'gotests') {
 			envForTools['GO111MODULE'] = 'off';
 		} else {
 			envForTools['GO111MODULE'] = 'on';
@@ -401,7 +401,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 					if (tool.endsWith('-gomod')) {
 						args.push('-d');
 					}
-					let opts = {
+					const opts = {
 						env: envForTools,
 						cwd: toolsTmpDir,
 					};
