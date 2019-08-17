@@ -92,7 +92,7 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 		toolsGopath = paths[0];
 		envForTools['GOPATH'] = toolsGopath;
 	} else {
-		let msg = 'Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.';
+		const msg = 'Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.';
 		vscode.window.showInformationMessage(msg, 'Open User Settings', 'Open Workspace Settings').then(selected => {
 			switch (selected) {
 				case 'Open User Settings':
@@ -200,9 +200,8 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 	});
 }
 
-
 export function promptForMissingTool(toolName: string) {
-	let tool = getTool(toolName);
+	const tool = getTool(toolName);
 
 	// If user has declined to install this tool, don't prompt for it.
 	if (containsTool(declinedInstalls, tool)) {
@@ -257,14 +256,14 @@ export function promptForMissingTool(toolName: string) {
 }
 
 export function promptForUpdatingTool(toolName: string) {
-	let tool = getTool(toolName);
+	const tool = getTool(toolName);
 
 	// If user has declined to update, then don't prompt.
 	if (containsTool(declinedUpdates, tool)) {
 		return;
 	}
 	getGoVersion().then((goVersion) => {
-		let updateMsg = `The Go extension is better with the latest version of "${tool.name}". Use "go get -u -v ${getImportPath(tool, goVersion)}" to update`;
+		const updateMsg = `The Go extension is better with the latest version of "${tool.name}". Use "go get -u -v ${getImportPath(tool, goVersion)}" to update`;
 		vscode.window.showInformationMessage(updateMsg, 'Update').then(selected => {
 			switch (selected) {
 				case 'Update':
@@ -275,7 +274,6 @@ export function promptForUpdatingTool(toolName: string) {
 		});
 	});
 }
-
 
 export function updateGoPathGoRootFromConfig(): Promise<void> {
 	const goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
