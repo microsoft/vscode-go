@@ -13,6 +13,7 @@ import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath, envPath } from './goPath';
+import { getLanguageServerToolPath } from './goLanguageServer';
 
 const updatesDeclinedTools: string[] = [];
 const installsDeclinedTools: string[] = [];
@@ -477,7 +478,7 @@ export function offerToInstallTools() {
 			}
 		});
 
-		const usingSourceGraph = false;
+		const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
 		if (usingSourceGraph && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 			const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 			const disableLabel = 'Disable language server';

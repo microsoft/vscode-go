@@ -17,6 +17,7 @@ import { goBuild } from './goBuild';
 import { isModSupported } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 import { getToolFromToolPath } from './goPath';
+import { parseLanguageServerConfig } from './goLanguageServer';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -58,15 +59,11 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	outputChannel.clear();
 	const runningToolsPromises = [];
 	const cwd = path.dirname(fileUri.fsPath);
-	const languageServerTool = "";
-	const languageServerOptions: any = goConfig.get('languageServerExperimentalFeatures');
-	let languageServerFlags: string[] = goConfig.get('languageServerFlags');
-	if (!Array.isArray(languageServerFlags)) {
-		languageServerFlags = [];
-	}
 
-	let disableBuild = true;
-	let disableVet = true;
+	// If a user has enabled diagnostics via a language server, 
+	// then we disable running build or vet to avoid duplicate errors and warnings.
+	let lspConfig = parseLanguageServerConfig();
+	let disableBuildAndVet = lspConfig.features.diagnostics;
 
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;
@@ -94,7 +91,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		return testPromise;
 	};
 
-	if (!disableBuild && !!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
+	if (!disableBuildAndVet && !!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
 		runningToolsPromises.push(isModSupported(fileUri)
 			.then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace'))
 			.then(errors => ({ diagnosticCollection: buildDiagnosticCollection, errors })));
@@ -120,7 +117,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			.then(errors => ({ diagnosticCollection: lintDiagnosticCollection, errors: errors })));
 	}
 
-	if (!disableVet && !!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
+	if (!disableBuildAndVet && !!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace')
 			.then(errors => ({ diagnosticCollection: vetDiagnosticCollection, errors: errors })));
 	}

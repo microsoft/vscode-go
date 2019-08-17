@@ -51,7 +51,6 @@ interface LanguageServerConfig {
 		implementation: boolean;
 		documentLink: boolean;
 	};
-	experimental: any;
 }
 
 // registerLanguageFeatures registers providers for all the language features.
@@ -284,14 +283,15 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	}));
 }
 
-function parseLanguageServerConfig(): LanguageServerConfig {
+export function parseLanguageServerConfig(): LanguageServerConfig {
 	const goConfig = vscode.workspace.getConfiguration('go');
 
-	// TODO:
 	let config = {
 		enabled: goConfig['useLanguageServer'],
-		flags: goConfig['languageServerFlags'],
+		flags: goConfig['languageServerFlags'] || [],
 		features: {
+			// TODO: We should have configs that match these names.
+			// Ultimately, we should have a centralized language server config rather than separate fields.
 			completion: goConfig['languageServerExperimentalFeatures']['autoComplete'],
 			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
 			format: goConfig['languageServerExperimentalFeatures']['format'],
@@ -306,7 +306,6 @@ function parseLanguageServerConfig(): LanguageServerConfig {
 			implementation: goConfig['languageServerExperimentalFeatures']['implementation'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
 		},
-		experimental: {},
 	};
 	return config;
 }
@@ -317,7 +316,7 @@ function parseLanguageServerConfig(): LanguageServerConfig {
  * This supports the language servers from both Google and Sourcegraph with the
  * former getting a precedence over the latter
  */
-function getLanguageServerToolPath(): string {
+export function getLanguageServerToolPath(): string {
 	// Check that all workspace folders are configured with the same GOPATH.
 	if (!allFoldersHaveSameGopath()) {
 		vscode.window.showInformationMessage('The Go language server is currently not supported in a multi-root set-up with different GOPATHs.');
