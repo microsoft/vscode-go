@@ -56,12 +56,17 @@ interface LanguageServerConfig {
 // registerLanguageFeatures registers providers for all the language features.
 // It looks to either the language server or the standard providers for these features.
 export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
+	// Subscribe to notifications for changes to the configuration of the language server.
+	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => watchLanguageServerConfiguration(e)));
+
 	let config = parseLanguageServerConfig();
-	console.log(config);
+
+	// If the user has not enabled the language server,
 	if (!config.enabled) {
 		registerUsualProviders(ctx);
 		return;
 	}
+
 	let path = getLanguageServerToolPath();
 	const toolName = getToolFromToolPath(path);
 	const c = new LanguageClient(
@@ -249,38 +254,38 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	if (!(toolName === 'gopls' && config.features['diagnostics'])) {
 		vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 	}
+}
 
-	// Subscribe to notifications for changes to the configuration of the language server.
-	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
-		if (!e.affectsConfiguration('go')) {
-			return;
+function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
+	if (!e.affectsConfiguration('go')) {
+		return;
+	}
+
+	let config = parseLanguageServerConfig();
+	let reloadMessage: string;
+
+	// If the user has disabled or enabled the language server.
+	if (e.affectsConfiguration('go.useLanguageServer')) {
+		if (config.enabled) {
+			reloadMessage = 'Reload VS Code window to enable the use of language server';
+		} else {
+			reloadMessage = 'Reload VS Code window to disable the use of language server';
 		}
-		let reloadMessage: string;
-		let config = parseLanguageServerConfig();
+	}
 
-		// If the user has disabled or enabled the language server.
-		if (e.affectsConfiguration('go.useLanguageServer')) {
-			if (config.enabled) {
-				reloadMessage = 'Reload VS Code window to enable the use of language server';
-			} else {
-				reloadMessage = 'Reload VS Code window to disable the use of language server';
+	if (e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures')) {
+		reloadMessage = 'Reload VS Code window for the changes in language server settings to take effect';
+	}
+
+	// If there was a change in the configuration of the language server,
+	// then ask the user to reload VS Code.
+	if (reloadMessage) {
+		vscode.window.showInformationMessage(reloadMessage, 'Reload').then(selected => {
+			if (selected === 'Reload') {
+				vscode.commands.executeCommand('workbench.action.reloadWindow');
 			}
-		}
-
-		if (e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures')) {
-			reloadMessage = 'Reload VS Code window for the changes in language server settings to take effect';
-		}
-
-		// If there was a change in the configuration of the language server,
-		// then ask the user to reload VS Code.
-		if (reloadMessage) {
-			vscode.window.showInformationMessage(reloadMessage, 'Reload').then(selected => {
-				if (selected === 'Reload') {
-					vscode.commands.executeCommand('workbench.action.reloadWindow');
-				}
-			});
-		}
-	}));
+		});
+	}
 }
 
 export function parseLanguageServerConfig(): LanguageServerConfig {
