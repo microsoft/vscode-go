@@ -36,11 +36,29 @@ import { getBinPath, getCurrentGoPath } from './util';
 interface LanguageServerConfig {
 	enabled: boolean;
 	flags: string[];
-	features: {[key: string]: boolean};
+	features: {
+		completion: boolean;
+		diagnostics: boolean;
+		format: boolean;
+		definition: boolean;
+		typeDefinition: boolean;
+		hover: boolean;
+		references: boolean;
+		rename: boolean;
+		signatureHelp: boolean;
+		documentSymbols: boolean;
+		workspaceSymbols: boolean;
+		implementation: boolean;
+		documentLink: boolean;
+	};
+	experimental: any;
 }
 
+// registerLanguageFeatures registers providers for all the language features.
+// It looks to either the language server or the standard providers for these features.
 export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	let config = parseLanguageServerConfig();
+	console.log(config);
 	if (!config.enabled) {
 		registerUsualProviders(ctx);
 		return;
@@ -53,15 +71,11 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			command: path,
 			args: ['-mode=stdio', ...config.flags],
 			options: {
-				env: getToolsEnvVars()
-			}
+				env: getToolsEnvVars(),
+			},
 		},
 		{
-			initializationOptions: {
-				funcSnippetEnabled: vscode.workspace.getConfiguration('go')['useCodeSnippetsOnFunctionSuggest'],
-				gocodeCompletionEnabled: config.features['autoComplete'],
-				incrementalSync: config.features['incrementalSync']
-			},
+			initializationOptions: {},
 			documentSelector: ['go', 'go.mod', 'go.sum'],
 			uriConverters: {
 				// Apply file:/// scheme to all file paths.
@@ -71,13 +85,13 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			revealOutputChannelOn: RevealOutputChannelOn.Never,
 			middleware: {
 				provideDocumentFormattingEdits: (document: vscode.TextDocument, options: FormattingOptions, token: vscode.CancellationToken, next: ProvideDocumentFormattingEditsSignature) => {
-					if (!config.features['format']) {
+					if (!config.features.format) {
 						return [];
 					}
 					return next(document, options, token);
 				},
 				provideCompletionItem: async (document: vscode.TextDocument, position: vscode.Position, context: vscode.CompletionContext, token: vscode.CancellationToken, next: ProvideCompletionItemsSignature) => {
-					if (!config.features['autoComplete']) {
+					if (!config.features.completion) {
 						return [];
 					}
 					// TODO(rstambler): gopls will support autocompletion of unimported package in its next release,
@@ -97,67 +111,67 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					return resultFromLanguageServer;
 				},
 				provideRenameEdits: (document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken, next: ProvideRenameEditsSignature) => {
-					if (!config.features['rename']) {
+					if (!config.features.rename) {
 						return null;
 					}
 					return next(document, position, newName, token);
 				},
 				provideDefinition: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideDefinitionSignature) => {
-					if (!config.features['goToDefinition']) {
+					if (!config.features.typeDefinition) {
 						return null;
 					}
 					return next(document, position, token);
 				},
 				provideTypeDefinition: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideTypeDefinitionSignature) => {
-					if (!config.features['goToTypeDefinition']) {
+					if (!config.features.typeDefinition) {
 						return null;
 					}
 					return next(document, position, token);
 				},
 				provideHover: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideHoverSignature) => {
-					if (!config.features['hover']) {
+					if (!config.features.hover) {
 						return null;
 					}
 					return next(document, position, token);
 				},
 				provideReferences: (document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken, next: ProvideReferencesSignature) => {
-					if (!config.features['findReferences']) {
+					if (!config.features.references) {
 						return [];
 					}
 					return next(document, position, options, token);
 				},
 				provideSignatureHelp: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideSignatureHelpSignature) => {
-					if (!config.features['signatureHelp']) {
+					if (!config.features.signatureHelp) {
 						return null;
 					}
 					return next(document, position, token);
 				},
 				provideDocumentSymbols: (document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentSymbolsSignature) => {
-					if (!config.features['documentSymbols']) {
+					if (!config.features.documentSymbols) {
 						return [];
 					}
 					return next(document, token);
 				},
 				provideWorkspaceSymbols: (query: string, token: vscode.CancellationToken, next: ProvideWorkspaceSymbolsSignature) => {
-					if (!config.features['workspaceSymbols']) {
+					if (!config.features.workspaceSymbols) {
 						return [];
 					}
 					return next(query, token);
 				},
 				provideImplementation: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideImplementationSignature) => {
-					if (!config.features['goToImplementation']) {
+					if (!config.features.implementation) {
 						return null;
 					}
 					return next(document, position, token);
 				},
 				handleDiagnostics: (uri: vscode.Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
-					if (!config.features['diagnostics']) {
+					if (!config.features.diagnostics) {
 						return null;
 					}
 					return next(uri, diagnostics);
 				},
 				provideDocumentLinks: (document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentLinksSignature) => {
-					if (!config.features['documentLink']) {
+					if (!config.features.documentLink) {
 						return null;
 					}
 					return next(document, token);
@@ -174,49 +188,49 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 
 		// Fallback to default providers for unsupported or disabled features.
 
-		if (!config.features['autoComplete'] || !capabilities.completionProvider) {
+		if (!config.features.completion || !capabilities.completionProvider) {
 			const provider = new GoCompletionItemProvider(ctx.globalState);
 			ctx.subscriptions.push(provider);
 			ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '\"'));
 		}
 
-		if (!config.features['format'] || !capabilities.documentFormattingProvider) {
+		if (!config.features.format || !capabilities.documentFormattingProvider) {
 			ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 		}
 
-		if (!config.features['rename'] || !capabilities.renameProvider) {
+		if (!config.features.rename || !capabilities.renameProvider) {
 			ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 		}
 
-		if (!config.features['goToTypeDefinition'] || !capabilities.typeDefinitionProvider) {
+		if (!config.features.typeDefinition || !capabilities.typeDefinitionProvider) {
 			ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
 		}
 
-		if (!config.features['hover'] || !capabilities.hoverProvider) {
+		if (!config.features.hover || !capabilities.hoverProvider) {
 			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 		}
 
-		if (!config.features['goToDefinition'] || !capabilities.definitionProvider) {
+		if (!config.features.definition || !capabilities.definitionProvider) {
 			ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
 		}
 
-		if (!config.features['findReferences'] || !capabilities.referencesProvider) {
+		if (!config.features.references || !capabilities.referencesProvider) {
 			ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
 		}
 
-		if (!config.features['documentSymbols'] || !capabilities.documentSymbolProvider) {
+		if (!config.features.documentSymbols || !capabilities.documentSymbolProvider) {
 			ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
 		}
 
-		if (!config.features['signatureHelp'] || !capabilities.signatureHelpProvider) {
+		if (!config.features.signatureHelp || !capabilities.signatureHelpProvider) {
 			ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
 		}
 
-		if (!config.features['workspaceSymbols'] || !capabilities.workspaceSymbolProvider) {
+		if (!config.features.workspaceSymbols || !capabilities.workspaceSymbolProvider) {
 			ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
 		}
 
-		if (!config.features['goToImplementation'] || !capabilities.implementationProvider) {
+		if (!config.features.implementation || !capabilities.implementationProvider) {
 			ctx.subscriptions.push(vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider()));
 		}
 	});
@@ -237,14 +251,16 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 	}
 
+	// Subscribe to notifications for changes to the configuration of the language server.
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
 		if (!e.affectsConfiguration('go')) {
 			return;
 		}
 		let reloadMessage: string;
 		let config = parseLanguageServerConfig();
+
 		// If the user has disabled or enabled the language server.
-		if (e.affectsConfiguration('languageServer.enabled') || e.affectsConfiguration('go.useLanguageServer')) {
+		if (e.affectsConfiguration('go.useLanguageServer')) {
 			if (config.enabled) {
 				reloadMessage = 'Reload VS Code window to enable the use of language server';
 			} else {
@@ -256,7 +272,8 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			reloadMessage = 'Reload VS Code window for the changes in language server settings to take effect';
 		}
 
-		// If there was a change in "useLanguageServer" setting, then ask the user to reload VS Code.
+		// If there was a change in the configuration of the language server,
+		// then ask the user to reload VS Code.
 		if (reloadMessage) {
 			vscode.window.showInformationMessage(reloadMessage, 'Reload').then(selected => {
 				if (selected === 'Reload') {
@@ -267,26 +284,30 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	}));
 }
 
-
-// For now, we have 2 configurations for the language server.
-//
-//  (1): The individual flags, which include "go.useLanguageServer", 
-//       "go.languageServerFlags", and "go.languageServerExperimentalFeatures".
-//  (2): The "languageServer" object, which includes "enabled", "features", and "flags".
-//
-// In the future, we should discontinue the individual flags, but for now, we must support them.
-// The language server object takes precedence over the flags.
 function parseLanguageServerConfig(): LanguageServerConfig {
 	const goConfig = vscode.workspace.getConfiguration('go');
 
-	let config: LanguageServerConfig = goConfig['languageServer'];
-	if (!config) {
-		config = {
-			enabled: goConfig['useLanguageServer'],
-			flags: goConfig['languageServerFlags'] || [],
-			features: goConfig['languageServerExperimentalFeatures'],
-		};
-	}
+	// TODO:
+	let config = {
+		enabled: goConfig['useLanguageServer'],
+		flags: goConfig['languageServerFlags'],
+		features: {
+			completion: goConfig['languageServerExperimentalFeatures']['autoComplete'],
+			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
+			format: goConfig['languageServerExperimentalFeatures']['format'],
+			definition: goConfig['languageServerExperimentalFeatures']['goToDefinition'],
+			typeDefinition: goConfig['languageServerExperimentalFeatures']['goToTypeDefinition'],
+			hover: goConfig['languageServerExperimentalFeatures']['hover'],
+			references: goConfig['languageServerExperimentalFeatures']['findReferences'],
+			rename: goConfig['languageServerExperimentalFeatures']['rename'],
+			signatureHelp: goConfig['languageServerExperimentalFeatures']['signatureHelp'],
+			documentSymbols: goConfig['languageServerExperimentalFeatures']['documentSymbols'],
+			workspaceSymbols: goConfig['languageServerExperimentalFeatures']['workspaceSymbols'],
+			implementation: goConfig['languageServerExperimentalFeatures']['implementation'],
+			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
+		},
+		experimental: {},
+	};
 	return config;
 }
 
@@ -324,7 +345,7 @@ function getLanguageServerToolPath(): string {
 			languageServerOfChoice = getToolFromToolPath(goplsAlternate);
 		}
 		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
-	 	if (typeof golangserverAlternate === 'string') {
+		if (typeof golangserverAlternate === 'string') {
 			languageServerOfChoice = getToolFromToolPath(golangserverAlternate);
 		}
 	}
