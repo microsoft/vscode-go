@@ -181,6 +181,16 @@ interface DebugGoroutine {
 	goStatementLoc: DebugLocation;
 }
 
+interface DebuggerCommand {
+	name: string;
+	threadID?: number;
+	goroutineID?: number;
+}
+
+interface RestartOut {
+	DiscardedBreakpoints: DiscardedBreakpoint[];
+}
+
 interface DiscardedBreakpoint {
 	breakpoint: DebugBreakpoint;
 	reason: string;
@@ -783,6 +793,10 @@ class GoDebugSession extends LoggingDebugSession {
 		// For remote process, we have to issue a continue request
 		// before disconnecting.
 		if (this.delve.isRemoteDebugging) {
+			// We don't have to wait for continue call
+			// because we are not doing anything with the result.
+			// Also, DisconnectRequest will return before
+			// we get the result back from delve.
 			this.continue();
 		}
 		this.delve.close().then(() => {
@@ -873,6 +887,8 @@ class GoDebugSession extends LoggingDebugSession {
 				breakpointIn.loadLocals = this.delve.loadConfig;
 				breakpointIn.cond = breakpoint.condition;
 				return this.delve.callPromise('CreateBreakpoint', [this.delve.isApiV1 ? breakpointIn : { Breakpoint: breakpointIn }]).then(null, err => {
+					// Delve does not seem to support error code at this time.
+					// TODO(quoct): Follow up with delve team.
 					if (err.toString().startsWith('Breakpoint exists at')) {
 						log('Encounter existing breakpoint: ' + breakpointIn);
 						return this.delve.isApiV1 ? breakpointIn : {Breakpoint: breakpointIn};
