@@ -181,16 +181,6 @@ interface DebugGoroutine {
 	goStatementLoc: DebugLocation;
 }
 
-interface DebuggerCommand {
-	name: string;
-	threadID?: number;
-	goroutineID?: number;
-}
-
-interface RestartOut {
-	DiscardedBreakpoints: DiscardedBreakpoint[];
-}
-
 interface DiscardedBreakpoint {
 	breakpoint: DebugBreakpoint;
 	reason: string;
@@ -591,7 +581,6 @@ class Delve {
 				(rpcConnection as any)['conn']['end']();
 				return;
 			}
-
 			const timeoutToken: NodeJS.Timer = isLocalDebugging && setTimeout(async () => {
 				log('Killing debug process manually as we could not halt delve in time');
 				await forceCleanup();
