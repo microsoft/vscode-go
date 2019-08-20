@@ -10,7 +10,7 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, getCurrentGoPath, resolvePath, lessThan } from './util';
+import { getBinPath, getToolsGopath, getGoVersion, SemVersion, getCurrentGoPath, resolvePath, isBelow } from './util';
 import { getToolFromToolPath, envPath } from './goPath';
 import { getImportPath, getConfiguredTools, containsTool, Tool, getTool, modulesOnly, isGocode, containsString } from './goTools';
 
@@ -209,7 +209,7 @@ export function promptForMissingTool(toolName: string) {
 	}
 	getGoVersion().then(goVersion => {
 		// Show error messages for outdated tools.
-		if (lessThan(goVersion, 9)) {
+		if (isBelow(goVersion, 1, 9)) {
 			switch (tool.name) {
 				case 'golint':
 					vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
