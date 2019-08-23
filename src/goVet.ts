@@ -78,7 +78,7 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		args.push(flag);
 	});
 
-	const vetPromise = getGoVersion().then((version: SemVersion) => {
+	const vetPromise = getGoVersion().then((version: SemVersion|null) => {
 		const tagsArg = [];
 		if (goConfig['buildTags'] && vetFlags.indexOf('-tags') === -1) {
 			tagsArg.push('-tags');

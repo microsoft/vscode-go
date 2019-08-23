@@ -258,7 +258,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 		childProcess.on('close', (status) => {
 			const lines = chunks.join('').toString().split('\n');
 
-			getGoVersion().then((ver: SemVersion) => {
+			getGoVersion().then((ver: SemVersion|null) => {
 				const result = new Map<string, string>();
 				const vendorAlreadyExcluded = !ver || ver.major > 1 || (ver.major === 1 && ver.minor >= 9);
 				lines.forEach(line => {

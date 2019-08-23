@@ -269,7 +269,7 @@ It returns the number of bytes written and any write error encountered.
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
-		getGoVersion().then(async version => {
+		getGoVersion().then(async () => {
 			const diagnostics = await check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config);
 			const sortedDiagnostics = []
 				.concat.apply([], diagnostics.map(x => x.errors))
@@ -292,7 +292,7 @@ It returns the number of bytes written and any write error encountered.
 			return done();
 		}
 
-		getGoVersion().then(async version => {
+		getGoVersion().then(async () => {
 			const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
 			const document = await vscode.workspace.openTextDocument(uri);
 			const editor = await vscode.window.showTextDocument(document);
@@ -315,7 +315,7 @@ It returns the number of bytes written and any write error encountered.
 			return done();
 		}
 
-		getGoVersion().then(async version => {
+		getGoVersion().then(async () => {
 			const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
 			const document = await vscode.workspace.openTextDocument(uri);
 			const editor = await vscode.window.showTextDocument(document);
@@ -341,7 +341,7 @@ It returns the number of bytes written and any write error encountered.
 			return done();
 		}
 
-		getGoVersion().then(async version => {
+		getGoVersion().then(async () => {
 			const uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
 			const document = await vscode.workspace.openTextDocument(uri);
 			const editor = await vscode.window.showTextDocument(document);
@@ -359,7 +359,7 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Gometalinter error checking', (done) => {
-		getGoVersion().then(async version => {
+		getGoVersion().then(async () => {
 			const config = Object.create(vscode.workspace.getConfiguration('go'), {
 				'lintOnSave': { value: 'package' },
 				'lintTool': { value: 'gometalinter' },

@@ -59,7 +59,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		goConfig = vscode.workspace.getConfiguration('go', document.uri);
 	}
 	const toolForDocs = goConfig['docsTool'] || 'godoc';
-	return getGoVersion().then((ver: SemVersion) => {
+	return getGoVersion().then(() => {
 		return getModFolderPath(document.uri).then(modFolderPath => {
 			const input: GoDefinitionInput = {
 				document,

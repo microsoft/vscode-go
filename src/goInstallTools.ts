@@ -46,7 +46,7 @@ const allToolsWithImportPaths: { [key: string]: string } = {
 	'godoctor': 'github.com/godoctor/godoctor',
 };
 
-function getToolImportPath(tool: string, goVersion: SemVersion) {
+function getToolImportPath(tool: string, goVersion: SemVersion|null) {
 	if (tool === 'gocode' && goVersion && goVersion.major < 2 && goVersion.minor < 9) {
 		return 'github.com/nsf/gocode';
 	}
@@ -74,7 +74,7 @@ const importantTools = [
 	'dlv'
 ];
 
-function getTools(goVersion: SemVersion): string[] {
+function getTools(goVersion: SemVersion|null): string[] {
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const tools: string[] = [
 		'gocode',
@@ -122,7 +122,8 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push(goConfig['lintTool']);
 	}
 
-	if (goConfig['useLanguageServer'] && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
+	// Verify goVersion >= go1.11 or is a dev branch
+	if (goConfig['useLanguageServer'] && (!goVersion || goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 		tools.push('gopls');
 	}
 
@@ -265,7 +266,7 @@ export function promptForUpdatingTool(tool: string) {
  *
  * @param string[] array of tool names to be installed
  */
-export function installTools(missing: string[], goVersion: SemVersion): Promise<void> {
+export function installTools(missing: string[], goVersion: SemVersion|null): Promise<void> {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showErrorMessage(`Failed to run "go get" to install the packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
@@ -502,7 +503,7 @@ export function offerToInstallTools() {
 		}
 	});
 
-	function promptForInstall(missing: string[], goVersion: SemVersion) {
+	function promptForInstall(missing: string[], goVersion: SemVersion|null) {
 		const installItem = {
 			title: 'Install',
 			command() {
@@ -528,7 +529,7 @@ export function offerToInstallTools() {
 	}
 }
 
-function getMissingTools(goVersion: SemVersion): Promise<string[]> {
+function getMissingTools(goVersion: SemVersion|null): Promise<string[]> {
 	const keys = getTools(goVersion);
 	return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
 		const toolPath = getBinPath(tool);

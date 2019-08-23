@@ -76,7 +76,7 @@ export interface SemVersion {
 	minor: number;
 }
 
-let goVersion: SemVersion = null;
+let goVersion: SemVersion | null = null;
 let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
@@ -222,7 +222,7 @@ export function getUserNameHash() {
  * Gets version of Go based on the output of the command `go version`.
  * Returns null if go is being used from source/tip in which case `go version` will not return release tag like go1.6.3
  */
-export function getGoVersion(): Promise<SemVersion> {
+export function getGoVersion(): Promise<SemVersion|null> {
 	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
