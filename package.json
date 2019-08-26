@@ -1,12 +1,12 @@
 {
   "name": "Go",
-  "version": "0.10.2",
+  "version": "0.11.4",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
     "name": "Microsoft Corporation - Development Labs"
   },
-  "icon": "images/goIcon.png",
+  "icon": "images/go-logo-blue.png",
   "categories": [
     "Programming Languages",
     "Snippets",
@@ -15,7 +15,7 @@
     "Formatters"
   ],
   "galleryBanner": {
-    "color": "#CFB69A",
+    "color": "#F2F2F2",
     "theme": "light"
   },
   "private": true,
@@ -31,8 +31,8 @@
     "compile": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "node ./node_modules/vscode/bin/test",
-    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
-    "fix-lint": "node ./node_modules/tslint/bin/tslint --fix ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
+    "lint": "node ./node_modules/tslint/bin/tslint --project tsconfig.json",
+    "fix-lint": "node ./node_modules/tslint/bin/tslint --fix --project tsconfig.json",
     "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
   },
   "extensionDependencies": [],
@@ -300,6 +300,11 @@
         "command": "go.godoctor.var",
         "title": "Go: Extract to variable",
         "description": "Extract to variable using godoctor."
+      },
+      {
+        "command": "go.languageserver.restart",
+        "title": "Go: Restart Language Server",
+        "description": "Restart the running instance of the language server"
       }
     ],
     "debuggers": [
@@ -366,19 +371,27 @@
             }
           },
           {
+            "label": "Go: Attach to local process",
+            "description": "Attach to an existing process by process ID",
+            "body": {
+              "name": "${1:Attach to Process}",
+              "type": "go",
+              "request": "attach",
+              "mode": "local",
+              "processId": 0
+            }
+          },
+          {
             "label": "Go: Connect to server",
             "description": "Connect to a remote headless debug server",
             "body": {
-              "name": "${3:Connect to server}",
+              "name": "${1:Connect to server}",
               "type": "go",
-              "request": "launch",
+              "request": "attach",
               "mode": "remote",
-              "remotePath": "^\"\\${workspaceFolder}${1:}\"",
+              "remotePath": "^\"\\${workspaceFolder}\"",
               "port": 2345,
-              "host": "127.0.0.1",
-              "program": "^\"\\${workspaceFolder}${1:}\"",
-              "env": {},
-              "args": []
+              "host": "127.0.0.1"
             }
           }
         ],
@@ -483,6 +496,141 @@
                 "type": "string",
                 "description": "Output path for the binary of delve",
                 "default": "debug"
+              },
+              "logOutput": {
+                "type": "string",
+                "enum": [
+                  "debugger",
+                  "gdbwire",
+                  "lldbout",
+                  "debuglineerr",
+                  "rpc"
+                ],
+                "description": "Comma separated list of components that should produce debug output.",
+                "default": "debugger"
+              },
+              "dlvLoadConfig": {
+                "type": "object",
+                "properties": {
+                  "followPointers": {
+                    "type": "boolean",
+                    "description": "FollowPointers requests pointers to be automatically dereferenced",
+                    "default": true
+                  },
+                  "maxVariableRecurse": {
+                    "type": "number",
+                    "description": "MaxVariableRecurse is how far to recurse when evaluating nested types",
+                    "default": 1
+                  },
+                  "maxStringLen": {
+                    "type": "number",
+                    "description": "MaxStringLen is the maximum number of bytes read from a string",
+                    "default": 64
+                  },
+                  "maxArrayValues": {
+                    "type": "number",
+                    "description": "MaxArrayValues is the maximum number of elements read from an array, a slice or a map",
+                    "default": 64
+                  },
+                  "maxStructFields": {
+                    "type": "number",
+                    "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
+                    "default": -1
+                  }
+                },
+                "description": "LoadConfig describes to delve, how to load values from target's memory",
+                "default": {
+                  "followPointers": true,
+                  "maxVariableRecurse": 1,
+                  "maxStringLen": 64,
+                  "maxArrayValues": 64,
+                  "maxStructFields": -1
+                }
+              },
+              "apiVersion": {
+                "type": "number",
+                "enum": [
+                  1,
+                  2
+                ],
+                "description": "Delve Api Version to use. Default value is 2.",
+                "default": 2
+              },
+              "stackTraceDepth": {
+                "type": "number",
+                "description": "Maximum depth of stack trace collected from Delve",
+                "default": 50
+              },
+              "showGlobalVariables": {
+                "type": "boolean",
+                "default": true,
+                "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not."
+              }
+            }
+          },
+          "attach": {
+            "required": [],
+            "properties": {
+              "processId": {
+                "type": "number",
+                "description": "The ID of the process to be debugged."
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "remote"
+                ],
+                "description": "Indicates local or remote debugging.  Local maps to the dlv 'attach' command, remote maps to 'connect'.",
+                "default": "local"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop program after launch.",
+                "default": false
+              },
+              "showLog": {
+                "type": "boolean",
+                "description": "Show log output from the delve debugger.",
+                "default": false
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Workspace relative or absolute path to the working directory of the program being debugged. Default is the current workspace.",
+                "default": "${workspaceFolder}"
+              },
+              "remotePath": {
+                "type": "string",
+                "description": "If remote debugging, the path to the source code on the remote machine, if different from the local machine.",
+                "default": ""
+              },
+              "port": {
+                "type": "number",
+                "description": "The port that the delve debugger will be listening on.",
+                "default": 2345
+              },
+              "host": {
+                "type": "string",
+                "description": "The host name of the machine the delve debugger will be listening on.",
+                "default": "127.0.0.1"
+              },
+              "trace": {
+                "type": "string",
+                "enum": [
+                  "log",
+                  "verbose",
+                  "error"
+                ],
+                "default": "error",
+                "description": "Various levels of logging shown in the debug console. When set to 'log' or 'verbose', the logs will also be written to a file."
+              },
+              "backend": {
+                "type": "string",
+                "enum": [
+                  "default",
+                  "native",
+                  "lldb"
+                ],
+                "description": "Backend used by delve. Only available in delve version 0.12.2 and above."
               },
               "logOutput": {
                 "type": "string",
@@ -980,8 +1128,18 @@
             },
             "diagnostics": {
               "type": "boolean",
-              "default": false,
+              "default": true,
               "description": "If true, the language server will provide build, vet errors and the extension will ignore the `buildOnSave`, `vetOnSave` settings."
+            },
+            "documentLink": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, the language server will provide clickable Godoc links for import statements."
+            },
+            "incrementalSync": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, the language server will accept incremental document synchronization."
             }
           },
           "default": {
@@ -996,7 +1154,8 @@
             "documentSymbols": true,
             "workspaceSymbols": true,
             "findReferences": true,
-            "diagnostics": false
+            "diagnostics": true,
+            "documentLink": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
@@ -1340,6 +1499,11 @@
               "type": "string",
               "default": "gopkgs",
               "description": "Alternate tool to use instead of the gopkgs binary or alternate path to use for the gopkgs binary."
+            },
+            "gopls": {
+              "type": "string",
+              "default": "gopls",
+              "description": "Alternate tool to use instead of the gopls binary or alternate path to use for the gopls binary."
             },
             "go-outline": {
               "type": "string",

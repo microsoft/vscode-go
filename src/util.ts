@@ -5,7 +5,7 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows } from './goPath';
+import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows, envPath } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -226,7 +226,7 @@ export function getGoVersion(): Promise<SemVersion> {
 	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		console.warn(`Failed to run "go version" as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 		return Promise.resolve(null);
 	}
 
@@ -371,7 +371,14 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, (tool === 'go') ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
+	const alternateTools: { [key: string]: string } = vscode.workspace.getConfiguration('go', null).get('alternateTools');
+	const alternateToolPath: string = alternateTools[tool];
+
+	return getBinPathWithPreferredGopath(
+		tool,
+		(tool === 'go') ? [] : [getToolsGopath(), getCurrentGoPath()],
+		resolvePath(alternateToolPath),
+	);
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {
@@ -390,18 +397,6 @@ export function getToolsEnvVars(): any {
 		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof toolsEnvVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : toolsEnvVars[key]);
 	}
 
-	// cgo expects go to be in the path
-	const goroot: string = envVars['GOROOT'];
-	let pathEnvVar: string;
-	if (envVars.hasOwnProperty('PATH')) {
-		pathEnvVar = 'PATH';
-	} else if (process.platform === 'win32' && envVars.hasOwnProperty('Path')) {
-		pathEnvVar = 'Path';
-	}
-	if (goroot && pathEnvVar && envVars[pathEnvVar] && (<string>envVars[pathEnvVar]).split(path.delimiter).indexOf(goroot) === -1) {
-		envVars[pathEnvVar] += path.delimiter + path.join(goroot, 'bin');
-	}
-
 	return envVars;
 }
 
@@ -413,21 +408,10 @@ export function substituteEnv(input: string): string {
 
 let currentGopath = '';
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
-	let currentFilePath: string;
-	if (vscode.window.activeTextEditor) {
-		currentFilePath = vscode.window.activeTextEditor.document.uri.fsPath;
-		if (!workspaceUri && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			workspaceUri = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
-		}
-	}
-	const config = vscode.workspace.getConfiguration('go', workspaceUri);
-	let currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
-
-	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
-	if (process.platform === 'win32') {
-		currentRoot = fixDriveCasingInWindows(currentRoot) || '';
-		currentFilePath = fixDriveCasingInWindows(currentFilePath) || '';
-	}
+	const activeEditorUri = vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri;
+	const currentFilePath = fixDriveCasingInWindows(activeEditorUri && activeEditorUri.fsPath);
+	const currentRoot = (workspaceUri && workspaceUri.fsPath) || getWorkspaceFolderPath(activeEditorUri);
+	const config = vscode.workspace.getConfiguration('go', workspaceUri || activeEditorUri);
 
 	// Infer the GOPATH from the current root or the path of the file opened in current editor
 	// Last resort: Check for the common case where GOPATH itself is opened directly in VS Code
@@ -520,11 +504,7 @@ export function resolvePath(inputPath: string, workspaceFolder?: string): string
 	if (!inputPath || !inputPath.trim()) return inputPath;
 
 	if (!workspaceFolder && vscode.workspace.workspaceFolders) {
-		if (vscode.workspace.workspaceFolders.length === 1) {
-			workspaceFolder = vscode.workspace.rootPath;
-		} else if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
-		}
+		workspaceFolder = getWorkspaceFolderPath(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
 	}
 
 	if (workspaceFolder) {
@@ -621,11 +601,11 @@ export interface ICheckResult {
  * @param printUnexpectedOutput If true, then output that doesnt match expected format is printed to the output channel
  */
 export function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput: boolean, token?: vscode.CancellationToken): Promise<ICheckResult[]> {
-	const goRuntimePath = getBinPath('go');
 	let cmd: string;
 	if (toolName) {
 		cmd = getBinPath(toolName);
 	} else {
+		const goRuntimePath = getBinPath('go');
 		if (!goRuntimePath) {
 			return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 		}
@@ -647,7 +627,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 				if (err && (<any>err).code === 'ENOENT') {
 					// Since the tool is run on save which can be frequent
 					// we avoid sending explicit notification if tool is missing
-					console.log(`Cannot find ${toolName ? toolName : goRuntimePath}`);
+					console.log(`Cannot find ${toolName ? toolName : 'go'}`);
 					return resolve([]);
 				}
 				if (err && stderr && !useStdErr) {
@@ -777,14 +757,14 @@ export function getWorkspaceFolderPath(fileUri?: vscode.Uri): string {
 	if (fileUri) {
 		const workspace = vscode.workspace.getWorkspaceFolder(fileUri);
 		if (workspace) {
-			return workspace.uri.fsPath;
+			return fixDriveCasingInWindows(workspace.uri.fsPath);
 		}
 	}
 
 	// fall back to the first workspace
 	const folders = vscode.workspace.workspaceFolders;
 	if (folders && folders.length) {
-		return folders[0].uri.fsPath;
+		return fixDriveCasingInWindows(folders[0].uri.fsPath);
 	}
 }
 
@@ -953,4 +933,22 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 			}
 		});
 	});
+}
+
+/**
+ * Returns a boolean whether the current position lies within a comment or not
+ * @param document
+ * @param position
+ */
+export function isPositionInComment(document: vscode.TextDocument, position: vscode.Position): boolean {
+	const lineText = document.lineAt(position.line).text;
+	const commentIndex = lineText.indexOf('//');
+
+	if (commentIndex >= 0 && position.character > commentIndex) {
+		const commentPosition = new vscode.Position(position.line, commentIndex);
+		const isCommentInString = isPositionInString(document, commentPosition);
+
+		return !isCommentInString;
+	}
+	return false;
 }

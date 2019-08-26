@@ -12,7 +12,7 @@ import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
-import { getToolFromToolPath } from './goPath';
+import { getToolFromToolPath, envPath } from './goPath';
 
 const updatesDeclinedTools: string[] = [];
 const installsDeclinedTools: string[] = [];
@@ -122,7 +122,7 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push(goConfig['lintTool']);
 	}
 
-	if (goConfig['useLanguageServer']) {
+	if (goConfig['useLanguageServer'] && (!goVersion || goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 		tools.push('gopls');
 	}
 
@@ -268,7 +268,7 @@ export function promptForUpdatingTool(tool: string) {
 export function installTools(missing: string[], goVersion: SemVersion): Promise<void> {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		vscode.window.showErrorMessage(`Failed to run "go get" to install the packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 		return;
 	}
 	if (!missing) {
@@ -420,8 +420,26 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	// If GOPATH is still not set, then use the one from `go env`
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
+		vscode.window.showErrorMessage(`Failed to run "go env" to find GOPATH as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return;
 	}
+	const goRuntimeBasePath = path.dirname(goRuntimePath);
+
+	// cgo and a few other Go tools expect Go binary to be in the path
+	let pathEnvVar: string;
+	if (process.env.hasOwnProperty('PATH')) {
+		pathEnvVar = 'PATH';
+	} else if (process.platform === 'win32' && process.env.hasOwnProperty('Path')) {
+		pathEnvVar = 'Path';
+	}
+	if (goRuntimeBasePath
+		&& pathEnvVar
+		&& process.env[pathEnvVar]
+		&& (<string>process.env[pathEnvVar]).split(path.delimiter).indexOf(goRuntimeBasePath) === -1
+	) {
+		process.env[pathEnvVar] += path.delimiter + goRuntimeBasePath;
+	}
+
 	return new Promise<void>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
 			if (err) {
@@ -460,7 +478,7 @@ export function offerToInstallTools() {
 		});
 
 		const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
-		if (usingSourceGraph) {
+		if (usingSourceGraph && (!goVersion || goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 			const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 			const disableLabel = 'Disable language server';
 			const installLabel = 'Install';
@@ -483,7 +501,6 @@ export function offerToInstallTools() {
 				});
 		}
 	});
-
 
 	function promptForInstall(missing: string[], goVersion: SemVersion) {
 		const installItem = {
