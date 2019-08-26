@@ -78,7 +78,6 @@ const importantTools = [
 	'dlv'
 ];
 
-
 function getTools(goVersion: SemVersion): string[] {
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 	const tools: string[] = [
