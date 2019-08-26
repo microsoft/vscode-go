@@ -122,7 +122,7 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push(goConfig['lintTool']);
 	}
 
-	if (goConfig['useLanguageServer'] && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
+	if (goConfig['useLanguageServer'] && (!goVersion || goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 		tools.push('gopls');
 	}
 
@@ -478,7 +478,7 @@ export function offerToInstallTools() {
 		});
 
 		const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
-		if (usingSourceGraph && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
+		if (usingSourceGraph && (!goVersion || goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 			const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 			const disableLabel = 'Disable language server';
 			const installLabel = 'Install';

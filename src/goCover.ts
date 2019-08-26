@@ -295,9 +295,9 @@ export function toggleCoverageCurrentPackage() {
 	const goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
 	const cwd = path.dirname(editor.document.uri.fsPath);
 
-	const args = getTestFlags(goConfig);
+	const testFlags = getTestFlags(goConfig);
 	const tmpCoverPath = getTempFilePath('go-code-cover');
-	args.push('-coverprofile=' + tmpCoverPath);
+	const args = ['-coverprofile=' + tmpCoverPath, ...testFlags];
 	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,

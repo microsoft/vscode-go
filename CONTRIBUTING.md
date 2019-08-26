@@ -67,6 +67,8 @@ Please include the following with each issue:
 
 * OS/Platform you are working on
 
+* Run the command `Preferences: Open Settings (JSON) to see the entire list of settings you have added/edited. Share any Go related settings from here.
+
 * Reproducible steps (1... 2... 3...) that cause the issue
 
 * What you expected to see, versus what you actually saw
@@ -78,6 +80,8 @@ Please include the following with each issue:
   * **Note:** Because the developers need to copy and paste the code snippet, including a code snippet as a media file (i.e. .gif) is not sufficient.
 
 * Errors from the Dev Tools Console (open from the menu: Help > Toggle Developer Tools -> Console)
+
+* If you have enabled the use of language server, then share any errors from the logs (open from the menu: View > Output -> select language server from the drop down on the to right corner of the output panel)
 
 ### Final Checklist
 
