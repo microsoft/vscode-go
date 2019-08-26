@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.11.2",
+  "version": "0.11.4",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -891,7 +891,7 @@
           ],
           "default": null,
           "description": "Specifies the GOROOT to use when no environment variable is set.",
-          "scope": "machine"
+          "scope": "resource"
         },
         "go.testOnSave": {
           "type": "boolean",
@@ -1536,6 +1536,11 @@
               "type": "string",
               "default": "gopkgs",
               "description": "Alternate tool to use instead of the gopkgs binary or alternate path to use for the gopkgs binary."
+            },
+            "gopls": {
+              "type": "string",
+              "default": "gopls",
+              "description": "Alternate tool to use instead of the gopls binary or alternate path to use for the gopls binary."
             },
             "go-outline": {
               "type": "string",
