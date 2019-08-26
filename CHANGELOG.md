@@ -1,3 +1,13 @@
+## 0.11.4 - 9th July, 2019
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Revert marking `go.goroot` setting to be of scope `machine` in order to support it to be configured at worksapce level. More in this is discussed at [2576](https://github.com/microsoft/vscode-go/issues/2576).
+    * Support custom arguments when running tests by passing them after `-args` in `go.testFlags` setting. Fixes [Bug 2457](https://github.com/microsoft/vscode-go/issues/2457) 
+
+* [James George (@jamesgeorge007)](https://github.com/jamesgeorge007)
+    * Update README to contain Table of Contents. [PR 2634](https://github.com/Microsoft/vscode-go/pull/2634)
+
+
 ## 0.11.2 - 5th July, 2019
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)

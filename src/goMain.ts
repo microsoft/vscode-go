@@ -31,7 +31,7 @@ import { addImport, addImportToWorkspace } from './goImport';
 import { installAllTools, getLanguageServerToolPath } from './goInstallTools';
 import {
 	isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath,
-	getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars, cleanupTempDir
+	getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars, cleanupTempDir, getWorkspaceFolderPath
 } from './util';
 import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
@@ -322,6 +322,11 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	initCoverageDecorators(ctx);
 
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.open.modulewiki', async () => {
+		vscode.commands.executeCommand('vscode.open', vscode.Uri.parse('https://github.com/microsoft/vscode-go/wiki/Go-modules-support-in-Visual-Studio-Code'));
+	}));
+	showHideStatus(vscode.window.activeTextEditor);
+
 	const testCodeLensProvider = new GoRunTestCodeLensProvider();
 	const referencesCodeLensProvider = new GoReferencesCodeLensProvider();
 
@@ -336,22 +341,16 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(lintDiagnosticCollection);
 	vetDiagnosticCollection = vscode.languages.createDiagnosticCollection('go-vet');
 	ctx.subscriptions.push(vetDiagnosticCollection);
-	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
-	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
-	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
-	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
-	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
-	startBuildOnSaveWatcher(ctx.subscriptions);
+
+	addOnChangeTextDocumentListeners(ctx);
+	addOnChangeActiveTextEditorListeners(ctx);
+	addOnSaveTextDocumentListeners(ctx);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
 		const gopath = getCurrentGoPath();
 		let msg = `${gopath} is the current GOPATH.`;
 		const wasInfered = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['inferGopath'];
-		let root = vscode.workspace.rootPath;
-		if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			root = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
-			root = fixDriveCasingInWindows(root);
-		}
+		const root = getWorkspaceFolderPath(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
 
 		// not only if it was configured, but if it was successful.
 		if (wasInfered && root && root.indexOf(gopath) === 0) {
@@ -624,7 +623,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 		});
 }
 
-function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
+function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidSaveTextDocument(document => {
 		if (document.languageId !== 'go') {
 			return;
@@ -632,7 +631,19 @@ function startBuildOnSaveWatcher(subscriptions: vscode.Disposable[]) {
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
 			runBuilds(document, vscode.workspace.getConfiguration('go', document.uri));
 		}
-	}, null, subscriptions);
+
+	}, null, ctx.subscriptions);
+}
+
+function addOnChangeTextDocumentListeners(ctx: vscode.ExtensionContext) {
+	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
+}
+
+function addOnChangeActiveTextEditorListeners(ctx: vscode.ExtensionContext) {
+	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
+	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
 }
 
 function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
