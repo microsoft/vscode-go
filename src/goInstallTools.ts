@@ -13,7 +13,7 @@ import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import {
 	getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath,
-	resolvePath, isBelow, rmdirRecursive
+	resolvePath, isBelow, rmdirRecursive, getTempFilePath
 } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath, envPath } from './goPath';
@@ -77,6 +77,7 @@ const importantTools = [
 	'revive',
 	'dlv'
 ];
+
 
 function getTools(goVersion: SemVersion): string[] {
 	const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
@@ -332,6 +333,12 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 
 	outputChannel.appendLine(''); // Blank line for spacing.
 
+	// Install tools in a temporary directory, to avoid altering go.mod files.
+	const toolsTmpDir = getTempFilePath('go-tools');
+	if (!fs.existsSync(toolsTmpDir)) {
+		fs.mkdirSync(toolsTmpDir);
+	}
+
 	return missing.reduce((res: Promise<string[]>, tool: string) => {
 		// Disable modules for staticcheck and gotests,
 		// which are installed with the "..." wildcard.
@@ -341,6 +348,7 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 		} else {
 			envForTools['GO111MODULE'] = 'on';
 		}
+
 		return res.then(sofar => new Promise<string[]>((resolve) => {
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
@@ -387,37 +395,29 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 					resolve([...sofar, null]);
 					return;
 				}
-				// Install tools in a temporary directory, to avoid altering go.mod files.
-				fs.mkdtemp(path.join(os.tmpdir(), 'go-tools-'), (err, toolsTmpDir) => {
-					if (err) {
-						resolve([...sofar, null]);
-						return;
+				const args = ['get', '-v'];
+				// Only get tools at master if we are not using modules.
+				if (modulesOff) {
+					args.push('-u');
+				}
+				if (tool.endsWith('-gomod')) {
+					args.push('-d');
+				}
+				const opts = {
+					env: envForTools,
+					cwd: toolsTmpDir,
+				};
+				args.push(getToolImportPath(tool, goVersion));
+				cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
+					if (stderr.indexOf('unexpected directory layout:') > -1) {
+						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
+						cp.execFile(goRuntimePath, args, opts, callback);
+					} else if (!err && tool.endsWith('-gomod')) {
+						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
+						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], opts, callback);
+					} else {
+						callback(err, stdout, stderr);
 					}
-					const args = ['get', '-v'];
-					// Only get tools at master if we are not using modules.
-					if (modulesOff) {
-						args.push('-u');
-					}
-					if (tool.endsWith('-gomod')) {
-						args.push('-d');
-					}
-					const opts = {
-						env: envForTools,
-						cwd: toolsTmpDir,
-					};
-					args.push(getToolImportPath(tool, goVersion));
-					cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
-						if (stderr.indexOf('unexpected directory layout:') > -1) {
-							outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-							cp.execFile(goRuntimePath, args, opts, callback);
-						} else if (!err && tool.endsWith('-gomod')) {
-							const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
-							cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], opts, callback);
-						} else {
-							callback(err, stdout, stderr);
-						}
-					});
-					rmdirRecursive(toolsTmpDir);
 				});
 			});
 		}));
