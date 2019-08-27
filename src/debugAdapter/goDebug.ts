@@ -556,6 +556,18 @@ class Delve {
 	}
 
 	/**
+	 * Returns the current state of the delve debugger.
+	 * This method does not block delve and should return immediately.
+	 */
+	public async getDebugState(): Promise<DebuggerState> {
+		// If a program is launched with --continue, the program is running
+		// before we can run attach. So we would need to check the state.
+		// We use NonBlocking so the call would return immediately.
+		const callResult = await this.callPromise<DebuggerState | CommandOut>('State', [{NonBlocking: true}]);
+		return this.isApiV1 ? <DebuggerState>callResult : (<CommandOut>callResult).State;
+	}
+
+	/**
 	 * Closing a debugging session follows different approaches for launch vs attach debugging.
 	 *
 	 * For launch debugging, since the extension starts the delve process, the extension should close it as well.
@@ -806,7 +818,7 @@ class GoDebugSession extends LoggingDebugSession {
 		});
 	}
 
-	protected configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): void {
+	protected async configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): Promise<void> {
 		log('ConfigurationDoneRequest');
 
 		if (this.stopOnEntry) {
@@ -814,7 +826,10 @@ class GoDebugSession extends LoggingDebugSession {
 			log('StoppedEvent("breakpoint")');
 			this.sendResponse(response);
 		} else {
-			this.continueRequest(<DebugProtocol.ContinueResponse>response);
+			this.debugState = await this.delve.getDebugState();
+			if (!this.debugState.Running) {
+				this.continueRequest(<DebugProtocol.ContinueResponse>response);
+			}
 		}
 	}
 
@@ -934,17 +949,15 @@ class GoDebugSession extends LoggingDebugSession {
 			// If a program is launched with --continue, the program is running
 			// before we can run attach. So we would need to check the state.
 			// We use NonBlocking so the call would return immediately.
-			const callResult = await this.delve.callPromise<DebuggerState | CommandOut>('State', [{NonBlocking: true}]);
-			const state = this.delve.isApiV1 ? <DebuggerState>callResult : (<CommandOut>callResult).State;
-			this.debugState = state;
+			this.debugState = await this.delve.getDebugState();
 		} catch (error) {
 			logError(`Failed to get state ${String(error)}`);
 		}
 
 		if (!this.debugState.Running && !this.continueRequestRunning) {
-			this.setBreakPoints(response, args);
+			await this.setBreakPoints(response, args);
 		} else {
-			this.skipStopEventOnce = true;
+			this.skipStopEventOnce = this.continueRequestRunning;
 			this.delve.callPromise('Command', [{ name: 'halt' }]).then(() => {
 				return this.setBreakPoints(response, args).then(() => {
 					return this.continue(true).then(null, err => {
