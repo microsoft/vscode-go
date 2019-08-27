@@ -81,6 +81,10 @@ let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
+export function isBelow(goVersion: SemVersion, major: number, minor: number): boolean {
+	return goVersion && goVersion.major <= major && goVersion.minor < minor;
+}
+
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
 	const offset = document.offsetAt(position);
 	const text = document.getText();
@@ -832,7 +836,7 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 	};
 }
 
-function rmdirRecursive(dir: string) {
+export function rmdirRecursive(dir: string) {
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(file => {
 			const relPath = path.join(dir, file);
