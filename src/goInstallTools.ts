@@ -97,8 +97,10 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 			switch (selected) {
 				case 'Open User Settings':
 					vscode.commands.executeCommand('workbench.action.openGlobalSettings');
+					break;
 				case 'Open Workspace Settings':
 					vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
+					break;
 			}
 		});
 		return;
@@ -188,7 +190,7 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 				if (modulesOff) {
 					args.push('-u');
 				}
-				// Tools with a "mod" suffix should not be installed, 
+				// Tools with a "mod" suffix should not be installed,
 				// instead we run "go build -o" to rename them.
 				if (hasModSuffix(tool)) {
 					args.push('-d');
@@ -274,12 +276,15 @@ export function promptForMissingTool(toolName: string) {
 						} else {
 							installTools([tool], goVersion);
 						}
+						break;
 					case 'Install All':
 						installTools(missing, goVersion);
 						hideGoStatus();
+						break;
 					default:
 						// The user has declined to install this tool.
 						declinedInstalls.push(tool);
+						break;
 				}
 			});
 		});
@@ -299,8 +304,10 @@ export function promptForUpdatingTool(toolName: string) {
 			switch (selected) {
 				case 'Update':
 					installTools([tool], goVersion);
+					break;
 				default:
 					declinedUpdates.push(tool);
+					break;
 			}
 		});
 	});

@@ -28,7 +28,7 @@ export function getImportPath(tool: Tool, goVersion: SemVersion): string {
 export function isWildcard(tool: Tool, goVersion: SemVersion): boolean {
 	const importPath = getImportPath(tool, goVersion);
 	return importPath.endsWith('...');
-} 
+}
 
 export function containsTool(tools: Tool[], tool: Tool): boolean {
 	return tools.indexOf(tool) > -1;
@@ -45,7 +45,7 @@ export function getTool(name: string): Tool {
 // hasModSuffix returns true if the given tool has a different, module-specific
 // name to avoid conflicts.
 export function hasModSuffix(tool: Tool): boolean {
-	return tool.name.endsWith("-gomod");
+	return tool.name.endsWith('-gomod');
 }
 
 export function isGocode(tool: Tool): boolean {
@@ -87,8 +87,10 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 	switch (goConfig['docsTool']) {
 		case 'godoc':
 			tools.push('godef');
+			break;
 		default:
 			tools.push(goConfig['docsTool']);
+			break;
 	}
 
 	// Install the format tool that was chosen by the user.
@@ -106,7 +108,14 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 		tools.push('gotype-live');
 	}
 
-	return tools.map(name => allToolsInformation[name]);
+	// TODO: We need to propagate errors here.
+	return tools.map(function(value: string): Tool {
+		const tool = allToolsInformation[value];
+		if (!tool) {
+			console.log(`no tool for ${value}`);
+		}
+		return tool;
+	});
 }
 
 const allToolsInformation: { [key: string]: Tool } = {
