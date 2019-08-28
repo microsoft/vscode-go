@@ -42,7 +42,7 @@
     "vscode-debugadapter": "^1.32.1",
     "vscode-debugprotocol": "^1.32.0",
     "vscode-extension-telemetry": "^0.1.0",
-    "vscode-languageclient": "~4.4.0"
+    "vscode-languageclient": "~5.2.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",
