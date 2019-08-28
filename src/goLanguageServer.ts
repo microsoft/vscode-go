@@ -98,21 +98,7 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					if (!config.features.completion) {
 						return [];
 					}
-					// TODO(rstambler): gopls will support autocompletion of unimported package in its next release,
-					// so disable this then.
-					const promiseFromLanguageServer = Promise.resolve(next(document, position, context, token));
-					const promiseWithoutGoCode = getCompletionsWithoutGoCode(document, position);
-					const [resultFromLanguageServer, resultWithoutGoCode] = await Promise.all([promiseFromLanguageServer, promiseWithoutGoCode]);
-					if (!resultWithoutGoCode || !resultWithoutGoCode.length) {
-						return resultFromLanguageServer;
-					}
-					const completionItemsFromLanguageServer = Array.isArray(resultFromLanguageServer) ? resultFromLanguageServer : resultFromLanguageServer.items;
-					resultWithoutGoCode.forEach(x => {
-						if (x.kind !== vscode.CompletionItemKind.Module || !completionItemsFromLanguageServer.some(y => y.label === x.label)) {
-							completionItemsFromLanguageServer.push(x);
-						}
-					});
-					return resultFromLanguageServer;
+					return next(document, position, context, token);
 				},
 				provideRenameEdits: (document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken, next: ProvideRenameEditsSignature) => {
 					if (!config.features.rename) {
