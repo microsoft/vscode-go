@@ -31,7 +31,7 @@ import { addImport, addImportToWorkspace } from './goImport';
 import { installAllTools, getLanguageServerToolPath } from './goInstallTools';
 import {
 	isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath,
-	getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars, cleanupTempDir
+	getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, getToolsEnvVars, cleanupTempDir, getWorkspaceFolderPath
 } from './util';
 import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
@@ -350,11 +350,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		const gopath = getCurrentGoPath();
 		let msg = `${gopath} is the current GOPATH.`;
 		const wasInfered = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['inferGopath'];
-		let root = vscode.workspace.rootPath;
-		if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			root = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
-			root = fixDriveCasingInWindows(root);
-		}
+		const root = getWorkspaceFolderPath(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
 
 		// not only if it was configured, but if it was successful.
 		if (wasInfered && root && root.indexOf(gopath) === 0) {

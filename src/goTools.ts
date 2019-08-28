@@ -6,7 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { SemVersion, greaterThan, getConfig, lessThan } from './util';
+import { SemVersion, isAbove, getConfig, isBelow } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 export interface Tool {
@@ -19,11 +19,17 @@ export interface Tool {
 // getImportPath returns the import path for a given tool, at a given Go version.
 export function getImportPath(tool: Tool, goVersion: SemVersion): string {
 	// For older versions of Go, install the older version of gocode.
-	if (tool.name === 'gocode' && lessThan(goVersion, 10)) {
+	// TODO: We should either not support this or install nsf/gocode as "gocode-old" or something.
+	if (tool.name === 'gocode' && isBelow(goVersion, 1, 10)) {
 		return 'github.com/nsf/gocode';
 	}
 	return tool.importPath;
 }
+
+export function isWildcard(tool: Tool, goVersion: SemVersion): boolean {
+	const importPath = getImportPath(tool, goVersion);
+	return importPath.endsWith('...');
+} 
 
 export function containsTool(tools: Tool[], tool: Tool): boolean {
 	return tools.indexOf(tool) > -1
@@ -37,8 +43,9 @@ export function getTool(name: string): Tool {
 	return allToolsInformation[name];
 }
 
-// modulesOnly returns true if the given tool is specific to modules users.
-export function modulesOnly(tool: Tool): boolean {
+// hasModSuffix returns true if the given tool has a different, module-specific
+// name to avoid conflicts.
+export function hasModSuffix(tool: Tool): boolean {
 	return tool.name.endsWith("-gomod");
 }
 
@@ -92,7 +99,7 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 	tools.push(goConfig['lintTool']);
 
 	// Install the language server for Go versions >= 1.11.
-	if (goConfig['useLanguageServer'] && greaterThan(goVersion, 10)) {
+	if (goConfig['useLanguageServer'] && isAbove(goVersion, 1, 10)) {
 		tools.push('gopls');
 	}
 
