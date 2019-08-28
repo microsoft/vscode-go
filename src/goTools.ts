@@ -5,7 +5,6 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import { SemVersion, isAbove, getConfig, isBelow } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
@@ -32,7 +31,7 @@ export function isWildcard(tool: Tool, goVersion: SemVersion): boolean {
 } 
 
 export function containsTool(tools: Tool[], tool: Tool): boolean {
-	return tools.indexOf(tool) > -1
+	return tools.indexOf(tool) > -1;
 }
 
 export function containsString(tools: Tool[], toolName: string): boolean {
@@ -82,7 +81,7 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 		tools.push('gocode-gomod');
 	}
 
-	let goConfig = getConfig('go');
+	const goConfig = getConfig('go');
 
 	// Install the doc/def tool that was chosen by the user.
 	switch (goConfig['docsTool']) {
@@ -127,144 +126,144 @@ const allToolsInformation: { [key: string]: Tool } = {
 		name: 'gopkgs',
 		importPath: 'github.com/uudashr/gopkgs/cmd/gopkgs',
 		isImportant: true,
-		description: "Auto-completion of unimported packages & Add Import feature",
+		description: 'Auto-completion of unimported packages & Add Import feature',
 	},
 	'go-outline': {
 		name: 'go-outline',
 		importPath: 'github.com/ramya-rao-a/go-outline',
 		isImportant: true,
-		description: "Go to symbol in file",
+		description: 'Go to symbol in file',
 	},
 	'go-symbols': {
 		name: 'go-symbols',
 		importPath: 'github.com/acroca/go-symbols',
 		isImportant: true,
-		description: "Go to symbol in workspace",
+		description: 'Go to symbol in workspace',
 	},
 	'guru': {
 		name: 'guru',
 		importPath: 'golang.org/x/tools/cmd/guru',
 		isImportant: true,
-		description: "Find all references and Go to implementation of symbols",
+		description: 'Find all references and Go to implementation of symbols',
 	},
 	'gorename': {
 		name: 'gorename',
 		importPath: 'golang.org/x/tools/cmd/gorename',
 		isImportant: true,
-		description: "Rename symbols",
+		description: 'Rename symbols',
 	},
 	'gomodifytags': {
 		name: 'gomodifytags',
 		importPath: 'github.com/fatih/gomodifytags',
 		isImportant: false,
-		description: "Modify tags on structs",
+		description: 'Modify tags on structs',
 	},
 	'goplay': {
 		name: 'goplay',
 		importPath: 'github.com/haya14busa/goplay/cmd/goplay',
 		isImportant: false,
-		description: "The Go playground",
+		description: 'The Go playground',
 	},
 	'impl': {
 		name: 'impl',
 		importPath: 'github.com/josharian/impl',
 		isImportant: false,
-		description: "Stubs for interfaces",
+		description: 'Stubs for interfaces',
 	},
 	'gotype-live': {
 		name: 'gotype-live',
 		importPath: 'github.com/tylerb/gotype-live',
 		isImportant: false,
-		description: "Show errors as you type",
+		description: 'Show errors as you type',
 	},
 	'godef': {
 		name: 'godef',
 		importPath: 'github.com/rogpeppe/godef',
 		isImportant: true,
-		description: "Go to definition",
+		description: 'Go to definition',
 	},
 	'gogetdoc': {
 		name: 'gogetdoc',
 		importPath: 'github.com/zmb3/gogetdoc',
 		isImportant: true,
-		description: "Go to definition & text shown on hover",
+		description: 'Go to definition & text shown on hover',
 	},
 	'goimports': {
 		name: 'goimports',
 		importPath: 'golang.org/x/tools/cmd/goimports',
 		isImportant: true,
-		description: "Formatter",
+		description: 'Formatter',
 	},
 	'goreturns': {
 		name: 'goreturns',
 		importPath: 'github.com/sqs/goreturns',
 		isImportant: true,
-		description: "Formatter",
+		description: 'Formatter',
 	},
 	'goformat': {
 		name: 'goformat',
 		importPath: 'winterdrache.de/goformat/goformat',
 		isImportant: false,
-		description: "Formatter",
+		description: 'Formatter',
 	},
 	'golint': {
 		name: 'golint',
 		importPath: 'golang.org/x/lint/golint',
 		isImportant: true,
-		description: "Linter",
+		description: 'Linter',
 	},
 	'gotests': {
 		name: 'gotests',
 		importPath: 'github.com/cweill/gotests/...',
 		isImportant: false,
-		description: "Generate unit tests",
+		description: 'Generate unit tests',
 	},
 	'staticcheck': {
 		name: 'staticcheck',
 		importPath: 'honnef.co/go/tools/...',
 		isImportant: true,
-		description: "Linter",
+		description: 'Linter',
 	},
 	'golangci-lint': {
 		name: 'golangci-lint',
 		importPath: 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 		isImportant: true,
-		description: "Linter",
+		description: 'Linter',
 	},
 	'revive': {
 		name: 'revive',
 		importPath: 'github.com/mgechev/revive',
 		isImportant: true,
-		description: "Linter",
+		description: 'Linter',
 	},
 	'go-langserver': {
 		name: 'go-langserver',
 		importPath: 'github.com/sourcegraph/go-langserver',
 		isImportant: false,
-		description: "Language Server from Sourcegraph",
+		description: 'Language Server from Sourcegraph',
 	},
 	'gopls': {
 		name: 'gopls',
 		importPath: 'golang.org/x/tools/cmd/gopls',
 		isImportant: false,
-		description: "Language Server from Google",
+		description: 'Language Server from Google',
 	},
 	'dlv': {
 		name: 'dlv',
 		importPath: 'github.com/go-delve/delve/cmd/dlv',
 		isImportant: true,
-		description: "Debugging",
+		description: 'Debugging',
 	},
 	'fillstruct': {
 		name: 'fillstruct',
 		importPath: 'github.com/davidrjenni/reftools/cmd/fillstruct',
 		isImportant: false,
-		description: "Fill structs with defaults",
+		description: 'Fill structs with defaults',
 	},
 	'godoctor': {
 		name: 'godoctor',
 		importPath: 'github.com/godoctor/godoctor',
 		isImportant: false,
-		description: "Extract to functions and variables",
+		description: 'Extract to functions and variables',
 	},
 };
