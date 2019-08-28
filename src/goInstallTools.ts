@@ -6,11 +6,15 @@
 'use strict';
 
 import vscode = require('vscode');
+import os = require('os');
 import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
+import {
+	getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath,
+	resolvePath, isBelow, rmdirRecursive, getTempFilePath
+} from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath, envPath } from './goPath';
 
@@ -40,7 +44,7 @@ const allToolsWithImportPaths: { [key: string]: string } = {
 	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 	'revive': 'github.com/mgechev/revive',
 	'go-langserver': 'github.com/sourcegraph/go-langserver',
-	'gopls': 'golang.org/x/tools/cmd/gopls',
+	'gopls': 'golang.org/x/tools/gopls',
 	'dlv': 'github.com/go-delve/delve/cmd/dlv',
 	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct',
 	'godoctor': 'github.com/godoctor/godoctor',
@@ -122,7 +126,7 @@ function getTools(goVersion: SemVersion): string[] {
 		tools.push(goConfig['lintTool']);
 	}
 
-	if (goConfig['useLanguageServer'] && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
+	if (goConfig['useLanguageServer'] && (!goVersion || goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 		tools.push('gopls');
 	}
 
@@ -311,7 +315,13 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 		return;
 	}
 
-	envForTools['GO111MODULE'] = 'off';
+	// If the user is on Go >= 1.11, tools should be installed with modules enabled.
+	// This ensures that users get the latest tagged version, rather than master,
+	// which may be unstable.
+	let modulesOff = false;
+	if (isBelow(goVersion, 1, 11)) {
+		modulesOff = true;
+	}
 
 	outputChannel.show();
 	outputChannel.clear();
@@ -322,8 +332,23 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 
 	outputChannel.appendLine(''); // Blank line for spacing.
 
+	// Install tools in a temporary directory, to avoid altering go.mod files.
+	const toolsTmpDir = getTempFilePath('go-tools');
+	if (!fs.existsSync(toolsTmpDir)) {
+		fs.mkdirSync(toolsTmpDir);
+	}
+
 	return missing.reduce((res: Promise<string[]>, tool: string) => {
-		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+		// Disable modules for staticcheck and gotests,
+		// which are installed with the "..." wildcard.
+		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
+		if (modulesOff || tool === 'staticcheck' || tool === 'gotests') {
+			envForTools['GO111MODULE'] = 'off';
+		} else {
+			envForTools['GO111MODULE'] = 'on';
+		}
+
+		return res.then(sofar => new Promise<string[]>((resolve) => {
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + getToolImportPath(tool, goVersion) + ' FAILED');
@@ -369,18 +394,26 @@ export function installTools(missing: string[], goVersion: SemVersion): Promise<
 					resolve([...sofar, null]);
 					return;
 				}
-				const args = ['get', '-u', '-v'];
+				const args = ['get', '-v'];
+				// Only get tools at master if we are not using modules.
+				if (modulesOff) {
+					args.push('-u');
+				}
 				if (tool.endsWith('-gomod')) {
 					args.push('-d');
 				}
+				const opts = {
+					env: envForTools,
+					cwd: toolsTmpDir,
+				};
 				args.push(getToolImportPath(tool, goVersion));
-				cp.execFile(goRuntimePath, args, { env: envForTools }, (err, stdout, stderr) => {
+				cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
 						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
+						cp.execFile(goRuntimePath, args, opts, callback);
 					} else if (!err && tool.endsWith('-gomod')) {
 						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
-						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], { env: envForTools }, callback);
+						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], opts, callback);
 					} else {
 						callback(err, stdout, stderr);
 					}
@@ -478,7 +511,7 @@ export function offerToInstallTools() {
 		});
 
 		const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
-		if (usingSourceGraph && (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
+		if (usingSourceGraph && (!goVersion || goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
 			const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 			const disableLabel = 'Disable language server';
 			const installLabel = 'Install';

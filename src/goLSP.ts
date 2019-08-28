@@ -6,29 +6,23 @@
 'use strict';
 
 import vscode = require('vscode');
-import { GO_MODE } from './goMode';
-import {
-	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
-	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
-	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature,
-	HandleDiagnosticsSignature, ProvideDocumentLinksSignature,
-} from 'vscode-languageclient';
+import { getToolFromToolPath } from './goPath';
+import { LanguageClient, RevealOutputChannelOn, ProvideDocumentFormattingEditsSignature, ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature, ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature, HandleDiagnosticsSignature, ProvideDocumentLinksSignature } from 'vscode-languageclient';
+import { getToolsEnvVars } from './util';
+import { getCompletionsWithoutGoCode, GoCompletionItemProvider } from './goSuggest';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
-import { getToolFromToolPath } from './goPath';
-import { getToolsEnvVars } from './util'
-import { getCompletionsWithoutGoCode } from './goSuggest';
-import { GoCompletionItemProvider } from './goSuggest';
+import { GO_MODE } from './goMode';
+import { GoDocumentFormattingEditProvider } from './goFormat';
+import { GoRenameProvider } from './goRename';
+import { GoTypeDefinitionProvider } from './goTypeDefinition';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoReferenceProvider } from './goReferences';
-import { GoImplementationProvider } from './goImplementations';
-import { GoTypeDefinitionProvider } from './goTypeDefinition';
-import { GoDocumentFormattingEditProvider } from './goFormat';
-import { GoRenameProvider } from './goRename';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
+import { GoImplementationProvider } from './goImplementations';
 import { parseLiveFile } from './goLiveErrors';
 
 export function registerLanguageServer(ctx: vscode.ExtensionContext, toolPath: string) {
@@ -77,7 +71,7 @@ export function registerLanguageServer(ctx: vscode.ExtensionContext, toolPath: s
 			},
 			revealOutputChannelOn: RevealOutputChannelOn.Never,
 			middleware: {
-				provideDocumentFormattingEdits: (document: vscode.TextDocument, options: FormattingOptions, token: vscode.CancellationToken, next: ProvideDocumentFormattingEditsSignature) => {
+				provideDocumentFormattingEdits: (document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken, next: ProvideDocumentFormattingEditsSignature) => {
 					if (!enabled['format']) {
 						return [];
 					}
