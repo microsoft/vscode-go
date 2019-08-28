@@ -17,6 +17,7 @@ import {
 } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getToolFromToolPath, envPath } from './goPath';
+import { getLanguageServerToolPath } from './goLanguageServer';
 
 const updatesDeclinedTools: string[] = [];
 const installsDeclinedTools: string[] = [];
