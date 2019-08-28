@@ -81,17 +81,14 @@ let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
-// Add a major version when Go 2 is released.
 export function isBelow(goVersion: SemVersion, major: number, minor: number): boolean {
 	return goVersion && goVersion.major <= 1 && goVersion.minor < minor;
 }
 
-// Add a major version when Go 2 is released.
 export function isAbove(goVersion: SemVersion, major: number, minor: number): boolean {
 	return goVersion && goVersion.major >= major && goVersion.minor > minor;
 }
 
-// Add a major version when Go 2 is released.
 export function isEqualTo(goVersion: SemVersion, major: number, minor: number): boolean {
 	return goVersion && goVersion.major === major && goVersion.minor === minor;
 }
