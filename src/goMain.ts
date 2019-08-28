@@ -6,38 +6,34 @@
 'use strict';
 
 import vscode = require('vscode');
-import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
-import { GoCodeActionProvider } from './goCodeAction';
-import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
-import { updateGoPathGoRootFromConfig, offerToInstallTools, promptForMissingTool, installTools } from './goInstallTools';
-import { GO_MODE } from './goMode';
-import { showHideStatus } from './goStatus';
-import { initCoverageDecorators, toggleCoverageCurrentPackage, applyCodeCoverage, removeCodeCoverageOnFileChange, updateCodeCoverageDecorators } from './goCover';
-import { testAtCursor, testCurrentPackage, testCurrentFile, testPrevious, testWorkspace } from './goTest';
-import { showTestOutput, cancelRunningTests } from './testUtils';
 import * as goGenerateTests from './goGenerateTests';
-import { addImport, addImportToWorkspace } from './goImport';
-import { installAllTools } from './goInstallTools';
-import {
-	isGoPathSet, getBinPath, sendTelemetryEvent, getExtensionCommands, getGoVersion, getCurrentGoPath,
-	getToolsGopath, handleDiagnosticErrors, disposeTelemetryReporter, cleanupTempDir
-} from './util';
-import { clearCacheForTools, fixDriveCasingInWindows } from './goPath';
+import { setGlobalState } from './stateUtils';
+import { updateGoPathGoRootFromConfig, installAllTools, offerToInstallTools, installTools, promptForMissingTool } from './goInstallTools';
+import { getToolsGopath, getCurrentGoPath, getGoVersion, isGoPathSet, getExtensionCommands, disposeTelemetryReporter, cleanupTempDir, handleDiagnosticErrors, sendTelemetryEvent, getBinPath } from './util';
+import { registerLanguageFeatures } from './goLanguageServer';
+import { initCoverageDecorators, toggleCoverageCurrentPackage, updateCodeCoverageDecorators, removeCodeCoverageOnFileChange, applyCodeCoverage } from './goCover';
+import { showHideStatus } from './goStatus';
+import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
+import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
+import { GO_MODE } from './goMode';
+import { GoCodeActionProvider } from './goCodeAction';
+import { GoDebugConfigurationProvider } from './goDebugConfiguration';
+import { fixDriveCasingInWindows, clearCacheForTools } from './goPath';
 import { addTags, removeTags } from './goModifytags';
 import { runFillStruct } from './goFillStruct';
-import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { implCursor } from './goImpl';
 import { extractFunction, extractVariable } from './goDoctor';
+import { testAtCursor, testCurrentPackage, testCurrentFile, testWorkspace, testPrevious } from './goTest';
+import { showTestOutput, cancelRunningTests } from './testUtils';
+import { addImport, addImportToWorkspace } from './goImport';
 import { browsePackages } from './goBrowsePackage';
 import { goGetPackage } from './goGetPackage';
-import { GoDebugConfigurationProvider } from './goDebugConfiguration';
 import { playgroundCommand } from './goPlayground';
 import { lintCode } from './goLint';
 import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
-import { setGlobalState } from './stateUtils';
-import { registerLanguageFeatures } from './goLanguageServer';
+import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
