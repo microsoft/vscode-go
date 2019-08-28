@@ -800,7 +800,7 @@ class GoDebugSession extends LoggingDebugSession {
 		this.initLaunchAttachRequest(response, args);
 	}
 
-	protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): void {
+	protected async disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments): Promise<void> {
 		log('DisconnectRequest');
 		// For remote process, we have to issue a continue request
 		// before disconnecting.
@@ -809,7 +809,10 @@ class GoDebugSession extends LoggingDebugSession {
 			// because we are not doing anything with the result.
 			// Also, DisconnectRequest will return before
 			// we get the result back from delve.
-			this.continue();
+			this.debugState = await this.delve.getDebugState();
+			if (!this.debugState.Running) {
+				this.continue();
+			}
 		}
 		this.delve.close().then(() => {
 			log('DisconnectRequest to parent');
