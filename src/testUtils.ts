@@ -6,12 +6,14 @@ import cp = require('child_process');
 import path = require('path');
 import util = require('util');
 import vscode = require('vscode');
+import semver = require('semver');
 
 import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile, envPath } from './goPath';
 import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
+
 
 const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
@@ -181,7 +183,7 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
  * @param goConfig Configuration for the Go extension.
  */
 export function goTest(testconfig: TestConfig): Thenable<boolean> {
-	return new Promise<boolean>((resolve, reject) => {
+	return new Promise<boolean>(async (resolve, reject) => {
 
 		// We do not want to clear it if tests are already running, as that could
 		// lose valuable output.
@@ -223,15 +225,14 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				targets = ['./...'];
 				pkgMapPromise = getNonVendorPackages(testconfig.dir); // We need the mapping to get absolute paths for the files in the test output
 			} else {
-				pkgMapPromise = getGoVersion().then(ver => {
-					if (!ver || ver.major > 1 || (ver.major === 1 && ver.minor >= 9)) {
-						targets = ['./...'];
-						return null; // We dont need mapping, as we can derive the absolute paths from package path
-					}
-					return getNonVendorPackages(testconfig.dir).then(pkgMap => {
-						targets = Array.from(pkgMap.keys());
-						return pkgMap; // We need the individual package paths to pass to `go test`
-					});
+				const goVersion = await getGoVersion();
+				if (semver.gte(goVersion, "1.9")) {
+					targets = ['./...'];
+					return null; // We dont need mapping, as we can derive the absolute paths from package path
+				}
+				return getNonVendorPackages(testconfig.dir).then(pkgMap => {
+					targets = Array.from(pkgMap.keys());
+					return pkgMap; // We need the individual package paths to pass to `go test`
 				});
 			}
 		}

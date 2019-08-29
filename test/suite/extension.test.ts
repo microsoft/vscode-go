@@ -14,21 +14,9 @@ import { GoDefinitionProvider } from '../../src/goDeclaration';
 import { getWorkspaceSymbols } from '../../src/goSymbol';
 import { check } from '../../src/goCheck';
 import cp = require('child_process');
-<<<<<<< HEAD:test/go.test.ts
-import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../src/diffUtils';
-import { testCurrentFile } from '../src/goTest';
-import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult } from '../src/util';
-import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../src/goOutline';
-import { listPackages, getTextEditForAddImport } from '../src/goImport';
-import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../src/goGenerateTests';
-import { getAllPackages } from '../src/goPackages';
-import { getImportPath } from '../src/util';
-import { goPlay } from '../src/goPlayground';
-import { runFillStruct } from '../src/goFillStruct';
-=======
 import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../../src/diffUtils';
 import { testCurrentFile } from '../../src/goTest';
-import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult } from '../../src/util';
+import { getBinPath, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult } from '../../src/util';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../../src/goGenerateTests';
@@ -36,7 +24,6 @@ import { getAllPackages } from '../../src/goPackages';
 import { getImportPath } from '../../src/util';
 import { goPlay } from '../../src/goPlayground';
 import { runFillStruct } from '../../src/goFillStruct';
->>>>>>> updates:test/suite/extension.test.ts
 
 suite('Go Extension Tests', () => {
 	const gopath = process.env['GOPATH'];
@@ -269,7 +256,7 @@ It returns the number of bytes written and any write error encountered.
 		testHoverProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
-	test('Error checking', (done) => {
+	test('Error checking', async () => {
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'package' },
 			'vetFlags': { value: ['-all'] },
@@ -282,134 +269,121 @@ It returns the number of bytes written and any write error encountered.
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
-		getGoVersion().then(async version => {
-			const diagnostics = await check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config);
-			const sortedDiagnostics = ([] as ICheckResult[])
-				.concat.apply([], diagnostics.map(x => x.errors))
-				.sort((a: any, b: any) => a.line - b.line);
-			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
-			const matchCount = expected.filter(expectedItem => {
-				return sortedDiagnostics.some((diag: any) => {
-					return expectedItem.line === diag.line
-						&& expectedItem.severity === diag.severity
-						&& expectedItem.msg === diag.msg;
-				});
+		const diagnostics = await check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config);
+		const sortedDiagnostics = ([] as ICheckResult[])
+			.concat.apply([], diagnostics.map(x => x.errors))
+			.sort((a: any, b: any) => a.line - b.line);
+		assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+		const matchCount = expected.filter(expectedItem => {
+			return sortedDiagnostics.some((diag: any) => {
+				return expectedItem.line === diag.line
+					&& expectedItem.severity === diag.severity
+					&& expectedItem.msg === diag.msg;
 			});
-			assert.equal(matchCount.length >= expected.length, true, `Failed to match expected errors`);
-		}).then(() => done(), done);
+		});
+		assert.equal(matchCount.length >= expected.length, true, `Failed to match expected errors`);
 	});
 
-	test('Test Generate unit tests skeleton for file', (done) => {
+	test('Test Generate unit tests skeleton for file', async (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+		const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
+		const document = await vscode.workspace.openTextDocument(uri);
+		const editor = await vscode.window.showTextDocument(document);
+		const result = await generateTestCurrentFile();
+		assert.equal(result, true);
+		await Promise.resolve();
+		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+		if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+			return Promise.resolve();
+		}
+		else {
+			return Promise.reject('generatetests_test.go not found');
+		}
+	});
+
+	test('Test Generate unit tests skeleton for a function', async (done) => {
+		const gotestsPath = getBinPath('gotests');
+		if (gotestsPath === 'gotests') {
+			return done();
+		}
+		const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
+		const document = await vscode.workspace.openTextDocument(uri);
+		const editor = await vscode.window.showTextDocument(document);
+		assert(vscode.window.activeTextEditor, 'No active editor');
+		const selection = new vscode.Selection(5, 0, 6, 0);
+		editor.selection = selection;
+		const result = await generateTestCurrentFunction();
+		assert.equal(result, true);
+		await Promise.resolve();
+		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+		if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+			return Promise.resolve();
+		}
+		else {
+			return Promise.reject('generatetests_test.go not found');
+		}
+	});
+
+	test('Test Generate unit tests skeleton for package', async (done) => {
 		const gotestsPath = getBinPath('gotests');
 		if (gotestsPath === 'gotests') {
 			return done();
 		}
 
-		getGoVersion().then(async version => {
-			const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
-			const document = await vscode.workspace.openTextDocument(uri);
-			const editor = await vscode.window.showTextDocument(document);
-			const result = await generateTestCurrentFile();
-			assert.equal(result, true);
-			await Promise.resolve();
-			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-				return Promise.resolve();
-			}
-			else {
-				return Promise.reject('generatetests_test.go not found');
-			}
-		}).then(() => done(), done);
-	});
-
-	test('Test Generate unit tests skeleton for a function', (done) => {
-		const gotestsPath = getBinPath('gotests');
-		if (gotestsPath === 'gotests') {
-			return done();
+		const uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
+		const document = await vscode.workspace.openTextDocument(uri);
+		const result = await generateTestCurrentPackage();
+		assert.equal(result, true);
+		await Promise.resolve();
+		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+		if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+			return Promise.resolve();
 		}
-
-		getGoVersion().then(async version => {
-			const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
-			const document = await vscode.workspace.openTextDocument(uri);
-			const editor = await vscode.window.showTextDocument(document);
-			assert(vscode.window.activeTextEditor, 'No active editor');
-			const selection = new vscode.Selection(5, 0, 6, 0);
-			editor.selection = selection;
-			const result = await generateTestCurrentFunction();
-			assert.equal(result, true);
-			await Promise.resolve();
-			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-				return Promise.resolve();
-			}
-			else {
-				return Promise.reject('generatetests_test.go not found');
-			}
-		}).then(() => done(), done);
-	});
-
-	test('Test Generate unit tests skeleton for package', (done) => {
-		const gotestsPath = getBinPath('gotests');
-		if (gotestsPath === 'gotests') {
-			return done();
+		else {
+			return Promise.reject('generatetests_test.go not found');
 		}
-
-		getGoVersion().then(async version => {
-			const uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
-			const document = await vscode.workspace.openTextDocument(uri);
-			const editor = await vscode.window.showTextDocument(document);
-			const result = await generateTestCurrentPackage();
-			assert.equal(result, true);
-			await Promise.resolve();
-			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-				return Promise.resolve();
-			}
-			else {
-				return Promise.reject('generatetests_test.go not found');
-			}
-		}).then(() => done(), done);
 	});
 
-	test('Gometalinter error checking', (done) => {
-		getGoVersion().then(async version => {
-			const config = Object.create(vscode.workspace.getConfiguration('go'), {
-				'lintOnSave': { value: 'package' },
-				'lintTool': { value: 'gometalinter' },
-				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
-				'vetOnSave': { value: 'off' },
-				'buildOnSave': { value: 'off' }
-			});
-			const expected = [
-				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
-			];
-			const errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
-			const diagnostics = await check(vscode.Uri.file(errorsTestPath), config);
-			const allDiagnostics = ([] as ICheckResult[]).concat.apply([], diagnostics.map(x => x.errors));
-			const sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
-				if (a.msg < b.msg)
-					return -1;
-				if (a.msg > b.msg)
-					return 1;
-				return 0;
-			});
-			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
-			let matchCount = 0;
-			for (const i in expected) {
-				if (expected.hasOwnProperty(i)) {
-					for (const j in sortedDiagnostics) {
-						if ((expected[i].line === sortedDiagnostics[j].line)
-							&& (expected[i].severity === sortedDiagnostics[j].severity)
-							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-							matchCount++;
-						}
+	test('Gometalinter error checking', async () => {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
+			'lintOnSave': { value: 'package' },
+			'lintTool': { value: 'gometalinter' },
+			'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
+			'vetOnSave': { value: 'off' },
+			'buildOnSave': { value: 'off' }
+		});
+		const expected = [
+			{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
+			{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
+		];
+		const errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
+		const diagnostics = await check(vscode.Uri.file(errorsTestPath), config);
+		const allDiagnostics = ([] as ICheckResult[]).concat.apply([], diagnostics.map(x => x.errors));
+		const sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
+			if (a.msg < b.msg)
+				return -1;
+			if (a.msg > b.msg)
+				return 1;
+			return 0;
+		});
+		assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
+		let matchCount = 0;
+		for (const i in expected) {
+			if (expected.hasOwnProperty(i)) {
+				for (const j in sortedDiagnostics) {
+					if ((expected[i].line === sortedDiagnostics[j].line)
+						&& (expected[i].severity === sortedDiagnostics[j].severity)
+						&& (expected[i].msg === sortedDiagnostics[j].msg)) {
+						matchCount++;
 					}
 				}
 			}
-			assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
-			return Promise.resolve();
-		}).then(() => done(), done);
+		}
+		assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
+		return Promise.resolve();
 	});
 
 	test('Test diffUtils.getEditsFromUnifiedDiffStr', (done) => {

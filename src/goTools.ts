@@ -5,7 +5,8 @@
 
 'use strict';
 
-import { SemVersion, isAbove, getConfig, isBelow } from './util';
+import semver = require('semver');
+import { getConfig } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 export interface Tool {
@@ -16,16 +17,16 @@ export interface Tool {
 }
 
 // getImportPath returns the import path for a given tool, at a given Go version.
-export function getImportPath(tool: Tool, goVersion: SemVersion): string {
+export function getImportPath(tool: Tool, goVersion: semver.SemVer): string {
 	// For older versions of Go, install the older version of gocode.
 	// TODO: We should either not support this or install nsf/gocode as "gocode-old" or something.
-	if (tool.name === 'gocode' && isBelow(goVersion, 1, 10)) {
+	if (tool.name === 'gocode' && semver.lt(goVersion, "1.10")) {
 		return 'github.com/nsf/gocode';
 	}
 	return tool.importPath;
 }
 
-export function isWildcard(tool: Tool, goVersion: SemVersion): boolean {
+export function isWildcard(tool: Tool, goVersion: semver.SemVer): boolean {
 	const importPath = getImportPath(tool, goVersion);
 	return importPath.endsWith('...');
 }
@@ -52,7 +53,7 @@ export function isGocode(tool: Tool): boolean {
 	return tool.name === 'gocode' || tool.name === 'gocode-gomod';
 }
 
-export function getConfiguredTools(goVersion: SemVersion): Tool[] {
+export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 	// Start with default tools that are always installed.
 	const tools: string[] = [
 		'gocode',
@@ -100,7 +101,7 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 	tools.push(goConfig['lintTool']);
 
 	// Install the language server for Go versions >= 1.11.
-	if (goConfig['useLanguageServer'] && isAbove(goVersion, 1, 10)) {
+	if (goConfig['useLanguageServer'] && semver.gt(goVersion, "1.10")) {
 		tools.push('gopls');
 	}
 
@@ -109,7 +110,7 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 	}
 
 	// TODO: We need to propagate errors here.
-	return tools.map(function(value: string): Tool {
+	return tools.map(function (value: string): Tool {
 		const tool = allToolsInformation[value];
 		if (!tool) {
 			console.log(`no tool for ${value}`);

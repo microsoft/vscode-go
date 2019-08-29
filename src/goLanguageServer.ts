@@ -6,10 +6,10 @@
 'use strict';
 
 import os = require('os');
+import semver = require('semver');
 import vscode = require('vscode');
 import WebRequest = require('web-request');
 import path = require('path');
-import semver = require('semver');
 import cp = require('child_process');
 import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,

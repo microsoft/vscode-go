@@ -230,11 +230,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		addImportToWorkspace();
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', (args) => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', async (args) => {
 		if (Array.isArray(args) && args.length) {
-			getGoVersion().then(goVersion => {
-				installTools(args, goVersion);
-			});
+			let goVersion = await getGoVersion();
+			installTools(args, goVersion);
 			return;
 		}
 		installAllTools();
