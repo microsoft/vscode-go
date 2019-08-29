@@ -390,7 +390,6 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
-// TODO add correct return type
 async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boolean> {
 	// Only support updating gopls for now.
 	if (tool.name !== 'gopls') {
@@ -407,7 +406,6 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	if (usersVersion === '(devel)') {
 		return false;
 	}
-
 	// If the user has a version of gopls that we understand,
 	// ask the proxy for the latest version, and if the user's version is older,
 	// prompt them to update.
