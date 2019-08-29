@@ -54,8 +54,16 @@ export function isGocode(tool: Tool): boolean {
 }
 
 export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
+	const tools: Tool[] = [];
+	function maybeAddTool(name: string) {
+		const tool = allToolsInformation[name];
+		if (tool) {
+			tools.push(tool);
+		}
+	}
+
 	// Start with default tools that are always installed.
-	const tools: string[] = [
+	for (const name of [
 		'gocode',
 		'gopkgs',
 		'go-outline',
@@ -68,18 +76,20 @@ export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 		'fillstruct',
 		'goplay',
 		'godoctor',
-	];
+	]) {
+		maybeAddTool(name);
+	}
 
 	// Check if the system supports dlv, i.e. is 64-bit.
 	// There doesn't seem to be a good way to check if the mips and s390
 	// families are 64-bit, so just try to install it and hope for the best.
 	if (process.arch.match(/^(arm64|mips|mipsel|ppc64|s390|s390x|x64)$/)) {
-		tools.push('dlv');
+		maybeAddTool('dlv');
 	}
 
 	// gocode-gomod needed in go 1.11 & higher
 	if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
-		tools.push('gocode-gomod');
+		maybeAddTool('gocode-gomod');
 	}
 
 	const goConfig = getConfig('go');
@@ -87,36 +97,29 @@ export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 	// Install the doc/def tool that was chosen by the user.
 	switch (goConfig['docsTool']) {
 		case 'godoc':
-			tools.push('godef');
+			maybeAddTool('godef');
 			break;
 		default:
-			tools.push(goConfig['docsTool']);
+			maybeAddTool(goConfig['docsTool']);
 			break;
 	}
 
 	// Install the format tool that was chosen by the user.
-	tools.push(goConfig['formatTool']);
+	maybeAddTool(goConfig['formatTool']);
 
 	// Install the linter that was chosen by the user.
-	tools.push(goConfig['lintTool']);
+	maybeAddTool(goConfig['lintTool']);
 
 	// Install the language server for Go versions >= 1.11.
-	if (goConfig['useLanguageServer'] && semver.gt(goVersion, "1.10")) {
-		tools.push('gopls');
+	if (goConfig['useLanguageServer'] && semver.lt(goVersion, "1.10")) {
+		maybeAddTool('gopls');
 	}
 
 	if (goLiveErrorsEnabled()) {
-		tools.push('gotype-live');
+		maybeAddTool('gotype-live');
 	}
 
-	// TODO: We need to propagate errors here.
-	return tools.map(function (value: string): Tool {
-		const tool = allToolsInformation[value];
-		if (!tool) {
-			console.log(`no tool for ${value}`);
-		}
-		return tool;
-	});
+	return tools;
 }
 
 const allToolsInformation: { [key: string]: Tool } = {
