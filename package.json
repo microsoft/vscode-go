@@ -31,7 +31,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
 		"pretest": "npm run compile",
-		"test": "node ./out/test/runTests.js",
+		"test": "node ./out/test/runTest.js",
     "lint": "node ./node_modules/tslint/bin/tslint --project tsconfig.json",
     "fix-lint": "node ./node_modules/tslint/bin/tslint --fix --project tsconfig.json",
     "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
