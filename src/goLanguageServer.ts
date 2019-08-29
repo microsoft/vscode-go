@@ -5,8 +5,12 @@
 
 'use strict';
 
+import os = require('os');
 import vscode = require('vscode');
+import WebRequest = require('web-request');
 import path = require('path');
+import semver = require('semver');
+import cp = require('child_process');
 import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
 	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
@@ -30,8 +34,9 @@ import { GoDocumentSymbolProvider } from './goOutline';
 import { GoSignatureHelpProvider } from './goSignature';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { parseLiveFile } from './goLiveErrors';
-import { promptForMissingTool } from './goInstallTools';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getBinPath, getCurrentGoPath } from './util';
+import { Tool, getTool } from './goTools';
 
 interface LanguageServerConfig {
 	enabled: boolean;
@@ -55,20 +60,29 @@ interface LanguageServerConfig {
 
 // registerLanguageFeatures registers providers for all the language features.
 // It looks to either the language server or the standard providers for these features.
-export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
+export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	// Subscribe to notifications for changes to the configuration of the language server.
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => watchLanguageServerConfiguration(e)));
 
 	let config = parseLanguageServerConfig();
 
 	// If the user has not enabled the language server,
+	// register the default language features and return.
 	if (!config.enabled) {
 		registerUsualProviders(ctx);
 		return;
 	}
 
+	// The user has opted into the language server.
 	let path = getLanguageServerToolPath();
 	const toolName = getToolFromToolPath(path);
+
+	// The user may not have the most up-to-date version of the language server.
+	let tool = getTool(toolName);
+	if (await shouldUpdateLanguageServer(tool, path)) {
+		promptForUpdatingTool(toolName);
+	}
+
 	const c = new LanguageClient(
 		toolName,
 		{
@@ -374,4 +388,101 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
+}
+
+// TODO add correct return type
+async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boolean> {
+	// Only support updating gopls for now.
+	if (tool.name !== 'gopls') {
+		return false;
+	}
+	// First, run the "gopls version" command and parse its results.
+	// If "gopls" is so old that it doesn't have the "gopls version" command,
+	// or its version doesn't match our expectations, prompt the user to download.
+	let usersVersion = await goplsVersion(path);
+	console.log(usersVersion);
+	if (!usersVersion) {
+		return true;
+	}
+	// We might have a developer version. Don't make the user update.
+	if (usersVersion === "(devel)") {
+		return false;
+	}
+
+	// If the user has a version of gopls that we understand,
+	// ask the proxy for the latest version, and if the user's version is older,
+	// prompt them to update.
+	const listURL = `https://proxy.golang.org/${tool.importPath}/@v/list`;
+	var data = await WebRequest.json<string>(listURL);
+
+	// Coerce the versions into SemVers so that they can be sorted correctly.
+	const versions = [];
+	for (var version of data.split(os.EOL)) {
+		if (version === "") {
+			continue
+		}
+		versions.push(semver.coerce(version));
+	}
+	if (versions.length === 0) {
+		return false;
+	}
+	versions.sort();
+	const latestVersion = versions[versions.length - 1];
+	console.log(usersVersion);
+	console.log(latestVersion);
+	return semver.lt(usersVersion, latestVersion);
+}
+
+async function goplsVersion(goplsPath: string): Promise<string> {
+	const env = getToolsEnvVars();
+	const util = require('util');
+	const execFile = util.promisify(cp.execFile);
+	let output: any;
+	try {
+		const { stdout } = await execFile(goplsPath, ["version"], { env });
+		output = stdout;
+	} catch (e) {
+		// The "gopls version" command is not supported, or something else went wrong.
+		// TODO: Should we propagate this error?
+		return null;
+	}
+
+	const lines = <string>output.trim().split(os.EOL);
+	switch (lines.length) {
+		case 0:
+			// No results, should update.
+			// Worth doing anything here?
+			return null;
+		case 1:
+			// Built in $GOPATH mode. Should update.
+			// TODO: Should we check the Go version here?
+			// Do we even allow users to enable gopls if their Go version is too low?
+			return null;
+		case 2:
+			// We might actually have a parseable version.
+			break;
+		default:
+			return null;
+	}
+
+	// The second line should be the sum line.
+	// It should look something like this:
+	//
+	//    golang.org/x/tools/gopls@v0.1.3 h1:CB5ECiPysqZrwxcyRjN+exyZpY0gODTZvNiqQi3lpeo=
+	//
+	const moduleVersion = lines[1].trim().split(' ')[0];
+
+	// Get the relevant portion, that is:
+	//
+	//    golang.org/x/tools/gopls@v0.1.3
+	//
+	const split = moduleVersion.trim().split('@');
+	if (split.length < 2) {
+		return null;
+	}
+	// The version comes after the @ symbol:
+	//
+	//    v0.1.3
+	//
+	return split[1];
 }

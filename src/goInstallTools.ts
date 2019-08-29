@@ -300,7 +300,7 @@ export function promptForUpdatingTool(toolName: string) {
 		return;
 	}
 	getGoVersion().then((goVersion) => {
-		const updateMsg = `The Go extension is better with the latest version of "${tool.name}". Use "go get -u -v ${getImportPath(tool, goVersion)}" to update`;
+		const updateMsg = `Your version of ${tool.name} appears to be out of date. Please update for an improved experience.`;
 		vscode.window.showInformationMessage(updateMsg, 'Update').then(selected => {
 			switch (selected) {
 				case 'Update':

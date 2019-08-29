@@ -86,7 +86,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		// This handles all of the configurations and registrations for the language server.
 		// It also registers the necessary language feature providers that the language server may not support.
-		registerLanguageFeatures(ctx);
+		await registerLanguageFeatures(ctx);
 
 		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'go' && isGoPathSet()) {
 			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri));

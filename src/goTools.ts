@@ -253,7 +253,7 @@ const allToolsInformation: { [key: string]: Tool } = {
 	},
 	'gopls': {
 		name: 'gopls',
-		importPath: 'golang.org/x/tools/cmd/gopls',
+		importPath: 'golang.org/x/tools/gopls',
 		isImportant: false,
 		description: 'Language Server from Google',
 	},
