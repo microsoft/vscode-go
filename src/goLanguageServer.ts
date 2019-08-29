@@ -21,8 +21,8 @@ import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDe
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
 import { GO_MODE } from './goMode';
 import { getToolFromToolPath } from './goPath';
-import { getToolsEnvVars } from './util'
-import { getCompletionsWithoutGoCode, GoCompletionItemProvider } from './goSuggest';
+import { getToolsEnvVars } from './util';
+import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoReferenceProvider } from './goReferences';
@@ -64,7 +64,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	// Subscribe to notifications for changes to the configuration of the language server.
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => watchLanguageServerConfiguration(e)));
 
-	let config = parseLanguageServerConfig();
+	const config = parseLanguageServerConfig();
 
 	// If the user has not enabled the language server,
 	// register the default language features and return.
@@ -74,11 +74,11 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	}
 
 	// The user has opted into the language server.
-	let path = getLanguageServerToolPath();
+	const path = getLanguageServerToolPath();
 	const toolName = getToolFromToolPath(path);
 
 	// The user may not have the most up-to-date version of the language server.
-	let tool = getTool(toolName);
+	const tool = getTool(toolName);
 	if (await shouldUpdateLanguageServer(tool, path)) {
 		promptForUpdatingTool(toolName);
 	}
@@ -261,7 +261,7 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 		return;
 	}
 
-	let config = parseLanguageServerConfig();
+	const config = parseLanguageServerConfig();
 	let reloadMessage: string;
 
 	// If the user has disabled or enabled the language server.
@@ -291,7 +291,7 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 export function parseLanguageServerConfig(): LanguageServerConfig {
 	const goConfig = vscode.workspace.getConfiguration('go');
 
-	let config = {
+	const config = {
 		enabled: goConfig['useLanguageServer'],
 		flags: goConfig['languageServerFlags'] || [],
 		features: {
@@ -399,13 +399,12 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	// First, run the "gopls version" command and parse its results.
 	// If "gopls" is so old that it doesn't have the "gopls version" command,
 	// or its version doesn't match our expectations, prompt the user to download.
-	let usersVersion = await goplsVersion(path);
-	console.log(usersVersion);
+	const usersVersion = await goplsVersion(path);
 	if (!usersVersion) {
 		return true;
 	}
 	// We might have a developer version. Don't make the user update.
-	if (usersVersion === "(devel)") {
+	if (usersVersion === '(devel)') {
 		return false;
 	}
 
@@ -413,14 +412,11 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	// ask the proxy for the latest version, and if the user's version is older,
 	// prompt them to update.
 	const listURL = `https://proxy.golang.org/${tool.importPath}/@v/list`;
-	var data = await WebRequest.json<string>(listURL);
+	const data = await WebRequest.json<string>(listURL);
 
 	// Coerce the versions into SemVers so that they can be sorted correctly.
 	const versions = [];
-	for (var version of data.split(os.EOL)) {
-		if (version === "") {
-			continue
-		}
+	for (const version of data.trim().split(os.EOL)) {
 		versions.push(semver.coerce(version));
 	}
 	if (versions.length === 0) {
@@ -428,8 +424,6 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	}
 	versions.sort();
 	const latestVersion = versions[versions.length - 1];
-	console.log(usersVersion);
-	console.log(latestVersion);
 	return semver.lt(usersVersion, latestVersion);
 }
 
@@ -439,7 +433,7 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 	const execFile = util.promisify(cp.execFile);
 	let output: any;
 	try {
-		const { stdout } = await execFile(goplsPath, ["version"], { env });
+		const { stdout } = await execFile(goplsPath, ['version'], { env });
 		output = stdout;
 	} catch (e) {
 		// The "gopls version" command is not supported, or something else went wrong.

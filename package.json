@@ -29,14 +29,13 @@
   "scripts": {
     "vscode:prepublish": "tsc -p ./",
     "compile": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "node ./node_modules/vscode/bin/test",
     "lint": "node ./node_modules/tslint/bin/tslint --project tsconfig.json",
     "fix-lint": "node ./node_modules/tslint/bin/tslint --fix --project tsconfig.json",
     "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
   },
   "extensionDependencies": [],
   "dependencies": {
+    "@types/vscode": "^1.37.0",
     "diff": "^4.0.1",
     "json-rpc2": "^1.0.2",
     "semver": "^6.3.0",
@@ -53,8 +52,7 @@
     "@types/semver": "^6.0.1",
     "fs-extra": "^8.1.0",
     "tslint": "^5.19.0",
-    "typescript": "^3.6.2",
-    "vscode": "^1.1.36"
+    "typescript": "^3.6.2"
   },
   "engines": {
     "vscode": "^1.25.0"
