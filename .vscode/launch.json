@@ -34,7 +34,7 @@
 			"preLaunchTask": "npm"
 		},
 		{
-			"name": "Run Extension Tests",
+			"name": "Launch Extension Tests",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
