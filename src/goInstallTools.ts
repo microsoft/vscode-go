@@ -35,18 +35,19 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 
 		// Otherwise, allow the user to select which tools to install or update.
 		vscode.window.showQuickPick(allTools.map(x => {
-			// This doesn't correctly align the descriptions.
-			// TODO: Fix.
-			return `${x.name}: ${x.description}`;
+			const item: vscode.QuickPickItem = {
+				label: x.name,
+				description: x.description
+			}
+			return item;
 		}), {
 				canPickMany: true,
-				placeHolder: 'Select the tool to install/update.'
+				placeHolder: 'Select the tools to install/update.'
 			}).then(selectedTools => {
 				if (!selectedTools) {
 					return;
 				}
-				// TODO: This feels really hacky. Is there really not a better way to do this?
-				installTools(selectedTools.map(x => getTool(x.substr(0, x.indexOf(': ')))), goVersion);
+				installTools(selectedTools.map(x => getTool(x.label)), goVersion);
 			});
 	});
 }
