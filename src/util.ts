@@ -82,19 +82,19 @@ let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
 export function isBelow(goVersion: SemVersion, major: number, minor: number): boolean {
-	return goVersion && goVersion.major <= 1 && goVersion.minor < minor;
+	return goVersion && (goVersion.major < major || (goVersion.major === major && goVersion.minor < minor));
 }
 
 export function isAbove(goVersion: SemVersion, major: number, minor: number): boolean {
-	return goVersion && goVersion.major >= major && goVersion.minor > minor;
+	return !goVersion || goVersion.major > major || (goVersion.major == major && goVersion.minor > minor);
 }
 
 export function isEqualTo(goVersion: SemVersion, major: number, minor: number): boolean {
 	return goVersion && goVersion.major === major && goVersion.minor === minor;
 }
 
-export function getConfig(name: string): vscode.WorkspaceConfiguration {
-	return vscode.workspace.getConfiguration(name, vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+export function getGoConfig(): vscode.WorkspaceConfiguration {
+	return vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 }
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {

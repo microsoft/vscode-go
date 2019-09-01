@@ -36,18 +36,19 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 
 		// Otherwise, allow the user to select which tools to install or update.
 		vscode.window.showQuickPick(allTools.map(x => {
-			// This doesn't correctly align the descriptions.
-			// TODO: Fix.
-			return `${x.name}: ${x.description}`;
+			const item: vscode.QuickPickItem = {
+				label: x.name,
+				description: x.description
+			}
+			return item;
 		}), {
 				canPickMany: true,
-				placeHolder: 'Select the tool to install/update.'
+				placeHolder: 'Select the tools to install/update.'
 			}).then(selectedTools => {
 				if (!selectedTools) {
 					return;
 				}
-				// TODO: This feels really hacky. Is there really not a better way to do this?
-				installTools(selectedTools.map(x => getTool(x.substr(0, x.indexOf(': ')))), goVersion);
+				installTools(selectedTools.map(x => getTool(x.label)), goVersion);
 			});
 	});
 }
@@ -131,8 +132,7 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 	}
 
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
-		// Disable modules for staticcheck and gotests,
-		// which are installed with the "..." wildcard.
+		// Disable modules for tools which are installed with the "..." wildcard.
 		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
 		if (modulesOff || isWildcard(tool, goVersion)) {
 			envForTools['GO111MODULE'] = 'off';
@@ -144,7 +144,7 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
-					const failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
+					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
 					resolve([...sofar, failureReason]);
 				} else {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
@@ -244,13 +244,18 @@ export function promptForMissingTool(toolName: string) {
 	getGoVersion().then(goVersion => {
 		// Show error messages for outdated tools.
 		if (isBelow(goVersion, 1, 9)) {
+			let outdatedErrorMsg;
 			switch (tool.name) {
 				case 'golint':
-					vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
-					return;
+					outdatedErrorMsg = 'golint no longer supports go1.8 or below, update your settings to use gometalinter as go.lintTool and install gometalinter';
+					break;
 				case 'gotests':
-					vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.');
-					return;
+					outdatedErrorMsg = 'Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.';
+					break;
+			}
+			if (outdatedErrorMsg) {
+				vscode.window.showInformationMessage(outdatedErrorMsg);
+				return;
 			}
 		}
 
@@ -260,23 +265,15 @@ export function promptForMissingTool(toolName: string) {
 				return;
 			}
 			missing = missing.filter(x => x === tool || tool.isImportant);
-			if (missing.length > 1 && hasModSuffix(tool)) {
+			if (missing.length > 1) {
 				// Offer the option to install all tools.
 				installOptions.push('Install All');
 			}
-			let msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
-			if (tool.name === 'gocode-gomod') {
-				msg = `To provide auto-completions when using Go modules, we are testing a fork(${getImportPath(tool, goVersion)}) of "gocode" and an updated version of "gopkgs". Please press the Install button to install them.`;
-			}
+			const msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
 			vscode.window.showInformationMessage(msg, ...installOptions).then(selected => {
 				switch (selected) {
 					case 'Install':
-						// If we are installing module-aware gocode, also install gopkgs.
-						if (tool.name === 'gocode-gomod') {
-							installTools([tool, getTool('gopkgs')], goVersion);
-						} else {
-							installTools([tool], goVersion);
-						}
+						installTools([tool], goVersion);
 						break;
 					case 'Install All':
 						installTools(missing, goVersion);
