@@ -336,11 +336,10 @@ export function getLanguageServerToolPath(): string {
 	let languageServerOfChoice = 'gopls';
 	if (goConfig['alternateTools']) {
 		const goplsAlternate = goConfig['alternateTools']['gopls'];
+		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
 		if (typeof goplsAlternate === 'string') {
 			languageServerOfChoice = getToolFromToolPath(goplsAlternate);
-		}
-		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
-		if (typeof golangserverAlternate === 'string') {
+		} else if (typeof golangserverAlternate === 'string') {
 			languageServerOfChoice = getToolFromToolPath(golangserverAlternate);
 		}
 	}
