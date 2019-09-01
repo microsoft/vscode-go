@@ -308,6 +308,12 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
  * former getting a precedence over the latter
  */
 export function getLanguageServerToolPath(): string {
+	// If language server is not enabled, return
+	const goConfig = vscode.workspace.getConfiguration('go');
+	if (!goConfig['useLanguageServer']) {
+		return;
+	}
+
 	// Check that all workspace folders are configured with the same GOPATH.
 	if (!allFoldersHaveSameGopath()) {
 		vscode.window.showInformationMessage('The Go language server is currently not supported in a multi-root set-up with different GOPATHs.');
@@ -327,7 +333,6 @@ export function getLanguageServerToolPath(): string {
 	}
 
 	// If no language server path has been found, notify the user.
-	const goConfig = vscode.workspace.getConfiguration('go');
 	let languageServerOfChoice = 'gopls';
 	if (goConfig['alternateTools']) {
 		const goplsAlternate = goConfig['alternateTools']['gopls'];
