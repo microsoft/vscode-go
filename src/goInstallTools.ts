@@ -38,7 +38,7 @@ export function installAllTools(updateExistingToolsOnly: boolean = false) {
 			const item: vscode.QuickPickItem = {
 				label: x.name,
 				description: x.description
-			}
+			};
 			return item;
 		}), {
 				canPickMany: true,
