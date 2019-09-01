@@ -16,7 +16,7 @@ import { check } from '../src/goCheck';
 import cp = require('child_process');
 import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../src/diffUtils';
 import { testCurrentFile } from '../src/goTest';
-import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath } from '../src/util';
+import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult } from '../src/util';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../src/goGenerateTests';
@@ -271,7 +271,7 @@ It returns the number of bytes written and any write error encountered.
 		];
 		getGoVersion().then(async version => {
 			const diagnostics = await check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config);
-			const sortedDiagnostics = []
+			const sortedDiagnostics = ([] as ICheckResult[])
 				.concat.apply([], diagnostics.map(x => x.errors))
 				.sort((a: any, b: any) => a.line - b.line);
 			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
@@ -373,7 +373,7 @@ It returns the number of bytes written and any write error encountered.
 			];
 			const errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
 			const diagnostics = await check(vscode.Uri.file(errorsTestPath), config);
-			const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
+			const allDiagnostics = ([] as ICheckResult[]).concat.apply([], diagnostics.map(x => x.errors));
 			const sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
 				if (a.msg < b.msg)
 					return -1;
