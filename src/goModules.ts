@@ -1,3 +1,8 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModuleCache } from './util';
 import path = require('path');
 import cp = require('child_process');
@@ -5,6 +10,7 @@ import vscode = require('vscode');
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
 import { installTools } from './goInstallTools';
 import { fixDriveCasingInWindows, envPath } from './goPath';
+import { getTool } from './goTools';
 
 async function runGoModEnv(folderPath: string): Promise<string> {
 	const goExecutable = getBinPath('go');
@@ -112,7 +118,7 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 			if (tool === 'switchFormatToolToGoimports') {
 				goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.Global);
 			} else {
-			installTools([tool], goVersion)
+			installTools([getTool(tool)], goVersion)
 				.then(() => {
 					if (tool === 'gopls') {
 						if (goConfig.get('useLanguageServer') === false) {
