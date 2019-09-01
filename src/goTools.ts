@@ -5,7 +5,7 @@
 
 'use strict';
 
-import { SemVersion, isAbove, getConfig, isBelow } from './util';
+import { SemVersion, isAbove, getGoConfig, isBelow } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 
 export interface Tool {
@@ -99,7 +99,7 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 		maybeAddTool('gocode-gomod');
 	}
 
-	const goConfig = getConfig('go');
+	const goConfig = getGoConfig();
 
 	// Add the doc/def tool that was chosen by the user.
 	switch (goConfig['docsTool']) {

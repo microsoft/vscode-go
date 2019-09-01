@@ -1,7 +1,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { getBinPath, getToolsEnvVars, getConfig } from './util';
+import { getBinPath, getToolsEnvVars, getGoConfig } from './util';
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
@@ -17,7 +17,7 @@ interface GoLiveErrorsConfig {
 let runner: NodeJS.Timer;
 
 export function goLiveErrorsEnabled() {
-	const goConfig = <GoLiveErrorsConfig>(getConfig('go')['liveErrors']);
+	const goConfig = <GoLiveErrorsConfig>(getGoConfig()['liveErrors']);
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
