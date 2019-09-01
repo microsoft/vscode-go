@@ -264,23 +264,15 @@ export function promptForMissingTool(toolName: string) {
 				return;
 			}
 			missing = missing.filter(x => x === tool || tool.isImportant);
-			if (missing.length > 1 && hasModSuffix(tool)) {
+			if (missing.length > 1) {
 				// Offer the option to install all tools.
 				installOptions.push('Install All');
 			}
-			let msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
-			if (tool.name === 'gocode-gomod') {
-				msg = `To provide auto-completions when using Go modules, we are testing a fork(${getImportPath(tool, goVersion)}) of "gocode" and an updated version of "gopkgs". Please press the Install button to install them.`;
-			}
+			const msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
 			vscode.window.showInformationMessage(msg, ...installOptions).then(selected => {
 				switch (selected) {
 					case 'Install':
-						// If we are installing module-aware gocode, also install gopkgs.
-						if (tool.name === 'gocode-gomod') {
-							installTools([tool, getTool('gopkgs')], goVersion);
-						} else {
-							installTools([tool], goVersion);
-						}
+						installTools([tool], goVersion);
 						break;
 					case 'Install All':
 						installTools(missing, goVersion);
