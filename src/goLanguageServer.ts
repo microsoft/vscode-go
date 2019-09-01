@@ -107,7 +107,7 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					return next(document, position, newName, token);
 				},
 				provideDefinition: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideDefinitionSignature) => {
-					if (!config.features.typeDefinition) {
+					if (!config.features.definition) {
 						return null;
 					}
 					return next(document, position, token);
