@@ -131,8 +131,7 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 	}
 
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
-		// Disable modules for staticcheck and gotests,
-		// which are installed with the "..." wildcard.
+		// Disable modules for tools which are installed with the "..." wildcard.
 		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
 		if (modulesOff || isWildcard(tool, goVersion)) {
 			envForTools['GO111MODULE'] = 'off';
@@ -140,11 +139,11 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 			envForTools['GO111MODULE'] = 'on';
 		}
 
-		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+		return res.then(sofar => new Promise<string[]>((resolve) => {
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
-					const failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
+					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
 					resolve([...sofar, failureReason]);
 				} else {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
@@ -244,13 +243,18 @@ export function promptForMissingTool(toolName: string) {
 	getGoVersion().then(goVersion => {
 		// Show error messages for outdated tools.
 		if (isBelow(goVersion, 1, 9)) {
+			let outdatedErrorMsg;
 			switch (tool.name) {
 				case 'golint':
-					vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
-					return;
+					outdatedErrorMsg = 'golint no longer supports go1.8 or below, update your settings to use gometalinter as go.lintTool and install gometalinter';
+					break;
 				case 'gotests':
-					vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.');
-					return;
+					outdatedErrorMsg = 'Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.';
+					break;
+			}
+			if (outdatedErrorMsg) {
+				vscode.window.showInformationMessage(outdatedErrorMsg);
+				return;
 			}
 		}
 
