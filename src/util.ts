@@ -82,7 +82,7 @@ let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
 export function isBelow(goVersion: SemVersion, major: number, minor: number): boolean {
-	return goVersion && goVersion.major <= 1 && goVersion.minor < minor;
+	return goVersion && goVersion.major <= major && goVersion.minor < minor;
 }
 
 export function isAbove(goVersion: SemVersion, major: number, minor: number): boolean {
