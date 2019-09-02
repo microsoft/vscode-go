@@ -16,7 +16,6 @@ import { goVet } from './goVet';
 import { goBuild } from './goBuild';
 import { isModSupported } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
-import { getToolFromToolPath } from './goPath';
 import { parseLanguageServerConfig } from './goLanguageServer';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
@@ -63,7 +62,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	// If a user has enabled diagnostics via a language server,
 	// then we disable running build or vet to avoid duplicate errors and warnings.
 	const lspConfig = parseLanguageServerConfig();
-	const disableBuildAndVet = lspConfig.features.diagnostics;
+	const disableBuildAndVet = lspConfig.enabled && lspConfig.features.diagnostics;
 
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;

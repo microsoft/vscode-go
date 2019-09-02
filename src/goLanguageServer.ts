@@ -121,7 +121,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					return next(document, position, newName, token);
 				},
 				provideDefinition: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideDefinitionSignature) => {
-					if (!config.features.typeDefinition) {
+					if (!config.features.definition) {
 						return null;
 					}
 					return next(document, position, token);
@@ -322,6 +322,12 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
  * former getting a precedence over the latter
  */
 export function getLanguageServerToolPath(): string {
+	// If language server is not enabled, return
+	const goConfig = vscode.workspace.getConfiguration('go');
+	if (!goConfig['useLanguageServer']) {
+		return;
+	}
+
 	// Check that all workspace folders are configured with the same GOPATH.
 	if (!allFoldersHaveSameGopath()) {
 		vscode.window.showInformationMessage('The Go language server is currently not supported in a multi-root set-up with different GOPATHs.');
@@ -341,15 +347,13 @@ export function getLanguageServerToolPath(): string {
 	}
 
 	// If no language server path has been found, notify the user.
-	const goConfig = vscode.workspace.getConfiguration('go');
 	let languageServerOfChoice = 'gopls';
 	if (goConfig['alternateTools']) {
 		const goplsAlternate = goConfig['alternateTools']['gopls'];
+		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
 		if (typeof goplsAlternate === 'string') {
 			languageServerOfChoice = getToolFromToolPath(goplsAlternate);
-		}
-		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
-		if (typeof golangserverAlternate === 'string') {
+		} else if (typeof golangserverAlternate === 'string') {
 			languageServerOfChoice = getToolFromToolPath(golangserverAlternate);
 		}
 	}

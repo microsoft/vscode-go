@@ -16,17 +16,25 @@ export interface Tool {
 	description: string;
 }
 
-// getImportPath returns the import path for a given tool, at a given Go version.
+/**
+ * Returns the import path for a given tool, at a given Go version.
+ * @param tool 		Object of type `Tool` for the Go tool.
+ * @param goVersion The current Go version.
+ */
 export function getImportPath(tool: Tool, goVersion: semver.SemVer): string {
 	// For older versions of Go, install the older version of gocode.
-	// TODO: We should either not support this or install nsf/gocode as "gocode-old" or something.
 	if (tool.name === 'gocode' && semver.lt(goVersion, "1.10")) {
 		return 'github.com/nsf/gocode';
 	}
 	return tool.importPath;
 }
 
-export function isWildcard(tool: Tool, goVersion: semver.SemVer): boolean {
+/**
+ * Returns boolean denoting if the import path for the given tool ends with `/...`
+ * @param tool  	Object of type `Tool` for the Go tool.
+ * @param goVersion The current Go version.
+ */
+export function isWildcard(tool: Tool, goVersion: SemVersion): boolean {
 	const importPath = getImportPath(tool, goVersion);
 	return importPath.endsWith('...');
 }
@@ -62,7 +70,7 @@ export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 		}
 	}
 
-	// Start with default tools that are always installed.
+	// Start with default tools that should always be installed.
 	for (const name of [
 		'gocode',
 		'gopkgs',
@@ -92,9 +100,9 @@ export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 		maybeAddTool('gocode-gomod');
 	}
 
-	const goConfig = getConfig('go');
+	const goConfig = getGoConfig();
 
-	// Install the doc/def tool that was chosen by the user.
+	// Add the doc/def tool that was chosen by the user.
 	switch (goConfig['docsTool']) {
 		case 'godoc':
 			maybeAddTool('godef');
@@ -104,14 +112,14 @@ export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 			break;
 	}
 
-	// Install the format tool that was chosen by the user.
+	// Add the format tool that was chosen by the user.
 	maybeAddTool(goConfig['formatTool']);
 
-	// Install the linter that was chosen by the user.
+	// Add the linter that was chosen by the user.
 	maybeAddTool(goConfig['lintTool']);
 
-	// Install the language server for Go versions >= 1.11.
-	if (goConfig['useLanguageServer'] && semver.lt(goVersion, "1.10")) {
+	// Add the language server for Go versions >= 1.11.
+	if (goConfig['useLanguageServer'] && isAbove(goVersion, 1, 10)) {
 		maybeAddTool('gopls');
 	}
 
@@ -127,13 +135,13 @@ const allToolsInformation: { [key: string]: Tool } = {
 		name: 'gocode',
 		importPath: 'github.com/mdempsky/gocode',
 		isImportant: true,
-		description: 'Auto-completion',
+		description: 'Auto-completion, does not work with modules',
 	},
 	'gocode-gomod': {
 		name: 'gocode-gomod',
 		importPath: 'github.com/stamblerre/gocode',
 		isImportant: true,
-		description: 'Autocompletion, works with modules',
+		description: 'Auto-completion, works with modules',
 	},
 	'gopkgs': {
 		name: 'gopkgs',

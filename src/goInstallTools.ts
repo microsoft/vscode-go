@@ -131,8 +131,7 @@ export function installTools(missing: Tool[], goVersion: semver.SemVer): Promise
 	}
 
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
-		// Disable modules for staticcheck and gotests,
-		// which are installed with the "..." wildcard.
+		// Disable modules for tools which are installed with the "..." wildcard.
 		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
 		if (modulesOff || isWildcard(tool, goVersion)) {
 			envForTools['GO111MODULE'] = 'off';
@@ -144,7 +143,7 @@ export function installTools(missing: Tool[], goVersion: semver.SemVer): Promise
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
-					const failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
+					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
 					resolve([...sofar, failureReason]);
 				} else {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
@@ -381,7 +380,7 @@ export async function offerToInstallTools() {
 	}
 
 	const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
-	if (usingSourceGraph && (!goVersion || goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 10))) {
+	if (usingSourceGraph && semver.gt(goVersion, "1.10")) {
 		const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 		const disableLabel = 'Disable language server';
 		const installLabel = 'Install';
