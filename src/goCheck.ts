@@ -59,10 +59,10 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	const runningToolsPromises = [];
 	const cwd = path.dirname(fileUri.fsPath);
 
-	// If a user has enabled diagnostics via a language server, 
+	// If a user has enabled diagnostics via a language server,
 	// then we disable running build or vet to avoid duplicate errors and warnings.
-	let lspConfig = parseLanguageServerConfig();
-	let disableBuildAndVet = lspConfig.enabled && lspConfig.features.diagnostics;
+	const lspConfig = parseLanguageServerConfig();
+	const disableBuildAndVet = lspConfig.enabled && lspConfig.features.diagnostics;
 
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;
