@@ -1071,7 +1071,7 @@
         "go.languageServerFlags": {
           "type": "array",
           "default": [],
-          "description": "Flags like -trace and -logfile to be used while running the language server."
+          "description": "Flags like -rpc.trace and -logfile to be used while running the language server."
         },
         "go.languageServerExperimentalFeatures": {
           "type": "object",

@@ -11,6 +11,7 @@ import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import { getToolFromToolPath, envPath } from './goPath';
+import { getLanguageServerToolPath } from './goLanguageServer';
 import { Tool, getConfiguredTools, getTool, isWildcard, isGocode, hasModSuffix, containsString, containsTool, getImportPath } from './goTools';
 import { getGoVersion, getBinPath, SemVersion, getToolsGopath, getCurrentGoPath, isBelow, getTempFilePath, resolvePath } from './util';
 
@@ -139,7 +140,7 @@ export function installTools(missing: Tool[], goVersion: SemVersion): Promise<vo
 			envForTools['GO111MODULE'] = 'on';
 		}
 
-		return res.then(sofar => new Promise<string[]>((resolve) => {
+		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
@@ -440,62 +441,4 @@ function getMissingTools(goVersion: SemVersion): Promise<Tool[]> {
 	}))).then(res => {
 		return res.filter(x => x != null);
 	});
-}
-
-/**
- * Gets the absolute path to the language server to be used.
- * If the required tool is not available, then user is prompted to install it.
- * This supports the language servers from both Google and Sourcegraph with the
- * former getting a precedence over the latter
- */
-export function getLanguageServerToolPath(): string | undefined {
-	const latestGoConfig = vscode.workspace.getConfiguration('go');
-	if (!latestGoConfig['useLanguageServer']) return;
-
-	if (!allFoldersHaveSameGopath()) {
-		vscode.window.showInformationMessage('The Go language server is not supported in a multi root set up with different GOPATHs.');
-		return;
-	}
-
-	// Get the path to gopls or any alternative that the user might have set for gopls
-	const goplsBinaryPath = getBinPath('gopls');
-	if (path.isAbsolute(goplsBinaryPath)) {
-		return goplsBinaryPath;
-	}
-
-	// Get the path to go-langserver or any alternative that the user might have set for go-langserver
-	const golangserverBinaryPath = getBinPath('go-langserver');
-	if (path.isAbsolute(golangserverBinaryPath)) {
-		return golangserverBinaryPath;
-	}
-
-	// Notify the user about the unavailability of the language server
-	let languageServerOfChoice = 'gopls';
-	if (latestGoConfig['alternateTools']) {
-		const goplsAlternate = latestGoConfig['alternateTools']['gopls'];
-		const golangserverAlternate = latestGoConfig['alternateTools']['go-langserver'];
-		if (typeof goplsAlternate === 'string') {
-			languageServerOfChoice = getToolFromToolPath(goplsAlternate);
-		} else if (typeof golangserverAlternate === 'string') {
-			languageServerOfChoice = getToolFromToolPath(golangserverAlternate);
-		}
-
-		if (languageServerOfChoice !== 'gopls' && languageServerOfChoice !== 'go-langserver') {
-			vscode.window.showErrorMessage(`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window`);
-			return;
-		}
-	}
-
-	promptForMissingTool(languageServerOfChoice);
-	vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
-
-}
-
-function allFoldersHaveSameGopath(): boolean {
-	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length <= 1) {
-		return true;
-	}
-
-	const tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
-	return vscode.workspace.workspaceFolders.find(x => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
 }
