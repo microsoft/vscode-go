@@ -54,7 +54,7 @@
     "vscode": "^1.1.36"
   },
   "engines": {
-    "vscode": "^1.25.0"
+    "vscode": "^1.30.0"
   },
   "activationEvents": [
     "onLanguage:go",
