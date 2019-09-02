@@ -41,7 +41,7 @@
 			// the workspace path should be GOPATH
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index",
+				"--extensionTestsPath=${workspaceFolder}/out/test/integration/index",
 				"--timeout",
 				"999999",
 			],
