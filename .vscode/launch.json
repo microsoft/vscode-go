@@ -16,7 +16,7 @@
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
 			],
-			"preLaunchTask": "npm"
+			"preLaunchTask": "npm: watch"
 		},
 		{
 			"name": "Launch as server",
@@ -41,11 +41,7 @@
 			// the workspace path should be GOPATH
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-<<<<<<< HEAD
-				"--extensionTestsPath=${workspaceFolder}/out/test/suite/index",
-=======
 				"--extensionTestsPath=${workspaceFolder}/out/test/integration/index",
->>>>>>> eb89f02910c3be3c97b2f3c770d355f059ae0863
 				"--timeout",
 				"999999",
 			],

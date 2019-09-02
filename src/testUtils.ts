@@ -14,7 +14,6 @@ import { getNonVendorPackages } from './goPackages';
 import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile, envPath } from './goPath';
 import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
-
 const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
@@ -226,7 +225,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				pkgMapPromise = getNonVendorPackages(testconfig.dir); // We need the mapping to get absolute paths for the files in the test output
 			} else {
 				const goVersion = await getGoVersion();
-				if (semver.gte(goVersion, "1.9")) {
+				if (semver.gte(goVersion, '1.9.0')) {
 					targets = ['./...'];
 					return null; // We dont need mapping, as we can derive the absolute paths from package path
 				}

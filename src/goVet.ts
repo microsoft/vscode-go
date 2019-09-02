@@ -92,7 +92,7 @@ export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfi
 	}
 
 	let vetArgs = ['vet', ...args, ...tagsArg, './...'];
-	if (semver.lte(goVersion, "1.9") && args.length) {
+	if (semver.lte(goVersion, '1.9.0') && args.length) {
 		vetArgs = ['tool', 'vet', ...args, ...tagsArg, '.'];
 	}
 

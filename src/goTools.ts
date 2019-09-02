@@ -6,8 +6,9 @@
 'use strict';
 
 import semver = require('semver');
-import { getConfig } from './util';
+import vscode = require('vscode');
 import { goLiveErrorsEnabled } from './goLiveErrors';
+import { getGoConfig } from './util';
 
 export interface Tool {
 	name: string;
@@ -23,7 +24,7 @@ export interface Tool {
  */
 export function getImportPath(tool: Tool, goVersion: semver.SemVer): string {
 	// For older versions of Go, install the older version of gocode.
-	if (tool.name === 'gocode' && semver.lt(goVersion, "1.10")) {
+	if (tool.name === 'gocode' && semver.lt(goVersion, '1.10.0')) {
 		return 'github.com/nsf/gocode';
 	}
 	return tool.importPath;
@@ -34,7 +35,7 @@ export function getImportPath(tool: Tool, goVersion: semver.SemVer): string {
  * @param tool  	Object of type `Tool` for the Go tool.
  * @param goVersion The current Go version.
  */
-export function isWildcard(tool: Tool, goVersion: SemVersion): boolean {
+export function isWildcard(tool: Tool, goVersion: semver.SemVer): boolean {
 	const importPath = getImportPath(tool, goVersion);
 	return importPath.endsWith('...');
 }
@@ -96,7 +97,7 @@ export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 	}
 
 	// gocode-gomod needed in go 1.11 & higher
-	if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
+	if (semver.gte(goVersion, '1.11.0')) {
 		maybeAddTool('gocode-gomod');
 	}
 
@@ -119,7 +120,7 @@ export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 	maybeAddTool(goConfig['lintTool']);
 
 	// Add the language server for Go versions >= 1.11.
-	if (goConfig['useLanguageServer'] && isAbove(goVersion, 1, 10)) {
+	if (goConfig['useLanguageServer'] && semver.gt(goVersion, '1.10.0')) {
 		maybeAddTool('gopls');
 	}
 

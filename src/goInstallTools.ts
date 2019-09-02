@@ -23,7 +23,7 @@ const declinedUpdates: Tool[] = [];
 const declinedInstalls: Tool[] = [];
 
 export async function installAllTools(updateExistingToolsOnly: boolean = false) {
-	let goVersion = await getGoVersion();
+	const goVersion = await getGoVersion();
 	const allTools = getConfiguredTools(goVersion);
 
 	// Update existing tools by finding all tools the user has already installed.
@@ -111,7 +111,7 @@ export function installTools(missing: Tool[], goVersion: semver.SemVer): Promise
 	// This ensures that users get the latest tagged version, rather than master,
 	// which may be unstable.
 	let modulesOff = false;
-	if (semver.lt(goVersion, "1.11")) {
+	if (semver.lt(goVersion, '1.11.0')) {
 		modulesOff = true;
 	}
 
@@ -240,9 +240,10 @@ export async function promptForMissingTool(toolName: string) {
 	if (containsTool(declinedInstalls, tool)) {
 		return;
 	}
-	let goVersion = await getGoVersion();
+
+	const goVersion = await getGoVersion();
 	// Show error messages for outdated tools.
-	if (semver.lt(goVersion, "1.9")) {
+	if (semver.lt(goVersion, '1.9.0')) {
 		switch (tool.name) {
 			case 'golint':
 				vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
@@ -297,7 +298,7 @@ export async function promptForUpdatingTool(toolName: string) {
 	if (containsTool(declinedUpdates, tool)) {
 		return;
 	}
-	let goVersion = await getGoVersion();
+	const goVersion = await getGoVersion();
 	const updateMsg = `Your version of ${tool.name} appears to be out of date. Please update for an improved experience.`;
 	vscode.window.showInformationMessage(updateMsg, 'Update').then(selected => {
 		switch (selected) {
@@ -369,7 +370,7 @@ export async function offerToInstallTools() {
 	}
 	alreadyOfferedToInstallTools = true;
 
-	let goVersion = await getGoVersion();
+	const goVersion = await getGoVersion();
 	let missing = await getMissingTools(goVersion);
 	missing = missing.filter(x => x.isImportant);
 	if (missing.length > 0) {
@@ -380,7 +381,7 @@ export async function offerToInstallTools() {
 	}
 
 	const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
-	if (usingSourceGraph && semver.gt(goVersion, "1.10")) {
+	if (usingSourceGraph && semver.gt(goVersion, '1.10')) {
 		const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 		const disableLabel = 'Disable language server';
 		const installLabel = 'Install';

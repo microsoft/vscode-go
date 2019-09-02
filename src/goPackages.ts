@@ -104,7 +104,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 function getAllPackagesNoCache(workDir: string): Promise<Map<string, string>> {
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
-		const callback = function (pkgMap: Map<string, string>) {
+		const callback = function(pkgMap: Map<string, string>) {
 			resolve(pkgMap);
 		};
 
@@ -265,8 +265,8 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 			const lines = chunks.join('').toString().split('\n');
 			const result = new Map<string, string>();
 
-			let version = await getGoVersion();
-			const vendorAlreadyExcluded = semver.gte(version, "1.9");
+			const version = await getGoVersion();
+			const vendorAlreadyExcluded = semver.gte(version, '1.9.0');
 
 			for (const line of lines) {
 				const matches = line.match(pkgToFolderMappingRegex);

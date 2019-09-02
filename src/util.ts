@@ -77,8 +77,8 @@ let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
-export function getConfig(name: string): vscode.WorkspaceConfiguration {
-	return vscode.workspace.getConfiguration(name, vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+export function getGoConfig(): vscode.WorkspaceConfiguration {
+	return vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 }
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
@@ -244,7 +244,6 @@ export async function getGoVersion(): Promise<semver.SemVer> {
 			const matches = /go version go(\d.\d+).*/.exec(stdout);
 			if (matches) {
 				goVersion = semver.coerce(matches[0]);
-				console.log(goVersion);
 				/* __GDPR__
 				   "getGoVersion" : {
 					  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
@@ -271,7 +270,7 @@ export async function isVendorSupported(): Promise<boolean> {
 	if (vendorSupport != null) {
 		return Promise.resolve(vendorSupport);
 	}
-	let goVersion = await getGoVersion();
+	const goVersion = await getGoVersion();
 	if (!goVersion) {
 		return process.env['GO15VENDOREXPERIMENT'] === '0' ? false : true;
 	}
