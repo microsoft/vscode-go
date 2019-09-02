@@ -17,8 +17,8 @@ import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDe
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
 import { GO_MODE } from './goMode';
 import { getToolFromToolPath } from './goPath';
-import { getToolsEnvVars } from './util'
-import { getCompletionsWithoutGoCode, GoCompletionItemProvider } from './goSuggest';
+import { getToolsEnvVars } from './util';
+import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoReferenceProvider } from './goReferences';
@@ -59,7 +59,7 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	// Subscribe to notifications for changes to the configuration of the language server.
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => watchLanguageServerConfiguration(e)));
 
-	let config = parseLanguageServerConfig();
+	const config = parseLanguageServerConfig();
 
 	// If the user has not enabled the language server,
 	if (!config.enabled) {
@@ -67,7 +67,7 @@ export function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		return;
 	}
 
-	let path = getLanguageServerToolPath();
+	const path = getLanguageServerToolPath();
 	const toolName = getToolFromToolPath(path);
 	const c = new LanguageClient(
 		toolName,
@@ -247,7 +247,7 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 		return;
 	}
 
-	let config = parseLanguageServerConfig();
+	const config = parseLanguageServerConfig();
 	let reloadMessage: string;
 
 	// If the user has disabled or enabled the language server.
@@ -277,7 +277,7 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 export function parseLanguageServerConfig(): LanguageServerConfig {
 	const goConfig = vscode.workspace.getConfiguration('go');
 
-	let config = {
+	const config = {
 		enabled: goConfig['useLanguageServer'],
 		flags: goConfig['languageServerFlags'] || [],
 		features: {
