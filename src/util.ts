@@ -82,7 +82,19 @@ let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
 export function isBelow(goVersion: SemVersion, major: number, minor: number): boolean {
-	return goVersion && goVersion.major <= major && goVersion.minor < minor;
+	return goVersion && (goVersion.major < major || (goVersion.major === major && goVersion.minor < minor));
+}
+
+export function isAbove(goVersion: SemVersion, major: number, minor: number): boolean {
+	return !goVersion || goVersion.major > major || (goVersion.major === major && goVersion.minor > minor);
+}
+
+export function isEqualTo(goVersion: SemVersion, major: number, minor: number): boolean {
+	return goVersion && goVersion.major === major && goVersion.minor === minor;
+}
+
+export function getGoConfig(): vscode.WorkspaceConfiguration {
+	return vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
 }
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
@@ -730,15 +742,15 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 		if (diagnosticCollection === buildDiagnosticCollection) {
 			// If there are lint/vet warnings on current file, remove the ones co-inciding with the new build errors
 			if (lintDiagnosticCollection.has(fileUri)) {
-				lintDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, lintDiagnosticCollection.get(fileUri)));
+				lintDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, lintDiagnosticCollection.get(fileUri).slice()));
 			}
 
 			if (vetDiagnosticCollection.has(fileUri)) {
-				vetDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, vetDiagnosticCollection.get(fileUri)));
+				vetDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, vetDiagnosticCollection.get(fileUri).slice()));
 			}
 		} else if (buildDiagnosticCollection.has(fileUri)) {
 			// If there are build errors on current file, ignore the new lint/vet warnings co-inciding with them
-			newDiagnostics = deDupeDiagnostics(buildDiagnosticCollection.get(fileUri), newDiagnostics);
+			newDiagnostics = deDupeDiagnostics(buildDiagnosticCollection.get(fileUri).slice(), newDiagnostics);
 		}
 		diagnosticCollection.set(fileUri, newDiagnostics);
 	});
