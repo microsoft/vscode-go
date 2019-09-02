@@ -37,19 +37,20 @@ export async function installAllTools(updateExistingToolsOnly: boolean = false) 
 
 	// Otherwise, allow the user to select which tools to install or update.
 	vscode.window.showQuickPick(allTools.map(x => {
-		// This doesn't correctly align the descriptions.
-		// TODO: Fix.
-		return `${x.name}: ${x.description}`;
+		const item: vscode.QuickPickItem = {
+			label: x.name,
+			description: x.description
+		};
+		return item;
 	}), {
-			canPickMany: true,
-			placeHolder: 'Select the tool to install/update.'
-		}).then(selectedTools => {
-			if (!selectedTools) {
-				return;
-			}
-			// TODO: This feels really hacky. Is there really not a better way to do this?
-			installTools(selectedTools.map(x => getTool(x.substr(0, x.indexOf(': ')))), goVersion);
-		});
+		canPickMany: true,
+		placeHolder: 'Select the tools to install/update.'
+	}).then(selectedTools => {
+		if (!selectedTools) {
+			return;
+		}
+		installTools(selectedTools.map(x => getTool(x.label)), goVersion);
+	});
 }
 
 /**
@@ -243,14 +244,19 @@ export async function promptForMissingTool(toolName: string) {
 
 	const goVersion = await getGoVersion();
 	// Show error messages for outdated tools.
-	if (semver.lt(goVersion, '1.9.0')) {
+	if (semver.lt(goVersion, "1.9.0")) {
+		let outdatedErrorMsg;
 		switch (tool.name) {
 			case 'golint':
-				vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
-				return;
+				outdatedErrorMsg = 'golint no longer supports go1.8 or below, update your settings to use gometalinter as go.lintTool and install gometalinter';
+				break;
 			case 'gotests':
-				vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.');
-				return;
+				outdatedErrorMsg = 'Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.';
+				break;
+		}
+		if (outdatedErrorMsg) {
+			vscode.window.showInformationMessage(outdatedErrorMsg);
+			return;
 		}
 	}
 
@@ -260,23 +266,15 @@ export async function promptForMissingTool(toolName: string) {
 			return;
 		}
 		missing = missing.filter(x => x === tool || tool.isImportant);
-		if (missing.length > 1 && hasModSuffix(tool)) {
+		if (missing.length > 1) {
 			// Offer the option to install all tools.
 			installOptions.push('Install All');
 		}
-		let msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
-		if (tool.name === 'gocode-gomod') {
-			msg = `To provide auto-completions when using Go modules, we are testing a fork(${getImportPath(tool, goVersion)}) of "gocode" and an updated version of "gopkgs". Please press the Install button to install them.`;
-		}
+		const msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
 		vscode.window.showInformationMessage(msg, ...installOptions).then(selected => {
 			switch (selected) {
 				case 'Install':
-					// If we are installing module-aware gocode, also install gopkgs.
-					if (tool.name === 'gocode-gomod') {
-						installTools([tool, getTool('gopkgs')], goVersion);
-					} else {
-						installTools([tool], goVersion);
-					}
+					installTools([tool], goVersion);
 					break;
 				case 'Install All':
 					installTools(missing, goVersion);
@@ -381,7 +379,7 @@ export async function offerToInstallTools() {
 	}
 
 	const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
-	if (usingSourceGraph && semver.gt(goVersion, '1.10')) {
+	if (usingSourceGraph && semver.gt(goVersion, '1.10.0')) {
 		const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 		const disableLabel = 'Disable language server';
 		const installLabel = 'Install';

@@ -466,6 +466,9 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 	//
 	//    golang.org/x/tools/gopls@v0.1.3 h1:CB5ECiPysqZrwxcyRjN+exyZpY0gODTZvNiqQi3lpeo=
 	//
+	// TODO: We should use a regex to match this, but for now, we split on the @ symbol.
+	// The reasoning for this is that gopls still has a golang.org/x/tools/cmd/gopls binary,
+	// so users may have a developer version that looks like "golang.org/x/tools@(devel)".
 	const moduleVersion = lines[1].trim().split(' ')[0];
 
 	// Get the relevant portion, that is:
@@ -481,4 +484,5 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 	//    v0.1.3
 	//
 	return split[1];
+
 }

@@ -38,7 +38,6 @@
   },
   "extensionDependencies": [],
   "dependencies": {
-    "@types/semver": "^6.0.1",
     "diff": "^4.0.1",
     "json-rpc2": "^1.0.2",
     "vscode-debugadapter": "^1.36.0",
@@ -50,16 +49,17 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^8.0.0",
+    "@types/glob": "^7.1.1",
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.7.2",
+    "@types/semver": "^6.0.1",
     "@types/vscode": "^1.25.0",
-    "@types/glob": "^7.1.1",
     "fs-extra": "^8.1.0",
+    "glob": "^7.1.4",
+    "mocha": "^6.2.0",
     "tslint": "^5.19.0",
     "typescript": "^3.6.2",
-    "vscode-test": "^1.2.0",
-    "glob": "^7.1.4",
-    "mocha": "^6.2.0"
+    "vscode-test": "^1.2.0"
   },
   "engines": {
     "vscode": "^1.30.0"
