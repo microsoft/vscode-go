@@ -1,6 +1,7 @@
 {
 	"version": "0.2.0",
 	"configurations": [
+		
 		{
 			"name": "Launch Extension",
 			"type": "extensionHost",
@@ -33,23 +34,23 @@
 			"preLaunchTask": "npm"
 		},
 		{
-			"name": "Launch Integration Tests",
+			"name": "Launch Extension Tests",
 			"type": "extensionHost",
 			"request": "launch",
 			"runtimeExecutable": "${execPath}",
 			// the workspace path should be GOPATH
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
-				"--extensionTestsPath=${workspaceFolder}/out/test",
+				"--extensionTestsPath=${workspaceFolder}/out/test/integration/index",
 				"--timeout",
 				"999999",
 			],
 			"stopOnEntry": false,
 			"sourceMaps": true,
 			"outFiles": [
-				"${workspaceFolder}/out/**/*.js"
+				"${workspaceFolder}/out/test/**/*.js"
 			],
-			"preLaunchTask": "npm"
+			"preLaunchTask": "npm: watch"
 		},
 		{
 			"type": "node",

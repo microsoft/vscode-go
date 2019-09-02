@@ -1,7 +1,12 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 'use strict';
 
 import vscode = require('vscode');
-import { getBinPath, getToolsEnvVars, getTimeoutConfiguration, killProcess } from './util';
+import { getBinPath, getToolsEnvVars, getTimeoutConfiguration, killProcess, getGoConfig } from './util';
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
@@ -17,7 +22,7 @@ interface GoLiveErrorsConfig {
 let runner: NodeJS.Timer;
 
 export function goLiveErrorsEnabled() {
-	const goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['liveErrors'];
+	const goConfig = <GoLiveErrorsConfig>(getGoConfig()['liveErrors']);
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}

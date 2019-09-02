@@ -12,6 +12,7 @@ import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModul
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
 import { installTools } from './goInstallTools';
 import { fixDriveCasingInWindows, envPath } from './goPath';
+import { getTool } from './goTools';
 
 async function runGoModEnv(folderPath: string): Promise<string> {
 	const goExecutable = getBinPath('go');
@@ -119,7 +120,7 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 			if (tool === 'switchFormatToolToGoimports') {
 				goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.Global);
 			} else {
-			installTools([tool], goVersion)
+			installTools([getTool(tool)], goVersion)
 				.then(() => {
 					if (tool === 'gopls') {
 						if (goConfig.get('useLanguageServer') === false) {
