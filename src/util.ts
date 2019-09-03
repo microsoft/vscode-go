@@ -639,8 +639,10 @@ export function runTool(
 	}
 
 	let p: cp.ChildProcess;
+	let processTimeout: NodeJS.Timeout;
 	if (token) {
 		token.onCancellationRequested(() => {
+			clearTimeout(processTimeout);
 			if (p) {
 				killTree(p.pid);
 			}
@@ -649,6 +651,7 @@ export function runTool(
 	cwd = fixDriveCasingInWindows(cwd);
 	return new Promise((resolve, reject) => {
 		p = cp.execFile(cmd, args, { env: env, cwd: cwd }, (err, stdout, stderr) => {
+			clearTimeout(processTimeout);
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					// Since the tool is run on save which can be frequent
@@ -711,7 +714,7 @@ export function runTool(
 				reject(e);
 			}
 		});
-		setTimeout(() => {
+		processTimeout = setTimeout(() => {
 			killProcess(p);
 			reject(new Error(`Timeout executing tool - ${toolName ? toolName : goRuntimePath}`));
 		}, timeout);
