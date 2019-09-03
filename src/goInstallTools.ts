@@ -244,7 +244,7 @@ export async function promptForMissingTool(toolName: string) {
 
 	const goVersion = await getGoVersion();
 	// Show error messages for outdated tools.
-	if (semver.lt(goVersion, "1.9.0")) {
+	if (semver.lt(goVersion, '1.9.0')) {
 		let outdatedErrorMsg;
 		switch (tool.name) {
 			case 'golint':
@@ -261,31 +261,30 @@ export async function promptForMissingTool(toolName: string) {
 	}
 
 	const installOptions = ['Install'];
-	getMissingTools(goVersion).then(missing => {
-		if (!containsTool(missing, tool)) {
-			return;
+	let missing = await getMissingTools(goVersion);
+	if (!containsTool(missing, tool)) {
+		return;
+	}
+	missing = missing.filter(x => x === tool || tool.isImportant);
+	if (missing.length > 1) {
+		// Offer the option to install all tools.
+		installOptions.push('Install All');
+	}
+	const msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
+	vscode.window.showInformationMessage(msg, ...installOptions).then(selected => {
+		switch (selected) {
+			case 'Install':
+				installTools([tool], goVersion);
+				break;
+			case 'Install All':
+				installTools(missing, goVersion);
+				hideGoStatus();
+				break;
+			default:
+				// The user has declined to install this tool.
+				declinedInstalls.push(tool);
+				break;
 		}
-		missing = missing.filter(x => x === tool || tool.isImportant);
-		if (missing.length > 1) {
-			// Offer the option to install all tools.
-			installOptions.push('Install All');
-		}
-		const msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
-		vscode.window.showInformationMessage(msg, ...installOptions).then(selected => {
-			switch (selected) {
-				case 'Install':
-					installTools([tool], goVersion);
-					break;
-				case 'Install All':
-					installTools(missing, goVersion);
-					hideGoStatus();
-					break;
-				default:
-					// The user has declined to install this tool.
-					declinedInstalls.push(tool);
-					break;
-			}
-		});
 	});
 }
 
