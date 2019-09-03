@@ -57,6 +57,7 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 	}
 
 	const p = cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], options, (err, stdout, stderr) => {
+		clearTimeout(processTimeout);
 		if (!stdout || stdout.indexOf(':') === -1) {
 			if (showAllPkgsIfPkgNotFound) {
 				return showPackageList(workDir);
@@ -84,9 +85,9 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 			});
 		}
 	});
-	setTimeout(() => {
+	const processTimeout = setTimeout(() => {
 		killProcess(p);
-		vscode.window.showErrorMessage('Timeout executing - go list');
+		vscode.window.showErrorMessage('Timeout executing "go list" to fetch packages.');
 	}, getTimeoutConfiguration('onCommand'));
 }
 

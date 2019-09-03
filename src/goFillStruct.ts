@@ -60,6 +60,7 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 
 	return new Promise<void>((resolve, reject) => {
 		const p = cp.execFile(fillstruct, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
+			clearTimeout(processTimeout);
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('fillstruct');
@@ -94,7 +95,7 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 		if (p.pid) {
 			p.stdin.end(input);
 		}
-		setTimeout(() => {
+		const processTimeout = setTimeout(() => {
 			killProcess(p);
 			reject(new Error('Timeout executing tool - fillstruct'));
 		}, getTimeoutConfiguration('onCommand'));

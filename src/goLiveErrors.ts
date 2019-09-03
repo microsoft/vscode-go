@@ -75,6 +75,7 @@ async function processFile(e: vscode.TextDocumentChangeEvent) {
 	const args = ['-e', '-a', '-lf=' + fileName, path.dirname(fileName)];
 	const env = getToolsEnvVars();
 	const p = cp.execFile(gotypeLive, args, { env }, (err, stdout, stderr) => {
+		clearTimeout(processTimeout);
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gotype-live');
 			return;
@@ -112,7 +113,7 @@ async function processFile(e: vscode.TextDocumentChangeEvent) {
 	if (p.pid) {
 		p.stdin.end(fileContents);
 	}
-	setTimeout(() => {
+	const processTimeout = setTimeout(() => {
 		killProcess(p);
 	}, getTimeoutConfiguration('onType'));
 }

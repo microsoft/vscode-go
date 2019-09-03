@@ -143,6 +143,7 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 		}
 
 		const p = cp.execFile(cmd, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
+			clearTimeout(processTimeout);
 			outputChannel.appendLine('Generating Tests: ' + cmd + ' ' + args.join(' '));
 
 			try {
@@ -183,7 +184,7 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 				reject(e);
 			}
 		});
-		setTimeout(() => {
+		const processTimeout = setTimeout(() => {
 			killProcess(p);
 			reject(new Error('Timeout executing tool - gotests'));
 		}, getTimeoutConfiguration('onCommand', goConfig));

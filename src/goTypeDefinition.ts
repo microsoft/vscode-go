@@ -56,6 +56,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 
 			const timeout = getTimeoutConfiguration('onCommand');
 			const p = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
+				clearTimeout(processTimeout);
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
@@ -112,13 +113,14 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			if (p.pid) {
 				p.stdin.end(getFileArchive(document));
 			}
-			token.onCancellationRequested(() => {
-				killTree(p.pid);
-			});
-			setTimeout(() => {
+			const processTimeout = setTimeout(() => {
 				killTree(p.pid);
 				reject('Timeout executing tool - guru');
 			}, timeout);
+			token.onCancellationRequested(() => {
+				clearTimeout(processTimeout);
+				killTree(p.pid);
+			});
 		});
 	}
 }

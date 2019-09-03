@@ -73,12 +73,17 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 		}
 
 		let p: cp.ChildProcess;
+		let processTimout: NodeJS.Timeout;
 		if (token) {
-			token.onCancellationRequested(() => killProcess(p));
+			token.onCancellationRequested(() => {
+				clearTimeout(processTimout);
+				killProcess(p);
+			});
 		}
 
 		// Spawn `go-outline` process
 		p = cp.execFile(gooutline, gooutlineFlags, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
+			clearTimeout(processTimout);
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('go-outline');
@@ -107,7 +112,7 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 		if (options.document && p.pid) {
 			p.stdin.end(getFileArchive(options.document));
 		}
-		setTimeout(() => {
+		processTimout = setTimeout(() => {
 			killProcess(p);
 			reject(new Error('Timeout executing tool - gooutline'));
 		}, getTimeoutConfiguration('onCommand'));

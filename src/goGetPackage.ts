@@ -31,6 +31,7 @@ export function goGetPackage() {
 	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
 
 	const p = cp.execFile(goRuntimePath, ['get', '-v', importPath], { env }, (err, stdout, stderr) => {
+		clearTimeout(processTimeout);
 		// go get -v uses stderr to write output regardless of success or failure
 		if (stderr !== '') {
 			outputChannel.show();
@@ -43,7 +44,8 @@ export function goGetPackage() {
 		// go get -v doesn't write anything when the package already exists
 		vscode.window.showInformationMessage(`Package already exists: ${importPath}`);
 	});
-	setTimeout(() => {
+	const processTimeout = setTimeout(() => {
 		killProcess(p);
+		vscode.window.showErrorMessage('Timeout executing "go get" to get the package');
 	}, getTimeoutConfiguration('onCommand'));
 }

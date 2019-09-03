@@ -40,6 +40,7 @@ export function implCursor() {
 function runGoImpl(args: string[], insertPos: vscode.Position) {
 	const goimpl = getBinPath('impl');
 	const p = cp.execFile(goimpl, args, { env: getToolsEnvVars(), cwd: dirname(vscode.window.activeTextEditor.document.fileName) }, (err, stdout, stderr) => {
+		clearTimeout(processTimeout);
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('impl');
 			return;
@@ -57,7 +58,7 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 	if (p.pid) {
 		p.stdin.end();
 	}
-	setTimeout(() => {
+	const processTimeout = setTimeout(() => {
 		killProcess(p);
 		vscode.window.showInformationMessage('Timeout executing tool - impl');
 	}, getTimeoutConfiguration('onCommand'));

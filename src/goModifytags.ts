@@ -128,6 +128,7 @@ function runGomodifytags(args: string[]) {
 	const editor = vscode.window.activeTextEditor;
 	const input = getFileArchive(editor.document);
 	const p = cp.execFile(gomodifytags, args, { env: getToolsEnvVars() }, (err, stdout, stderr) => {
+		clearTimeout(processTimeout);
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('gomodifytags');
 			return;
@@ -144,7 +145,7 @@ function runGomodifytags(args: string[]) {
 	if (p.pid) {
 		p.stdin.end(input);
 	}
-	setTimeout(() => {
+	const processTimeout = setTimeout(() => {
 		killProcess(p);
 		vscode.window.showErrorMessage('Timout executing - gomodifytags');
 	}, getTimeoutConfiguration('onCommand'));

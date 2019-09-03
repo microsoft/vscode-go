@@ -39,11 +39,16 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			}
 
 			let p: cp.ChildProcess;
+			let processTimeout: NodeJS.Timeout;
 			if (token) {
-				token.onCancellationRequested(() => killProcess(p));
+				token.onCancellationRequested(() => {
+					clearTimeout(processTimeout);
+					killProcess(p);
+				});
 			}
 
 			p = cp.execFile(gorename, gorenameArgs, {env}, (err, stdout, stderr) => {
+				clearTimeout(processTimeout);
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gorename');
@@ -74,7 +79,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 					reject(e);
 				}
 			});
-			setTimeout(() => {
+			processTimeout = setTimeout(() => {
 				killProcess(p);
 				reject(new Error('Timeout executing tool - gorename'));
 			}, getTimeoutConfiguration('onCommand'));

@@ -98,9 +98,12 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, token:
 function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise<GoSymbolDeclaration[]> {
 	const gosyms = getBinPath('go-symbols');
 	let p: cp.ChildProcess;
-
+	let processTimeout: NodeJS.Timeout;
 	if (token) {
-		token.onCancellationRequested(() => killProcess(p));
+		token.onCancellationRequested(() => {
+			clearTimeout(processTimeout);
+			killProcess(p);
+		});
 	}
 
 	// Set up execFile parameters
@@ -111,6 +114,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 
 	return new Promise((resolve, reject) => {
 		p = cp.execFile(gosyms, args, options, (err, stdout, stderr) => {
+			clearTimeout(processTimeout);
 			if (err && stderr && stderr.startsWith('flag provided but not defined: -ignore')) {
 				return reject(new Error(stderr));
 			} else if (err) {
@@ -120,7 +124,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 			const decls = <GoSymbolDeclaration[]>JSON.parse(result);
 			return resolve(decls);
 		});
-		setTimeout(() => {
+		processTimeout = setTimeout(() => {
 			killProcess(p);
 			reject(new Error('Timeout executing tool - go-symbols'));
 		}, getTimeoutConfiguration('onCommand'));

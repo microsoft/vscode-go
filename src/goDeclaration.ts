@@ -110,8 +110,12 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 	const offset = byteOffsetAt(input.document, input.position);
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
+	let processTimeout: NodeJS.Timeout;
 	if (token) {
-		token.onCancellationRequested(() => killProcess(p));
+		token.onCancellationRequested(() => {
+			clearTimeout(processTimeout);
+			killProcess(p);
+		});
 	}
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -123,9 +127,11 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 		p = cp.execFile(godefPath, args, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
+					clearTimeout(processTimeout);
 					return reject(missingToolMsg + godefTool);
 				}
 				if (err) {
+					clearTimeout(processTimeout);
 					if (input.isMod
 						&& !input.includeDocs
 						&& stderr
@@ -161,26 +167,30 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 					name: null
 				};
 				if (!input.includeDocs || godefImportDefinitionRegex.test(definitionInformation.declarationlines[0])) {
+					clearTimeout(processTimeout);
 					return resolve(definitionInformation);
 				}
 				match = /^\w+ \(\*?(\w+)\)/.exec(lines[1]);
 				runGodoc(input.cwd, pkgPath, match ? match[1] : '', input.word, token).then(doc => {
+					clearTimeout(processTimeout);
 					if (doc) {
 						definitionInformation.doc = doc;
 					}
 					resolve(definitionInformation);
 				}).catch(err => {
+					clearTimeout(processTimeout);
 					console.log(err);
 					resolve(definitionInformation);
 				});
 			} catch (e) {
+				clearTimeout(processTimeout);
 				reject(e);
 			}
 		});
 		if (p.pid) {
 			p.stdin.end(input.document.getText());
 		}
-		setTimeout(() => {
+		processTimeout = setTimeout(() => {
 			killProcess(p);
 			reject(new Error('Timeout executing tool - godef'));
 		}, timeout);
@@ -195,8 +205,12 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, 
 	const offset = byteOffsetAt(input.document, input.position);
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
+	let processTimeout: NodeJS.Timeout;
 	if (token) {
-		token.onCancellationRequested(() => killProcess(p));
+		token.onCancellationRequested(() => {
+			clearTimeout(processTimeout);
+			killProcess(p);
+		});
 	}
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -206,6 +220,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, 
 		const gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
 		p = cp.execFile(gogetdoc, gogetdocFlags, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
+				clearTimeout(processTimeout);
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'gogetdoc');
 				}
@@ -250,7 +265,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, 
 		if (p.pid) {
 			p.stdin.end(getFileArchive(input.document));
 		}
-		setTimeout(() => {
+		processTimeout = setTimeout(() => {
 			killProcess(p);
 			reject(new Error('Timeout executing tool - gogetdoc'));
 		}, timeout);
@@ -265,11 +280,16 @@ function definitionLocation_guru(input: GoDefinitionInput, timeout: number, toke
 	const offset = byteOffsetAt(input.document, input.position);
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
+	let processTimeout: NodeJS.Timeout;
 	if (token) {
-		token.onCancellationRequested(() => killProcess(p));
+		token.onCancellationRequested(() => {
+			clearTimeout(processTimeout);
+			killProcess(p);
+		});
 	}
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		p = cp.execFile(guru, ['-json', '-modified', 'definition', input.document.fileName + ':#' + offset.toString()], { env }, (err, stdout, stderr) => {
+			clearTimeout(processTimeout);
 			try {
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'guru');
@@ -303,7 +323,7 @@ function definitionLocation_guru(input: GoDefinitionInput, timeout: number, toke
 		if (p.pid) {
 			p.stdin.end(getFileArchive(input.document));
 		}
-		setTimeout(() => {
+		processTimeout = setTimeout(() => {
 			killProcess(p);
 			reject(new Error('Timeout executing tool - guru'));
 		}, timeout);

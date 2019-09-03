@@ -158,6 +158,7 @@ export function addImportToWorkspace() {
 	const env = getToolsEnvVars();
 
 	const p = cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}', importPath], { env }, (err, stdout, stderr) => {
+		clearTimeout(processTimeout);
 		const dirs = (stdout || '').split('\n');
 		if (!dirs.length || !dirs[0].trim()) {
 			vscode.window.showErrorMessage(`Could not find package ${importPath}`);
@@ -174,7 +175,7 @@ export function addImportToWorkspace() {
 
 		vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, { uri: importPathUri });
 	});
-	setTimeout(() => {
+	const processTimeout = setTimeout(() => {
 		killProcess(p);
 		vscode.window.showErrorMessage('Timout executing - go list');
 	}, getTimeoutConfiguration('onCommand'));

@@ -49,12 +49,25 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 			return;
 		}
 
+		let listProcess: cp.ChildProcess;
+		let guruProcess: cp.ChildProcess;
+		let listProcessTimeout: NodeJS.Timeout;
+		let guruProcessTimeout: NodeJS.Timeout;
 		return new Promise<vscode.Definition>((resolve, reject) => {
 			if (token.isCancellationRequested) {
 				return resolve(null);
 			}
+			token.onCancellationRequested(() => {
+				clearTimeout(listProcessTimeout);
+				clearTimeout(guruProcessTimeout);
+				killTree(listProcess.pid);
+				killTree(guruProcess.pid);
+			});
 			const env = getToolsEnvVars();
-			const listProcess = cp.execFile(goRuntimePath, ['list', '-e', '-json'], { cwd: root, env }, (err, stdout, stderr) => {
+			const startTime = Date.now();
+			const totalTimeout = getTimeoutConfiguration('onCommand');
+			listProcess = cp.execFile(goRuntimePath, ['list', '-e', '-json'], { cwd: root, env }, (err, stdout, stderr) => {
+				clearTimeout(listProcessTimeout);
 				if (err) {
 					return reject(err);
 				}
@@ -70,7 +83,9 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				}
 				args.push('-json', 'implements', `${filename}:#${offset.toString()}`);
 
-				const guruProcess = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
+				const guruTimeoutValue = totalTimeout - (Date.now() - startTime);
+				guruProcess = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
+					clearTimeout(guruProcessTimeout);
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
 						return resolve(null);
@@ -108,17 +123,15 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 
 					return resolve(results);
 				});
-				token.onCancellationRequested(() => killTree(guruProcess.pid));
-				setTimeout(() => {
+				guruProcessTimeout = setTimeout(() => {
 					killTree(guruProcess.pid);
 					reject('Timout executing tool - guru');
-				}, getTimeoutConfiguration('onCommand'));
+				}, guruTimeoutValue);
 			});
-			token.onCancellationRequested(() => killTree(listProcess.pid));
-			setTimeout(() => {
+			listProcessTimeout = setTimeout(() => {
 				killTree(listProcess.pid);
 				reject('Timout executing - go list');
-			}, getTimeoutConfiguration('onCommand'));
+			}, totalTimeout);
 		});
 	}
 }

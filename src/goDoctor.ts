@@ -94,14 +94,17 @@ function runGoDoctor(
 				cwd: dirname(fileName)
 			},
 			(err, stdout, stderr) => {
+				clearTimeout(processTimeout);
 				if (err) {
 					vscode.window.showErrorMessage(stderr || err.message);
 				}
+				resolve();
 			}
 		);
 
-		setTimeout(() => {
+		const processTimeout = setTimeout(() => {
 			killProcess(p);
+			vscode.window.showErrorMessage('Timeout executing tool - godoctor');
 		}, getTimeoutConfiguration('onCommand'));
 	});
 }

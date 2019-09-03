@@ -39,7 +39,10 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			const args = buildTags ? ['-tags', buildTags] : [];
 			args.push('-modified', 'referrers', `${filename}:#${offset.toString()}`);
 
-			const p = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
+			let p: cp.ChildProcess;
+			let processTimeout: NodeJS.Timeout;
+			p = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
+				clearTimeout(processTimeout);
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('guru');
@@ -78,13 +81,14 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			if (p.pid) {
 				p.stdin.end(getFileArchive(document));
 			}
-			token.onCancellationRequested(() => {
-				killTree(p.pid);
-			});
-			setTimeout(() => {
+			processTimeout = setTimeout(() => {
 				killTree(p.pid);
 				reject('Timeout executing tool - guru');
 			}, getTimeoutConfiguration('onCommand'));
+			token.onCancellationRequested(() => {
+				clearTimeout(processTimeout);
+				killTree(p.pid);
+			});
 		});
 	}
 
