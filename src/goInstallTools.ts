@@ -9,12 +9,11 @@ import vscode = require('vscode');
 import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
-import semver = require('semver');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import { getToolFromToolPath, envPath } from './goPath';
 import { getLanguageServerToolPath } from './goLanguageServer';
 import { Tool, getConfiguredTools, getTool, isWildcard, isGocode, hasModSuffix, containsString, containsTool, getImportPath } from './goTools';
-import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath } from './util';
+import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, Version } from './util';
 
 // declinedUpdates tracks the tools that the user has declined to update.
 const declinedUpdates: Tool[] = [];
@@ -58,7 +57,7 @@ export async function installAllTools(updateExistingToolsOnly: boolean = false) 
  *
  * @param string[] array of tool names to be installed
  */
-export function installTools(missing: Tool[], goVersion: semver.SemVer): Promise<void> {
+export function installTools(missing: Tool[], goVersion: Version): Promise<void> {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showErrorMessage(`Failed to run "go get" to install the packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
@@ -112,7 +111,7 @@ export function installTools(missing: Tool[], goVersion: semver.SemVer): Promise
 	// This ensures that users get the latest tagged version, rather than master,
 	// which may be unstable.
 	let modulesOff = false;
-	if (semver.lt(goVersion, '1.11.0')) {
+	if (goVersion.lt('1.11')) {
 		modulesOff = true;
 	}
 
@@ -244,7 +243,7 @@ export async function promptForMissingTool(toolName: string) {
 
 	const goVersion = await getGoVersion();
 	// Show error messages for outdated tools.
-	if (semver.lt(goVersion, '1.9.0')) {
+	if (goVersion.lt('1.9')) {
 		let outdatedErrorMsg;
 		switch (tool.name) {
 			case 'golint':
@@ -378,7 +377,7 @@ export async function offerToInstallTools() {
 	}
 
 	const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
-	if (usingSourceGraph && semver.gt(goVersion, '1.10.0')) {
+	if (usingSourceGraph && goVersion.gt('1.10')) {
 		const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
 		const disableLabel = 'Disable language server';
 		const installLabel = 'Install';
@@ -401,7 +400,7 @@ export async function offerToInstallTools() {
 			});
 	}
 
-	function promptForInstall(missing: Tool[], goVersion: semver.SemVer) {
+	function promptForInstall(missing: Tool[], goVersion: Version) {
 		const installItem = {
 			title: 'Install',
 			command() {
@@ -427,7 +426,7 @@ export async function offerToInstallTools() {
 	}
 }
 
-function getMissingTools(goVersion: semver.SemVer): Promise<Tool[]> {
+function getMissingTools(goVersion: Version): Promise<Tool[]> {
 	const keys = getConfiguredTools(goVersion);
 	return Promise.all<Tool>(keys.map(tool => new Promise<Tool>((resolve, reject) => {
 		const toolPath = getBinPath(tool.name);

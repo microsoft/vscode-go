@@ -266,7 +266,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 			const result = new Map<string, string>();
 
 			const version = await getGoVersion();
-			const vendorAlreadyExcluded = semver.gte(version, '1.9.0');
+			const vendorAlreadyExcluded = version.gt('1.8');
 
 			for (const line of lines) {
 				const matches = line.match(pkgToFolderMappingRegex);

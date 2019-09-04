@@ -65,7 +65,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			const currentVersion = await getGoVersion();
 			if (currentVersion) {
 				const prevVersion = toolsGoInfo[toolsGopath].version;
-				const currVersionString = `${currentVersion.major}.${currentVersion.minor}`;
+				const currVersionString = currentVersion.format();
 
 				if (prevVersion !== currVersionString) {
 					if (prevVersion) {

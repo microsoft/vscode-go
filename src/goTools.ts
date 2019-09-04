@@ -5,10 +5,9 @@
 
 'use strict';
 
-import semver = require('semver');
 import vscode = require('vscode');
 import { goLiveErrorsEnabled } from './goLiveErrors';
-import { getGoConfig } from './util';
+import { getGoConfig, Version } from './util';
 
 export interface Tool {
 	name: string;
@@ -22,9 +21,9 @@ export interface Tool {
  * @param tool 		Object of type `Tool` for the Go tool.
  * @param goVersion The current Go version.
  */
-export function getImportPath(tool: Tool, goVersion: semver.SemVer): string {
+export function getImportPath(tool: Tool, goVersion: Version): string {
 	// For older versions of Go, install the older version of gocode.
-	if (tool.name === 'gocode' && semver.lt(goVersion, '1.10.0')) {
+	if (tool.name === 'gocode' && goVersion.lt('1.10')) {
 		return 'github.com/nsf/gocode';
 	}
 	return tool.importPath;
@@ -35,7 +34,7 @@ export function getImportPath(tool: Tool, goVersion: semver.SemVer): string {
  * @param tool  	Object of type `Tool` for the Go tool.
  * @param goVersion The current Go version.
  */
-export function isWildcard(tool: Tool, goVersion: semver.SemVer): boolean {
+export function isWildcard(tool: Tool, goVersion: Version): boolean {
 	const importPath = getImportPath(tool, goVersion);
 	return importPath.endsWith('...');
 }
@@ -62,7 +61,7 @@ export function isGocode(tool: Tool): boolean {
 	return tool.name === 'gocode' || tool.name === 'gocode-gomod';
 }
 
-export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
+export function getConfiguredTools(goVersion: Version): Tool[] {
 	const tools: Tool[] = [];
 	function maybeAddTool(name: string) {
 		const tool = allToolsInformation[name];
@@ -97,7 +96,7 @@ export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 	}
 
 	// gocode-gomod needed in go 1.11 & higher
-	if (semver.gte(goVersion, '1.11.0')) {
+	if (goVersion.gt('1.10')) {
 		maybeAddTool('gocode-gomod');
 	}
 
@@ -120,7 +119,7 @@ export function getConfiguredTools(goVersion: semver.SemVer): Tool[] {
 	maybeAddTool(goConfig['lintTool']);
 
 	// Add the language server for Go versions >= 1.11.
-	if (goConfig['useLanguageServer'] && semver.gt(goVersion, '1.10.0')) {
+	if (goConfig['useLanguageServer'] && goVersion.gt('1.10')) {
 		maybeAddTool('gopls');
 	}
 

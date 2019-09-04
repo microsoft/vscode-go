@@ -225,7 +225,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				pkgMapPromise = getNonVendorPackages(testconfig.dir); // We need the mapping to get absolute paths for the files in the test output
 			} else {
 				const goVersion = await getGoVersion();
-				if (semver.gte(goVersion, '1.9.0')) {
+				if (goVersion.gt('1.8')) {
 					targets = ['./...'];
 					return null; // We dont need mapping, as we can derive the absolute paths from package path
 				}
