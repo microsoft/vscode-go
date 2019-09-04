@@ -99,7 +99,7 @@ export class Version {
 			return `${this.sv.major}.${this.sv.minor}`;
 		}
 		return `devel +${this.commit}`;
-	};
+	}
 
 	lt(version: string): boolean {
 		// Assume a developer version is always above any released version.
@@ -108,7 +108,7 @@ export class Version {
 			return false;
 		}
 		return semver.lt(this.sv, semver.coerce(version));
-	};
+	}
 
 	gt(version: string): boolean {
 		// Assume a developer version is always above any released version.
@@ -117,7 +117,7 @@ export class Version {
 			return true;
 		}
 		return semver.gt(this.sv, semver.coerce(version));
-	};
+	}
 }
 
 let goVersion: Version = null;
