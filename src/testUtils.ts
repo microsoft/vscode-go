@@ -6,7 +6,6 @@ import cp = require('child_process');
 import path = require('path');
 import util = require('util');
 import vscode = require('vscode');
-import semver = require('semver');
 
 import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';

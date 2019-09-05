@@ -5,7 +5,6 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getGoConfig, Version } from './util';
 

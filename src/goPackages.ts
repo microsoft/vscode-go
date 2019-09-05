@@ -6,7 +6,6 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import semver = require('semver');
 import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows, envPath } from './goPath';
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';

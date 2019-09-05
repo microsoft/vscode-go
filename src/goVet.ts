@@ -4,7 +4,6 @@
  *--------------------------------------------------------*/
 
 import path = require('path');
-import semver = require('semver');
 import vscode = require('vscode');
 import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, resolvePath } from './util';
 import { outputChannel } from './goStatus';
