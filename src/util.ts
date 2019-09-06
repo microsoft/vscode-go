@@ -72,7 +72,7 @@ export const goBuiltinTypes: Set<string> = new Set<string>([
 	'uintptr'
 ]);
 
-export class Version {
+export class GoVersion {
 	sv: semver.SemVer;
 	commit: string;
 	isDevel: boolean;
@@ -120,7 +120,7 @@ export class Version {
 	}
 }
 
-let goVersion: Version = null;
+let goVersion: GoVersion = null;
 let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
@@ -270,7 +270,7 @@ export function getUserNameHash() {
  * Gets version of Go based on the output of the command `go version`.
  * Returns null if go is being used from source/tip in which case `go version` will not return release tag like go1.6.3
  */
-export async function getGoVersion(): Promise<Version> {
+export async function getGoVersion(): Promise<GoVersion> {
 	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
@@ -287,9 +287,9 @@ export async function getGoVersion(): Promise<Version> {
 		sendTelemetryEvent('getGoVersion', { version: `${goVersion.format()}` });
 		return Promise.resolve(goVersion);
 	}
-	return new Promise<Version>((resolve) => {
+	return new Promise<GoVersion>((resolve) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
-			goVersion = new Version(stdout);
+			goVersion = new GoVersion(stdout);
 			return resolve(goVersion);
 		});
 	});

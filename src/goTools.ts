@@ -6,7 +6,7 @@
 'use strict';
 
 import { goLiveErrorsEnabled } from './goLiveErrors';
-import { getGoConfig, Version } from './util';
+import { getGoConfig, GoVersion } from './util';
 
 export interface Tool {
 	name: string;
@@ -20,7 +20,7 @@ export interface Tool {
  * @param tool 		Object of type `Tool` for the Go tool.
  * @param goVersion The current Go version.
  */
-export function getImportPath(tool: Tool, goVersion: Version): string {
+export function getImportPath(tool: Tool, goVersion: GoVersion): string {
 	// For older versions of Go, install the older version of gocode.
 	if (tool.name === 'gocode' && goVersion.lt('1.10')) {
 		return 'github.com/nsf/gocode';
@@ -33,7 +33,7 @@ export function getImportPath(tool: Tool, goVersion: Version): string {
  * @param tool  	Object of type `Tool` for the Go tool.
  * @param goVersion The current Go version.
  */
-export function isWildcard(tool: Tool, goVersion: Version): boolean {
+export function isWildcard(tool: Tool, goVersion: GoVersion): boolean {
 	const importPath = getImportPath(tool, goVersion);
 	return importPath.endsWith('...');
 }
@@ -60,7 +60,7 @@ export function isGocode(tool: Tool): boolean {
 	return tool.name === 'gocode' || tool.name === 'gocode-gomod';
 }
 
-export function getConfiguredTools(goVersion: Version): Tool[] {
+export function getConfiguredTools(goVersion: GoVersion): Tool[] {
 	const tools: Tool[] = [];
 	function maybeAddTool(name: string) {
 		const tool = allToolsInformation[name];
