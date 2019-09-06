@@ -43,20 +43,23 @@
     "vscode-debugadapter": "^1.36.0",
     "vscode-debugprotocol": "^1.36.0",
     "vscode-extension-telemetry": "^0.1.2",
-    "vscode-languageclient": "~5.2.1"
+    "vscode-languageclient": "~5.2.1",
+    "semver": "^6.3.0",
+    "web-request": "^1.0.7"
   },
   "devDependencies": {
     "@types/fs-extra": "^8.0.0",
+    "@types/glob": "^7.1.1",
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.7.2",
+    "@types/semver": "^6.0.1",
     "@types/vscode": "^1.25.0",
-    "@types/glob": "^7.1.1",
     "fs-extra": "^8.1.0",
+    "glob": "^7.1.4",
+    "mocha": "^6.2.0",
     "tslint": "^5.19.0",
     "typescript": "^3.6.2",
-    "vscode-test": "^1.2.0",
-    "glob": "^7.1.4",
-    "mocha": "^6.2.0"
+    "vscode-test": "^1.2.0"
   },
   "engines": {
     "vscode": "^1.30.0"

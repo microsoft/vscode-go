@@ -4,6 +4,7 @@
  *--------------------------------------------------------*/
 
 import vscode = require('vscode');
+import semver = require('semver');
 import path = require('path');
 import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows, envPath } from './goPath';
 import cp = require('child_process');
@@ -71,27 +72,58 @@ export const goBuiltinTypes: Set<string> = new Set<string>([
 	'uintptr'
 ]);
 
-export interface SemVersion {
-	major: number;
-	minor: number;
+export class GoVersion {
+	sv: semver.SemVer;
+	commit: string;
+	isDevel: boolean;
+
+	constructor(version: string) {
+		const matchesRelease = /go version go(\d.\d+).*/.exec(version);
+		const matchesDevel = /go version devel \+(.\d+).*/.exec(version);
+		if (matchesRelease) {
+			this.sv = semver.coerce(matchesRelease[0]);
+		} else if (matchesDevel) {
+			this.isDevel = true;
+			this.commit = matchesDevel[0];
+		}
+		/* __GDPR__
+            "getGoVersion" : {
+	  			"version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+   			}
+ 		*/
+		sendTelemetryEvent('getGoVersion', { version: this.format() });
+	}
+
+	format(): string {
+		if (this.sv) {
+			return this.sv.format();
+		}
+		return `devel +${this.commit}`;
+	}
+
+	lt(version: string): boolean {
+		// Assume a developer version is always above any released version.
+		// This is not necessarily true.
+		if (this.isDevel) {
+			return false;
+		}
+		return semver.lt(this.sv, semver.coerce(version));
+	}
+
+	gt(version: string): boolean {
+		// Assume a developer version is always above any released version.
+		// This is not necessarily true.
+		if (this.isDevel) {
+			return true;
+		}
+		return semver.gt(this.sv, semver.coerce(version));
+	}
 }
 
-let goVersion: SemVersion = null;
+let goVersion: GoVersion = null;
 let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
-
-export function isBelow(goVersion: SemVersion, major: number, minor: number): boolean {
-	return goVersion && (goVersion.major < major || (goVersion.major === major && goVersion.minor < minor));
-}
-
-export function isAbove(goVersion: SemVersion, major: number, minor: number): boolean {
-	return !goVersion || goVersion.major > major || (goVersion.major === major && goVersion.minor > minor);
-}
-
-export function isEqualTo(goVersion: SemVersion, major: number, minor: number): boolean {
-	return goVersion && goVersion.major === major && goVersion.minor === minor;
-}
 
 export function getGoConfig(): vscode.WorkspaceConfiguration {
 	return vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
@@ -238,7 +270,7 @@ export function getUserNameHash() {
  * Gets version of Go based on the output of the command `go version`.
  * Returns null if go is being used from source/tip in which case `go version` will not return release tag like go1.6.3
  */
-export function getGoVersion(): Promise<SemVersion> {
+export async function getGoVersion(): Promise<GoVersion> {
 	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
@@ -252,31 +284,12 @@ export function getGoVersion(): Promise<SemVersion> {
 			  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 		   }
 		 */
-		sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
+		sendTelemetryEvent('getGoVersion', { version: `${goVersion.format()}` });
 		return Promise.resolve(goVersion);
 	}
-	return new Promise<SemVersion>((resolve, reject) => {
+	return new Promise<GoVersion>((resolve) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
-			const matches = /go version go(\d).(\d+).*/.exec(stdout);
-			if (matches) {
-				goVersion = {
-					major: parseInt(matches[1]),
-					minor: parseInt(matches[2])
-				};
-				/* __GDPR__
-				   "getGoVersion" : {
-					  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				   }
-				 */
-				sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
-			} else {
-				/* __GDPR__
-				   "getGoVersion" : {
-					  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				   }
-				 */
-				sendTelemetryEvent('getGoVersion', { version: stdout });
-			}
+			goVersion = new GoVersion(stdout);
 			return resolve(goVersion);
 		});
 	});
@@ -285,28 +298,26 @@ export function getGoVersion(): Promise<SemVersion> {
 /**
  * Returns boolean denoting if current version of Go supports vendoring
  */
-export function isVendorSupported(): Promise<boolean> {
+export async function isVendorSupported(): Promise<boolean> {
 	if (vendorSupport != null) {
 		return Promise.resolve(vendorSupport);
 	}
-	return getGoVersion().then(version => {
-		if (!version) {
-			return process.env['GO15VENDOREXPERIMENT'] === '0' ? false : true;
-		}
-
-		switch (version.major) {
-			case 0:
-				vendorSupport = false;
-				break;
-			case 1:
-				vendorSupport = (version.minor > 6 || ((version.minor === 5 || version.minor === 6) && process.env['GO15VENDOREXPERIMENT'] === '1')) ? true : false;
-				break;
-			default:
-				vendorSupport = true;
-				break;
-		}
-		return vendorSupport;
-	});
+	const goVersion = await getGoVersion();
+	if (!goVersion.sv) {
+		return process.env['GO15VENDOREXPERIMENT'] === '0' ? false : true;
+	}
+	switch (goVersion.sv.major) {
+		case 0:
+			vendorSupport = false;
+			break;
+		case 1:
+			vendorSupport = (goVersion.sv.minor > 6 || ((goVersion.sv.minor === 5 || goVersion.sv.minor === 6) && process.env['GO15VENDOREXPERIMENT'] === '1')) ? true : false;
+			break;
+		default:
+			vendorSupport = true;
+			break;
+	}
+	return vendorSupport;
 }
 
 /**
