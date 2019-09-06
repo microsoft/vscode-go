@@ -30,13 +30,17 @@ export function showHideStatus(editor: vscode.TextEditor) {
 		}
 	}
 
-	isModSupported(editor.document.uri).then(isMod => {
-		if (isMod) {
-			statusBarItemModule.show();
-		} else {
-			statusBarItemModule.hide();
-		}
-	});
+	if (editor) {
+		isModSupported(editor.document.uri).then(isMod => {
+			if (isMod) {
+				statusBarItemModule.show();
+			} else {
+				statusBarItemModule.hide();
+			}
+		});
+	} else {
+		statusBarItemModule.hide();
+	}
 }
 
 export function hideGoStatus() {
