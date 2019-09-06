@@ -13,7 +13,7 @@ import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import { getToolFromToolPath, envPath } from './goPath';
 import { getLanguageServerToolPath } from './goLanguageServer';
 import { Tool, getConfiguredTools, getTool, isWildcard, isGocode, hasModSuffix, containsString, containsTool, getImportPath } from './goTools';
-import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, Version } from './util';
+import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, GoVersion } from './util';
 
 // declinedUpdates tracks the tools that the user has declined to update.
 const declinedUpdates: Tool[] = [];
@@ -57,7 +57,7 @@ export async function installAllTools(updateExistingToolsOnly: boolean = false) 
  *
  * @param string[] array of tool names to be installed
  */
-export function installTools(missing: Tool[], goVersion: Version): Promise<void> {
+export function installTools(missing: Tool[], goVersion: GoVersion): Promise<void> {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showErrorMessage(`Failed to run "go get" to install the packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
@@ -400,7 +400,7 @@ export async function offerToInstallTools() {
 			});
 	}
 
-	function promptForInstall(missing: Tool[], goVersion: Version) {
+	function promptForInstall(missing: Tool[], goVersion: GoVersion) {
 		const installItem = {
 			title: 'Install',
 			command() {
@@ -426,7 +426,7 @@ export async function offerToInstallTools() {
 	}
 }
 
-function getMissingTools(goVersion: Version): Promise<Tool[]> {
+function getMissingTools(goVersion: GoVersion): Promise<Tool[]> {
 	const keys = getConfiguredTools(goVersion);
 	return Promise.all<Tool>(keys.map(tool => new Promise<Tool>((resolve, reject) => {
 		const toolPath = getBinPath(tool.name);
