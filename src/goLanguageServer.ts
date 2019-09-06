@@ -424,9 +424,8 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	if (versions.length === 0) {
 		return false;
 	}
-	versions.sort();
-	const latestVersion = versions[versions.length - 1];
-	return semver.lt(usersVersion, latestVersion);
+	versions.sort(semver.rcompare);
+	return semver.lt(usersVersion, versions[0]);
 }
 
 async function goplsVersion(goplsPath: string): Promise<string> {

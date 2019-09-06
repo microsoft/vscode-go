@@ -96,7 +96,7 @@ export class Version {
 
 	format(): string {
 		if (this.sv) {
-			return `${this.sv.major}.${this.sv.minor}`;
+			return this.sv.format();
 		}
 		return `devel +${this.commit}`;
 	}
