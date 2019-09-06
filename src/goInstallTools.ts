@@ -147,22 +147,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 					resolve([...sofar, failureReason]);
 				} else {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
-					if (tool.name === 'gometalinter') {
-						// Gometalinter needs to install all the linters it uses.
-						outputChannel.appendLine('Installing all linters used by gometalinter....');
-						const gometalinterBinPath = getBinPath('gometalinter');
-						cp.execFile(gometalinterBinPath, ['--install'], { env: envForTools }, (err, stdout, stderr) => {
-							if (!err) {
-								outputChannel.appendLine('Installing all linters used by gometalinter SUCCEEDED.');
-								resolve([...sofar, null]);
-							} else {
-								const failureReason = `Error while running gometalinter --install;; ${stderr}`;
-								resolve([...sofar, failureReason]);
-							}
-						});
-					} else {
-						resolve([...sofar, null]);
-					}
+					resolve([...sofar, null]);
 				}
 			};
 
@@ -247,7 +232,7 @@ export async function promptForMissingTool(toolName: string) {
 		let outdatedErrorMsg;
 		switch (tool.name) {
 			case 'golint':
-				outdatedErrorMsg = 'golint no longer supports go1.8 or below, update your settings to use gometalinter as go.lintTool and install gometalinter';
+				outdatedErrorMsg = 'golint no longer supports go1.8 or below, update your settings to use golangci-lint as go.lintTool and install golangci-lint'
 				break;
 			case 'gotests':
 				outdatedErrorMsg = 'Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.';

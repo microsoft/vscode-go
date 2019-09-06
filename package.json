@@ -778,10 +778,10 @@
           "scope": "resource",
           "enum": [
             "golint",
-            "gometalinter",
             "golangci-lint",
             "revive",
-            "staticcheck"
+            "staticcheck",
+            "gometalinter"
           ]
         },
         "go.lintFlags": {
