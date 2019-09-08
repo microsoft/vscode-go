@@ -630,7 +630,6 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 		}
 		if (vscode.debug.activeDebugSession) {
 			vscode.window.showWarningMessage('A debug session is currently active. Changes to your Go files may result in unexpected behaviour.');
-			return;
 		}
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
 			runBuilds(document, vscode.workspace.getConfiguration('go', document.uri));
