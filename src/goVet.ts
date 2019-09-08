@@ -1,6 +1,11 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion, resolvePath } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, resolvePath } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
 import { vetDiagnosticCollection } from './goMain';
@@ -44,7 +49,7 @@ export function vetCode(vetWorkspace?: boolean) {
  * @param goConfig Configuration for the Go extension.
  * @param vetWorkspace If true vets code in all workspace.
  */
-export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace?: boolean): Promise<ICheckResult[]> {
+export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace?: boolean): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;
 	if (tokenSource) {
@@ -78,38 +83,35 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		args.push(flag);
 	});
 
-	const vetPromise = getGoVersion().then((version: SemVersion) => {
-		const tagsArg = [];
-		if (goConfig['buildTags'] && vetFlags.indexOf('-tags') === -1) {
-			tagsArg.push('-tags');
-			tagsArg.push(goConfig['buildTags']);
-		}
+	const goVersion = await getGoVersion();
+	const tagsArg = [];
+	if (goConfig['buildTags'] && vetFlags.indexOf('-tags') === -1) {
+		tagsArg.push('-tags');
+		tagsArg.push(goConfig['buildTags']);
+	}
 
-		let vetArgs = ['vet', ...args, ...tagsArg, './...'];
-		if (version && version.major === 1 && version.minor <= 9 && args.length) {
-			vetArgs = ['tool', 'vet', ...args, ...tagsArg, '.'];
-		}
+	let vetArgs = ['vet', ...args, ...tagsArg, './...'];
+	if (goVersion.lt('1.10') && args.length) {
+		vetArgs = ['tool', 'vet', ...args, ...tagsArg, '.'];
+	}
 
-		outputChannel.appendLine(`Starting "go vet" under the folder ${cwd}`);
+	outputChannel.appendLine(`Starting "go vet" under the folder ${cwd}`);
 
-		running = true;
-		return runTool(
-			vetArgs,
-			cwd,
-			'warning',
-			true,
-			null,
-			vetEnv,
-			false,
-			tokenSource.token
-		).then((result) => {
-			if (closureEpoch === epoch)
-				running = false;
-			return result;
-		});
+	running = true;
+	return runTool(
+		vetArgs,
+		cwd,
+		'warning',
+		true,
+		null,
+		vetEnv,
+		false,
+		tokenSource.token
+	).then((result) => {
+		if (closureEpoch === epoch)
+			running = false;
+		return result;
 	});
-
-	return vetPromise;
 }
 
 let epoch = 0;
