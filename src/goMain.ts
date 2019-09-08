@@ -34,7 +34,6 @@ import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
 import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
-import { DebugSession } from 'vscode-debugadapter';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
