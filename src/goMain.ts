@@ -629,8 +629,7 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 			return;
 		}
 		if (vscode.debug.activeDebugSession) {
-			vscode.window.showWarningMessage('Changes are not allowed while code is running');
-
+			vscode.window.showWarningMessage('A debug session is currently active. Changes to your Go files may result in unexpected behaviour.');
 			return;
 		}
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
