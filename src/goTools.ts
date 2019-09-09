@@ -5,8 +5,8 @@
 
 'use strict';
 
-import { SemVersion, isAbove, getGoConfig, isBelow } from './util';
 import { goLiveErrorsEnabled } from './goLiveErrors';
+import { getGoConfig, GoVersion } from './util';
 
 export interface Tool {
 	name: string;
@@ -20,9 +20,9 @@ export interface Tool {
  * @param tool 		Object of type `Tool` for the Go tool.
  * @param goVersion The current Go version.
  */
-export function getImportPath(tool: Tool, goVersion: SemVersion): string {
+export function getImportPath(tool: Tool, goVersion: GoVersion): string {
 	// For older versions of Go, install the older version of gocode.
-	if (tool.name === 'gocode' && isBelow(goVersion, 1, 10)) {
+	if (tool.name === 'gocode' && goVersion.lt('1.10')) {
 		return 'github.com/nsf/gocode';
 	}
 	return tool.importPath;
@@ -33,7 +33,7 @@ export function getImportPath(tool: Tool, goVersion: SemVersion): string {
  * @param tool  	Object of type `Tool` for the Go tool.
  * @param goVersion The current Go version.
  */
-export function isWildcard(tool: Tool, goVersion: SemVersion): boolean {
+export function isWildcard(tool: Tool, goVersion: GoVersion): boolean {
 	const importPath = getImportPath(tool, goVersion);
 	return importPath.endsWith('...');
 }
@@ -60,7 +60,7 @@ export function isGocode(tool: Tool): boolean {
 	return tool.name === 'gocode' || tool.name === 'gocode-gomod';
 }
 
-export function getConfiguredTools(goVersion: SemVersion): Tool[] {
+export function getConfiguredTools(goVersion: GoVersion): Tool[] {
 	const tools: Tool[] = [];
 	function maybeAddTool(name: string) {
 		const tool = allToolsInformation[name];
@@ -95,7 +95,7 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 	}
 
 	// gocode-gomod needed in go 1.11 & higher
-	if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
+	if (goVersion.gt('1.10')) {
 		maybeAddTool('gocode-gomod');
 	}
 
@@ -118,7 +118,7 @@ export function getConfiguredTools(goVersion: SemVersion): Tool[] {
 	maybeAddTool(goConfig['lintTool']);
 
 	// Add the language server for Go versions >= 1.11.
-	if (goConfig['useLanguageServer'] && isAbove(goVersion, 1, 10)) {
+	if (goConfig['useLanguageServer'] && goVersion.gt('1.10')) {
 		maybeAddTool('gopls');
 	}
 
@@ -264,7 +264,7 @@ const allToolsInformation: { [key: string]: Tool } = {
 	},
 	'gopls': {
 		name: 'gopls',
-		importPath: 'golang.org/x/tools/cmd/gopls',
+		importPath: 'golang.org/x/tools/gopls',
 		isImportant: false,
 		description: 'Language Server from Google',
 	},

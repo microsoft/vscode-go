@@ -65,7 +65,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			const currentVersion = await getGoVersion();
 			if (currentVersion) {
 				const prevVersion = toolsGoInfo[toolsGopath].version;
-				const currVersionString = `${currentVersion.major}.${currentVersion.minor}`;
+				const currVersionString = currentVersion.format();
 
 				if (prevVersion !== currVersionString) {
 					if (prevVersion) {
@@ -86,7 +86,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		// This handles all of the configurations and registrations for the language server.
 		// It also registers the necessary language feature providers that the language server may not support.
-		registerLanguageFeatures(ctx);
+		await registerLanguageFeatures(ctx);
 
 		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'go' && isGoPathSet()) {
 			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri));
@@ -226,11 +226,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		addImportToWorkspace();
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', (args) => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.tools.install', async (args) => {
 		if (Array.isArray(args) && args.length) {
-			getGoVersion().then(goVersion => {
-				installTools(args, goVersion);
-			});
+			const goVersion = await getGoVersion();
+			installTools(args, goVersion);
 			return;
 		}
 		installAllTools();
@@ -377,6 +376,9 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidSaveTextDocument(document => {
 		if (document.languageId !== 'go') {
 			return;
+		}
+		if (vscode.debug.activeDebugSession) {
+			vscode.window.showWarningMessage('A debug session is currently active. Changes to your Go files may result in unexpected behaviour.');
 		}
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
 			runBuilds(document, vscode.workspace.getConfiguration('go', document.uri));

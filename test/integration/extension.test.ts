@@ -358,47 +358,6 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Gometalinter error checking', (done) => {
-		getGoVersion().then(async version => {
-			const config = Object.create(vscode.workspace.getConfiguration('go'), {
-				'lintOnSave': { value: 'package' },
-				'lintTool': { value: 'gometalinter' },
-				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
-				'vetOnSave': { value: 'off' },
-				'buildOnSave': { value: 'off' }
-			});
-			const expected = [
-				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
-			];
-			const errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
-			const diagnostics = await check(vscode.Uri.file(errorsTestPath), config);
-			const allDiagnostics = ([] as ICheckResult[]).concat.apply([], diagnostics.map(x => x.errors));
-			const sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
-				if (a.msg < b.msg)
-					return -1;
-				if (a.msg > b.msg)
-					return 1;
-				return 0;
-			});
-			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
-			let matchCount = 0;
-			for (const i in expected) {
-				if (expected.hasOwnProperty(i)) {
-					for (const j in sortedDiagnostics) {
-						if ((expected[i].line === sortedDiagnostics[j].line)
-							&& (expected[i].severity === sortedDiagnostics[j].severity)
-							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-							matchCount++;
-						}
-					}
-				}
-			}
-			assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
-			return Promise.resolve();
-		}).then(() => done(), done);
-	});
-
 	test('Test diffUtils.getEditsFromUnifiedDiffStr', (done) => {
 		const file1path = path.join(fixturePath, 'diffTest1Data', 'file1.go');
 		const file2path = path.join(fixturePath, 'diffTest1Data', 'file2.go');

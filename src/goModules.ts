@@ -48,7 +48,7 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 		return moduleCache;
 	}
 	const goVersion = await getGoVersion();
-	if (goVersion && (goVersion.major !== 1 || goVersion.minor < 11)) {
+	if (goVersion.lt('1.11')) {
 		return;
 	}
 
