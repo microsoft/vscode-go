@@ -40,11 +40,12 @@
   "dependencies": {
     "diff": "^4.0.1",
     "json-rpc2": "^1.0.2",
+    "moment": "^2.24.0",
+    "semver": "^6.3.0",
     "vscode-debugadapter": "^1.36.0",
     "vscode-debugprotocol": "^1.36.0",
     "vscode-extension-telemetry": "^0.1.2",
     "vscode-languageclient": "~5.2.1",
-    "semver": "^6.3.0",
     "web-request": "^1.0.7"
   },
   "devDependencies": {
