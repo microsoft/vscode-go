@@ -115,8 +115,6 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		modulesOff = true;
 	}
 
-	console.log(envForTools);
-
 	outputChannel.show();
 	outputChannel.clear();
 	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${path.sep}bin`);
