@@ -1,3 +1,28 @@
+## 0.11.5 - Coming Soon...
+
+### Debugging improvements
+* [Quoc Truong (@quoctruong)](https://github.com/quoctruong)
+    * Fix the bug where setting breakpoint fails if the remote program is started through dlv with --continue switch. [Bug 2690](https://github.com/Microsoft/vscode-go/issues/2690)
+    * Fix the bug where disconnecting (after attaching to) the remote program terminates it [Bug 2592](https://github.com/Microsoft/vscode-go/issues/2592)
+    * Fix the bug where setting breakpoint will fail if a breakpoint already exists (if dlv is started through multi client and another client sets the breakpoint).
+
+* [Hary Prabowo Suryoatmojo (@haryps)](https://github.com/haryps)
+    * Show a warning if an edit to a Go file is saved when a debug session is active. Fixes [Bug 2559](https://github.com/Microsoft/vscode-go/issues/2559) with [PR 2653](https://github.com/Microsoft/vscode-go/pull/2653)
+
+### Tooling improvements
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Use the `latest` tag on `gopls` when installing instead of the master branch. Prompt to update `gopls` if you have an older version. [PR 2719](https://github.com/Microsoft/vscode-go/pull/2719)
+    * Install the Go tools in module mode if supported. [PR 2700](https://github.com/Microsoft/vscode-go/pull/2700)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * `gopls` can now be used when using Go from the tip
+    * A new status bar item "Go Modules" will show up when the extension has determined that modules are being used.
+    On clicking, this will take you to the wiki page for [Go modules support in VS Code](https://github.com/microsoft/vscode-go/wiki/Go-modules-support-in-Visual-Studio-Code)
+
+* [Nurbol Alpysbayev (@anurbol)](https://github.com/anurbol)
+    * Allow the use of `go.alternateTools` setting to provide an alternative for `gopls`. [PR 2660](https://github.com/Microsoft/vscode-go/pull/2660)
+
 ## 0.11.4 - 9th July, 2019
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
