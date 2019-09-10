@@ -187,6 +187,10 @@ interface DebuggerCommand {
 	goroutineID?: number;
 }
 
+interface ListBreakpointsOut {
+	Breakpoints: DebugBreakpoint[];
+}
+
 interface RestartOut {
 	DiscardedBreakpoints: DiscardedBreakpoint[];
 }
@@ -892,6 +896,7 @@ class GoDebugSession extends LoggingDebugSession {
 			return this.delve.callPromise('ClearBreakpoint', [this.delve.isApiV1 ? existingBP.id : { Id: existingBP.id }]);
 		})).then(() => {
 			log('All cleared');
+			let existingBreakpoints: DebugBreakpoint[]|undefined;
 			return Promise.all(args.breakpoints.map(breakpoint => {
 				if (this.delve.remotePath.length === 0) {
 					log('Creating on: ' + file + ':' + breakpoint.line);
@@ -904,15 +909,35 @@ class GoDebugSession extends LoggingDebugSession {
 				breakpointIn.loadArgs = this.delve.loadConfig;
 				breakpointIn.loadLocals = this.delve.loadConfig;
 				breakpointIn.cond = breakpoint.condition;
-				return this.delve.callPromise('CreateBreakpoint', [this.delve.isApiV1 ? breakpointIn : { Breakpoint: breakpointIn }]).then(null, err => {
-					// Delve does not seem to support error code at this time.
-					// TODO(quoct): Follow up with delve team.
-					if (err.toString().startsWith('Breakpoint exists at')) {
-						log('Encounter existing breakpoint: ' + breakpointIn);
-						return this.delve.isApiV1 ? breakpointIn : {Breakpoint: breakpointIn};
-					}
-					log('Error on CreateBreakpoint: ' + err.toString());
-					return null;
+				return this.delve.callPromise('CreateBreakpoint', [this.delve.isApiV1 ? breakpointIn : { Breakpoint: breakpointIn }]).then(null,
+					async (err) => {
+						// Delve does not seem to support error code at this time.
+						// TODO(quoct): Follow up with delve team.
+						if (err.toString().startsWith('Breakpoint exists at')) {
+							log('Encounter existing breakpoint: ' + breakpointIn);
+							// We need to call listbreakpoints to find the ID.
+							// Otherwise, we would not be able to clear the breakpoints.
+							if (!existingBreakpoints) {
+								try {
+									const listBreakpointsResponse =
+										await this.delve.callPromise<ListBreakpointsOut | DebugBreakpoint[]>('ListBreakpoints', this.delve.isApiV1 ? [] : [{}]);
+									existingBreakpoints = this.delve.isApiV1 ?
+										listBreakpointsResponse as DebugBreakpoint[] : (listBreakpointsResponse as ListBreakpointsOut).Breakpoints;
+								} catch (error) {
+									log('Error listing breakpoints: ' + error.toString());
+									return null;
+								}
+							}
+							const matchedBreakpoint = existingBreakpoints.find(breakpoint =>
+								breakpoint.line === breakpointIn.line && breakpoint.file === breakpointIn.file);
+							if (!matchedBreakpoint) {
+								log(`Cannot match breakpoint ${breakpointIn} with existing breakpoints.`);
+								return null;
+							}
+							return this.delve.isApiV1 ? matchedBreakpoint : {Breakpoint: matchedBreakpoint};
+						}
+						log('Error on CreateBreakpoint: ' + err.toString());
+						return null;
 				});
 			}));
 		}).then(newBreakpoints => {
