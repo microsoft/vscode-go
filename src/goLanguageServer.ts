@@ -418,7 +418,7 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 
 	// Coerce the versions into SemVers so that they can be sorted correctly.
 	const versions = [];
-	for (const version of data.trim().split(os.EOL)) {
+	for (const version of data.trim().split('\n')) {
 		versions.push(semver.coerce(version));
 	}
 	if (versions.length === 0) {
@@ -442,7 +442,7 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 		return null;
 	}
 
-	const lines = <string>output.trim().split(os.EOL);
+	const lines = <string>output.trim().split('\n');
 	switch (lines.length) {
 		case 0:
 			// No results, should update.
