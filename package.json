@@ -816,7 +816,7 @@
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format. Not applicable when using the language server. Choosing 'goimport' or 'goreturns' will add missing imports and remove unused imports.",
+          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format. Not applicable when using the language server. Choosing 'goimports' or 'goreturns' will add missing imports and remove unused imports.",
           "scope": "resource",
           "enum": [
             "gofmt",
