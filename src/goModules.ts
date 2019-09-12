@@ -12,12 +12,16 @@ import { installTools } from './goInstallTools';
 import { fixDriveCasingInWindows, envPath } from './goPath';
 import { getTool } from './goTools';
 
+export let GO111MODULE: string;
+
 async function runGoModEnv(folderPath: string): Promise<string> {
 	const goExecutable = getBinPath('go');
 	if (!goExecutable) {
 		console.warn(`Failed to run "go env GOMOD" to find mod file as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 		return;
 	}
+	const env = getToolsEnvVars();
+	GO111MODULE = env['GO111MODULE'];
 	return new Promise(resolve => {
 		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
 			if (err) {
@@ -35,6 +39,10 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 }
 
 const packageModCache = new Map<string, string>();
+
+export function clearPackageModCache() {
+	packageModCache.clear();
+}
 export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 	const pkgPath = path.dirname(fileuri.fsPath);
 	if (packageModCache.has(pkgPath)) {
