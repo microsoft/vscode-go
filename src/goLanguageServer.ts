@@ -438,7 +438,7 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 }
 
 // Copied from src/cmd/go/internal/modfetch.
-let pseudoVersionRE = /^v[0-9]+\.(0\.0-|\d+\.\d+-([^+]*\.)?0\.)\d{14}-[A-Za-z0-9]+(\+incompatible)?$/
+const pseudoVersionRE = /^v[0-9]+\.(0\.0-|\d+\.\d+-([^+]*\.)?0\.)\d{14}-[A-Za-z0-9]+(\+incompatible)?$/;
 
 // parsePseudoVersion reports whether v is a pseudo-version.
 // The timestamp is the center component, and it has the format "YYYYMMDDHHmmss".
@@ -464,19 +464,19 @@ function parsePseudoversionTimestamp(version: string): moment.Moment {
 	if (buildIndex >= 0) {
 		version = version.substring(0, buildIndex);
 	}
-	let lastDashIndex = version.lastIndexOf('-');
-	version = version.substring(0, lastDashIndex)
-	let firstDashIndex = version.lastIndexOf('-')
-	const dotIndex = version.lastIndexOf('.')
-	var timestamp: string;
+	const lastDashIndex = version.lastIndexOf('-');
+	version = version.substring(0, lastDashIndex);
+	const firstDashIndex = version.lastIndexOf('-');
+	const dotIndex = version.lastIndexOf('.');
+	let timestamp: string;
 	if (dotIndex > firstDashIndex) {
 		// "vX.Y.Z-pre.0" or "vX.Y.(Z+1)-0"
-		timestamp = version.substring(dotIndex+1)
+		timestamp = version.substring(dotIndex + 1);
 	} else {
 		// "vX.0.0"
-		timestamp = version.substring(firstDashIndex+1)
+		timestamp = version.substring(firstDashIndex + 1);
 	}
-	return moment.utc(timestamp, "YYYYMMDDHHmmss");
+	return moment.utc(timestamp, 'YYYYMMDDHHmmss');
 }
 
 async function goplsVersionTimestamp(importPath: string, version: semver.SemVer): Promise<moment.Moment> {
