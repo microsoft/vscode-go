@@ -5,7 +5,7 @@
 
 'use strict';
 
-import os = require('os');
+import moment = require('moment');
 import semver = require('semver');
 import vscode = require('vscode');
 import WebRequest = require('web-request');
@@ -399,6 +399,7 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	if (tool.name !== 'gopls') {
 		return false;
 	}
+
 	// First, run the "gopls version" command and parse its results.
 	// If "gopls" is so old that it doesn't have the "gopls version" command,
 	// or its version doesn't match our expectations, prompt the user to download.
@@ -406,10 +407,86 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	if (!usersVersion) {
 		return true;
 	}
+
 	// We might have a developer version. Don't make the user update.
 	if (usersVersion === '(devel)') {
 		return false;
 	}
+
+	// Get the latest gopls version.
+	const latestVersion = await latestGopls(tool);
+
+	// If we failed to get the gopls version, assume the user does not need to update.
+	if (!latestVersion) {
+		return false;
+	}
+
+	// The user may have downloaded golang.org/x/tools/gopls@master,
+	// which means that they have a pseudoversion.
+	const usersTime = parsePseudoversionTimestamp(usersVersion);
+	// If the user has a pseudoversion, get the timestamp for the latest gopls version and compare.
+	if (usersTime) {
+		const latestTime = await goplsVersionTimestamp(tool.importPath, latestVersion);
+		if (latestTime) {
+			return usersTime.isBefore(latestTime);
+		}
+	}
+
+	// If the user's version does not contain a timestamp,
+	// default to a semver comparison of the two versions.
+	return semver.lt(usersVersion, latestVersion);
+}
+
+// Copied from src/cmd/go/internal/modfetch.
+const pseudoVersionRE = /^v[0-9]+\.(0\.0-|\d+\.\d+-([^+]*\.)?0\.)\d{14}-[A-Za-z0-9]+(\+incompatible)?$/;
+
+// parsePseudoVersion reports whether v is a pseudo-version.
+// The timestamp is the center component, and it has the format "YYYYMMDDHHmmss".
+
+function parsePseudoversionTimestamp(version: string): moment.Moment {
+	const split = version.split('-');
+	if (split.length < 2) {
+		return null;
+	}
+	if (!semver.valid(version)) {
+		return null;
+	}
+	if (!pseudoVersionRE.test(version)) {
+		return null;
+	}
+	const sv = semver.coerce(version);
+	if (!sv) {
+		return null;
+	}
+	// Copied from src/cmd/go/internal/modfetch.go.
+	const build = sv.build.join('.');
+	const buildIndex = version.lastIndexOf(build);
+	if (buildIndex >= 0) {
+		version = version.substring(0, buildIndex);
+	}
+	const lastDashIndex = version.lastIndexOf('-');
+	version = version.substring(0, lastDashIndex);
+	const firstDashIndex = version.lastIndexOf('-');
+	const dotIndex = version.lastIndexOf('.');
+	let timestamp: string;
+	if (dotIndex > firstDashIndex) {
+		// "vX.Y.Z-pre.0" or "vX.Y.(Z+1)-0"
+		timestamp = version.substring(dotIndex + 1);
+	} else {
+		// "vX.0.0"
+		timestamp = version.substring(firstDashIndex + 1);
+	}
+	return moment.utc(timestamp, 'YYYYMMDDHHmmss');
+}
+
+async function goplsVersionTimestamp(importPath: string, version: semver.SemVer): Promise<moment.Moment> {
+	const infoURL = `https://proxy.golang.org/${importPath}/@v/v${version.format()}.info`;
+	const data = await WebRequest.json<any>(infoURL);
+	const time = moment(data['Time']);
+	return time;
+}
+
+async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	// If the user has a version of gopls that we understand,
 	// ask the proxy for the latest version, and if the user's version is older,
 	// prompt them to update.
@@ -422,10 +499,10 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 		versions.push(semver.coerce(version));
 	}
 	if (versions.length === 0) {
-		return false;
+		return null;
 	}
 	versions.sort(semver.rcompare);
-	return semver.lt(usersVersion, versions[0]);
+	return versions[0];
 }
 
 async function goplsVersion(goplsPath: string): Promise<string> {
@@ -483,5 +560,4 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 	//    v0.1.3
 	//
 	return split[1];
-
 }
