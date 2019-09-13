@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import * as goGenerateTests from './goGenerateTests';
 import { setGlobalState } from './stateUtils';
 import { updateGoPathGoRootFromConfig, installAllTools, offerToInstallTools, installTools, promptForMissingTool } from './goInstallTools';
-import { getToolsGopath, getCurrentGoPath, getGoVersion, isGoPathSet, getExtensionCommands, disposeTelemetryReporter, cleanupTempDir, handleDiagnosticErrors, sendTelemetryEvent, getBinPath, getWorkspaceFolderPath } from './util';
+import { getToolsGopath, getCurrentGoPath, getGoVersion, isGoPathSet, getExtensionCommands, disposeTelemetryReporter, cleanupTempDir, handleDiagnosticErrors, sendTelemetryEvent, getBinPath, getWorkspaceFolderPath, getToolsEnvVars } from './util';
 import { registerLanguageFeatures } from './goLanguageServer';
 import { initCoverageDecorators, toggleCoverageCurrentPackage, updateCodeCoverageDecorators, removeCodeCoverageOnFileChange, applyCodeCoverage } from './goCover';
 import { showHideStatus } from './goStatus';
@@ -34,6 +34,7 @@ import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
 import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
+import { GO111MODULE } from './goModules';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -268,6 +269,17 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 		if (e.affectsConfiguration('go.coverageDecorator')) {
 			updateCodeCoverageDecorators(updatedGoConfig['coverageDecorator']);
+		}
+		if (e.affectsConfiguration('go.toolsEnvVars')) {
+			const env = getToolsEnvVars();
+			if (GO111MODULE !==  env['GO111MODULE']) {
+				const reloadMsg = 'Reload VS Code window so that the Go tools can respect the change to GO111MODULE';
+				vscode.window.showInformationMessage(reloadMsg, 'Reload').then((selected) => {
+					if (selected === 'Reload') {
+						vscode.commands.executeCommand('workbench.action.reloadWindow');
+					}
+				});
+			}
 		}
 	}));
 
