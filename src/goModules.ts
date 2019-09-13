@@ -40,9 +40,6 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 
 const packageModCache = new Map<string, string>();
 
-export function clearPackageModCache() {
-	packageModCache.clear();
-}
 export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 	const pkgPath = path.dirname(fileuri.fsPath);
 	if (packageModCache.has(pkgPath)) {
@@ -135,7 +132,12 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 						if (goConfig.inspect('useLanguageServer').workspaceFolderValue === false) {
 							goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.WorkspaceFolder);
 						}
-						vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
+						const reloadMsg = 'Reload VS Code window to enable the use of Go language server';
+						vscode.window.showInformationMessage(reloadMsg, 'Reload').then((selected) => {
+							if (selected === 'Reload') {
+								vscode.commands.executeCommand('workbench.action.reloadWindow');
+							}
+						})
 					}
 				});
 			}

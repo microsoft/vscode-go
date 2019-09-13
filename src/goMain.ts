@@ -34,7 +34,7 @@ import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
 import { installCurrentPackage } from './goInstall';
 import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
-import { clearPackageModCache, GO111MODULE } from './goModules';
+import { GO111MODULE } from './goModules';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -273,7 +273,12 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		if (e.affectsConfiguration('go.toolsEnvVars')) {
 			const env = getToolsEnvVars();
 			if (GO111MODULE !==  env['GO111MODULE']) {
-				clearPackageModCache();
+				const reloadMsg = 'Reload VS Code window in order for the Go tools to respect the change to GO111MODULE';
+				vscode.window.showInformationMessage(reloadMsg, 'Reload').then((selected) => {
+					if (selected === 'Reload') {
+						vscode.commands.executeCommand('workbench.action.reloadWindow');
+					}
+				});
 			}
 		}
 	}));
