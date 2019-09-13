@@ -137,7 +137,7 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 							if (selected === 'Reload') {
 								vscode.commands.executeCommand('workbench.action.reloadWindow');
 							}
-						})
+						});
 					}
 				});
 			}
