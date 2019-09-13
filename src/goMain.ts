@@ -273,7 +273,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		if (e.affectsConfiguration('go.toolsEnvVars')) {
 			const env = getToolsEnvVars();
 			if (GO111MODULE !==  env['GO111MODULE']) {
-				const reloadMsg = 'Reload VS Code window in order for the Go tools to respect the change to GO111MODULE';
+				const reloadMsg = 'Reload VS Code window so that the Go tools can respect the change to GO111MODULE';
 				vscode.window.showInformationMessage(reloadMsg, 'Reload').then((selected) => {
 					if (selected === 'Reload') {
 						vscode.commands.executeCommand('workbench.action.reloadWindow');
