@@ -823,9 +823,8 @@ class GoDebugSession extends LoggingDebugSession {
 
 	protected async configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): Promise<void> {
 		log('ConfigurationDoneRequest');
-
 		if (this.stopOnEntry) {
-			this.sendEvent(new StoppedEvent('breakpoint', 0));
+			this.sendEvent(new StoppedEvent('breakpoint', 1));
 			log('StoppedEvent("breakpoint")');
 			this.sendResponse(response);
 		} else {
@@ -1003,6 +1002,9 @@ class GoDebugSession extends LoggingDebugSession {
 					goroutine.userCurrentLoc.function ? goroutine.userCurrentLoc.function.name : (goroutine.userCurrentLoc.file + '@' + goroutine.userCurrentLoc.line)
 				)
 			);
+			if (threads.length === 0) {
+				threads.push(new Thread(1, 'Dummy'));
+			}
 			response.body = { threads };
 			this.sendResponse(response);
 			log('ThreadsResponse', threads);
