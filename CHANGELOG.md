@@ -1,4 +1,4 @@
-## 0.11.5 - Coming Soon...
+## 0.11.5 - 19th September, 2019
 
 ### Debugging improvements
 * [Quoc Truong (@quoctruong)](https://github.com/quoctruong)
