@@ -90,7 +90,8 @@
         ],
         "aliases": [
           "Go Module File"
-        ]
+        ],
+        "configuration": "./languages/go.mod.language-configuration.json"
       },
       {
         "id": "go.sum",
