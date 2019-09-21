@@ -1169,6 +1169,11 @@
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
+        "go.languageServerCheckForUpdates": {
+          "type": "boolean",
+          "default": false,
+          "description": "When enabled, the extension automatically checks if there is an update available for the language server each time the VS Code window is loaded and prompts user to update."
+        },
         "go.gotoSymbol.includeImports": {
           "type": "boolean",
           "default": false,
