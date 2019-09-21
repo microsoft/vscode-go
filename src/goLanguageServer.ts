@@ -79,7 +79,8 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 
 	// The user may not have the most up-to-date version of the language server.
 	const tool = getTool(toolName);
-	if (await shouldUpdateLanguageServer(tool, path)) {
+	const update = await shouldUpdateLanguageServer(tool, path);
+	if (update) {
 		promptForUpdatingTool(toolName);
 	}
 
@@ -481,7 +482,18 @@ function parsePseudoversionTimestamp(version: string): moment.Moment {
 
 async function goplsVersionTimestamp(importPath: string, version: semver.SemVer): Promise<moment.Moment> {
 	const infoURL = `https://proxy.golang.org/${importPath}/@v/v${version.format()}.info`;
-	const data = await WebRequest.json<any>(infoURL);
+	let data: any;
+	try {
+		data = await WebRequest.json<any>(infoURL, {
+			throwResponseError: true,
+		});
+	} catch (e) {
+		console.log(`Unable to determine gopls timestamp: ${e}`);
+		return null;
+	}
+	if (!data) {
+		return null;
+	}
 	const time = moment(data['Time']);
 	return time;
 }
@@ -491,8 +503,18 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	// ask the proxy for the latest version, and if the user's version is older,
 	// prompt them to update.
 	const listURL = `https://proxy.golang.org/${tool.importPath}/@v/list`;
-	const data = await WebRequest.json<string>(listURL);
-
+	let data: string;
+	try {
+		data = await WebRequest.json<string>(listURL, {
+			throwResponseError: true,
+		});
+	} catch (e) {
+		console.log(`Unable to determine latest gopls version: ${e}`);
+		return null;
+	}
+	if (!data) {
+		return null;
+	}
 	// Coerce the versions into SemVers so that they can be sorted correctly.
 	const versions = [];
 	for (const version of data.trim().split('\n')) {
