@@ -1,3 +1,8 @@
+## 0.11.6 - 21st September, 2019
+
+* The prompt to update your `gopls` that was introduced in the previous update, relied on making calls to https://proxy.golang.org.
+In this patch release, we replace such calls with a check against a known hard-coded value for the latest version of `gopls`. Details on the next steps here are captured in the [issue 2776](https://github.com/microsoft/vscode-go/issues/2776)
+
 ## 0.11.5 - 19th September, 2019
 
 ### Debugging improvements
