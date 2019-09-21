@@ -56,7 +56,7 @@ interface LanguageServerConfig {
 		implementation: boolean;
 		documentLink: boolean;
 	};
-	checkForUpdates: boolean
+	checkForUpdates: boolean;
 }
 
 // registerLanguageFeatures registers providers for all the language features.
