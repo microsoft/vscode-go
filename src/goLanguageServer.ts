@@ -8,6 +8,7 @@
 import moment = require('moment');
 import semver = require('semver');
 import vscode = require('vscode');
+import util = require('util');
 import WebRequest = require('web-request');
 import path = require('path');
 import cp = require('child_process');
@@ -428,7 +429,6 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	const usersTime = parsePseudoversionTimestamp(usersVersion);
 	// If the user has a pseudoversion, get the timestamp for the latest gopls version and compare.
 	if (usersTime) {
-		const env = getToolsEnvVars();
 		const latestTime = await goplsVersionTimestamp(tool, latestVersion);
 		if (latestTime) {
 			return usersTime.isBefore(latestTime);
@@ -513,7 +513,6 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 
 async function goplsVersion(goplsPath: string): Promise<string> {
 	const env = getToolsEnvVars();
-	const util = require('util');
 	const execFile = util.promisify(cp.execFile);
 	let output: any;
 	try {
@@ -569,28 +568,36 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 }
 
 async function goProxyRequest(tool: Tool, endpoint: string): Promise<any> {
-	let proxy = await goProxy();
-	if (!proxy) {
+	let proxies = await goProxy();
+	if (!proxies) {
 		return null;
 	}
-	const url = `${proxy}/${tool.importPath}/@v/${endpoint}`;
-	let data: string;
-	try {
-		data = await WebRequest.json<string>(url, {
-			throwResponseError: true,
-		});
-	} catch (e) {
-		return null;
+	// Try each URL set in the user's GOPROXY environment variable.
+	// If none is set, don't make the request.
+	for (const proxy of proxies) {
+		if (proxy === "direct") {
+			continue
+		}
+		const url = `${proxy}/${tool.importPath}/@v/${endpoint}`;
+		let data: string;
+		try {
+			data = await WebRequest.json<string>(url, {
+				throwResponseError: true,
+			});
+		} catch (e) {
+			return null;
+		}
+		return data;
 	}
-	return data;
+	return null;
 }
 
-async function goProxy(): Promise<string>  {
+async function goProxy(): Promise<string[]>  {
 	const env = getToolsEnvVars();
-	const util = require('util');
 	const execFile = util.promisify(cp.execFile);
 	let output: string;
 	try {
+		// Run `go env GOPROXY` to get the user's GOPROXY setting.
 		const goExecutable = getBinPath('go');
 		if (!goExecutable) {
 			return null;
@@ -607,5 +614,5 @@ async function goProxy(): Promise<string>  {
 	if (split.length == 0) {
 		return null;
 	}
-	return split[0];
+	return split;
 }
