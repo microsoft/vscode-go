@@ -284,7 +284,7 @@ It returns the number of bytes written and any write error encountered.
 			});
 			assert.equal(matchCount.length >= expected.length, true, `Failed to match expected errors`);
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test Generate unit tests skeleton for file', (done) => {
 		const gotestsPath = getBinPath('gotests');
@@ -455,7 +455,7 @@ It returns the number of bytes written and any write error encountered.
 			assert.equal(result, true);
 			return Promise.resolve();
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test Outline', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
@@ -689,7 +689,7 @@ It returns the number of bytes written and any write error encountered.
 		});
 
 		return Promise.all([withIgnoringFolders, withoutIgnoringFolders, withIncludingGoroot, withoutIncludingGoroot]);
-	});
+	}).timeout(10000);
 
 	test('Test Completion', (done) => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
@@ -803,7 +803,7 @@ encountered.
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test No Completion Snippets For Functions', (done) => {
 		const provider = new GoCompletionItemProvider();
@@ -1125,7 +1125,7 @@ encountered.
 				});
 			});
 		}).then(done, done);
-	});
+	}).timeout(10000);
 
 	test('Add imports when no imports', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'noimports.go'));
@@ -1183,7 +1183,7 @@ encountered.
 			assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
 			return Promise.resolve();
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Fill struct - select line', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_2.go'));
@@ -1197,5 +1197,5 @@ encountered.
 			assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
 			return Promise.resolve();
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 });
