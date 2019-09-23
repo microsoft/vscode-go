@@ -4,7 +4,7 @@
  *--------------------------------------------------------*/
 
 import * as assert from 'assert';
-import { guessPackageNameFromFile, substituteEnv } from '../../src/util';
+import { guessPackageNameFromFile, substituteEnv, GoVersion } from '../../src/util';
 
 suite('utils Tests', () => {
 	test('substituteEnv: default', () => {
@@ -59,5 +59,30 @@ suite('GuessPackageNameFromFile Tests', () => {
 				assert.equal(packageTestNameResult, expectedPackageTestName);
 			})
 			.then(() => done(), done);
+	});
+
+	test('Parse Go version', () => {
+		const versions = [
+			{
+				stdout: 'go version go1.13rc1 linux/amd64',
+				want: '1.13',
+			},
+			{
+				stdout: 'go version go1.12.9 windows/amd64',
+				want: '1.12.9',
+			},
+			{
+				stdout: 'go version devel +24781a1 Fri Sep 13 16:25:00 2019 +0000 linux/amd64',
+				want: '(devel)',
+			}
+		];
+		for (const v of versions) {
+			const goVersion = new GoVersion(v.stdout);
+			if (v.want === '(devel)') {
+				assert(goVersion.isDevel);
+				continue;
+			}
+			assert(goVersion.compare(v.want) == 0);
+		}
 	});
 });
