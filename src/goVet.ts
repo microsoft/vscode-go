@@ -90,7 +90,7 @@ export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfi
 		tagsArg.push(goConfig['buildTags']);
 	}
 
-	let vetArgs = ['vet', ...args, ...tagsArg, './...'];
+	let vetArgs = ['vet', ...args, ...tagsArg, vetWorkspace ? './...' :  '.'];
 	if (goVersion.lt('1.10') && args.length) {
 		vetArgs = ['tool', 'vet', ...args, ...tagsArg, '.'];
 	}
