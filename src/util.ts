@@ -95,10 +95,30 @@ export class GoVersion {
 	}
 
 	format(): string {
+		if (!this) {
+			return null;
+		}
 		if (this.sv) {
 			return this.sv.format();
 		}
 		return `devel +${this.commit}`;
+	}
+
+	compare(version: string): number {
+		if (!this) {
+			return null;
+		}
+		if (!this.sv) {
+			return null;
+		}
+		const v = semver.coerce(version);
+		if (!v) {
+			return null;
+		}
+		return semver.compare(this.sv, v, {
+			includePrerelease: true,
+			loose: true,
+		});
 	}
 
 	lt(version: string): boolean {
@@ -107,7 +127,12 @@ export class GoVersion {
 		if (this.isDevel) {
 			return false;
 		}
-		return semver.lt(this.sv, semver.coerce(version));
+		const compared = this.compare(version);
+		// TODO: How should we handle the case where we can't compare the versions?
+		if (!compared) {
+			return false;
+		}
+		return compared < 0;
 	}
 
 	gt(version: string): boolean {
@@ -116,7 +141,12 @@ export class GoVersion {
 		if (this.isDevel) {
 			return true;
 		}
-		return semver.gt(this.sv, semver.coerce(version));
+		const compared = this.compare(version);
+		// TODO: How should we handle the case where we can't compare the versions?
+		if (!compared) {
+			return false;
+		}
+		return compared > 0;
 	}
 }
 
@@ -287,8 +317,11 @@ export async function getGoVersion(): Promise<GoVersion> {
 		sendTelemetryEvent('getGoVersion', { version: `${goVersion.format()}` });
 		return Promise.resolve(goVersion);
 	}
-	return new Promise<GoVersion>((resolve) => {
+	return new Promise<GoVersion>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
+			if (err || stderr) {
+				return resolve(null);
+			}
 			goVersion = new GoVersion(stdout);
 			return resolve(goVersion);
 		});
