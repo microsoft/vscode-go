@@ -82,7 +82,7 @@ suite('GuessPackageNameFromFile Tests', () => {
 				assert(goVersion.isDevel);
 				continue;
 			}
-			assert(goVersion.compare(v.want) == 0);
+			assert(goVersion.compare(v.want) === 0);
 		}
 	});
 });

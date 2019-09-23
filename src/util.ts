@@ -317,7 +317,7 @@ export async function getGoVersion(): Promise<GoVersion> {
 		sendTelemetryEvent('getGoVersion', { version: `${goVersion.format()}` });
 		return Promise.resolve(goVersion);
 	}
-	return new Promise<GoVersion>((resolve, reject) => {
+	return new Promise<GoVersion>((resolve) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
 			if (err || stderr) {
 				return resolve(null);
