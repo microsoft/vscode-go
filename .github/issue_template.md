@@ -1,18 +1,63 @@
-If you have a question, please ask it on https://gitter.im/Microsoft/vscode-go or on the VSCode channel in Gophers Slack(https://invite.slack.golangbridge.org/)
+Please direct general questions to:
+- [Gitter](https://gitter.im/Microsoft/vscode-go)
+- [Gophers Slack](https://invite.slack.golangbridge.org/messages/vscode)
 
-If you have issues around GOPATH, read https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension first.
+Please review the [Wiki](https://github.com/microsoft/vscode-go/wiki) before filing an issue.
+Helpful pages include:
+- [GOPATH](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension)
+- [Debugging](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code)
 
-If you have issues debugging your Go programs
-- read https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code first.
-- set `"trace": "verbose"` and share the resulting logs in the debug console
+Please answer these questions before submitting your issue. Thanks!
 
-If this is a bug report, please share 
-- a sample code which can be used to reproduce the issue
-- any Go related settings you might have added/changed
+### What version of Go are you using (`go version`)?
 
-Steps to Reproduce:
+<pre>
+$ go version
 
-1.
-2.
+</pre>
+
+### What operating system and processor architecture are you using (`go env`)?
+
+<details><summary><code>go env</code> Output</summary><br><pre>
+$ go env
+PASTE HERE
+</pre></details>
 
 
+### What version of VS Code are you using (`code -v)?
+
+<details><summary><code>code -v</code> Output</summary><br><pre>
+$ code -v
+
+</pre></details>
+
+
+### Which extensions are you using (`code --list-extensions --show-versions`)?
+
+<details><summary><code>code --list-extensions --show-versions</code> Output</summary><br><pre>
+$ code --list-extensions --show-versions
+
+</pre></details>
+
+
+### What are your VS Code settings?
+
+<!--Please paste in the contents of your settings.json file. It can be found by opening the command palette (Ctrl + Shift + P) and selecting "Preferences: Open Settings (JSON)". If you have a separate settings.json file for your workspace, please include that as well. 
+
+For more information on VSCode settings, see https://code.visualstudio.com/docs/getstarted/settings.-->
+
+<details><summary><code>Preferences: Open Settings (JSON)</code> Output</summary><br><pre>
+PASTE HERE
+</pre></details>
+
+
+### What did you do?
+
+<!--
+If possible, provide a recipe for reproducing the error.
+A complete runnable program is good.
+A link on play.golang.org is best.
+-->
+
+
+### What did you expect to see?
