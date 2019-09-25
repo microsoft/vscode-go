@@ -14,6 +14,7 @@ import { getToolFromToolPath, envPath } from './goPath';
 import { getLanguageServerToolPath } from './goLanguageServer';
 import { Tool, getConfiguredTools, getTool, isWildcard, isGocode, hasModSuffix, containsString, containsTool, getImportPath } from './goTools';
 import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, GoVersion } from './util';
+import { goGet, goBuild, GoCommandResult } from './goCommand';
 
 // declinedUpdates tracks the tools that the user has declined to update.
 const declinedUpdates: Tool[] = [];
@@ -57,7 +58,7 @@ export async function installAllTools(updateExistingToolsOnly: boolean = false) 
  *
  * @param string[] array of tool names to be installed
  */
-export function installTools(missing: Tool[], goVersion: GoVersion): Promise<void> {
+export async function installTools(missing: Tool[], goVersion: GoVersion): Promise<void> {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showErrorMessage(`Failed to run "go get" to install the packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
@@ -130,7 +131,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		fs.mkdirSync(toolsTmpDir);
 	}
 
-	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
+	return missing.reduce(async (res: Promise<string[]>, tool: Tool) => {
 		// Disable modules for tools which are installed with the "..." wildcard.
 		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
 		if (modulesOff || isWildcard(tool, goVersion)) {
@@ -139,23 +140,27 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 			envForTools['GO111MODULE'] = 'on';
 		}
 
-		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			const callback = (err: Error, stdout: string, stderr: string) => {
-				if (err) {
+		const sofar = await res;
+		return await new Promise<string[]>(async (resolve) => {
+			const printOutcome = (r: GoCommandResult) => {
+				if (r.err) {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
-					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
+					const failureReason = tool.name + ';;' + r.err + r.stdout.toString() + r.stderr.toString();
 					resolve([...sofar, failureReason]);
-				} else {
+				}
+				else {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
 					resolve([...sofar, null]);
 				}
 			};
 
+			// Some tools work as persistent servers.
+			// If we are installing such a tool, we should make sure that it is not currently running.
 			let closeToolPromise = Promise.resolve(true);
 			const toolBinPath = getBinPath(tool.name);
 			if (path.isAbsolute(toolBinPath) && isGocode(tool)) {
 				closeToolPromise = new Promise<boolean>((innerResolve) => {
-					cp.execFile(toolBinPath, ['close'], {}, (err, stdout, stderr) => {
+					cp.execFile(toolBinPath, ['close'], {}, (err_2, stdout, stderr) => {
 						if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
 							outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
 							return innerResolve(false);
@@ -164,40 +169,51 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 					});
 				});
 			}
+			let success = await closeToolPromise;
+			if (!success) {
+				resolve([...sofar, null]);
+				return;
+			}
 
-			closeToolPromise.then((success) => {
-				if (!success) {
-					resolve([...sofar, null]);
-					return;
-				}
-				const args = ['get', '-v'];
-				// Only get tools at master if we are not using modules.
-				if (modulesOff) {
-					args.push('-u');
-				}
-				// Tools with a "mod" suffix should not be installed,
-				// instead we run "go build -o" to rename them.
-				if (hasModSuffix(tool)) {
-					args.push('-d');
-				}
-				const opts = {
-					env: envForTools,
-					cwd: toolsTmpDir,
-				};
-				args.push(getImportPath(tool, goVersion));
-				cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
-					if (stderr.indexOf('unexpected directory layout:') > -1) {
-						outputChannel.appendLine(`Installing ${tool.name} failed with error "unexpected directory layout". Retrying...`);
-						cp.execFile(goRuntimePath, args, opts, callback);
-					} else if (!err && hasModSuffix(tool)) {
-						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool.name}.exe` : tool.name);
-						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getImportPath(tool, goVersion)], opts, callback);
-					} else {
-						callback(err, stdout, stderr);
+			// Collect flags and arguments for the call to the `go` command.
+			const args = ['-v'];
+			// Only get tools at master if we are not using modules.
+			if (modulesOff) {
+				args.push('-u');
+			}
+			// Tools with a "mod" suffix should not be installed,
+			// instead we run "go build -o" to rename them.
+			if (hasModSuffix(tool)) {
+				args.push('-d');
+			}
+			const opts = {
+				env: envForTools,
+				cwd: toolsTmpDir,
+			};
+
+			const importPath = getImportPath(tool, goVersion)
+			let result = await goGet(importPath, args, opts);
+
+			// Handle certain error cases by retrying.
+			if (result.err) {
+				if (result.stderr.indexOf('unexpected directory layout:') > -1) {
+					outputChannel.appendLine(`Installing ${tool.name} failed with error "unexpected directory layout". Retrying...`);
+					result = await goGet(importPath, args, opts);
+
+					// Give up if we failed on the second retry.
+					if (result.err) {
+						printOutcome(result);
 					}
-				});
-			});
-		}));
+				}
+			}
+			// If the tool has a "gomod" suffix, run "go build" to rename it.
+			if (hasModSuffix(tool)) {
+				const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool.name}.exe` : tool.name);
+				const args = ['-o', outputFile];
+				result = await goBuild(importPath, args, opts);
+			}
+			printOutcome(result);
+		});
 	}, Promise.resolve([])).then(res => {
 		outputChannel.appendLine(''); // Blank line for spacing
 		const failures = res.filter(x => x != null);
@@ -411,14 +427,13 @@ export async function offerToInstallTools() {
 	}
 }
 
-function getMissingTools(goVersion: GoVersion): Promise<Tool[]> {
+async function getMissingTools(goVersion: GoVersion): Promise<Tool[]> {
 	const keys = getConfiguredTools(goVersion);
-	return Promise.all<Tool>(keys.map(tool => new Promise<Tool>((resolve, reject) => {
+	const res = await Promise.all<Tool>(keys.map(tool => new Promise<Tool>((resolve, reject) => {
 		const toolPath = getBinPath(tool.name);
 		fs.exists(toolPath, exists => {
 			resolve(exists ? null : tool);
 		});
-	}))).then(res => {
-		return res.filter(x => x != null);
-	});
+	})));
+	return res.filter(x => x != null);
 }
