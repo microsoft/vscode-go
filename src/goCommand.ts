@@ -1,6 +1,6 @@
 import util = require('util');
 import cp = require('child_process');
-import { getBinPath } from "./util";
+import { getBinPath } from './util';
 
 const execFile = util.promisify(cp.execFile);
 
@@ -33,7 +33,7 @@ async function goCommand(cmd: string, path: string, flags: string[], opts: any):
 	let err: Error;
 
 	try {
-		let result = await execFile(goRuntimePath, args, opts);
+		const result = await execFile(goRuntimePath, args, opts);
 		stdout = result.stdout.toString();
 		stderr = result.stderr.toString();
 	} catch (e) {

@@ -119,10 +119,9 @@ export async function installTools(missing: Tool[], goVersion: GoVersion): Promi
 	outputChannel.show();
 	outputChannel.clear();
 	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${path.sep}bin`);
-	missing.forEach((missingTool, index, missing) => {
+	for (const missingTool of missing) {
 		outputChannel.appendLine('  ' + missingTool.name);
-	});
-
+	}
 	outputChannel.appendLine(''); // Blank line for spacing.
 
 	// Install tools in a temporary directory, to avoid altering go.mod files.
@@ -160,7 +159,7 @@ export async function installTools(missing: Tool[], goVersion: GoVersion): Promi
 			const toolBinPath = getBinPath(tool.name);
 			if (path.isAbsolute(toolBinPath) && isGocode(tool)) {
 				closeToolPromise = new Promise<boolean>((innerResolve) => {
-					cp.execFile(toolBinPath, ['close'], {}, (err_2, stdout, stderr) => {
+					cp.execFile(toolBinPath, ['close'], {}, (err, stdout, stderr) => {
 						if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
 							outputChannel.appendLine('Installing gocode aborted as existing process cannot be closed. Please kill the running process for gocode and try again.');
 							return innerResolve(false);
@@ -169,7 +168,7 @@ export async function installTools(missing: Tool[], goVersion: GoVersion): Promi
 					});
 				});
 			}
-			let success = await closeToolPromise;
+			const success = await closeToolPromise;
 			if (!success) {
 				resolve([...sofar, null]);
 				return;
@@ -191,7 +190,7 @@ export async function installTools(missing: Tool[], goVersion: GoVersion): Promi
 				cwd: toolsTmpDir,
 			};
 
-			const importPath = getImportPath(tool, goVersion)
+			const importPath = getImportPath(tool, goVersion);
 			let result = await goGet(importPath, args, opts);
 
 			// Handle certain error cases by retrying.
@@ -204,6 +203,8 @@ export async function installTools(missing: Tool[], goVersion: GoVersion): Promi
 					if (result.err) {
 						printOutcome(result);
 					}
+				} else {
+					printOutcome(result);
 				}
 			}
 			// If the tool has a "gomod" suffix, run "go build" to rename it.
@@ -226,11 +227,11 @@ export async function installTools(missing: Tool[], goVersion: GoVersion): Promi
 		}
 
 		outputChannel.appendLine(failures.length + ' tools failed to install.\n');
-		failures.forEach((failure, index, failures) => {
+		for (const failure of failures) {
 			const reason = failure.split(';;');
 			outputChannel.appendLine(reason[0] + ':');
 			outputChannel.appendLine(reason[1]);
-		});
+		}
 	});
 }
 
@@ -429,7 +430,7 @@ export async function offerToInstallTools() {
 
 async function getMissingTools(goVersion: GoVersion): Promise<Tool[]> {
 	const keys = getConfiguredTools(goVersion);
-	const res = await Promise.all<Tool>(keys.map(tool => new Promise<Tool>((resolve, reject) => {
+	const res = await Promise.all<Tool>(keys.map(tool => new Promise<Tool>((resolve) => {
 		const toolPath = getBinPath(tool.name);
 		fs.exists(toolPath, exists => {
 			resolve(exists ? null : tool);
