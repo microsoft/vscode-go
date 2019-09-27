@@ -739,7 +739,8 @@ class GoDebugSession extends LoggingDebugSession {
 			if (i) {
 				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
 				args.remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
-			} else if ((args.remotePath.endsWith('\\')) || (args.remotePath.endsWith('/'))) {
+			} else if (args.remotePath.length > 1 &&
+					(args.remotePath.endsWith('\\') || args.remotePath.endsWith('/'))) {
 				args.remotePath = args.remotePath.substring(0, args.remotePath.length - 1);
 			}
 		}
