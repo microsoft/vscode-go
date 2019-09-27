@@ -292,9 +292,9 @@ export async function getGoVersion(): Promise<GoVersion> {
 			goVersion = new GoVersion(stdout);
 			if (!goVersion.sv && !goVersion.isDevel) {
 				if (err || stderr) {
-					console.log(`Error when running the command "go version": `, err || stderr);
+					console.log(`Error when running the command "${goRuntimePath} version": `, err || stderr);
 				} else {
-					console.log(`Not able to determine version from the output of the command "go version": ${stdout}`);
+					console.log(`Not able to determine version from the output of the command "${goRuntimePath} version": ${stdout}`);
 				}
 			}
 			return resolve(goVersion);
