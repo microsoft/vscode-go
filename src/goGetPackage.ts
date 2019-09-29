@@ -28,11 +28,11 @@ export async function goGetPackage() {
 	// go get -v doesn't write anything when the package already exists
 	if (result.stderr === '') {
 		vscode.window.showInformationMessage(`Package already exists: ${importPath}`);
+		return;
 	}
 
 	outputChannel.show();
 	outputChannel.clear();
 	outputChannel.appendLine(result.stderr);
 	buildCode();
-	return;
 }

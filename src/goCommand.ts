@@ -2,8 +2,6 @@ import util = require('util');
 import cp = require('child_process');
 import { getBinPath } from './util';
 
-const execFile = util.promisify(cp.execFile);
-
 export class GoCommandResult {
 	stderr: string;
 	stdout: string;
@@ -24,20 +22,15 @@ async function goCommand(cmd: string, path: string, flags: string[], opts: any):
 		return null;
 	}
 
-	let args: string[] = [cmd];
-	args = args.concat(flags);
-	args.push(path);
+	const args = [cmd, ...flags, path];
 
-	let stdout: string;
-	let stderr: string;
-	let err: Error;
-
-	try {
-		const result = await execFile(goRuntimePath, args, opts);
-		stdout = result.stdout.toString();
-		stderr = result.stderr.toString();
-	} catch (e) {
-		err = e;
-	}
-	return { stdout: stdout, stderr: stderr, err: err };
+	return new Promise<GoCommandResult>((resolve) => {
+		cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
+			resolve({
+				stdout: stdout.toString(),
+				stderr: stderr.toString(),
+				err: err,
+			});
+		});
+	});
 }
