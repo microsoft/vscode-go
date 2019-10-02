@@ -26,6 +26,8 @@ const allPkgsCache: Map<string, Cache> = new Map<string, Cache>();
 
 const pkgRootDirs = new Map<string, string>();
 
+const stdLibPkgsCache = new Map<string,boolean>();
+
 function gopkgs(workDir?: string): Promise<Map<string, string>> {
 	const gopkgsBinPath = getBinPath('gopkgs');
 	if (!path.isAbsolute(gopkgsBinPath)) {
@@ -299,4 +301,31 @@ function isAllowToImportPackage(toDirPath: string, currentWorkspace: string, pkg
 		return toDirPath.startsWith(rootProjectForInternalPkg + path.sep) || toDirPath === rootProjectForInternalPkg;
 	}
 	return true;
+}
+
+export function getStandardLibraryPackages(): Promise<Map<string,boolean>> {
+	if (stdLibPkgsCache.size > 0) {
+		return Promise.resolve(stdLibPkgsCache);
+	}
+	const goRuntimePath = getBinPath('go');
+	if (!goRuntimePath) {
+		console.warn(`Failed to run "go list" to find packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return;
+	}
+
+	return new Promise<Map<string,boolean>>((resolve, reject) => {
+		const childProcess = cp.spawn(goRuntimePath, ['list', 'std']);
+		const chunks: any[] = [];
+		childProcess.stdout.on('data', (stdout) => {
+			chunks.push(stdout);
+		});
+
+		childProcess.on('close', async (status) => {
+			const lines = chunks.join('').toString().trim().split('\n');
+			lines.forEach(line => {
+				stdLibPkgsCache.set(line,true);
+			});
+			resolve(stdLibPkgsCache);
+		});
+	});
 }
