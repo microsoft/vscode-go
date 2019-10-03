@@ -1,6 +1,6 @@
 import vscode = require('vscode');
-import {tree, decoration, range} from 'vscode-tree-sitter';
-import {colorGo} from './treeSitterColor';
+import {tree, decoration} from 'vscode-tree-sitter';
+import {colorGo, Range} from './treeSitterColor';
 
 export function color(editor: vscode.TextEditor) {
 	try {
@@ -15,7 +15,7 @@ export function color(editor: vscode.TextEditor) {
 			console.warn(editor.document.uri.path, 'has not been parsed');
 			return;
 		}
-		const colors = colorGo(t.rootNode, visibleRanges);
+		const colors = colorGo(t, visibleRanges);
 		for (const scope of Object.keys(colors)) {
 			const dec = decoration(scope);
 			if (!dec) continue;
@@ -25,4 +25,8 @@ export function color(editor: vscode.TextEditor) {
 	} catch (e) {
 		console.error(e);
 	}
+}
+
+function range(x: Range): vscode.Range {
+	return new vscode.Range(x.start.row, x.start.column, x.end.row, x.end.column);
 }

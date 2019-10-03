@@ -152,15 +152,17 @@ suite('Syntax coloring', () => {
 	for (const [src, ...expect] of testCases) {
 		test(src, async () => {
 			const tree = (await parser).parse(src);
-			const found = colorGo(tree.rootNode, [{ start: 0, end: tree.rootNode.endPosition.row }]);
-			const foundMap = new Map<string, Set<string>>();
-			for (const scope of Object.keys(found)) {
-				for (const node of found[scope]) {
-					const code = node.text;
-					if (!foundMap.has(code)) {
-						foundMap.set(code, new Set<string>());
+			const scope2ranges = colorGo(tree, [{start: 0, end: tree.rootNode.endPosition.row}]);
+			const code2scopes = new Map<string, Set<string>>();
+			for (const scope of Object.keys(scope2ranges)) {
+				for (const range of scope2ranges[scope]) {
+					const start = index(src, range.start);
+					const end = index(src, range.end);
+					const code = src.substring(start, end);
+					if (!code2scopes.has(code)) {
+						code2scopes.set(code, new Set<string>());
 					}
-					foundMap.get(code)!.add(scope);
+					code2scopes.get(code)!.add(scope);
 				}
 			}
 			function printSrcAndTree() {
@@ -170,12 +172,12 @@ suite('Syntax coloring', () => {
 			for (const [code, check] of expect) {
 				if (typeof check === 'string') {
 					const scope = check;
-					if (!foundMap.has(code)) {
+					if (!code2scopes.has(code)) {
 						printSrcAndTree();
-						assert.fail(`Error:\tcode (${code}) was not found in (${join(foundMap.keys())})`);
+						assert.fail(`Error:\tcode (${code}) was not found in (${join(code2scopes.keys())})`);
 						continue;
 					}
-					const foundScopes = foundMap.get(code)!;
+					const foundScopes = code2scopes.get(code)!;
 					if (!foundScopes.has(scope)) {
 						printSrcAndTree();
 						assert.fail(`Error:\tscope (${scope}) was not among the scopes for (${code}) (${join(foundScopes.keys())})`);
@@ -183,10 +185,10 @@ suite('Syntax coloring', () => {
 					}
 				} else {
 					const scope = check.not;
-					if (!foundMap.has(code)) {
+					if (!code2scopes.has(code)) {
 						continue;
 					}
-					const foundScopes = foundMap.get(code)!;
+					const foundScopes = code2scopes.get(code)!;
 					if (foundScopes.has(scope)) {
 						printSrcAndTree();
 						assert.fail(`Error:\tbanned scope (${scope}) was among the scopes for (${code}) (${join(foundScopes.keys())})`);
@@ -197,6 +199,23 @@ suite('Syntax coloring', () => {
 		});
 	}
 });
+
+function index(code: string, point: Parser.Point): number {
+	let row = 0;
+	let column = 0;
+	for (let i = 0; i < code.length; i++) {
+		if (row === point.row && column === point.column) {
+			return i;
+		}
+		if (code[i] === '\n') {
+			row++;
+			column = 0;
+		} else {
+			column++;
+		}
+	}
+	return code.length;
+}
 
 function join(strings: IterableIterator<string>) {
 	let result = '';

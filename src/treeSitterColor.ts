@@ -1,6 +1,15 @@
 import * as Parser from 'web-tree-sitter';
 
-export function colorGo(root: Parser.SyntaxNode, visibleRanges: {start: number, end: number}[]) {
+export interface Range {
+	start: Parser.Point;
+	end: Parser.Point;
+}
+
+export function colorGo(root: Parser.Tree, visibleRanges: {start: number, end: number}[]): {[scope: string]: Range[]} {
+	const functions: Range[] = [];
+	const types: Range[] = [];
+	const variables: Range[] = [];
+	const underlines: Range[] = [];
 	// Guess package names based on paths
 	const packages: {[id: string]: boolean} = {};
 	function scanImport(x: Parser.SyntaxNode) {
@@ -87,15 +96,9 @@ export function colorGo(root: Parser.SyntaxNode, visibleRanges: {start: number, 
 			return this.parent === null;
 		}
 	}
-	const colors: {[scope: string]: Parser.SyntaxNode[]} = {
-		'entity.name.function': [],
-		'entity.name.type': [],
-		'variable': [],
-		'markup.underline': [],
-	};
 	const rootScope = new Scope(null);
 	function scanSourceFile() {
-		for (const top of root.namedChildren) {
+		for (const top of root.rootNode.namedChildren) {
 			scanTopLevelDeclaration(top);
 		}
 	}
@@ -126,7 +129,7 @@ export function colorGo(root: Parser.SyntaxNode, visibleRanges: {start: number, 
 			switch (child.type) {
 				case 'identifier':
 					if (isVisible(child, visibleRanges)) {
-						colors['entity.name.function'].push(child);
+						functions.push({start: child.startPosition, end: child.endPosition});
 					}
 					break;
 				default:
@@ -140,7 +143,7 @@ export function colorGo(root: Parser.SyntaxNode, visibleRanges: {start: number, 
 				switch (child.type) {
 					case 'identifier':
 						if (isVisible(child, visibleRanges)) {
-							colors['variable'].push(child);
+							variables.push({start: child.startPosition, end: child.endPosition});
 						}
 						break;
 					default:
@@ -210,19 +213,19 @@ export function colorGo(root: Parser.SyntaxNode, visibleRanges: {start: number, 
 			case 'identifier':
 				scope.referenceLocal(x);
 				if (isVisible(x, visibleRanges) && scope.isUnknown(x.text)) {
-					colors['variable'].push(x);
+					variables.push({start: x.startPosition, end: x.endPosition});
 				}
 				return;
 			case 'selector_expression':
 				if (isVisible(x, visibleRanges) && scope.isPackage(x.firstChild!.text)) {
-					colors['variable'].push(x.lastChild!);
+					variables.push({start: x.lastChild!.startPosition, end: x.lastChild!.endPosition});
 				}
 				scanExpr(x.firstChild!, scope);
 				scanExpr(x.lastChild!, scope);
 				return;
 			case 'type_identifier':
 				if (isVisible(x, visibleRanges)) {
-					colors['entity.name.type'].push(x);
+					types.push({start: x.startPosition, end: x.endPosition});
 				}
 				return;
 		}
@@ -234,13 +237,13 @@ export function colorGo(root: Parser.SyntaxNode, visibleRanges: {start: number, 
 		switch (x.type) {
 			case 'identifier':
 				if (isVisible(x, visibleRanges) && scope.isUnknown(x.text)) {
-					colors['entity.name.function'].push(x);
+					functions.push({start: x.startPosition, end: x.endPosition});
 				}
 				scope.referenceLocal(x);
 				return;
 			case 'selector_expression':
 				if (isVisible(x, visibleRanges) && scope.isPackage(x.firstChild!.text)) {
-					colors['entity.name.function'].push(x.lastChild!);
+					functions.push({start: x.lastChild!.startPosition, end: x.lastChild!.endPosition});
 				}
 				scanExpr(x.firstChild!, scope);
 				scanExpr(x.lastChild!, scope);
@@ -255,11 +258,16 @@ export function colorGo(root: Parser.SyntaxNode, visibleRanges: {start: number, 
 	scanSourceFile();
 	for (const scope of allScopes) {
 		for (const local of scope.modifiedLocals()) {
-			colors['markup.underline'].push(local);
+			underlines.push({start: local.startPosition, end: local.endPosition});
 		}
 	}
 
-	return colors;
+	return {
+		'entity.name.function': functions,
+		'entity.name.type': types,
+		'variable': variables,
+		'markup.underline': underlines,
+	};
 }
 
 function isVisible(x: Parser.SyntaxNode, visibleRanges: {start: number, end: number}[]) {
