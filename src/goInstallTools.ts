@@ -129,6 +129,11 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	if (!fs.existsSync(toolsTmpDir)) {
 		fs.mkdirSync(toolsTmpDir);
 	}
+	// Write a temporary go.mod file to support Go 1.11.
+	const tmpGoModFile = path.join(toolsTmpDir, 'go.mod');
+	if (!fs.existsSync(tmpGoModFile)) {
+		fs.writeFileSync(tmpGoModFile, 'module tools');
+	}
 
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
 		// Disable modules for tools which are installed with the "..." wildcard.
