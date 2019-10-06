@@ -11,7 +11,7 @@ import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile, envPath } from './goPath';
-import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath, removeRunFlag } from './util';
+import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
 const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
@@ -406,4 +406,13 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 		params = ['-bench', '.'];
 	}
 	return params;
+}
+
+
+function removeRunFlag(flags: string[]): string[] {
+	const index: number = flags.indexOf('-run');
+	if (index !== -1) {
+		flags.splice(index, 2);
+	}
+	return flags;
 }
