@@ -199,7 +199,6 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		if (testconfig.isBenchmark) {
 			args.push('-benchmem', '-run=^$');
-			testconfig.flags = removeRunFlag(testconfig.flags);
 		} else {
 			args.push('-timeout', testconfig.goConfig['testTimeout']);
 		}
@@ -257,7 +256,12 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			outputChannel.appendLine('');
 
 			args.push(...targets);
+
 			// ensure that user provided flags are appended last (allow use of -args ...)
+			// ignore user provided -run flag if we are already using it
+			if (args.indexOf('-run') > -1) {
+				removeRunFlag(testconfig.flags);
+			}
 			args.push(...testconfig.flags);
 
 			const tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
@@ -392,7 +396,6 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
 			// which will result in the correct thing to happen
 			if (testFunctions.length > 0) {
-				testconfig.flags = removeRunFlag(testconfig.flags);
 				params = params.concat(['-run', util.format('^(%s)$', testFunctions.join('|'))]);
 			}
 			if (testifyMethods.length > 0) {
@@ -408,11 +411,9 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 	return params;
 }
 
-
-function removeRunFlag(flags: string[]): string[] {
+function removeRunFlag(flags: string[]): void {
 	const index: number = flags.indexOf('-run');
 	if (index !== -1) {
 		flags.splice(index, 2);
 	}
-	return flags;
 }
