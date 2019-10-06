@@ -1,4 +1,224 @@
-## 0.8.1 - Coming Soon
+## 0.11.7 - 27th September, 2019
+
+### Bug Fixes
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+
+    - Fix for [bug 2766](https://github.com/microsoft/vscode-go/issues/2766) where the `Go: Test All Packages In Workspace` command failed to run tests since the last update.
+    - Fix for [bug 2765](https://github.com/microsoft/vscode-go/issues/2765) where the `Go: Build Workspace` command failed to run the build command since the last update
+    - Fix for [bug 2770](https://github.com/microsoft/vscode-go/issues/2770) where failure to find the path to the go binary results in `gopls` results in the extension throwing error & not working as expected since the last update
+    - Use `go vet .` instead of `go vet ./...` when vetting current package for better performance.
+
+* [Quoc Truong (@quoctruong)](https://github.com/quoctruong)
+
+    - Fix for bug where remote debugging failed if the configured remote path was just `/`. Fixes [Bug 2119](https://github.com/Microsoft/vscode-go/issues/2119) with [PR 2794](https://github.com/Microsoft/vscode-go/pull/2794)
+
+* [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
+
+    - Respect the `stopOnEntry` debug configuration by providing a dummy thread when no threads exist. Fixes [Bug 763](https://github.com/Microsoft/vscode-go/issues/763) with [PR 2762](https://github.com/Microsoft/vscode-go/pull/2762)
+
+## 0.11.6 - 21st September, 2019
+
+* The prompt to update your `gopls` that was introduced in the previous update, relied on making calls to https://proxy.golang.org.
+In this patch release, we replace such calls with a check against a known hard-coded value for the latest version of `gopls`. Details on the next steps here are captured in the [issue 2776](https://github.com/microsoft/vscode-go/issues/2776)
+
+## 0.11.5 - 19th September, 2019
+
+### Debugging improvements
+* [Quoc Truong (@quoctruong)](https://github.com/quoctruong)
+    * Fix the bug where setting breakpoint fails if the remote program is started through dlv with --continue switch. [Bug 2690](https://github.com/Microsoft/vscode-go/issues/2690)
+    * Fix the bug where disconnecting (after attaching to) the remote program terminates it [Bug 2592](https://github.com/Microsoft/vscode-go/issues/2592)
+    * Fix the bug where setting breakpoint will fail if a breakpoint already exists (if dlv is started through multi client and another client sets the breakpoint).
+
+* [Hary Prabowo Suryoatmojo (@haryps)](https://github.com/haryps)
+    * Show a warning if an edit to a Go file is saved when a debug session is active. Fixes [Bug 2559](https://github.com/Microsoft/vscode-go/issues/2559) with [PR 2653](https://github.com/Microsoft/vscode-go/pull/2653)
+
+### Tooling improvements
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Use the `latest` tag on `gopls` when installing instead of the master branch. Prompt to update `gopls` if you have an older version. [PR 2719](https://github.com/Microsoft/vscode-go/pull/2719)
+    * Install the Go tools in module mode if supported. [PR 2700](https://github.com/Microsoft/vscode-go/pull/2700)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * `gopls` can now be used when using Go from the tip
+    * A new status bar item "Go Modules" will show up when the extension has determined that modules are being used.
+    On clicking, this will take you to the wiki page for [Go modules support in VS Code](https://github.com/microsoft/vscode-go/wiki/Go-modules-support-in-Visual-Studio-Code)
+
+* [Nurbol Alpysbayev (@anurbol)](https://github.com/anurbol)
+    * Allow the use of `go.alternateTools` setting to provide an alternative for `gopls`. [PR 2660](https://github.com/Microsoft/vscode-go/pull/2660)
+
+## 0.11.4 - 9th July, 2019
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Revert marking `go.goroot` setting to be of scope `machine` in order to support it to be configured at worksapce level. More in this is discussed at [2576](https://github.com/microsoft/vscode-go/issues/2576).
+    * Support custom arguments when running tests by passing them after `-args` in `go.testFlags` setting. Fixes [Bug 2457](https://github.com/microsoft/vscode-go/issues/2457) 
+
+* [James George (@jamesgeorge007)](https://github.com/jamesgeorge007)
+    * Update README to contain Table of Contents. [PR 2634](https://github.com/Microsoft/vscode-go/pull/2634)
+
+
+## 0.11.2 - 5th July, 2019
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Mark only `go.goroot` and not `go.gopath`, `go.toolsGopath` setting to be of scope `machine` in order to support the latter two to be configured at worksapce level. More in this is discussed at [2576](https://github.com/microsoft/vscode-go/issues/2576).
+
+* [Daniel Mundt (@dmundt)](https://github.com/dmundt)
+    * Update the banner color to have a beter color contrast witht he new logo in the marketplace. [PR 2631](https://github.com/Microsoft/vscode-go/pull/2631)
+
+## 0.11.1 - 2nd July, 2019
+
+### Bug Fixes
+
+* [Daniel Mundt (@dmundt)](https://github.com/dmundt)
+    * Update the extension to use new Go logo! [PR 2582](https://github.com/Microsoft/vscode-go/pull/2582)
+
+* [Cooper Maruyama (@coopermaruyama)](https://github.com/coopermaruyama)
+    * The values in the `go.testEnvVars` setting should override the ones in the file specified in the `go.testEnvFile` setting rather than the other way around. Fixes [Bug 2398](https://github.com/Microsoft/vscode-go/issues/2398) with [PR 2585](https://github.com/Microsoft/vscode-go/pull/2585)
+
+* [Benjamin Kane (@bbkane)](https://github.com/bbkane)
+    * Add link to all the code snippets provided by the extension in the README. [PR 2603](https://github.com/Microsoft/vscode-go/pull/2603)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Support the `output` attribute in the debug configuration when `mode` is set to `test`. Fixes [Bug 2445](https://github.com/Microsoft/vscode-go/issues/2445) with [commit 373f0743](https://github.com/microsoft/vscode-go/commit/373f07436b81da8f0da5696e53f29f4b2a50c069) 
+    * Fix bug that got introduced in the previous update where nested variables show empty values when debugging. Fixes [Bug 2601](https://github.com/Microsoft/vscode-go/issues/2601) with [commit e89118e42](https://github.com/microsoft/vscode-go/commit/e89118e42ba581453f3a5587840fef915b74db68)
+    * Warnings regarding the inability to find the go binary in the PATH environment variable now includes the value of the PATH being checked.
+    * The prompt to choose `goimports` instead of the default `goreturns` as the formatting tool when using modules without the language server, now
+    has the option to not be shown again for cases when you don't want to use `goimports`. Fixes [Bug 2578](https://github.com/Microsoft/vscode-go/issues/2578) with [commit 658db8d4](https://github.com/microsoft/vscode-go/commit/658db8d45f3a38eafcf536e73326ad98946c133c)
+    * Avoid unwanted prompt to re-compile tools when current goroot is different from the previous only in terms of casing. Fixes [Bug 2606](https://github.com/Microsoft/vscode-go/issues/2606) with [commit b0a2d2d](https://github.com/microsoft/vscode-go/commit/b0a2d2debb5c1e32f09184060572cb86ad900a81)
+    * Preserve text highlighting as part of code coverage in multiple editor groups. Fixes [Bug 2608](https://github.com/Microsoft/vscode-go/issues/2608) with [commit 0de7e94e](https://github.com/microsoft/vscode-go/commit/0de7e94e4d313b06ab63dcd484aa85405941e771)
+    * Update code coverage decorators in the visible editor immediately after corresponding setting is changed rather than wait for focusing on the editor. [commit 86df86fd6](https://github.com/microsoft/vscode-go/commit/86df86fd65b9c360b033c4b58af6fd8c0125c17e)
+    * Mark `go.goroot`, `go.gopath` and `go.toolsGopath` settings to be of scope `machine` as per upstream request
+    [2576](https://github.com/microsoft/vscode-go/issues/2576) from VS Code to better support remote scenarios.
+
+## 0.11.0 - 17th June, 2019
+
+* [@BetaXOi](https://github.com/BetaXOi) & [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
+    * When debugging, support attaching to a local Go process and detaching gracefully without killing the process.
+    This uses the [attach](https://github.com/go-delve/delve/blob/master/Documentation/usage/dlv_attach.md) command 
+    [delve](https://github.com/go-delve/delve). [Feature Request 1599](https://github.com/Microsoft/vscode-go/issues/1599) implemented with [PR 2125](https://github.com/Microsoft/vscode-go/pull/2125).
+
+    Please note the feature of attaching to a local process using process id only works when the process is started by running the compiled code i.e the executable and not by using the command `go run`. This is a limitation from delve.
+
+* [@SteelPhase](https://github.com/SteelPhase)
+    * A new command `Go: Restart Language Server` to restart the language server which previously was possible only by reloading the VS Code window. [Feature Request 2500](https://github.com/Microsoft/vscode-go/issues/2500) implemented with [PR 2530](https://github.com/Microsoft/vscode-go/pull/2530)
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Enable diagnostics feature from `gopls` by default and add the feature to provide to clickable Godoc links for import statements. [PR 2518](https://github.com/microsoft/vscode-go/pull/2518)
+
+* [Ian Cottrell (@ianthehat)](https://github.com/ianthehat)
+    * Add a new option `incrementalSync` to `go.languageServerExperimentalFeatures` setting. If true, the language server will accept incremental document synchronization. [PR 2493](https://github.com/Microsoft/vscode-go/pull/2493)
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+    * Fix issues with signature help getting triggered at wrong times. Fixes [Bug 2481](https://github.com/Microsoft/vscode-go/issues/2481) with [PR 2496](https://github.com/Microsoft/vscode-go/pull/2496)
+
+* [Caleb Doxsey (@calebdoxsey )](https://github.com/calebdoxsey)
+    * Improve syntax highlighting in `go.mod` files. Fixes [Bug 2423](https://github.com/Microsoft/vscode-go/issues/2423) with [PR 2424](https://github.com/Microsoft/vscode-go/pull/2424)
+
+* [@tamayika](https://github.com/tamayika)
+    * Resolve `${workspaceRoot}` and `${workspaceFolder}` for the `-vetTtool` flag provided in `go.vetFlags` setting. [Feature Request 2527](https://github.com/Microsoft/vscode-go/issues/2527) implemented with [PR 2528](https://github.com/Microsoft/vscode-go/pull/2528)
+
+* [John (@pseudo-su)](https://github.com/pseudo-su)
+    * Resolve `${workspaceRoot}` and `${workspaceFolder}` for the values provided to the `go.alternateTools` setting. [Feature Request 2543](https://github.com/Microsoft/vscode-go/issues/2543) implemented with [PR 2544](https://github.com/Microsoft/vscode-go/pull/2544)
+
+* [Stuart Grigg (@stuartgrigg)](https://github.com/stuartgrigg)
+    * Improve linting in the vscode-go project. [PR 2524](https://github.com/Microsoft/vscode-go/pull/2524) and [PR 2568](https://github.com/Microsoft/vscode-go/pull/2568)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Ensure Go binary is in the PATH when running Go tools. Fixes [Bug 2514](https://github.com/Microsoft/vscode-go/issues/2514) with [commit d93a0aec](https://github.com/microsoft/vscode-go/commit/d93a0aec2a1a57e820cff3a9511cedbc7f13b61c)
+    * Use `gotype-live` to provide diagnostics as you type only when the user is not using `gopls` and is not in module mode. This is because `gopls` supports this feature out of the box and the tool doesnt support modules. Fixes [Bug 1950](https://github.com/Microsoft/vscode-go/issues/1950) with [commit d1bf95c5](https://github.com/microsoft/vscode-go/commit/d1bf95c51d4bf3e730689045ef8c78de85d21152)
+
+
+## 0.10.2 - 30th April, 2019
+
+This patch release has fixes for the below bugs
+- [Bug 2469](https://github.com/Microsoft/vscode-go/issues/2469): When the setting `go.autocompleteUnimportedPackages` is enabled,
+packages show up in completion list when typing `.` after a variable or existing package.
+- [Bug 2473](https://github.com/Microsoft/vscode-go/issues/2473): Adding of missing imports and removal of unused imports don't work on saving file after using `gopls`.
+
+## 0.10.1 - 25th April, 2019
+
+This patch release has fixes for the below bugs
+
+- [Bug 2459](https://github.com/Microsoft/vscode-go/issues/2459): `gopls` crashes when `-trace` is set in the `go.languageServerFlags` setting
+- [Bug 2461](https://github.com/Microsoft/vscode-go/issues/2461): Extension uses high CPU due to being stuck in an infinite loop when `go.useLanguageServer` is set to `true`, but no language server can be found
+- [Bug 2458](https://github.com/Microsoft/vscode-go/issues/2458): Reference to GOPATH when dependent tools are missing misleads users to think that they need GOPATH for the extension to work
+
+
+## 0.10.0 - 23rd April, 2019
+
+### Go Modules support improvements
+
+* [Caleb Doxsey (@calebdoxsey )](https://github.com/calebdoxsey)
+    * Add grammar for `go.mod` and `go.sum` files, thus providing syntax highlighting for them. [Feature Request 1886](https://github.com/Microsoft/vscode-go/issues/1886) implemented with [PR 2344](https://github.com/Microsoft/vscode-go/pull/2344)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+  * Support `gopls`, the language server from Google as the one from Sourcegraph is no longer under active development. Also because `gopls` supports Go modules. [PR 2383](https://github.com/Microsoft/vscode-go/pull/2383). Please read our [updated README on language servers](https://github.com/Microsoft/vscode-go/tree/8ea6e4708dfd141ab65b4c7eb4f71e55d098a222#go-language-server-experimental) for the latest on what we recommend.
+  * Use `goimports` for formatting when using Go modules without the language server because `goreturns`(the default formatting tool) doesn't work with modules yet. Fixes [Bug 2309](https://github.com/Microsoft/vscode-go/issues/2309)
+  * Fix build on save, install and debug features when `GO111MODULE` is set to `on` inside the GOPATH. Fixes [Bug 2238](https://github.com/Microsoft/vscode-go/issues/2238) with [commit 15f571e4](https://github.com/Microsoft/vscode-go/commit/15f571e490e35a4c531aca6585aae7d07dfaae93)
+    
+
+### New features
+
+* [Aswin M Prabhu (@aswinmprabhu)](https://github.com/aswinmprabhu)
+    * Refactor commands to extract functions and variables using [godoctor](https://github.com/godoctor/godoctor). [Feature Request 588](https://github.com/Microsoft/vscode-go/issues/588) implemented with [PR 2139](https://github.com/Microsoft/vscode-go/pull/2139)
+        - `Go: Extract to function`
+        - `Go: Extract to variable`
+
+
+### Debugging improvements
+
+* [Vlad Barosan (@vladbarosan)](https://github.com/vladbarosan)
+    * Fix issue of debug file not being cleared after debugging on Windows. Fixes [Bug 2265](https://github.com/Microsoft/vscode-go/issues/2265) with [PR 2332](https://github.com/Microsoft/vscode-go/pull/2332)
+
+* [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
+    * Fix variable display when debugging when the name has `-` in it. Fixes [Bug 2328](https://github.com/Microsoft/vscode-go/issues/2328) with [PR 2320](https://github.com/Microsoft/vscode-go/pull/2320)
+
+* [Alex Schade (@aschade92)](https://github.com/aschade92)
+    * You can now control whether global variables are shown or not in the variable pane while debugging by tweaking the `showGlobalVariables` property in the `go.delveConfig` setting. [Feature Request 2323](https://github.com/Microsoft/vscode-go/issues/2323) implemented with [PR 2351](https://github.com/Microsoft/vscode-go/pull/2351)
+
+
+
+### Others
+
+* [Filippo Valsorda (@FiloSottile)](https://github.com/FiloSottile) & [Vlad Barosan (@vladbarosan)](https://github.com/vladbarosan)
+    * Avoid prompts to re-compile Go tools when the `go.toolsGopath` is different between workspaces. [PR 1589](https://github.com/Microsoft/vscode-go/pull/1589)
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+    * Avoid moving to the next parameter in the Signature Help feature, when provided parameter value is a string with commas. Fixes [Bug 1682](https://github.com/Microsoft/vscode-go/issues/1682) with [PR 1738](https://github.com/Microsoft/vscode-go/pull/1738)
+    * Improvements to the README for the debug adapter that provides information on how to debug the debug adapter. [PR 2341](https://github.com/Microsoft/vscode-go/pull/2341)
+    * Add module definitions for test fixtures. [PR 2306](https://github.com/Microsoft/vscode-go/pull/2306)
+
+* [Sardorbek (@oneslash)](https://github.com/oneslash)
+    * Remove support for older versions of Go. Fixes [Bug 1026](https://github.com/Microsoft/vscode-go/issues/1026) with [PR 2319](https://github.com/Microsoft/vscode-go/pull/2319)
+    * Fix auto-completion when there is a string with `//` in the same line before the current position. Fixes [Bug 2240](https://github.com/Microsoft/vscode-go/issues/2240) with [PR 2316](https://github.com/Microsoft/vscode-go/pull/2316)
+
+* [Edouard SCHWEISGUTH (@Edznux)](https://github.com/Edznux)
+    * Fix single quotes uses for JSON examples in setting descriptions. [PR 2036](https://github.com/Microsoft/vscode-go/pull/2036)
+
+* [Utsob Roy (@uroybd)](https://github.com/uroybd)
+    * Improve the snippet for anonymous go function. [PR 2354](https://github.com/Microsoft/vscode-go/pull/2354)
+
+* [Chris Broadfoot (@broady)](https://github.com/broady)
+    * Improve documentation usage of VS Code commands in README. Fixes [Bug 2385](https://github.com/Microsoft/vscode-go/issues/2385) with [PR 2390](https://github.com/Microsoft/vscode-go/pull/2390)
+
+* [Jackson Kearl (@JacksonKearl)](https://github.com/JacksonKearl) & [Vlad Barosan (@vladbarosan)](https://github.com/vladbarosan)
+    * Use the latest apis for the Outline feature. [Feature Request 1772](https://github.com/Microsoft/vscode-go/issues/1772) implemented with [PR 1795](https://github.com/Microsoft/vscode-go/pull/1795)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Clean up the temporary directory created by the Go extension when VS Code window is closed. Fixes [Bug 2188](https://github.com/Microsoft/vscode-go/issues/2188) with [commit 4a241f80](https://github.com/Microsoft/vscode-go/commit/4a241f806809465afa7085a3f62729ff37fa63cd)
+    * Show the start of on save features in the output panel. Fixes [Bug 1869](https://github.com/Microsoft/vscode-go/issues/1869) with [commit 058eccf17](https://github.com/Microsoft/vscode-go/commit/058eccf17f1b0eebd607581591828531d768b98e)
+    * Ignore `GOBIN` when user has set `go.toolsGopath` setting. Fixes [Bug 2339](https://github.com/Microsoft/vscode-go/issues/2339) with [commit 9f99c30](https://github.com/Microsoft/vscode-go/commit/9f99c306e00209a221abc1962c4f419565141ffb)
+       
+
+## 0.9.2 - 12th February, 2019
+
+* When the program being debugged closes naturally, avoid showing the error from delve when trying to halt it. Fixes [Bug 2313](https://github.com/Microsoft/vscode-go/issues/2313) with [commit fd5a488c2](https://github.com/Microsoft/vscode-go/commit/fd5a488c2d73d27cbe3ce9f32be8bd0b586ef108)
+
+## 0.9.1 - 6th February, 2019
+
+* Fix regression where benchmarks get run without the -bench flag
+
+## 0.9.0 - 6th February, 2019
 
 ### Debugging improvements
 
@@ -8,11 +228,16 @@
     * Use unique stack frame ids to be compliant with Debug Adapter Protocol. [PR 2130](https://github.com/Microsoft/vscode-go/pull/2130)
 
 * [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
-    * Display nested content in variables pane. Fixes [Bug 1010](https://github.com/Microsoft/vscode-go/issues/1010) with [PR 2198](https://github.com/Microsoft/vscode-go/pull/2198)
+    * Display nested content of structs in variables pane. Fixes [Bug 1010](https://github.com/Microsoft/vscode-go/issues/1010) with [PR 2198](https://github.com/Microsoft/vscode-go/pull/2198)
     * Display shadowed variables in variables pane. Fixes [Bug 1974](https://github.com/Microsoft/vscode-go/issues/1974) with [PR 2254](https://github.com/Microsoft/vscode-go/pull/2254)
+    * Fix the slowness during debugging that got introduced a few releases ago, by caching the package info used to call `ListPackageVars` command in delve. [PR 2289](https://github.com/Microsoft/vscode-go/pull/2289)
+
+* [Adrian Suwała (@Ashiroq)](https://github.com/Ashiroq) & * [Vlad Barosan (@vladbarosan)](https://github.com/vladbarosan)
+    * New command `Go: Debug Test at Cursor` to debug the test function under the cursor. This provides the same feature as the debug codelens, but in the form of a command. [Feature Request 1088](https://github.com/Microsoft/vscode-go/issues/1088) implemented with [PR 2059](https://github.com/Microsoft/vscode-go/pull/2059)
 
 * [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
     * Fix bug that got introduced in the previous release where only the top call stack frame was shown. Fixes [Bug 2187](https://github.com/Microsoft/vscode-go/issues/2187) with [PR 2200](https://github.com/Microsoft/vscode-go/pull/2200)
+    * Upstream bug fix in VS Code to avoid the frequent jump to `proc.go` file when stepping in/out during debugging. Fixes https://github.com/Microsoft/vscode/issues/65920
 
 * [Bryce Kahle (@brycekahle)](https://github.com/brycekahle)
     * Use `LoggingDebugSession` to show logs from the VS Code debug adapter. [Feature Request 858](https://github.com/Microsoft/vscode-go/issues/858) implemented with [PR 2081](https://github.com/Microsoft/vscode-go/pull/2081)
@@ -55,7 +280,6 @@ Microsoft/vscode-go/pull/2235)
 
 * [kerem (@keremgocen)](https://github.com/keremgocen)
     * Check if the file at the expected tool path is executable before using it. Fixes [Bug 2220](https://github.com/Microsoft/vscode-go/issues/2220) with [PR 2230](https://github.com/Microsoft/vscode-go/pull/2230)
-
 
 * [Segev Finer (@segevfiner)](https://github.com/segevfiner) 
     * Use the right documentation in auto-completion widget when there are multiple functions of the same name but on different receivers. Fixes [Bug 2107](https://github.com/Microsoft/vscode-go/issues/2107) with [PR 2215](https://github.com/Microsoft/vscode-go/pull/2215)

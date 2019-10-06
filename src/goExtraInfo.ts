@@ -6,11 +6,11 @@
 'use strict';
 
 import vscode = require('vscode');
-import { HoverProvider, Hover, MarkedString, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
+import { HoverProvider, Hover, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {
-	private goConfig = null;
+	private goConfig: WorkspaceConfiguration = null;
 
 	constructor(goConfig?: WorkspaceConfiguration) {
 		this.goConfig = goConfig;
@@ -28,17 +28,17 @@ export class GoHoverProvider implements HoverProvider {
 		}
 		return definitionLocation(document, position, goConfig, true, token).then(definitionInfo => {
 			if (definitionInfo == null) return null;
-			let lines = definitionInfo.declarationlines
+			const lines = definitionInfo.declarationlines
 				.filter(line => line !== '')
 				.map(line => line.replace(/\t/g, '    '));
 			let text;
 			text = lines.join('\n').replace(/\n+$/, '');
-			let hoverTexts: MarkedString[] = [];
-			hoverTexts.push({ language: 'go', value: text });
+			const hoverTexts = new vscode.MarkdownString();
+			hoverTexts.appendCodeblock(text, 'go');
 			if (definitionInfo.doc != null) {
-				hoverTexts.push(definitionInfo.doc);
+				hoverTexts.appendMarkdown(definitionInfo.doc);
 			}
-			let hover = new Hover(hoverTexts);
+			const hover = new Hover(hoverTexts);
 			return hover;
 		}, () => {
 			return null;

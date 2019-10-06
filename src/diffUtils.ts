@@ -93,10 +93,10 @@ export interface FilePatch {
  * @returns Array of FilePatch objects, one for each file
  */
 function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
-	let filePatches: FilePatch[] = [];
+	const filePatches: FilePatch[] = [];
 	diffOutput.forEach((uniDiff: jsDiff.IUniDiff) => {
 		let edit: Edit = null;
-		let edits: Edit[] = [];
+		const edits: Edit[] = [];
 		uniDiff.hunks.forEach((hunk: jsDiff.IHunk) => {
 			let startLine = hunk.oldStart;
 			hunk.lines.forEach((line) => {
@@ -119,7 +119,7 @@ function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 			});
 		});
 
-		let fileName = uniDiff.oldFileName;
+		const fileName = uniDiff.oldFileName;
 		filePatches.push({ fileName, edits });
 	});
 
@@ -141,8 +141,8 @@ export function getEdits(fileName: string, oldStr: string, newStr: string): File
 		oldStr = oldStr.split('\r\n').join('\n');
 		newStr = newStr.split('\r\n').join('\n');
 	}
-	let unifiedDiffs: jsDiff.IUniDiff = jsDiff.structuredPatch(fileName, fileName, oldStr, newStr, '', '');
-	let filePatches: FilePatch[] = parseUniDiffs([unifiedDiffs]);
+	const unifiedDiffs: jsDiff.IUniDiff = jsDiff.structuredPatch(fileName, fileName, oldStr, newStr, '', '');
+	const filePatches: FilePatch[] = parseUniDiffs([unifiedDiffs]);
 	return filePatches[0];
 }
 
@@ -154,7 +154,7 @@ export function getEdits(fileName: string, oldStr: string, newStr: string): File
  * @returns Array of FilePatch objects, one for each file
  */
 export function getEditsFromUnifiedDiffStr(diffstr: string): FilePatch[] {
-	let unifiedDiffs: jsDiff.IUniDiff[] = jsDiff.parsePatch(diffstr);
-	let filePatches: FilePatch[] = parseUniDiffs(unifiedDiffs);
+	const unifiedDiffs: jsDiff.IUniDiff[] = jsDiff.parsePatch(diffstr);
+	const filePatches: FilePatch[] = parseUniDiffs(unifiedDiffs);
 	return filePatches;
 }

@@ -10,6 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { getAllPackages } from './goPackages';
 import { getImportPath, getCurrentGoPath, getBinPath } from './util';
+import { envPath } from './goPath';
 
 export function browsePackages() {
 	let workDir = '';
@@ -19,7 +20,7 @@ export function browsePackages() {
 	if (editor) {
 		currentUri = vscode.window.activeTextEditor.document.uri;
 		workDir = path.dirname(currentUri.fsPath);
-		let selection = editor.selection;
+		const selection = editor.selection;
 		if (!selection.isEmpty) {
 			// get selected text
 			selectedText = editor.document.getText(selection);
@@ -40,16 +41,17 @@ export function browsePackages() {
 function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDir: string) {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
+		return vscode.window.showErrorMessage(`Failed to run "go list" to fetch packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 	}
 
 	if (!pkg && showAllPkgsIfPkgNotFound) {
 		return showPackageList(workDir);
 	}
 
-	const options = {
+	const options: { [key: string]: any } = {
 		env: Object.assign({}, process.env, { GOPATH: getCurrentGoPath() })
 	};
+
 	if (workDir) {
 		options['cwd'] = workDir;
 	}
@@ -63,12 +65,12 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 			return;
 		}
 
-		let matches = stdout && stdout.match(/(.*):\[(.*)\]:\[(.*)\]:\[(.*)\]/);
+		const matches = stdout && stdout.match(/(.*):\[(.*)\]:\[(.*)\]:\[(.*)\]/);
 		if (matches) {
-			let dir = matches[1];
+			const dir = matches[1];
 			let files = matches[2] ? matches[2].split(' ') : [];
-			let testfiles = matches[3] ? matches[3].split(' ') : [];
-			let xtestfiles = matches[4] ? matches[4].split(' ') : [];
+			const testfiles = matches[3] ? matches[3].split(' ') : [];
+			const xtestfiles = matches[4] ? matches[4].split(' ') : [];
 			files = files.concat(testfiles);
 			files = files.concat(xtestfiles);
 			vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then(file => {

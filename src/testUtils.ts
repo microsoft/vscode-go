@@ -2,16 +2,16 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
-
 import cp = require('child_process');
 import path = require('path');
-import vscode = require('vscode');
 import util = require('util');
-import { parseEnvFile, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { getToolsEnvVars, getGoVersion, LineBuffer, SemVersion, resolvePath, getCurrentGoPath, getBinPath } from './util';
+import vscode = require('vscode');
+
+import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
-import { getCurrentPackage } from './goModules';
+import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile, envPath } from './goPath';
+import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
 const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
@@ -70,7 +70,7 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 	const envVars = getToolsEnvVars();
 	const testEnvConfig = config['testEnvVars'] || {};
 
-	let fileEnv = {};
+	let fileEnv: { [key: string]: any } = {};
 	let testEnvFile = config['testEnvFile'];
 	if (testEnvFile) {
 		testEnvFile = resolvePath(testEnvFile);
@@ -81,8 +81,8 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 		}
 	}
 
-	Object.keys(testEnvConfig).forEach(key => envVars[key] = typeof testEnvConfig[key] === 'string' ? resolvePath(testEnvConfig[key]) : testEnvConfig[key]);
 	Object.keys(fileEnv).forEach(key => envVars[key] = typeof fileEnv[key] === 'string' ? resolvePath(fileEnv[key]) : fileEnv[key]);
+	Object.keys(testEnvConfig).forEach(key => envVars[key] = typeof testEnvConfig[key] === 'string' ? resolvePath(testEnvConfig[key]) : testEnvConfig[key]);
 
 	return envVars;
 }
@@ -99,10 +99,11 @@ export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args?: any
  * @param the URI of a Go source file.
  * @return test function symbols for the source file.
  */
-export function getTestFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-	let documentSymbolProvider = new GoDocumentSymbolProvider(true);
+export function getTestFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
+	const documentSymbolProvider = new GoDocumentSymbolProvider(true);
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
+		.then(symbols => symbols[0].children)
 		.then(symbols => {
 			const testify = symbols.some(sym => sym.kind === vscode.SymbolKind.Namespace && sym.name === '"github.com/stretchr/testify/suite"');
 			return symbols.filter(sym =>
@@ -127,16 +128,33 @@ export function extractInstanceTestName(symbolName: string): string {
 }
 
 /**
+ * Gets the appropriate debug arguments for a debug session on a test function.
+ * @param document  The document containing the tests
+ * @param testFunctionName The test function to get the debug args
+ * @param testFunctions The test functions found in the document
+ */
+export function getTestFunctionDebugArgs(document: vscode.TextDocument, testFunctionName: string, testFunctions: vscode.DocumentSymbol[]): string[] {
+	const instanceMethod = extractInstanceTestName(testFunctionName);
+	if (instanceMethod) {
+		const testFns = findAllTestSuiteRuns(document, testFunctions);
+		const testSuiteRuns = ['-test.run', `^${testFns.map(t => t.name).join('|')}$`];
+		const testSuiteTests = ['-testify.m', `^${instanceMethod}$`];
+		return [...testSuiteRuns, ...testSuiteTests];
+	} else {
+		return ['-test.run', `^${testFunctionName}$`];
+	}
+}
+/**
  * Finds test methods containing "suite.Run()" call.
  *
  * @param doc Editor document
  * @param allTests All test functions
  */
-export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.SymbolInformation[]): vscode.SymbolInformation[] {
+export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.DocumentSymbol[]): vscode.DocumentSymbol[] {
 	// get non-instance test functions
 	const testFunctions = allTests.filter(t => !testMethodRegex.test(t.name));
 	// filter further to ones containing suite.Run()
-	return testFunctions.filter(t => doc.getText(t.location.range).includes('suite.Run('));
+	return testFunctions.filter(t => doc.getText(t.range).includes('suite.Run('));
 }
 
 /**
@@ -145,10 +163,11 @@ export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.
  * @param the URI of a Go source file.
  * @return benchmark function symbols for the source file.
  */
-export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
-	let documentSymbolProvider = new GoDocumentSymbolProvider();
+export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
+	const documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
+		.then(symbols => symbols[0].children)
 		.then(symbols =>
 			symbols.filter(sym =>
 				sym.kind === vscode.SymbolKind.Function
@@ -162,7 +181,7 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
  * @param goConfig Configuration for the Go extension.
  */
 export function goTest(testconfig: TestConfig): Thenable<boolean> {
-	return new Promise<boolean>((resolve, reject) => {
+	return new Promise<boolean>(async (resolve, reject) => {
 
 		// We do not want to clear it if tests are already running, as that could
 		// lose valuable output.
@@ -174,9 +193,9 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			outputChannel.show(true);
 		}
 
-		let testTags: string = testconfig.goConfig['testTags'] !== null ? testconfig.goConfig['testTags'] : testconfig.goConfig['buildTags'];
-		let args: Array<string> = ['test'];
-		let testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
+		const testTags: string = testconfig.goConfig['testTags'] !== null ? testconfig.goConfig['testTags'] : testconfig.goConfig['buildTags'];
+		const args: Array<string> = ['test'];
+		const testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
 
 		if (testconfig.isBenchmark) {
 			args.push('-benchmem', '-run=^$');
@@ -187,25 +206,25 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			args.push('-tags', testTags);
 		}
 
-		let testEnvVars = getTestEnvVars(testconfig.goConfig);
-		let goRuntimePath = getBinPath('go');
+		const testEnvVars = getTestEnvVars(testconfig.goConfig);
+		const goRuntimePath = getBinPath('go');
 
 		if (!goRuntimePath) {
-			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+			vscode.window.showErrorMessage(`Failed to run "go test" as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 			return Promise.resolve();
 		}
 
-		let currentGoWorkspace = testconfig.isMod ? '' : getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
+		const currentGoWorkspace = testconfig.isMod ? '' : getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), testconfig.dir);
 		let targets = targetArgs(testconfig);
-		let getCurrentPackagePromise = testconfig.isMod ? getCurrentPackage(testconfig.dir) : Promise.resolve(currentGoWorkspace ? testconfig.dir.substr(currentGoWorkspace.length + 1) : '');
+		const getCurrentPackagePromise = testconfig.isMod ? getCurrentPackage(testconfig.dir) : Promise.resolve(currentGoWorkspace ? testconfig.dir.substr(currentGoWorkspace.length + 1) : '');
 		let pkgMapPromise: Promise<Map<string, string> | null> = Promise.resolve(null);
 		if (testconfig.includeSubDirectories) {
 			if (testconfig.isMod) {
 				targets = ['./...'];
 				pkgMapPromise = getNonVendorPackages(testconfig.dir); // We need the mapping to get absolute paths for the files in the test output
 			} else {
-				pkgMapPromise = getGoVersion().then(ver => {
-					if (!ver || ver.major > 1 || (ver.major === 1 && ver.minor >= 9)) {
+				pkgMapPromise = getGoVersion().then(goVersion => {
+					if (goVersion.gt('1.8')) {
 						targets = ['./...'];
 						return null; // We dont need mapping, as we can derive the absolute paths from package path
 					}
@@ -226,7 +245,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				targets.splice(0, 0, currentPackage);
 			}
 
-			let outTargets = args.slice(0);
+			const outTargets = args.slice(0);
 			if (targets.length > 4) {
 				outTargets.push('<long arguments omitted>');
 			} else {
@@ -240,7 +259,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			// ensure that user provided flags are appended last (allow use of -args ...)
 			args.push(...testconfig.flags);
 
-			let tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
+			const tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
 			const errBuf = new LineBuffer();
 
@@ -294,7 +313,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 					outputChannel.appendLine(`Success: ${testType} passed.`);
 				}
 
-				let index = runningTestProcesses.indexOf(tp, 0);
+				const index = runningTestProcesses.indexOf(tp, 0);
 				if (index > -1) {
 					runningTestProcesses.splice(index, 1);
 				}
@@ -338,9 +357,9 @@ export function cancelRunningTests(): Thenable<boolean> {
 }
 
 function expandFilePathInOutput(output: string, cwd: string): string {
-	let lines = output.split('\n');
+	const lines = output.split('\n');
 	for (let i = 0; i < lines.length; i++) {
-		let matches = lines[i].match(/^\s*(.+.go):(\d+):/);
+		const matches = lines[i].match(/^\s*(.+.go):(\d+):/);
 		if (matches && matches[1] && !path.isAbsolute(matches[1])) {
 			lines[i] = lines[i].replace(matches[1], path.join(cwd, matches[1]));
 		}

@@ -1,9 +1,9 @@
 language: go
 
 go:
-  - 1.9.x
   - 1.10.x
   - 1.11.x
+  - 1.12.x
   - tip
 
 matrix:
@@ -18,23 +18,24 @@ os:
 
 before_install:
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
-      export DISPLAY=:99.0;
-      sh -e /etc/init.d/xvfb start;
-      sudo apt-get update && sudo apt-get install -y libsecret-1-0;
+    export DISPLAY=:99.0;
+    Xvfb :99 &
+    sleep 3; # give xvfb some time to start 
+    sudo apt-get update && sudo apt-get install -y libsecret-1-0;
     fi
 
 install:
   - TRAVIS_NODE_VERSION="6";
-      # Clear out whatever version of NVM Travis has as it is old.
+  # Clear out whatever version of NVM Travis has as it is old.
   - rm -rf ~/.nvm;
-      # Grab NVM.
+    # Grab NVM.
   - git clone https://github.com/creationix/nvm.git ~/.nvm;
-      # Checkout the latest stable tag.
-      # Note that you can just hardcode a preferred version here.
+    # Checkout the latest stable tag.
+    # Note that you can just hardcode a preferred version here.
   - (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`);
-      # Install the desired version of Node
-  -  source ~/.nvm/nvm.sh;
-  -  nvm install $TRAVIS_NODE_VERSION;
+    # Install the desired version of Node
+  - source ~/.nvm/nvm.sh;
+  - nvm install $TRAVIS_NODE_VERSION;
   - npm install
   - npm run vscode:prepublish
   - if [[ "$(go version)" =~ "go version go1.8" ]]; then go get -u -v github.com/nsf/gocode; else go get -u -v github.com/mdempsky/gocode; fi
@@ -49,8 +50,8 @@ install:
   - go get -u -v github.com/cweill/gotests/...
   - go get -u -v github.com/haya14busa/goplay/cmd/goplay
   - go get -u -v github.com/davidrjenni/reftools/cmd/fillstruct
-  - curl -fsSL https://git.io/vp6lP | sh -s -- -b $GOPATH/bin
 
 script:
   - npm run lint
+  - npm run unit-test
   - npm test --silent

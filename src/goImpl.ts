@@ -15,7 +15,7 @@ import { dirname } from 'path';
 const inputRegex = /^(\w+\ \*?\w+\ )?([\w./]+)$/;
 
 export function implCursor() {
-	let cursor = vscode.window.activeTextEditor.selection;
+	const cursor = vscode.window.activeTextEditor.selection;
 	return vscode.window.showInputBox({
 		placeHolder: 'f *File io.Closer',
 		prompt: 'Enter receiver and interface to implement.'
@@ -38,8 +38,8 @@ export function implCursor() {
 }
 
 function runGoImpl(args: string[], insertPos: vscode.Position) {
-	let goimpl = getBinPath('impl');
-	let p = cp.execFile(goimpl, args, { env: getToolsEnvVars(), cwd: dirname(vscode.window.activeTextEditor.document.fileName) }, (err, stdout, stderr) => {
+	const goimpl = getBinPath('impl');
+	const p = cp.execFile(goimpl, args, { env: getToolsEnvVars(), cwd: dirname(vscode.window.activeTextEditor.document.fileName) }, (err, stdout, stderr) => {
 		if (err && (<any>err).code === 'ENOENT') {
 			promptForMissingTool('impl');
 			return;

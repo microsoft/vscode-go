@@ -17,9 +17,9 @@
 	// the command is a shell script
 	"type": "shell",
 
-	// show the output window only if unrecognized errors occur.
+	// don't show the output window, rely on the problem matcher.
 	"presentation": {
-		"reveal": "silent"
+		"reveal": "never"
 	},
 
 	// we run the custom script "compile" as defined in package.json
@@ -29,5 +29,27 @@
 	"isBackground": true,
 
 	// use the standard tsc in watch mode problem matcher to find compile problems in the output.
-	"problemMatcher": "$tsc-watch"
+	"problemMatcher": "$tsc-watch",
+	"tasks": [
+		{
+			"type": "typescript",
+			"tsconfig": "tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"type": "npm",
+			"script": "watch",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"presentation": {
+				"reveal": "never"
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
 }

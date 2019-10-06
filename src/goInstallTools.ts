@@ -10,266 +10,45 @@ import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
 import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getBinPath, getToolsGopath, getGoVersion, SemVersion, isVendorSupported, getCurrentGoPath, resolvePath } from './util';
-import { goLiveErrorsEnabled } from './goLiveErrors';
+import { getToolFromToolPath, envPath } from './goPath';
+import { getLanguageServerToolPath } from './goLanguageServer';
+import { Tool, getConfiguredTools, getTool, isWildcard, isGocode, hasModSuffix, containsString, containsTool, getImportPath } from './goTools';
+import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, GoVersion } from './util';
 
-let updatesDeclinedTools: string[] = [];
-let installsDeclinedTools: string[] = [];
-const _allTools: { [key: string]: string } = {
-	'gocode': 'github.com/mdempsky/gocode',
-	'gocode-gomod': 'github.com/stamblerre/gocode',
-	'gopkgs': 'github.com/uudashr/gopkgs/cmd/gopkgs',
-	'go-outline': 'github.com/ramya-rao-a/go-outline',
-	'go-symbols': 'github.com/acroca/go-symbols',
-	'guru': 'golang.org/x/tools/cmd/guru',
-	'gorename': 'golang.org/x/tools/cmd/gorename',
-	'gomodifytags': 'github.com/fatih/gomodifytags',
-	'goplay': 'github.com/haya14busa/goplay/cmd/goplay',
-	'impl': 'github.com/josharian/impl',
-	'gotype-live': 'github.com/tylerb/gotype-live',
-	'godef': 'github.com/rogpeppe/godef',
-	'gogetdoc': 'github.com/zmb3/gogetdoc',
-	'goimports': 'golang.org/x/tools/cmd/goimports',
-	'goreturns': 'github.com/sqs/goreturns',
-	'goformat': 'winterdrache.de/goformat/goformat',
-	'golint': 'golang.org/x/lint/golint',
-	'gotests': 'github.com/cweill/gotests/...',
-	'gometalinter': 'github.com/alecthomas/gometalinter',
-	'staticcheck': 'honnef.co/go/tools/...',
-	'golangci-lint': 'github.com/golangci/golangci-lint/cmd/golangci-lint',
-	'revive': 'github.com/mgechev/revive',
-	'go-langserver': 'github.com/sourcegraph/go-langserver',
-	'dlv': 'github.com/go-delve/delve/cmd/dlv',
-	'fillstruct': 'github.com/davidrjenni/reftools/cmd/fillstruct',
-};
+// declinedUpdates tracks the tools that the user has declined to update.
+const declinedUpdates: Tool[] = [];
 
-function getToolImportPath(tool: string, goVersion: SemVersion) {
-	if (tool === 'gocode' && goVersion && goVersion.major < 2 && goVersion.minor < 9) {
-		return 'github.com/nsf/gocode';
-	}
-	return _allTools[tool];
-}
+// declinedUpdates tracks the tools that the user has declined to install.
+const declinedInstalls: Tool[] = [];
 
-// Tools used explicitly by the basic features of the extension
-const importantTools = [
-	'gocode',
-	'gocode-gomod',
-	'gopkgs',
-	'go-outline',
-	'go-symbols',
-	'guru',
-	'gorename',
-	'godef',
-	'gogetdoc',
-	'goreturns',
-	'goimports',
-	'golint',
-	'gometalinter',
-	'staticcheck',
-	'golangci-lint',
-	'revive',
-	'dlv'
-];
+export async function installAllTools(updateExistingToolsOnly: boolean = false) {
+	const goVersion = await getGoVersion();
+	const allTools = getConfiguredTools(goVersion);
 
-function getTools(goVersion: SemVersion): string[] {
-	let goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
-	let tools: string[] = [
-		'gocode',
-		'gopkgs',
-		'go-outline',
-		'go-symbols',
-		'guru',
-		'gorename'
-	];
-
-	// Check if the system supports dlv (e.g. is 64-bit)
-	// There doesn't seem to be a good way to check if the mips and s390
-	// families are 64-bit, so just try to install it and hope for the best
-	if (process.arch.match(/^(arm64|mips|mipsel|ppc64|s390|s390x|x64)$/)) {
-		tools.push('dlv');
+	// Update existing tools by finding all tools the user has already installed.
+	if (updateExistingToolsOnly) {
+		installTools(allTools.filter(tool => {
+			const toolPath = getBinPath(tool.name);
+			return toolPath && path.isAbsolute(toolPath);
+		}), goVersion);
+		return;
 	}
 
-	// gocode-gomod needed in go 1.11 & higher
-	if (!goVersion || (goVersion.major === 1 && goVersion.minor >= 11)) {
-		tools.push('gocode-gomod');
-	}
-
-	// Install the doc/def tool that was chosen by the user
-	if (goConfig['docsTool'] === 'godoc') {
-		tools.push('godef');
-	}
-
-	// Install the formattool that was chosen by the user
-	if (goConfig['formatTool'] === 'goimports') {
-		tools.push('goimports');
-	} else if (goConfig['formatTool'] === 'goformat') {
-		tools.push('goformat');
-	} else if (goConfig['formatTool'] === 'goreturns') {
-		tools.push('goreturns');
-	}
-
-	// Tools not supported in go1.8
-	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 8))) {
-		if (goConfig['lintTool'] === 'golint') {
-			tools.push('golint');
-		}
-		if (goConfig['docsTool'] === 'gogetdoc') {
-			tools.push('gogetdoc');
-		}
-	}
-
-	if (goConfig['lintTool'] === 'gometalinter') {
-		tools.push('gometalinter');
-	}
-
-	if (goConfig['lintTool'] === 'staticcheck') {
-		tools.push('staticcheck');
-	}
-
-	if (goConfig['lintTool'] === 'golangci-lint') {
-		tools.push('golangci-lint');
-	}
-
-	if (goConfig['lintTool'] === 'revive') {
-		tools.push('revive');
-	}
-
-	if (goConfig['useLanguageServer']) {
-		tools.push('go-langserver');
-	}
-
-	if (goLiveErrorsEnabled()) {
-		tools.push('gotype-live');
-	}
-
-	// gotests is not supported in go1.5
-	if (!goVersion || (goVersion.major > 1 || (goVersion.major === 1 && goVersion.minor > 5))) {
-		tools.push('gotests');
-	}
-
-	tools.push(
-		'gomodifytags',
-		'impl',
-		'fillstruct',
-		'goplay'
-	);
-
-	return tools;
-}
-
-export function installAllTools(updateExistingToolsOnly: boolean = false) {
-	const allToolsDescription: { [key: string]: string } = {
-		'gocode': '\t\t(Auto-completion)',
-		'gocode-gomod': '(Autocompletion, works with Modules)',
-		'gopkgs': '\t\t(Auto-completion of unimported packages & Add Import feature)',
-		'go-outline': '\t(Go to symbol in file)',
-		'go-symbols': '\t(Go to symbol in workspace)',
-		'guru': '\t\t(Find all references and Go to implementation of symbols)',
-		'gorename': '\t(Rename symbols)',
-		'gomodifytags': '(Modify tags on structs)',
-		'goplay': '\t\t(The Go playground)',
-		'impl': '\t\t(Stubs for interfaces)',
-		'gotype-live': '\t(Show errors as you type)',
-		'godef': '\t\t(Go to definition)',
-		'gogetdoc': '\t(Go to definition & text shown on hover)',
-		'goimports': '\t(Formatter)',
-		'goreturns': '\t(Formatter)',
-		'goformat': '\t(Formatter)',
-		'golint': '\t\t(Linter)',
-		'gotests': '\t\t(Generate unit tests)',
-		'gometalinter': '\t(Linter)',
-		'golangci-lint': '\t(Linter)',
-		'revive': '\t\t(Linter)',
-		'staticcheck': '\t(Linter)',
-		'go-langserver': '(Language Server)',
-		'dlv': '\t\t\t(Debugging)',
-		'fillstruct': '\t\t(Fill structs with defaults)'
-	};
-
-	getGoVersion().then((goVersion) => {
-		const allTools = getTools(goVersion);
-		if (updateExistingToolsOnly) {
-			installTools(allTools.filter(tool => {
-				const toolPath = getBinPath(tool);
-				return toolPath && path.isAbsolute(toolPath);
-			}), goVersion);
+	// Otherwise, allow the user to select which tools to install or update.
+	vscode.window.showQuickPick(allTools.map(x => {
+		const item: vscode.QuickPickItem = {
+			label: x.name,
+			description: x.description
+		};
+		return item;
+	}), {
+		canPickMany: true,
+		placeHolder: 'Select the tools to install/update.'
+	}).then(selectedTools => {
+		if (!selectedTools) {
 			return;
 		}
-		vscode.window.showQuickPick(allTools.map(x => `${x} ${allToolsDescription[x]}`), {
-			canPickMany: true,
-			placeHolder: 'Select the tool to install/update.'
-		}).then(selectedTools => {
-			if (!selectedTools) {
-				return;
-			}
-			installTools(selectedTools.map(x => x.substr(0, x.indexOf(' '))), goVersion);
-		});
-	});
-}
-
-export function promptForMissingTool(tool: string) {
-	// If user has declined to install, then don't prompt
-	if (installsDeclinedTools.indexOf(tool) > -1) {
-		return;
-	}
-	getGoVersion().then((goVersion) => {
-		if (goVersion && goVersion.major === 1 && goVersion.minor < 6) {
-			if (tool === 'golint') {
-				vscode.window.showInformationMessage('golint no longer supports go1.8, update your settings to use gometalinter as go.lintTool and install gometalinter');
-				return;
-			}
-			if (tool === 'gotests') {
-				vscode.window.showInformationMessage('Generate unit tests feature is not supported as gotests tool needs go1.6 or higher.');
-				return;
-			}
-		}
-
-		const items = ['Install'];
-		getMissingTools(goVersion).then(missing => {
-			if (missing.indexOf(tool) === -1) {
-				return;
-			}
-			missing = missing.filter(x => x === tool || importantTools.indexOf(x) > -1);
-			if (missing.length > 1 && tool.indexOf('-gomod') === -1) {
-				items.push('Install All');
-			}
-
-			let msg = `The "${tool}" command is not available.  Use "go get -v ${getToolImportPath(tool, goVersion)}" to install.`;
-			if (tool === 'gocode-gomod') {
-				msg = `To provide auto-completions when using Go modules, we are testing a fork(${getToolImportPath(tool, goVersion)}) of "gocode" and an updated version of "gopkgs". Please press the Install button to install them.`;
-			}
-			vscode.window.showInformationMessage(msg, ...items).then(selected => {
-				if (selected === 'Install') {
-					if (tool === 'gocode-gomod') {
-						installTools(['gocode-gomod', 'gopkgs'], goVersion);
-					} else {
-						installTools([tool], goVersion);
-					}
-
-				} else if (selected === 'Install All') {
-					installTools(missing, goVersion);
-					hideGoStatus();
-				} else {
-					installsDeclinedTools.push(tool);
-				}
-			});
-		});
-	});
-}
-
-export function promptForUpdatingTool(tool: string) {
-	// If user has declined to update, then don't prompt
-	if (updatesDeclinedTools.indexOf(tool) > -1) {
-		return;
-	}
-	getGoVersion().then((goVersion) => {
-		vscode.window.showInformationMessage(`The Go extension is better with the latest version of "${tool}". Use "go get -u -v ${getToolImportPath(tool, goVersion)}" to update`, 'Update').then(selected => {
-			if (selected === 'Update') {
-				installTools([tool], goVersion);
-			} else {
-				updatesDeclinedTools.push(tool);
-			}
-		});
+		installTools(selectedTools.map(x => getTool(x.label)), goVersion);
 	});
 }
 
@@ -278,10 +57,10 @@ export function promptForUpdatingTool(tool: string) {
  *
  * @param string[] array of tool names to be installed
  */
-export function installTools(missing: string[], goVersion: SemVersion) {
-	let goRuntimePath = getBinPath('go');
+export function installTools(missing: Tool[], goVersion: GoVersion): Promise<void> {
+	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		vscode.window.showErrorMessage(`Failed to run "go get" to install the packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 		return;
 	}
 	if (!missing) {
@@ -289,7 +68,7 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 	}
 
 	// http.proxy setting takes precedence over environment variables
-	let httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
+	const httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
 	let envForTools = Object.assign({}, process.env);
 	if (httpProxy) {
 		envForTools = Object.assign({}, process.env, {
@@ -302,64 +81,79 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 
 	// If the go.toolsGopath is set, use its value as the GOPATH for the "go get" child process.
 	// Else use the Current Gopath
-	let toolsGopath = getToolsGopath() || getCurrentGoPath();
+	let toolsGopath = getToolsGopath();
 	if (toolsGopath) {
-		let paths = toolsGopath.split(path.delimiter);
+		// User has explicitly chosen to use toolsGopath, so ignore GOBIN
+		envForTools['GOBIN'] = '';
+	} else {
+		toolsGopath = getCurrentGoPath();
+	}
+	if (toolsGopath) {
+		const paths = toolsGopath.split(path.delimiter);
 		toolsGopath = paths[0];
 		envForTools['GOPATH'] = toolsGopath;
 	} else {
-		vscode.window.showInformationMessage('Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.', 'Open User Settings', 'Open Workspace Settings').then(selected => {
-			if (selected === 'Open User Settings') {
-				vscode.commands.executeCommand('workbench.action.openGlobalSettings');
-			} else if (selected === 'Open Workspace Settings') {
-				vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
+		const msg = 'Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.';
+		vscode.window.showInformationMessage(msg, 'Open User Settings', 'Open Workspace Settings').then(selected => {
+			switch (selected) {
+				case 'Open User Settings':
+					vscode.commands.executeCommand('workbench.action.openGlobalSettings');
+					break;
+				case 'Open Workspace Settings':
+					vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
+					break;
 			}
 		});
 		return;
 	}
 
-	envForTools['GO111MODULE'] = 'off';
+	// If the user is on Go >= 1.11, tools should be installed with modules enabled.
+	// This ensures that users get the latest tagged version, rather than master,
+	// which may be unstable.
+	let modulesOff = false;
+	if (goVersion.lt('1.11')) {
+		modulesOff = true;
+	}
 
 	outputChannel.show();
 	outputChannel.clear();
 	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${path.sep}bin`);
 	missing.forEach((missingTool, index, missing) => {
-		outputChannel.appendLine('  ' + missingTool);
+		outputChannel.appendLine('  ' + missingTool.name);
 	});
 
 	outputChannel.appendLine(''); // Blank line for spacing.
 
-	missing.reduce((res: Promise<string[]>, tool: string) => {
+	// Install tools in a temporary directory, to avoid altering go.mod files.
+	const toolsTmpDir = getTempFilePath('go-tools');
+	if (!fs.existsSync(toolsTmpDir)) {
+		fs.mkdirSync(toolsTmpDir);
+	}
+
+	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
+		// Disable modules for tools which are installed with the "..." wildcard.
+		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
+		if (modulesOff || isWildcard(tool, goVersion)) {
+			envForTools['GO111MODULE'] = 'off';
+		} else {
+			envForTools['GO111MODULE'] = 'on';
+		}
+
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				if (err) {
-					outputChannel.appendLine('Installing ' + getToolImportPath(tool, goVersion) + ' FAILED');
-					let failureReason = tool + ';;' + err + stdout.toString() + stderr.toString();
+					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
+					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
 					resolve([...sofar, failureReason]);
 				} else {
-					outputChannel.appendLine('Installing ' + getToolImportPath(tool, goVersion) + ' SUCCEEDED');
-					if (tool === 'gometalinter') {
-						// Gometalinter needs to install all the linters it uses.
-						outputChannel.appendLine('Installing all linters used by gometalinter....');
-						let gometalinterBinPath = getBinPath('gometalinter');
-						cp.execFile(gometalinterBinPath, ['--install'], { env: envForTools }, (err, stdout, stderr) => {
-							if (!err) {
-								outputChannel.appendLine('Installing all linters used by gometalinter SUCCEEDED.');
-								resolve([...sofar, null]);
-							} else {
-								let failureReason = `Error while running gometalinter --install;; ${stderr}`;
-								resolve([...sofar, failureReason]);
-							}
-						});
-					} else {
-						resolve([...sofar, null]);
-					}
+					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
+					resolve([...sofar, null]);
 				}
 			};
 
 			let closeToolPromise = Promise.resolve(true);
-			const toolBinPath = getBinPath(tool);
-			if (path.isAbsolute(toolBinPath) && (tool === 'gocode' || tool === 'gocode-gomod')) {
+			const toolBinPath = getBinPath(tool.name);
+			if (path.isAbsolute(toolBinPath) && isGocode(tool)) {
 				closeToolPromise = new Promise<boolean>((innerResolve) => {
 					cp.execFile(toolBinPath, ['close'], {}, (err, stdout, stderr) => {
 						if (stderr && stderr.indexOf('rpc: can\'t find service Server.') > -1) {
@@ -376,18 +170,28 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 					resolve([...sofar, null]);
 					return;
 				}
-				let args = ['get', '-u', '-v'];
-				if (tool.endsWith('-gomod')) {
+				const args = ['get', '-v'];
+				// Only get tools at master if we are not using modules.
+				if (modulesOff) {
+					args.push('-u');
+				}
+				// Tools with a "mod" suffix should not be installed,
+				// instead we run "go build -o" to rename them.
+				if (hasModSuffix(tool)) {
 					args.push('-d');
 				}
-				args.push(getToolImportPath(tool, goVersion));
-				cp.execFile(goRuntimePath, args, { env: envForTools }, (err, stdout, stderr) => {
+				const opts = {
+					env: envForTools,
+					cwd: toolsTmpDir,
+				};
+				args.push(getImportPath(tool, goVersion));
+				cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
-						outputChannel.appendLine(`Installing ${tool} failed with error "unexpected directory layout". Retrying...`);
-						cp.execFile(goRuntimePath, args, { env: envForTools }, callback);
-					} else if (!err && tool.endsWith('-gomod')) {
-						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool}.exe` : tool);
-						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getToolImportPath(tool, goVersion)], { env: envForTools }, callback);
+						outputChannel.appendLine(`Installing ${tool.name} failed with error "unexpected directory layout". Retrying...`);
+						cp.execFile(goRuntimePath, args, opts, callback);
+					} else if (!err && hasModSuffix(tool)) {
+						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool.name}.exe` : tool.name);
+						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getImportPath(tool, goVersion)], opts, callback);
 					} else {
 						callback(err, stdout, stderr);
 					}
@@ -396,9 +200,9 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 		}));
 	}, Promise.resolve([])).then(res => {
 		outputChannel.appendLine(''); // Blank line for spacing
-		let failures = res.filter(x => x != null);
+		const failures = res.filter(x => x != null);
 		if (failures.length === 0) {
-			if (missing.indexOf('go-langserver') > -1) {
+			if (containsString(missing, 'go-langserver') || containsString(missing, 'gopls')) {
 				outputChannel.appendLine('Reload VS Code window to use the Go language server');
 			}
 			outputChannel.appendLine('All tools successfully installed. You\'re ready to Go :).');
@@ -407,15 +211,90 @@ export function installTools(missing: string[], goVersion: SemVersion) {
 
 		outputChannel.appendLine(failures.length + ' tools failed to install.\n');
 		failures.forEach((failure, index, failures) => {
-			let reason = failure.split(';;');
+			const reason = failure.split(';;');
 			outputChannel.appendLine(reason[0] + ':');
 			outputChannel.appendLine(reason[1]);
 		});
 	});
 }
 
+export async function promptForMissingTool(toolName: string) {
+	const tool = getTool(toolName);
+
+	// If user has declined to install this tool, don't prompt for it.
+	if (containsTool(declinedInstalls, tool)) {
+		return;
+	}
+
+	const goVersion = await getGoVersion();
+	// Show error messages for outdated tools.
+	if (goVersion.lt('1.9')) {
+		let outdatedErrorMsg;
+		switch (tool.name) {
+			case 'golint':
+				outdatedErrorMsg = 'golint no longer supports go1.8 or below, update your settings to use golangci-lint as go.lintTool and install golangci-lint';
+				break;
+			case 'gotests':
+				outdatedErrorMsg = 'Generate unit tests feature is not supported as gotests tool needs go1.9 or higher.';
+				break;
+		}
+		if (outdatedErrorMsg) {
+			vscode.window.showInformationMessage(outdatedErrorMsg);
+			return;
+		}
+	}
+
+	const installOptions = ['Install'];
+	let missing = await getMissingTools(goVersion);
+	if (!containsTool(missing, tool)) {
+		return;
+	}
+	missing = missing.filter(x => x === tool || tool.isImportant);
+	if (missing.length > 1) {
+		// Offer the option to install all tools.
+		installOptions.push('Install All');
+	}
+	const msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
+	vscode.window.showInformationMessage(msg, ...installOptions).then(selected => {
+		switch (selected) {
+			case 'Install':
+				installTools([tool], goVersion);
+				break;
+			case 'Install All':
+				installTools(missing, goVersion);
+				hideGoStatus();
+				break;
+			default:
+				// The user has declined to install this tool.
+				declinedInstalls.push(tool);
+				break;
+		}
+	});
+}
+
+export async function promptForUpdatingTool(toolName: string) {
+	const tool = getTool(toolName);
+
+	// If user has declined to update, then don't prompt.
+	if (containsTool(declinedUpdates, tool)) {
+		return;
+	}
+	const goVersion = await getGoVersion();
+	const updateMsg = `Your version of ${tool.name} appears to be out of date. Please update for an improved experience.`;
+	vscode.window.showInformationMessage(updateMsg, 'Update').then(selected => {
+		switch (selected) {
+			case 'Update':
+				installTools([tool], goVersion);
+				break;
+			default:
+				declinedUpdates.push(tool);
+				break;
+		}
+	});
+}
+
 export function updateGoPathGoRootFromConfig(): Promise<void> {
-	let goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
+	const goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
@@ -425,16 +304,34 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	}
 
 	// If GOPATH is still not set, then use the one from `go env`
-	let goRuntimePath = getBinPath('go');
+	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
+		vscode.window.showErrorMessage(`Failed to run "go env" to find GOPATH as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return;
 	}
+	const goRuntimeBasePath = path.dirname(goRuntimePath);
+
+	// cgo and a few other Go tools expect Go binary to be in the path
+	let pathEnvVar: string;
+	if (process.env.hasOwnProperty('PATH')) {
+		pathEnvVar = 'PATH';
+	} else if (process.platform === 'win32' && process.env.hasOwnProperty('Path')) {
+		pathEnvVar = 'Path';
+	}
+	if (goRuntimeBasePath
+		&& pathEnvVar
+		&& process.env[pathEnvVar]
+		&& (<string>process.env[pathEnvVar]).split(path.delimiter).indexOf(goRuntimeBasePath) === -1
+	) {
+		process.env[pathEnvVar] += path.delimiter + goRuntimeBasePath;
+	}
+
 	return new Promise<void>((resolve, reject) => {
 		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
 			if (err) {
 				return reject();
 			}
-			let envOutput = stdout.split('\n');
+			const envOutput = stdout.split('\n');
 			if (!process.env['GOPATH'] && envOutput[0].trim()) {
 				process.env['GOPATH'] = envOutput[0].trim();
 			}
@@ -446,39 +343,65 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	});
 }
 
-export function offerToInstallTools() {
-	isVendorSupported();
+let alreadyOfferedToInstallTools = false;
 
-	getGoVersion().then(goVersion => {
-		getMissingTools(goVersion).then(missing => {
-			missing = missing.filter(x => importantTools.indexOf(x) > -1);
-			if (missing.length > 0) {
-				showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
-				vscode.commands.registerCommand('go.promptforinstall', () => {
-					promptForInstall(missing, goVersion);
-				});
-			}
+export async function offerToInstallTools() {
+	if (alreadyOfferedToInstallTools) {
+		return;
+	}
+	alreadyOfferedToInstallTools = true;
+
+	const goVersion = await getGoVersion();
+	let missing = await getMissingTools(goVersion);
+	missing = missing.filter(x => x.isImportant);
+	if (missing.length > 0) {
+		showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
+		vscode.commands.registerCommand('go.promptforinstall', () => {
+			promptForInstall(missing, goVersion);
 		});
-	});
+	}
 
+	const usingSourceGraph = getToolFromToolPath(getLanguageServerToolPath()) === 'go-langserver';
+	if (usingSourceGraph && goVersion.gt('1.10')) {
+		const promptMsg = 'The language server from Sourcegraph is no longer under active development and it does not support Go modules as well. Please install and use the language server from Google or disable the use of language servers altogether.';
+		const disableLabel = 'Disable language server';
+		const installLabel = 'Install';
+		vscode.window.showInformationMessage(promptMsg, installLabel, disableLabel)
+			.then(selected => {
+				if (selected === installLabel) {
+					installTools([getTool('gopls')], goVersion)
+						.then(() => {
+							vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
+						});
+				} else if (selected === disableLabel) {
+					const goConfig = vscode.workspace.getConfiguration('go');
+					const inspectLanguageServerSetting = goConfig.inspect('useLanguageServer');
+					if (inspectLanguageServerSetting.globalValue === true) {
+						goConfig.update('useLanguageServer', false, vscode.ConfigurationTarget.Global);
+					} else if (inspectLanguageServerSetting.workspaceFolderValue === true) {
+						goConfig.update('useLanguageServer', false, vscode.ConfigurationTarget.WorkspaceFolder);
+					}
+				}
+			});
+	}
 
-	function promptForInstall(missing: string[], goVersion: SemVersion) {
-		let installItem = {
+	function promptForInstall(missing: Tool[], goVersion: GoVersion) {
+		const installItem = {
 			title: 'Install',
 			command() {
 				hideGoStatus();
 				installTools(missing, goVersion);
 			}
 		};
-		let showItem = {
+		const showItem = {
 			title: 'Show',
 			command() {
 				outputChannel.clear();
 				outputChannel.appendLine('Below tools are needed for the basic features of the Go extension.');
-				missing.forEach(x => outputChannel.appendLine(x));
+				missing.forEach(x => outputChannel.appendLine(x.name));
 			}
 		};
-		vscode.window.showInformationMessage('Some Go analysis tools are missing from your GOPATH.  Would you like to install them?', installItem, showItem).then(selection => {
+		vscode.window.showInformationMessage('Failed to find some of the Go analysis tools. Would you like to install them?', installItem, showItem).then(selection => {
 			if (selection) {
 				selection.command();
 			} else {
@@ -488,43 +411,14 @@ export function offerToInstallTools() {
 	}
 }
 
-function getMissingTools(goVersion: SemVersion): Promise<string[]> {
-	let keys = getTools(goVersion);
-	return Promise.all<string>(keys.map(tool => new Promise<string>((resolve, reject) => {
-		let toolPath = getBinPath(tool);
+function getMissingTools(goVersion: GoVersion): Promise<Tool[]> {
+	const keys = getConfiguredTools(goVersion);
+	return Promise.all<Tool>(keys.map(tool => new Promise<Tool>((resolve, reject) => {
+		const toolPath = getBinPath(tool.name);
 		fs.exists(toolPath, exists => {
 			resolve(exists ? null : tool);
 		});
 	}))).then(res => {
 		return res.filter(x => x != null);
 	});
-}
-
-// If langserver needs to be used, but is not installed, this will prompt user to install and Reload
-// If langserver needs to be used, and is installed, this will return true
-// Returns false in all other cases
-export function checkLanguageServer(): boolean {
-	let latestGoConfig = vscode.workspace.getConfiguration('go');
-	if (!latestGoConfig['useLanguageServer']) return false;
-
-	if (!allFoldersHaveSameGopath()) {
-		vscode.window.showInformationMessage('The Go language server is not supported in a multi root set up with different GOPATHs.');
-		return false;
-	}
-
-	let langServerAvailable = getBinPath('go-langserver') !== 'go-langserver';
-	if (!langServerAvailable) {
-		promptForMissingTool('go-langserver');
-		vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server');
-	}
-	return langServerAvailable;
-}
-
-function allFoldersHaveSameGopath(): boolean {
-	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length <= 1) {
-		return true;
-	}
-
-	let tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
-	return vscode.workspace.workspaceFolders.find(x => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
 }
