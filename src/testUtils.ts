@@ -11,7 +11,7 @@ import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile, envPath } from './goPath';
-import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
+import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath, removeRunFlag } from './util';
 
 const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
@@ -199,6 +199,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 
 		if (testconfig.isBenchmark) {
 			args.push('-benchmem', '-run=^$');
+			testconfig.flags = removeRunFlag(testconfig.flags);
 		} else {
 			args.push('-timeout', testconfig.goConfig['testTimeout']);
 		}
@@ -391,6 +392,7 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
 			// which will result in the correct thing to happen
 			if (testFunctions.length > 0) {
+				testconfig.flags = removeRunFlag(testconfig.flags);
 				params = params.concat(['-run', util.format('^(%s)$', testFunctions.join('|'))]);
 			}
 			if (testifyMethods.length > 0) {

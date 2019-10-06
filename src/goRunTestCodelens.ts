@@ -11,7 +11,7 @@ import { CancellationToken, CodeLens, Command, TextDocument } from 'vscode';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getBenchmarkFunctions, getTestFlags, getTestFunctionDebugArgs, getTestFunctions } from './testUtils';
-import { getCurrentGoPath, removeRunFlag } from './util';
+import { getCurrentGoPath } from './util';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private readonly benchmarkRegex = /^Benchmark.+/;
@@ -87,7 +87,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		const program = path.dirname(document.fileName);
 		const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
 		const envFile = vsConfig['testEnvFile'];
-		const buildFlags = removeRunFlag(getTestFlags(vsConfig));
+		const buildFlags = getTestFlags(vsConfig);
 		if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
 			buildFlags.push('-tags');
 			buildFlags.push(`${vsConfig['buildTags']}`);

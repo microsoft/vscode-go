@@ -18,7 +18,7 @@ import {
 	goTest,
 	TestConfig,
 } from './testUtils';
-import { getTempFilePath, removeRunFlag} from './util';
+import { getTempFilePath } from './util';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
 // the last test to be easily re-executed.
@@ -173,7 +173,7 @@ export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any
 	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: workspaceUri.fsPath,
-		flags: removeRunFlag(getTestFlags(goConfig, args)),
+		flags: getTestFlags(goConfig, args),
 		includeSubDirectories: true
 	};
 	// Remember this config as the last executed test.
@@ -211,7 +211,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBench
 			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
-				flags: removeRunFlag(getTestFlags(goConfig, args)),
+				flags: getTestFlags(goConfig, args),
 				functions: testFunctions.map(sym => sym.name),
 				isBenchmark: isBenchmark,
 			};
@@ -249,7 +249,7 @@ export function testPrevious() {
  */
 function makeCoverData(goConfig: vscode.WorkspaceConfiguration, confFlag: string, args: any): { tmpCoverPath: string, testFlags: string[] } {
 	let tmpCoverPath = '';
-	let testFlags = removeRunFlag(getTestFlags(goConfig, args) || []);
+	const testFlags = getTestFlags(goConfig, args) || [];
 	if (goConfig[confFlag] === true) {
 		tmpCoverPath = getTempFilePath('go-code-cover');
 		testFlags.push('-coverprofile=' + tmpCoverPath);
