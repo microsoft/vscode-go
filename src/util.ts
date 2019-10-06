@@ -960,3 +960,11 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 		});
 	});
 }
+
+export function removeRunFlag(flags: string[]): string[] {
+	const index: number = flags.indexOf('-run');
+	if (index !== -1) {
+		flags.splice(index, 2);
+	}
+	return flags;
+}

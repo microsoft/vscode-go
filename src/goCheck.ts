@@ -10,7 +10,7 @@ import path = require('path');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
 import { goTest, TestConfig, getTestFlags } from './testUtils';
-import { ICheckResult, getBinPath, getTempFilePath } from './util';
+import { ICheckResult, getBinPath, getTempFilePath, removeRunFlag } from './util';
 import { goLint } from './goLint';
 import { goVet } from './goVet';
 import { goBuild } from './goBuild';
@@ -69,7 +69,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	let testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,
-		flags: getTestFlags(goConfig, false),
+		flags: removeRunFlag(getTestFlags(goConfig)),
 		background: true
 	};
 
@@ -113,12 +113,12 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
 		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'])
-			.then(errors => ({ diagnosticCollection: lintDiagnosticCollection, errors: errors })));
+			.then(errors => ({diagnosticCollection: lintDiagnosticCollection, errors: errors})));
 	}
 
 	if (!!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace')
-			.then(errors => ({ diagnosticCollection: vetDiagnosticCollection, errors: errors })));
+			.then(errors => ({diagnosticCollection: vetDiagnosticCollection, errors: errors})));
 	}
 
 	if (!!goConfig['coverOnSave']) {
