@@ -441,6 +441,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "autocompleteUnimportedPackages": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "docsTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "useLanguageServer": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "languageServerExperimentalFeatures": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "includeImports": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "addTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "removeTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
