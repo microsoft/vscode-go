@@ -250,10 +250,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				outTargets.push('<long arguments omitted>');
 			} else {
 				outTargets.push(...targets);
-				outTargets.push(...testconfig.flags);
 			}
-			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
-			outputChannel.appendLine('');
 
 			args.push(...targets);
 
@@ -263,6 +260,10 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				removeRunFlag(testconfig.flags);
 			}
 			args.push(...testconfig.flags);
+
+			outTargets.push(...testconfig.flags);
+			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
+			outputChannel.appendLine('');
 
 			const tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
