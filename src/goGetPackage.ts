@@ -24,6 +24,10 @@ export async function goGetPackage() {
 
 	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });
 	const result = await goGet(importPath, ['-v'], { env });
+	if (result.err) {
+		vscode.window.showErrorMessage(`failed to get ${importPath}: ${result.err.message}`);
+		return;
+	}
 
 	// go get -v doesn't write anything when the package already exists
 	if (result.stderr === '') {
