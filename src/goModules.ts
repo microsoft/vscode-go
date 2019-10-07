@@ -73,8 +73,7 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 			const choseToUpdateLS = await promptToUpdateToolForModules('gopls', promptMsg, goConfig);
 			promptFormatTool = promptFormatTool && !choseToUpdateLS;
 		} else if (promptFormatTool) {
-			const languageServerExperimentalFeatures: any = goConfig.get('languageServerExperimentalFeatures');
-			promptFormatTool = languageServerExperimentalFeatures['format'] === false;
+			promptFormatTool = false;
 		}
 
 		if (promptFormatTool) {
