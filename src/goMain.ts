@@ -37,7 +37,6 @@ import { installCurrentPackage } from './goInstall';
 import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
 import { GO111MODULE } from './goModules';
 
-
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
 export let vetDiagnosticCollection: vscode.DiagnosticCollection;
