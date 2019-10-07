@@ -19,12 +19,18 @@ export async function goBuild(path: string, flags: string[], opts: any): Promise
 async function goCommand(cmd: string, path: string, flags: string[], opts: any): Promise<GoCommandResult> {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return null;
+		return new Promise<GoCommandResult>(resolve => {
+			resolve({
+				stdout: '',
+				stderr: '',
+				err: new Error('failed to determine path to `go` binary'),
+			})
+		});
 	}
 
 	const args = [cmd, ...flags, path];
 
-	return new Promise<GoCommandResult>((resolve) => {
+	return new Promise<GoCommandResult>(resolve => {
 		cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
 			resolve({
 				stdout: stdout.toString(),
