@@ -130,9 +130,11 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		fs.mkdirSync(toolsTmpDir);
 	}
 	// Write a temporary go.mod file to support Go 1.11.
-	const tmpGoModFile = path.join(toolsTmpDir, 'go.mod');
-	if (!fs.existsSync(tmpGoModFile)) {
-		fs.writeFileSync(tmpGoModFile, 'module tools');
+	if (goVersion.lt('1.12')) {
+		const tmpGoModFile = path.join(toolsTmpDir, 'go.mod');
+		if (!fs.existsSync(tmpGoModFile)) {
+			fs.writeFileSync(tmpGoModFile, 'module tools');
+		}
 	}
 
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
