@@ -739,7 +739,8 @@ class GoDebugSession extends LoggingDebugSession {
 			if (i) {
 				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
 				args.remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
-			} else if ((args.remotePath.endsWith('\\')) || (args.remotePath.endsWith('/'))) {
+			} else if (args.remotePath.length > 1 &&
+					(args.remotePath.endsWith('\\') || args.remotePath.endsWith('/'))) {
 				args.remotePath = args.remotePath.substring(0, args.remotePath.length - 1);
 			}
 		}
@@ -827,9 +828,8 @@ class GoDebugSession extends LoggingDebugSession {
 
 	protected async configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): Promise<void> {
 		log('ConfigurationDoneRequest');
-
 		if (this.stopOnEntry) {
-			this.sendEvent(new StoppedEvent('breakpoint', 0));
+			this.sendEvent(new StoppedEvent('breakpoint', 1));
 			log('StoppedEvent("breakpoint")');
 			this.sendResponse(response);
 		} else {
@@ -1028,6 +1028,9 @@ class GoDebugSession extends LoggingDebugSession {
 					goroutine.userCurrentLoc.function ? goroutine.userCurrentLoc.function.name : (goroutine.userCurrentLoc.file + '@' + goroutine.userCurrentLoc.line)
 				)
 			);
+			if (threads.length === 0) {
+				threads.push(new Thread(1, 'Dummy'));
+			}
 			response.body = { threads };
 			this.sendResponse(response);
 			log('ThreadsResponse', threads);

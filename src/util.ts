@@ -15,6 +15,7 @@ import { outputChannel } from './goStatus';
 import { NearestNeighborDict, Node } from './avlTree';
 import { getCurrentPackage } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { getTestFlags } from './testUtils';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -104,7 +105,7 @@ export class GoVersion {
 	lt(version: string): boolean {
 		// Assume a developer version is always above any released version.
 		// This is not necessarily true.
-		if (this.isDevel) {
+		if (this.isDevel || !this.sv) {
 			return false;
 		}
 		return semver.lt(this.sv, semver.coerce(version));
@@ -113,7 +114,7 @@ export class GoVersion {
 	gt(version: string): boolean {
 		// Assume a developer version is always above any released version.
 		// This is not necessarily true.
-		if (this.isDevel) {
+		if (this.isDevel || !this.sv) {
 			return true;
 		}
 		return semver.gt(this.sv, semver.coerce(version));
@@ -278,7 +279,7 @@ export async function getGoVersion(): Promise<GoVersion> {
 		return Promise.resolve(null);
 	}
 
-	if (goVersion) {
+	if (goVersion && (goVersion.sv || goVersion.isDevel)) {
 		/* __GDPR__
 		   "getGoVersion" : {
 			  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
@@ -290,6 +291,13 @@ export async function getGoVersion(): Promise<GoVersion> {
 	return new Promise<GoVersion>((resolve) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
 			goVersion = new GoVersion(stdout);
+			if (!goVersion.sv && !goVersion.isDevel) {
+				if (err || stderr) {
+					console.log(`Error when running the command "${goRuntimePath} version": `, err || stderr);
+				} else {
+					console.log(`Not able to determine version from the output of the command "${goRuntimePath} version": ${stdout}`);
+				}
+			}
 			return resolve(goVersion);
 		});
 	});

@@ -397,6 +397,8 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
+const defaultLatestVersion = semver.coerce('0.1.7');
+const defaultLatestVersionTime = moment('2019-09-18', 'YYYY-MM-DD');
 async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boolean> {
 	// Only support updating gopls for now.
 	if (tool.name !== 'gopls') {
@@ -417,12 +419,13 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	}
 
 	// Get the latest gopls version.
-	const latestVersion = await latestGopls(tool);
+	const latestVersion = defaultLatestVersion;
+	// const latestVersion = await latestGopls(tool);
 
-	// If we failed to get the gopls version, assume the user does not need to update.
-	if (!latestVersion) {
-		return false;
-	}
+	// // If we failed to get the gopls version, assume the user does not need to update.
+	// if (!latestVersion) {
+	// 	return false;
+	// }
 
 	// The user may have downloaded golang.org/x/tools/gopls@master,
 	// which means that they have a pseudoversion.

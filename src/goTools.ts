@@ -117,7 +117,7 @@ export function getConfiguredTools(goVersion: GoVersion): Tool[] {
 	// Add the linter that was chosen by the user.
 	maybeAddTool(goConfig['lintTool']);
 
-	// Add the language server for Go versions >= 1.11.
+	// Add the language server for Go versions > 1.10 if user has choosen to do so
 	if (goConfig['useLanguageServer'] && goVersion.gt('1.10')) {
 		maybeAddTool('gopls');
 	}
@@ -157,19 +157,19 @@ const allToolsInformation: { [key: string]: Tool } = {
 	'go-symbols': {
 		name: 'go-symbols',
 		importPath: 'github.com/acroca/go-symbols',
-		isImportant: true,
+		isImportant: false,
 		description: 'Go to symbol in workspace',
 	},
 	'guru': {
 		name: 'guru',
 		importPath: 'golang.org/x/tools/cmd/guru',
-		isImportant: true,
+		isImportant: false,
 		description: 'Find all references and Go to implementation of symbols',
 	},
 	'gorename': {
 		name: 'gorename',
 		importPath: 'golang.org/x/tools/cmd/gorename',
-		isImportant: true,
+		isImportant: false,
 		description: 'Rename symbols',
 	},
 	'gomodifytags': {
@@ -271,7 +271,7 @@ const allToolsInformation: { [key: string]: Tool } = {
 	'dlv': {
 		name: 'dlv',
 		importPath: 'github.com/go-delve/delve/cmd/dlv',
-		isImportant: true,
+		isImportant: false,
 		description: 'Debugging',
 	},
 	'fillstruct': {

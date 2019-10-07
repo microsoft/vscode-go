@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.11.5",
+  "version": "0.11.7",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -592,11 +592,6 @@
                 ],
                 "description": "Indicates local or remote debugging.  Local maps to the dlv 'attach' command, remote maps to 'connect'.",
                 "default": "local"
-              },
-              "stopOnEntry": {
-                "type": "boolean",
-                "description": "Automatically stop program after launch.",
-                "default": false
               },
               "showLog": {
                 "type": "boolean",

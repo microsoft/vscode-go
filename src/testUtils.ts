@@ -223,14 +223,15 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				targets = ['./...'];
 				pkgMapPromise = getNonVendorPackages(testconfig.dir); // We need the mapping to get absolute paths for the files in the test output
 			} else {
-				const goVersion = await getGoVersion();
-				if (goVersion.gt('1.8')) {
-					targets = ['./...'];
-					return null; // We dont need mapping, as we can derive the absolute paths from package path
-				}
-				return getNonVendorPackages(testconfig.dir).then(pkgMap => {
-					targets = Array.from(pkgMap.keys());
-					return pkgMap; // We need the individual package paths to pass to `go test`
+				pkgMapPromise = getGoVersion().then(goVersion => {
+					if (goVersion.gt('1.8')) {
+						targets = ['./...'];
+						return null; // We dont need mapping, as we can derive the absolute paths from package path
+					}
+					return getNonVendorPackages(testconfig.dir).then(pkgMap => {
+						targets = Array.from(pkgMap.keys());
+						return pkgMap; // We need the individual package paths to pass to `go test`
+					});
 				});
 			}
 		}
@@ -249,14 +250,20 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				outTargets.push('<long arguments omitted>');
 			} else {
 				outTargets.push(...targets);
-				outTargets.push(...testconfig.flags);
 			}
-			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
-			outputChannel.appendLine('');
 
 			args.push(...targets);
+
 			// ensure that user provided flags are appended last (allow use of -args ...)
+			// ignore user provided -run flag if we are already using it
+			if (args.indexOf('-run') > -1) {
+				removeRunFlag(testconfig.flags);
+			}
 			args.push(...testconfig.flags);
+
+			outTargets.push(...testconfig.flags);
+			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
+			outputChannel.appendLine('');
 
 			const tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
@@ -403,4 +410,11 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 		params = ['-bench', '.'];
 	}
 	return params;
+}
+
+function removeRunFlag(flags: string[]): void {
+	const index: number = flags.indexOf('-run');
+	if (index !== -1) {
+		flags.splice(index, 2);
+	}
 }

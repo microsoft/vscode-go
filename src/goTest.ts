@@ -6,7 +6,6 @@
 
 import path = require('path');
 import vscode = require('vscode');
-
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { isModSupported } from './goModules';
 import {

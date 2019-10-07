@@ -1,3 +1,27 @@
+## 0.11.7 - 27th September, 2019
+
+### Bug Fixes
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+
+    - Fix for [bug 2766](https://github.com/microsoft/vscode-go/issues/2766) where the `Go: Test All Packages In Workspace` command failed to run tests since the last update.
+    - Fix for [bug 2765](https://github.com/microsoft/vscode-go/issues/2765) where the `Go: Build Workspace` command failed to run the build command since the last update
+    - Fix for [bug 2770](https://github.com/microsoft/vscode-go/issues/2770) where failure to find the path to the go binary results in `gopls` results in the extension throwing error & not working as expected since the last update
+    - Use `go vet .` instead of `go vet ./...` when vetting current package for better performance.
+
+* [Quoc Truong (@quoctruong)](https://github.com/quoctruong)
+
+    - Fix for bug where remote debugging failed if the configured remote path was just `/`. Fixes [Bug 2119](https://github.com/Microsoft/vscode-go/issues/2119) with [PR 2794](https://github.com/Microsoft/vscode-go/pull/2794)
+
+* [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
+
+    - Respect the `stopOnEntry` debug configuration by providing a dummy thread when no threads exist. Fixes [Bug 763](https://github.com/Microsoft/vscode-go/issues/763) with [PR 2762](https://github.com/Microsoft/vscode-go/pull/2762)
+
+## 0.11.6 - 21st September, 2019
+
+* The prompt to update your `gopls` that was introduced in the previous update, relied on making calls to https://proxy.golang.org.
+In this patch release, we replace such calls with a check against a known hard-coded value for the latest version of `gopls`. Details on the next steps here are captured in the [issue 2776](https://github.com/microsoft/vscode-go/issues/2776)
+
 ## 0.11.5 - 19th September, 2019
 
 ### Debugging improvements

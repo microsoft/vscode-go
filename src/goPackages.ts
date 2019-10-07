@@ -267,7 +267,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 			const version = await getGoVersion();
 			const vendorAlreadyExcluded = version.gt('1.8');
 
-			for (const line of lines) {
+			lines.forEach(line => {
 				const matches = line.match(pkgToFolderMappingRegex);
 				if (!matches || matches.length !== 3) {
 					return;
@@ -277,7 +277,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 					return;
 				}
 				result.set(pkgPath, folderPath);
-			}
+			});
 			resolve(result);
 		});
 	});
