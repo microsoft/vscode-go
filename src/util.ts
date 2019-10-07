@@ -126,7 +126,11 @@ let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
 export function getGoConfig(): vscode.WorkspaceConfiguration {
-	return vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	return vscode.window.activeTextEditor ? getGoConfigForUri(vscode.window.activeTextEditor.document.uri) : null;
+}
+
+export function getGoConfigForUri(uri: vscode.Uri): vscode.WorkspaceConfiguration {
+	return vscode.workspace.getConfiguration('go', uri);
 }
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
@@ -378,8 +382,7 @@ export function getToolsGopath(useCache: boolean = true): string {
 }
 
 function resolveToolsGopath(): string {
-
-	let toolsGopathForWorkspace = substituteEnv(vscode.workspace.getConfiguration('go')['toolsGopath'] || '');
+	let toolsGopathForWorkspace = substituteEnv(getGoConfig()['toolsGopath'] || '');
 
 	// In case of single root
 	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length <= 1) {
@@ -396,7 +399,7 @@ function resolveToolsGopath(): string {
 
 	// If any of the folders in multi root have toolsGopath set, use it.
 	for (let i = 0; i < vscode.workspace.workspaceFolders.length; i++) {
-		let toolsGopath = <string>vscode.workspace.getConfiguration('go', vscode.workspace.workspaceFolders[i].uri).inspect('toolsGopath').workspaceFolderValue;
+		let toolsGopath = <string>getGoConfigForUri(vscode.workspace.workspaceFolders[i].uri).inspect('toolsGopath').workspaceFolderValue;
 		toolsGopath = resolvePath(toolsGopath, vscode.workspace.workspaceFolders[i].uri.fsPath);
 		if (toolsGopath) {
 			return toolsGopath;
@@ -405,7 +408,7 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	const alternateTools: { [key: string]: string } = vscode.workspace.getConfiguration('go', null).get('alternateTools');
+	const alternateTools: { [key: string]: string } = getGoConfig().get('alternateTools');
 	const alternateToolPath: string = alternateTools[tool];
 
 	return getBinPathWithPreferredGopath(
@@ -421,7 +424,7 @@ export function getFileArchive(document: vscode.TextDocument): string {
 }
 
 export function getToolsEnvVars(): any {
-	const config = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	const config = getGoConfig();
 	const toolsEnvVars = config['toolsEnvVars'];
 
 	const gopath = getCurrentGoPath();
@@ -445,7 +448,7 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	const activeEditorUri = vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri;
 	const currentFilePath = fixDriveCasingInWindows(activeEditorUri && activeEditorUri.fsPath);
 	const currentRoot = (workspaceUri && workspaceUri.fsPath) || getWorkspaceFolderPath(activeEditorUri);
-	const config = vscode.workspace.getConfiguration('go', workspaceUri || activeEditorUri);
+	const config = getGoConfigForUri(workspaceUri || activeEditorUri);
 
 	// Infer the GOPATH from the current root or the path of the file opened in current editor
 	// Last resort: Check for the common case where GOPATH itself is opened directly in VS Code

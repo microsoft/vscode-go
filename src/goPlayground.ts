@@ -7,7 +7,7 @@ import vscode = require('vscode');
 import * as path from 'path';
 import { execFile } from 'child_process';
 import { outputChannel } from './goStatus';
-import { getBinPath } from './util';
+import { getBinPath, getGoConfigForUri } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
 const TOOL_CMD_NAME = 'goplay';
@@ -32,7 +32,7 @@ export const playgroundCommand = () => {
 	const code = selection.isEmpty
 		? editor.document.getText()
 		: editor.document.getText(selection);
-	goPlay(code, vscode.workspace.getConfiguration('go', editor.document.uri).get('playground')).then(result => {
+	goPlay(code, getGoConfigForUri(editor.document.uri).get('playground')).then(result => {
 		outputChannel.append(result);
 	}, (e: string) => {
 		if (e) {

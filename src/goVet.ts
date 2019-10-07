@@ -5,7 +5,7 @@
 
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, resolvePath } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, resolvePath, getGoConfig } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
 import { vetDiagnosticCollection } from './goMain';
@@ -25,7 +25,7 @@ export function vetCode(vetWorkspace?: boolean) {
 	}
 
 	const documentUri = editor ? editor.document.uri : null;
-	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const goConfig = getGoConfig();
 
 	outputChannel.clear(); // Ensures stale output from vet on save is cleared
 	diagnosticsStatusBarItem.show();

@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './util';
+import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree, getGoConfig } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
@@ -19,7 +19,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		}
 
 		const filename = document.fileName;
-		const goConfig = vscode.workspace.getConfiguration('go', document.uri);
+		const goConfig = getGoConfig();
 		const formatTool = goConfig['formatTool'] || 'goreturns';
 		const formatFlags = goConfig['formatFlags'].slice() || [];
 

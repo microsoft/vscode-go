@@ -8,6 +8,7 @@
 import vscode = require('vscode');
 import { HoverProvider, Hover, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
+import { getGoConfig } from './util';
 
 export class GoHoverProvider implements HoverProvider {
 	private goConfig: WorkspaceConfiguration = null;
@@ -18,7 +19,7 @@ export class GoHoverProvider implements HoverProvider {
 
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 		if (!this.goConfig) {
-			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
+			this.goConfig = getGoConfig();
 		}
 		let goConfig = this.goConfig;
 

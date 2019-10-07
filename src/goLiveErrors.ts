@@ -6,7 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { getBinPath, getToolsEnvVars, getGoConfig } from './util';
+import { getBinPath, getToolsEnvVars, getGoConfig, getGoConfigForUri } from './util';
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
@@ -55,7 +55,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	runner = setTimeout(() => {
 		processFile(e);
 		runner = null;
-	}, vscode.workspace.getConfiguration('go', e.document.uri)['liveErrors']['delay']);
+	}, getGoConfigForUri(e.document.uri)['liveErrors']['delay']);
 }
 
 // processFile does the actual work once the timeout has fired

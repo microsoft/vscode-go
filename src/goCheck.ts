@@ -35,10 +35,6 @@ export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEv
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
-
-	const documentUri = e ? e.document.uri : null;
-	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
-
 	if ((ctx.globalState.get('ignoreGeneratedCodeWarning') !== true) && e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
 		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then(result => {
 			if (result === neverAgain) {

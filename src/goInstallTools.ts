@@ -13,7 +13,7 @@ import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import { getToolFromToolPath, envPath } from './goPath';
 import { getLanguageServerToolPath } from './goLanguageServer';
 import { Tool, getConfiguredTools, getTool, isWildcard, isGocode, hasModSuffix, containsString, containsTool, getImportPath } from './goTools';
-import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, GoVersion } from './util';
+import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, GoVersion, getGoConfigForUri, getGoConfig } from './util';
 
 // declinedUpdates tracks the tools that the user has declined to update.
 const declinedUpdates: Tool[] = [];
@@ -294,7 +294,7 @@ export async function promptForUpdatingTool(toolName: string) {
 }
 
 export function updateGoPathGoRootFromConfig(): Promise<void> {
-	const goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
+	const goroot = getGoConfig()['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
@@ -374,7 +374,7 @@ export async function offerToInstallTools() {
 							vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
 						});
 				} else if (selected === disableLabel) {
-					const goConfig = vscode.workspace.getConfiguration('go');
+					const goConfig = getGoConfig();
 					const inspectLanguageServerSetting = goConfig.inspect('useLanguageServer');
 					if (inspectLanguageServerSetting.globalValue === true) {
 						goConfig.update('useLanguageServer', false, vscode.ConfigurationTarget.Global);

@@ -10,7 +10,7 @@ import { TextDocument, CancellationToken, CodeLens, Range } from 'vscode';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { GoReferenceProvider } from './goReferences';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
-import { getBinPath } from './util';
+import { getBinPath, getGoConfigForUri } from './util';
 import { isAbsolute } from 'path';
 
 const methodRegex = /^func\s+\(\s*\w+\s+\*?\w+\s*\)\s+/;
@@ -29,7 +29,7 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		if (!this.enabled) {
 			return [];
 		}
-		const codeLensConfig: { [key: string]: any } = vscode.workspace.getConfiguration('go', document.uri).get('enableCodeLens');
+		const codeLensConfig: { [key: string]: any } = getGoConfigForUri(document.uri).get('enableCodeLens');
 		const codelensEnabled = codeLensConfig ? codeLensConfig['references'] : false;
 		if (!codelensEnabled) {
 			return Promise.resolve([]);

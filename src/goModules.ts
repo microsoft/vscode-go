@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModuleCache } from './util';
+import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModuleCache, getGoConfigForUri, getGoConfig } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
@@ -61,7 +61,7 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 	if (goModEnvResult) {
 		logModuleUsage();
 		goModEnvResult = path.dirname(goModEnvResult);
-		const goConfig = vscode.workspace.getConfiguration('go', fileuri);
+		const goConfig = getGoConfigForUri(fileuri);
 		let promptFormatTool = goConfig['formatTool'] === 'goreturns';
 
 		if (goConfig['inferGopath'] === true) {
@@ -118,7 +118,7 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 		case 'Update':
 			choseToUpdate = true;
 			if (!goConfig) {
-				goConfig = vscode.workspace.getConfiguration('go');
+				goConfig = getGoConfig();
 			}
 			if (tool === 'switchFormatToolToGoimports') {
 				goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.Global);
