@@ -1,11 +1,17 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 'use strict';
 
 import vscode = require('vscode');
-import { getBinPath, getToolsEnvVars } from './util';
+import { getBinPath, getToolsEnvVars, getGoConfig } from './util';
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
 import { buildDiagnosticCollection } from './goMain';
+import { isModSupported } from './goModules';
 
 // Interface for settings configuration for adding and removing tags
 interface GoLiveErrorsConfig {
@@ -16,7 +22,7 @@ interface GoLiveErrorsConfig {
 let runner: NodeJS.Timer;
 
 export function goLiveErrorsEnabled() {
-	const goConfig = <GoLiveErrorsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['liveErrors'];
+	const goConfig = <GoLiveErrorsConfig>(getGoConfig()['liveErrors']);
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
@@ -53,7 +59,12 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 }
 
 // processFile does the actual work once the timeout has fired
-function processFile(e: vscode.TextDocumentChangeEvent) {
+async function processFile(e: vscode.TextDocumentChangeEvent) {
+	const isMod = await isModSupported(e.document.uri);
+	if (isMod) {
+		return;
+	}
+
 	const gotypeLive = getBinPath('gotype-live');
 	if (!path.isAbsolute(gotypeLive)) {
 		return promptForMissingTool('gotype-live');

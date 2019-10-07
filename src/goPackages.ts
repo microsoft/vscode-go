@@ -1,8 +1,13 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent } from './util';
+import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows, envPath } from './goPath';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 type GopkgsDone = (res: Map<string, string>) => void;
@@ -244,10 +249,9 @@ const pkgToFolderMappingRegex = /ImportPath: (.*) FolderPath: (.*)/;
  */
 export function getNonVendorPackages(folderPath: string): Promise<Map<string, string>> {
 	const goRuntimePath = getBinPath('go');
-
 	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
-		return Promise.resolve(null);
+		console.warn(`Failed to run "go list" to find packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return;
 	}
 	return new Promise<Map<string, string>>((resolve, reject) => {
 		const childProcess = cp.spawn(goRuntimePath, ['list', '-f', 'ImportPath: {{.ImportPath}} FolderPath: {{.Dir}}', './...'], { cwd: folderPath, env: getToolsEnvVars() });
@@ -256,25 +260,25 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 			chunks.push(stdout);
 		});
 
-		childProcess.on('close', (status) => {
+		childProcess.on('close', async (status) => {
 			const lines = chunks.join('').toString().split('\n');
+			const result = new Map<string, string>();
 
-			getGoVersion().then((ver: SemVersion) => {
-				const result = new Map<string, string>();
-				const vendorAlreadyExcluded = !ver || ver.major > 1 || (ver.major === 1 && ver.minor >= 9);
-				lines.forEach(line => {
-					const matches = line.match(pkgToFolderMappingRegex);
-					if (!matches || matches.length !== 3) {
-						return;
-					}
-					const [_, pkgPath, folderPath] = matches;
-					if (!pkgPath || (!vendorAlreadyExcluded && pkgPath.includes('/vendor/'))) {
-						return;
-					}
-					result.set(pkgPath, folderPath);
-				});
-				resolve(result);
+			const version = await getGoVersion();
+			const vendorAlreadyExcluded = version.gt('1.8');
+
+			lines.forEach(line => {
+				const matches = line.match(pkgToFolderMappingRegex);
+				if (!matches || matches.length !== 3) {
+					return;
+				}
+				const [_, pkgPath, folderPath] = matches;
+				if (!pkgPath || (!vendorAlreadyExcluded && pkgPath.includes('/vendor/'))) {
+					return;
+				}
+				result.set(pkgPath, folderPath);
 			});
+			resolve(result);
 		});
 	});
 }

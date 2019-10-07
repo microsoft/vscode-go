@@ -4,8 +4,9 @@
  *--------------------------------------------------------*/
 
 import vscode = require('vscode');
+import semver = require('semver');
 import path = require('path');
-import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows } from './goPath';
+import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows, envPath } from './goPath';
 import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
 import fs = require('fs');
@@ -14,6 +15,7 @@ import { outputChannel } from './goStatus';
 import { NearestNeighborDict, Node } from './avlTree';
 import { getCurrentPackage } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { getTestFlags } from './testUtils';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -71,15 +73,62 @@ export const goBuiltinTypes: Set<string> = new Set<string>([
 	'uintptr'
 ]);
 
-export interface SemVersion {
-	major: number;
-	minor: number;
+export class GoVersion {
+	sv: semver.SemVer;
+	commit: string;
+	isDevel: boolean;
+
+	constructor(version: string) {
+		const matchesRelease = /go version go(\d.\d+).*/.exec(version);
+		const matchesDevel = /go version devel \+(.\d+).*/.exec(version);
+		if (matchesRelease) {
+			this.sv = semver.coerce(matchesRelease[0]);
+		} else if (matchesDevel) {
+			this.isDevel = true;
+			this.commit = matchesDevel[0];
+		}
+		/* __GDPR__
+            "getGoVersion" : {
+	  			"version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
+   			}
+ 		*/
+		sendTelemetryEvent('getGoVersion', { version: this.format() });
+	}
+
+	format(): string {
+		if (this.sv) {
+			return this.sv.format();
+		}
+		return `devel +${this.commit}`;
+	}
+
+	lt(version: string): boolean {
+		// Assume a developer version is always above any released version.
+		// This is not necessarily true.
+		if (this.isDevel || !this.sv) {
+			return false;
+		}
+		return semver.lt(this.sv, semver.coerce(version));
+	}
+
+	gt(version: string): boolean {
+		// Assume a developer version is always above any released version.
+		// This is not necessarily true.
+		if (this.isDevel || !this.sv) {
+			return true;
+		}
+		return semver.gt(this.sv, semver.coerce(version));
+	}
 }
 
-let goVersion: SemVersion = null;
+let goVersion: GoVersion = null;
 let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
+
+export function getGoConfig(): vscode.WorkspaceConfiguration {
+	return vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+}
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
 	const offset = document.offsetAt(position);
@@ -222,44 +271,32 @@ export function getUserNameHash() {
  * Gets version of Go based on the output of the command `go version`.
  * Returns null if go is being used from source/tip in which case `go version` will not return release tag like go1.6.3
  */
-export function getGoVersion(): Promise<SemVersion> {
+export async function getGoVersion(): Promise<GoVersion> {
 	const goRuntimePath = getBinPath('go');
 
 	if (!goRuntimePath) {
-		vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+		console.warn(`Failed to run "go version" as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 		return Promise.resolve(null);
 	}
 
-	if (goVersion) {
+	if (goVersion && (goVersion.sv || goVersion.isDevel)) {
 		/* __GDPR__
 		   "getGoVersion" : {
 			  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 		   }
 		 */
-		sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
+		sendTelemetryEvent('getGoVersion', { version: `${goVersion.format()}` });
 		return Promise.resolve(goVersion);
 	}
-	return new Promise<SemVersion>((resolve, reject) => {
+	return new Promise<GoVersion>((resolve) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
-			const matches = /go version go(\d).(\d+).*/.exec(stdout);
-			if (matches) {
-				goVersion = {
-					major: parseInt(matches[1]),
-					minor: parseInt(matches[2])
-				};
-				/* __GDPR__
-				   "getGoVersion" : {
-					  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				   }
-				 */
-				sendTelemetryEvent('getGoVersion', { version: `${goVersion.major}.${goVersion.minor}` });
-			} else {
-				/* __GDPR__
-				   "getGoVersion" : {
-					  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				   }
-				 */
-				sendTelemetryEvent('getGoVersion', { version: stdout });
+			goVersion = new GoVersion(stdout);
+			if (!goVersion.sv && !goVersion.isDevel) {
+				if (err || stderr) {
+					console.log(`Error when running the command "${goRuntimePath} version": `, err || stderr);
+				} else {
+					console.log(`Not able to determine version from the output of the command "${goRuntimePath} version": ${stdout}`);
+				}
 			}
 			return resolve(goVersion);
 		});
@@ -269,28 +306,26 @@ export function getGoVersion(): Promise<SemVersion> {
 /**
  * Returns boolean denoting if current version of Go supports vendoring
  */
-export function isVendorSupported(): Promise<boolean> {
+export async function isVendorSupported(): Promise<boolean> {
 	if (vendorSupport != null) {
 		return Promise.resolve(vendorSupport);
 	}
-	return getGoVersion().then(version => {
-		if (!version) {
-			return process.env['GO15VENDOREXPERIMENT'] === '0' ? false : true;
-		}
-
-		switch (version.major) {
-			case 0:
-				vendorSupport = false;
-				break;
-			case 1:
-				vendorSupport = (version.minor > 6 || ((version.minor === 5 || version.minor === 6) && process.env['GO15VENDOREXPERIMENT'] === '1')) ? true : false;
-				break;
-			default:
-				vendorSupport = true;
-				break;
-		}
-		return vendorSupport;
-	});
+	const goVersion = await getGoVersion();
+	if (!goVersion.sv) {
+		return process.env['GO15VENDOREXPERIMENT'] === '0' ? false : true;
+	}
+	switch (goVersion.sv.major) {
+		case 0:
+			vendorSupport = false;
+			break;
+		case 1:
+			vendorSupport = (goVersion.sv.minor > 6 || ((goVersion.sv.minor === 5 || goVersion.sv.minor === 6) && process.env['GO15VENDOREXPERIMENT'] === '1')) ? true : false;
+			break;
+		default:
+			vendorSupport = true;
+			break;
+	}
+	return vendorSupport;
 }
 
 /**
@@ -371,7 +406,14 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	return getBinPathWithPreferredGopath(tool, (tool === 'go') ? [] : [getToolsGopath(), getCurrentGoPath()], vscode.workspace.getConfiguration('go', null).get('alternateTools'));
+	const alternateTools: { [key: string]: string } = vscode.workspace.getConfiguration('go', null).get('alternateTools');
+	const alternateToolPath: string = alternateTools[tool];
+
+	return getBinPathWithPreferredGopath(
+		tool,
+		(tool === 'go') ? [] : [getToolsGopath(), getCurrentGoPath()],
+		resolvePath(alternateToolPath),
+	);
 }
 
 export function getFileArchive(document: vscode.TextDocument): string {
@@ -390,18 +432,6 @@ export function getToolsEnvVars(): any {
 		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof toolsEnvVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : toolsEnvVars[key]);
 	}
 
-	// cgo expects go to be in the path
-	const goroot: string = envVars['GOROOT'];
-	let pathEnvVar: string;
-	if (envVars.hasOwnProperty('PATH')) {
-		pathEnvVar = 'PATH';
-	} else if (process.platform === 'win32' && envVars.hasOwnProperty('Path')) {
-		pathEnvVar = 'Path';
-	}
-	if (goroot && pathEnvVar && envVars[pathEnvVar] && (<string>envVars[pathEnvVar]).split(path.delimiter).indexOf(goroot) === -1) {
-		envVars[pathEnvVar] += path.delimiter + path.join(goroot, 'bin');
-	}
-
 	return envVars;
 }
 
@@ -413,21 +443,10 @@ export function substituteEnv(input: string): string {
 
 let currentGopath = '';
 export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
-	let currentFilePath: string;
-	if (vscode.window.activeTextEditor) {
-		currentFilePath = vscode.window.activeTextEditor.document.uri.fsPath;
-		if (!workspaceUri && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			workspaceUri = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri;
-		}
-	}
-	const config = vscode.workspace.getConfiguration('go', workspaceUri);
-	let currentRoot = workspaceUri ? workspaceUri.fsPath : vscode.workspace.rootPath;
-
-	// Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
-	if (process.platform === 'win32') {
-		currentRoot = fixDriveCasingInWindows(currentRoot) || '';
-		currentFilePath = fixDriveCasingInWindows(currentFilePath) || '';
-	}
+	const activeEditorUri = vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri;
+	const currentFilePath = fixDriveCasingInWindows(activeEditorUri && activeEditorUri.fsPath);
+	const currentRoot = (workspaceUri && workspaceUri.fsPath) || getWorkspaceFolderPath(activeEditorUri);
+	const config = vscode.workspace.getConfiguration('go', workspaceUri || activeEditorUri);
 
 	// Infer the GOPATH from the current root or the path of the file opened in current editor
 	// Last resort: Check for the common case where GOPATH itself is opened directly in VS Code
@@ -520,11 +539,7 @@ export function resolvePath(inputPath: string, workspaceFolder?: string): string
 	if (!inputPath || !inputPath.trim()) return inputPath;
 
 	if (!workspaceFolder && vscode.workspace.workspaceFolders) {
-		if (vscode.workspace.workspaceFolders.length === 1) {
-			workspaceFolder = vscode.workspace.rootPath;
-		} else if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
-		}
+		workspaceFolder = getWorkspaceFolderPath(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
 	}
 
 	if (workspaceFolder) {
@@ -621,11 +636,11 @@ export interface ICheckResult {
  * @param printUnexpectedOutput If true, then output that doesnt match expected format is printed to the output channel
  */
 export function runTool(args: string[], cwd: string, severity: string, useStdErr: boolean, toolName: string, env: any, printUnexpectedOutput: boolean, token?: vscode.CancellationToken): Promise<ICheckResult[]> {
-	const goRuntimePath = getBinPath('go');
 	let cmd: string;
 	if (toolName) {
 		cmd = getBinPath(toolName);
 	} else {
+		const goRuntimePath = getBinPath('go');
 		if (!goRuntimePath) {
 			return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
 		}
@@ -647,7 +662,7 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 				if (err && (<any>err).code === 'ENOENT') {
 					// Since the tool is run on save which can be frequent
 					// we avoid sending explicit notification if tool is missing
-					console.log(`Cannot find ${toolName ? toolName : goRuntimePath}`);
+					console.log(`Cannot find ${toolName ? toolName : 'go'}`);
 					return resolve([]);
 				}
 				if (err && stderr && !useStdErr) {
@@ -746,15 +761,15 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 		if (diagnosticCollection === buildDiagnosticCollection) {
 			// If there are lint/vet warnings on current file, remove the ones co-inciding with the new build errors
 			if (lintDiagnosticCollection.has(fileUri)) {
-				lintDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, lintDiagnosticCollection.get(fileUri)));
+				lintDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, lintDiagnosticCollection.get(fileUri).slice()));
 			}
 
 			if (vetDiagnosticCollection.has(fileUri)) {
-				vetDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, vetDiagnosticCollection.get(fileUri)));
+				vetDiagnosticCollection.set(fileUri, deDupeDiagnostics(newDiagnostics, vetDiagnosticCollection.get(fileUri).slice()));
 			}
 		} else if (buildDiagnosticCollection.has(fileUri)) {
 			// If there are build errors on current file, ignore the new lint/vet warnings co-inciding with them
-			newDiagnostics = deDupeDiagnostics(buildDiagnosticCollection.get(fileUri), newDiagnostics);
+			newDiagnostics = deDupeDiagnostics(buildDiagnosticCollection.get(fileUri).slice(), newDiagnostics);
 		}
 		diagnosticCollection.set(fileUri, newDiagnostics);
 	});
@@ -777,14 +792,14 @@ export function getWorkspaceFolderPath(fileUri?: vscode.Uri): string {
 	if (fileUri) {
 		const workspace = vscode.workspace.getWorkspaceFolder(fileUri);
 		if (workspace) {
-			return workspace.uri.fsPath;
+			return fixDriveCasingInWindows(workspace.uri.fsPath);
 		}
 	}
 
 	// fall back to the first workspace
 	const folders = vscode.workspace.workspaceFolders;
 	if (folders && folders.length) {
-		return folders[0].uri.fsPath;
+		return fixDriveCasingInWindows(folders[0].uri.fsPath);
 	}
 }
 
@@ -852,7 +867,7 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 	};
 }
 
-function rmdirRecursive(dir: string) {
+export function rmdirRecursive(dir: string) {
 	if (fs.existsSync(dir)) {
 		fs.readdirSync(dir).forEach(file => {
 			const relPath = path.join(dir, file);
@@ -953,4 +968,22 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 			}
 		});
 	});
+}
+
+/**
+ * Returns a boolean whether the current position lies within a comment or not
+ * @param document
+ * @param position
+ */
+export function isPositionInComment(document: vscode.TextDocument, position: vscode.Position): boolean {
+	const lineText = document.lineAt(position.line).text;
+	const commentIndex = lineText.indexOf('//');
+
+	if (commentIndex >= 0 && position.character > commentIndex) {
+		const commentPosition = new vscode.Position(position.line, commentIndex);
+		const isCommentInString = isPositionInString(document, commentPosition);
+
+		return !isCommentInString;
+	}
+	return false;
 }

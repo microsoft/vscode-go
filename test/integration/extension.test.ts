@@ -7,23 +7,23 @@ import * as assert from 'assert';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { GoHoverProvider } from '../src/goExtraInfo';
-import { GoCompletionItemProvider } from '../src/goSuggest';
-import { GoSignatureHelpProvider } from '../src/goSignature';
-import { GoDefinitionProvider } from '../src/goDeclaration';
-import { getWorkspaceSymbols } from '../src/goSymbol';
-import { check } from '../src/goCheck';
+import { GoHoverProvider } from '../../src/goExtraInfo';
+import { GoCompletionItemProvider } from '../../src/goSuggest';
+import { GoSignatureHelpProvider } from '../../src/goSignature';
+import { GoDefinitionProvider } from '../../src/goDeclaration';
+import { getWorkspaceSymbols } from '../../src/goSymbol';
+import { check } from '../../src/goCheck';
 import cp = require('child_process');
-import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../src/diffUtils';
-import { testCurrentFile } from '../src/goTest';
-import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath } from '../src/util';
-import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../src/goOutline';
-import { listPackages, getTextEditForAddImport } from '../src/goImport';
-import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../src/goGenerateTests';
-import { getAllPackages } from '../src/goPackages';
-import { getImportPath } from '../src/util';
-import { goPlay } from '../src/goPlayground';
-import { runFillStruct } from '../src/goFillStruct';
+import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../../src/diffUtils';
+import { testCurrentFile } from '../../src/goTest';
+import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult } from '../../src/util';
+import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
+import { listPackages, getTextEditForAddImport } from '../../src/goImport';
+import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../../src/goGenerateTests';
+import { getAllPackages } from '../../src/goPackages';
+import { getImportPath } from '../../src/util';
+import { goPlay } from '../../src/goPlayground';
+import { runFillStruct } from '../../src/goFillStruct';
 
 suite('Go Extension Tests', () => {
 	const gopath = process.env['GOPATH'];
@@ -34,7 +34,7 @@ suite('Go Extension Tests', () => {
 
 	const repoPath = path.join(gopath, 'src', 'test');
 	const fixturePath = path.join(repoPath, 'testfixture');
-	const fixtureSourcePath = path.join(__dirname, '..', '..', 'test', 'fixtures');
+	const fixtureSourcePath = path.join(__dirname, '..', '..', '..', 'test', 'fixtures');
 	const generateTestsSourcePath = path.join(repoPath, 'generatetests');
 	const generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
 	const generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
@@ -226,7 +226,7 @@ encountered.
 			'docsTool': { value: 'godoc' }
 		});
 		testHoverProvider(config, testCases).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test Hover Provider using gogetdoc', (done) => {
 		const gogetdocPath = getBinPath('gogetdoc');
@@ -271,7 +271,7 @@ It returns the number of bytes written and any write error encountered.
 		];
 		getGoVersion().then(async version => {
 			const diagnostics = await check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config);
-			const sortedDiagnostics = []
+			const sortedDiagnostics = ([] as ICheckResult[])
 				.concat.apply([], diagnostics.map(x => x.errors))
 				.sort((a: any, b: any) => a.line - b.line);
 			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
@@ -284,7 +284,7 @@ It returns the number of bytes written and any write error encountered.
 			});
 			assert.equal(matchCount.length >= expected.length, true, `Failed to match expected errors`);
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test Generate unit tests skeleton for file', (done) => {
 		const gotestsPath = getBinPath('gotests');
@@ -355,47 +355,6 @@ It returns the number of bytes written and any write error encountered.
 			else {
 				return Promise.reject('generatetests_test.go not found');
 			}
-		}).then(() => done(), done);
-	});
-
-	test('Gometalinter error checking', (done) => {
-		getGoVersion().then(async version => {
-			const config = Object.create(vscode.workspace.getConfiguration('go'), {
-				'lintOnSave': { value: 'package' },
-				'lintTool': { value: 'gometalinter' },
-				'lintFlags': { value: ['--disable-all', '--enable=varcheck', '--enable=errcheck'] },
-				'vetOnSave': { value: 'off' },
-				'buildOnSave': { value: 'off' }
-			});
-			const expected = [
-				{ line: 11, severity: 'warning', msg: 'error return value not checked (undeclared name: prin) (errcheck)' },
-				{ line: 11, severity: 'warning', msg: 'unused variable or constant undeclared name: prin (varcheck)' },
-			];
-			const errorsTestPath = path.join(fixturePath, 'errorsTest', 'errors.go');
-			const diagnostics = await check(vscode.Uri.file(errorsTestPath), config);
-			const allDiagnostics = [].concat.apply([], diagnostics.map(x => x.errors));
-			const sortedDiagnostics = allDiagnostics.sort((a: any, b: any) => {
-				if (a.msg < b.msg)
-					return -1;
-				if (a.msg > b.msg)
-					return 1;
-				return 0;
-			});
-			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
-			let matchCount = 0;
-			for (const i in expected) {
-				if (expected.hasOwnProperty(i)) {
-					for (const j in sortedDiagnostics) {
-						if ((expected[i].line === sortedDiagnostics[j].line)
-							&& (expected[i].severity === sortedDiagnostics[j].severity)
-							&& (expected[i].msg === sortedDiagnostics[j].msg)) {
-							matchCount++;
-						}
-					}
-				}
-			}
-			assert.equal(matchCount >= expected.length, true, `Failed to match expected errors`);
-			return Promise.resolve();
 		}).then(() => done(), done);
 	});
 
@@ -496,7 +455,7 @@ It returns the number of bytes written and any write error encountered.
 			assert.equal(result, true);
 			return Promise.resolve();
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test Outline', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
@@ -730,7 +689,7 @@ It returns the number of bytes written and any write error encountered.
 		});
 
 		return Promise.all([withIgnoringFolders, withoutIgnoringFolders, withIncludingGoroot, withoutIncludingGoroot]);
-	});
+	}).timeout(10000);
 
 	test('Test Completion', (done) => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
@@ -844,7 +803,7 @@ encountered.
 		}, (err) => {
 			assert.ok(false, `error in OpenTextDocument ${err}`);
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test No Completion Snippets For Functions', (done) => {
 		const provider = new GoCompletionItemProvider();
@@ -1166,7 +1125,7 @@ encountered.
 				});
 			});
 		}).then(done, done);
-	});
+	}).timeout(10000);
 
 	test('Add imports when no imports', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'noimports.go'));
@@ -1224,7 +1183,7 @@ encountered.
 			assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
 			return Promise.resolve();
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Fill struct - select line', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_2.go'));
@@ -1238,5 +1197,5 @@ encountered.
 			assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
 			return Promise.resolve();
 		}).then(() => done(), done);
-	});
+	}).timeout(10000);
 });

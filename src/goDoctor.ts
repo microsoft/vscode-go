@@ -42,7 +42,7 @@ async function extract(type: typeOfExtraction): Promise<void> {
 	}
 
 	const newName = await vscode.window.showInputBox({
-		placeHolder: 'Please enter a name for the extracted variable.'
+		placeHolder: `Please enter a name for the extracted ${type === 'var' ? 'variable' : 'method'}.`
 	});
 
 	if (!newName) {

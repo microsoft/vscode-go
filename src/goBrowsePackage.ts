@@ -10,6 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { getAllPackages } from './goPackages';
 import { getImportPath, getCurrentGoPath, getBinPath } from './util';
+import { envPath } from './goPath';
 
 export function browsePackages() {
 	let workDir = '';
@@ -40,7 +41,7 @@ export function browsePackages() {
 function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDir: string) {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return vscode.window.showErrorMessage('Could not locate Go path. Make sure you have Go installed');
+		return vscode.window.showErrorMessage(`Failed to run "go list" to fetch packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 	}
 
 	if (!pkg && showAllPkgsIfPkgNotFound) {

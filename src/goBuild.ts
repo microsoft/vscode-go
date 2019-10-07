@@ -1,3 +1,8 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 import path = require('path');
 import vscode = require('vscode');
 import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath, getModuleCache } from './util';
@@ -117,11 +122,18 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 		});
 	}
 
+	outputChannel.appendLine(`Starting building the current package at ${cwd}`);
+
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
 	const currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
-	const importPath = (currentGoWorkspace && !isMod) ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+	let importPath = '.';
+	if (currentGoWorkspace && !isMod) {
+		importPath = cwd.substr(currentGoWorkspace.length + 1);
+	} else {
+		outputChannel.appendLine(`Not able to determine import path of current package by using cwd: ${cwd} and Go workspace: ${currentGoWorkspace}`);
+	}
+
 	running = true;
-	outputChannel.appendLine(`Starting building the current package at ${cwd}`);
 	return runTool(
 		buildArgs.concat('-o', tmpPath, importPath),
 		cwd,

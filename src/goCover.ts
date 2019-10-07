@@ -1,5 +1,6 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
 'use strict';
@@ -94,6 +95,7 @@ export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 		}
 	}
 	setDecorators();
+	vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
 }
 
 function setDecorators() {
@@ -182,6 +184,7 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				setCoverageData(filePath, coverage);
 			});
 			lines.on('close', () => {
+				setDecorators();
 				vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
 				resolve();
 			});
@@ -238,8 +241,6 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 
 	const cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
 	const coverageOptions = cfg['coverageOptions'];
-	setDecorators();
-
 	for (const filename in coverageFiles) {
 		if (editor.document.uri.fsPath.endsWith(filename)) {
 			isCoverageApplied = true;
@@ -295,9 +296,9 @@ export function toggleCoverageCurrentPackage() {
 	const goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
 	const cwd = path.dirname(editor.document.uri.fsPath);
 
-	const args = getTestFlags(goConfig);
+	const testFlags = getTestFlags(goConfig);
 	const tmpCoverPath = getTempFilePath('go-code-cover');
-	args.push('-coverprofile=' + tmpCoverPath);
+	const args = ['-coverprofile=' + tmpCoverPath, ...testFlags];
 	const testConfig: TestConfig = {
 		goConfig: goConfig,
 		dir: cwd,

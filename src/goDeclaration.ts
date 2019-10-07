@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCache } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
+import { goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
 import { promptToUpdateToolForModules, getModFolderPath } from './goModules';
 
 const missingToolMsg = 'Missing tool: ';
@@ -59,24 +59,22 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		goConfig = vscode.workspace.getConfiguration('go', document.uri);
 	}
 	const toolForDocs = goConfig['docsTool'] || 'godoc';
-	return getGoVersion().then((ver: SemVersion) => {
-		return getModFolderPath(document.uri).then(modFolderPath => {
-			const input: GoDefinitionInput = {
-				document,
-				position,
-				word,
-				includeDocs,
-				isMod: !!modFolderPath,
-				cwd: (modFolderPath && modFolderPath !== getModuleCache())
-					? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
-			};
-			if (toolForDocs === 'godoc') {
-				return definitionLocation_godef(input, token);
-			} else if (toolForDocs === 'guru') {
-				return definitionLocation_guru(input, token);
-			}
-			return definitionLocation_gogetdoc(input, token, true);
-		});
+	return getModFolderPath(document.uri).then(modFolderPath => {
+		const input: GoDefinitionInput = {
+			document,
+			position,
+			word,
+			includeDocs,
+			isMod: !!modFolderPath,
+			cwd: (modFolderPath && modFolderPath !== getModuleCache())
+				? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
+		};
+		if (toolForDocs === 'godoc') {
+			return definitionLocation_godef(input, token);
+		} else if (toolForDocs === 'guru') {
+			return definitionLocation_guru(input, token);
+		}
+		return definitionLocation_gogetdoc(input, token, true);
 	});
 }
 

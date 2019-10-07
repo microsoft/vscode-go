@@ -1,10 +1,17 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 'use strict';
 
 import vscode = require('vscode');
-import { SymbolInformation, TextDocument, CancellationToken, CodeLens, Range, Command, Location, commands } from 'vscode';
+import { TextDocument, CancellationToken, CodeLens, Range } from 'vscode';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { GoReferenceProvider } from './goReferences';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
+import { getBinPath } from './util';
+import { isAbsolute } from 'path';
 
 const methodRegex = /^func\s+\(\s*\w+\s+\*?\w+\s*\)\s+/;
 
@@ -25,6 +32,11 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		const codeLensConfig: { [key: string]: any } = vscode.workspace.getConfiguration('go', document.uri).get('enableCodeLens');
 		const codelensEnabled = codeLensConfig ? codeLensConfig['references'] : false;
 		if (!codelensEnabled) {
+			return Promise.resolve([]);
+		}
+
+		const goGuru = getBinPath('guru');
+		if (!isAbsolute(goGuru)) {
 			return Promise.resolve([]);
 		}
 

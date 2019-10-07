@@ -3,9 +3,8 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { guessPackageNameFromFile } from '../src/util';
 import * as assert from 'assert';
-import { substituteEnv } from '../src/util';
+import { guessPackageNameFromFile, substituteEnv } from '../../src/util';
 
 suite('utils Tests', () => {
 	test('substituteEnv: default', () => {
@@ -62,4 +61,3 @@ suite('GuessPackageNameFromFile Tests', () => {
 			.then(() => done(), done);
 	});
 });
-

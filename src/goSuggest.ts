@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, isPositionInComment } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -105,7 +105,18 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 		});
 	}
 
-	public provideCompletionItemsInternal(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, config: vscode.WorkspaceConfiguration): Thenable<vscode.CompletionItem[] | vscode.CompletionList> {
+	public async provideCompletionItemsInternal(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken,
+		config: vscode.WorkspaceConfiguration
+	): Promise<vscode.CompletionItem[] | vscode.CompletionList> {
+		// Completions for the package statement based on the file name
+		const pkgStatementCompletions = await getPackageStatementCompletions(document);
+		if (pkgStatementCompletions && pkgStatementCompletions.length) {
+			return pkgStatementCompletions;
+		}
+
 		this.excludeDocs = false;
 		this.gocodeFlags = ['-f=json'];
 		if (Array.isArray(config['gocodeFlags'])) {
@@ -141,7 +152,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 				let offset = byteOffsetAt(document, position);
 				let inputText = document.getText();
-				const includeUnimportedPkgs = autocompleteUnimportedPackages && !inString;
+				const includeUnimportedPkgs = autocompleteUnimportedPackages && !inString && currentWord.length > 0;
 
 				return this.runGoCode(document, filename, inputText, offset, inString, position, lineText, currentWord, includeUnimportedPkgs, config).then(suggestions => {
 					// gocode does not suggest keywords, so we have to do it
@@ -259,7 +270,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 					const packageSuggestions: string[] = [];
 
 					const wordAtPosition = document.getWordRangeAtPosition(position);
-
+					let areCompletionsForPackageSymbols = false;
 					if (results && results[1]) {
 						for (const suggest of results[1]) {
 							if (inString && suggest.class !== 'import') continue;
@@ -269,6 +280,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 							item.receiver = suggest.receiver;
 							item.fileName = document.fileName;
 							item.detail = suggest.type;
+							if (!areCompletionsForPackageSymbols && item.package && item.package !== 'builtin') {
+								areCompletionsForPackageSymbols = true;
+							}
 							if (suggest.class === 'package') {
 								const possiblePackageImportPaths = this.getPackageImportPath(item.label);
 								if (possiblePackageImportPaths.length === 1) {
@@ -350,22 +364,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 					}
 
 					// Add importable packages matching currentword to suggestions
-					if (includeUnimportedPkgs && !this.isGoMod) {
+					if (includeUnimportedPkgs && !this.isGoMod && !areCompletionsForPackageSymbols) {
 						suggestions = suggestions.concat(getPackageCompletions(document, currentWord, this.pkgsList, packageSuggestions));
-					}
-
-					// 'Smart Snippet' for package clause
-					// TODO: Factor this out into a general mechanism
-					if (!inputText.match(/package\s+(\w+)/)) {
-						return guessPackageNameFromFile(filename).then((pkgNames: string[]) => {
-							pkgNames.forEach(pkgName => {
-								const packageItem = new vscode.CompletionItem('package ' + pkgName);
-								packageItem.kind = vscode.CompletionItemKind.Snippet;
-								packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
-								suggestions.push(packageItem);
-							});
-							resolve(suggestions);
-						}, () => resolve(suggestions));
 					}
 
 					resolve(suggestions);
@@ -494,21 +494,6 @@ function getCommentCompletion(document: vscode.TextDocument, position: vscode.Po
 	}
 }
 
-function isPositionInComment(document: vscode.TextDocument, position: vscode.Position): boolean {
-	const lineText = document.lineAt(position.line).text;
-
-	// prevent completion when typing in a line comment that doesnt start from the beginning of the line
-	const commentIndex = lineText.indexOf('//');
-
-	if (commentIndex >= 0 && position.character > commentIndex) {
-		const commentPosition = new vscode.Position(position.line, commentIndex);
-		const isCommentInString = isPositionInString(document, commentPosition);
-
-		return !isCommentInString;
-	}
-	return false;
-}
-
 function getCurrentWord(document: vscode.TextDocument, position: vscode.Position): string {
 	// get current word
 	const wordAtPosition = document.getWordRangeAtPosition(position);
@@ -572,7 +557,30 @@ function getPackageCompletions(document: vscode.TextDocument, currentWord: strin
 	return completionItems;
 }
 
+async function getPackageStatementCompletions(document: vscode.TextDocument): Promise<vscode.CompletionItem[]> {
+	// 'Smart Snippet' for package clause
+	const inputText = document.getText();
+	if (inputText.match(/package\s+(\w+)/)) {
+		return [];
+	}
+
+	const pkgNames = await guessPackageNameFromFile(document.fileName);
+	const suggestions = pkgNames.map(pkgName => {
+		const packageItem = new vscode.CompletionItem('package ' + pkgName);
+		packageItem.kind = vscode.CompletionItemKind.Snippet;
+		packageItem.insertText = 'package ' + pkgName + '\r\n\r\n';
+		return packageItem;
+	});
+	return suggestions;
+}
+
 export async function getCompletionsWithoutGoCode(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.CompletionItem[]> {
+	// Completions for the package statement based on the file name
+	const pkgStatementCompletions = await getPackageStatementCompletions(document);
+	if (pkgStatementCompletions && pkgStatementCompletions.length) {
+		return pkgStatementCompletions;
+	}
+
 	const lineText = document.lineAt(position.line).text;
 	const config = vscode.workspace.getConfiguration('go', document.uri);
 	const autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);

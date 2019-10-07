@@ -1,3 +1,8 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 'use strict';
 
 import vscode = require('vscode');
@@ -5,6 +10,7 @@ import cp = require('child_process');
 import { getImportPath, getCurrentGoPath, getBinPath } from './util';
 import { outputChannel } from './goStatus';
 import { buildCode } from './goBuild';
+import { envPath } from './goPath';
 
 export function goGetPackage() {
 	const editor = vscode.window.activeTextEditor;
@@ -19,7 +25,7 @@ export function goGetPackage() {
 
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return vscode.window.showErrorMessage('Could not locate Go binaries. Make sure you have Go installed');
+		return vscode.window.showErrorMessage(`Failed to run "go get" to get package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 	}
 
 	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });

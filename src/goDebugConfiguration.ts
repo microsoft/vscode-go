@@ -1,9 +1,15 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 'use strict';
 
 import vscode = require('vscode');
 import path = require('path');
 import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
+import { getFromGlobalState, updateGlobalState } from './stateUtils';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -28,6 +34,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 					"request" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 					"mode" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 					"useApiV<NUMBER>": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+					"apiVersion": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 					"stopOnEntry": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 				}
 			*/
@@ -35,6 +42,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				request: debugConfiguration.request,
 				mode: debugConfiguration.mode,
 				useApiV1: debugConfiguration.useApiV1,
+				apiVersion: debugConfiguration.apiVersion,
 				stopOnEntry: debugConfiguration.stopOnEntry
 			});
 		}
@@ -70,8 +78,14 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		});
 
 		const dlvConfig: { [key: string]: any } = goConfig.get('delveConfig');
-		if (!debugConfiguration.hasOwnProperty('useApiV1') && dlvConfig.hasOwnProperty('useApiV1')) {
-			debugConfiguration['useApiV1'] = dlvConfig['useApiV1'];
+		let useApiV1 = false;
+		if (debugConfiguration.hasOwnProperty('useApiV1')) {
+			useApiV1 = debugConfiguration['useApiV1'] === true;
+		} else if (dlvConfig.hasOwnProperty('useApiV1')) {
+			useApiV1 = dlvConfig['useApiV1'] === true;
+		}
+		if (useApiV1) {
+			debugConfiguration['apiVersion'] = 1;
 		}
 		if (!debugConfiguration.hasOwnProperty('apiVersion') && dlvConfig.hasOwnProperty('apiVersion')) {
 			debugConfiguration['apiVersion'] = dlvConfig['apiVersion'];
@@ -81,6 +95,9 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 		if (!debugConfiguration.hasOwnProperty('showGlobalVariables') && dlvConfig.hasOwnProperty('showGlobalVariables')) {
 			debugConfiguration['showGlobalVariables'] = dlvConfig['showGlobalVariables'];
+		}
+		if (debugConfiguration.request === 'attach' && !debugConfiguration['cwd']) {
+			debugConfiguration['cwd'] = '${workspaceFolder}';
 		}
 
 		debugConfiguration['dlvToolPath'] = getBinPath('dlv');
@@ -94,6 +111,16 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 		debugConfiguration['currentFile'] = activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
 
+		const neverAgain = { title: 'Don\'t Show Again' };
+		const ignoreWarningKey = 'ignoreDebugLaunchRemoteWarning';
+		const ignoreWarning = getFromGlobalState(ignoreWarningKey);
+		if (ignoreWarning !== true && debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
+			vscode.window.showWarningMessage('Request type of \'launch\' with mode \'remote\' is deprecated, please use request type \'attach\' with mode \'remote\' instead.', neverAgain).then(result => {
+				if (result === neverAgain) {
+					updateGlobalState(ignoreWarningKey, true);
+				}
+			});
+		}
 		return debugConfiguration;
 	}
 
