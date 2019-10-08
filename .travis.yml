@@ -15,12 +15,14 @@ sudo: false
 
 os:
   - osx
-  # - linux
+  - linux
 
 before_install:
+  # Call xvfb directly on linux runs and give it time to start
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
     export DISPLAY=:99.0;
-    sh -e /etc/init.d/xvfb start;
+    Xvfb :99 &
+    sleep 3;
     sudo apt-get update && sudo apt-get install -y libsecret-1-0;
     fi
 

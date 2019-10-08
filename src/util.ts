@@ -15,6 +15,7 @@ import { outputChannel } from './goStatus';
 import { NearestNeighborDict, Node } from './avlTree';
 import { getCurrentPackage } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { getTestFlags } from './testUtils';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -296,9 +297,9 @@ export async function getGoVersion(): Promise<GoVersion> {
 			goVersion = new GoVersion(stdout);
 			if (!goVersion.sv && !goVersion.isDevel) {
 				if (err || stderr) {
-					console.log(`Error when running the command "go version": `, err || stderr);
+					console.log(`Error when running the command "${goRuntimePath} version": `, err || stderr);
 				} else {
-					console.log(`Not able to determine version from the output of the command "go version": ${stdout}`);
+					console.log(`Not able to determine version from the output of the command "${goRuntimePath} version": ${stdout}`);
 				}
 			}
 			return resolve(goVersion);

@@ -231,7 +231,7 @@ encountered.
 			'docsTool': { value: 'godoc' }
 		});
 		testHoverProvider(config, testCases).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test Hover Provider using gogetdoc', (done) => {
 		const gogetdocPath = getBinPath('gogetdoc');
