@@ -340,7 +340,7 @@ It returns the number of bytes written and any write error encountered.
 		await Promise.resolve();
 		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-			assert.fail('generatetests_test.go not found')
+			assert.fail('generatetests_test.go not found');
 		}
 	});
 
