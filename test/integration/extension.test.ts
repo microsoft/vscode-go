@@ -191,10 +191,10 @@ encountered.
 		await testSignatureHelpProvider(config, testCases);
 	});
 
-	test('Test SignatureHelp Provider using gogetdoc', (done) => {
+	test('Test SignatureHelp Provider using gogetdoc', async () => {
 		const gogetdocPath = getBinPath('gogetdoc');
 		if (gogetdocPath === 'gogetdoc') {
-			return done();
+			return;
 		}
 
 		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
@@ -209,7 +209,7 @@ It returns the number of bytes written and any write error encountered.
 		];
 		const config = getDefaultConfig();
 		config['docsTool'] = 'gogetdoc';
-		testSignatureHelpProvider(config, testCases).then(() => done(), done);
+		await testSignatureHelpProvider(config, testCases);
 	}).timeout(10000);
 
 	test('Test Hover Provider using godoc', (done) => {
@@ -594,7 +594,7 @@ It returns the number of bytes written and any write error encountered.
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9/client'
 		];
 
-		vendorSupportPromise.then((vendorSupport: boolean) => {
+		vendorSupportPromise.then(async (vendorSupport: boolean) => {
 			const gopkgsPromise = new Promise<void>((resolve, reject) => {
 				const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
 				const chunks: any[] = [];
@@ -621,8 +621,8 @@ It returns the number of bytes written and any write error encountered.
 				return Promise.resolve();
 			});
 
-			return Promise.all<void>([gopkgsPromise, listPkgPromise]);
-		}).then(() => done(), done);
+			await Promise.all<void>([gopkgsPromise, listPkgPromise]);
+		});
 	});
 
 	test('Workspace Symbols', () => {
