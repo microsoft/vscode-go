@@ -13,7 +13,7 @@ import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
 import { getToolFromToolPath, envPath } from './goPath';
 import { getLanguageServerToolPath } from './goLanguageServer';
 import { Tool, getConfiguredTools, getTool, isWildcard, isGocode, hasModSuffix, containsString, containsTool, getImportPath } from './goTools';
-import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, GoVersion, getGoConfigForUri, getGoConfig } from './util';
+import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, GoVersion, getGoConfig } from './util';
 
 // declinedUpdates tracks the tools that the user has declined to update.
 const declinedUpdates: Tool[] = [];
@@ -68,7 +68,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	}
 
 	// http.proxy setting takes precedence over environment variables
-	const httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
+	const httpProxy = vscode.workspace.getConfiguration('http', null).get('proxy');
 	let envForTools = Object.assign({}, process.env);
 	if (httpProxy) {
 		envForTools = Object.assign({}, process.env, {

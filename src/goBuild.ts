@@ -5,7 +5,7 @@
 
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath, getModuleCache, getGoConfigForUri } from './util';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath, getModuleCache, getGoConfig } from './util';
 import { outputChannel } from './goStatus';
 import { getNonVendorPackages } from './goPackages';
 import { getTestFlags } from './testUtils';
@@ -30,7 +30,7 @@ export function buildCode(buildWorkspace?: boolean) {
 	}
 
 	const documentUri = editor ? editor.document.uri : null;
-	const goConfig = getGoConfigForUri(documentUri);
+	const goConfig = getGoConfig(documentUri);
 
 	outputChannel.clear(); // Ensures stale output from build on save is cleared
 	diagnosticsStatusBarItem.show();

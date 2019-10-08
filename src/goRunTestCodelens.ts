@@ -11,7 +11,7 @@ import { CancellationToken, CodeLens, Command, TextDocument } from 'vscode';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getBenchmarkFunctions, getTestFlags, getTestFunctionDebugArgs, getTestFunctions } from './testUtils';
-import { getCurrentGoPath, getGoConfigForUri } from './util';
+import { getCurrentGoPath, getGoConfig } from './util';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private readonly benchmarkRegex = /^Benchmark.+/;
@@ -29,7 +29,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		if (!this.enabled) {
 			return [];
 		}
-		const config = getGoConfigForUri(document.uri);
+		const config = getGoConfig(document.uri);
 		const codeLensConfig: { [key: string]: any } = config.get('enableCodeLens');
 		const codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
 		if (!codelensEnabled || !document.fileName.endsWith('_test.go')) {

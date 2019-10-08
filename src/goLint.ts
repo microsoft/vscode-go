@@ -5,7 +5,7 @@
 
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getToolsGopath, getGoConfigForUri } from './util';
+import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getToolsGopath, getGoConfig } from './util';
 import { outputChannel } from './goStatus';
 import { diagnosticsStatusBarItem } from './goStatus';
 import { lintDiagnosticCollection } from './goMain';
@@ -24,7 +24,7 @@ export function lintCode(scope?: string) {
 	}
 
 	const documentUri = editor ? editor.document.uri : null;
-	const goConfig = getGoConfigForUri(documentUri);
+	const goConfig = getGoConfig(documentUri);
 
 	outputChannel.clear(); // Ensures stale output from lint on save is cleared
 	diagnosticsStatusBarItem.show();

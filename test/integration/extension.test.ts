@@ -16,7 +16,7 @@ import { getWorkspaceSymbols } from '../../src/goSymbol';
 import { check } from '../../src/goCheck';
 import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../../src/diffUtils';
 import { testCurrentFile } from '../../src/goTest';
-import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult, getGoConfig, getGoConfigForUri } from '../../src/util';
+import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult, getGoConfig } from '../../src/util';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
 import { listPackages, getTextEditForAddImport } from '../../src/goImport';
 import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../../src/goGenerateTests';
@@ -28,7 +28,7 @@ import { runFillStruct } from '../../src/goFillStruct';
 // TODO: Ideally, we should be able to use this function as a stub,
 // so that it's used for calls to getGoConfig.
 function getDefaultConfig(): any {
-	return vscode.workspace.getConfiguration('').inspect('go').defaultValue;
+	return vscode.workspace.getConfiguration('', null).inspect('go').defaultValue;
 }
 
 suite('Go Extension Tests', () => {

@@ -10,7 +10,7 @@ import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getModFolderPath, promptToUpdateToolForModules } from './goModules';
-import { byteOffsetAt, getBinPath, getFileArchive, getGoConfigForUri, getModuleCache, getToolsEnvVars, getWorkspaceFolderPath, goKeywords, isPositionInString, killProcess, runGodoc } from './util';
+import { byteOffsetAt, getBinPath, getFileArchive, getGoConfig, getModuleCache, getToolsEnvVars, getWorkspaceFolderPath, goKeywords, isPositionInString, killProcess, runGodoc } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -55,7 +55,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	position = adjustedPos[2];
 
 	if (!goConfig) {
-		goConfig = getGoConfigForUri(document.uri);
+		goConfig = getGoConfig(document.uri);
 	}
 	const toolForDocs = goConfig['docsTool'] || 'godoc';
 	return getModFolderPath(document.uri).then(modFolderPath => {
@@ -189,7 +189,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		const gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', input.document.fileName + ':#' + offset.toString()];
-		const buildTags = getGoConfigForUri(input.document.uri)['buildTags'];
+		const buildTags = getGoConfig(input.document.uri)['buildTags'];
 		const gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
 		p = cp.execFile(gogetdoc, gogetdocFlags, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {

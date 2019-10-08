@@ -8,7 +8,7 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, isPositionInComment, getGoConfig, getGoConfigForUri } from './util';
+import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, isPositionInComment, getGoConfig } from './util';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
@@ -73,7 +73,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	}
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionList> {
-		return this.provideCompletionItemsInternal(document, position, token, getGoConfigForUri(document.uri)).then(result => {
+		return this.provideCompletionItemsInternal(document, position, token, getGoConfig(document.uri)).then(result => {
 			if (!result) {
 				return new vscode.CompletionList([], false);
 			}
@@ -582,7 +582,7 @@ export async function getCompletionsWithoutGoCode(document: vscode.TextDocument,
 	}
 
 	const lineText = document.lineAt(position.line).text;
-	const config = getGoConfigForUri(document.uri);
+	const config = getGoConfig(document.uri);
 	const autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
 	const commentCompletion = getCommentCompletion(document, position);

@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess, getGoConfigForUri } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess, getGoConfig } from './util';
 import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 import { outputChannel } from './goStatus';
@@ -28,7 +28,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			const offset = byteOffsetAt(document, pos);
 			const env = getToolsEnvVars();
 			const gorename = getBinPath('gorename');
-			const buildTags = getGoConfigForUri(document.uri)['buildTags'] ;
+			const buildTags = getGoConfig(document.uri)['buildTags'] ;
 			const gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName];
 			if (buildTags) {
 				gorenameArgs.push('-tags', buildTags);

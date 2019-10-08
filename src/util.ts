@@ -126,14 +126,14 @@ let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
-export function getGoConfig(): vscode.WorkspaceConfiguration {
-	if (vscode.window.activeTextEditor) {
-		return getGoConfigForUri(vscode.window.activeTextEditor.document.uri);
+export function getGoConfig(uri?: vscode.Uri): vscode.WorkspaceConfiguration {
+	if (!uri) {
+		if (vscode.window.activeTextEditor) {
+			uri = vscode.window.activeTextEditor.document.uri;
+		} else {
+			uri = null;
+		}
 	}
-	return vscode.workspace.getConfiguration('go');
-}
-
-export function getGoConfigForUri(uri: vscode.Uri): vscode.WorkspaceConfiguration {
 	return vscode.workspace.getConfiguration('go', uri);
 }
 
@@ -402,7 +402,7 @@ function resolveToolsGopath(): string {
 
 	// If any of the folders in multi root have toolsGopath set, use it.
 	for (let i = 0; i < vscode.workspace.workspaceFolders.length; i++) {
-		let toolsGopath = <string>getGoConfigForUri(vscode.workspace.workspaceFolders[i].uri).inspect('toolsGopath').workspaceFolderValue;
+		let toolsGopath = <string>getGoConfig(vscode.workspace.workspaceFolders[i].uri).inspect('toolsGopath').workspaceFolderValue;
 		toolsGopath = resolvePath(toolsGopath, vscode.workspace.workspaceFolders[i].uri.fsPath);
 		if (toolsGopath) {
 			return toolsGopath;
@@ -451,7 +451,7 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	const activeEditorUri = vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri;
 	const currentFilePath = fixDriveCasingInWindows(activeEditorUri && activeEditorUri.fsPath);
 	const currentRoot = (workspaceUri && workspaceUri.fsPath) || getWorkspaceFolderPath(activeEditorUri);
-	const config = getGoConfigForUri(workspaceUri || activeEditorUri);
+	const config = getGoConfig(workspaceUri || activeEditorUri);
 
 	// Infer the GOPATH from the current root or the path of the file opened in current editor
 	// Last resort: Check for the common case where GOPATH itself is opened directly in VS Code

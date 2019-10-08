@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import * as goGenerateTests from './goGenerateTests';
 import { setGlobalState } from './stateUtils';
 import { updateGoPathGoRootFromConfig, installAllTools, offerToInstallTools, installTools, promptForMissingTool } from './goInstallTools';
-import { getToolsGopath, getCurrentGoPath, getGoVersion, isGoPathSet, getExtensionCommands, disposeTelemetryReporter, cleanupTempDir, handleDiagnosticErrors, sendTelemetryEvent, getBinPath, getWorkspaceFolderPath, getToolsEnvVars, getGoConfig, getGoConfigForUri } from './util';
+import { getToolsGopath, getCurrentGoPath, getGoVersion, isGoPathSet, getExtensionCommands, disposeTelemetryReporter, cleanupTempDir, handleDiagnosticErrors, sendTelemetryEvent, getBinPath, getWorkspaceFolderPath, getToolsEnvVars, getGoConfig } from './util';
 import { registerLanguageFeatures } from './goLanguageServer';
 import { initCoverageDecorators, toggleCoverageCurrentPackage, updateCodeCoverageDecorators, removeCodeCoverageOnFileChange, applyCodeCoverage } from './goCover';
 import { showHideStatus } from './goStatus';
@@ -393,7 +393,7 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 			vscode.window.showWarningMessage('A debug session is currently active. Changes to your Go files may result in unexpected behaviour.');
 		}
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
-			runBuilds(document, getGoConfigForUri(document.uri));
+			runBuilds(document, getGoConfig(document.uri));
 		}
 
 	}, null, ctx.subscriptions);

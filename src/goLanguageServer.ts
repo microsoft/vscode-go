@@ -21,7 +21,7 @@ import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDe
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
 import { GO_MODE } from './goMode';
 import { getToolFromToolPath } from './goPath';
-import { getToolsEnvVars, getGoConfigForUri, getGoConfig } from './util';
+import { getToolsEnvVars, getGoConfig } from './util';
 import { GoCompletionItemProvider } from './goSuggest';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDefinitionProvider } from './goDeclaration';
