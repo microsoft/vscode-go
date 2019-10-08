@@ -10,7 +10,7 @@ import cp = require('child_process');
 import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars, sendTelemetryEvent } from './util';
 import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
-import { getImportablePackages, getStandardLibraryPackages } from './goPackages';
+import { getImportablePackages } from './goPackages';
 import { envPath } from './goPath';
 
 const missingToolMsg = 'Missing tool: ';
@@ -20,18 +20,9 @@ export async function listPackages(excludeImportedPkgs: boolean = false): Promis
 		? await getImports(vscode.window.activeTextEditor.document)
 		: [];
 	const pkgMap = await getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
-	const stdLib = await getStandardLibraryPackages();
 	return Array.from(pkgMap.keys())
-		.filter(pkg => !importedPkgs.some(imported => imported === pkg))
-		.sort((a,b)=> {
-			if (stdLib.get(a)){
-				return -1
-			}
-			if (stdLib.get(b)){
-				return 1
-			}
-			return 0
-		});
+		.filter(pkg => !importedPkgs.some(imported => imported === pkg));
+		//.sort();
 }
 
 /**
