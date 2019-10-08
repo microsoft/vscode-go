@@ -170,7 +170,7 @@ suite('Go Extension Tests', () => {
 		testDefinitionProvider(config).then(() => done(), done);
 	}).timeout(10000);
 
-	test('Test SignatureHelp Provider using godoc', (done) => {
+	test('Test SignatureHelp Provider using godoc', async () => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
 standard output. Spaces are always added between operands and a newline is
 appended. It returns the number of bytes written and any write error
@@ -185,7 +185,7 @@ encountered.
 		];
 		const config = getDefaultConfig();
 		config['docsTool'] = 'godoc';
-		testSignatureHelpProvider(config, testCases).then(() => done(), done);
+		await testSignatureHelpProvider(config, testCases);
 	});
 
 	test('Test SignatureHelp Provider using gogetdoc', (done) => {

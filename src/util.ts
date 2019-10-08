@@ -80,7 +80,7 @@ export class GoVersion {
 
 	constructor(version: string) {
 		const matchesRelease = /go version go(\d.\d+).*/.exec(version);
-		const matchesDevel = /go version devel \+(.\d+).*/.exec(version);
+		const matchesDevel = /go version devel \+(.[a-zA-Z0-9]+).*/.exec(version);
 		if (matchesRelease) {
 			this.sv = semver.coerce(matchesRelease[0]);
 		} else if (matchesDevel) {
