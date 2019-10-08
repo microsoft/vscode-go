@@ -153,7 +153,7 @@ suite('Go Extension Tests', () => {
 	test('Test Definition Provider using godoc', async (done) => {
 		const config = getDefaultConfig();
 		config['docsTool'] = 'godoc';
-		testDefinitionProvider(config);
+		await testDefinitionProvider(config);
 		done();
 	});
 
