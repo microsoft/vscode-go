@@ -7,23 +7,22 @@ import * as assert from 'assert';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import cp = require('child_process');
-import { GoHoverProvider } from '../../src/goExtraInfo';
-import { GoCompletionItemProvider } from '../../src/goSuggest';
-import { GoSignatureHelpProvider } from '../../src/goSignature';
-import { GoDefinitionProvider } from '../../src/goDeclaration';
-import { getWorkspaceSymbols } from '../../src/goSymbol';
+import { FilePatch, getEdits, getEditsFromUnifiedDiffStr } from '../../src/diffUtils';
 import { check } from '../../src/goCheck';
-import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../../src/diffUtils';
-import { testCurrentFile } from '../../src/goTest';
-import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult, getGoConfig } from '../../src/util';
-import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
-import { listPackages, getTextEditForAddImport } from '../../src/goImport';
-import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../../src/goGenerateTests';
-import { getAllPackages } from '../../src/goPackages';
-import { getImportPath } from '../../src/util';
-import { goPlay } from '../../src/goPlayground';
+import { GoDefinitionProvider } from '../../src/goDeclaration';
+import { GoHoverProvider } from '../../src/goExtraInfo';
 import { runFillStruct } from '../../src/goFillStruct';
+import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../../src/goGenerateTests';
+import { getTextEditForAddImport, listPackages } from '../../src/goImport';
+import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
+import { getAllPackages } from '../../src/goPackages';
+import { goPlay } from '../../src/goPlayground';
+import { GoSignatureHelpProvider } from '../../src/goSignature';
+import { GoCompletionItemProvider } from '../../src/goSuggest';
+import { getWorkspaceSymbols } from '../../src/goSymbol';
+import { testCurrentFile } from '../../src/goTest';
+import { getBinPath, getCurrentGoPath, getGoVersion, getImportPath, getToolsGopath, ICheckResult, isVendorSupported } from '../../src/util';
+import cp = require('child_process');
 
 // TODO: Ideally, we should be able to use this function as a stub,
 // so that it's used for calls to getGoConfig.
@@ -46,7 +45,6 @@ suite('Go Extension Tests', () => {
 	const generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
 	const testPath = path.join(__dirname, 'tests');
 	const toolsGopath = getToolsGopath() || getCurrentGoPath();
-
 
 	suiteSetup(() => {
 		fs.removeSync(repoPath);
@@ -289,53 +287,43 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	}).timeout(10000);
 
-	test('Test Generate unit tests skeleton for file', (done) => {
+	test('Test Generate unit tests skeleton for file', async (done) => {
 		const gotestsPath = getBinPath('gotests');
 		if (gotestsPath === 'gotests') {
 			return done();
 		}
-
-		getGoVersion().then(async version => {
-			const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
-			const document = await vscode.workspace.openTextDocument(uri);
-			const editor = await vscode.window.showTextDocument(document);
-			const result = await generateTestCurrentFile();
-			assert.equal(result, true);
-			await Promise.resolve();
-			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-				return Promise.resolve();
-			}
-			else {
-				return Promise.reject('generatetests_test.go not found');
-			}
-		}).then(() => done(), done);
+		const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
+		const document = await vscode.workspace.openTextDocument(uri);
+		const editor = await vscode.window.showTextDocument(document);
+		const result = await generateTestCurrentFile();
+		assert.equal(result, true);
+		await Promise.resolve();
+		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+			assert.fail('generatetests_test.go not found');
+		}
+		done();
 	});
 
-	test('Test Generate unit tests skeleton for a function', (done) => {
+	test('Test Generate unit tests skeleton for a function', async (done) => {
 		const gotestsPath = getBinPath('gotests');
 		if (gotestsPath === 'gotests') {
 			return done();
 		}
-
-		getGoVersion().then(async version => {
-			const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
-			const document = await vscode.workspace.openTextDocument(uri);
-			const editor = await vscode.window.showTextDocument(document);
-			assert(vscode.window.activeTextEditor, 'No active editor');
-			const selection = new vscode.Selection(5, 0, 6, 0);
-			editor.selection = selection;
-			const result = await generateTestCurrentFunction();
-			assert.equal(result, true);
-			await Promise.resolve();
-			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-				return Promise.resolve();
-			}
-			else {
-				return Promise.reject('generatetests_test.go not found');
-			}
-		}).then(() => done(), done);
+		const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
+		const document = await vscode.workspace.openTextDocument(uri);
+		const editor = await vscode.window.showTextDocument(document);
+		assert(vscode.window.activeTextEditor, 'No active editor');
+		const selection = new vscode.Selection(5, 0, 6, 0);
+		editor.selection = selection;
+		const result = await generateTestCurrentFunction();
+		assert.equal(result, true);
+		await Promise.resolve();
+		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+			assert.fail('generatetests_test.go not found');
+		}
+		done();
 	});
 
 	test('Test Generate unit tests skeleton for package', async (done) => {
@@ -351,7 +339,7 @@ It returns the number of bytes written and any write error encountered.
 		await Promise.resolve();
 		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-			return Promise.reject('generatetests_test.go not found');
+			assert.fail('generatetests_test.go not found')
 		}
 		done();
 	});
