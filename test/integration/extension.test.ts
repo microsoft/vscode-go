@@ -110,7 +110,7 @@ suite('Go Extension Tests', () => {
 		try {
 			const textDocument = await vscode.workspace.openTextDocument(uri);
 			const promises = testCases.map(([position, expected, expectedDoc, expectedParams]) => provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
-				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position}`);
+				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position.line}:${position.character}`);
 				assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 				assert.equal(sigHelp.signatures[0].label, expected);
 				assert.equal(sigHelp.signatures[0].documentation, expectedDoc);
@@ -207,9 +207,8 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this correctly\n', ['s string', 'exclaim bool']],
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
-		const config = Object.create(getDefaultConfig(), {
-			'docsTool': { value: 'gogetdoc' }
-		});
+		const config = getDefaultConfig();
+		config['docsTool'] = 'gogetdoc';
 		testSignatureHelpProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
