@@ -51,7 +51,6 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 		verticalyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
 	};
 
-	const editor = vscode.window.activeTextEditor;
 	// Update the coverageDecorator in User config, if they are using the old style.
 	const goConfig = getGoConfig();
 	const inspectResult = goConfig.inspect('coverageDecorator');

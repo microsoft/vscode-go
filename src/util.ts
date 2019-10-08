@@ -127,7 +127,10 @@ let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
 export function getGoConfig(): vscode.WorkspaceConfiguration {
-	return vscode.window.activeTextEditor ? getGoConfigForUri(vscode.window.activeTextEditor.document.uri) : null;
+	if (vscode.window.activeTextEditor) {
+		return getGoConfigForUri(vscode.window.activeTextEditor.document.uri);
+	}
+	return vscode.workspace.getConfiguration('go');
 }
 
 export function getGoConfigForUri(uri: vscode.Uri): vscode.WorkspaceConfiguration {
@@ -378,7 +381,6 @@ export function getToolsGopath(useCache: boolean = true): string {
 	if (!useCache || !toolsGopath) {
 		toolsGopath = resolveToolsGopath();
 	}
-
 	return toolsGopath;
 }
 

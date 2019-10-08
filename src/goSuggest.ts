@@ -97,7 +97,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 		}
 
 		return runGodoc(path.dirname(item.fileName), item.package || path.dirname(item.fileName), item.receiver, item.label, token).then(doc => {
-			item.documentation = new vscode.MarkdownString(doc);
+			item.documentation = new vscode.MarkdownString(doc.trimLeft());
 			return item;
 		}).catch(err => {
 			console.log(err);

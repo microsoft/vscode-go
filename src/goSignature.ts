@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { getParametersAndReturnType, isPositionInString, isPositionInComment, getGoConfig } from './util';
+import { getParametersAndReturnType, isPositionInString, isPositionInComment, getGoConfigForUri } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
@@ -16,7 +16,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	}
 
 	public async provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
-		let goConfig = this.goConfig || getGoConfig();
+		let goConfig = this.goConfig || getGoConfigForUri(document.uri);
 
 		const theCall = this.walkBackwardsToBeginningOfCall(document, position);
 		if (theCall == null) {
@@ -50,7 +50,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				const sigStart = nameEnd + 5; // ' func'
 				const funcName = declarationText.substring(0, nameEnd);
 				sig = declarationText.substring(sigStart);
-				si = new SignatureInformation(funcName + sig, res.doc);
+				si = new SignatureInformation(funcName + sig, res.doc.trimLeft());
 			}
 			else if (res.toolUsed === 'gogetdoc') {
 				// declaration is of the form "func Add(a int, b int) int"
