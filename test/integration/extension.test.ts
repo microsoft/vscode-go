@@ -138,7 +138,11 @@ suite('Go Extension Tests', () => {
 				}
 				let expectedHover = '\n```go\n' + expectedSignature + '\n```\n';
 				if (expectedDocumentation != null) {
-					expectedHover += expectedDocumentation;
+					// Make sure not to add any empty documentation.
+					expectedDocumentation = expectedDocumentation.trimRight();
+					if (expectedDocumentation !== '') {
+						expectedHover += expectedDocumentation + '\n';
+					}
 				}
 				assert.equal(res.contents.length, 1);
 				assert.equal((<vscode.MarkdownString>res.contents[0]).value, expectedHover);
@@ -287,10 +291,10 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	}).timeout(10000);
 
-	test('Test Generate unit tests skeleton for file', async (done) => {
+	test('Test Generate unit tests skeleton for file', async () => {
 		const gotestsPath = getBinPath('gotests');
 		if (gotestsPath === 'gotests') {
-			return done();
+			return;
 		}
 		const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
 		const document = await vscode.workspace.openTextDocument(uri);
@@ -302,13 +306,12 @@ It returns the number of bytes written and any write error encountered.
 		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
 			assert.fail('generatetests_test.go not found');
 		}
-		done();
 	});
 
-	test('Test Generate unit tests skeleton for a function', async (done) => {
+	test('Test Generate unit tests skeleton for a function', async () => {
 		const gotestsPath = getBinPath('gotests');
 		if (gotestsPath === 'gotests') {
-			return done();
+			return;
 		}
 		const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
 		const document = await vscode.workspace.openTextDocument(uri);
@@ -323,13 +326,12 @@ It returns the number of bytes written and any write error encountered.
 		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
 			assert.fail('generatetests_test.go not found');
 		}
-		done();
 	});
 
-	test('Test Generate unit tests skeleton for package', async (done) => {
+	test('Test Generate unit tests skeleton for package', async () => {
 		const gotestsPath = getBinPath('gotests');
 		if (gotestsPath === 'gotests') {
-			return done();
+			return;
 		}
 		const uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
 		const document = await vscode.workspace.openTextDocument(uri);
@@ -341,7 +343,6 @@ It returns the number of bytes written and any write error encountered.
 		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
 			assert.fail('generatetests_test.go not found')
 		}
-		done();
 	});
 
 	test('Test diffUtils.getEditsFromUnifiedDiffStr', (done) => {
