@@ -114,6 +114,7 @@ suite('Go Extension Tests', () => {
 				assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 				assert.equal(sigHelp.signatures[0].label, expected);
 				const gotDoc = sigHelp.signatures[0].documentation.toString().trimLeft();
+				expectedDoc = expectedDoc.trimLeft();
 				assert.equal(gotDoc, expectedDoc);
 				assert.equal(sigHelp.signatures[0].parameters.length, expectedParams.length);
 				for (let i = 0; i < expectedParams.length; i++) {
@@ -144,6 +145,7 @@ suite('Go Extension Tests', () => {
 					if (expectedDocumentation !== '') {
 						expectedHover += expectedDocumentation + '\n';
 					}
+					expectedDocumentation = expectedDocumentation.trimLeft();
 				}
 				if (!res) {
 					assert.fail(`no result for ${textDocument.fileName}:${position.line}:${position.character}`);
@@ -695,6 +697,7 @@ encountered.
 			const editor = await vscode.window.showTextDocument(textDocument);
 			const promises = testCases.map(([position, expectedLabel, expectedDetail, expectedDoc]) => provider.provideCompletionItems(editor.document, position, null).then(async items => {
 				const item = items.items.find(x => x.label === expectedLabel);
+				expectedDoc = expectedDoc.trimLeft();
 				assert.equal(!!item, true, 'missing expected item in completion list');
 				assert.equal(item.detail, expectedDetail);
 				const resolvedItemResult: vscode.ProviderResult<vscode.CompletionItem> = provider.resolveCompletionItem(item, null);
