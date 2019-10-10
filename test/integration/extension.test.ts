@@ -113,8 +113,13 @@ suite('Go Extension Tests', () => {
 				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position.line}:${position.character}`);
 				assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 				assert.equal(sigHelp.signatures[0].label, expected);
-				const gotDoc = sigHelp.signatures[0].documentation.toString().trimLeft();
-				expectedDoc = expectedDoc.trimLeft();
+				let gotDoc = sigHelp.signatures[0].documentation.toString();
+				if (gotDoc) {
+					gotDoc = gotDoc.trimLeft();
+				}
+				if (expectedDoc) {
+					expectedDoc = expectedDoc.trimLeft();
+				}
 				assert.equal(gotDoc, expectedDoc);
 				assert.equal(sigHelp.signatures[0].parameters.length, expectedParams.length);
 				for (let i = 0; i < expectedParams.length; i++) {
@@ -138,14 +143,13 @@ suite('Go Extension Tests', () => {
 					assert.equal(res, null);
 					return;
 				}
-				let expectedHover = '\n```go\n' + expectedSignature + '\n```\n';
+				let expectedHover = '```go\n' + expectedSignature + '\n```\n';
 				if (expectedDocumentation != null) {
 					// Make sure not to add any empty documentation.
 					expectedDocumentation = expectedDocumentation.trimRight();
 					if (expectedDocumentation !== '') {
 						expectedHover += expectedDocumentation + '\n';
 					}
-					expectedDocumentation = expectedDocumentation.trimLeft();
 				}
 				if (!res) {
 					assert.fail(`no result for ${textDocument.fileName}:${position.line}:${position.character}`);
@@ -162,8 +166,9 @@ suite('Go Extension Tests', () => {
 	}
 
 	test('Test Definition Provider using godoc', async () => {
-		const config = getDefaultConfig();
-		config['docsTool'] = 'godoc';
+		const config = Object.create(getDefaultConfig(), {
+			'docsTool': { value: 'godoc' }
+		});
 		await testDefinitionProvider(config);
 	});
 
@@ -172,8 +177,9 @@ suite('Go Extension Tests', () => {
 		if (gogetdocPath === 'gogetdoc') {
 			return done();
 		}
-		const config = getDefaultConfig();
-		config['docsTool'] = 'gogetdoc';
+		const config = Object.create(getDefaultConfig(), {
+			'docsTool': { value: 'gogetdoc' }
+		});
 		testDefinitionProvider(config).then(() => done(), done);
 	}).timeout(10000);
 
@@ -190,8 +196,9 @@ encountered.
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this\ncorrectly\n', ['s string', 'exclaim bool']],
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
-		const config = getDefaultConfig();
-		config['docsTool'] = 'godoc';
+		const config = Object.create(getDefaultConfig(), {
+			'docsTool': { value: 'godoc' }
+		});
 		await testSignatureHelpProvider(config, testCases);
 	});
 
@@ -211,12 +218,13 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this correctly\n', ['s string', 'exclaim bool']],
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
-		const config = getDefaultConfig();
-		config['docsTool'] = 'gogetdoc';
+		const config = Object.create(getDefaultConfig(), {
+			'docsTool': { value: 'gogetdoc' }
+		});
 		await testSignatureHelpProvider(config, testCases);
 	}).timeout(10000);
 
-	test('Test Hover Provider using godoc', (done) => {
+	test('Test Hover Provider using godoc', async () => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
 standard output. Spaces are always added between operands and a newline is
 appended. It returns the number of bytes written and any write error
@@ -233,9 +241,10 @@ encountered.
 			[new vscode.Position(19, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
 			[new vscode.Position(23, 4), 'print func(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :( Not\nanymore!!\n']
 		];
-		const config = getDefaultConfig();
-		config['docsTool'] = 'godoc';
-		testHoverProvider(config, testCases).then(() => done(), done);
+		const config = Object.create(getDefaultConfig(), {
+			'docsTool': { value: 'godoc' }
+		});
+		await testHoverProvider(config, testCases);
 	}).timeout(10000);
 
 	test('Test Hover Provider using gogetdoc', (done) => {
@@ -697,7 +706,9 @@ encountered.
 			const editor = await vscode.window.showTextDocument(textDocument);
 			const promises = testCases.map(([position, expectedLabel, expectedDetail, expectedDoc]) => provider.provideCompletionItems(editor.document, position, null).then(async items => {
 				const item = items.items.find(x => x.label === expectedLabel);
-				expectedDoc = expectedDoc.trimLeft();
+				if (expectedDoc) {
+					expectedDoc = expectedDoc.trimLeft();
+				}
 				assert.equal(!!item, true, 'missing expected item in completion list');
 				assert.equal(item.detail, expectedDetail);
 				const resolvedItemResult: vscode.ProviderResult<vscode.CompletionItem> = provider.resolveCompletionItem(item, null);
@@ -706,7 +717,11 @@ encountered.
 				}
 				if (resolvedItemResult instanceof vscode.CompletionItem) {
 					if (resolvedItemResult.documentation) {
-						assert.equal((<vscode.MarkdownString>resolvedItemResult.documentation).value.trimLeft(), expectedDoc);
+						let gotDoc = (<vscode.MarkdownString>resolvedItemResult.documentation).value;
+						if (gotDoc) {
+							gotDoc = gotDoc.trimLeft();
+						}
+						assert.equal(gotDoc, expectedDoc);
 					}
 					return;
 				}
