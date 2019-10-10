@@ -69,7 +69,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			debugConfiguration['env']['GOPATH'] = gopath;
 		}
 
-		const goConfig = folder ? getGoConfig(folder.uri) : null;
+		const goConfig = getGoConfig(folder && folder.uri);
 		const goToolsEnvVars = getToolsEnvVars();
 		Object.keys(goToolsEnvVars).forEach(key => {
 			if (!debugConfiguration['env'].hasOwnProperty(key)) {
