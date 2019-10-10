@@ -579,14 +579,14 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Vendor pkgs from other projects should not be allowed to import', (done) => {
+	test('Vendor pkgs from other projects should not be allowed to import', async () => {
 		// This test needs a go project that has vendor folder and vendor packages
 		// Since the Go extension takes a dependency on the godef tool at github.com/rogpeppe/godef
 		// which has vendor packages, we are using it here to test the "replace vendor packages with relative path" feature.
 		// If the extension ever stops depending on godef tool or if godef ever stops having vendor packages, then this test
 		// will fail and will have to be replaced with any other go project with vendor packages
 
-		const vendorSupportPromise = isVendorSupported();
+		const vendorSupport = await isVendorSupported();
 		const filePath = path.join(toolsGopath, 'src', 'github.com', 'ramya-rao-a', 'go-outline', 'main.go');
 		const vendorPkgs = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
@@ -594,7 +594,6 @@ It returns the number of bytes written and any write error encountered.
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9/client'
 		];
 
-		vendorSupportPromise.then(async (vendorSupport: boolean) => {
 			const gopkgsPromise = new Promise<void>((resolve, reject) => {
 				const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
 				const chunks: any[] = [];
@@ -611,18 +610,17 @@ It returns the number of bytes written and any write error encountered.
 			});
 
 			const listPkgPromise: Thenable<void> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(async document => {
-				const editor = await vscode.window.showTextDocument(document);
+				await vscode.window.showTextDocument(document);
 				const pkgs = await listPackages();
 				if (vendorSupport) {
 					vendorPkgs.forEach(pkg => {
 						assert.equal(pkgs.indexOf(pkg), -1, `Vendor package ${pkg} should not be shown by listPackages method`);
 					});
 				}
-				return Promise.resolve();
 			});
 
 			await Promise.all<void>([gopkgsPromise, listPkgPromise]);
-		});
+		
 	});
 
 	test('Workspace Symbols', () => {
