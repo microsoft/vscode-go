@@ -238,7 +238,7 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 		return;
 	}
 
-	const cfg = getGoConfig();
+	const cfg = getGoConfig(editor.document.uri));
 	const coverageOptions = cfg['coverageOptions'];
 	for (const filename in coverageFiles) {
 		if (editor.document.uri.fsPath.endsWith(filename)) {
