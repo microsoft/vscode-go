@@ -594,33 +594,33 @@ It returns the number of bytes written and any write error encountered.
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9/client'
 		];
 
-			const gopkgsPromise = new Promise<void>((resolve, reject) => {
-				const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
-				const chunks: any[] = [];
-				cmd.stdout.on('data', (d) => chunks.push(d));
-				cmd.on('close', () => {
-					const pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
-					if (vendorSupport) {
-						vendorPkgs.forEach(pkg => {
-							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
-						});
-					}
-					return resolve();
-				});
-			});
-
-			const listPkgPromise: Thenable<void> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(async document => {
-				await vscode.window.showTextDocument(document);
-				const pkgs = await listPackages();
+		const gopkgsPromise = new Promise<void>((resolve, reject) => {
+			const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
+			const chunks: any[] = [];
+			cmd.stdout.on('data', (d) => chunks.push(d));
+			cmd.on('close', () => {
+				const pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
 				if (vendorSupport) {
 					vendorPkgs.forEach(pkg => {
-						assert.equal(pkgs.indexOf(pkg), -1, `Vendor package ${pkg} should not be shown by listPackages method`);
+						assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
 					});
 				}
+				return resolve();
 			});
+		});
 
-			await Promise.all<void>([gopkgsPromise, listPkgPromise]);
-		
+		const listPkgPromise: Thenable<void> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(async document => {
+			await vscode.window.showTextDocument(document);
+			const pkgs = await listPackages();
+			if (vendorSupport) {
+				vendorPkgs.forEach(pkg => {
+					assert.equal(pkgs.indexOf(pkg), -1, `Vendor package ${pkg} should not be shown by listPackages method`);
+				});
+			}
+		});
+
+		await Promise.all<void>([gopkgsPromise, listPkgPromise]);
+
 	});
 
 	test('Workspace Symbols', () => {
