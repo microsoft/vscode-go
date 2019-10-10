@@ -50,7 +50,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				const sigStart = nameEnd + 5; // ' func'
 				const funcName = declarationText.substring(0, nameEnd);
 				sig = declarationText.substring(sigStart);
-				si = new SignatureInformation(funcName + sig, res.doc.trimLeft());
+				si = new SignatureInformation(funcName + sig, res.doc);
 			}
 			else if (res.toolUsed === 'gogetdoc') {
 				// declaration is of the form "func Add(a int, b int) int"

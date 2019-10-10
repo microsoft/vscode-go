@@ -113,7 +113,8 @@ suite('Go Extension Tests', () => {
 				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position.line}:${position.character}`);
 				assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 				assert.equal(sigHelp.signatures[0].label, expected);
-				assert.equal(sigHelp.signatures[0].documentation, expectedDoc);
+				const gotDoc = sigHelp.signatures[0].documentation.toString().trimLeft();
+				assert.equal(gotDoc, expectedDoc);
 				assert.equal(sigHelp.signatures[0].parameters.length, expectedParams.length);
 				for (let i = 0; i < expectedParams.length; i++) {
 					assert.equal(sigHelp.signatures[0].parameters[i].label, expectedParams[i]);
@@ -148,7 +149,8 @@ suite('Go Extension Tests', () => {
 					assert.fail(`no result for ${textDocument.fileName}:${position.line}:${position.character}`);
 				}
 				assert.equal(res.contents.length, 1);
-				assert.equal((<vscode.MarkdownString>res.contents[0]).value, expectedHover);
+				const gotHover = (<vscode.MarkdownString>res.contents[0]).value.trimLeft();
+				assert.equal(gotHover, expectedHover);
 			}));
 			return Promise.all(promises);
 		} catch (err) {
@@ -701,7 +703,7 @@ encountered.
 				}
 				if (resolvedItemResult instanceof vscode.CompletionItem) {
 					if (resolvedItemResult.documentation) {
-						assert.equal((<vscode.MarkdownString>resolvedItemResult.documentation).value, expectedDoc);
+						assert.equal((<vscode.MarkdownString>resolvedItemResult.documentation).value.trimLeft(), expectedDoc);
 					}
 					return;
 				}

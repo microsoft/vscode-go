@@ -37,7 +37,7 @@ export class GoHoverProvider implements HoverProvider {
 			const hoverTexts = new vscode.MarkdownString();
 			hoverTexts.appendCodeblock(text, 'go');
 			if (definitionInfo.doc != null) {
-				hoverTexts.appendMarkdown(definitionInfo.doc.trimLeft());
+				hoverTexts.appendMarkdown(definitionInfo.doc);
 			}
 			const hover = new Hover(hoverTexts);
 			return hover;
