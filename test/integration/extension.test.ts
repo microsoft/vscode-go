@@ -14,6 +14,7 @@ import { GoDefinitionProvider } from '../../src/goDeclaration';
 import { getWorkspaceSymbols } from '../../src/goSymbol';
 import { check } from '../../src/goCheck';
 import cp = require('child_process');
+import os = require('os');
 import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../../src/diffUtils';
 import { testCurrentFile } from '../../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult } from '../../src/util';
@@ -26,7 +27,7 @@ import { goPlay } from '../../src/goPlayground';
 import { runFillStruct } from '../../src/goFillStruct';
 
 suite('Go Extension Tests', () => {
-	const gopath = process.env['GOPATH'];
+	const gopath = process.env['GOPATH'] || path.join(os.homedir(), 'go');
 	if (!gopath) {
 		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
 		return;
