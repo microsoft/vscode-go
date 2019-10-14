@@ -145,11 +145,11 @@ suite('Go Extension Tests', () => {
 				}
 				let expectedHover = '```go\n' + expectedSignature + '\n```\n';
 				if (expectedDocumentation) {
-					console.log(`adding expected documentation 1: ${expectedDocumentation}`)
+					console.log(`adding expected documentation 1: ${expectedDocumentation}`);
 					// Make sure not to add any empty documentation.
 					expectedDocumentation = expectedDocumentation.trimRight();
 					if (expectedDocumentation !== '') {
-						console.log(`adding expected documentation 2: ${expectedDocumentation}`)
+						console.log(`adding expected documentation 2: ${expectedDocumentation}`);
 						expectedHover += expectedDocumentation + '\n';
 					}
 				}
