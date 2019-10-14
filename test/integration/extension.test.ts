@@ -27,7 +27,7 @@ import { goPlay } from '../../src/goPlayground';
 import { runFillStruct } from '../../src/goFillStruct';
 
 suite('Go Extension Tests', () => {
-	const gopath = process.env['GOPATH'] || path.join(os.homedir(), 'go');
+	const gopath = getCurrentGoPath();
 	if (!gopath) {
 		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
 		return;
