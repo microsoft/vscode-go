@@ -15,7 +15,7 @@ import {
 	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
 	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
 	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature,
-	HandleDiagnosticsSignature, ProvideDocumentLinksSignature,
+	HandleDiagnosticsSignature, ProvideDocumentLinksSignature, ProvideDocumentHighlightsSignature
 } from 'vscode-languageclient';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
@@ -55,6 +55,7 @@ interface LanguageServerConfig {
 		workspaceSymbols: boolean;
 		implementation: boolean;
 		documentLink: boolean;
+		highlight: boolean;
 	};
 }
 
@@ -180,6 +181,12 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 						return null;
 					}
 					return next(document, token);
+				},
+				provideDocumentHighlights: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideDocumentHighlightsSignature) => {
+					if (!config.features.highlight) {
+						return null;
+					}
+					return next(document, position, token);
 				}
 			}
 		}
@@ -198,7 +205,6 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			ctx.subscriptions.push(provider);
 			ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '\"'));
 		}
-
 		if (!config.features.format || !capabilities.documentFormattingProvider) {
 			ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 		}
@@ -312,6 +318,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			workspaceSymbols: goConfig['languageServerExperimentalFeatures']['workspaceSymbols'],
 			implementation: goConfig['languageServerExperimentalFeatures']['implementation'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
+			highlight: goConfig['languageServerExperimentalFeatures']['highlight'],
 		},
 	};
 	return config;

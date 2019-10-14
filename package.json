@@ -1145,6 +1145,11 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the language server will accept incremental document synchronization."
+            },
+            "highlight": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, the language server will be used to highlighting selected text."
             }
           },
           "default": {
@@ -1160,7 +1165,8 @@
             "workspaceSymbols": true,
             "findReferences": true,
             "diagnostics": true,
-            "documentLink": true
+            "documentLink": true,
+            "highlight": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
