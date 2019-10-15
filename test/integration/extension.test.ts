@@ -14,7 +14,6 @@ import { GoDefinitionProvider } from '../../src/goDeclaration';
 import { getWorkspaceSymbols } from '../../src/goSymbol';
 import { check } from '../../src/goCheck';
 import cp = require('child_process');
-import os = require('os');
 import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../../src/diffUtils';
 import { testCurrentFile } from '../../src/goTest';
 import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult } from '../../src/util';
