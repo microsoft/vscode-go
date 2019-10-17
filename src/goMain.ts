@@ -441,6 +441,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "autocompleteUnimportedPackages": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "docsTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "useLanguageServer": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "languageServerExperimentalFeatures": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "includeImports": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "addTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "removeTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
@@ -448,6 +449,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "liveErrors": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "alternateTools": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
+		  "useGoProxyToCheckForToolUpdates": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
 	   }
 	 */
 	sendTelemetryEvent('goConfig', {
@@ -487,7 +489,8 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands']),
 		liveErrors: JSON.stringify(goConfig['liveErrors']),
 		codeLens: JSON.stringify(goConfig['enableCodeLens']),
-		alternateTools: JSON.stringify(goConfig['alternateTools'])
+		alternateTools: JSON.stringify(goConfig['alternateTools']),
+		useGoProxyToCheckForToolUpdates: goConfig['useGoProxyToCheckForToolUpdates'] + '',
 	});
 }
 

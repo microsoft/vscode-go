@@ -306,7 +306,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
 
-	if (process.env['GOPATH'] && process.env['GOROOT']) {
+	if (process.env['GOPATH'] && process.env['GOROOT'] && process.env['GOPROXY']) {
 		return Promise.resolve();
 	}
 
@@ -334,7 +334,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	}
 
 	return new Promise<void>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT', 'GOPROXY'], (err, stdout, stderr) => {
 			if (err) {
 				return reject();
 			}
@@ -344,6 +344,9 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 			}
 			if (!process.env['GOROOT'] && envOutput[1] && envOutput[1].trim()) {
 				process.env['GOROOT'] = envOutput[1].trim();
+			}
+			if (!process.env['GOPROXY'] && envOutput[2] && envOutput[2].trim()) {
+				process.env['GOPROXY'] = envOutput[2].trim();
 			}
 			return resolve();
 		});
