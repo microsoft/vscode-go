@@ -574,10 +574,7 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 }
 
 async function goProxyRequest(tool: Tool, endpoint: string): Promise<any> {
-	const proxies = await goProxy();
-	if (!proxies) {
-		return null;
-	}
+	const proxies = goProxy();
 	// Try each URL set in the user's GOPROXY environment variable.
 	// If none is set, don't make the request.
 	for (const proxy of proxies) {
@@ -598,27 +595,11 @@ async function goProxyRequest(tool: Tool, endpoint: string): Promise<any> {
 	return null;
 }
 
-async function goProxy(): Promise<string[]>  {
-	const env = getToolsEnvVars();
-	const execFile = util.promisify(cp.execFile);
-	let output: string;
-	try {
-		// Run `go env GOPROXY` to get the user's GOPROXY setting.
-		const goExecutable = getBinPath('go');
-		if (!goExecutable) {
-			return null;
-		}
-		const { stdout } = await execFile(goExecutable, ['env', 'GOPROXY'], { env });
-		output = stdout;
-	} catch (e) {
-		return null;
-	}
-	if (output.length === 0) {
-		return null;
+function goProxy(): string[]  {
+	const output: string = process.env['GOPROXY'];
+	if (!output || !output.trim()) {
+		return [];
 	}
 	const split = output.trim().split(',');
-	if (split.length === 0) {
-		return null;
-	}
 	return split;
 }
