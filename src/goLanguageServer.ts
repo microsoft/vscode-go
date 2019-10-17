@@ -313,7 +313,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			implementation: goConfig['languageServerExperimentalFeatures']['implementation'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
 		},
-		checkForUpdates: goConfig['languageServerCheckForUpdates']
+		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
 	};
 	return config;
 }
