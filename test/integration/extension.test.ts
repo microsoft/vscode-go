@@ -145,11 +145,9 @@ suite('Go Extension Tests', () => {
 				}
 				let expectedHover = '```go\n' + expectedSignature + '\n```\n';
 				if (expectedDocumentation) {
-					console.log(`adding expected documentation 1: ${expectedDocumentation}`);
 					// Make sure not to add any empty documentation.
 					expectedDocumentation = expectedDocumentation.trimRight();
 					if (expectedDocumentation !== '') {
-						console.log(`adding expected documentation 2: ${expectedDocumentation}`);
 						expectedHover += expectedDocumentation + '\n';
 					}
 				}
@@ -157,8 +155,8 @@ suite('Go Extension Tests', () => {
 					assert.fail(`no result for ${textDocument.fileName}:${position.line}:${position.character}`);
 				}
 				assert.equal(res.contents.length, 1);
-				const gotHover = (<vscode.MarkdownString>res.contents[0]).value.trimLeft();
-				assert.equal(gotHover, expectedHover);
+				const gotHover = (<vscode.MarkdownString>res.contents[0]).value;
+				assert.equal(gotHover.trim(), expectedHover.trim());
 			}));
 			return Promise.all(promises);
 		} catch (err) {
