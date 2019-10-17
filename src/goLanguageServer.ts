@@ -490,7 +490,7 @@ function parsePseudoversionTimestamp(version: string): moment.Moment {
 
 async function goplsVersionTimestamp(tool: Tool, version: semver.SemVer): Promise<moment.Moment> {
 	const data = await goProxyRequest(tool, `v${version.format()}.info`);
- 	if (!data) {
+	if (!data) {
 		return null;
 	}
 	const time = moment(data['Time']);
@@ -501,7 +501,7 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	// If the user has a version of gopls that we understand,
 	// ask the proxy for the latest version, and if the user's version is older,
 	// prompt them to update.
-	let data = await goProxyRequest(tool, "list");
+	const data = await goProxyRequest(tool, 'list');
 	if (!data) {
 		return null;
 	}
@@ -574,15 +574,15 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 }
 
 async function goProxyRequest(tool: Tool, endpoint: string): Promise<any> {
-	let proxies = await goProxy();
+	const proxies = await goProxy();
 	if (!proxies) {
 		return null;
 	}
 	// Try each URL set in the user's GOPROXY environment variable.
 	// If none is set, don't make the request.
 	for (const proxy of proxies) {
-		if (proxy === "direct") {
-			continue
+		if (proxy === 'direct') {
+			continue;
 		}
 		const url = `${proxy}/${tool.importPath}/@v/${endpoint}`;
 		let data: string;
@@ -613,11 +613,11 @@ async function goProxy(): Promise<string[]>  {
 	} catch (e) {
 		return null;
 	}
-	if (output.length == 0) {
+	if (output.length === 0) {
 		return null;
 	}
 	const split = output.trim().split(',');
-	if (split.length == 0) {
+	if (split.length === 0) {
 		return null;
 	}
 	return split;
