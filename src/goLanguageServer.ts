@@ -57,6 +57,7 @@ interface LanguageServerConfig {
 		implementation: boolean;
 		documentLink: boolean;
 	};
+	checkForUpdates: boolean;
 }
 
 // registerLanguageFeatures registers providers for all the language features.
@@ -81,7 +82,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 
 	// The user may not have the most up-to-date version of the language server.
 	const tool = getTool(toolName);
-	const update = await shouldUpdateLanguageServer(tool, path);
+	const update = await shouldUpdateLanguageServer(tool, path, config.checkForUpdates);
 	if (update) {
 		promptForUpdatingTool(toolName);
 	}
@@ -246,6 +247,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	ctx.subscriptions.push(languageServerDisposable);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', async () => {
+		c.diagnostics.clear();
 		await c.stop();
 		languageServerDisposable.dispose();
 		languageServerDisposable = c.start();
@@ -314,6 +316,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			implementation: goConfig['languageServerExperimentalFeatures']['implementation'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
 		},
+		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
 	};
 	return config;
 }
@@ -399,7 +402,7 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 
 const defaultLatestVersion = semver.coerce('0.1.7');
 const defaultLatestVersionTime = moment('2019-09-18', 'YYYY-MM-DD');
-async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boolean> {
+async function shouldUpdateLanguageServer(tool: Tool, path: string, makeProxyCall: boolean): Promise<boolean> {
 	// Only support updating gopls for now.
 	if (tool.name !== 'gopls') {
 		return false;
@@ -419,23 +422,23 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	}
 
 	// Get the latest gopls version.
-	const latestVersion = defaultLatestVersion;
-	// const latestVersion = await latestGopls(tool);
+	let latestVersion = makeProxyCall ? await latestGopls(tool) : defaultLatestVersion;
 
-	// // If we failed to get the gopls version, assume the user does not need to update.
-	// if (!latestVersion) {
-	// 	return false;
-	// }
+	// If we failed to get the gopls version, pick the one we know to be latest at the time of this extension's last update
+	if (!latestVersion) {
+		latestVersion = defaultLatestVersion;
+	}
 
 	// The user may have downloaded golang.org/x/tools/gopls@master,
 	// which means that they have a pseudoversion.
 	const usersTime = parsePseudoversionTimestamp(usersVersion);
 	// If the user has a pseudoversion, get the timestamp for the latest gopls version and compare.
 	if (usersTime) {
-		const latestTime = await goplsVersionTimestamp(tool, latestVersion);
-		if (latestTime) {
-			return usersTime.isBefore(latestTime);
+		let latestTime = makeProxyCall ? await goplsVersionTimestamp(tool, latestVersion) : defaultLatestVersionTime;
+		if (!latestTime) {
+			latestTime = defaultLatestVersionTime;
 		}
+		return usersTime.isBefore(latestTime);
 	}
 
 	// If the user's version does not contain a timestamp,

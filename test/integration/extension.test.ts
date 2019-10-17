@@ -26,7 +26,7 @@ import { goPlay } from '../../src/goPlayground';
 import { runFillStruct } from '../../src/goFillStruct';
 
 suite('Go Extension Tests', () => {
-	const gopath = process.env['GOPATH'];
+	const gopath = getCurrentGoPath();
 	if (!gopath) {
 		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
 		return;
@@ -106,7 +106,7 @@ suite('Go Extension Tests', () => {
 		try {
 			const textDocument = await vscode.workspace.openTextDocument(uri);
 			const promises = testCases.map(([position, expected, expectedDoc, expectedParams]) => provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
-				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position}`);
+				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position.line + 1}:${position.character + 1}`);
 				assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 				assert.equal(sigHelp.signatures[0].label, expected);
 				assert.equal(sigHelp.signatures[0].documentation, expectedDoc);
@@ -921,7 +921,7 @@ encountered.
 			const editor = await vscode.window.showTextDocument(textDocument);
 			const promises = testCases.map(([position, expected]) => provider.provideCompletionItems(editor.document, position, null).then(items => {
 				const labels = items.items.map(x => x.label);
-				assert.equal(expected.length, labels.length, `expected number of completions: ${expected.length} Actual: ${labels.length} at position(${position.line},${position.character}) ${labels}`);
+				assert.equal(expected.length, labels.length, `expected number of completions: ${expected.length} Actual: ${labels.length} at position(${position.line + 1},${position.character + 1}) ${labels}`);
 				expected.forEach((entry, index) => {
 					assert.equal(entry, labels[index], `mismatch in comment completion list Expected: ${entry} Actual: ${labels[index]}`);
 				});
