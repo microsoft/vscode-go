@@ -168,6 +168,7 @@ interface DebugVariable {
 	children: DebugVariable[];
 	unreadable: string;
 	fullyQualifiedName: string;
+	base: number;
 }
 
 interface ListGoroutinesOut {
@@ -567,7 +568,7 @@ class Delve {
 		// If a program is launched with --continue, the program is running
 		// before we can run attach. So we would need to check the state.
 		// We use NonBlocking so the call would return immediately.
-		const callResult = await this.callPromise<DebuggerState | CommandOut>('State', [{NonBlocking: true}]);
+		const callResult = await this.callPromise<DebuggerState | CommandOut>('State', [{ NonBlocking: true }]);
 		return this.isApiV1 ? <DebuggerState>callResult : (<CommandOut>callResult).State;
 	}
 
@@ -740,7 +741,7 @@ class GoDebugSession extends LoggingDebugSession {
 				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
 				args.remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
 			} else if (args.remotePath.length > 1 &&
-					(args.remotePath.endsWith('\\') || args.remotePath.endsWith('/'))) {
+				(args.remotePath.endsWith('\\') || args.remotePath.endsWith('/'))) {
 				args.remotePath = args.remotePath.substring(0, args.remotePath.length - 1);
 			}
 		}
@@ -896,7 +897,7 @@ class GoDebugSession extends LoggingDebugSession {
 			return this.delve.callPromise('ClearBreakpoint', [this.delve.isApiV1 ? existingBP.id : { Id: existingBP.id }]);
 		})).then(() => {
 			log('All cleared');
-			let existingBreakpoints: DebugBreakpoint[]|undefined;
+			let existingBreakpoints: DebugBreakpoint[] | undefined;
 			return Promise.all(args.breakpoints.map(breakpoint => {
 				if (this.delve.remotePath.length === 0) {
 					log('Creating on: ' + file + ':' + breakpoint.line);
@@ -934,11 +935,11 @@ class GoDebugSession extends LoggingDebugSession {
 								log(`Cannot match breakpoint ${breakpointIn} with existing breakpoints.`);
 								return null;
 							}
-							return this.delve.isApiV1 ? matchedBreakpoint : {Breakpoint: matchedBreakpoint};
+							return this.delve.isApiV1 ? matchedBreakpoint : { Breakpoint: matchedBreakpoint };
 						}
 						log('Error on CreateBreakpoint: ' + err.toString());
 						return null;
-				});
+					});
 			}));
 		}).then(newBreakpoints => {
 			let convertedBreakpoints: DebugBreakpoint[];
@@ -1144,6 +1145,7 @@ class GoDebugSession extends LoggingDebugSession {
 					children: vars,
 					unreadable: '',
 					fullyQualifiedName: '',
+					base: 0,
 				};
 
 				scopes.push(new Scope('Local', this.variableHandles.create(localVariables), false));
@@ -1195,6 +1197,7 @@ class GoDebugSession extends LoggingDebugSession {
 							children: globals,
 							unreadable: '',
 							fullyQualifiedName: '',
+							base: 0,
 						};
 						scopes.push(new Scope('Global', this.variableHandles.create(globalVariables), false));
 						this.sendResponse(response);
@@ -1262,11 +1265,23 @@ class GoDebugSession extends LoggingDebugSession {
 				};
 			}
 		} else if (v.kind === GoReflectKind.Slice) {
+			if (v.base === 0) {
+				return {
+					result: 'nil <' + v.type + '>',
+					variablesReference: 0
+				};
+			}
 			return {
 				result: '<' + v.type + '> (length: ' + v.len + ', cap: ' + v.cap + ')',
 				variablesReference: this.variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.Map) {
+			if (v.base === 0) {
+				return {
+					result: 'nil <' + v.type + '>',
+					variablesReference: 0
+				};
+			}
 			return {
 				result: '<' + v.type + '> (length: ' + v.len + ')',
 				variablesReference: this.variableHandles.create(v)
