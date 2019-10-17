@@ -8,6 +8,7 @@
 import moment = require('moment');
 import semver = require('semver');
 import vscode = require('vscode');
+import util = require('util');
 import WebRequest = require('web-request');
 import path = require('path');
 import cp = require('child_process');
@@ -77,6 +78,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	// The user has opted into the language server.
 	const path = getLanguageServerToolPath();
 	const toolName = getToolFromToolPath(path);
+	const env = getToolsEnvVars();
 
 	// The user may not have the most up-to-date version of the language server.
 	const tool = getTool(toolName);
@@ -91,7 +93,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			command: path,
 			args: ['-mode=stdio', ...config.flags],
 			options: {
-				env: getToolsEnvVars(),
+				env: env,
 			},
 		},
 		{
@@ -432,7 +434,7 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string, makeProxyCal
 	const usersTime = parsePseudoversionTimestamp(usersVersion);
 	// If the user has a pseudoversion, get the timestamp for the latest gopls version and compare.
 	if (usersTime) {
-		let latestTime = makeProxyCall ? await goplsVersionTimestamp(tool.importPath, latestVersion) : defaultLatestVersionTime;
+		let latestTime = makeProxyCall ? await goplsVersionTimestamp(tool, latestVersion) : defaultLatestVersionTime;
 		if (!latestTime) {
 			latestTime = defaultLatestVersionTime;
 		}
@@ -486,17 +488,8 @@ function parsePseudoversionTimestamp(version: string): moment.Moment {
 	return moment.utc(timestamp, 'YYYYMMDDHHmmss');
 }
 
-async function goplsVersionTimestamp(importPath: string, version: semver.SemVer): Promise<moment.Moment> {
-	const infoURL = `https://proxy.golang.org/${importPath}/@v/v${version.format()}.info`;
-	let data: any;
-	try {
-		data = await WebRequest.json<any>(infoURL, {
-			throwResponseError: true,
-		});
-	} catch (e) {
-		console.log(`Unable to determine gopls timestamp: ${e}`);
-		return null;
-	}
+async function goplsVersionTimestamp(tool: Tool, version: semver.SemVer): Promise<moment.Moment> {
+	const data = await goProxyRequest(tool, `v${version.format()}.info`);
 	if (!data) {
 		return null;
 	}
@@ -508,16 +501,7 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	// If the user has a version of gopls that we understand,
 	// ask the proxy for the latest version, and if the user's version is older,
 	// prompt them to update.
-	const listURL = `https://proxy.golang.org/${tool.importPath}/@v/list`;
-	let data: string;
-	try {
-		data = await WebRequest.json<string>(listURL, {
-			throwResponseError: true,
-		});
-	} catch (e) {
-		console.log(`Unable to determine latest gopls version: ${e}`);
-		return null;
-	}
+	const data = await goProxyRequest(tool, 'list');
 	if (!data) {
 		return null;
 	}
@@ -535,7 +519,6 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 
 async function goplsVersion(goplsPath: string): Promise<string> {
 	const env = getToolsEnvVars();
-	const util = require('util');
 	const execFile = util.promisify(cp.execFile);
 	let output: any;
 	try {
@@ -588,4 +571,35 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 	//    v0.1.3
 	//
 	return split[1];
+}
+
+async function goProxyRequest(tool: Tool, endpoint: string): Promise<any> {
+	const proxies = goProxy();
+	// Try each URL set in the user's GOPROXY environment variable.
+	// If none is set, don't make the request.
+	for (const proxy of proxies) {
+		if (proxy === 'direct') {
+			continue;
+		}
+		const url = `${proxy}/${tool.importPath}/@v/${endpoint}`;
+		let data: string;
+		try {
+			data = await WebRequest.json<string>(url, {
+				throwResponseError: true,
+			});
+		} catch (e) {
+			return null;
+		}
+		return data;
+	}
+	return null;
+}
+
+function goProxy(): string[]  {
+	const output: string = process.env['GOPROXY'];
+	if (!output || !output.trim()) {
+		return [];
+	}
+	const split = output.trim().split(',');
+	return split;
 }
