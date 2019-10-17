@@ -448,6 +448,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "liveErrors": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "alternateTools": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
+		  "useGoProxyToCheckForToolUpdates": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
 	   }
 	 */
 	sendTelemetryEvent('goConfig', {
@@ -487,7 +488,8 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands']),
 		liveErrors: JSON.stringify(goConfig['liveErrors']),
 		codeLens: JSON.stringify(goConfig['enableCodeLens']),
-		alternateTools: JSON.stringify(goConfig['alternateTools'])
+		alternateTools: JSON.stringify(goConfig['alternateTools']),
+		useGoProxyToCheckForToolUpdates: goConfig['useGoProxyToCheckForToolUpdates'] + '',
 	});
 }
 
