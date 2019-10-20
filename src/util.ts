@@ -6,16 +6,15 @@
 import vscode = require('vscode');
 import semver = require('semver');
 import path = require('path');
-import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows, envPath } from './goPath';
-import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
+import { NearestNeighborDict, Node } from './avlTree';
+import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { getCurrentPackage } from './goModules';
+import { envPath, fixDriveCasingInWindows, getBinPathWithPreferredGopath, getInferredGopath, resolveHomeDir } from './goPath';
+import { outputChannel } from './goStatus';
+import cp = require('child_process');
 import fs = require('fs');
 import os = require('os');
-import { outputChannel } from './goStatus';
-import { NearestNeighborDict, Node } from './avlTree';
-import { getCurrentPackage } from './goModules';
-import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
-import { getTestFlags } from './testUtils';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;

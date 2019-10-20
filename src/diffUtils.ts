@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { Position, Range, TextEdit, Uri, WorkspaceEdit, TextEditorEdit } from 'vscode';
+import { Position, Range, TextEdit, TextEditorEdit, Uri, WorkspaceEdit } from 'vscode';
 import { getBinPathFromEnvVar } from './goPath';
 import jsDiff = require('diff');
 

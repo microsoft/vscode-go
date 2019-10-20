@@ -9,10 +9,10 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 
-import { getBinPath, getToolsEnvVars } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { outputChannel } from './goStatus';
+import { getBinPath, getToolsEnvVars } from './util';
 
 const generatedWord = 'Generated ';
 

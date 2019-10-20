@@ -3,14 +3,14 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { getBinPath, getGoVersion, getToolsEnvVars, sendTelemetryEvent, getModuleCache } from './util';
+import { installTools } from './goInstallTools';
+import { envPath, fixDriveCasingInWindows } from './goPath';
+import { getTool } from './goTools';
+import { getFromGlobalState, updateGlobalState } from './stateUtils';
+import { getBinPath, getGoVersion, getModuleCache, getToolsEnvVars, sendTelemetryEvent } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
-import { getFromGlobalState, updateGlobalState } from './stateUtils';
-import { installTools } from './goInstallTools';
-import { fixDriveCasingInWindows, envPath } from './goPath';
-import { getTool } from './goTools';
 
 export let GO111MODULE: string;
 

@@ -9,7 +9,7 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { sendTelemetryEvent, getBinPath, getToolsEnvVars, killTree } from './util';
+import { getBinPath, getToolsEnvVars, killTree, sendTelemetryEvent } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 

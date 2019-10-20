@@ -6,7 +6,7 @@
 'use strict';
 
 import vscode = require('vscode');
-import { HoverProvider, Hover, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
+import { CancellationToken, Hover, HoverProvider, Position, TextDocument, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
 
 export class GoHoverProvider implements HoverProvider {

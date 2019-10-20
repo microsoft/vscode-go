@@ -7,9 +7,9 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars } from './util';
-import { promptForMissingTool } from './goInstallTools';
 import { dirname, isAbsolute } from 'path';
+import { promptForMissingTool } from './goInstallTools';
+import { getBinPath, getToolsEnvVars } from './util';
 
 /**
  * Extracts function out of current selection and replaces the current selection with a call to the extracted function.
