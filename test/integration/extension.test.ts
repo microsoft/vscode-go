@@ -7,28 +7,23 @@ import * as assert from 'assert';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { FilePatch, getEdits, getEditsFromUnifiedDiffStr } from '../../src/diffUtils';
-import { check } from '../../src/goCheck';
-import { GoDefinitionProvider } from '../../src/goDeclaration';
 import { GoHoverProvider } from '../../src/goExtraInfo';
-import { runFillStruct } from '../../src/goFillStruct';
-import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../../src/goGenerateTests';
-import { getTextEditForAddImport, listPackages } from '../../src/goImport';
-import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
-import { getAllPackages } from '../../src/goPackages';
-import { goPlay } from '../../src/goPlayground';
-import { GoSignatureHelpProvider } from '../../src/goSignature';
 import { GoCompletionItemProvider } from '../../src/goSuggest';
+import { GoSignatureHelpProvider } from '../../src/goSignature';
+import { GoDefinitionProvider } from '../../src/goDeclaration';
 import { getWorkspaceSymbols } from '../../src/goSymbol';
-import { testCurrentFile } from '../../src/goTest';
-import { getBinPath, getCurrentGoPath, getGoVersion, getImportPath, getToolsGopath, ICheckResult, isVendorSupported } from '../../src/util';
+import { check } from '../../src/goCheck';
 import cp = require('child_process');
-
-// TODO: Ideally, we should be able to use this function as a stub,
-// so that it's used for calls to getGoConfig.
-function getDefaultConfig(): any {
-	return vscode.workspace.getConfiguration('', null).inspect('go').defaultValue;
-}
+import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../../src/diffUtils';
+import { testCurrentFile } from '../../src/goTest';
+import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult } from '../../src/util';
+import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
+import { listPackages, getTextEditForAddImport } from '../../src/goImport';
+import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../../src/goGenerateTests';
+import { getAllPackages } from '../../src/goPackages';
+import { getImportPath } from '../../src/util';
+import { goPlay } from '../../src/goPlayground';
+import { runFillStruct } from '../../src/goFillStruct';
 
 suite('Go Extension Tests', () => {
 	const gopath = getCurrentGoPath();
@@ -47,6 +42,7 @@ suite('Go Extension Tests', () => {
 	const toolsGopath = getToolsGopath() || getCurrentGoPath();
 
 	suiteSetup(() => {
+
 		fs.removeSync(repoPath);
 		fs.removeSync(testPath);
 		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'test.go'), path.join(fixturePath, 'baseTest', 'test.go'));
@@ -113,14 +109,7 @@ suite('Go Extension Tests', () => {
 				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position.line + 1}:${position.character + 1}`);
 				assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 				assert.equal(sigHelp.signatures[0].label, expected);
-				let gotDoc = sigHelp.signatures[0].documentation.toString();
-				if (gotDoc) {
-					gotDoc = gotDoc.trimLeft();
-				}
-				if (expectedDoc) {
-					expectedDoc = expectedDoc.trimLeft();
-				}
-				assert.equal(gotDoc, expectedDoc);
+				assert.equal(sigHelp.signatures[0].documentation, expectedDoc);
 				assert.equal(sigHelp.signatures[0].parameters.length, expectedParams.length);
 				for (let i = 0; i < expectedParams.length; i++) {
 					assert.equal(sigHelp.signatures[0].parameters[i].label, expectedParams[i]);
@@ -143,20 +132,12 @@ suite('Go Extension Tests', () => {
 					assert.equal(res, null);
 					return;
 				}
-				let expectedHover = '```go\n' + expectedSignature + '\n```\n';
-				if (expectedDocumentation) {
-					// Make sure not to add any empty documentation.
-					expectedDocumentation = expectedDocumentation.trimRight();
-					if (expectedDocumentation !== '') {
-						expectedHover += expectedDocumentation + '\n';
-					}
-				}
-				if (!res) {
-					assert.fail(`no result for ${textDocument.fileName}:${position.line}:${position.character}`);
+				let expectedHover = '\n```go\n' + expectedSignature + '\n```\n';
+				if (expectedDocumentation != null) {
+					expectedHover += expectedDocumentation;
 				}
 				assert.equal(res.contents.length, 1);
-				const gotHover = (<vscode.MarkdownString>res.contents[0]).value;
-				assert.equal(gotHover.trim(), expectedHover.trim());
+				assert.equal((<vscode.MarkdownString>res.contents[0]).value, expectedHover);
 			}));
 			return Promise.all(promises);
 		} catch (err) {
@@ -165,11 +146,11 @@ suite('Go Extension Tests', () => {
 		}
 	}
 
-	test('Test Definition Provider using godoc', async () => {
-		const config = Object.create(getDefaultConfig(), {
+	test('Test Definition Provider using godoc', (done) => {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'godoc' }
 		});
-		await testDefinitionProvider(config);
+		testDefinitionProvider(config).then(() => done(), done);
 	});
 
 	test('Test Definition Provider using gogetdoc', (done) => {
@@ -177,13 +158,13 @@ suite('Go Extension Tests', () => {
 		if (gogetdocPath === 'gogetdoc') {
 			return done();
 		}
-		const config = Object.create(getDefaultConfig(), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
 		testDefinitionProvider(config).then(() => done(), done);
 	}).timeout(10000);
 
-	test('Test SignatureHelp Provider using godoc', async () => {
+	test('Test SignatureHelp Provider using godoc', (done) => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
 standard output. Spaces are always added between operands and a newline is
 appended. It returns the number of bytes written and any write error
@@ -196,16 +177,16 @@ encountered.
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this\ncorrectly\n', ['s string', 'exclaim bool']],
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
-		const config = Object.create(getDefaultConfig(), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'godoc' }
 		});
-		await testSignatureHelpProvider(config, testCases);
+		testSignatureHelpProvider(config, testCases).then(() => done(), done);
 	});
 
-	test('Test SignatureHelp Provider using gogetdoc', async () => {
+	test('Test SignatureHelp Provider using gogetdoc', (done) => {
 		const gogetdocPath = getBinPath('gogetdoc');
 		if (gogetdocPath === 'gogetdoc') {
-			return;
+			return done();
 		}
 
 		const printlnDoc = `Println formats using the default formats for its operands and writes to standard output.
@@ -218,13 +199,13 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(41, 19), 'Hello(s string, exclaim bool) string', 'Hello is a method on the struct ABC. Will signature help understand this correctly\n', ['s string', 'exclaim bool']],
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
-		const config = Object.create(getDefaultConfig(), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
-		await testSignatureHelpProvider(config, testCases);
+		testSignatureHelpProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
-	test('Test Hover Provider using godoc', async () => {
+	test('Test Hover Provider using godoc', (done) => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
 standard output. Spaces are always added between operands and a newline is
 appended. It returns the number of bytes written and any write error
@@ -241,10 +222,10 @@ encountered.
 			[new vscode.Position(19, 6), 'Println func(a ...interface{}) (n int, err error)', printlnDoc],
 			[new vscode.Position(23, 4), 'print func(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :( Not\nanymore!!\n']
 		];
-		const config = Object.create(getDefaultConfig(), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'godoc' }
 		});
-		await testHoverProvider(config, testCases);
+		testHoverProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Test Hover Provider using gogetdoc', (done) => {
@@ -269,14 +250,14 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(27, 14), 'type ABC struct {\n    a int\n    b int\n    c int\n}', 'ABC is a struct, you coudn\'t use Goto Definition or Hover info on this before\nNow you can due to gogetdoc and go doc\n'],
 			[new vscode.Position(28, 6), 'func IPv4Mask(a, b, c, d byte) IPMask', 'IPv4Mask returns the IP mask (in 4-byte form) of the\nIPv4 mask a.b.c.d.\n']
 		];
-		const config = Object.create(getDefaultConfig(), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
 		});
 		testHoverProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Error checking', (done) => {
-		const config = Object.create(getDefaultConfig(), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'package' },
 			'vetFlags': { value: ['-all'] },
 			'lintOnSave': { value: 'package' },
@@ -305,58 +286,76 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	}).timeout(10000);
 
-	test('Test Generate unit tests skeleton for file', async () => {
+	test('Test Generate unit tests skeleton for file', (done) => {
 		const gotestsPath = getBinPath('gotests');
 		if (gotestsPath === 'gotests') {
-			return;
+			return done();
 		}
-		const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
-		const document = await vscode.workspace.openTextDocument(uri);
-		const editor = await vscode.window.showTextDocument(document);
-		const result = await generateTestCurrentFile();
-		assert.equal(result, true);
-		await Promise.resolve();
-		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-			assert.fail('generatetests_test.go not found');
-		}
+
+		getGoVersion().then(async version => {
+			const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
+			const document = await vscode.workspace.openTextDocument(uri);
+			const editor = await vscode.window.showTextDocument(document);
+			const result = await generateTestCurrentFile();
+			assert.equal(result, true);
+			await Promise.resolve();
+			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+				return Promise.resolve();
+			}
+			else {
+				return Promise.reject('generatetests_test.go not found');
+			}
+		}).then(() => done(), done);
 	});
 
-	test('Test Generate unit tests skeleton for a function', async () => {
+	test('Test Generate unit tests skeleton for a function', (done) => {
 		const gotestsPath = getBinPath('gotests');
 		if (gotestsPath === 'gotests') {
-			return;
+			return done();
 		}
-		const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
-		const document = await vscode.workspace.openTextDocument(uri);
-		const editor = await vscode.window.showTextDocument(document);
-		assert(vscode.window.activeTextEditor, 'No active editor');
-		const selection = new vscode.Selection(5, 0, 6, 0);
-		editor.selection = selection;
-		const result = await generateTestCurrentFunction();
-		assert.equal(result, true);
-		await Promise.resolve();
-		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-			assert.fail('generatetests_test.go not found');
-		}
+
+		getGoVersion().then(async version => {
+			const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
+			const document = await vscode.workspace.openTextDocument(uri);
+			const editor = await vscode.window.showTextDocument(document);
+			assert(vscode.window.activeTextEditor, 'No active editor');
+			const selection = new vscode.Selection(5, 0, 6, 0);
+			editor.selection = selection;
+			const result = await generateTestCurrentFunction();
+			assert.equal(result, true);
+			await Promise.resolve();
+			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+				return Promise.resolve();
+			}
+			else {
+				return Promise.reject('generatetests_test.go not found');
+			}
+		}).then(() => done(), done);
 	});
 
-	test('Test Generate unit tests skeleton for package', async () => {
+	test('Test Generate unit tests skeleton for package', (done) => {
 		const gotestsPath = getBinPath('gotests');
 		if (gotestsPath === 'gotests') {
-			return;
+			return done();
 		}
-		const uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
-		const document = await vscode.workspace.openTextDocument(uri);
-		await vscode.window.showTextDocument(document);
-		const result = await generateTestCurrentPackage();
-		assert.equal(result, true);
-		await Promise.resolve();
-		vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-		if (!fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
-			assert.fail('generatetests_test.go not found');
-		}
+
+		getGoVersion().then(async version => {
+			const uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
+			const document = await vscode.workspace.openTextDocument(uri);
+			const editor = await vscode.window.showTextDocument(document);
+			const result = await generateTestCurrentPackage();
+			assert.equal(result, true);
+			await Promise.resolve();
+			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
+				return Promise.resolve();
+			}
+			else {
+				return Promise.reject('generatetests_test.go not found');
+			}
+		}).then(() => done(), done);
 	});
 
 	test('Test diffUtils.getEditsFromUnifiedDiffStr', (done) => {
@@ -445,7 +444,7 @@ It returns the number of bytes written and any write error encountered.
 	});
 
 	test('Test Env Variables are passed to Tests', (done) => {
-		const config = Object.create(getDefaultConfig(), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue', 'dummyNonString': 1 } }
 		});
 
@@ -592,14 +591,14 @@ It returns the number of bytes written and any write error encountered.
 		}).then(() => done(), done);
 	});
 
-	test('Vendor pkgs from other projects should not be allowed to import', async () => {
+	test('Vendor pkgs from other projects should not be allowed to import', (done) => {
 		// This test needs a go project that has vendor folder and vendor packages
 		// Since the Go extension takes a dependency on the godef tool at github.com/rogpeppe/godef
 		// which has vendor packages, we are using it here to test the "replace vendor packages with relative path" feature.
 		// If the extension ever stops depending on godef tool or if godef ever stops having vendor packages, then this test
 		// will fail and will have to be replaced with any other go project with vendor packages
 
-		const vendorSupport = await isVendorSupported();
+		const vendorSupportPromise = isVendorSupported();
 		const filePath = path.join(toolsGopath, 'src', 'github.com', 'ramya-rao-a', 'go-outline', 'main.go');
 		const vendorPkgs = [
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/acme',
@@ -607,33 +606,35 @@ It returns the number of bytes written and any write error encountered.
 			'github.com/rogpeppe/godef/vendor/9fans.net/go/plan9/client'
 		];
 
-		const gopkgsPromise = new Promise<void>((resolve, reject) => {
-			const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
-			const chunks: any[] = [];
-			cmd.stdout.on('data', (d) => chunks.push(d));
-			cmd.on('close', () => {
-				const pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
+		vendorSupportPromise.then((vendorSupport: boolean) => {
+			const gopkgsPromise = new Promise<void>((resolve, reject) => {
+				const cmd = cp.spawn(getBinPath('gopkgs'), ['-format', '{{.ImportPath}}'], { env: process.env });
+				const chunks: any[] = [];
+				cmd.stdout.on('data', (d) => chunks.push(d));
+				cmd.on('close', () => {
+					const pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
+					if (vendorSupport) {
+						vendorPkgs.forEach(pkg => {
+							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
+						});
+					}
+					return resolve();
+				});
+			});
+
+			const listPkgPromise: Thenable<void> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(async document => {
+				const editor = await vscode.window.showTextDocument(document);
+				const pkgs = await listPackages();
 				if (vendorSupport) {
 					vendorPkgs.forEach(pkg => {
-						assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
+						assert.equal(pkgs.indexOf(pkg), -1, `Vendor package ${pkg} should not be shown by listPackages method`);
 					});
 				}
-				return resolve();
+				return Promise.resolve();
 			});
-		});
 
-		const listPkgPromise: Thenable<void> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(async document => {
-			await vscode.window.showTextDocument(document);
-			const pkgs = await listPackages();
-			if (vendorSupport) {
-				vendorPkgs.forEach(pkg => {
-					assert.equal(pkgs.indexOf(pkg), -1, `Vendor package ${pkg} should not be shown by listPackages method`);
-				});
-			}
-		});
-
-		await Promise.all<void>([gopkgsPromise, listPkgPromise]);
-
+			return Promise.all<void>([gopkgsPromise, listPkgPromise]);
+		}).then(() => done(), done);
 	});
 
 	test('Workspace Symbols', () => {
@@ -644,28 +645,28 @@ It returns the number of bytes written and any write error encountered.
 		// will fail and will have to be replaced with any other go project with vendor packages
 
 		const workspacePath = path.join(toolsGopath, 'src', 'github.com', 'rogpeppe', 'godef');
-		const configWithoutIgnoringFolders = Object.create(getDefaultConfig(), {
+		const configWithoutIgnoringFolders = Object.create(vscode.workspace.getConfiguration('go'), {
 			'gotoSymbol': {
 				value: {
 					'ignoreFolders': []
 				}
 			}
 		});
-		const configWithIgnoringFolders = Object.create(getDefaultConfig(), {
+		const configWithIgnoringFolders = Object.create(vscode.workspace.getConfiguration('go'), {
 			'gotoSymbol': {
 				value: {
 					'ignoreFolders': ['vendor']
 				}
 			}
 		});
-		const configWithIncludeGoroot = Object.create(getDefaultConfig(), {
+		const configWithIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
 			'gotoSymbol': {
 				value: {
 					'includeGoroot': true
 				}
 			}
 		});
-		const configWithoutIncludeGoroot = Object.create(getDefaultConfig(), {
+		const configWithoutIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
 			'gotoSymbol': {
 				value: {
 					'includeGoroot': false
@@ -706,9 +707,6 @@ encountered.
 			const editor = await vscode.window.showTextDocument(textDocument);
 			const promises = testCases.map(([position, expectedLabel, expectedDetail, expectedDoc]) => provider.provideCompletionItems(editor.document, position, null).then(async items => {
 				const item = items.items.find(x => x.label === expectedLabel);
-				if (expectedDoc) {
-					expectedDoc = expectedDoc.trimLeft();
-				}
 				assert.equal(!!item, true, 'missing expected item in completion list');
 				assert.equal(item.detail, expectedDetail);
 				const resolvedItemResult: vscode.ProviderResult<vscode.CompletionItem> = provider.resolveCompletionItem(item, null);
@@ -717,11 +715,7 @@ encountered.
 				}
 				if (resolvedItemResult instanceof vscode.CompletionItem) {
 					if (resolvedItemResult.documentation) {
-						let gotDoc = (<vscode.MarkdownString>resolvedItemResult.documentation).value;
-						if (gotDoc) {
-							gotDoc = gotDoc.trimLeft();
-						}
-						assert.equal(gotDoc, expectedDoc);
+						assert.equal((<vscode.MarkdownString>resolvedItemResult.documentation).value, expectedDoc);
 					}
 					return;
 				}
@@ -744,7 +738,7 @@ encountered.
 		const testCases: [vscode.Position, string[]][] = [
 			[new vscode.Position(5, 6), ['Print']]
 		];
-		const baseConfig = getDefaultConfig();
+		const baseConfig = vscode.workspace.getConfiguration('go');
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
 			const noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
@@ -814,7 +808,7 @@ encountered.
 	test('Test No Completion Snippets For Functions', (done) => {
 		const provider = new GoCompletionItemProvider();
 		const uri = vscode.Uri.file(path.join(fixturePath, 'completions', 'nosnippets.go'));
-		const baseConfig = getDefaultConfig();
+		const baseConfig = vscode.workspace.getConfiguration('go');
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
 			const symbolFollowedByBrackets = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(5, 10), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
@@ -844,7 +838,7 @@ encountered.
 	});
 
 	test('Test Completion on unimported packages', (done) => {
-		const config = Object.create(getDefaultConfig(), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'autocompleteUnimportedPackages': { value: true }
 		});
 		const provider = new GoCompletionItemProvider();
@@ -871,7 +865,7 @@ encountered.
 	});
 
 	test('Test Completion on unimported packages (multiple)', (done) => {
-		const config = Object.create(getDefaultConfig(), {
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'gocodeFlags': { value: ['-builtin'] }
 		});
 		const provider = new GoCompletionItemProvider();
@@ -971,7 +965,7 @@ encountered.
 				}
 				fmt.Print("Go!")
 			}`;
-		const goConfig = Object.create(getDefaultConfig(), {
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
 			'playground': { value: { run: true, openbrowser: false, share: false } }
 		});
 
@@ -1001,7 +995,7 @@ encountered.
 				}
 				fmt.Print("Go!")
 			}`;
-		const goConfig = Object.create(getDefaultConfig(), {
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
 			'playground': { value: { run: true, openbrowser: false, share: true } }
 		});
 
@@ -1027,7 +1021,7 @@ encountered.
 			func fantasy() {
 				fmt.Print("not a main package, sorry")
 			}`;
-		const goConfig = Object.create(getDefaultConfig(), {
+		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
 			'playground': { value: { run: true, openbrowser: false, share: false } }
 		});
 
@@ -1039,7 +1033,7 @@ encountered.
 	});
 
 	test('Build Tags checking', (done) => {
-		const config1 = Object.create(getDefaultConfig(), {
+		const config1 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
 			'lintOnSave': { value: 'off' },
 			'buildOnSave': { value: 'package' },
@@ -1052,7 +1046,7 @@ encountered.
 			assert.equal(diagnostics[0].errors[0].msg, 'undefined: fmt.Prinln');
 		});
 
-		const config2 = Object.create(getDefaultConfig(), {
+		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
 			'lintOnSave': { value: 'off' },
 			'buildOnSave': { value: 'package' },
@@ -1065,7 +1059,7 @@ encountered.
 			assert.equal(diagnostics[0].errors[0].msg, 'undefined: fmt.Prinln');
 		});
 
-		const config3 = Object.create(getDefaultConfig(), {
+		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
 			'lintOnSave': { value: 'off' },
 			'buildOnSave': { value: 'package' },
@@ -1084,7 +1078,7 @@ encountered.
 
 	test('Test Tags checking', (done) => {
 
-		const config1 = Object.create(getDefaultConfig(), {
+		const config1 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
 			'lintOnSave': { value: 'off' },
 			'buildOnSave': { value: 'package' },
@@ -1092,21 +1086,21 @@ encountered.
 			'buildTags': { value: 'randomtag' }
 		});
 
-		const config2 = Object.create(getDefaultConfig(), {
+		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
 			'lintOnSave': { value: 'off' },
 			'buildOnSave': { value: 'package' },
 			'testTags': { value: 'randomtag' }
 		});
 
-		const config3 = Object.create(getDefaultConfig(), {
+		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
 			'lintOnSave': { value: 'off' },
 			'buildOnSave': { value: 'package' },
 			'testTags': { value: 'randomtag othertag' }
 		});
 
-		const config4 = Object.create(getDefaultConfig(), {
+		const config4 = Object.create(vscode.workspace.getConfiguration('go'), {
 			'vetOnSave': { value: 'off' },
 			'lintOnSave': { value: 'off' },
 			'buildOnSave': { value: 'package' },
