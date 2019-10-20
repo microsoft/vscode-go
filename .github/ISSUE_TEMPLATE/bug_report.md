@@ -14,7 +14,7 @@ If you have issues around GOPATH, read https://github.com/Microsoft/vscode-go/wi
 If you have issues debugging your Go programs
 
 read https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code first.
-set "trace": "verbose" and share the resulting logs in the debug console
+set "trace": "log" and share the resulting logs in the debug console
 
 
 **Describe the bug**
