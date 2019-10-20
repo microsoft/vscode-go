@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
-import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars } from './util';
+import { byteOffsetAt, getBinPath, getGoConfig, getFileArchive, getToolsEnvVars } from './util';
 import cp = require('child_process');
 
 // Interface for the output from gomodifytags
@@ -31,7 +31,7 @@ export function addTags(commandArgs: GoTagsConfig) {
 		return;
 	}
 
-	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri)['addTags'], commandArgs).then(([tags, options, transformValue]) => {
+	getTagsAndOptions(<GoTagsConfig>getGoConfig()['addTags'], commandArgs).then(([tags, options, transformValue]) => {
 		if (!tags && !options) {
 			return;
 		}
@@ -58,7 +58,7 @@ export function removeTags(commandArgs: GoTagsConfig) {
 		return;
 	}
 
-	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri)['removeTags'], commandArgs).then(([tags, options]) => {
+	getTagsAndOptions(<GoTagsConfig>getGoConfig()['removeTags'], commandArgs).then(([tags, options]) => {
 		if (!tags && !options) {
 			args.push('--clear-tags');
 			args.push('--clear-options');

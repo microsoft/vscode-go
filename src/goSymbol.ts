@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getToolsEnvVars, getWorkspaceFolderPath, killProcess } from './util';
+import { getBinPath, getGoConfig, getToolsEnvVars, getWorkspaceFolderPath, killProcess } from './util';
 
 // Keep in sync with github.com/acroca/go-symbols'
 interface GoSymbolDeclaration {
@@ -49,7 +49,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 			});
 		};
 		const root = getWorkspaceFolderPath(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 
 		if (!root && !goConfig.gotoSymbol.includeGoroot) {
 			vscode.window.showInformationMessage('No workspace is open to find symbols.');
@@ -66,7 +66,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 
 export function getWorkspaceSymbols(workspacePath: string, query: string, token: vscode.CancellationToken, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
 	if (!goConfig) {
-		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		goConfig = getGoConfig();
 	}
 	const gotoSymbolConfig = goConfig['gotoSymbol'];
 	const calls: Promise<GoSymbolDeclaration[]>[] = [];

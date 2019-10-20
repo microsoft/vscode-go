@@ -8,7 +8,7 @@ import vscode = require('vscode');
 import { isModSupported } from './goModules';
 import { envPath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { outputChannel } from './goStatus';
-import { getBinPath, getCurrentGoPath, getModuleCache, getToolsEnvVars } from './util';
+import { getBinPath, getCurrentGoPath, getGoConfig, getModuleCache, getToolsEnvVars } from './util';
 import cp = require('child_process');
 
 export async function installCurrentPackage(): Promise<void> {
@@ -37,7 +37,7 @@ export async function installCurrentPackage(): Promise<void> {
 		return;
 	}
 
-	const goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
+	const goConfig = getGoConfig();
 	const buildFlags = goConfig['buildFlags'] || [];
 	const args = ['install', ...buildFlags];
 

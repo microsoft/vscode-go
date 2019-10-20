@@ -31,7 +31,7 @@ import { GoCompletionItemProvider } from './goSuggest';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { getTool, Tool } from './goTools';
 import { GoTypeDefinitionProvider } from './goTypeDefinition';
-import { getBinPath, getCurrentGoPath, getToolsEnvVars } from './util';
+import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 
 interface LanguageServerConfig {
 	enabled: boolean;
@@ -288,7 +288,7 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 }
 
 export function parseLanguageServerConfig(): LanguageServerConfig {
-	const goConfig = vscode.workspace.getConfiguration('go');
+	const goConfig = getGoConfig();
 
 	const config = {
 		enabled: goConfig['useLanguageServer'],
@@ -323,7 +323,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
  */
 export function getLanguageServerToolPath(): string {
 	// If language server is not enabled, return
-	const goConfig = vscode.workspace.getConfiguration('go');
+	const goConfig = getGoConfig();
 	if (!goConfig['useLanguageServer']) {
 		return;
 	}

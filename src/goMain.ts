@@ -34,7 +34,7 @@ import { testAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWo
 import { vetCode } from './goVet';
 import { setGlobalState } from './stateUtils';
 import { cancelRunningTests, showTestOutput } from './testUtils';
-import { cleanupTempDir, disposeTelemetryReporter, getBinPath, getCurrentGoPath, getExtensionCommands, getGoVersion, getToolsEnvVars, getToolsGopath, getWorkspaceFolderPath, handleDiagnosticErrors, isGoPathSet, sendTelemetryEvent } from './util';
+import { cleanupTempDir, disposeTelemetryReporter, getBinPath, getGoConfig, getCurrentGoPath, getExtensionCommands, getGoVersion, getToolsEnvVars, getToolsGopath, getWorkspaceFolderPath, handleDiagnosticErrors, isGoPathSet, sendTelemetryEvent } from './util';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -90,7 +90,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		await registerLanguageFeatures(ctx);
 
 		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'go' && isGoPathSet()) {
-			runBuilds(vscode.window.activeTextEditor.document, vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri));
+			runBuilds(vscode.window.activeTextEditor.document, getGoConfig());
 		}
 
 	});
@@ -124,7 +124,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.gopath', () => {
 		const gopath = getCurrentGoPath();
 		let msg = `${gopath} is the current GOPATH.`;
-		const wasInfered = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['inferGopath'];
+		const wasInfered = getGoConfig()['inferGopath'];
 		const root = getWorkspaceFolderPath(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
 
 		// not only if it was configured, but if it was successful.
@@ -160,46 +160,46 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.cursor', (args) => {
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 		testAtCursor(goConfig, 'test', args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.debug.cursor', (args) => {
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 		testAtCursor(goConfig, 'debug', args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.cursor', (args) => {
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 		testAtCursor(goConfig, 'benchmark', args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.package', (args) => {
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 		const isBenchmark = false;
 		testCurrentPackage(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.package', (args) => {
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 		const isBenchmark = true;
 		testCurrentPackage(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.file', (args) => {
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 		const isBenchmark = false;
 		testCurrentFile(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.benchmark.file', (args) => {
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 		const isBenchmark = true;
 		testCurrentFile(goConfig, isBenchmark, args);
 	}));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.test.workspace', (args) => {
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 		testWorkspace(goConfig, args);
 	}));
 
@@ -244,7 +244,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		if (!e.affectsConfiguration('go')) {
 			return;
 		}
-		const updatedGoConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const updatedGoConfig = getGoConfig();
 		sendTelemetryEventForConfig(updatedGoConfig);
 		updateGoPathGoRootFromConfig();
 
@@ -358,7 +358,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
 	});
 
-	sendTelemetryEventForConfig(vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null));
+	sendTelemetryEventForConfig(getGoConfig());
 }
 
 export function deactivate() {
@@ -393,7 +393,7 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 			vscode.window.showWarningMessage('A debug session is currently active. Changes to your Go files may result in unexpected behaviour.');
 		}
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
-			runBuilds(document, vscode.workspace.getConfiguration('go', document.uri));
+			runBuilds(document, getGoConfig(document.uri));
 		}
 
 	}, null, ctx.subscriptions);

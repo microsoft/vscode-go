@@ -13,7 +13,7 @@ import { getLanguageServerToolPath } from './goLanguageServer';
 import { envPath, getToolFromToolPath } from './goPath';
 import { hideGoStatus, outputChannel, showGoStatus } from './goStatus';
 import { containsString, containsTool, getConfiguredTools, getImportPath, getTool, hasModSuffix, isGocode, isWildcard, Tool } from './goTools';
-import { getBinPath, getCurrentGoPath, getGoVersion, getTempFilePath, getToolsGopath, GoVersion, resolvePath } from './util';
+import { getBinPath, getCurrentGoPath, getGoConfig, getGoVersion, getTempFilePath, getToolsGopath, GoVersion, resolvePath } from './util';
 
 // declinedUpdates tracks the tools that the user has declined to update.
 const declinedUpdates: Tool[] = [];
@@ -68,7 +68,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	}
 
 	// http.proxy setting takes precedence over environment variables
-	const httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
+	const httpProxy = vscode.workspace.getConfiguration('http', null).get('proxy');
 	let envForTools = Object.assign({}, process.env);
 	if (httpProxy) {
 		envForTools = Object.assign({}, process.env, {
@@ -301,7 +301,7 @@ export async function promptForUpdatingTool(toolName: string) {
 }
 
 export function updateGoPathGoRootFromConfig(): Promise<void> {
-	const goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
+	const goroot = getGoConfig()['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
@@ -384,7 +384,7 @@ export async function offerToInstallTools() {
 							vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
 						});
 				} else if (selected === disableLabel) {
-					const goConfig = vscode.workspace.getConfiguration('go');
+					const goConfig = getGoConfig();
 					const inspectLanguageServerSetting = goConfig.inspect('useLanguageServer');
 					if (inspectLanguageServerSetting.globalValue === true) {
 						goConfig.update('useLanguageServer', false, vscode.ConfigurationTarget.Global);

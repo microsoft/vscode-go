@@ -26,7 +26,7 @@ export function goLiveErrorsEnabled() {
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
-	const files = vscode.workspace.getConfiguration('files');
+	const files = vscode.workspace.getConfiguration('files', null);
 	const autoSave = files['autoSave'];
 	const autoSaveDelay = files['autoSaveDelay'];
 	if (autoSave !== null && autoSave !== undefined &&
@@ -55,7 +55,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	runner = setTimeout(() => {
 		processFile(e);
 		runner = null;
-	}, vscode.workspace.getConfiguration('go', e.document.uri)['liveErrors']['delay']);
+	}, getGoConfig(e.document.uri)['liveErrors']['delay']);
 }
 
 // processFile does the actual work once the timeout has fired

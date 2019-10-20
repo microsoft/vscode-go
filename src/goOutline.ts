@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedByteOffsetConverter } from './util';
+import { getBinPath, getGoConfig, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedByteOffsetConverter } from './util';
 
 // Keep in sync with https://github.com/ramya-rao-a/go-outline
 export interface GoOutlineRange {
@@ -170,7 +170,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
 		if (typeof this.includeImports !== 'boolean') {
-			const gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
+			const gotoSymbolConfig = getGoConfig(document.uri)['gotoSymbol'];
 			this.includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
 		}
 		const options: GoOutlineOptions = {

@@ -11,7 +11,7 @@ import { getNonVendorPackages } from './goPackages';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
 import { getTestFlags } from './testUtils';
-import { getCurrentGoPath, getModuleCache, getTempFilePath, getToolsEnvVars, getWorkspaceFolderPath, handleDiagnosticErrors, ICheckResult, runTool } from './util';
+import { getCurrentGoPath, getGoConfig, getModuleCache, getTempFilePath, getToolsEnvVars, getWorkspaceFolderPath, handleDiagnosticErrors, ICheckResult, runTool } from './util';
 /**
  * Builds current package or workspace.
  */
@@ -29,7 +29,7 @@ export function buildCode(buildWorkspace?: boolean) {
 	}
 
 	const documentUri = editor ? editor.document.uri : null;
-	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const goConfig = getGoConfig(documentUri);
 
 	outputChannel.clear(); // Ensures stale output from build on save is cleared
 	diagnosticsStatusBarItem.show();
