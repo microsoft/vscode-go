@@ -7,9 +7,9 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
+import { getBinPath, getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent } from './util';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 

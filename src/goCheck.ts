@@ -7,16 +7,16 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { applyCodeCoverageToAllEditors } from './goCover';
-import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
-import { goTest, TestConfig, getTestFlags } from './testUtils';
-import { ICheckResult, getTempFilePath } from './util';
-import { goLint } from './goLint';
-import { goVet } from './goVet';
 import { goBuild } from './goBuild';
-import { isModSupported } from './goModules';
-import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { applyCodeCoverageToAllEditors } from './goCover';
 import { parseLanguageServerConfig } from './goLanguageServer';
+import { goLint } from './goLint';
+import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { isModSupported } from './goModules';
+import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
+import { goVet } from './goVet';
+import { getTestFlags, goTest, TestConfig } from './testUtils';
+import { getTempFilePath, ICheckResult } from './util';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';

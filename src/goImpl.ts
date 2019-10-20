@@ -7,9 +7,9 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars } from './util';
-import { promptForMissingTool } from './goInstallTools';
 import { dirname } from 'path';
+import { promptForMissingTool } from './goInstallTools';
+import { getBinPath, getToolsEnvVars } from './util';
 
 // Supports only passing interface, see TODO in implCursor to finish
 const inputRegex = /^(\w+\ \*?\w+\ )?([\w./]+)$/;

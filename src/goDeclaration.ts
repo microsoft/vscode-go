@@ -8,10 +8,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCache } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
-import { promptToUpdateToolForModules, getModFolderPath } from './goModules';
+import { getModFolderPath, promptToUpdateToolForModules } from './goModules';
+import { byteOffsetAt, getBinPath, getFileArchive, getModuleCache, getToolsEnvVars, getWorkspaceFolderPath, goKeywords, isPositionInString, killProcess, runGodoc } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 

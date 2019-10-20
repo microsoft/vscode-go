@@ -5,11 +5,11 @@
 
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, getCurrentGoPath, getBinPath, getModuleCache } from './util';
-import { outputChannel } from './goStatus';
-import { getCurrentGoWorkspaceFromGOPATH, envPath } from './goPath';
-import cp = require('child_process');
 import { isModSupported } from './goModules';
+import { envPath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { outputChannel } from './goStatus';
+import { getBinPath, getCurrentGoPath, getModuleCache, getToolsEnvVars } from './util';
+import cp = require('child_process');
 
 export async function installCurrentPackage(): Promise<void> {
 	const editor = vscode.window.activeTextEditor;

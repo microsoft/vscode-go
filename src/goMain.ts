@@ -6,35 +6,35 @@
 'use strict';
 
 import vscode = require('vscode');
-import * as goGenerateTests from './goGenerateTests';
-import { setGlobalState } from './stateUtils';
-import { updateGoPathGoRootFromConfig, installAllTools, offerToInstallTools, installTools, promptForMissingTool } from './goInstallTools';
-import { getToolsGopath, getCurrentGoPath, getGoVersion, isGoPathSet, getExtensionCommands, disposeTelemetryReporter, cleanupTempDir, handleDiagnosticErrors, sendTelemetryEvent, getBinPath, getWorkspaceFolderPath, getToolsEnvVars } from './util';
-import { registerLanguageFeatures } from './goLanguageServer';
-import { initCoverageDecorators, toggleCoverageCurrentPackage, updateCodeCoverageDecorators, removeCodeCoverageOnFileChange, applyCodeCoverage } from './goCover';
-import { showHideStatus } from './goStatus';
-import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
-import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
-import { GO_MODE } from './goMode';
-import { GoCodeActionProvider } from './goCodeAction';
-import { GoDebugConfigurationProvider } from './goDebugConfiguration';
-import { fixDriveCasingInWindows, clearCacheForTools } from './goPath';
-import { addTags, removeTags } from './goModifytags';
-import { runFillStruct } from './goFillStruct';
-import { implCursor } from './goImpl';
-import { extractFunction, extractVariable } from './goDoctor';
-import { testAtCursor, testCurrentPackage, testCurrentFile, testWorkspace, testPrevious } from './goTest';
-import { showTestOutput, cancelRunningTests } from './testUtils';
-import { addImport, addImportToWorkspace } from './goImport';
 import { browsePackages } from './goBrowsePackage';
-import { goGetPackage } from './goGetPackage';
-import { playgroundCommand } from './goPlayground';
-import { lintCode } from './goLint';
-import { vetCode } from './goVet';
 import { buildCode } from './goBuild';
+import { check, notifyIfGeneratedFile, removeTestStatus } from './goCheck';
+import { GoCodeActionProvider } from './goCodeAction';
+import { applyCodeCoverage, initCoverageDecorators, removeCodeCoverageOnFileChange, toggleCoverageCurrentPackage, updateCodeCoverageDecorators } from './goCover';
+import { GoDebugConfigurationProvider } from './goDebugConfiguration';
+import { extractFunction, extractVariable } from './goDoctor';
+import { runFillStruct } from './goFillStruct';
+import * as goGenerateTests from './goGenerateTests';
+import { goGetPackage } from './goGetPackage';
+import { implCursor } from './goImpl';
+import { addImport, addImportToWorkspace } from './goImport';
 import { installCurrentPackage } from './goInstall';
-import { check, removeTestStatus, notifyIfGeneratedFile } from './goCheck';
+import { installAllTools, installTools, offerToInstallTools, promptForMissingTool, updateGoPathGoRootFromConfig } from './goInstallTools';
+import { registerLanguageFeatures } from './goLanguageServer';
+import { lintCode } from './goLint';
+import { GO_MODE } from './goMode';
+import { addTags, removeTags } from './goModifytags';
 import { GO111MODULE } from './goModules';
+import { clearCacheForTools } from './goPath';
+import { playgroundCommand } from './goPlayground';
+import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
+import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
+import { showHideStatus } from './goStatus';
+import { testAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWorkspace } from './goTest';
+import { vetCode } from './goVet';
+import { setGlobalState } from './stateUtils';
+import { cancelRunningTests, showTestOutput } from './testUtils';
+import { cleanupTempDir, disposeTelemetryReporter, getBinPath, getCurrentGoPath, getExtensionCommands, getGoVersion, getToolsEnvVars, getToolsGopath, getWorkspaceFolderPath, handleDiagnosticErrors, isGoPathSet, sendTelemetryEvent } from './util';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -441,6 +441,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "autocompleteUnimportedPackages": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "docsTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "useLanguageServer": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
+		  "languageServerExperimentalFeatures": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "includeImports": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "addTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "removeTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
@@ -448,6 +449,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "liveErrors": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "alternateTools": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
+		  "useGoProxyToCheckForToolUpdates": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
 	   }
 	 */
 	sendTelemetryEvent('goConfig', {
@@ -487,7 +489,8 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands']),
 		liveErrors: JSON.stringify(goConfig['liveErrors']),
 		codeLens: JSON.stringify(goConfig['enableCodeLens']),
-		alternateTools: JSON.stringify(goConfig['alternateTools'])
+		alternateTools: JSON.stringify(goConfig['alternateTools']),
+		useGoProxyToCheckForToolUpdates: goConfig['useGoProxyToCheckForToolUpdates'] + '',
 	});
 }
 

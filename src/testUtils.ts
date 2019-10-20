@@ -10,7 +10,7 @@ import vscode = require('vscode');
 import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
-import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile, envPath } from './goPath';
+import { envPath, getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
 import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
 const sendSignal = 'SIGKILL';

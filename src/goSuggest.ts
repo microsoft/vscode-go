@@ -8,12 +8,12 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, isPositionInComment } from './util';
-import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
-import { getImportablePackages } from './goPackages';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { isModSupported } from './goModules';
+import { getImportablePackages } from './goPackages';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { byteOffsetAt, getBinPath, getCurrentGoPath, getParametersAndReturnType, getToolsEnvVars, goBuiltinTypes, goKeywords, guessPackageNameFromFile, isPositionInComment, isPositionInString, parseFilePrelude, runGodoc } from './util';
 
 function vscodeKindFromGoCodeClass(kind: string, type: string): vscode.CompletionItemKind {
 	switch (kind) {

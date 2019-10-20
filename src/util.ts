@@ -6,16 +6,15 @@
 import vscode = require('vscode');
 import semver = require('semver');
 import path = require('path');
-import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows, envPath } from './goPath';
-import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
+import { NearestNeighborDict, Node } from './avlTree';
+import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { getCurrentPackage } from './goModules';
+import { envPath, fixDriveCasingInWindows, getBinPathWithPreferredGopath, getInferredGopath, resolveHomeDir } from './goPath';
+import { outputChannel } from './goStatus';
+import cp = require('child_process');
 import fs = require('fs');
 import os = require('os');
-import { outputChannel } from './goStatus';
-import { NearestNeighborDict, Node } from './avlTree';
-import { getCurrentPackage } from './goModules';
-import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
-import { getTestFlags } from './testUtils';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -940,7 +939,20 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 				if (err) {
 					return reject(err.message || stderr);
 				}
+				let doc = '';
 				const godocLines = stdout.split('\n');
+				if (!godocLines.length) {
+					return resolve(doc);
+				}
+
+				// Recent versions of Go have started to include the package statement
+				// tht we dont need.
+				if (godocLines[0].startsWith('package ')) {
+					godocLines.splice(0, 1);
+					if (!godocLines[0].trim()) {
+						godocLines.splice(0, 1);
+					}
+				}
 
 				// Skip trailing empty lines
 				let lastLine = godocLines.length - 1;
@@ -950,7 +962,6 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 					}
 				}
 
-				let doc = '';
 				for (let i = 1; i <= lastLine; i++) {
 					if (godocLines[i].startsWith('    ')) {
 						doc += godocLines[i].substring(4) + '\n';

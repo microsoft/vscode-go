@@ -7,8 +7,8 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars, killProcess, getWorkspaceFolderPath } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
+import { getBinPath, getToolsEnvVars, getWorkspaceFolderPath, killProcess } from './util';
 
 // Keep in sync with github.com/acroca/go-symbols'
 interface GoSymbolDeclaration {
