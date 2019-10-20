@@ -6,12 +6,12 @@
 'use strict';
 
 import vscode = require('vscode');
-import { getBinPath, getToolsEnvVars, getGoConfig } from './util';
-import cp = require('child_process');
-import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
 import { buildDiagnosticCollection } from './goMain';
 import { isModSupported } from './goModules';
+import { getBinPath, getGoConfig, getToolsEnvVars } from './util';
+import cp = require('child_process');
+import path = require('path');
 
 // Interface for settings configuration for adding and removing tags
 interface GoLiveErrorsConfig {

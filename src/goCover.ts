@@ -9,9 +9,9 @@ import vscode = require('vscode');
 import path = require('path');
 import fs = require('fs');
 import rl = require('readline');
-import { getTempFilePath, getGoConfig } from './util';
-import { showTestOutput, goTest, TestConfig, getTestFlags } from './testUtils';
 import { isModSupported } from './goModules';
+import { getTestFlags, goTest, showTestOutput, TestConfig } from './testUtils';
+import { getGoConfig, getTempFilePath } from './util';
 
 let gutterSvgs: { [key: string]: string };
 let decorators: {

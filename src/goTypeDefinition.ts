@@ -8,10 +8,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getFileArchive, killTree, goBuiltinTypes, isPositionInString, goKeywords, getGoConfig } from './util';
+import { adjustWordPosition, definitionLocation, parseMissingError } from './goDeclaration';
 import { promptForMissingTool } from './goInstallTools';
-import { getToolsEnvVars } from './util';
-import { definitionLocation, parseMissingError, adjustWordPosition } from './goDeclaration';
+import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getGoConfig, getFileArchive, getToolsEnvVars, goBuiltinTypes, killTree } from './util';
 
 interface GuruDescribeOutput {
 	desc: string;

@@ -12,32 +12,26 @@ import util = require('util');
 import WebRequest = require('web-request');
 import path = require('path');
 import cp = require('child_process');
-import {
-	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
-	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
-	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature,
-	HandleDiagnosticsSignature, ProvideDocumentLinksSignature,
-} from 'vscode-languageclient';
-import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
+import { FormattingOptions, HandleDiagnosticsSignature, LanguageClient, ProvideCompletionItemsSignature, ProvideDefinitionSignature, ProvideDocumentFormattingEditsSignature, ProvideDocumentLinksSignature, ProvideDocumentSymbolsSignature, ProvideHoverSignature, ProvideReferencesSignature, ProvideRenameEditsSignature, ProvideSignatureHelpSignature, ProvideWorkspaceSymbolsSignature, RevealOutputChannelOn } from 'vscode-languageclient';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
-import { GO_MODE } from './goMode';
-import { getToolFromToolPath } from './goPath';
-import { getToolsEnvVars, getGoConfig } from './util';
-import { GoCompletionItemProvider } from './goSuggest';
-import { GoHoverProvider } from './goExtraInfo';
+import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { GoDefinitionProvider } from './goDeclaration';
-import { GoReferenceProvider } from './goReferences';
-import { GoImplementationProvider } from './goImplementations';
-import { GoTypeDefinitionProvider } from './goTypeDefinition';
+import { GoHoverProvider } from './goExtraInfo';
 import { GoDocumentFormattingEditProvider } from './goFormat';
-import { GoRenameProvider } from './goRename';
-import { GoDocumentSymbolProvider } from './goOutline';
-import { GoSignatureHelpProvider } from './goSignature';
-import { GoWorkspaceSymbolProvider } from './goSymbol';
-import { parseLiveFile } from './goLiveErrors';
+import { GoImplementationProvider } from './goImplementations';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getCurrentGoPath } from './util';
-import { Tool, getTool } from './goTools';
+import { parseLiveFile } from './goLiveErrors';
+import { GO_MODE } from './goMode';
+import { GoDocumentSymbolProvider } from './goOutline';
+import { getToolFromToolPath } from './goPath';
+import { GoReferenceProvider } from './goReferences';
+import { GoRenameProvider } from './goRename';
+import { GoSignatureHelpProvider } from './goSignature';
+import { GoCompletionItemProvider } from './goSuggest';
+import { GoWorkspaceSymbolProvider } from './goSymbol';
+import { getTool, Tool } from './goTools';
+import { GoTypeDefinitionProvider } from './goTypeDefinition';
+import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 
 interface LanguageServerConfig {
 	enabled: boolean;

@@ -5,10 +5,9 @@
 
 'use strict';
 
-import vscode = require('vscode');
-import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
+import { CancellationToken, ParameterInformation, Position, SignatureHelp, SignatureHelpProvider, SignatureInformation, TextDocument, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { getParametersAndReturnType, isPositionInString, isPositionInComment, getGoConfig } from './util';
+import { getGoConfig, getParametersAndReturnType, isPositionInComment, isPositionInString } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 

@@ -8,10 +8,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath, killTree, getGoConfig } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { getToolsEnvVars } from './util';
 import { envPath } from './goPath';
+import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getGoConfig, getToolsEnvVars, getWorkspaceFolderPath, killTree } from './util';
 
 interface GoListOutput {
 	Dir: string;

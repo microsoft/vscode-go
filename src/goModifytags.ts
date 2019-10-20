@@ -6,9 +6,9 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, getGoConfig } from './util';
-import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
+import { byteOffsetAt, getBinPath, getGoConfig, getFileArchive, getToolsEnvVars } from './util';
+import cp = require('child_process');
 
 // Interface for the output from gomodifytags
 interface GomodifytagsOutput {
