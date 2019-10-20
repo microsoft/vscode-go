@@ -940,7 +940,20 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 				if (err) {
 					return reject(err.message || stderr);
 				}
+				let doc = '';
 				const godocLines = stdout.split('\n');
+				if (!godocLines.length) {
+					return resolve(doc);
+				}
+
+				// Recent versions of Go have started to include the package statement
+				// tht we dont need.
+				if (godocLines[0].startsWith('package ')) {
+					godocLines.splice(0, 1);
+					if (!godocLines[0].trim()) {
+						godocLines.splice(0, 1);
+					}
+				}
 
 				// Skip trailing empty lines
 				let lastLine = godocLines.length - 1;
@@ -950,7 +963,6 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 					}
 				}
 
-				let doc = '';
 				for (let i = 1; i <= lastLine; i++) {
 					if (godocLines[i].startsWith('    ')) {
 						doc += godocLines[i].substring(4) + '\n';
