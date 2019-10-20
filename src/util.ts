@@ -6,16 +6,15 @@
 import vscode = require('vscode');
 import semver = require('semver');
 import path = require('path');
-import { getBinPathWithPreferredGopath, resolveHomeDir, getInferredGopath, fixDriveCasingInWindows, envPath } from './goPath';
-import cp = require('child_process');
 import TelemetryReporter from 'vscode-extension-telemetry';
+import { NearestNeighborDict, Node } from './avlTree';
+import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
+import { getCurrentPackage } from './goModules';
+import { envPath, fixDriveCasingInWindows, getBinPathWithPreferredGopath, getInferredGopath, resolveHomeDir } from './goPath';
+import { outputChannel } from './goStatus';
+import cp = require('child_process');
 import fs = require('fs');
 import os = require('os');
-import { outputChannel } from './goStatus';
-import { NearestNeighborDict, Node } from './avlTree';
-import { getCurrentPackage } from './goModules';
-import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
-import { getTestFlags } from './testUtils';
 
 const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -80,7 +79,7 @@ export class GoVersion {
 
 	constructor(version: string) {
 		const matchesRelease = /go version go(\d.\d+).*/.exec(version);
-		const matchesDevel = /go version devel \+(.\d+).*/.exec(version);
+		const matchesDevel = /go version devel \+(.[a-zA-Z0-9]+).*/.exec(version);
 		if (matchesRelease) {
 			this.sv = semver.coerce(matchesRelease[0]);
 		} else if (matchesDevel) {
@@ -126,8 +125,15 @@ let vendorSupport: boolean = null;
 let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
-export function getGoConfig(): vscode.WorkspaceConfiguration {
-	return vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+export function getGoConfig(uri?: vscode.Uri): vscode.WorkspaceConfiguration {
+	if (!uri) {
+		if (vscode.window.activeTextEditor) {
+			uri = vscode.window.activeTextEditor.document.uri;
+		} else {
+			uri = null;
+		}
+	}
+	return vscode.workspace.getConfiguration('go', uri);
 }
 
 export function byteOffsetAt(document: vscode.TextDocument, position: vscode.Position): number {
@@ -374,13 +380,11 @@ export function getToolsGopath(useCache: boolean = true): string {
 	if (!useCache || !toolsGopath) {
 		toolsGopath = resolveToolsGopath();
 	}
-
 	return toolsGopath;
 }
 
 function resolveToolsGopath(): string {
-
-	let toolsGopathForWorkspace = substituteEnv(vscode.workspace.getConfiguration('go')['toolsGopath'] || '');
+	let toolsGopathForWorkspace = substituteEnv(getGoConfig()['toolsGopath'] || '');
 
 	// In case of single root
 	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length <= 1) {
@@ -397,7 +401,7 @@ function resolveToolsGopath(): string {
 
 	// If any of the folders in multi root have toolsGopath set, use it.
 	for (let i = 0; i < vscode.workspace.workspaceFolders.length; i++) {
-		let toolsGopath = <string>vscode.workspace.getConfiguration('go', vscode.workspace.workspaceFolders[i].uri).inspect('toolsGopath').workspaceFolderValue;
+		let toolsGopath = <string>getGoConfig(vscode.workspace.workspaceFolders[i].uri).inspect('toolsGopath').workspaceFolderValue;
 		toolsGopath = resolvePath(toolsGopath, vscode.workspace.workspaceFolders[i].uri.fsPath);
 		if (toolsGopath) {
 			return toolsGopath;
@@ -406,7 +410,7 @@ function resolveToolsGopath(): string {
 }
 
 export function getBinPath(tool: string): string {
-	const alternateTools: { [key: string]: string } = vscode.workspace.getConfiguration('go', null).get('alternateTools');
+	const alternateTools: { [key: string]: string } = getGoConfig().get('alternateTools');
 	const alternateToolPath: string = alternateTools[tool];
 
 	return getBinPathWithPreferredGopath(
@@ -422,7 +426,7 @@ export function getFileArchive(document: vscode.TextDocument): string {
 }
 
 export function getToolsEnvVars(): any {
-	const config = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+	const config = getGoConfig();
 	const toolsEnvVars = config['toolsEnvVars'];
 
 	const gopath = getCurrentGoPath();
@@ -446,7 +450,7 @@ export function getCurrentGoPath(workspaceUri?: vscode.Uri): string {
 	const activeEditorUri = vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri;
 	const currentFilePath = fixDriveCasingInWindows(activeEditorUri && activeEditorUri.fsPath);
 	const currentRoot = (workspaceUri && workspaceUri.fsPath) || getWorkspaceFolderPath(activeEditorUri);
-	const config = vscode.workspace.getConfiguration('go', workspaceUri || activeEditorUri);
+	const config = getGoConfig(workspaceUri || activeEditorUri);
 
 	// Infer the GOPATH from the current root or the path of the file opened in current editor
 	// Last resort: Check for the common case where GOPATH itself is opened directly in VS Code
@@ -940,7 +944,20 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 				if (err) {
 					return reject(err.message || stderr);
 				}
+				let doc = '';
 				const godocLines = stdout.split('\n');
+				if (!godocLines.length) {
+					return resolve(doc);
+				}
+
+				// Recent versions of Go have started to include the package statement
+				// tht we dont need.
+				if (godocLines[0].startsWith('package ')) {
+					godocLines.splice(0, 1);
+					if (!godocLines[0].trim()) {
+						godocLines.splice(0, 1);
+					}
+				}
 
 				// Skip trailing empty lines
 				let lastLine = godocLines.length - 1;
@@ -950,7 +967,6 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 					}
 				}
 
-				let doc = '';
 				for (let i = 1; i <= lastLine; i++) {
 					if (godocLines[i].startsWith('    ')) {
 						doc += godocLines[i].substring(4) + '\n';

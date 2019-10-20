@@ -6,9 +6,9 @@
 'use strict';
 
 import vscode = require('vscode');
+import { promptForMissingTool } from './goInstallTools';
 import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars } from './util';
 import cp = require('child_process');
-import { promptForMissingTool } from './goInstallTools';
 
 // Interface for the output from fillstruct
 interface GoFillStructOutput {

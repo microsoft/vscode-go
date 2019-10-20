@@ -8,10 +8,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath, killTree } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { getToolsEnvVars } from './util';
 import { envPath } from './goPath';
+import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getGoConfig, getToolsEnvVars, getWorkspaceFolderPath, killTree } from './util';
 
 interface GoListOutput {
 	Dir: string;
@@ -63,7 +62,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				const cwd = path.dirname(filename);
 				const offset = byteOffsetAt(document, position);
 				const goGuru = getBinPath('guru');
-				const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
+				const buildTags = getGoConfig(document.uri)['buildTags'];
 				const args = buildTags ? ['-tags', buildTags] : [];
 				if (listOutput.Root && listOutput.ImportPath) {
 					args.push('-scope', `${listOutput.ImportPath}/...`);

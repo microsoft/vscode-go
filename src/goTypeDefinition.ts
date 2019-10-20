@@ -8,10 +8,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getFileArchive, killTree, goBuiltinTypes, isPositionInString, goKeywords } from './util';
+import { adjustWordPosition, definitionLocation, parseMissingError } from './goDeclaration';
 import { promptForMissingTool } from './goInstallTools';
-import { getToolsEnvVars } from './util';
-import { definitionLocation, parseMissingError, adjustWordPosition } from './goDeclaration';
+import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getGoConfig, getFileArchive, getToolsEnvVars, goBuiltinTypes, killTree } from './util';
 
 interface GuruDescribeOutput {
 	desc: string;
@@ -50,7 +49,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			const filename = canonicalizeGOPATHPrefix(document.fileName);
 			const offset = byteOffsetAt(document, position);
 			const env = getToolsEnvVars();
-			const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
+			const buildTags = getGoConfig(document.uri)['buildTags'];
 			const args = buildTags ? ['-tags', buildTags] : [];
 			args.push('-json', '-modified', 'describe', `${filename}:#${offset.toString()}`);
 
