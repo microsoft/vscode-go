@@ -79,14 +79,19 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		});
 	}
 
+	outputChannel.show();
+	outputChannel.clear();
+
 	// If the go.toolsGopath is set, use its value as the GOPATH for the "go get" child process.
 	// Else use the Current Gopath
 	let toolsGopath = getToolsGopath();
 	if (toolsGopath) {
 		// User has explicitly chosen to use toolsGopath, so ignore GOBIN
 		envForTools['GOBIN'] = '';
+		outputChannel.appendLine(`Using the value ${toolsGopath} from the go.toolsGopath setting.`);
 	} else {
 		toolsGopath = getCurrentGoPath();
+		outputChannel.appendLine(`go.toolsGopath setting is not set. Using GOPATH ${toolsGopath}`);
 	}
 	if (toolsGopath) {
 		const paths = toolsGopath.split(path.delimiter);
@@ -107,17 +112,19 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		return;
 	}
 
+	let installingMsg = `Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${path.sep}bin`;
+
 	// If the user is on Go >= 1.11, tools should be installed with modules enabled.
 	// This ensures that users get the latest tagged version, rather than master,
 	// which may be unstable.
 	let modulesOff = false;
 	if (goVersion.lt('1.11')) {
 		modulesOff = true;
+	} else {
+		installingMsg += ' in module mode.';
 	}
 
-	outputChannel.show();
-	outputChannel.clear();
-	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${path.sep}bin`);
+	outputChannel.appendLine(installingMsg);
 	missing.forEach((missingTool, index, missing) => {
 		outputChannel.appendLine('  ' + missingTool.name);
 	});
