@@ -38,7 +38,7 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 	return getModFolderPath(fileuri).then(modPath => !!modPath);
 }
 
-const packagePathToGoModPathMap = new Map<string, string>();
+export const packagePathToGoModPathMap = new Map<string, string>();
 
 export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 	const pkgPath = path.dirname(fileuri.fsPath);

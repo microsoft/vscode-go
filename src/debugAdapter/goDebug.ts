@@ -232,6 +232,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 	showGlobalVariables?: boolean;
 	currentFile: string;
+	packagePathToGoModPathMap: Map<string, string>;
 }
 
 interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
@@ -434,7 +435,7 @@ class Delve {
 				dlvArgs.push(mode || 'debug');
 				if (mode === 'exec') {
 					dlvArgs.push(program);
-				} else if (currentGOWorkspace && env['GO111MODULE'] !== 'on') {
+				} else if (currentGOWorkspace && !launchArgs.packagePathToGoModPathMap.get(dirname)) {
 					dlvArgs.push(dirname.substr(currentGOWorkspace.length + 1));
 				}
 				dlvArgs.push('--headless=true', `--listen=${launchArgs.host}:${launchArgs.port}`);
