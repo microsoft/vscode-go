@@ -511,7 +511,9 @@ class Delve {
 				setTimeout(() => {
 					const client = Client.$create(port, host);
 					client.connectSocket((err, conn) => {
-						if (err) return reject(err);
+						if (err) {
+							return reject(err);
+						}
 						return resolve(conn);
 					});
 				}, 200);
@@ -691,7 +693,9 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	protected findPathSeperator(path: string) {
-		if (/^(\w:[\\/]|\\\\)/.test(path)) return '\\';
+		if (/^(\w:[\\/]|\\\\)/.test(path)) {
+			return '\\';
+		}
 		return path.includes('/') ? '/' : '\\';
 	}
 
@@ -735,7 +739,11 @@ class GoDebugSession extends LoggingDebugSession {
 			const llist = localPath.split(/\/|\\/).reverse();
 			const rlist = args.remotePath.split(/\/|\\/).reverse();
 			let i = 0;
-			for (; i < llist.length; i++) if (llist[i] !== rlist[i] || llist[i] === 'src') break;
+			for (; i < llist.length; i++) {
+				if (llist[i] !== rlist[i] || llist[i] === 'src') {
+					break;
+				}
+			}
 
 			if (i) {
 				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
