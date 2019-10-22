@@ -103,7 +103,7 @@
 			"check-open-brace",
 			"check-whitespace"
 		],
-		// "one-variable-per-declaration": { "options": ["ignore-for-loop"] },
+		"one-variable-per-declaration": { "options": ["ignore-for-loop"] },
 		// "only-arrow-functions": {
 		// 	"options": ["allow-declarations", "allow-named-functions"]
 		// },
