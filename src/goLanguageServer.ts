@@ -8,35 +8,30 @@
 import moment = require('moment');
 import semver = require('semver');
 import vscode = require('vscode');
+import util = require('util');
 import WebRequest = require('web-request');
 import path = require('path');
 import cp = require('child_process');
-import {
-	LanguageClient, RevealOutputChannelOn, FormattingOptions, ProvideDocumentFormattingEditsSignature,
-	ProvideCompletionItemsSignature, ProvideRenameEditsSignature, ProvideDefinitionSignature, ProvideHoverSignature,
-	ProvideReferencesSignature, ProvideSignatureHelpSignature, ProvideDocumentSymbolsSignature, ProvideWorkspaceSymbolsSignature,
-	HandleDiagnosticsSignature, ProvideDocumentLinksSignature,
-} from 'vscode-languageclient';
-import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
+import { FormattingOptions, HandleDiagnosticsSignature, LanguageClient, ProvideCompletionItemsSignature, ProvideDefinitionSignature, ProvideDocumentFormattingEditsSignature, ProvideDocumentLinksSignature, ProvideDocumentSymbolsSignature, ProvideHoverSignature, ProvideReferencesSignature, ProvideRenameEditsSignature, ProvideSignatureHelpSignature, ProvideWorkspaceSymbolsSignature, RevealOutputChannelOn, ProvideDocumentHighlightsSignature } from 'vscode-languageclient';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
-import { GO_MODE } from './goMode';
-import { getToolFromToolPath } from './goPath';
-import { getToolsEnvVars } from './util';
-import { GoCompletionItemProvider } from './goSuggest';
-import { GoHoverProvider } from './goExtraInfo';
+import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import { GoDefinitionProvider } from './goDeclaration';
-import { GoReferenceProvider } from './goReferences';
-import { GoImplementationProvider } from './goImplementations';
-import { GoTypeDefinitionProvider } from './goTypeDefinition';
+import { GoHoverProvider } from './goExtraInfo';
 import { GoDocumentFormattingEditProvider } from './goFormat';
-import { GoRenameProvider } from './goRename';
-import { GoDocumentSymbolProvider } from './goOutline';
-import { GoSignatureHelpProvider } from './goSignature';
-import { GoWorkspaceSymbolProvider } from './goSymbol';
-import { parseLiveFile } from './goLiveErrors';
+import { GoImplementationProvider } from './goImplementations';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getCurrentGoPath } from './util';
-import { Tool, getTool } from './goTools';
+import { parseLiveFile } from './goLiveErrors';
+import { GO_MODE } from './goMode';
+import { GoDocumentSymbolProvider } from './goOutline';
+import { getToolFromToolPath } from './goPath';
+import { GoReferenceProvider } from './goReferences';
+import { GoRenameProvider } from './goRename';
+import { GoSignatureHelpProvider } from './goSignature';
+import { GoCompletionItemProvider } from './goSuggest';
+import { GoWorkspaceSymbolProvider } from './goSymbol';
+import { getTool, Tool } from './goTools';
+import { GoTypeDefinitionProvider } from './goTypeDefinition';
+import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 
 interface LanguageServerConfig {
 	enabled: boolean;
@@ -55,7 +50,9 @@ interface LanguageServerConfig {
 		workspaceSymbols: boolean;
 		implementation: boolean;
 		documentLink: boolean;
+		highlight: boolean;
 	};
+	checkForUpdates: boolean;
 }
 
 // registerLanguageFeatures registers providers for all the language features.
@@ -76,10 +73,11 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	// The user has opted into the language server.
 	const path = getLanguageServerToolPath();
 	const toolName = getToolFromToolPath(path);
+	const env = getToolsEnvVars();
 
 	// The user may not have the most up-to-date version of the language server.
 	const tool = getTool(toolName);
-	const update = await shouldUpdateLanguageServer(tool, path);
+	const update = await shouldUpdateLanguageServer(tool, path, config.checkForUpdates);
 	if (update) {
 		promptForUpdatingTool(toolName);
 	}
@@ -90,7 +88,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			command: path,
 			args: ['-mode=stdio', ...config.flags],
 			options: {
-				env: getToolsEnvVars(),
+				env: env,
 			},
 		},
 		{
@@ -180,6 +178,12 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 						return null;
 					}
 					return next(document, token);
+				},
+				provideDocumentHighlights: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideDocumentHighlightsSignature) => {
+					if (!config.features.highlight) {
+						return null;
+					}
+					return next(document, position, token);
 				}
 			}
 		}
@@ -198,7 +202,6 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			ctx.subscriptions.push(provider);
 			ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '\"'));
 		}
-
 		if (!config.features.format || !capabilities.documentFormattingProvider) {
 			ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
 		}
@@ -244,6 +247,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	ctx.subscriptions.push(languageServerDisposable);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', async () => {
+		c.diagnostics.clear();
 		await c.stop();
 		languageServerDisposable.dispose();
 		languageServerDisposable = c.start();
@@ -290,7 +294,7 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 }
 
 export function parseLanguageServerConfig(): LanguageServerConfig {
-	const goConfig = vscode.workspace.getConfiguration('go');
+	const goConfig = getGoConfig();
 
 	const config = {
 		enabled: goConfig['useLanguageServer'],
@@ -311,7 +315,9 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			workspaceSymbols: goConfig['languageServerExperimentalFeatures']['workspaceSymbols'],
 			implementation: goConfig['languageServerExperimentalFeatures']['implementation'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
+			highlight: goConfig['languageServerExperimentalFeatures']['highlight'],
 		},
+		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
 	};
 	return config;
 }
@@ -324,7 +330,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
  */
 export function getLanguageServerToolPath(): string {
 	// If language server is not enabled, return
-	const goConfig = vscode.workspace.getConfiguration('go');
+	const goConfig = getGoConfig();
 	if (!goConfig['useLanguageServer']) {
 		return;
 	}
@@ -397,7 +403,7 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 
 const defaultLatestVersion = semver.coerce('0.1.7');
 const defaultLatestVersionTime = moment('2019-09-18', 'YYYY-MM-DD');
-async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boolean> {
+async function shouldUpdateLanguageServer(tool: Tool, path: string, makeProxyCall: boolean): Promise<boolean> {
 	// Only support updating gopls for now.
 	if (tool.name !== 'gopls') {
 		return false;
@@ -417,24 +423,23 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string): Promise<boo
 	}
 
 	// Get the latest gopls version.
-	const latestVersion = defaultLatestVersion;
-	// const latestVersion = await latestGopls(tool);
+	let latestVersion = makeProxyCall ? await latestGopls(tool) : defaultLatestVersion;
 
-	// // If we failed to get the gopls version, assume the user does not need to update.
-	// if (!latestVersion) {
-	// 	return false;
-	// }
+	// If we failed to get the gopls version, pick the one we know to be latest at the time of this extension's last update
+	if (!latestVersion) {
+		latestVersion = defaultLatestVersion;
+	}
 
 	// The user may have downloaded golang.org/x/tools/gopls@master,
 	// which means that they have a pseudoversion.
 	const usersTime = parsePseudoversionTimestamp(usersVersion);
 	// If the user has a pseudoversion, get the timestamp for the latest gopls version and compare.
 	if (usersTime) {
-		return usersTime.isBefore(defaultLatestVersionTime);
-		// const latestTime = await goplsVersionTimestamp(tool.importPath, latestVersion);
-		// if (latestTime) {
-		// 	return usersTime.isBefore(latestTime);
-		// }
+		let latestTime = makeProxyCall ? await goplsVersionTimestamp(tool, latestVersion) : defaultLatestVersionTime;
+		if (!latestTime) {
+			latestTime = defaultLatestVersionTime;
+		}
+		return usersTime.isBefore(latestTime);
 	}
 
 	// If the user's version does not contain a timestamp,
@@ -484,17 +489,8 @@ function parsePseudoversionTimestamp(version: string): moment.Moment {
 	return moment.utc(timestamp, 'YYYYMMDDHHmmss');
 }
 
-async function goplsVersionTimestamp(importPath: string, version: semver.SemVer): Promise<moment.Moment> {
-	const infoURL = `https://proxy.golang.org/${importPath}/@v/v${version.format()}.info`;
-	let data: any;
-	try {
-		data = await WebRequest.json<any>(infoURL, {
-			throwResponseError: true,
-		});
-	} catch (e) {
-		console.log(`Unable to determine gopls timestamp: ${e}`);
-		return null;
-	}
+async function goplsVersionTimestamp(tool: Tool, version: semver.SemVer): Promise<moment.Moment> {
+	const data = await goProxyRequest(tool, `v${version.format()}.info`);
 	if (!data) {
 		return null;
 	}
@@ -506,16 +502,7 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	// If the user has a version of gopls that we understand,
 	// ask the proxy for the latest version, and if the user's version is older,
 	// prompt them to update.
-	const listURL = `https://proxy.golang.org/${tool.importPath}/@v/list`;
-	let data: string;
-	try {
-		data = await WebRequest.json<string>(listURL, {
-			throwResponseError: true,
-		});
-	} catch (e) {
-		console.log(`Unable to determine latest gopls version: ${e}`);
-		return null;
-	}
+	const data = await goProxyRequest(tool, 'list');
 	if (!data) {
 		return null;
 	}
@@ -533,7 +520,6 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 
 async function goplsVersion(goplsPath: string): Promise<string> {
 	const env = getToolsEnvVars();
-	const util = require('util');
 	const execFile = util.promisify(cp.execFile);
 	let output: any;
 	try {
@@ -586,4 +572,35 @@ async function goplsVersion(goplsPath: string): Promise<string> {
 	//    v0.1.3
 	//
 	return split[1];
+}
+
+async function goProxyRequest(tool: Tool, endpoint: string): Promise<any> {
+	const proxies = goProxy();
+	// Try each URL set in the user's GOPROXY environment variable.
+	// If none is set, don't make the request.
+	for (const proxy of proxies) {
+		if (proxy === 'direct') {
+			continue;
+		}
+		const url = `${proxy}/${tool.importPath}/@v/${endpoint}`;
+		let data: string;
+		try {
+			data = await WebRequest.json<string>(url, {
+				throwResponseError: true,
+			});
+		} catch (e) {
+			return null;
+		}
+		return data;
+	}
+	return null;
+}
+
+function goProxy(): string[]  {
+	const output: string = process.env['GOPROXY'];
+	if (!output || !output.trim()) {
+		return [];
+	}
+	const split = output.trim().split(',');
+	return split;
 }

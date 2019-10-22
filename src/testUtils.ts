@@ -10,7 +10,7 @@ import vscode = require('vscode');
 import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
-import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile, envPath } from './goPath';
+import { envPath, getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
 import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
 const sendSignal = 'SIGKILL';
@@ -250,14 +250,20 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				outTargets.push('<long arguments omitted>');
 			} else {
 				outTargets.push(...targets);
-				outTargets.push(...testconfig.flags);
 			}
-			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
-			outputChannel.appendLine('');
 
 			args.push(...targets);
+
 			// ensure that user provided flags are appended last (allow use of -args ...)
+			// ignore user provided -run flag if we are already using it
+			if (args.indexOf('-run') > -1) {
+				removeRunFlag(testconfig.flags);
+			}
 			args.push(...testconfig.flags);
+
+			outTargets.push(...testconfig.flags);
+			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
+			outputChannel.appendLine('');
 
 			const tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
@@ -404,4 +410,11 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 		params = ['-bench', '.'];
 	}
 	return params;
+}
+
+function removeRunFlag(flags: string[]): void {
+	const index: number = flags.indexOf('-run');
+	if (index !== -1) {
+		flags.splice(index, 2);
+	}
 }

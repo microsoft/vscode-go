@@ -6,9 +6,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows, envPath } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
+import { envPath, fixDriveCasingInWindows, getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, isVendorSupported, sendTelemetryEvent } from './util';
 
 type GopkgsDone = (res: Map<string, PackageInfo>) => void;
 interface Cache {

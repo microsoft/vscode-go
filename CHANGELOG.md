@@ -1,3 +1,23 @@
+## 0.11.8 - Coming Soon...
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre) & [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Use Go proxy to check if user has an older version of `gopls` and prompt to update accordingly. 
+    This can be disabled using the new setting `go.useGoProxyToCheckForToolUpdates`.
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre) 
+    * Support installing Go tools in module mode when using Go 1.11. Previously, this worked only in Go 1.12 and above
+    * Clear diagnostics when language server restarts
+
+* [Marcus Farkas (@ToothlessGear)](https://github.com/ToothlessGear)
+    * Re-enable linux is the test matrix in Travis
+
+* [Aravind (@scriptonist)](https://github.com/scriptonist)
+    * Fixes [Bug 2260](https://github.com/Microsoft/vscode-go/issues/2260) with [PR 2285](https://github.com/Microsoft/vscode-go/pull/2285)
+    where extension failed to run tests if `-run` was part of the user provided test flags
+
+* [Roman Levin (@romanlevin)](https://github.com/romanlevin) 
+    * Fix the placeholder text when extracting method. [PR 2799](https://github.com/Microsoft/vscode-go/pull/2799)
+
 ## 0.11.7 - 27th September, 2019
 
 ### Bug Fixes

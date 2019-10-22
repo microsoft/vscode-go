@@ -5,10 +5,9 @@
 
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getToolsGopath } from './util';
-import { outputChannel } from './goStatus';
-import { diagnosticsStatusBarItem } from './goStatus';
 import { lintDiagnosticCollection } from './goMain';
+import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
+import { getGoConfig, getToolsEnvVars, getToolsGopath, getWorkspaceFolderPath, handleDiagnosticErrors, ICheckResult, resolvePath, runTool } from './util';
 /**
  * Runs linter on the current file, package or workspace.
  */
@@ -24,7 +23,7 @@ export function lintCode(scope?: string) {
 	}
 
 	const documentUri = editor ? editor.document.uri : null;
-	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const goConfig = getGoConfig(documentUri);
 
 	outputChannel.clear(); // Ensures stale output from lint on save is cleared
 	diagnosticsStatusBarItem.show();

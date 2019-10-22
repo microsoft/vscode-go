@@ -7,9 +7,9 @@
 
 import vscode = require('vscode');
 import path = require('path');
-import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
+import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars, sendTelemetryEvent } from './util';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -69,7 +69,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			debugConfiguration['env']['GOPATH'] = gopath;
 		}
 
-		const goConfig = vscode.workspace.getConfiguration('go', folder ? folder.uri : null);
+		const goConfig = getGoConfig(folder && folder.uri);
 		const goToolsEnvVars = getToolsEnvVars();
 		Object.keys(goToolsEnvVars).forEach(key => {
 			if (!debugConfiguration['env'].hasOwnProperty(key)) {
