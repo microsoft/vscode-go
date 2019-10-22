@@ -10,11 +10,16 @@ import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows, envPath } fro
 import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, sendTelemetryEvent } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
-type GopkgsDone = (res: Map<string, string>) => void;
+type GopkgsDone = (res: Map<string, PackageInfo>) => void;
 interface Cache {
-	entry: Map<string, string>;
+	entry: Map<string, PackageInfo>;
 	lastHit: number;
 }
+
+export interface PackageInfo {
+	name: string;
+	isStd: boolean;
+ }
 
 let gopkgsNotified: boolean = false;
 let cacheTimeout: number = 5000;
@@ -27,15 +32,15 @@ const allPkgsCache: Map<string, Cache> = new Map<string, Cache>();
 const pkgRootDirs = new Map<string, string>();
 
 
-function gopkgs(workDir?: string): Promise<Map<string, string>> {
+function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 	const gopkgsBinPath = getBinPath('gopkgs');
 	if (!path.isAbsolute(gopkgsBinPath)) {
 		promptForMissingTool('gopkgs');
-		return Promise.resolve(new Map<string, string>());
+		return Promise.resolve(new Map<string, PackageInfo>());
 	}
 
 	const t0 = Date.now();
-	return new Promise<Map<string, string>>((resolve, reject) => {
+	return new Promise<Map<string, PackageInfo>>((resolve, reject) => {
 		const args = ['-format', '{{.Name}};{{.ImportPath}};{{.Dir}}'];
 		if (workDir) {
 			args.push('-workDir', workDir);
@@ -49,7 +54,7 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 		cmd.stderr.on('data', d => errchunks.push(d));
 		cmd.on('error', e => err = e);
 		cmd.on('close', () => {
-			const pkgs = new Map<string, string>();
+			const pkgs = new Map<string, PackageInfo>();
 			if (err && err.code === 'ENOENT') {
 				return promptForMissingTool('gopkgs');
 			}
@@ -76,27 +81,21 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 					}
 					const index = pkgPath.lastIndexOf('/');
 					const pkgName = index === -1 ? pkgPath : pkgPath.substr(index + 1);
-					pkgs.set(pkgPath, pkgName);
+					pkgs.set(pkgPath, {
+						name: pkgName,
+						isStd: pkgPath.includes(process.env['GOROOT'])
+					});
 				});
 				return resolve(pkgs);
 			}
-			const stdPkgs = new Map<string, string>();
-			const otherPkg = new Map<string, string>();
 			output.split('\n').forEach((pkgDetail) => {
 				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
 				const [pkgName, pkgPath, pkgDir] = pkgDetail.trim().split(';');
-				if (pkgDir.includes(process.env['GOROOT'])) {
-					stdPkgs.set(pkgPath, pkgName);
-				} else {
-					otherPkg.set(pkgPath, pkgName);
-				}
+				pkgs.set(pkgPath, {
+					name: pkgName,
+					isStd: pkgDir.includes(process.env['GOROOT'])
+				});
 			});
-			Array.from(stdPkgs.keys()).forEach((val)=>{
-				pkgs.set(val, stdPkgs.get(val));
-			})
-			Array.from(otherPkg.keys()).forEach((val)=>{
-				pkgs.set(val, otherPkg.get(val));
-			})
 			const timeTaken = Date.now() - t0;
 			/* __GDPR__
 				"gopkgs" : {
@@ -111,10 +110,10 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 	});
 }
 
-function getAllPackagesNoCache(workDir: string): Promise<Map<string, string>> {
-	return new Promise<Map<string, string>>((resolve, reject) => {
+function getAllPackagesNoCache(workDir: string): Promise<Map<string, PackageInfo>> {
+	return new Promise<Map<string, PackageInfo>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
-		const callback = function (pkgMap: Map<string, string>) {
+		const callback = function (pkgMap: Map<string, PackageInfo>) {
 			resolve(pkgMap);
 		};
 
@@ -143,7 +142,7 @@ function getAllPackagesNoCache(workDir: string): Promise<Map<string, string>> {
  * @argument workDir. The workspace directory of the project.
  * @returns Map<string, string> mapping between package import path and package name
  */
-export async function getAllPackages(workDir: string): Promise<Map<string, string>> {
+export async function getAllPackages(workDir: string): Promise<Map<string, PackageInfo>> {
 	const cache = allPkgsCache.get(workDir);
 	const useCache = cache && (new Date().getTime() - cache.lastHit) < cacheTimeout;
 	if (useCache) {
@@ -172,7 +171,7 @@ export async function getAllPackages(workDir: string): Promise<Map<string, strin
  * @param useCache. Force to use cache
  * @returns Map<string, string> mapping between package import path and package name
  */
-export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, string>> {
+export function getImportablePackages(filePath: string, useCache: boolean = false): Promise<Map<string, PackageInfo>> {
 	filePath = fixDriveCasingInWindows(filePath);
 	const fileDirPath = path.dirname(filePath);
 
@@ -180,24 +179,24 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 	const workDir = foundPkgRootDir || fileDirPath;
 	const cache = allPkgsCache.get(workDir);
 
-	const getAllPackagesPromise: Promise<Map<string, string>> = useCache && cache
+	const getAllPackagesPromise: Promise<Map<string, PackageInfo>> = useCache && cache
 		? Promise.race([getAllPackages(workDir), cache.entry])
 		: getAllPackages(workDir);
 
 	return Promise.all([isVendorSupported(), getAllPackagesPromise]).then(([vendorSupported, pkgs]) => {
-		const pkgMap = new Map<string, string>();
+		const pkgMap = new Map<string, PackageInfo>();
 		if (!pkgs) {
 			return pkgMap;
 		}
 
 		const currentWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), fileDirPath);
-		pkgs.forEach((pkgName, pkgPath) => {
-			if (pkgName === 'main') {
+		pkgs.forEach((info, pkgPath) => {
+			if (info.name === 'main') {
 				return;
 			}
 
 			if (!vendorSupported || !currentWorkspace) {
-				pkgMap.set(pkgPath, pkgName);
+				pkgMap.set(pkgPath, info);
 				return;
 			}
 
@@ -217,7 +216,7 @@ export function getImportablePackages(filePath: string, useCache: boolean = fals
 
 			const allowToImport = isAllowToImportPackage(fileDirPath, currentWorkspace, relativePkgPath);
 			if (allowToImport) {
-				pkgMap.set(relativePkgPath, pkgName);
+				pkgMap.set(relativePkgPath, info);
 			}
 		});
 		return pkgMap;
