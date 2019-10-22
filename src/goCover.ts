@@ -29,6 +29,10 @@ let decoratorConfig: {
 	coveredGutterStyle: string;
 	uncoveredGutterStyle: string;
 };
+// a list of modified, unsaved go files with actual code edits (rather than comment edits)
+let modifiedFiles: {
+	[key: string]: boolean;
+};
 
 /**
  * Initializes the decorators used for Code coverage.
@@ -256,11 +260,32 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 }
 
 /**
+ * Listener for file save
+ * A save in a Go file means the coverage data is stale, if it is dirty and the diff
+ * is in code and not comments. Therefore it should be cleared.
+ * @param e TextDocument
+ */
+export function removeCodeCoverageOnFileSave(e: vscode.TextDocument) {
+	if (e.languageId !== 'go' || !isCoverageApplied || !e.isDirty) {
+		return;
+	}
+
+	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e)) {
+		return;
+	}
+
+	if (modifiedFiles[e.fileName]) {
+		clearCoverage();
+		modifiedFiles = {}; // reset the list of modified files
+	}
+}
+
+/**
  * Listener for change in the editor.
- * A change in a Go file means the coverage data is stale. Therefore it should be cleared.
+ * A change in a Go file means the coverage data is stale. Therefore it should be cleared on save.
  * @param e TextDocumentChangeEvent
  */
-export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent) {
+export function trackCodeCoverageRemovalOnFileChange(e: vscode.TextDocumentChangeEvent) {
 	if (e.document.languageId !== 'go' || !e.contentChanges.length || !isCoverageApplied) {
 		return;
 	}
@@ -273,7 +298,7 @@ export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent
 		return;
 	}
 
-	clearCoverage();
+	modifiedFiles[e.document.fileName] = true;
 }
 
 /**
