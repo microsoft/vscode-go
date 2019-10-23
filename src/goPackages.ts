@@ -19,7 +19,7 @@ interface Cache {
 export interface PackageInfo {
 	name: string;
 	isStd: boolean;
- }
+}
 
 let gopkgsNotified: boolean = false;
 let cacheTimeout: number = 5000;
@@ -70,7 +70,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 				console.log(`Running gopkgs failed with "${errorMsg}"\nCheck if you can run \`gopkgs -format {{.Name}};{{.ImportPath}}\` in a terminal successfully.`);
 				return resolve(pkgs);
 			}
-
+			const goroot = process.env['GOROOT']
 			const output = chunks.join('');
 			if (output.indexOf(';') === -1) {
 				// User might be using the old gopkgs tool, prompt to update
@@ -83,7 +83,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 					const pkgName = index === -1 ? pkgPath : pkgPath.substr(index + 1);
 					pkgs.set(pkgPath, {
 						name: pkgName,
-						isStd: pkgPath.includes(process.env['GOROOT'])
+						isStd: goroot === null ? false : pkgPath.startsWith(goroot)
 					});
 				});
 				return resolve(pkgs);
@@ -93,7 +93,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 				const [pkgName, pkgPath, pkgDir] = pkgDetail.trim().split(';');
 				pkgs.set(pkgPath, {
 					name: pkgName,
-					isStd: pkgDir.includes(process.env['GOROOT'])
+					isStd: goroot === null ? false : pkgDir.startsWith(goroot)
 				});
 			});
 			const timeTaken = Date.now() - t0;
