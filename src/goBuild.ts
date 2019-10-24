@@ -67,8 +67,9 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 	}
 	tokenSource = new vscode.CancellationTokenSource();
 	const updateRunning = () => {
-		if (closureEpoch === epoch)
+		if (closureEpoch === epoch) {
 			running = false;
+		}
 	};
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);

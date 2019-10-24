@@ -54,7 +54,9 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 					const results: vscode.Location[] = [];
 					for (let i = 0; i < lines.length; i++) {
 						const match = /^(.*):(\d+)\.(\d+)-(\d+)\.(\d+):/.exec(lines[i]);
-						if (!match) continue;
+						if (!match) {
+							continue;
+						}
 						const [_, file, lineStartStr, colStartStr, lineEndStr, colEndStr] = match;
 						const referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 

@@ -128,8 +128,9 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 		false,
 		tokenSource.token
 	).then((result) => {
-		if (closureEpoch === epoch)
+		if (closureEpoch === epoch) {
 			running = false;
+		}
 		return result;
 	});
 

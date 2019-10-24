@@ -28,7 +28,9 @@ export class GoHoverProvider implements HoverProvider {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
 		return definitionLocation(document, position, goConfig, true, token).then(definitionInfo => {
-			if (definitionInfo == null) return null;
+			if (definitionInfo == null) {
+				return null;
+			}
 			const lines = definitionInfo.declarationlines
 				.filter(line => line !== '')
 				.map(line => line.replace(/\t/g, '    '));
