@@ -1601,6 +1601,7 @@ function killTree(processId: number): void {
 		try {
 			execSync(`${TASK_KILL} /F /T /PID ${processId}`);
 		} catch (err) {
+			logError(`Error killing process tree: ${err.toString() || ''}`);
 		}
 	} else {
 		// on linux and OS X we kill all direct and indirect child processes as well
@@ -1608,6 +1609,7 @@ function killTree(processId: number): void {
 			const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
 			spawnSync(cmd, [processId.toString()]);
 		} catch (err) {
+			logError(`Error killing process tree: ${err.toString() || ''}`);
 		}
 	}
 }

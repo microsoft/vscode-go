@@ -75,7 +75,7 @@
 		"no-debugger": true,
 		"no-duplicate-super": true,
 		"no-duplicate-variable": true,
-		// "no-empty": true,
+		"no-empty": true,
 		"no-empty-interface": true,
 		"no-eval": true,
 		"no-internal-module": true,
