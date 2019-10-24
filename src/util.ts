@@ -248,8 +248,8 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
  * Returns a number between 0 and 4294967295.
  */
 export function getStringHash(value: string): number {
-	let hash = 5381,
-		i = value.length;
+	let hash = 5381;
+	let i = value.length;
 
 	while (i) {
 		hash = (hash * 33) ^ value.charCodeAt(--i);
