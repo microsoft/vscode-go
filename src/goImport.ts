@@ -22,15 +22,22 @@ export async function listPackages(excludeImportedPkgs: boolean = false): Promis
 	const pkgMap = await getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
 	return Array.from(pkgMap.keys())
 		.filter(pkg => !importedPkgs.some(imported => imported === pkg))
-		.sort( (a, b)=>{
-			if(pkgMap.get(a).isStd){
+		.sort((a, b) => {
+			if (pkgMap.get(a).isStd && pkgMap.get(b).isStd) {
+				if (a < b) {
+					return -1
+				}
+				if (a > b) {
+					return 1
+				}
+				return 0
+			}else if (pkgMap.get(a).isStd) {
 				return -1
-			}
-			if(pkgMap.get(b).isStd){
+			}else if (pkgMap.get(b).isStd) {
 				return 1
 			}
 			return 0
-		  });
+		});
 }
 
 
