@@ -459,7 +459,7 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Outline', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
-			const options = { document: document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Include };
+			const options = { document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Include };
 
 			documentSymbols(options, null).then(outlines => {
 				const packageSymbols = outlines.filter((x: any) => x.kind === vscode.SymbolKind.Package);
@@ -482,7 +482,7 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Outline imports only', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
-			const options = { document: document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only };
+			const options = { document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only };
 
 			documentSymbols(options, null).then(outlines => {
 				const packageSymbols = outlines.filter(x => x.kind === vscode.SymbolKind.Package);

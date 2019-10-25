@@ -87,9 +87,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		{
 			command: path,
 			args: ['-mode=stdio', ...config.flags],
-			options: {
-				env: env,
-			},
+			options: { env },
 		},
 		{
 			initializationOptions: {},
