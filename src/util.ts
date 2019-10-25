@@ -222,7 +222,9 @@ export function getParametersAndReturnType(signature: string): { params: string[
 
 export function canonicalizeGOPATHPrefix(filename: string): string {
 	const gopath: string = getCurrentGoPath();
-	if (!gopath) return filename;
+	if (!gopath) {
+		return filename;
+	}
 	const workspaces = gopath.split(path.delimiter);
 	const filenameLowercase = filename.toLowerCase();
 
@@ -239,7 +241,9 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
 		}
 	}
 
-	if (!currentWorkspace) return filename;
+	if (!currentWorkspace) {
+		return filename;
+	}
 	return currentWorkspace + filename.slice(currentWorkspace.length);
 }
 
@@ -248,8 +252,8 @@ export function canonicalizeGOPATHPrefix(filename: string): string {
  * Returns a number between 0 and 4294967295.
  */
 export function getStringHash(value: string): number {
-	let hash = 5381,
-		i = value.length;
+	let hash = 5381;
+	let i = value.length;
 
 	while (i) {
 		hash = (hash * 33) ^ value.charCodeAt(--i);
@@ -540,7 +544,9 @@ export function timeout(millis: number): Promise<void> {
  * Expands ~ to homedir in non-Windows platform and resolves ${workspaceFolder} or ${workspaceRoot}
  */
 export function resolvePath(inputPath: string, workspaceFolder?: string): string {
-	if (!inputPath || !inputPath.trim()) return inputPath;
+	if (!inputPath || !inputPath.trim()) {
+		return inputPath;
+	}
 
 	if (!workspaceFolder && vscode.workspace.workspaceFolders) {
 		workspaceFolder = getWorkspaceFolderPath(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
@@ -687,7 +693,9 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 					}
 					const match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+)?)?:(?:\w+:)? (.*)$/.exec(lines[i]);
 					if (!match) {
-						if (printUnexpectedOutput && useStdErr && stderr) unexpectedOutput = true;
+						if (printUnexpectedOutput && useStdErr && stderr) {
+							unexpectedOutput = true;
+						}
 						continue;
 					}
 					atLeastSingleMatch = true;
@@ -839,6 +847,7 @@ export function killTree(processId: number): void {
 		try {
 			cp.execSync(`${TASK_KILL} /F /T /PID ${processId}`);
 		} catch (err) {
+			console.log('Error killing process tree: ' + err);
 		}
 	} else {
 		// on linux and OS X we kill all direct and indirect child processes as well
@@ -846,6 +855,7 @@ export function killTree(processId: number): void {
 			const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
 			cp.spawnSync(cmd, [processId.toString()]);
 		} catch (err) {
+			console.log('Error killing process tree: ' + err);
 		}
 	}
 }
@@ -857,14 +867,17 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 		const nearest = memo.getNearest(byteOffset);
 		const byteDelta = byteOffset - nearest.key;
 
-		if (byteDelta === 0)
+		if (byteDelta === 0) {
 			return nearest.value;
+		}
 
 		let charDelta: number;
-		if (byteDelta > 0)
+		if (byteDelta > 0) {
 			charDelta = buffer.toString('utf8', nearest.key, byteOffset).length;
-		else
+		}
+		else {
 			charDelta = -buffer.toString('utf8', byteOffset, nearest.key).length;
+		}
 
 		memo.insert(byteOffset, nearest.value + charDelta);
 		return nearest.value + charDelta;

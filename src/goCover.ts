@@ -158,7 +158,9 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits CoverCount
 				// The first line will be "mode: set" which will be ignored
 				const fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
-				if (!fileRange) return;
+				if (!fileRange) {
+					return;
+				}
 
 				const filePath = path.join(packageDirPath, path.basename(fileRange[1]));
 				const coverage = getCoverageData(filePath);

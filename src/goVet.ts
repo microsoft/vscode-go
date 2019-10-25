@@ -107,8 +107,9 @@ export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfi
 		false,
 		tokenSource.token
 	).then((result) => {
-		if (closureEpoch === epoch)
+		if (closureEpoch === epoch) {
 			running = false;
+		}
 		return result;
 	});
 }

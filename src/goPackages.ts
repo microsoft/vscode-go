@@ -89,7 +89,9 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 				return resolve(pkgs);
 			}
 			output.split('\n').forEach((pkgDetail) => {
-				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
+				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) {
+					return;
+				}
 				const [pkgName, pkgPath, pkgDir] = pkgDetail.trim().split(';');
 				pkgs.set(pkgPath, {
 					name: pkgName,

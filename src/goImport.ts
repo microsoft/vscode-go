@@ -31,9 +31,9 @@ export async function listPackages(excludeImportedPkgs: boolean = false): Promis
 					return 1
 				}
 				return 0
-			}else if (pkgMap.get(a).isStd) {
+			} else if (pkgMap.get(a).isStd) {
 				return -1
-			}else if (pkgMap.get(b).isStd) {
+			} else if (pkgMap.get(b).isStd) {
 				return 1
 			}
 			return 0

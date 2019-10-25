@@ -273,7 +273,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 					let areCompletionsForPackageSymbols = false;
 					if (results && results[1]) {
 						for (const suggest of results[1]) {
-							if (inString && suggest.class !== 'import') continue;
+							if (inString && suggest.class !== 'import') {
+								continue;
+							}
 							const item = new ExtendedCompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class, suggest.type);
 							item.package = suggest.package;

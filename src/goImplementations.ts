@@ -84,7 +84,9 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 					const addResults = (list: GuruImplementsRef[]) => {
 						list.forEach((ref: GuruImplementsRef) => {
 							const match = /^(.*):(\d+):(\d+)/.exec(ref.pos);
-							if (!match) return;
+							if (!match) {
+								return;
+							}
 							const [_, file, lineStartStr, colStartStr] = match;
 							const referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 							const range = new vscode.Range(

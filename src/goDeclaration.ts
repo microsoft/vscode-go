@@ -309,7 +309,9 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
 		return definitionLocation(document, position, this.goConfig, false, token).then(definitionInfo => {
-			if (definitionInfo == null || definitionInfo.file == null) return null;
+			if (definitionInfo == null || definitionInfo.file == null) {
+				return null;
+			}
 			const definitionResource = vscode.Uri.file(definitionInfo.file);
 			const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
 			return new vscode.Location(definitionResource, pos);
