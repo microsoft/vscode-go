@@ -254,6 +254,31 @@
 			"prefix": "sort",
 			"body": "type ${1:SortBy} []${2:Type}\n\nfunc (a $1) Len() int           { return len(a) }\nfunc (a $1) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }\nfunc (a $1) Less(i, j int) bool { ${3:return a[i] < a[j]} }",
 			"description": "Snippet for a custom sort.Sort interface implementation, for a given slice type."
+		},
+		"tag generation": {
+			"prefix": "ftag",
+			"description": "Generate a struct field with typed tag",
+			"body": "${1:FieldName} ${2:string} `${3:type}:\"${4:field_name}\"`"
+		},
+		"empty tag generation": {
+			"prefix": "ftag",
+			"description": "Generate a struct field with empty tag body",
+			"body": "${1:FieldName} ${2:string} `${3:tag_body}`"
+		},
+		"json tag generation": {
+			"prefix": "jft",
+			"description": "Generate a struct field with JSON tag placeholder",
+			"body": "${1:FieldName} ${2:string} `json:\"${3:field_name}\"`"
+		},
+		"struct init": {
+			"prefix": "sti",
+			"description":"Create an empty struct",
+			"body": "type ${1:Name} struct {\n\t$0\n}"
+		},
+		"struct init with construct": {
+			"prefix": "scon",
+			"description":"Create an empty struct, with a constructor function",
+			"body": "type ${1:Name} struct {\n\t$0\n}\n\nfunc New${1:Name}() *${1:Name} {\n\treturn &${1:Name}{}\n}\n"
 		}
 	}
 }
