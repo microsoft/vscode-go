@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/Microsoft/vscode-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/vscode-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/Microsoft/vscode-go.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-go)
 
-This extension adds rich language support for the [Go language](https://golang.org/) to VS Code.
+This extension adds rich language support for the open source [Go language](https://golang.org/) to VS Code.
 
 Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
 
