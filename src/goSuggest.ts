@@ -8,12 +8,12 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, isPositionInComment } from './util';
-import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
-import { getImportablePackages } from './goPackages';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { isModSupported } from './goModules';
+import { getImportablePackages } from './goPackages';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { byteOffsetAt, getBinPath, getCurrentGoPath, getGoConfig, getParametersAndReturnType, getToolsEnvVars, goBuiltinTypes, goKeywords, guessPackageNameFromFile, isPositionInComment, isPositionInString, parseFilePrelude, runGodoc } from './util';
 
 function vscodeKindFromGoCodeClass(kind: string, type: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -73,7 +73,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	}
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionList> {
-		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go', document.uri)).then(result => {
+		return this.provideCompletionItemsInternal(document, position, token, getGoConfig(document.uri)).then(result => {
 			if (!result) {
 				return new vscode.CompletionList([], false);
 			}
@@ -273,7 +273,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 					let areCompletionsForPackageSymbols = false;
 					if (results && results[1]) {
 						for (const suggest of results[1]) {
-							if (inString && suggest.class !== 'import') continue;
+							if (inString && suggest.class !== 'import') {
+								continue;
+							}
 							const item = new ExtendedCompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class, suggest.type);
 							item.package = suggest.package;
@@ -582,7 +584,7 @@ export async function getCompletionsWithoutGoCode(document: vscode.TextDocument,
 	}
 
 	const lineText = document.lineAt(position.line).text;
-	const config = vscode.workspace.getConfiguration('go', document.uri);
+	const config = getGoConfig(document.uri);
 	const autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
 	const commentCompletion = getCommentCompletion(document, position);

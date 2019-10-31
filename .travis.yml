@@ -4,6 +4,7 @@ go:
   - 1.10.x
   - 1.11.x
   - 1.12.x
+  - 1.13.x
   - tip
 
 matrix:
@@ -17,14 +18,16 @@ os:
   - linux
 
 before_install:
+  # Call xvfb directly on linux runs and give it time to start
   - if [ $TRAVIS_OS_NAME == "linux" ]; then
     export DISPLAY=:99.0;
-    sh -e /etc/init.d/xvfb start;
+    Xvfb :99 &
+    sleep 3;
     sudo apt-get update && sudo apt-get install -y libsecret-1-0;
     fi
 
 install:
-  - TRAVIS_NODE_VERSION="6"; GOMETALINTER_RELEASE_TAG="v2.0.12"; GOMETALIMTER_INSTALL_SCRIPT_COMMIT="83891259ab664a6d96066685f7f07431375ca8e5";
+  - TRAVIS_NODE_VERSION="6";
   # Clear out whatever version of NVM Travis has as it is old.
   - rm -rf ~/.nvm;
     # Grab NVM.
@@ -49,8 +52,6 @@ install:
   - go get -u -v github.com/cweill/gotests/...
   - go get -u -v github.com/haya14busa/goplay/cmd/goplay
   - go get -u -v github.com/davidrjenni/reftools/cmd/fillstruct
-  # The latest script at https://git.io/vp6lP seems to have broken us as some checkers have been removed. Locking to previous version.
-  - curl -fsSL https://raw.githubusercontent.com/alecthomas/gometalinter/$GOMETALIMTER_INSTALL_SCRIPT_COMMIT/scripts/install.sh | sh -s $GOMETALINTER_RELEASE_TAG -- -b $GOPATH/bin
 
 script:
   - npm run lint

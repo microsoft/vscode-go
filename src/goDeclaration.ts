@@ -8,10 +8,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCache } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
-import { promptToUpdateToolForModules, getModFolderPath } from './goModules';
+import { getModFolderPath, promptToUpdateToolForModules } from './goModules';
+import { byteOffsetAt, getBinPath, getFileArchive, getGoConfig, getModuleCache, getToolsEnvVars, getWorkspaceFolderPath, goKeywords, isPositionInString, killProcess, runGodoc } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -56,27 +55,25 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 	position = adjustedPos[2];
 
 	if (!goConfig) {
-		goConfig = vscode.workspace.getConfiguration('go', document.uri);
+		goConfig = getGoConfig(document.uri);
 	}
 	const toolForDocs = goConfig['docsTool'] || 'godoc';
-	return getGoVersion().then((ver: SemVersion) => {
-		return getModFolderPath(document.uri).then(modFolderPath => {
-			const input: GoDefinitionInput = {
-				document,
-				position,
-				word,
-				includeDocs,
-				isMod: !!modFolderPath,
-				cwd: (modFolderPath && modFolderPath !== getModuleCache())
-					? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
-			};
-			if (toolForDocs === 'godoc') {
-				return definitionLocation_godef(input, token);
-			} else if (toolForDocs === 'guru') {
-				return definitionLocation_guru(input, token);
-			}
-			return definitionLocation_gogetdoc(input, token, true);
-		});
+	return getModFolderPath(document.uri).then(modFolderPath => {
+		const input: GoDefinitionInput = {
+			document,
+			position,
+			word,
+			includeDocs,
+			isMod: !!modFolderPath,
+			cwd: (modFolderPath && modFolderPath !== getModuleCache())
+				? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
+		};
+		if (toolForDocs === 'godoc') {
+			return definitionLocation_godef(input, token);
+		} else if (toolForDocs === 'guru') {
+			return definitionLocation_guru(input, token);
+		}
+		return definitionLocation_gogetdoc(input, token, true);
 	});
 }
 
@@ -192,7 +189,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, token: vscode.Can
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		const gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', input.document.fileName + ':#' + offset.toString()];
-		const buildTags = vscode.workspace.getConfiguration('go', input.document.uri)['buildTags'];
+		const buildTags = getGoConfig(input.document.uri)['buildTags'];
 		const gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
 		p = cp.execFile(gogetdoc, gogetdocFlags, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
@@ -312,7 +309,9 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
 		return definitionLocation(document, position, this.goConfig, false, token).then(definitionInfo => {
-			if (definitionInfo == null || definitionInfo.file == null) return null;
+			if (definitionInfo == null || definitionInfo.file == null) {
+				return null;
+			}
 			const definitionResource = vscode.Uri.file(definitionInfo.file);
 			const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
 			return new vscode.Location(definitionResource, pos);

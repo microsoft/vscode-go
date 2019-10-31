@@ -6,19 +6,9 @@
 
 import path = require('path');
 import vscode = require('vscode');
-
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { isModSupported } from './goModules';
-import {
-	extractInstanceTestName,
-	findAllTestSuiteRuns,
-	getBenchmarkFunctions,
-	getTestFlags,
-	getTestFunctionDebugArgs,
-	getTestFunctions,
-	goTest,
-	TestConfig,
-} from './testUtils';
+import { extractInstanceTestName, findAllTestSuiteRuns, getBenchmarkFunctions, getTestFlags, getTestFunctionDebugArgs, getTestFunctions, goTest, TestConfig } from './testUtils';
 import { getTempFilePath } from './util';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows

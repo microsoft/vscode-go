@@ -1,3 +1,72 @@
+## 0.11.8 - Coming Soon...
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre) & [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Use Go proxy to check if user has an older version of `gopls` and prompt to update accordingly. 
+    This can be disabled using the new setting `go.useGoProxyToCheckForToolUpdates`.
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre) 
+    * Support installing Go tools in module mode when using Go 1.11. Previously, this worked only in Go 1.12 and above
+    * Clear diagnostics when language server restarts
+
+* [Marcus Farkas (@ToothlessGear)](https://github.com/ToothlessGear)
+    * Re-enable linux is the test matrix in Travis
+
+* [Aravind (@scriptonist)](https://github.com/scriptonist)
+    * Fixes [Bug 2260](https://github.com/Microsoft/vscode-go/issues/2260) with [PR 2285](https://github.com/Microsoft/vscode-go/pull/2285)
+    where extension failed to run tests if `-run` was part of the user provided test flags
+
+* [Roman Levin (@romanlevin)](https://github.com/romanlevin) 
+    * Fix the placeholder text when extracting method. [PR 2799](https://github.com/Microsoft/vscode-go/pull/2799)
+
+## 0.11.7 - 27th September, 2019
+
+### Bug Fixes
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+
+    - Fix for [bug 2766](https://github.com/microsoft/vscode-go/issues/2766) where the `Go: Test All Packages In Workspace` command failed to run tests since the last update.
+    - Fix for [bug 2765](https://github.com/microsoft/vscode-go/issues/2765) where the `Go: Build Workspace` command failed to run the build command since the last update
+    - Fix for [bug 2770](https://github.com/microsoft/vscode-go/issues/2770) where failure to find the path to the go binary results in `gopls` results in the extension throwing error & not working as expected since the last update
+    - Use `go vet .` instead of `go vet ./...` when vetting current package for better performance.
+
+* [Quoc Truong (@quoctruong)](https://github.com/quoctruong)
+
+    - Fix for bug where remote debugging failed if the configured remote path was just `/`. Fixes [Bug 2119](https://github.com/Microsoft/vscode-go/issues/2119) with [PR 2794](https://github.com/Microsoft/vscode-go/pull/2794)
+
+* [Joel Hendrix (@jhendrixMSFT)](https://github.com/jhendrixMSFT)
+
+    - Respect the `stopOnEntry` debug configuration by providing a dummy thread when no threads exist. Fixes [Bug 763](https://github.com/Microsoft/vscode-go/issues/763) with [PR 2762](https://github.com/Microsoft/vscode-go/pull/2762)
+
+## 0.11.6 - 21st September, 2019
+
+* The prompt to update your `gopls` that was introduced in the previous update, relied on making calls to https://proxy.golang.org.
+In this patch release, we replace such calls with a check against a known hard-coded value for the latest version of `gopls`. Details on the next steps here are captured in the [issue 2776](https://github.com/microsoft/vscode-go/issues/2776)
+
+## 0.11.5 - 19th September, 2019
+
+### Debugging improvements
+* [Quoc Truong (@quoctruong)](https://github.com/quoctruong)
+    * Fix the bug where setting breakpoint fails if the remote program is started through dlv with --continue switch. [Bug 2690](https://github.com/Microsoft/vscode-go/issues/2690)
+    * Fix the bug where disconnecting (after attaching to) the remote program terminates it [Bug 2592](https://github.com/Microsoft/vscode-go/issues/2592)
+    * Fix the bug where setting breakpoint will fail if a breakpoint already exists (if dlv is started through multi client and another client sets the breakpoint).
+
+* [Hary Prabowo Suryoatmojo (@haryps)](https://github.com/haryps)
+    * Show a warning if an edit to a Go file is saved when a debug session is active. Fixes [Bug 2559](https://github.com/Microsoft/vscode-go/issues/2559) with [PR 2653](https://github.com/Microsoft/vscode-go/pull/2653)
+
+### Tooling improvements
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Use the `latest` tag on `gopls` when installing instead of the master branch. Prompt to update `gopls` if you have an older version. [PR 2719](https://github.com/Microsoft/vscode-go/pull/2719)
+    * Install the Go tools in module mode if supported. [PR 2700](https://github.com/Microsoft/vscode-go/pull/2700)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * `gopls` can now be used when using Go from the tip
+    * A new status bar item "Go Modules" will show up when the extension has determined that modules are being used.
+    On clicking, this will take you to the wiki page for [Go modules support in VS Code](https://github.com/microsoft/vscode-go/wiki/Go-modules-support-in-Visual-Studio-Code)
+
+* [Nurbol Alpysbayev (@anurbol)](https://github.com/anurbol)
+    * Allow the use of `go.alternateTools` setting to provide an alternative for `gopls`. [PR 2660](https://github.com/Microsoft/vscode-go/pull/2660)
+
 ## 0.11.4 - 9th July, 2019
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)

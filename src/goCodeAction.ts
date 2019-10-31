@@ -7,7 +7,6 @@
 
 import vscode = require('vscode');
 import { listPackages } from './goImport';
-import * as _ from 'lodash';
 
 export class GoCodeActionProvider implements vscode.CodeActionProvider {
 	public provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken): Thenable<vscode.Command[]> {
