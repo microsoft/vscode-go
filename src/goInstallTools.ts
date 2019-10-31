@@ -147,18 +147,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 			envForTools['GO111MODULE'] = 'on';
 		}
 
-		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
-			const callback = (err: Error, stdout: string, stderr: string) => {
-				if (err) {
-					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
-					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
-					resolve([...sofar, failureReason]);
-				} else {
-					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
-					resolve([...sofar, null]);
-				}
-			};
-
+		return res.then(sofar => new Promise<string[]>(async (resolve, reject) => {
 			let closeToolPromise = Promise.resolve(true);
 			const toolBinPath = getBinPath(tool.name);
 			if (path.isAbsolute(toolBinPath) && isGocode(tool)) {
@@ -173,37 +162,51 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				});
 			}
 
-			closeToolPromise.then((success) => {
-				if (!success) {
+			let success = await closeToolPromise;
+			if (!success) {
+				resolve([...sofar, null]);
+				return;
+			}
+			const args = ['get', '-v'];
+			// Only get tools at master if we are not using modules.
+			if (modulesOff) {
+				args.push('-u');
+			}
+			// Tools with a "mod" suffix should not be installed,
+			// instead we run "go build -o" to rename them.
+			if (hasModSuffix(tool)) {
+				args.push('-d');
+			}
+			const opts = {
+				env: envForTools,
+				cwd: toolsTmpDir,
+			};
+			args.push(getImportPath(tool, goVersion));
+
+			const callback = (err: Error, stdout: string, stderr: string) => {
+				// Make sure to run `go mod tidy` between tool installations.
+				// This avoids us having to create a fresh go.mod file for each tool.
+				cp.execFileSync(goRuntimePath, ['mod', 'tidy'], opts);
+				if (err) {
+					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
+					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
+					resolve([...sofar, failureReason]);
+				} else {
+					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
 					resolve([...sofar, null]);
-					return;
 				}
-				const args = ['get', '-v'];
-				// Only get tools at master if we are not using modules.
-				if (modulesOff) {
-					args.push('-u');
+			};
+
+			cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
+				if (stderr.indexOf('unexpected directory layout:') > -1) {
+					outputChannel.appendLine(`Installing ${tool.name} failed with error "unexpected directory layout". Retrying...`);
+					cp.execFile(goRuntimePath, args, opts, callback);
+				} else if (!err && hasModSuffix(tool)) {
+					const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool.name}.exe` : tool.name);
+					cp.execFile(goRuntimePath, ['build', '-o', outputFile, getImportPath(tool, goVersion)], opts, callback);
+				} else {
+					callback(err, stdout, stderr);
 				}
-				// Tools with a "mod" suffix should not be installed,
-				// instead we run "go build -o" to rename them.
-				if (hasModSuffix(tool)) {
-					args.push('-d');
-				}
-				const opts = {
-					env: envForTools,
-					cwd: toolsTmpDir,
-				};
-				args.push(getImportPath(tool, goVersion));
-				cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
-					if (stderr.indexOf('unexpected directory layout:') > -1) {
-						outputChannel.appendLine(`Installing ${tool.name} failed with error "unexpected directory layout". Retrying...`);
-						cp.execFile(goRuntimePath, args, opts, callback);
-					} else if (!err && hasModSuffix(tool)) {
-						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool.name}.exe` : tool.name);
-						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getImportPath(tool, goVersion)], opts, callback);
-					} else {
-						callback(err, stdout, stderr);
-					}
-				});
 			});
 		}));
 	}, Promise.resolve([])).then(res => {
