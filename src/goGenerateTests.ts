@@ -107,7 +107,7 @@ export async function generateTestCurrentFunction(): Promise<boolean> {
 		vscode.window.showInformationMessage('Cannot toggle test file. File in the editor is not a Go file.');
 		return;
 	}
-	
+
 	return generateTests({ dir: editor.document.uri.fsPath, func: funcName, testFile: currentFilePath.endsWith('_test.go') }, getGoConfig(editor.document.uri));
 }
 
