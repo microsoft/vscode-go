@@ -101,7 +101,14 @@ export async function generateTestCurrentFunction(): Promise<boolean> {
 	if (funcName.includes('.')) {
 		funcName = funcName.split('.')[1];
 	}
-	return generateTests({ dir: editor.document.uri.fsPath, func: funcName }, getGoConfig(editor.document.uri));
+
+	const currentFilePath = editor.document.fileName;
+	if (!currentFilePath.endsWith('.go')) {
+		vscode.window.showInformationMessage('Cannot toggle test file. File in the editor is not a Go file.');
+		return;
+	}
+	
+	return generateTests({ dir: editor.document.uri.fsPath, func: funcName, testFile: currentFilePath.endsWith('_test.go') }, getGoConfig(editor.document.uri));
 }
 
 /**
@@ -116,6 +123,11 @@ interface Config {
 	 * Specific function names to generate tests skeleton.
 	 */
 	func?: string;
+
+	/**
+	 * Whether or not the file to generate test functions for is a test file.
+	 */
+	testFile?: boolean;
 }
 
 function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): Promise<boolean> {
@@ -172,7 +184,7 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 
 				vscode.window.showInformationMessage(message);
 				outputChannel.append(message);
-				if (testsGenerated) {
+				if (testsGenerated && !conf.testFile) {
 					toggleTestFile();
 				}
 
