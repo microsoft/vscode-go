@@ -184,7 +184,10 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 
 				vscode.window.showInformationMessage(message);
 				outputChannel.append(message);
-				if (testsGenerated && !conf.testFile) {
+
+				const isTestFile = (conf.testFile !== undefined && conf.testFile);
+
+				if (testsGenerated && !isTestFile) {
 					toggleTestFile();
 				}
 
