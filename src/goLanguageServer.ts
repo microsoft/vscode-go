@@ -313,7 +313,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			signatureHelp: goConfig['languageServerExperimentalFeatures']['signatureHelp'],
 			documentSymbols: goConfig['languageServerExperimentalFeatures']['documentSymbols'],
 			workspaceSymbols: goConfig['languageServerExperimentalFeatures']['workspaceSymbols'],
-			implementation: goConfig['languageServerExperimentalFeatures']['implementation'],
+			implementation: goConfig['languageServerExperimentalFeatures']['goToImplementation'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
 			highlight: goConfig['languageServerExperimentalFeatures']['highlight'],
 		},
