@@ -404,9 +404,9 @@ function resolveToolsGopath(): string {
 	}
 
 	// If any of the folders in multi root have toolsGopath set, use it.
-	for (let i = 0; i < vscode.workspace.workspaceFolders.length; i++) {
-		let toolsGopath = <string>getGoConfig(vscode.workspace.workspaceFolders[i].uri).inspect('toolsGopath').workspaceFolderValue;
-		toolsGopath = resolvePath(toolsGopath, vscode.workspace.workspaceFolders[i].uri.fsPath);
+	for (const folder of vscode.workspace.workspaceFolders) {
+		let toolsGopath = <string>getGoConfig(folder.uri).inspect('toolsGopath').workspaceFolderValue;
+		toolsGopath = resolvePath(toolsGopath, folder.uri.fsPath);
 		if (toolsGopath) {
 			return toolsGopath;
 		}
@@ -686,12 +686,12 @@ export function runTool(args: string[], cwd: string, severity: string, useStdErr
 				const ret: ICheckResult[] = [];
 				let unexpectedOutput = false;
 				let atLeastSingleMatch = false;
-				for (let i = 0; i < lines.length; i++) {
-					if (lines[i][0] === '\t' && ret.length > 0) {
-						ret[ret.length - 1].msg += '\n' + lines[i];
+				for (const l of lines) {
+					if (l[0] === '\t' && ret.length > 0) {
+						ret[ret.length - 1].msg += '\n' + l;
 						continue;
 					}
-					const match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+)?)?:(?:\w+:)? (.*)$/.exec(lines[i]);
+					const match = /^([^:]*: )?((.:)?[^:]*):(\d+)(:(\d+)?)?:(?:\w+:)? (.*)$/.exec(l);
 					if (!match) {
 						if (printUnexpectedOutput && useStdErr && stderr) {
 							unexpectedOutput = true;
