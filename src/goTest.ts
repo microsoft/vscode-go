@@ -214,8 +214,9 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBench
 				testConfig.isMod = isMod;
 				return goTest(testConfig).then(success => {
 					if (tmpCoverPath) {
-						return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
+						applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 					}
+					return Promise.resolve(success);
 				}, err => {
 					console.log(err);
 				});
