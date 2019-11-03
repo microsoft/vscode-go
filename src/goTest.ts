@@ -195,6 +195,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBench
 		return;
 	}
 
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTestFile', args);
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
 	return editor.document.save().then(() => {
@@ -202,7 +203,7 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBench
 			const testConfig: TestConfig = {
 				goConfig: goConfig,
 				dir: path.dirname(editor.document.fileName),
-				flags: getTestFlags(goConfig, args),
+				flags: testFlags,
 				functions: testFunctions.map(sym => sym.name),
 				isBenchmark: isBenchmark,
 			};
@@ -211,7 +212,13 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBench
 
 			return isModSupported(editor.document.uri).then(isMod => {
 				testConfig.isMod = isMod;
-				return goTest(testConfig);
+				return goTest(testConfig).then(success => {
+					if (tmpCoverPath) {
+						return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
+					}
+				}, err => {
+					console.log(err);
+				});
 			});
 		});
 	}).then(null, err => {
