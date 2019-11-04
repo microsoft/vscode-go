@@ -11,7 +11,7 @@ import cp = require('child_process');
 import { getTextEditForAddImport } from './goImport';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { isModSupported } from './goModules';
-import { getImportablePackages,PackageInfo } from './goPackages';
+import { getImportablePackages, PackageInfo } from './goPackages';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { byteOffsetAt, getBinPath, getCurrentGoPath, getGoConfig, getParametersAndReturnType, getToolsEnvVars, goBuiltinTypes, goKeywords, guessPackageNameFromFile, isPositionInComment, isPositionInString, parseFilePrelude, runGodoc } from './util';
 
@@ -537,7 +537,7 @@ function getPackageCompletions(document: vscode.TextDocument, currentWord: strin
 	const completionItems: any[] = [];
 
 	allPkgMap.forEach((info: PackageInfo, pkgPath: string) => {
-		const pkgName = info.name
+		const pkgName = info.name;
 		if (pkgName.startsWith(currentWord) && importedPackages.indexOf(pkgName) === -1) {
 
 			const item = new vscode.CompletionItem(pkgName, vscode.CompletionItemKind.Keyword);

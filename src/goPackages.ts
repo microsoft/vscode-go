@@ -31,7 +31,6 @@ const allPkgsCache: Map<string, Cache> = new Map<string, Cache>();
 
 const pkgRootDirs = new Map<string, string>();
 
-
 function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 	const gopkgsBinPath = getBinPath('gopkgs');
 	if (!path.isAbsolute(gopkgsBinPath)) {
@@ -70,7 +69,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 				console.log(`Running gopkgs failed with "${errorMsg}"\nCheck if you can run \`gopkgs -format {{.Name}};{{.ImportPath}}\` in a terminal successfully.`);
 				return resolve(pkgs);
 			}
-			const goroot = process.env['GOROOT']
+			const goroot = process.env['GOROOT'];
 			const output = chunks.join('');
 			if (output.indexOf(';') === -1) {
 				// User might be using the old gopkgs tool, prompt to update
@@ -115,7 +114,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 function getAllPackagesNoCache(workDir: string): Promise<Map<string, PackageInfo>> {
 	return new Promise<Map<string, PackageInfo>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
-		const callback = function (pkgMap: Map<string, PackageInfo>) {
+		const callback = function(pkgMap: Map<string, PackageInfo>) {
 			resolve(pkgMap);
 		};
 
