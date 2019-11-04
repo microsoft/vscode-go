@@ -3,20 +3,38 @@
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre) & [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Use Go proxy to check if user has an older version of `gopls` and prompt to update accordingly. 
     This can be disabled using the new setting `go.useGoProxyToCheckForToolUpdates`.
-
+    
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre) 
     * Support installing Go tools in module mode when using Go 1.11. Previously, this worked only in Go 1.12 and above
-    * Clear diagnostics when language server restarts
-
-* [Marcus Farkas (@ToothlessGear)](https://github.com/ToothlessGear)
-    * Re-enable linux is the test matrix in Travis
+    * Clear diagnostics when language server restarts to avoid linger errors from the previous run.
+    * Enable the `Go to Implementation` feature when using the language server.
 
 * [Aravind (@scriptonist)](https://github.com/scriptonist)
     * Fixes [Bug 2260](https://github.com/Microsoft/vscode-go/issues/2260) with [PR 2285](https://github.com/Microsoft/vscode-go/pull/2285)
     where extension failed to run tests if `-run` was part of the user provided test flags
 
+* [Kaarthik Rao Bekal Radhakrishna (@karthikraobr)](https://github.com/karthikraobr)
+    * Add flag `highlight` to `go.languageServerExperimentalFeatures` setting to allow disabling of the highlighting feature from language server. Fixes [Bug 2664](https://github.com/Microsoft/vscode-go/issues/2664) with [PR 2833](https://github.com/Microsoft/vscode-go/pull/2833)
+    * Distinguish between arrays with `nil` value and zero length. Fixes [Bug 2813](https://github.com/Microsoft/vscode-go/issues/2813) with [PR 2839](https://github.com/Microsoft/vscode-go/pull/2839)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * In Go 1.13, GO111MODULE with value `auto` inside the GOPATH now looks at the presence of go.mod file to determine module mode.
+    Updated our debug adapter similarly to recognize module mode. Fixes [Bug 2828](https://github.com/Microsoft/vscode-go/issues/2828) with [PR 2846](https://github.com/Microsoft/vscode-go/pull/2846) 
+
 * [Roman Levin (@romanlevin)](https://github.com/romanlevin) 
     * Fix the placeholder text when extracting method. [PR 2799](https://github.com/Microsoft/vscode-go/pull/2799)
+
+### Engineering improvements
+
+* [Kegsay @Kegsay](https://github.com/Kegsay) & [Zac Bergquist (@zmb3)](https://github.com/zmb3)
+    * Enable more rules via tslint.
+
+* [Marcus Farkas (@ToothlessGear)](https://github.com/ToothlessGear)
+    * Re-enable linux tests in travis runs.
+
+* [Julio C. Ramos (@ramosisw)](https://github.com/ramosisw)
+    * Use the new template for bug reports. [PR 2840](https://github.com/Microsoft/vscode-go/pull/2840)
+
 
 ## 0.11.7 - 27th September, 2019
 
