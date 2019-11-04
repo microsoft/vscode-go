@@ -10,6 +10,7 @@ import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
 import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars, sendTelemetryEvent } from './util';
+import { packagePathToGoModPathMap } from './goModules';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -61,6 +62,8 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				'program': activeEditor.document.fileName
 			};
 		}
+
+		debugConfiguration['packagePathToGoModPathMap'] = packagePathToGoModPathMap;
 
 		const gopath = getCurrentGoPath(folder ? folder.uri : null);
 		if (!debugConfiguration['env']) {
