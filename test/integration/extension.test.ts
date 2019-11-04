@@ -552,7 +552,7 @@ It returns the number of bytes written and any write error encountered.
 
 		vendorSupportPromise.then(async (vendorSupport: boolean) => {
 			const gopkgsPromise = getAllPackages(workDir).then(pkgMap => {
-				const pkgs = Array.from(pkgMap.keys()).filter(p => pkgMap.get(p) !== 'main');
+				const pkgs = Array.from(pkgMap.keys()).filter(p => pkgMap.get(p).name !== 'main');
 				if (vendorSupport) {
 					vendorPkgsFullPath.forEach(pkg => {
 						assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
