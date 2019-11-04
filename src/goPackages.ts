@@ -83,7 +83,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 					const pkgName = index === -1 ? pkgPath : pkgPath.substr(index + 1);
 					pkgs.set(pkgPath, {
 						name: pkgName,
-						isStd: goroot === null ? false : pkgPath.startsWith(goroot)
+						isStd: !pkgPath.includes('.')
 					});
 				});
 				return resolve(pkgs);
