@@ -20,26 +20,20 @@ export async function listPackages(excludeImportedPkgs: boolean = false): Promis
 		? await getImports(vscode.window.activeTextEditor.document)
 		: [];
 	const pkgMap = await getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
-	return Array.from(pkgMap.keys())
-		.filter(pkg => !importedPkgs.some(imported => imported === pkg))
-		.sort((a, b) => {
-			if (pkgMap.get(a).isStd && pkgMap.get(b).isStd) {
-				if (a < b) {
-					return -1
-				}
-				if (a > b) {
-					return 1
-				}
-				return 0
-			} else if (pkgMap.get(a).isStd) {
-				return -1
-			} else if (pkgMap.get(b).isStd) {
-				return 1
-			}
-			return 0
-		});
+	const stdLibs:string[] = [];
+	const nonStdLibs: string[] = [];
+	pkgMap.forEach((value, key) => {
+		if (importedPkgs.some(imported => imported === key)) {
+			return;
+		}
+		if (value.isStd) {
+			stdLibs.push(key);
+		} else {
+			nonStdLibs.push(key);
+		}
+	});
+	return [...stdLibs.sort(), ...nonStdLibs.sort()];
 }
-
 
 /**
  * Returns the imported packages in the given file
