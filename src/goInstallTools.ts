@@ -162,7 +162,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				});
 			}
 
-			let success = await closeToolPromise;
+			const success = await closeToolPromise;
 			if (!success) {
 				resolve([...sofar, null]);
 				return;
