@@ -148,6 +148,20 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		}
 
 		return res.then(sofar => new Promise<string[]>(async (resolve, reject) => {
+			const callback = (err: Error, stdout: string, stderr: string) => {
+				// Make sure to run `go mod tidy` between tool installations.
+				// This avoids us having to create a fresh go.mod file for each tool.
+				cp.execFileSync(goRuntimePath, ['mod', 'tidy'], opts);
+				if (err) {
+					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
+					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
+					resolve([...sofar, failureReason]);
+				} else {
+					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
+					resolve([...sofar, null]);
+				}
+			};
+
 			let closeToolPromise = Promise.resolve(true);
 			const toolBinPath = getBinPath(tool.name);
 			if (path.isAbsolute(toolBinPath) && isGocode(tool)) {
@@ -182,20 +196,6 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				cwd: toolsTmpDir,
 			};
 			args.push(getImportPath(tool, goVersion));
-
-			const callback = (err: Error, stdout: string, stderr: string) => {
-				// Make sure to run `go mod tidy` between tool installations.
-				// This avoids us having to create a fresh go.mod file for each tool.
-				cp.execFileSync(goRuntimePath, ['mod', 'tidy'], opts);
-				if (err) {
-					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
-					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
-					resolve([...sofar, failureReason]);
-				} else {
-					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
-					resolve([...sofar, null]);
-				}
-			};
 
 			cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
 				if (stderr.indexOf('unexpected directory layout:') > -1) {
