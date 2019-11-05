@@ -155,7 +155,9 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				// Make sure to run `go mod tidy` between tool installations.
 				// This avoids us having to create a fresh go.mod file for each tool.
-				cp.execFileSync(goRuntimePath, ['mod', 'tidy'], opts);
+				if (!modulesOff) {
+					cp.execFileSync(goRuntimePath, ['mod', 'tidy'], opts);
+				}
 				if (err) {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
 					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
