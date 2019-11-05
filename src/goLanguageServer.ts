@@ -518,10 +518,10 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	}
 	versions.sort(semver.rcompare);
 
-	var latestNonPreRelease: semver.SemVer;
+	let latestNonPreRelease: semver.SemVer;
 	for (const version of versions) {
 		// The first version in the sorted list without a prerelease tag.
-		if (version.prerelease.length == 0) {
+		if (version.prerelease.length === 0) {
 			latestNonPreRelease = version;
 			break;
 		}
