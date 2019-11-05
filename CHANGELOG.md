@@ -1,4 +1,4 @@
-## 0.11.8 - Coming Soon...
+## 0.11.8 - 5th November, 2019
 
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre) & [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Use Go proxy to check if user has an older version of `gopls` and prompt to update accordingly. 
@@ -16,6 +16,7 @@
 * [Kaarthik Rao Bekal Radhakrishna (@karthikraobr)](https://github.com/karthikraobr)
     * Add flag `highlight` to `go.languageServerExperimentalFeatures` setting to allow disabling of the highlighting feature from language server. Fixes [Bug 2664](https://github.com/Microsoft/vscode-go/issues/2664) with [PR 2833](https://github.com/Microsoft/vscode-go/pull/2833)
     * Distinguish between arrays with `nil` value and zero length. Fixes [Bug 2813](https://github.com/Microsoft/vscode-go/issues/2813) with [PR 2839](https://github.com/Microsoft/vscode-go/pull/2839)
+    * Sort standard library packages before others in the drop down result of the `Go: Add Import` command. [Feature Request 2683](https://github.com/Microsoft/vscode-go/issues/2683) implemented with [PR 2803](https://github.com/Microsoft/vscode-go/pull/2803)
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * In Go 1.13, GO111MODULE with value `auto` inside the GOPATH now looks at the presence of go.mod file to determine module mode.
@@ -23,6 +24,9 @@
 
 * [Roman Levin (@romanlevin)](https://github.com/romanlevin) 
     * Fix the placeholder text when extracting method. [PR 2799](https://github.com/Microsoft/vscode-go/pull/2799)
+
+* [Ilya Danilkin (@nezorflame)](https://github.com/nezorflame)
+    * Updated links to `gopls` wiki and added link to recommended VS Code settings when using `gopls`. [PR 2852](https://github.com/Microsoft/vscode-go/pull/2852)
 
 ### Engineering improvements
 
