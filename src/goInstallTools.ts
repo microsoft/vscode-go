@@ -152,7 +152,6 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				env: envForTools,
 				cwd: toolsTmpDir,
 			};
-
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				// Make sure to run `go mod tidy` between tool installations.
 				// This avoids us having to create a fresh go.mod file for each tool.
@@ -197,7 +196,6 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 					args.push('-d');
 				}
 				args.push(getImportPath(tool, goVersion));
-
 				cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
 						outputChannel.appendLine(`Installing ${tool.name} failed with error "unexpected directory layout". Retrying...`);
