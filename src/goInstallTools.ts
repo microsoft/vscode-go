@@ -147,7 +147,12 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 			envForTools['GO111MODULE'] = 'on';
 		}
 
-		return res.then(sofar => new Promise<string[]>(async (resolve, reject) => {
+		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+			const opts = {
+				env: envForTools,
+				cwd: toolsTmpDir,
+			};
+
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				// Make sure to run `go mod tidy` between tool installations.
 				// This avoids us having to create a fresh go.mod file for each tool.
@@ -176,37 +181,34 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				});
 			}
 
-			const success = await closeToolPromise;
-			if (!success) {
-				resolve([...sofar, null]);
-				return;
-			}
-			const args = ['get', '-v'];
-			// Only get tools at master if we are not using modules.
-			if (modulesOff) {
-				args.push('-u');
-			}
-			// Tools with a "mod" suffix should not be installed,
-			// instead we run "go build -o" to rename them.
-			if (hasModSuffix(tool)) {
-				args.push('-d');
-			}
-			const opts = {
-				env: envForTools,
-				cwd: toolsTmpDir,
-			};
-			args.push(getImportPath(tool, goVersion));
-
-			cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
-				if (stderr.indexOf('unexpected directory layout:') > -1) {
-					outputChannel.appendLine(`Installing ${tool.name} failed with error "unexpected directory layout". Retrying...`);
-					cp.execFile(goRuntimePath, args, opts, callback);
-				} else if (!err && hasModSuffix(tool)) {
-					const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool.name}.exe` : tool.name);
-					cp.execFile(goRuntimePath, ['build', '-o', outputFile, getImportPath(tool, goVersion)], opts, callback);
-				} else {
-					callback(err, stdout, stderr);
+			closeToolPromise.then((success) => {
+				if (!success) {
+					resolve([...sofar, null]);
+					return;
 				}
+				const args = ['get', '-v'];
+				// Only get tools at master if we are not using modules.
+				if (modulesOff) {
+					args.push('-u');
+				}
+				// Tools with a "mod" suffix should not be installed,
+				// instead we run "go build -o" to rename them.
+				if (hasModSuffix(tool)) {
+					args.push('-d');
+				}
+				args.push(getImportPath(tool, goVersion));
+
+				cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
+					if (stderr.indexOf('unexpected directory layout:') > -1) {
+						outputChannel.appendLine(`Installing ${tool.name} failed with error "unexpected directory layout". Retrying...`);
+						cp.execFile(goRuntimePath, args, opts, callback);
+					} else if (!err && hasModSuffix(tool)) {
+						const outputFile = path.join(toolsGopath, 'bin', process.platform === 'win32' ? `${tool.name}.exe` : tool.name);
+						cp.execFile(goRuntimePath, ['build', '-o', outputFile, getImportPath(tool, goVersion)], opts, callback);
+					} else {
+						callback(err, stdout, stderr);
+					}
+				});
 			});
 		}));
 	}, Promise.resolve([])).then(res => {
