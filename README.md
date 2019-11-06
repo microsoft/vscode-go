@@ -159,7 +159,8 @@ If you find any problems using the `gopls` language server, please first check t
 
 #### Helpful links for gopls
 
-- [Wiki for gopls](https://github.com/golang/go/wiki/gopls)
+- [Wiki for gopls](https://github.com/golang/tools/blob/master/gopls/doc/user.md)
+- [Recommended settings for VSCode when using gopls](https://github.com/golang/tools/blob/master/gopls/doc/vscode.md)
 - [Troubleshooting for gopls](https://github.com/golang/go/wiki/gopls#troubleshooting)
 - [Known bugs with gopls](https://github.com/golang/go/wiki/gopls#known-issues)
 - [Github issues for gopls](https://github.com/golang/go/issues?q=is%3Aissue+is%3Aopen+label%3Agopls)

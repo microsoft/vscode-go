@@ -93,7 +93,7 @@
 		"no-var-keyword": true,
 		// "no-var-requires": true,
 		// "object-literal-key-quotes": { "options": "consistent-as-needed" },
-		// "object-literal-shorthand": true,
+		"object-literal-shorthand": true,
 		// "object-literal-sort-keys": true,
 		"one-line": [
 			true,
@@ -115,7 +115,7 @@
 		// 	}
 		// },
 		"prefer-const": true,
-		// "prefer-for-of": true,
+		"prefer-for-of": true,
 		"quotemark": [
 			true,
 			"single"

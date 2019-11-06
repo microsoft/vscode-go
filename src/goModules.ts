@@ -39,12 +39,12 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 	return getModFolderPath(fileuri).then(modPath => !!modPath);
 }
 
-const packagePathToGoModPathMap = new Map<string, string>();
+export const packagePathToGoModPathMap: {[key: string]: string} = {};
 
 export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 	const pkgPath = path.dirname(fileuri.fsPath);
-	if (packagePathToGoModPathMap.has(pkgPath)) {
-		return packagePathToGoModPathMap.get(pkgPath);
+	if (packagePathToGoModPathMap[pkgPath]) {
+		return packagePathToGoModPathMap[pkgPath];
 	}
 
 	// We never would be using the path under module cache for anything
@@ -83,7 +83,7 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 			await promptToUpdateToolForModules('switchFormatToolToGoimports', promptMsgForFormatTool, goConfig);
 		}
 	}
-	packagePathToGoModPathMap.set(pkgPath, goModEnvResult);
+	packagePathToGoModPathMap[pkgPath] = goModEnvResult;
 	return goModEnvResult;
 }
 

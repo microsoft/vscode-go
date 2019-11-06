@@ -155,7 +155,7 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 				const [_, file, line, col] = match;
 				const pkgPath = path.dirname(file);
 				const definitionInformation: GoDefinitionInformation = {
-					file: file,
+					file,
 					line: +line - 1,
 					column: + col - 1,
 					declarationlines: lines.slice(1),

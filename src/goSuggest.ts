@@ -12,7 +12,7 @@ import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrel
 import { getTextEditForAddImport } from './goImport';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { isModSupported } from './goModules';
-import { getImportablePackages } from './goPackages';
+import { getImportablePackages, PackageInfo } from './goPackages';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 
 function vscodeKindFromGoCodeClass(kind: string, type: string): vscode.CompletionItemKind {
@@ -58,7 +58,7 @@ const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 const gocodeNoSupportForgbMsgKey = 'dontshowNoSupportForgb';
 
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider, vscode.Disposable {
-	private pkgsList = new Map<string, string>();
+	private pkgsList = new Map<string, PackageInfo>();
 	private killMsgShown: boolean = false;
 	private setGocodeOptions: boolean = true;
 	private isGoMod: boolean = false;
@@ -483,8 +483,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	 */
 	private getPackageImportPath(input: string): string[] {
 		const matchingPackages: any[] = [];
-		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
-			if (input === pkgName) {
+		this.pkgsList.forEach((info: PackageInfo, pkgPath: string) => {
+			if (input === info.name) {
 				matchingPackages.push(pkgPath);
 			}
 		});
@@ -544,7 +544,7 @@ function getKeywordCompletions(currentWord: string): vscode.CompletionItem[] {
  * @param allPkgMap Map of all available packages and their import paths
  * @param importedPackages List of imported packages. Used to prune imported packages out of available packages
  */
-function getPackageCompletions(document: vscode.TextDocument, currentWord: string, allPkgMap: Map<string, string>, importedPackages: string[] = []): vscode.CompletionItem[] {
+function getPackageCompletions(document: vscode.TextDocument, currentWord: string, allPkgMap: Map<string, PackageInfo>, importedPackages: string[] = []): vscode.CompletionItem[] {
 	const cwd = path.dirname(document.fileName);
 	const goWorkSpace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
 	const workSpaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -552,7 +552,8 @@ function getPackageCompletions(document: vscode.TextDocument, currentWord: strin
 
 	const completionItems: any[] = [];
 
-	allPkgMap.forEach((pkgName: string, pkgPath: string) => {
+	allPkgMap.forEach((info: PackageInfo, pkgPath: string) => {
+		const pkgName = info.name;
 		if (pkgName.startsWith(currentWord) && importedPackages.indexOf(pkgName) === -1) {
 
 			const item = new vscode.CompletionItem(pkgName, vscode.CompletionItemKind.Keyword);

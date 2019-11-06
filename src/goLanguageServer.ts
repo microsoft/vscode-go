@@ -87,9 +87,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		{
 			command: path,
 			args: ['-mode=stdio', ...config.flags],
-			options: {
-				env: env,
-			},
+			options: { env },
 		},
 		{
 			initializationOptions: {},
@@ -313,7 +311,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			signatureHelp: goConfig['languageServerExperimentalFeatures']['signatureHelp'],
 			documentSymbols: goConfig['languageServerExperimentalFeatures']['documentSymbols'],
 			workspaceSymbols: goConfig['languageServerExperimentalFeatures']['workspaceSymbols'],
-			implementation: goConfig['languageServerExperimentalFeatures']['implementation'],
+			implementation: goConfig['languageServerExperimentalFeatures']['goToImplementation'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
 			highlight: goConfig['languageServerExperimentalFeatures']['highlight'],
 		},
@@ -509,13 +507,19 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	// Coerce the versions into SemVers so that they can be sorted correctly.
 	const versions = [];
 	for (const version of data.trim().split('\n')) {
-		versions.push(semver.coerce(version));
+		const parsed = semver.parse(version, {
+			includePrerelease: true,
+			loose: true,
+		});
+		versions.push(parsed);
 	}
 	if (versions.length === 0) {
 		return null;
 	}
 	versions.sort(semver.rcompare);
-	return versions[0];
+
+	// The first version in the sorted list without a prerelease tag.
+	return versions.find(version => !version.prerelease || !version.prerelease.length);
 }
 
 async function goplsVersion(goplsPath: string): Promise<string> {
@@ -596,7 +600,7 @@ async function goProxyRequest(tool: Tool, endpoint: string): Promise<any> {
 	return null;
 }
 
-function goProxy(): string[]  {
+function goProxy(): string[] {
 	const output: string = process.env['GOPROXY'];
 	if (!output || !output.trim()) {
 		return [];

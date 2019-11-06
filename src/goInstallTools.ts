@@ -148,7 +148,16 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		}
 
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+			const opts = {
+				env: envForTools,
+				cwd: toolsTmpDir,
+			};
 			const callback = (err: Error, stdout: string, stderr: string) => {
+				// Make sure to run `go mod tidy` between tool installations.
+				// This avoids us having to create a fresh go.mod file for each tool.
+				if (!modulesOff) {
+					cp.execFileSync(goRuntimePath, ['mod', 'tidy'], opts);
+				}
 				if (err) {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
 					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
@@ -188,10 +197,6 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				if (hasModSuffix(tool)) {
 					args.push('-d');
 				}
-				const opts = {
-					env: envForTools,
-					cwd: toolsTmpDir,
-				};
 				args.push(getImportPath(tool, goVersion));
 				cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {

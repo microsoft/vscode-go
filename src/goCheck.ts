@@ -64,7 +64,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	let testPromise: Thenable<boolean>;
 	let tmpCoverPath: string;
 	const testConfig: TestConfig = {
-		goConfig: goConfig,
+		goConfig,
 		dir: cwd,
 		flags: getTestFlags(goConfig),
 		background: true
@@ -110,12 +110,12 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
 		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'], timeout)
-			.then(errors => ({ diagnosticCollection: lintDiagnosticCollection, errors: errors })));
+			.then(errors => ({ diagnosticCollection: lintDiagnosticCollection, errors })));
 	}
 
 	if (!disableBuildAndVet && !!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace', timeout)
-			.then(errors => ({ diagnosticCollection: vetDiagnosticCollection, errors: errors })));
+			.then(errors => ({ diagnosticCollection: vetDiagnosticCollection, errors })));
 	}
 
 	if (!!goConfig['coverOnSave']) {
