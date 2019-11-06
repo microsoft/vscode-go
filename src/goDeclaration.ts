@@ -107,7 +107,7 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 	const offset = byteOffsetAt(input.document, input.position);
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
-	let processTimeout: NodeJS.Timer;
+	let processTimeout: NodeJS.Timeout;
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);
@@ -202,7 +202,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, 
 	const offset = byteOffsetAt(input.document, input.position);
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
-	let processTimeout: NodeJS.Timer;
+	let processTimeout: NodeJS.Timeout;
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);
@@ -277,7 +277,7 @@ function definitionLocation_guru(input: GoDefinitionInput, timeout: number, toke
 	const offset = byteOffsetAt(input.document, input.position);
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
-	let processTimeout: NodeJS.Timer;
+	let processTimeout: NodeJS.Timeout;
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);

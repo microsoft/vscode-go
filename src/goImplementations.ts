@@ -50,8 +50,8 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 
 		let listProcess: cp.ChildProcess;
 		let guruProcess: cp.ChildProcess;
-		let listProcessTimeout: NodeJS.Timer;
-		let guruProcessTimeout: NodeJS.Timer;
+		let listProcessTimeout: NodeJS.Timeout;
+		let guruProcessTimeout: NodeJS.Timeout;
 		return new Promise<vscode.Definition>((resolve, reject) => {
 			if (token.isCancellationRequested) {
 				return resolve(null);

@@ -98,7 +98,7 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, token:
 function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise<GoSymbolDeclaration[]> {
 	const gosyms = getBinPath('go-symbols');
 	let p: cp.ChildProcess;
-	let processTimeout: NodeJS.Timer;
+	let processTimeout: NodeJS.Timeout;
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);

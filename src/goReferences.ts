@@ -40,7 +40,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			args.push('-modified', 'referrers', `${filename}:#${offset.toString()}`);
 
 			let p: cp.ChildProcess;
-			let processTimeout: NodeJS.Timer;
+			let processTimeout: NodeJS.Timeout;
 			p = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
 				clearTimeout(processTimeout);
 				try {

@@ -39,7 +39,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			}
 
 			let p: cp.ChildProcess;
-			let processTimeout: NodeJS.Timer;
+			let processTimeout: NodeJS.Timeout;
 			if (token) {
 				token.onCancellationRequested(() => {
 					clearTimeout(processTimeout);
