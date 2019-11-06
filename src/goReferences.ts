@@ -8,7 +8,7 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getFileArchive, getToolsEnvVars, killTree, getTimeoutConfiguration } from './util';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getFileArchive, getToolsEnvVars, killTree, getTimeoutConfiguration, getGoConfig } from './util';
 import { promptForMissingTool } from './goInstallTools';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
@@ -35,12 +35,12 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			const cwd = path.dirname(filename);
 			const offset = byteOffsetAt(document, wordRange.start);
 			const env = getToolsEnvVars();
-			const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
+			const buildTags = getGoConfig(document.uri)['buildTags'];
 			const args = buildTags ? ['-tags', buildTags] : [];
 			args.push('-modified', 'referrers', `${filename}:#${offset.toString()}`);
 
 			let p: cp.ChildProcess;
-			let processTimeout: NodeJS.Timeout;
+			let processTimeout: NodeJS.Timer;
 			p = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
 				clearTimeout(processTimeout);
 				try {
@@ -57,7 +57,9 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 					const results: vscode.Location[] = [];
 					for (let i = 0; i < lines.length; i++) {
 						const match = /^(.*):(\d+)\.(\d+)-(\d+)\.(\d+):/.exec(lines[i]);
-						if (!match) continue;
+						if (!match) {
+							continue;
+						}
 						const [_, file, lineStartStr, colStartStr, lineEndStr, colEndStr] = match;
 						const referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 

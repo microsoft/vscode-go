@@ -6,9 +6,9 @@
 'use strict';
 
 import vscode = require('vscode');
-import { HoverProvider, Hover, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
+import { CancellationToken, Hover, HoverProvider, Position, TextDocument, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { getTimeoutConfiguration } from './util';
+import { getTimeoutConfiguration, getGoConfig } from './util';
 
 export class GoHoverProvider implements HoverProvider {
 	private goConfig: WorkspaceConfiguration = null;
@@ -19,7 +19,7 @@ export class GoHoverProvider implements HoverProvider {
 
 	public provideHover(document: TextDocument, position: Position, token: CancellationToken): Thenable<Hover> {
 		if (!this.goConfig) {
-			this.goConfig = vscode.workspace.getConfiguration('go', document.uri);
+			this.goConfig = getGoConfig(document.uri);
 		}
 		let goConfig = this.goConfig;
 		const timeout = getTimeoutConfiguration('onHover', this.goConfig);
@@ -29,7 +29,9 @@ export class GoHoverProvider implements HoverProvider {
 			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
 		}
 		return definitionLocation(document, position, goConfig, true, timeout, token).then(definitionInfo => {
-			if (definitionInfo == null) return null;
+			if (definitionInfo == null) {
+				return null;
+			}
 			const lines = definitionInfo.declarationlines
 				.filter(line => line !== '')
 				.map(line => line.replace(/\t/g, '    '));

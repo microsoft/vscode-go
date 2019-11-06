@@ -9,9 +9,9 @@ import vscode = require('vscode');
 import path = require('path');
 import fs = require('fs');
 import rl = require('readline');
-import { getTempFilePath } from './util';
-import { showTestOutput, goTest, TestConfig, getTestFlags } from './testUtils';
 import { isModSupported } from './goModules';
+import { getTestFlags, goTest, showTestOutput, TestConfig } from './testUtils';
+import { getGoConfig, getTempFilePath } from './util';
 
 let gutterSvgs: { [key: string]: string };
 let decorators: {
@@ -51,9 +51,8 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 		verticalyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
 	};
 
-	const editor = vscode.window.activeTextEditor;
 	// Update the coverageDecorator in User config, if they are using the old style.
-	const goConfig = vscode.workspace.getConfiguration('go', editor ? editor.document.uri : null);
+	const goConfig = getGoConfig();
 	const inspectResult = goConfig.inspect('coverageDecorator');
 	if (typeof inspectResult.globalValue === 'string') {
 		goConfig.update('coverageDecorator', { type: inspectResult.globalValue }, vscode.ConfigurationTarget.Global);
@@ -159,7 +158,9 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits CoverCount
 				// The first line will be "mode: set" which will be ignored
 				const fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
-				if (!fileRange) return;
+				if (!fileRange) {
+					return;
+				}
 
 				const filePath = path.join(packageDirPath, path.basename(fileRange[1]));
 				const coverage = getCoverageData(filePath);
@@ -239,7 +240,7 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 		return;
 	}
 
-	const cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
+	const cfg = getGoConfig(editor.document.uri);
 	const coverageOptions = cfg['coverageOptions'];
 	for (const filename in coverageFiles) {
 		if (editor.document.uri.fsPath.endsWith(filename)) {
@@ -293,7 +294,7 @@ export function toggleCoverageCurrentPackage() {
 		return;
 	}
 
-	const goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
+	const goConfig = getGoConfig();
 	const cwd = path.dirname(editor.document.uri.fsPath);
 
 	const testFlags = getTestFlags(goConfig);

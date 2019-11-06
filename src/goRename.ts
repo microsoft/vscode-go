@@ -7,8 +7,8 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess, getTimeoutConfiguration } from './util';
-import { getEditsFromUnifiedDiffStr, isDiffToolAvailable, FilePatch, Edit } from './diffUtils';
+import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess, getTimeoutConfiguration, getGoConfig } from './util';
+import { Edit, FilePatch, getEditsFromUnifiedDiffStr, isDiffToolAvailable } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 import { outputChannel } from './goStatus';
 
@@ -28,7 +28,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			const offset = byteOffsetAt(document, pos);
 			const env = getToolsEnvVars();
 			const gorename = getBinPath('gorename');
-			const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'] ;
+			const buildTags = getGoConfig(document.uri)['buildTags'] ;
 			const gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName];
 			if (buildTags) {
 				gorenameArgs.push('-tags', buildTags);
@@ -39,7 +39,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			}
 
 			let p: cp.ChildProcess;
-			let processTimeout: NodeJS.Timeout;
+			let processTimeout: NodeJS.Timer;
 			if (token) {
 				token.onCancellationRequested(() => {
 					clearTimeout(processTimeout);

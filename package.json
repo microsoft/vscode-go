@@ -1,6 +1,6 @@
 {
   "name": "Go",
-  "version": "0.11.4",
+  "version": "0.11.7",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
@@ -40,23 +40,27 @@
   "dependencies": {
     "diff": "^4.0.1",
     "json-rpc2": "^1.0.2",
+    "moment": "^2.24.0",
+    "semver": "^6.3.0",
     "vscode-debugadapter": "^1.36.0",
     "vscode-debugprotocol": "^1.36.0",
     "vscode-extension-telemetry": "^0.1.2",
-    "vscode-languageclient": "~5.2.1"
+    "vscode-languageclient": "~5.2.1",
+    "web-request": "^1.0.7"
   },
   "devDependencies": {
     "@types/fs-extra": "^8.0.0",
+    "@types/glob": "^7.1.1",
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.7.2",
+    "@types/semver": "^6.0.1",
     "@types/vscode": "^1.25.0",
-    "@types/glob": "^7.1.1",
     "fs-extra": "^8.1.0",
+    "glob": "^7.1.4",
+    "mocha": "^6.2.0",
     "tslint": "^5.19.0",
     "typescript": "^3.6.2",
-    "vscode-test": "^1.2.0",
-    "glob": "^7.1.4",
-    "mocha": "^6.2.0"
+    "vscode-test": "^1.2.0"
   },
   "engines": {
     "vscode": "^1.30.0"
@@ -86,7 +90,8 @@
         ],
         "aliases": [
           "Go Module File"
-        ]
+        ],
+        "configuration": "./languages/go.mod.language-configuration.json"
       },
       {
         "id": "go.sum",
@@ -588,11 +593,6 @@
                 "description": "Indicates local or remote debugging.  Local maps to the dlv 'attach' command, remote maps to 'connect'.",
                 "default": "local"
               },
-              "stopOnEntry": {
-                "type": "boolean",
-                "description": "Automatically stop program after launch.",
-                "default": false
-              },
               "showLog": {
                 "type": "boolean",
                 "description": "Show log output from the delve debugger.",
@@ -775,10 +775,10 @@
           "scope": "resource",
           "enum": [
             "golint",
-            "gometalinter",
             "golangci-lint",
             "revive",
-            "staticcheck"
+            "staticcheck",
+            "gometalinter"
           ]
         },
         "go.lintFlags": {
@@ -813,7 +813,7 @@
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format. Not applicable when using the language server. Choosing 'goimport' or 'goreturns' will add missing imports and remove unused imports.",
+          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format. Not applicable when using the language server. Choosing 'goimports' or 'goreturns' will add missing imports and remove unused imports.",
           "scope": "resource",
           "enum": [
             "gofmt",
@@ -1182,6 +1182,11 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the language server will accept incremental document synchronization."
+            },
+            "highlight": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, the language server will be used to highlighting selected text."
             }
           },
           "default": {
@@ -1197,9 +1202,15 @@
             "workspaceSymbols": true,
             "findReferences": true,
             "diagnostics": true,
-            "documentLink": true
+            "documentLink": true,
+            "highlight": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
+        },
+        "go.useGoProxyToCheckForToolUpdates": {
+          "type": "boolean",
+          "default": true,
+          "description": "When enabled, the extension automatically checks the Go proxy if there are updates available for the Go tools (at present, only gopls) it depends on and prompts the user accordingly"
         },
         "go.gotoSymbol.includeImports": {
           "type": "boolean",

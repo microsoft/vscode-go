@@ -7,7 +7,7 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars, killProcess, getTimeoutConfiguration, getWorkspaceFolderPath } from './util';
+import { getBinPath, getToolsEnvVars, killProcess, getTimeoutConfiguration, getWorkspaceFolderPath, getGoConfig } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 
 // Keep in sync with github.com/acroca/go-symbols'
@@ -49,7 +49,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 			});
 		};
 		const root = getWorkspaceFolderPath(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const goConfig = getGoConfig();
 
 		if (!root && !goConfig.gotoSymbol.includeGoroot) {
 			vscode.window.showInformationMessage('No workspace is open to find symbols.');
@@ -66,7 +66,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 
 export function getWorkspaceSymbols(workspacePath: string, query: string, token: vscode.CancellationToken, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
 	if (!goConfig) {
-		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		goConfig = getGoConfig();
 	}
 	const gotoSymbolConfig = goConfig['gotoSymbol'];
 	const calls: Promise<GoSymbolDeclaration[]>[] = [];
@@ -98,7 +98,7 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, token:
 function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise<GoSymbolDeclaration[]> {
 	const gosyms = getBinPath('go-symbols');
 	let p: cp.ChildProcess;
-	let processTimeout: NodeJS.Timeout;
+	let processTimeout: NodeJS.Timer;
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);

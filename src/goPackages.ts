@@ -6,9 +6,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { getCurrentGoWorkspaceFromGOPATH, fixDriveCasingInWindows, envPath } from './goPath';
-import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, SemVersion, sendTelemetryEvent, killProcess, getTimeoutConfiguration, timeoutForLongRunningProcess } from './util';
+import { isVendorSupported, getCurrentGoPath, getToolsEnvVars, getGoVersion, getBinPath, sendTelemetryEvent, killProcess, getTimeoutConfiguration, timeoutForLongRunningProcess } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
+import { envPath, fixDriveCasingInWindows, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 
 type GopkgsDone = (res: Map<string, string>) => void;
 interface Cache {
@@ -97,7 +97,9 @@ function gopkgs(workDir?: string): Promise<Map<string, string>> {
 			}
 
 			output.split('\n').forEach((pkgDetail) => {
-				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) return;
+				if (!pkgDetail || !pkgDetail.trim() || pkgDetail.indexOf(';') === -1) {
+					return;
+				}
 				const [pkgName, pkgPath] = pkgDetail.trim().split(';');
 				pkgs.set(pkgPath, pkgName);
 			});
@@ -286,26 +288,26 @@ export function getNonVendorPackages(folderPath: string, timeout?: number): Prom
 			clearTimeout(waitTimer);
 		});
 
-		p.on('close', (status) => {
+		p.on('close', async (status) => {
 			clearTimeout(waitTimer);
 			const lines = chunks.join('').toString().split('\n');
+			const result = new Map<string, string>();
 
-			getGoVersion().then((ver: SemVersion) => {
-				const result = new Map<string, string>();
-				const vendorAlreadyExcluded = !ver || ver.major > 1 || (ver.major === 1 && ver.minor >= 9);
-				lines.forEach(line => {
-					const matches = line.match(pkgToFolderMappingRegex);
-					if (!matches || matches.length !== 3) {
-						return;
-					}
-					const [_, pkgPath, folderPath] = matches;
-					if (!pkgPath || (!vendorAlreadyExcluded && pkgPath.includes('/vendor/'))) {
-						return;
-					}
-					result.set(pkgPath, folderPath);
-				});
-				resolve(result);
+			const version = await getGoVersion();
+			const vendorAlreadyExcluded = version.gt('1.8');
+
+			lines.forEach(line => {
+				const matches = line.match(pkgToFolderMappingRegex);
+				if (!matches || matches.length !== 3) {
+					return;
+				}
+				const [_, pkgPath, folderPath] = matches;
+				if (!pkgPath || (!vendorAlreadyExcluded && pkgPath.includes('/vendor/'))) {
+					return;
+				}
+				result.set(pkgPath, folderPath);
 			});
+			resolve(result);
 		});
 	});
 }

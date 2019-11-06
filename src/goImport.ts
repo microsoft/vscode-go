@@ -8,8 +8,8 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars, sendTelemetryEvent, getTimeoutConfiguration, killProcess } from './util';
-import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
+import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { getImportablePackages } from './goPackages';
 import { envPath } from './goPath';
 

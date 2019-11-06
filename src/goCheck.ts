@@ -7,16 +7,16 @@
 
 import vscode = require('vscode');
 import path = require('path');
+import { goBuild } from './goBuild';
 import { applyCodeCoverageToAllEditors } from './goCover';
-import { outputChannel, diagnosticsStatusBarItem } from './goStatus';
-import { goTest, TestConfig, getTestFlags } from './testUtils';
+import { parseLanguageServerConfig } from './goLanguageServer';
 import { ICheckResult, getTempFilePath, getTimeoutConfiguration } from './util';
 import { goLint } from './goLint';
-import { goVet } from './goVet';
-import { goBuild } from './goBuild';
-import { isModSupported } from './goModules';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
-import { parseLanguageServerConfig } from './goLanguageServer';
+import { isModSupported } from './goModules';
+import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
+import { goVet } from './goVet';
+import { getTestFlags, goTest, TestConfig } from './testUtils';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -35,10 +35,6 @@ export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEv
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
-
-	const documentUri = e ? e.document.uri : null;
-	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
-
 	if ((ctx.globalState.get('ignoreGeneratedCodeWarning') !== true) && e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
 		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then(result => {
 			if (result === neverAgain) {

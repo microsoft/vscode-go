@@ -31,7 +31,9 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 }
 
 export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths: string[], alternateTool?: string) {
-	if (binPathCache[toolName]) return binPathCache[toolName];
+	if (binPathCache[toolName]) {
+		return binPathCache[toolName];
+	}
 
 	if (alternateTool && path.isAbsolute(alternateTool) && fileExists(alternateTool)) {
 		binPathCache[toolName] = alternateTool;
@@ -79,10 +81,10 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 }
 
 function correctBinname(toolName: string) {
-	if (process.platform === 'win32')
+	if (process.platform === 'win32') {
 		return toolName + '.exe';
-	else
-		return toolName;
+	}
+	return toolName;
 }
 
 function fileExists(filePath: string): boolean {
@@ -106,7 +108,9 @@ export function clearCacheForTools() {
  * Exapnds ~ to homedir in non-Windows platform
  */
 export function resolveHomeDir(inputPath: string): string {
-	if (!inputPath || !inputPath.trim()) return inputPath;
+	if (!inputPath || !inputPath.trim()) {
+		return inputPath;
+	}
 	return inputPath.startsWith('~') ? path.join(os.homedir(), inputPath.substr(1)) : inputPath;
 }
 

@@ -7,8 +7,8 @@
 
 import vscode = require('vscode');
 import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, getTimeoutConfiguration, killProcess } from './util';
-import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
+import cp = require('child_process');
 
 // Interface for the output from fillstruct
 interface GoFillStructOutput {

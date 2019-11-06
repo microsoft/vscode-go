@@ -8,9 +8,8 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath, killTree, getTimeoutConfiguration } from './util';
+import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath, killTree, getTimeoutConfiguration, getToolsEnvVars, getGoConfig } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { getToolsEnvVars } from './util';
 import { envPath } from './goPath';
 
 interface GoListOutput {
@@ -51,8 +50,8 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 
 		let listProcess: cp.ChildProcess;
 		let guruProcess: cp.ChildProcess;
-		let listProcessTimeout: NodeJS.Timeout;
-		let guruProcessTimeout: NodeJS.Timeout;
+		let listProcessTimeout: NodeJS.Timer;
+		let guruProcessTimeout: NodeJS.Timer;
 		return new Promise<vscode.Definition>((resolve, reject) => {
 			if (token.isCancellationRequested) {
 				return resolve(null);
@@ -76,7 +75,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				const cwd = path.dirname(filename);
 				const offset = byteOffsetAt(document, position);
 				const goGuru = getBinPath('guru');
-				const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
+				const buildTags = getGoConfig(document.uri)['buildTags'];
 				const args = buildTags ? ['-tags', buildTags] : [];
 				if (listOutput.Root && listOutput.ImportPath) {
 					args.push('-scope', `${listOutput.ImportPath}/...`);
@@ -100,7 +99,9 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 					const addResults = (list: GuruImplementsRef[]) => {
 						list.forEach((ref: GuruImplementsRef) => {
 							const match = /^(.*):(\d+):(\d+)/.exec(ref.pos);
-							if (!match) return;
+							if (!match) {
+								return;
+							}
 							const [_, file, lineStartStr, colStartStr] = match;
 							const referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 							const range = new vscode.Range(

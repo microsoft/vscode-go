@@ -5,10 +5,9 @@
 
 'use strict';
 
-import vscode = require('vscode');
-import { SignatureHelpProvider, SignatureHelp, SignatureInformation, ParameterInformation, TextDocument, Position, CancellationToken, WorkspaceConfiguration } from 'vscode';
+import { CancellationToken, ParameterInformation, Position, SignatureHelp, SignatureHelpProvider, SignatureInformation, TextDocument, WorkspaceConfiguration } from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { getParametersAndReturnType, isPositionInString, isPositionInComment, getTimeoutConfiguration } from './util';
+import { getParametersAndReturnType, isPositionInString, isPositionInComment, getTimeoutConfiguration, getGoConfig } from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
 
@@ -16,7 +15,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	}
 
 	public async provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
-		let goConfig = this.goConfig || vscode.workspace.getConfiguration('go', document.uri);
+		let goConfig = this.goConfig || getGoConfig(document.uri);
 		const timeout = getTimeoutConfiguration('onType', this.goConfig);
 
 		const theCall = this.walkBackwardsToBeginningOfCall(document, position);

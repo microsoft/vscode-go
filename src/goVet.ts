@@ -5,10 +5,9 @@
 
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, SemVersion, getTimeoutConfiguration, resolvePath } from './util';
-import { outputChannel } from './goStatus';
-import { diagnosticsStatusBarItem } from './goStatus';
+import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, getGoConfig, getTimeoutConfiguration, resolvePath } from './util';
 import { vetDiagnosticCollection } from './goMain';
+import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
 
 /**
  * Runs go vet in the current package or workspace.
@@ -25,7 +24,7 @@ export function vetCode(vetWorkspace?: boolean) {
 	}
 
 	const documentUri = editor ? editor.document.uri : null;
-	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const goConfig = getGoConfig(documentUri);
 
 	outputChannel.clear(); // Ensures stale output from vet on save is cleared
 	diagnosticsStatusBarItem.show();
@@ -49,7 +48,7 @@ export function vetCode(vetWorkspace?: boolean) {
  * @param goConfig Configuration for the Go extension.
  * @param vetWorkspace If true vets code in all workspace.
  */
-export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace: boolean, timeout: number): Promise<ICheckResult[]> {
+export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace: boolean, timeout: number): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;
 	if (tokenSource) {
@@ -83,39 +82,37 @@ export function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 		args.push(flag);
 	});
 
-	const vetPromise = getGoVersion().then((version: SemVersion) => {
-		const tagsArg = [];
-		if (goConfig['buildTags'] && vetFlags.indexOf('-tags') === -1) {
-			tagsArg.push('-tags');
-			tagsArg.push(goConfig['buildTags']);
-		}
+	const goVersion = await getGoVersion();
+	const tagsArg = [];
+	if (goConfig['buildTags'] && vetFlags.indexOf('-tags') === -1) {
+		tagsArg.push('-tags');
+		tagsArg.push(goConfig['buildTags']);
+	}
 
-		let vetArgs = ['vet', ...args, ...tagsArg, './...'];
-		if (version && version.major === 1 && version.minor <= 9 && args.length) {
-			vetArgs = ['tool', 'vet', ...args, ...tagsArg, '.'];
-		}
+	let vetArgs = ['vet', ...args, ...tagsArg, vetWorkspace ? './...' :  '.'];
+	if (goVersion.lt('1.10') && args.length) {
+		vetArgs = ['tool', 'vet', ...args, ...tagsArg, '.'];
+	}
 
-		outputChannel.appendLine(`Starting "go vet" under the folder ${cwd}`);
+	outputChannel.appendLine(`Starting "go vet" under the folder ${cwd}`);
 
-		running = true;
-		return runTool(
-			vetArgs,
-			cwd,
-			'warning',
-			true,
-			null,
-			vetEnv,
-			false,
+	running = true;
+	return runTool(
+		vetArgs,
+		cwd,
+		'warning',
+		true,
+		null,
+		vetEnv,
+		false,
 			timeout,
-			tokenSource.token
-		).then((result) => {
-			if (closureEpoch === epoch)
-				running = false;
-			return result;
-		});
+		tokenSource.token
+	).then((result) => {
+		if (closureEpoch === epoch) {
+			running = false;
+		}
+		return result;
 	});
-
-	return vetPromise;
 }
 
 let epoch = 0;

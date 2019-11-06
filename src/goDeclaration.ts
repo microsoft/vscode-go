@@ -9,9 +9,8 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { promptToUpdateToolForModules, getModFolderPath } from './goModules';
-import { byteOffsetAt, getBinPath, runGodoc, getWorkspaceFolderPath, getModuleCache, getTimeoutConfiguration } from './util';
-import { getGoVersion, SemVersion, goKeywords, isPositionInString, getToolsEnvVars, getFileArchive, killProcess } from './util';
+import { getModFolderPath, promptToUpdateToolForModules } from './goModules';
+import { byteOffsetAt, getBinPath, getFileArchive, getGoConfig, getModuleCache, getToolsEnvVars, getWorkspaceFolderPath, goKeywords, isPositionInString, killProcess, runGodoc, getTimeoutConfiguration } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -62,27 +61,25 @@ export function definitionLocation(
 	position = adjustedPos[2];
 
 	if (!goConfig) {
-		goConfig = vscode.workspace.getConfiguration('go', document.uri);
+		goConfig = getGoConfig(document.uri);
 	}
 	const toolForDocs = goConfig['docsTool'] || 'godoc';
-	return getGoVersion().then((ver: SemVersion) => {
-		return getModFolderPath(document.uri).then(modFolderPath => {
-			const input: GoDefinitionInput = {
-				document,
-				position,
-				word,
-				includeDocs,
-				isMod: !!modFolderPath,
-				cwd: (modFolderPath && modFolderPath !== getModuleCache())
-					? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
-			};
-			if (toolForDocs === 'godoc') {
+	return getModFolderPath(document.uri).then(modFolderPath => {
+		const input: GoDefinitionInput = {
+			document,
+			position,
+			word,
+			includeDocs,
+			isMod: !!modFolderPath,
+			cwd: (modFolderPath && modFolderPath !== getModuleCache())
+				? modFolderPath : (getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName))
+		};
+		if (toolForDocs === 'godoc') {
 				return definitionLocation_godef(input, timeout, token);
-			} else if (toolForDocs === 'guru') {
+		} else if (toolForDocs === 'guru') {
 				return definitionLocation_guru(input, timeout, token);
-			}
+		}
 			return definitionLocation_gogetdoc(input, timeout, token, true);
-		});
 	});
 }
 
@@ -110,7 +107,7 @@ function definitionLocation_godef(input: GoDefinitionInput, timeout: number, tok
 	const offset = byteOffsetAt(input.document, input.position);
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
-	let processTimeout: NodeJS.Timeout;
+	let processTimeout: NodeJS.Timer;
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);
@@ -205,7 +202,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, 
 	const offset = byteOffsetAt(input.document, input.position);
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
-	let processTimeout: NodeJS.Timeout;
+	let processTimeout: NodeJS.Timer;
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);
@@ -216,7 +213,7 @@ function definitionLocation_gogetdoc(input: GoDefinitionInput, timeout: number, 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 
 		const gogetdocFlagsWithoutTags = ['-u', '-json', '-modified', '-pos', input.document.fileName + ':#' + offset.toString()];
-		const buildTags = vscode.workspace.getConfiguration('go', input.document.uri)['buildTags'];
+		const buildTags = getGoConfig(input.document.uri)['buildTags'];
 		const gogetdocFlags = (buildTags && useTags) ? [...gogetdocFlagsWithoutTags, '-tags', buildTags] : gogetdocFlagsWithoutTags;
 		p = cp.execFile(gogetdoc, gogetdocFlags, { env, cwd: input.cwd }, (err, stdout, stderr) => {
 			try {
@@ -280,7 +277,7 @@ function definitionLocation_guru(input: GoDefinitionInput, timeout: number, toke
 	const offset = byteOffsetAt(input.document, input.position);
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
-	let processTimeout: NodeJS.Timeout;
+	let processTimeout: NodeJS.Timer;
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);
@@ -351,7 +348,9 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
 		const timeout = getTimeoutConfiguration('onCommand', this.goConfig);
 		return definitionLocation(document, position, this.goConfig, false, timeout, token).then(definitionInfo => {
-			if (definitionInfo == null || definitionInfo.file == null) return null;
+			if (definitionInfo == null || definitionInfo.file == null) {
+				return null;
+			}
 			const definitionResource = vscode.Uri.file(definitionInfo.file);
 			const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
 			return new vscode.Location(definitionResource, pos);

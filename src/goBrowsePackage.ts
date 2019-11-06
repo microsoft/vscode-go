@@ -77,7 +77,9 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 			vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then(file => {
 				// if user abandoned list, file will be null and path.join will error out.
 				// therefore return.
-				if (!file) return;
+				if (!file) {
+					return;
+				}
 
 				vscode.workspace.openTextDocument(path.join(dir, file)).then(document => {
 					vscode.window.showTextDocument(document);
@@ -102,7 +104,9 @@ function showPackageList(workDir: string) {
 			.window
 			.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
 			.then(pkgFromDropdown => {
-				if (!pkgFromDropdown) return;
+				if (!pkgFromDropdown) {
+					return;
+				}
 				showPackageFiles(pkgFromDropdown, false, workDir);
 			});
 	});

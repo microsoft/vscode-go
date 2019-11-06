@@ -8,9 +8,9 @@
 import vscode = require('vscode');
 import cp = require('child_process');
 import { getImportPath, getCurrentGoPath, getBinPath, getTimeoutConfiguration, killProcess } from './util';
-import { outputChannel } from './goStatus';
 import { buildCode } from './goBuild';
 import { envPath } from './goPath';
+import { outputChannel } from './goStatus';
 
 export function goGetPackage() {
 	const editor = vscode.window.activeTextEditor;

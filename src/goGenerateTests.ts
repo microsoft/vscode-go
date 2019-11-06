@@ -9,7 +9,7 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 
-import { getBinPath, getToolsEnvVars, getTimeoutConfiguration, killProcess } from './util';
+import { getBinPath, getToolsEnvVars, getTimeoutConfiguration, killProcess, getGoConfig } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { outputChannel } from './goStatus';
@@ -71,7 +71,7 @@ export function generateTestCurrentPackage(): Promise<boolean> {
 		return;
 	}
 	return generateTests({ dir: path.dirname(editor.document.uri.fsPath) },
-		vscode.workspace.getConfiguration('go', editor.document.uri));
+		getGoConfig(editor.document.uri));
 }
 
 export function generateTestCurrentFile(): Promise<boolean> {
@@ -80,7 +80,7 @@ export function generateTestCurrentFile(): Promise<boolean> {
 		return;
 	}
 	return generateTests({ dir: editor.document.uri.fsPath },
-		vscode.workspace.getConfiguration('go', editor.document.uri));
+		getGoConfig(editor.document.uri));
 }
 
 export async function generateTestCurrentFunction(): Promise<boolean> {
@@ -101,7 +101,7 @@ export async function generateTestCurrentFunction(): Promise<boolean> {
 	if (funcName.includes('.')) {
 		funcName = funcName.split('.')[1];
 	}
-	return generateTests({ dir: editor.document.uri.fsPath, func: funcName }, vscode.workspace.getConfiguration('go', editor.document.uri));
+	return generateTests({ dir: editor.document.uri.fsPath, func: funcName }, getGoConfig(editor.document.uri));
 }
 
 /**

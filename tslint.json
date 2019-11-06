@@ -43,7 +43,7 @@
 			true,
 			"check-space"
 		],
-		// "curly": true,
+		"curly": true,
 		"eofline": true,
 		"forin": true,
 		"import-spacing": true,
@@ -75,7 +75,7 @@
 		"no-debugger": true,
 		"no-duplicate-super": true,
 		"no-duplicate-variable": true,
-		// "no-empty": true,
+		"no-empty": true,
 		"no-empty-interface": true,
 		"no-eval": true,
 		"no-internal-module": true,
@@ -103,7 +103,7 @@
 			"check-open-brace",
 			"check-whitespace"
 		],
-		// "one-variable-per-declaration": { "options": ["ignore-for-loop"] },
+		"one-variable-per-declaration": { "options": ["ignore-for-loop"] },
 		// "only-arrow-functions": {
 		// 	"options": ["allow-declarations", "allow-named-functions"]
 		// },

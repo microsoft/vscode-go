@@ -7,9 +7,9 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars, getTimeoutConfiguration, killProcess } from './util';
-import { promptForMissingTool } from './goInstallTools';
 import { dirname, isAbsolute } from 'path';
+import { promptForMissingTool } from './goInstallTools';
+import { getBinPath, getToolsEnvVars, getTimeoutConfiguration, killProcess } from './util';
 
 /**
  * Extracts function out of current selection and replaces the current selection with a call to the extracted function.
@@ -42,7 +42,7 @@ async function extract(type: typeOfExtraction): Promise<void> {
 	}
 
 	const newName = await vscode.window.showInputBox({
-		placeHolder: 'Please enter a name for the extracted variable.'
+		placeHolder: `Please enter a name for the extracted ${type === 'var' ? 'variable' : 'method'}.`
 	});
 
 	if (!newName) {
