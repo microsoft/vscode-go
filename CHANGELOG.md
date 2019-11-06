@@ -1,3 +1,9 @@
+## 0.11.9 - 5th November, 2019
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Run `go mod tidy` before installing tools to fix [Bug 2886](https://github.com/Microsoft/vscode-go/issues/2886) with [PR 2877](https://github.com/Microsoft/vscode-go/pull/2877)
+
+
 ## 0.11.8 - 5th November, 2019
 
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre) & [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
