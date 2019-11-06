@@ -79,7 +79,7 @@ export function definitionLocation(
 		} else if (toolForDocs === 'guru') {
 				return definitionLocation_guru(input, timeout, token);
 		}
-			return definitionLocation_gogetdoc(input, timeout, token, true);
+		return definitionLocation_gogetdoc(input, timeout, token, true);
 	});
 }
 
