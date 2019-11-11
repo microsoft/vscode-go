@@ -1,13 +1,17 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath, getModuleCache } from './util';
-import { outputChannel } from './goStatus';
-import { getNonVendorPackages } from './goPackages';
-import { getTestFlags } from './testUtils';
-import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { diagnosticsStatusBarItem } from './goStatus';
-import { isModSupported } from './goModules';
 import { buildDiagnosticCollection } from './goMain';
+import { isModSupported } from './goModules';
+import { getNonVendorPackages } from './goPackages';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
+import { getTestFlags } from './testUtils';
+import { getCurrentGoPath, getGoConfig, getModuleCache, getTempFilePath, getToolsEnvVars, getWorkspaceFolderPath, handleDiagnosticErrors, ICheckResult, runTool } from './util';
 /**
  * Builds current package or workspace.
  */
@@ -25,7 +29,7 @@ export function buildCode(buildWorkspace?: boolean) {
 	}
 
 	const documentUri = editor ? editor.document.uri : null;
-	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const goConfig = getGoConfig(documentUri);
 
 	outputChannel.clear(); // Ensures stale output from build on save is cleared
 	diagnosticsStatusBarItem.show();
@@ -63,8 +67,9 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 	}
 	tokenSource = new vscode.CancellationTokenSource();
 	const updateRunning = () => {
-		if (closureEpoch === epoch)
+		if (closureEpoch === epoch) {
 			running = false;
+		}
 	};
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);

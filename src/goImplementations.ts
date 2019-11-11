@@ -1,12 +1,16 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 'use strict';
 
 import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
-import { byteOffsetAt, getBinPath, canonicalizeGOPATHPrefix, getWorkspaceFolderPath, killTree } from './util';
 import { promptForMissingTool } from './goInstallTools';
-import { getToolsEnvVars } from './util';
 import { envPath } from './goPath';
+import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getGoConfig, getToolsEnvVars, getWorkspaceFolderPath, killTree } from './util';
 
 interface GoListOutput {
 	Dir: string;
@@ -58,7 +62,7 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 				const cwd = path.dirname(filename);
 				const offset = byteOffsetAt(document, position);
 				const goGuru = getBinPath('guru');
-				const buildTags = vscode.workspace.getConfiguration('go', document.uri)['buildTags'];
+				const buildTags = getGoConfig(document.uri)['buildTags'];
 				const args = buildTags ? ['-tags', buildTags] : [];
 				if (listOutput.Root && listOutput.ImportPath) {
 					args.push('-scope', `${listOutput.ImportPath}/...`);
@@ -80,7 +84,9 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 					const addResults = (list: GuruImplementsRef[]) => {
 						list.forEach((ref: GuruImplementsRef) => {
 							const match = /^(.*):(\d+):(\d+)/.exec(ref.pos);
-							if (!match) return;
+							if (!match) {
+								return;
+							}
 							const [_, file, lineStartStr, colStartStr] = match;
 							const referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 							const range = new vscode.Range(
