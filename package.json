@@ -920,6 +920,11 @@
           "default": false,
           "description": "If true, shows test coverage when Go: Test Function at cursor command is run."
         },
+        "go.coverOnSingleTestFile": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, shows test coverage when Go: Test Single File command is run."
+        },
         "go.coverageOptions": {
           "type": "string",
           "enum": [
