@@ -1582,7 +1582,7 @@ class GoDebugSession extends LoggingDebugSession {
 			throw err;
 		};
 
-		return this.delve.callPromise('Rewind', []).then(callback, errorCallback);
+		return this.delve.callPromise('Command', [{ name: 'rewind' }]).then(callback, errorCallback);
 	}
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
