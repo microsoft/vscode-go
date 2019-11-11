@@ -233,6 +233,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 	showGlobalVariables?: boolean;
 	currentFile: string;
+	packagePathToGoModPathMap: {[key: string]: string};
 }
 
 interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
@@ -242,7 +243,7 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 	showLog?: boolean;
 	logOutput?: string;
 	cwd?: string;
-	mode?: 'local' | 'remote';
+	mode?: 'local' | 'remote' | 'replay';
 	remotePath?: string;
 	port?: number;
 	host?: string;
@@ -433,16 +434,18 @@ class Delve {
 
 				const currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
 				dlvArgs.push(mode || 'debug');
+
 				if (mode === 'exec') {
 					dlvArgs.push(program);
-			} else if (mode === 'replay') {
-				if (launchArgs.backend !== 'rr') {
-					return reject('Invalid debugger backend. Only rr is supported for replay mode');
-				}
-				dlvArgs = dlvArgs.concat(launchArgs.traceDirectory);
-				} else if (currentGOWorkspace && env['GO111MODULE'] !== 'on') {
+				} else if (mode === 'replay') {
+					if (launchArgs.backend !== 'rr') {
+						return reject('Invalid debugger backend. Only rr is supported for replay mode');
+					}
+					dlvArgs.push(launchArgs.traceDirectory);
+				} else if (currentGOWorkspace && !launchArgs.packagePathToGoModPathMap[dirname]) {
 					dlvArgs.push(dirname.substr(currentGOWorkspace.length + 1));
 				}
+
 				dlvArgs.push('--headless=true', `--listen=${launchArgs.host}:${launchArgs.port}`);
 				if (!this.isApiV1) {
 					dlvArgs.push('--api-version=2');

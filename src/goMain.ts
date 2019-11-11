@@ -24,7 +24,7 @@ import { registerLanguageFeatures } from './goLanguageServer';
 import { lintCode } from './goLint';
 import { GO_MODE } from './goMode';
 import { addTags, removeTags } from './goModifytags';
-import { GO111MODULE } from './goModules';
+import { GO111MODULE, isModSupported } from './goModules';
 import { clearCacheForTools } from './goPath';
 import { playgroundCommand } from './goPlayground';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
@@ -90,7 +90,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		await registerLanguageFeatures(ctx);
 
 		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'go' && isGoPathSet()) {
-			runBuilds(vscode.window.activeTextEditor.document, getGoConfig());
+			// Check mod status so that cache is updated and then run build/lint/vet
+			isModSupported(vscode.window.activeTextEditor.document.uri).then(() => {
+				runBuilds(vscode.window.activeTextEditor.document, getGoConfig());
+			});
 		}
 
 	});
@@ -448,7 +451,7 @@ function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
 		  "editorContextMenuCommands": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "liveErrors": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
 		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "alternateTools": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
+		  "alternateTools": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
 		  "useGoProxyToCheckForToolUpdates": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
 	   }
 	 */

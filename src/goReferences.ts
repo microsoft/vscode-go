@@ -52,8 +52,8 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 
 					const lines = stdout.toString().split('\n');
 					const results: vscode.Location[] = [];
-					for (let i = 0; i < lines.length; i++) {
-						const match = /^(.*):(\d+)\.(\d+)-(\d+)\.(\d+):/.exec(lines[i]);
+					for (const line of lines) {
+						const match = /^(.*):(\d+)\.(\d+)-(\d+)\.(\d+):/.exec(line);
 						if (!match) {
 							continue;
 						}

@@ -301,7 +301,7 @@ export function toggleCoverageCurrentPackage() {
 	const tmpCoverPath = getTempFilePath('go-code-cover');
 	const args = ['-coverprofile=' + tmpCoverPath, ...testFlags];
 	const testConfig: TestConfig = {
-		goConfig: goConfig,
+		goConfig,
 		dir: cwd,
 		flags: args,
 		background: true

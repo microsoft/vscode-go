@@ -459,7 +459,7 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Outline', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
-			const options = { document: document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Include };
+			const options = { document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Include };
 
 			documentSymbols(options, null).then(outlines => {
 				const packageSymbols = outlines.filter((x: any) => x.kind === vscode.SymbolKind.Package);
@@ -482,7 +482,7 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Outline imports only', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
-			const options = { document: document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only };
+			const options = { document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only };
 
 			documentSymbols(options, null).then(outlines => {
 				const packageSymbols = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
@@ -552,7 +552,7 @@ It returns the number of bytes written and any write error encountered.
 
 		vendorSupportPromise.then(async (vendorSupport: boolean) => {
 			const gopkgsPromise = getAllPackages(workDir).then(pkgMap => {
-				const pkgs = Array.from(pkgMap.keys()).filter(p => pkgMap.get(p) !== 'main');
+				const pkgs = Array.from(pkgMap.keys()).filter(p => pkgMap.get(p).name !== 'main');
 				if (vendorSupport) {
 					vendorPkgsFullPath.forEach(pkg => {
 						assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
