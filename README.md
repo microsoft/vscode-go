@@ -6,6 +6,32 @@ This extension adds rich language support for the [Go language](https://golang.o
 
 Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
 
+## Table of Contents
+
+- [Language Features](#language-features)
+	- [IntelliSense](#intellisense)
+	- [Code Navigation](#code-navigation)
+	- [Code Editing](#code-editing)
+	- [Diagnostics](#diagnostics)
+	- [Testing](#testing)
+	- [Debugging](#debugging)
+	- [Others](#others)
+- [How to use this extension?](#how-to-use-this-extension)
+	- [Go Language Server](#go-language-server)
+		- [Settings to control the use of the Go language server](#settings-to-control-the-use-of-the-go-language-server)
+		- [Provide feedback on gopls](#provide-feedback-on-gopls)
+	- [Linter](#linter)
+	- [Commands](#commands)
+	- [Optional: Debugging](#optional-debugging)
+		- [Remote Debugging](#remote-debugging)
+- [Install or update all dependencies](#install-or-update-all-dependencies)
+- [Building and Debugging the Extension](#building-and-debugging-the-extension)
+- [Tools this extension depends on](#tools-this-extension-depends-on)
+- [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
+- [Contributing](#contributing)
+- [Code of Conduct](#code-of-conduct)
+- [License](#license)
+
 ## Language Features
 
 ### IntelliSense
@@ -41,7 +67,7 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 
 ### Testing
 
-- Run Tests under the cursor, in current file, in current package, in the whole workspace using either commands or codelens 
+- Run Tests under the cursor, in current file, in current package, in the whole workspace using either commands or codelens
 - Run Benchmarks under the cursor using either commands or codelens
 - Show code coverage either on demand or after running tests in the package.
 - Generate unit tests skeleton (using `gotests`)
@@ -65,7 +91,7 @@ You will see `Analysis Tools Missing` in the bottom right, clicking this will of
 
 **Note 1**: Read [GOPATH in the VS Code Go extension](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension) to learn about the different ways you can get the extension to set GOPATH.
 
-**Note 2**: The `Format on save` feature has a timeout of 750ms after which the formatting is aborted. You can change this timeout using the setting `editor.formatOnSaveTimeout`. This feature gets disabled when you have enabled the `Auto Save` feature in Visual Studio Code. 
+**Note 2**: The `Format on save` feature has a timeout of 750ms after which the formatting is aborted. You can change this timeout using the setting `editor.formatOnSaveTimeout`. This feature gets disabled when you have enabled the `Auto Save` feature in Visual Studio Code.
 
 **Note 3**:  This extension uses `gocode` to provide completion lists as you type. If you have disabled the `go.buildOnSave` setting, then you may not get fresh results from not-yet-built dependencies. Therefore, ensure you have built your dependencies manually in such cases.
 
@@ -76,12 +102,12 @@ The Go extension is ready to use on the get go. If you want to customize the fea
 
 ### Go Language Server
 
-The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) to provide the various language features. An alternative is to use a single language server that provides the same features.  
+The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) to provide the various language features. An alternative is to use a single language server that provides the same features using the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
 
-Previously, we added support to use the [language server from Sourcegraph](https://github.com/sourcegraph/go-langserver). Since there is no
-active development for it anymore and because it doesn't support Go modules, we are now switching to use the [language server from Google](https://github.com/golang/go/wiki/gopls). 
+Previously, we added support to use `go-langserver`, the [language server from Sourcegraph](https://github.com/sourcegraph/go-langserver). There is no active development for it anymore and it doesn't support Go modules. Therefore, we are now switching to use `gopls`, the [language server from Google](https://github.com/golang/go/wiki/gopls) which is currently in active development.
 
-- If you are using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules.
+- If you are already using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules. We do suggest you to move to using `gopls` though.
+    - To do so, delete the `go-langserver` binary/executable in your machine and this extension will prompt you to install `gopls` after a reload of the VS Code window.
 - Since the language server from Google provides much better support for Go modules, you will be prompted about it when the extension detects that you are working on a project that uses Go modules.
 - If you have never used language server before, and now opt to use it, you will be prompted to install and use the language server from Google as long as you are using a Go version > 1.10
 
@@ -92,25 +118,38 @@ active development for it anymore and because it doesn't support Go modules, we 
 Below are the settings you can use to control the use of the language server. You need to reload the VS Code window for any changes in these settings to take effect.
 
 - Set `go.useLanguageServer` to `true` to enable the use of language server
-- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server. Diagnostics from the language server is the only feature that is not enabled by default. If you want to try this feature from the language server, add the below in your settings
+- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server. Below are the various features you can control. By default, all are set to `true`.
 ```json
-"go.languageServerExperimentalFeatures": {
-  "diagnostics": true
-}
+  "go.languageServerExperimentalFeatures": {
+    "format": true,
+    "autoComplete": true,
+    "rename": true,
+    "goToDefinition": true,
+    "hover": true,
+    "signatureHelp": true,
+    "goToTypeDefinition": true,
+    "goToImplementation": true,
+    "documentSymbols": true,
+    "workspaceSymbols": true,
+    "findReferences": true,
+    "diagnostics": true,
+    "documentLink": true
+  }
 ```
 - Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect logs in a log file.
 - Set `"go.languageServerFlags": ["-rpc.trace"]` to see the complete rpc trace in the output panel (`View` -> `Output` -> `gopls`)
 
-```
 
 #### Setting to change the language server being used
 
 If you want to try out other language servers, for example, [bingo](https://github.com/saibing/bingo), then install it and add the below setting
+
 ```json
 "go.alternateTools": {
   "gopls": "bingo"
 }
 ```
+
 This will tell the Go extension to use `bingo` in place of `gopls`.
 
 #### Provide feedback on gopls
@@ -118,31 +157,21 @@ This will tell the Go extension to use `bingo` in place of `gopls`.
 If you find any problems using the `gopls` language server, please first check the [list of existing issues for gopls](https://github.com/golang/go/issues?q=is%3Aissue+is%3Aopen+label%3Agopls) and update the relevant ones with your case before logging a new one at https://github.com/golang/go/issues
 
 
+#### Helpful links for gopls
+
+- [Wiki for gopls](https://github.com/golang/tools/blob/master/gopls/doc/user.md)
+- [Recommended settings for VSCode when using gopls](https://github.com/golang/tools/blob/master/gopls/doc/vscode.md)
+- [Troubleshooting for gopls](https://github.com/golang/go/wiki/gopls#troubleshooting)
+- [Known bugs with gopls](https://github.com/golang/go/wiki/gopls#known-issues)
+- [Github issues for gopls](https://github.com/golang/go/issues?q=is%3Aissue+is%3Aopen+label%3Agopls)
+
 ### Linter
 
 A linter is a tool giving coding style feedback and suggestions.
 By default this extension uses the official [golint](https://github.com/golang/lint) as a linter.
 
-You can change the default linter and use the more advanced [Go Meta Linter](https://github.com/alecthomas/gometalinter)
-by setting `go.lintTool` to "gometalinter" in your settings.
-
-Go Meta Linter uses a collection of various linters which will be installed for you by the extension.
-
-Some of the very useful linter tools:
-* [errcheck](https://github.com/kisielk/errcheck) checks for unchecked errors in your code.
-* [varcheck](https://github.com/opennota/check) finds unused global variables and constants.
-* [deadcode](https://github.com/tsenart/deadcode) finds unused code.
-
-If you want to run only specific linters (some linters are slow), you can modify your configuration to specify them:
-
-```javascript
-  "go.lintFlags": ["--disable=all", "--enable=errcheck"],
-```
-
-Alternatively, you can use [staticcheck](https://github.com/dominikh/go-tools/tree/master/cmd/staticcheck) which 
-may have significantly better performance than `gometalinter`, while only supporting a subset of the tools.
-
-Another alternative is [golangci-lint](https://github.com/golangci/golangci-lint) which shares some of the performance
+You can change the default linter and use the more advanced [golangci-lint](https://github.com/golangci/golangci-lint)
+by setting `go.lintTool` to "golangci-lint" in your settings. It shares some of the performance
 characteristics of megacheck, but supports a broader range of tools.
 You can configure golangci-lint with `go.lintFlags`, for example to show issues only in new code and to enable all linters:
 
@@ -150,7 +179,9 @@ You can configure golangci-lint with `go.lintFlags`, for example to show issues 
   "go.lintFlags": ["--enable-all", "--new"],
 ```
 
-An alternative of golint is [revive](https://github.com/mgechev/revive). It is extensible, configurable, provides superset of the rules of golint, and has significantly better performance.
+You can also use [staticcheck](https://github.com/dominikh/go-tools/tree/master/cmd/staticcheck).
+
+Another alternative of golint is [revive](https://github.com/mgechev/revive). It is extensible, configurable, provides superset of the rules of golint, and has significantly better performance.
 
 To configure revive, use:
 
@@ -216,7 +247,7 @@ Please see our wiki on [Frequently Asked Questions](https://github.com/Microsoft
 
 ## Contributing
 
-This project welcomes contributions and suggestions. Please go through our [Contributing Guide](https://github.com/Microsoft/vscode-go/blob/master/CONTRIBUTING.md) 
+This project welcomes contributions and suggestions. Please go through our [Contributing Guide](https://github.com/Microsoft/vscode-go/blob/master/CONTRIBUTING.md)
 to learn how you can contribute. It also includes details on the Contributor License Agreement.
 
 ## Code of Conduct

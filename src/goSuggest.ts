@@ -8,12 +8,12 @@
 import path = require('path');
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getCurrentGoPath, getBinPath, getParametersAndReturnType, parseFilePrelude, isPositionInString, goKeywords, getToolsEnvVars, guessPackageNameFromFile, goBuiltinTypes, byteOffsetAt, runGodoc, isPositionInComment } from './util';
-import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getTextEditForAddImport } from './goImport';
-import { getImportablePackages } from './goPackages';
+import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { isModSupported } from './goModules';
+import { getImportablePackages, PackageInfo } from './goPackages';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { byteOffsetAt, getBinPath, getCurrentGoPath, getGoConfig, getParametersAndReturnType, getToolsEnvVars, goBuiltinTypes, goKeywords, guessPackageNameFromFile, isPositionInComment, isPositionInString, parseFilePrelude, runGodoc } from './util';
 
 function vscodeKindFromGoCodeClass(kind: string, type: string): vscode.CompletionItemKind {
 	switch (kind) {
@@ -58,7 +58,7 @@ const exportedMemberRegex = /(const|func|type|var)(\s+\(.*\))?\s+([A-Z]\w*)/;
 const gocodeNoSupportForgbMsgKey = 'dontshowNoSupportForgb';
 
 export class GoCompletionItemProvider implements vscode.CompletionItemProvider, vscode.Disposable {
-	private pkgsList = new Map<string, string>();
+	private pkgsList = new Map<string, PackageInfo>();
 	private killMsgShown: boolean = false;
 	private setGocodeOptions: boolean = true;
 	private isGoMod: boolean = false;
@@ -73,7 +73,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	}
 
 	public provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.CompletionList> {
-		return this.provideCompletionItemsInternal(document, position, token, vscode.workspace.getConfiguration('go', document.uri)).then(result => {
+		return this.provideCompletionItemsInternal(document, position, token, getGoConfig(document.uri)).then(result => {
 			if (!result) {
 				return new vscode.CompletionList([], false);
 			}
@@ -273,7 +273,9 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 					let areCompletionsForPackageSymbols = false;
 					if (results && results[1]) {
 						for (const suggest of results[1]) {
-							if (inString && suggest.class !== 'import') continue;
+							if (inString && suggest.class !== 'import') {
+								continue;
+							}
 							const item = new ExtendedCompletionItem(suggest.name);
 							item.kind = vscodeKindFromGoCodeClass(suggest.class, suggest.type);
 							item.package = suggest.package;
@@ -465,8 +467,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 	 */
 	private getPackageImportPath(input: string): string[] {
 		const matchingPackages: any[] = [];
-		this.pkgsList.forEach((pkgName: string, pkgPath: string) => {
-			if (input === pkgName) {
+		this.pkgsList.forEach((info: PackageInfo, pkgPath: string) => {
+			if (input === info.name) {
 				matchingPackages.push(pkgPath);
 			}
 		});
@@ -526,7 +528,7 @@ function getKeywordCompletions(currentWord: string): vscode.CompletionItem[] {
  * @param allPkgMap Map of all available packages and their import paths
  * @param importedPackages List of imported packages. Used to prune imported packages out of available packages
  */
-function getPackageCompletions(document: vscode.TextDocument, currentWord: string, allPkgMap: Map<string, string>, importedPackages: string[] = []): vscode.CompletionItem[] {
+function getPackageCompletions(document: vscode.TextDocument, currentWord: string, allPkgMap: Map<string, PackageInfo>, importedPackages: string[] = []): vscode.CompletionItem[] {
 	const cwd = path.dirname(document.fileName);
 	const goWorkSpace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
 	const workSpaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -534,7 +536,8 @@ function getPackageCompletions(document: vscode.TextDocument, currentWord: strin
 
 	const completionItems: any[] = [];
 
-	allPkgMap.forEach((pkgName: string, pkgPath: string) => {
+	allPkgMap.forEach((info: PackageInfo, pkgPath: string) => {
+		const pkgName = info.name;
 		if (pkgName.startsWith(currentWord) && importedPackages.indexOf(pkgName) === -1) {
 
 			const item = new vscode.CompletionItem(pkgName, vscode.CompletionItemKind.Keyword);
@@ -582,7 +585,7 @@ export async function getCompletionsWithoutGoCode(document: vscode.TextDocument,
 	}
 
 	const lineText = document.lineAt(position.line).text;
-	const config = vscode.workspace.getConfiguration('go', document.uri);
+	const config = getGoConfig(document.uri);
 	const autocompleteUnimportedPackages = config['autocompleteUnimportedPackages'] === true && !lineText.match(/^(\s)*(import|package)(\s)+/);
 
 	const commentCompletion = getCommentCompletion(document, position);

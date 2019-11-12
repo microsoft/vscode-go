@@ -7,8 +7,8 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedByteOffsetConverter } from './util';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
+import { getBinPath, getGoConfig, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedByteOffsetConverter } from './util';
 
 // Keep in sync with https://github.com/ramya-rao-a/go-outline
 export interface GoOutlineRange {
@@ -96,7 +96,9 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 						return resolve(results);
 					});
 				}
-				if (err) return resolve(null);
+				if (err) {
+					return resolve(null);
+				}
 				const result = stdout.toString();
 				const decls = <GoOutlineDeclaration[]>JSON.parse(result);
 				return resolve(decls);
@@ -127,9 +129,12 @@ function convertToCodeSymbols(
 
 	const symbols: vscode.DocumentSymbol[] = [];
 	(decls || []).forEach(decl => {
-		if (!includeImports && decl.type === 'import') return;
-
-		if (decl.label === '_' && decl.type === 'variable') return;
+		if (!includeImports && decl.type === 'import') {
+			return;
+		}
+		if (decl.label === '_' && decl.type === 'variable') {
+			return;
+		}
 
 		const label = decl.receiverType
 			? `(${decl.receiverType}).${decl.label}`
@@ -170,7 +175,7 @@ export class GoDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
 
 	public provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.DocumentSymbol[]> {
 		if (typeof this.includeImports !== 'boolean') {
-			const gotoSymbolConfig = vscode.workspace.getConfiguration('go', document.uri)['gotoSymbol'];
+			const gotoSymbolConfig = getGoConfig(document.uri)['gotoSymbol'];
 			this.includeImports = gotoSymbolConfig ? gotoSymbolConfig['includeImports'] : false;
 		}
 		const options: GoOutlineOptions = {

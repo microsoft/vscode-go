@@ -10,7 +10,7 @@ import vscode = require('vscode');
 import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
-import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
+import { envPath, getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
 import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
 const sendSignal = 'SIGKILL';
@@ -181,7 +181,7 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
  * @param goConfig Configuration for the Go extension.
  */
 export function goTest(testconfig: TestConfig): Thenable<boolean> {
-	return new Promise<boolean>((resolve, reject) => {
+	return new Promise<boolean>(async (resolve, reject) => {
 
 		// We do not want to clear it if tests are already running, as that could
 		// lose valuable output.
@@ -210,7 +210,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 		const goRuntimePath = getBinPath('go');
 
 		if (!goRuntimePath) {
-			vscode.window.showInformationMessage('Cannot find "go" binary. Update PATH or GOROOT appropriately');
+			vscode.window.showErrorMessage(`Failed to run "go test" as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 			return Promise.resolve();
 		}
 
@@ -223,8 +223,8 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				targets = ['./...'];
 				pkgMapPromise = getNonVendorPackages(testconfig.dir); // We need the mapping to get absolute paths for the files in the test output
 			} else {
-				pkgMapPromise = getGoVersion().then(ver => {
-					if (!ver || ver.major > 1 || (ver.major === 1 && ver.minor >= 9)) {
+				pkgMapPromise = getGoVersion().then(goVersion => {
+					if (goVersion.gt('1.8')) {
 						targets = ['./...'];
 						return null; // We dont need mapping, as we can derive the absolute paths from package path
 					}
@@ -250,14 +250,20 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 				outTargets.push('<long arguments omitted>');
 			} else {
 				outTargets.push(...targets);
-				outTargets.push(...testconfig.flags);
 			}
-			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
-			outputChannel.appendLine('');
 
 			args.push(...targets);
+
 			// ensure that user provided flags are appended last (allow use of -args ...)
+			// ignore user provided -run flag if we are already using it
+			if (args.indexOf('-run') > -1) {
+				removeRunFlag(testconfig.flags);
+			}
 			args.push(...testconfig.flags);
+
+			outTargets.push(...testconfig.flags);
+			outputChannel.appendLine(['Running tool:', goRuntimePath, ...outTargets].join(' '));
+			outputChannel.appendLine('');
 
 			const tp = cp.spawn(goRuntimePath, args, { env: testEnvVars, cwd: testconfig.dir });
 			const outBuf = new LineBuffer();
@@ -284,7 +290,9 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			// go test emits test results on stdout, which contain file names relative to the package under test
 			outBuf.onLine(line => processTestResultLine(line));
 			outBuf.onDone(last => {
-				if (last) processTestResultLine(last);
+				if (last) {
+					processTestResultLine(last);
+				}
 
 				// If there are any remaining test result lines, emit them to the output channel.
 				if (testResultLines.length > 0) {
@@ -404,4 +412,11 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 		params = ['-bench', '.'];
 	}
 	return params;
+}
+
+function removeRunFlag(flags: string[]): void {
+	const index: number = flags.indexOf('-run');
+	if (index !== -1) {
+		flags.splice(index, 2);
+	}
 }

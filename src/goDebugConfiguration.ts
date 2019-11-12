@@ -1,11 +1,16 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 'use strict';
 
 import vscode = require('vscode');
 import path = require('path');
-import { getCurrentGoPath, getToolsEnvVars, sendTelemetryEvent, getBinPath } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
-import { debug } from 'util';
+import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars, sendTelemetryEvent } from './util';
+import { packagePathToGoModPathMap } from './goModules';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -58,6 +63,8 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			};
 		}
 
+		debugConfiguration['packagePathToGoModPathMap'] = packagePathToGoModPathMap;
+
 		const gopath = getCurrentGoPath(folder ? folder.uri : null);
 		if (!debugConfiguration['env']) {
 			debugConfiguration['env'] = { 'GOPATH': gopath };
@@ -65,7 +72,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			debugConfiguration['env']['GOPATH'] = gopath;
 		}
 
-		const goConfig = vscode.workspace.getConfiguration('go', folder ? folder.uri : null);
+		const goConfig = getGoConfig(folder && folder.uri);
 		const goToolsEnvVars = getToolsEnvVars();
 		Object.keys(goToolsEnvVars).forEach(key => {
 			if (!debugConfiguration['env'].hasOwnProperty(key)) {

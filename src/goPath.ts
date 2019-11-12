@@ -20,8 +20,8 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 	toolName = correctBinname(toolName);
 	if (envVarValue) {
 		const paths = envVarValue.split(path.delimiter);
-		for (let i = 0; i < paths.length; i++) {
-			const binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', toolName);
+		for (const p of paths) {
+			const binpath = path.join(p, appendBinToPath ? 'bin' : '', toolName);
 			if (fileExists(binpath)) {
 				return binpath;
 			}
@@ -31,7 +31,9 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 }
 
 export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths: string[], alternateTool?: string) {
-	if (binPathCache[toolName]) return binPathCache[toolName];
+	if (binPathCache[toolName]) {
+		return binPathCache[toolName];
+	}
 
 	if (alternateTool && path.isAbsolute(alternateTool) && fileExists(alternateTool)) {
 		binPathCache[toolName] = alternateTool;
@@ -39,10 +41,10 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 	}
 
 	const binname = (alternateTool && !path.isAbsolute(alternateTool)) ? alternateTool : toolName;
-	for (let i = 0; i < preferredGopaths.length; i++) {
-		if (typeof preferredGopaths[i] === 'string') {
+	for (const preferred of preferredGopaths) {
+		if (typeof preferred === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder
-			const pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferredGopaths[i], true);
+			const pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferred, true);
 			if (pathFrompreferredGoPath) {
 				binPathCache[toolName] = pathFrompreferredGoPath;
 				return pathFrompreferredGoPath;
@@ -79,10 +81,10 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 }
 
 function correctBinname(toolName: string) {
-	if (process.platform === 'win32')
+	if (process.platform === 'win32') {
 		return toolName + '.exe';
-	else
-		return toolName;
+	}
+	return toolName;
 }
 
 function fileExists(filePath: string): boolean {
@@ -106,7 +108,9 @@ export function clearCacheForTools() {
  * Exapnds ~ to homedir in non-Windows platform
  */
 export function resolveHomeDir(inputPath: string): string {
-	if (!inputPath || !inputPath.trim()) return inputPath;
+	if (!inputPath || !inputPath.trim()) {
+		return inputPath;
+	}
 	return inputPath.startsWith('~') ? path.join(os.homedir(), inputPath.substr(1)) : inputPath;
 }
 
@@ -171,8 +175,8 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 
 	// Find current workspace by checking if current file is
 	// under any of the workspaces in $GOPATH
-	for (let i = 0; i < workspaces.length; i++) {
-		const possibleCurrentWorkspace = path.join(workspaces[i], 'src');
+	for (const workspace of workspaces) {
+		const possibleCurrentWorkspace = path.join(workspace, 'src');
 		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)
 			|| (process.platform === 'win32' && currentFileDirPath.toLowerCase().startsWith(possibleCurrentWorkspace.toLowerCase()))) {
 			// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)

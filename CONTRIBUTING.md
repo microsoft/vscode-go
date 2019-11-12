@@ -10,6 +10,14 @@ If you are interested in writing code to fix issues, first look at the issues wi
 
 To get started with the code, please see [Building, Debugging and Sideloading the extension in Visual Studio Code](https://github.com/Microsoft/vscode-go/wiki/Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code) in the wiki.
 
+A few labels other than [help-wanted](https://github.com/Microsoft/vscode-go/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) that might be of interest to you are
+- [good-first-issue](https://github.com/microsoft/vscode-go/issues?q=is%3Aopen+is%3Aissue+label%3Agood-first-issue)
+   These are issues that have fixes with the lowest barrier of entry.
+- [engineering-debt](https://github.com/microsoft/vscode-go/issues?utf8=✓&q=is%3Aopen+is%3Aissue+label%3Aengineering-debt+)
+   These are issues tracking the work that would improve the project structure, coding standards, test coverage etc. If you have any Javascript or Typescript background, then these are the issues you can jump in and start contributing immediately.
+- [under-discussion](https://github.com/microsoft/vscode-go/issues?utf8=✓&q=is%3Aopen+is%3Aissue+label%3Aunder-discussion)
+   These are issues where you as a Go developer can jump in and provide your insights on the discussion regarding how a problem should be solved or help in replicating the problem.
+
 ### Contributor License Agreement
 
 You must sign a Contribution License Agreement (CLA) before your PR will be merged. This a one-time requirement for Microsoft projects in GitHub. 
@@ -67,6 +75,8 @@ Please include the following with each issue:
 
 * OS/Platform you are working on
 
+* Run the command `Preferences: Open Settings (JSON) to see the entire list of settings you have added/edited. Share any Go related settings from here.
+
 * Reproducible steps (1... 2... 3...) that cause the issue
 
 * What you expected to see, versus what you actually saw
@@ -78,6 +88,8 @@ Please include the following with each issue:
   * **Note:** Because the developers need to copy and paste the code snippet, including a code snippet as a media file (i.e. .gif) is not sufficient.
 
 * Errors from the Dev Tools Console (open from the menu: Help > Toggle Developer Tools -> Console)
+
+* If you have enabled the use of language server, then share any errors from the logs (open from the menu: View > Output -> select language server from the drop down on the to right corner of the output panel)
 
 ### Final Checklist
 
