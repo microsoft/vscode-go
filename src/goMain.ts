@@ -32,7 +32,7 @@ import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
 import { showHideStatus } from './goStatus';
 import { testAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWorkspace } from './goTest';
 import { vetCode } from './goVet';
-import { setGlobalState } from './stateUtils';
+import { setGlobalState, getFromGlobalState, updateGlobalState } from './stateUtils';
 import { cancelRunningTests, showTestOutput } from './testUtils';
 import { cleanupTempDir, disposeTelemetryReporter, getBinPath, getGoConfig, getCurrentGoPath, getExtensionCommands, getGoVersion, getToolsEnvVars, getToolsGopath, getWorkspaceFolderPath, handleDiagnosticErrors, isGoPathSet, sendTelemetryEvent } from './util';
 
@@ -275,7 +275,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 		if (e.affectsConfiguration('go.toolsEnvVars')) {
 			const env = getToolsEnvVars();
-			if (GO111MODULE !==  env['GO111MODULE']) {
+			if (GO111MODULE !== env['GO111MODULE']) {
 				const reloadMsg = 'Reload VS Code window so that the Go tools can respect the change to GO111MODULE';
 				vscode.window.showInformationMessage(reloadMsg, 'Reload').then((selected) => {
 					if (selected === 'Reload') {
@@ -393,7 +393,16 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 			return;
 		}
 		if (vscode.debug.activeDebugSession) {
-			vscode.window.showWarningMessage('A debug session is currently active. Changes to your Go files may result in unexpected behaviour.');
+			const neverAgain = { title: 'Don\'t Show Again' };
+			const ignoreActiveDebugWarningKey = 'ignoreActiveDebugWarningKey';
+			const ignoreActiveDebugWarning = getFromGlobalState(ignoreActiveDebugWarningKey);
+			if (!ignoreActiveDebugWarning) {
+				vscode.window.showWarningMessage('A debug session is currently active. Changes to your Go files may result in unexpected behaviour.', neverAgain).then(result => {
+					if (result === neverAgain) {
+						updateGlobalState(ignoreActiveDebugWarningKey, true);
+					}
+				});
+			}
 		}
 		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
 			runBuilds(document, getGoConfig(document.uri));
