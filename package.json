@@ -66,6 +66,7 @@
     "vscode": "^1.30.0"
   },
   "activationEvents": [
+    "workspaceContains:**/*.go",
     "onLanguage:go",
     "onCommand:go.gopath",
     "onCommand:go.tools.install",
