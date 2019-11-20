@@ -235,7 +235,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	currentFile: string;
 	packagePathToGoModPathMap: {[key: string]: string};
 	/** Used to relativize source files passed to delve - required to debug binaries built with bazel */
-	sourceRoot?: string
+	sourceRoot?: string;
 }
 
 interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
@@ -262,7 +262,7 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 	showGlobalVariables?: boolean;
 	currentFile: string;
 	/** Used to relativize source files passed to delve - required to debug binaries built with bazel */
-	sourceRoot?: string
+	sourceRoot?: string;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -312,7 +312,7 @@ class Delve {
 	isRemoteDebugging: boolean;
 	request: 'attach' | 'launch';
 	/** Used to relativize source files passed to delve - required to debug binaries built with bazel */
-	sourceRoot?: string
+	sourceRoot?: string;
 
 	constructor(launchArgs: LaunchRequestArguments | AttachRequestArguments, program: string) {
 		this.sourceRoot = launchArgs.sourceRoot;
@@ -870,7 +870,11 @@ class GoDebugSession extends LoggingDebugSession {
 
 	protected toLocalPath(pathToConvert: string): string {
 		if (this.delve.remotePath.length === 0) {
-			return this.convertDebuggerPathToClient(pathToConvert);
+			if (!!this.delve.sourceRoot) {
+				return this.convertDebuggerPathToClient(this.delve.sourceRoot + pathToConvert);
+			} else {
+				return this.convertDebuggerPathToClient(pathToConvert);
+			}
 		}
 
 		// Fix for https://github.com/Microsoft/vscode-go/issues/1178
