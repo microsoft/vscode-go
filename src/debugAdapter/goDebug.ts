@@ -857,7 +857,7 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	protected toDebuggerPath(clientPath: string, sourceRoot?: string): string {
+	protected toDebuggerPath(clientPath: string): string {
 		if (this.delve.remotePath.length === 0) {
 			if (!!this.delve.sourceRoot && clientPath.startsWith(this.delve.sourceRoot)) {
 				return this.convertClientPathToDebugger(path.relative(this.delve.sourceRoot, clientPath));
@@ -871,7 +871,7 @@ class GoDebugSession extends LoggingDebugSession {
 	protected toLocalPath(pathToConvert: string): string {
 		if (this.delve.remotePath.length === 0) {
 			if (!!this.delve.sourceRoot) {
-				return this.convertDebuggerPathToClient(this.delve.sourceRoot + pathToConvert);
+				return this.convertDebuggerPathToClient(this.delve.sourceRoot + this.findPathSeperator(pathToConvert) + pathToConvert);
 			} else {
 				return this.convertDebuggerPathToClient(pathToConvert);
 			}
@@ -914,7 +914,7 @@ class GoDebugSession extends LoggingDebugSession {
 		if (!this.breakpoints.get(file)) {
 			this.breakpoints.set(file, []);
 		}
-		const remoteFile = this.toDebuggerPath(file, this.delve.sourceRoot);
+		const remoteFile = this.toDebuggerPath(file);
 
 		return Promise.all(this.breakpoints.get(file).map(existingBP => {
 			log('Clearing: ' + existingBP.id);
@@ -1236,7 +1236,7 @@ class GoDebugSession extends LoggingDebugSession {
 		if (!debugState.currentThread || !debugState.currentThread.file) {
 			return Promise.resolve(null);
 		}
-		const dir = path.dirname(this.delve.remotePath.length ? this.toLocalPath(debugState.currentThread.file) : debugState.currentThread.file);
+		const dir = path.dirname(this.toLocalPath(debugState.currentThread.file));
 		if (this.packageInfo.has(dir)) {
 			return Promise.resolve(this.packageInfo.get(dir));
 		}
