@@ -234,6 +234,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	showGlobalVariables?: boolean;
 	currentFile: string;
 	packagePathToGoModPathMap: {[key: string]: string};
+	/** Used to relativize source files passed to delve - required to debug binaries built with bazel */
+	sourceRoot?: string
 }
 
 interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
@@ -259,6 +261,8 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 
 	showGlobalVariables?: boolean;
 	currentFile: string;
+	/** Used to relativize source files passed to delve - required to debug binaries built with bazel */
+	sourceRoot?: string
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -307,8 +311,11 @@ class Delve {
 	stackTraceDepth: number;
 	isRemoteDebugging: boolean;
 	request: 'attach' | 'launch';
+	/** Used to relativize source files passed to delve - required to debug binaries built with bazel */
+	sourceRoot?: string
 
 	constructor(launchArgs: LaunchRequestArguments | AttachRequestArguments, program: string) {
+		this.sourceRoot = launchArgs.sourceRoot;
 		this.request = launchArgs.request;
 		this.program = normalizePath(program);
 		this.remotePath = launchArgs.remotePath;
@@ -850,11 +857,15 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 	}
 
-	protected toDebuggerPath(path: string): string {
+	protected toDebuggerPath(clientPath: string, sourceRoot?: string): string {
 		if (this.delve.remotePath.length === 0) {
-			return this.convertClientPathToDebugger(path);
+			if (!!this.delve.sourceRoot && clientPath.startsWith(this.delve.sourceRoot)) {
+				return this.convertClientPathToDebugger(path.relative(this.delve.sourceRoot, clientPath));
+			} else {
+				return this.convertClientPathToDebugger(clientPath);
+			}
 		}
-		return path.replace(this.delve.program, this.delve.remotePath).split(this.localPathSeparator).join(this.remotePathSeparator);
+		return clientPath.replace(this.delve.program, this.delve.remotePath).split(this.localPathSeparator).join(this.remotePathSeparator);
 	}
 
 	protected toLocalPath(pathToConvert: string): string {
@@ -899,7 +910,7 @@ class GoDebugSession extends LoggingDebugSession {
 		if (!this.breakpoints.get(file)) {
 			this.breakpoints.set(file, []);
 		}
-		const remoteFile = this.toDebuggerPath(file);
+		const remoteFile = this.toDebuggerPath(file, this.delve.sourceRoot);
 
 		return Promise.all(this.breakpoints.get(file).map(existingBP => {
 			log('Clearing: ' + existingBP.id);

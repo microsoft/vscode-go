@@ -410,6 +410,11 @@
           "launch": {
             "required": [],
             "properties": {
+              "sourceRoot": {
+                "type": "string",
+                "description": "Path with which to relativize source file paths. Required to debug binaries built with trim-paths e.g. with Bazel",
+                "default": "${workspaceFolder}"
+              },
               "program": {
                 "type": "string",
                 "description": "Path to the program folder (or any file within that folder) when in 'debug' or 'test' mode, and to the pre-built binary file to debug in 'exec' mode.",
