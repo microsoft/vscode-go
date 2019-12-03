@@ -60,7 +60,7 @@
     "mocha": "^6.2.0",
     "tslint": "^5.19.0",
     "typescript": "^3.6.2",
-    "vscode-test": "^1.2.0"
+    "vscode-test": "^1.2.3"
   },
   "engines": {
     "vscode": "^1.30.0"
