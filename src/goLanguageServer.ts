@@ -245,7 +245,9 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	ctx.subscriptions.push(languageServerDisposable);
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', async () => {
-		c.diagnostics.clear();
+		if (c.diagnostics) {
+			c.diagnostics.clear();
+		}
 		await c.stop();
 		languageServerDisposable.dispose();
 		languageServerDisposable = c.start();
