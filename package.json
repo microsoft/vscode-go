@@ -781,8 +781,7 @@
             "golint",
             "golangci-lint",
             "revive",
-            "staticcheck",
-            "gometalinter"
+            "staticcheck"
           ]
         },
         "go.lintFlags": {
@@ -1443,11 +1442,6 @@
               "type": "string",
               "default": "go",
               "description": "Alternate tool to use instead of the go binary or alternate path to use for the go binary."
-            },
-            "gometalinter": {
-              "type": "string",
-              "default": "gometalinter",
-              "description": "Alternate tool to use instead of the gometalinter binary or alternate path to use for the gometalinter binary."
             },
             "gocode": {
               "type": "string",
