@@ -1,3 +1,25 @@
+## 0.12.0 - Coming Soon
+
+* [Oleg Kovalov (@cristaloleg)](https://github.com/cristaloleg)
+    * New setting `go.coverOnSingleTestFile` to enable applying code coverage resulting from running all tests in current file either using
+    the code lens `run file tests` or the command `Go: Test File`. [Feature Request 2873](https://github.com/Microsoft/vscode-go/issues/2873) implemented with [PR 2884](https://github.com/Microsoft/vscode-go/pull/2884)
+
+* [C S Madhav (@csmadhav)](https://github.com/csmadhav)
+    * Add the option `Don't show again` to the warning that appears on saving changes to files when in the midst of debugging. [Feature Request 2880](https://github.com/Microsoft/vscode-go/issues/2880) implemented with [PR 2906](https://github.com/Microsoft/vscode-go/pull/2906)
+
+* [Zac Bergquist (@zmb3)](https://github.com/zmb3)
+    * Activate the Go extension when the workspace contains Go files rather than wait for a Go file to be opened. [Feature Request 2821](https://github.com/Microsoft/vscode-go/issues/2821) implemented with [PR 2859](https://github.com/Microsoft/vscode-go/pull/2859)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Fix error "Cannot read property 'clear' of undefined" that appears on running the command `Restart language server` if the language server had not started successfully. 
+
+* [Ryan Boehning (@y0ssar1an)](https://github.com/y0ssar1an)
+    * Update travis.yml with latest VM and improve time taken during cloning step. For more details, see [PR 2915](https://github.com/Microsoft/vscode-go/pull/2915)
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+    * Update package dependencies. [PR 2900](https://github.com/Microsoft/vscode-go/pull/2900)
+
+
 ## 0.11.9 - 5th November, 2019
 
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
