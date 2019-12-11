@@ -40,7 +40,6 @@ interface LanguageServerConfig {
 		diagnostics: boolean;
 		format: boolean;
 		documentLink: boolean;
-		highlight: boolean;
 	};
 	checkForUpdates: boolean;
 }
@@ -106,12 +105,6 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 						return null;
 					}
 					return next(document, token);
-				},
-				provideDocumentHighlights: (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, next: ProvideDocumentHighlightsSignature) => {
-					if (!config.features.highlight) {
-						return null;
-					}
-					return next(document, position, token);
 				}
 			}
 		}

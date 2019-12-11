@@ -1101,24 +1101,12 @@
               "type": "boolean",
               "default": true,
               "description": "If true, the language server will provide clickable Godoc links for import statements."
-            },
-            "incrementalSync": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will accept incremental document synchronization."
-            },
-            "highlight": {
-              "type": "boolean",
-              "default": true,
-              "description": "If true, the language server will be used to highlighting selected text."
             }
           },
           "default": {
             "format": true,
             "diagnostics": true,
-            "documentLink": true,
-            "highlight": true,
-            "incrementalSync": false
+            "documentLink": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
