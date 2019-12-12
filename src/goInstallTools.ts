@@ -12,7 +12,7 @@ import cp = require('child_process');
 import { getLanguageServerToolPath } from './goLanguageServer';
 import { envPath, getToolFromToolPath } from './goPath';
 import { hideGoStatus, outputChannel, showGoStatus } from './goStatus';
-import { containsString, containsTool, getConfiguredTools, getImportPath, getTool, hasModSuffix, isGocode, isWildcard, Tool } from './goTools';
+import { containsString, containsTool, getConfiguredTools, getImportPath, getTool, hasModSuffix, isGocode, Tool, disableModulesForWildcard } from './goTools';
 import { getBinPath, getCurrentGoPath, getGoConfig, getGoVersion, getTempFilePath, getToolsGopath, GoVersion, resolvePath } from './util';
 
 // declinedUpdates tracks the tools that the user has declined to update.
@@ -141,7 +141,8 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
 		// Disable modules for tools which are installed with the "..." wildcard.
 		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
-		if (modulesOff || isWildcard(tool, goVersion)) {
+		let modulesOffForTool = modulesOff || disableModulesForWildcard(tool, goVersion);
+		if (modulesOffForTool) {
 			envForTools['GO111MODULE'] = 'off';
 		} else {
 			envForTools['GO111MODULE'] = 'on';
@@ -155,7 +156,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				// Make sure to run `go mod tidy` between tool installations.
 				// This avoids us having to create a fresh go.mod file for each tool.
-				if (!modulesOff) {
+				if (!modulesOffForTool) {
 					cp.execFileSync(goRuntimePath, ['mod', 'tidy'], opts);
 				}
 				if (err) {
@@ -189,7 +190,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				}
 				const args = ['get', '-v'];
 				// Only get tools at master if we are not using modules.
-				if (modulesOff) {
+				if (modulesOffForTool) {
 					args.push('-u');
 				}
 				// Tools with a "mod" suffix should not be installed,
