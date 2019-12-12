@@ -128,7 +128,6 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				codelens.push(new CodeLens(func.range, runBenchmarkCmd));
 
 				const debugConfigToUsed = Object.assign({}, currentDebugConfig);
-
 				debugConfigToUsed.args = (currentDebugConfig.args || []).concat(['-test.bench', '^' + func.name + '$', '-test.run', 'a^']);
 				const debugTestCmd: Command = {
 					title: 'debug benchmark',
