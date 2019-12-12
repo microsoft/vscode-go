@@ -7,26 +7,25 @@ import * as assert from 'assert';
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { GoHoverProvider } from '../../src/goExtraInfo';
-import { GoCompletionItemProvider } from '../../src/goSuggest';
-import { GoSignatureHelpProvider } from '../../src/goSignature';
-import { GoDefinitionProvider } from '../../src/goDeclaration';
-import { getWorkspaceSymbols } from '../../src/goSymbol';
+import { FilePatch, getEdits, getEditsFromUnifiedDiffStr } from '../../src/diffUtils';
 import { check } from '../../src/goCheck';
-import cp = require('child_process');
-import { getEditsFromUnifiedDiffStr, getEdits, FilePatch } from '../../src/diffUtils';
-import { testCurrentFile } from '../../src/goTest';
-import { getBinPath, getGoVersion, isVendorSupported, getToolsGopath, getCurrentGoPath, ICheckResult } from '../../src/util';
-import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
-import { listPackages, getTextEditForAddImport } from '../../src/goImport';
-import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../../src/goGenerateTests';
-import { getAllPackages } from '../../src/goPackages';
-import { getImportPath } from '../../src/util';
-import { goPlay } from '../../src/goPlayground';
+import { GoDefinitionProvider } from '../../src/goDeclaration';
+import { GoHoverProvider } from '../../src/goExtraInfo';
 import { runFillStruct } from '../../src/goFillStruct';
+import { generateTestCurrentFile, generateTestCurrentFunction, generateTestCurrentPackage } from '../../src/goGenerateTests';
+import { getTextEditForAddImport, listPackages } from '../../src/goImport';
+import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
+import { getAllPackages } from '../../src/goPackages';
+import { goPlay } from '../../src/goPlayground';
+import { GoSignatureHelpProvider } from '../../src/goSignature';
+import { GoCompletionItemProvider } from '../../src/goSuggest';
+import { getWorkspaceSymbols } from '../../src/goSymbol';
+import { testCurrentFile } from '../../src/goTest';
+import { getBinPath, getCurrentGoPath, getGoVersion, getImportPath, getToolsGopath, ICheckResult, isVendorSupported } from '../../src/util';
+import cp = require('child_process');
 
 suite('Go Extension Tests', () => {
-	const gopath = process.env['GOPATH'];
+	const gopath = getCurrentGoPath();
 	if (!gopath) {
 		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
 		return;
@@ -106,7 +105,7 @@ suite('Go Extension Tests', () => {
 		try {
 			const textDocument = await vscode.workspace.openTextDocument(uri);
 			const promises = testCases.map(([position, expected, expectedDoc, expectedParams]) => provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
-				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position}`);
+				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position.line + 1}:${position.character + 1}`);
 				assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 				assert.equal(sigHelp.signatures[0].label, expected);
 				assert.equal(sigHelp.signatures[0].documentation, expectedDoc);
@@ -226,7 +225,7 @@ encountered.
 			'docsTool': { value: 'godoc' }
 		});
 		testHoverProvider(config, testCases).then(() => done(), done);
-	});
+	}).timeout(10000);
 
 	test('Test Hover Provider using gogetdoc', (done) => {
 		const gogetdocPath = getBinPath('gogetdoc');
@@ -248,7 +247,7 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(40, 23), 'package math', 'Package math provides basic constants and mathematical functions.\n\nThis package does not guarantee bit-identical results across architectures.\n'],
 			[new vscode.Position(19, 6), 'func Println(a ...interface{}) (n int, err error)', printlnDoc],
 			[new vscode.Position(27, 14), 'type ABC struct {\n    a int\n    b int\n    c int\n}', 'ABC is a struct, you coudn\'t use Goto Definition or Hover info on this before\nNow you can due to gogetdoc and go doc\n'],
-			[new vscode.Position(28, 6), 'func CIDRMask(ones, bits int) IPMask', 'CIDRMask returns an IPMask consisting of `ones\' 1 bits\nfollowed by 0s up to a total length of `bits\' bits.\nFor a mask of this form, CIDRMask is the inverse of IPMask.Size.\n']
+			[new vscode.Position(28, 6), 'func IPv4Mask(a, b, c, d byte) IPMask', 'IPv4Mask returns the IP mask (in 4-byte form) of the\nIPv4 mask a.b.c.d.\n']
 		];
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
 			'docsTool': { value: 'gogetdoc' }
@@ -460,7 +459,7 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Outline', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
-			const options = { document: document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Include };
+			const options = { document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Include };
 
 			documentSymbols(options, null).then(outlines => {
 				const packageSymbols = outlines.filter((x: any) => x.kind === vscode.SymbolKind.Package);
@@ -483,7 +482,7 @@ It returns the number of bytes written and any write error encountered.
 	test('Test Outline imports only', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(document => {
-			const options = { document: document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only };
+			const options = { document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only };
 
 			documentSymbols(options, null).then(outlines => {
 				const packageSymbols = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
@@ -553,7 +552,7 @@ It returns the number of bytes written and any write error encountered.
 
 		vendorSupportPromise.then(async (vendorSupport: boolean) => {
 			const gopkgsPromise = getAllPackages(workDir).then(pkgMap => {
-				const pkgs = Array.from(pkgMap.keys()).filter(p => pkgMap.get(p) !== 'main');
+				const pkgs = Array.from(pkgMap.keys()).filter(p => pkgMap.get(p).name !== 'main');
 				if (vendorSupport) {
 					vendorPkgsFullPath.forEach(pkg => {
 						assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
@@ -921,7 +920,7 @@ encountered.
 			const editor = await vscode.window.showTextDocument(textDocument);
 			const promises = testCases.map(([position, expected]) => provider.provideCompletionItems(editor.document, position, null).then(items => {
 				const labels = items.items.map(x => x.label);
-				assert.equal(expected.length, labels.length, `expected number of completions: ${expected.length} Actual: ${labels.length} at position(${position.line},${position.character}) ${labels}`);
+				assert.equal(expected.length, labels.length, `expected number of completions: ${expected.length} Actual: ${labels.length} at position(${position.line + 1},${position.character + 1}) ${labels}`);
 				expected.forEach((entry, index) => {
 					assert.equal(entry, labels[index], `mismatch in comment completion list Expected: ${entry} Actual: ${labels[index]}`);
 				});

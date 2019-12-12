@@ -168,6 +168,7 @@ interface DebugVariable {
 	children: DebugVariable[];
 	unreadable: string;
 	fullyQualifiedName: string;
+	base: number;
 }
 
 interface ListGoroutinesOut {
@@ -232,6 +233,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 	showGlobalVariables?: boolean;
 	currentFile: string;
+	packagePathToGoModPathMap: {[key: string]: string};
 }
 
 interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
@@ -434,7 +436,7 @@ class Delve {
 				dlvArgs.push(mode || 'debug');
 				if (mode === 'exec') {
 					dlvArgs.push(program);
-				} else if (currentGOWorkspace && env['GO111MODULE'] !== 'on') {
+				} else if (currentGOWorkspace && !launchArgs.packagePathToGoModPathMap[dirname]) {
 					dlvArgs.push(dirname.substr(currentGOWorkspace.length + 1));
 				}
 				dlvArgs.push('--headless=true', `--listen=${launchArgs.host}:${launchArgs.port}`);
@@ -510,7 +512,9 @@ class Delve {
 				setTimeout(() => {
 					const client = Client.$create(port, host);
 					client.connectSocket((err, conn) => {
-						if (err) return reject(err);
+						if (err) {
+							return reject(err);
+						}
 						return resolve(conn);
 					});
 				}, 200);
@@ -567,7 +571,7 @@ class Delve {
 		// If a program is launched with --continue, the program is running
 		// before we can run attach. So we would need to check the state.
 		// We use NonBlocking so the call would return immediately.
-		const callResult = await this.callPromise<DebuggerState | CommandOut>('State', [{NonBlocking: true}]);
+		const callResult = await this.callPromise<DebuggerState | CommandOut>('State', [{ NonBlocking: true }]);
 		return this.isApiV1 ? <DebuggerState>callResult : (<CommandOut>callResult).State;
 	}
 
@@ -690,7 +694,9 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	protected findPathSeperator(path: string) {
-		if (/^(\w:[\\/]|\\\\)/.test(path)) return '\\';
+		if (/^(\w:[\\/]|\\\\)/.test(path)) {
+			return '\\';
+		}
 		return path.includes('/') ? '/' : '\\';
 	}
 
@@ -734,12 +740,17 @@ class GoDebugSession extends LoggingDebugSession {
 			const llist = localPath.split(/\/|\\/).reverse();
 			const rlist = args.remotePath.split(/\/|\\/).reverse();
 			let i = 0;
-			for (; i < llist.length; i++) if (llist[i] !== rlist[i] || llist[i] === 'src') break;
+			for (; i < llist.length; i++) {
+				if (llist[i] !== rlist[i] || llist[i] === 'src') {
+					break;
+				}
+			}
 
 			if (i) {
 				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
 				args.remotePath = rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
-			} else if ((args.remotePath.endsWith('\\')) || (args.remotePath.endsWith('/'))) {
+			} else if (args.remotePath.length > 1 &&
+				(args.remotePath.endsWith('\\') || args.remotePath.endsWith('/'))) {
 				args.remotePath = args.remotePath.substring(0, args.remotePath.length - 1);
 			}
 		}
@@ -827,9 +838,8 @@ class GoDebugSession extends LoggingDebugSession {
 
 	protected async configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments): Promise<void> {
 		log('ConfigurationDoneRequest');
-
 		if (this.stopOnEntry) {
-			this.sendEvent(new StoppedEvent('breakpoint', 0));
+			this.sendEvent(new StoppedEvent('breakpoint', 1));
 			log('StoppedEvent("breakpoint")');
 			this.sendResponse(response);
 		} else {
@@ -896,7 +906,7 @@ class GoDebugSession extends LoggingDebugSession {
 			return this.delve.callPromise('ClearBreakpoint', [this.delve.isApiV1 ? existingBP.id : { Id: existingBP.id }]);
 		})).then(() => {
 			log('All cleared');
-			let existingBreakpoints: DebugBreakpoint[]|undefined;
+			let existingBreakpoints: DebugBreakpoint[] | undefined;
 			return Promise.all(args.breakpoints.map(breakpoint => {
 				if (this.delve.remotePath.length === 0) {
 					log('Creating on: ' + file + ':' + breakpoint.line);
@@ -934,11 +944,11 @@ class GoDebugSession extends LoggingDebugSession {
 								log(`Cannot match breakpoint ${breakpointIn} with existing breakpoints.`);
 								return null;
 							}
-							return this.delve.isApiV1 ? matchedBreakpoint : {Breakpoint: matchedBreakpoint};
+							return this.delve.isApiV1 ? matchedBreakpoint : { Breakpoint: matchedBreakpoint };
 						}
 						log('Error on CreateBreakpoint: ' + err.toString());
 						return null;
-				});
+					});
 			}));
 		}).then(newBreakpoints => {
 			let convertedBreakpoints: DebugBreakpoint[];
@@ -1028,6 +1038,9 @@ class GoDebugSession extends LoggingDebugSession {
 					goroutine.userCurrentLoc.function ? goroutine.userCurrentLoc.function.name : (goroutine.userCurrentLoc.file + '@' + goroutine.userCurrentLoc.line)
 				)
 			);
+			if (threads.length === 0) {
+				threads.push(new Thread(1, 'Dummy'));
+			}
 			response.body = { threads };
 			this.sendResponse(response);
 			log('ThreadsResponse', threads);
@@ -1141,6 +1154,7 @@ class GoDebugSession extends LoggingDebugSession {
 					children: vars,
 					unreadable: '',
 					fullyQualifiedName: '',
+					base: 0,
 				};
 
 				scopes.push(new Scope('Local', this.variableHandles.create(localVariables), false));
@@ -1192,6 +1206,7 @@ class GoDebugSession extends LoggingDebugSession {
 							children: globals,
 							unreadable: '',
 							fullyQualifiedName: '',
+							base: 0,
 						};
 						scopes.push(new Scope('Global', this.variableHandles.create(globalVariables), false));
 						this.sendResponse(response);
@@ -1259,11 +1274,23 @@ class GoDebugSession extends LoggingDebugSession {
 				};
 			}
 		} else if (v.kind === GoReflectKind.Slice) {
+			if (v.base === 0) {
+				return {
+					result: 'nil <' + v.type + '>',
+					variablesReference: 0
+				};
+			}
 			return {
 				result: '<' + v.type + '> (length: ' + v.len + ', cap: ' + v.cap + ')',
 				variablesReference: this.variableHandles.create(v)
 			};
 		} else if (v.kind === GoReflectKind.Map) {
+			if (v.base === 0) {
+				return {
+					result: 'nil <' + v.type + '>',
+					variablesReference: 0
+				};
+			}
 			return {
 				result: '<' + v.type + '> (length: ' + v.len + ')',
 				variablesReference: this.variableHandles.create(v)
@@ -1583,6 +1610,7 @@ function killTree(processId: number): void {
 		try {
 			execSync(`${TASK_KILL} /F /T /PID ${processId}`);
 		} catch (err) {
+			logError(`Error killing process tree: ${err.toString() || ''}`);
 		}
 	} else {
 		// on linux and OS X we kill all direct and indirect child processes as well
@@ -1590,6 +1618,7 @@ function killTree(processId: number): void {
 			const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
 			spawnSync(cmd, [processId.toString()]);
 		} catch (err) {
+			logError(`Error killing process tree: ${err.toString() || ''}`);
 		}
 	}
 }

@@ -6,19 +6,9 @@
 
 import path = require('path');
 import vscode = require('vscode');
-
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { isModSupported } from './goModules';
-import {
-	extractInstanceTestName,
-	findAllTestSuiteRuns,
-	getBenchmarkFunctions,
-	getTestFlags,
-	getTestFunctionDebugArgs,
-	getTestFunctions,
-	goTest,
-	TestConfig,
-} from './testUtils';
+import { extractInstanceTestName, findAllTestSuiteRuns, getBenchmarkFunctions, getTestFlags, getTestFunctionDebugArgs, getTestFunctions, goTest, TestConfig } from './testUtils';
 import { getTempFilePath } from './util';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -86,7 +76,7 @@ async function runTestAtCursor(editor: vscode.TextEditor, testFunctionName: stri
 
 	const isMod = await isModSupported(editor.document.uri);
 	const testConfig: TestConfig = {
-		goConfig: goConfig,
+		goConfig,
 		dir: path.dirname(editor.document.fileName),
 		flags: testFlags,
 		functions: testConfigFns,
@@ -136,10 +126,10 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, isBe
 	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnTestPackage', args);
 
 	const testConfig: TestConfig = {
-		goConfig: goConfig,
+		goConfig,
 		dir: path.dirname(editor.document.fileName),
 		flags: testFlags,
-		isBenchmark: isBenchmark,
+		isBenchmark,
 	};
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
@@ -172,7 +162,7 @@ export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any
 	}
 
 	const testConfig: TestConfig = {
-		goConfig: goConfig,
+		goConfig,
 		dir: workspaceUri.fsPath,
 		flags: getTestFlags(goConfig, args),
 		includeSubDirectories: true
@@ -205,23 +195,31 @@ export function testCurrentFile(goConfig: vscode.WorkspaceConfiguration, isBench
 		return;
 	}
 
+	const { tmpCoverPath, testFlags } = makeCoverData(goConfig, 'coverOnSingleTestFile', args);
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 
 	return editor.document.save().then(() => {
 		return getFunctions(editor.document, null).then(testFunctions => {
 			const testConfig: TestConfig = {
-				goConfig: goConfig,
+				goConfig,
 				dir: path.dirname(editor.document.fileName),
-				flags: getTestFlags(goConfig, args),
+				flags: testFlags,
 				functions: testFunctions.map(sym => sym.name),
-				isBenchmark: isBenchmark,
+				isBenchmark,
 			};
 			// Remember this config as the last executed test.
 			lastTestConfig = testConfig;
 
 			return isModSupported(editor.document.uri).then(isMod => {
 				testConfig.isMod = isMod;
-				return goTest(testConfig);
+				return goTest(testConfig).then(success => {
+					if (tmpCoverPath) {
+						applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
+					}
+					return Promise.resolve(success);
+				}, err => {
+					console.log(err);
+				});
 			});
 		});
 	}).then(null, err => {
