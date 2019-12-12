@@ -141,7 +141,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
 		// Disable modules for tools which are installed with the "..." wildcard.
 		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
-		let modulesOffForTool = modulesOff || disableModulesForWildcard(tool, goVersion);
+		const modulesOffForTool = modulesOff || disableModulesForWildcard(tool, goVersion);
 		if (modulesOffForTool) {
 			envForTools['GO111MODULE'] = 'off';
 		} else {
