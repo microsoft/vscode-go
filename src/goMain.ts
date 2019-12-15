@@ -359,6 +359,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.install.package', installCurrentPackage));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.apply.coverprofile', () => {
+		if (!vscode.window.activeTextEditor || vscode.window.activeTextEditor.document.fileName.endsWith('.go')) {
+			vscode.window.showErrorMessage('Cannot apply coverage profile when no Go file is open.');
+			return;
+		}
 		vscode.window.showInputBox({
 			prompt: 'Enter the path to the coverage profile'
 		}).then(coverProfilePath => {
