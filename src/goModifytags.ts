@@ -6,9 +6,9 @@
 'use strict';
 
 import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars } from './util';
-import cp = require('child_process');
 import { promptForMissingTool } from './goInstallTools';
+import { byteOffsetAt, getBinPath, getGoConfig, getFileArchive, getToolsEnvVars } from './util';
+import cp = require('child_process');
 
 // Interface for the output from gomodifytags
 interface GomodifytagsOutput {
@@ -31,7 +31,7 @@ export function addTags(commandArgs: GoTagsConfig) {
 		return;
 	}
 
-	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri)['addTags'], commandArgs).then(([tags, options, transformValue]) => {
+	getTagsAndOptions(<GoTagsConfig>getGoConfig()['addTags'], commandArgs).then(([tags, options, transformValue]) => {
 		if (!tags && !options) {
 			return;
 		}
@@ -58,7 +58,7 @@ export function removeTags(commandArgs: GoTagsConfig) {
 		return;
 	}
 
-	getTagsAndOptions(<GoTagsConfig>vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor.document.uri)['removeTags'], commandArgs).then(([tags, options]) => {
+	getTagsAndOptions(<GoTagsConfig>getGoConfig()['removeTags'], commandArgs).then(([tags, options]) => {
 		if (!tags && !options) {
 			args.push('--clear-tags');
 			args.push('--clear-options');
@@ -111,11 +111,11 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 	}
 
 	return vscode.window.showInputBox({
-		value: 'json',
+		value: tags,
 		prompt: 'Enter comma separated tag names'
 	}).then(inputTags => {
 		return vscode.window.showInputBox({
-			value: 'json=omitempty,xml=cdata',
+			value: options,
 			prompt: 'Enter comma separated options'
 		}).then(inputOptions => {
 			return [inputTags, inputOptions, transformValue];

@@ -7,11 +7,11 @@
 
 import vscode = require('vscode');
 import cp = require('child_process');
-import { parseFilePrelude, getImportPath, getBinPath, getToolsEnvVars, sendTelemetryEvent } from './util';
-import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { promptForMissingTool } from './goInstallTools';
+import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { getImportablePackages } from './goPackages';
 import { envPath } from './goPath';
+import { getBinPath, getImportPath, getToolsEnvVars, parseFilePrelude, sendTelemetryEvent } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -20,10 +20,19 @@ export async function listPackages(excludeImportedPkgs: boolean = false): Promis
 		? await getImports(vscode.window.activeTextEditor.document)
 		: [];
 	const pkgMap = await getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
-
-	return Array.from(pkgMap.keys())
-		.filter(pkg => !importedPkgs.some(imported => imported === pkg))
-		.sort();
+	const stdLibs: string[] = [];
+	const nonStdLibs: string[] = [];
+	pkgMap.forEach((value, key) => {
+		if (importedPkgs.some(imported => imported === key)) {
+			return;
+		}
+		if (value.isStd) {
+			stdLibs.push(key);
+		} else {
+			nonStdLibs.push(key);
+		}
+	});
+	return [...stdLibs.sort(), ...nonStdLibs.sort()];
 }
 
 /**
@@ -100,7 +109,7 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	}
 }
 
-export function addImport(arg: {importPath: string, from: string}) {
+export function addImport(arg: { importPath: string, from: string }) {
 	const p = (arg && arg.importPath) ? Promise.resolve(arg.importPath) : askUserForImport();
 	p.then(imp => {
 		/* __GDPR__
@@ -108,7 +117,7 @@ export function addImport(arg: {importPath: string, from: string}) {
 			"from" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 		}
 		*/
-		sendTelemetryEvent('addImportCmd', { from: (arg && arg.from) || 'cmd'});
+		sendTelemetryEvent('addImportCmd', { from: (arg && arg.from) || 'cmd' });
 		const edits = getTextEditForAddImport(imp);
 		if (edits && edits.length > 0) {
 			const edit = new vscode.WorkspaceEdit();

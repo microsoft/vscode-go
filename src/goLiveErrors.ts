@@ -6,12 +6,12 @@
 'use strict';
 
 import vscode = require('vscode');
-import { getBinPath, getToolsEnvVars, getGoConfig } from './util';
-import cp = require('child_process');
-import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
 import { buildDiagnosticCollection } from './goMain';
 import { isModSupported } from './goModules';
+import { getBinPath, getGoConfig, getToolsEnvVars } from './util';
+import cp = require('child_process');
+import path = require('path');
 
 // Interface for settings configuration for adding and removing tags
 interface GoLiveErrorsConfig {
@@ -26,7 +26,7 @@ export function goLiveErrorsEnabled() {
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
-	const files = vscode.workspace.getConfiguration('files');
+	const files = vscode.workspace.getConfiguration('files', null);
 	const autoSave = files['autoSave'];
 	const autoSaveDelay = files['autoSaveDelay'];
 	if (autoSave !== null && autoSave !== undefined &&
@@ -55,7 +55,7 @@ export function parseLiveFile(e: vscode.TextDocumentChangeEvent) {
 	runner = setTimeout(() => {
 		processFile(e);
 		runner = null;
-	}, vscode.workspace.getConfiguration('go', e.document.uri)['liveErrors']['delay']);
+	}, getGoConfig(e.document.uri)['liveErrors']['delay']);
 }
 
 // processFile does the actual work once the timeout has fired

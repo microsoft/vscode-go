@@ -9,11 +9,11 @@ import vscode = require('vscode');
 import fs = require('fs');
 import path = require('path');
 import cp = require('child_process');
-import { showGoStatus, hideGoStatus, outputChannel } from './goStatus';
-import { getToolFromToolPath, envPath } from './goPath';
 import { getLanguageServerToolPath } from './goLanguageServer';
-import { Tool, getConfiguredTools, getTool, isWildcard, isGocode, hasModSuffix, containsString, containsTool, getImportPath } from './goTools';
-import { getGoVersion, getBinPath, getToolsGopath, getCurrentGoPath, getTempFilePath, resolvePath, GoVersion } from './util';
+import { envPath, getToolFromToolPath } from './goPath';
+import { hideGoStatus, outputChannel, showGoStatus } from './goStatus';
+import { containsString, containsTool, getConfiguredTools, getImportPath, getTool, hasModSuffix, isGocode, Tool, disableModulesForWildcard } from './goTools';
+import { getBinPath, getCurrentGoPath, getGoConfig, getGoVersion, getTempFilePath, getToolsGopath, GoVersion, resolvePath } from './util';
 
 // declinedUpdates tracks the tools that the user has declined to update.
 const declinedUpdates: Tool[] = [];
@@ -68,7 +68,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	}
 
 	// http.proxy setting takes precedence over environment variables
-	const httpProxy = vscode.workspace.getConfiguration('http').get('proxy');
+	const httpProxy = vscode.workspace.getConfiguration('http', null).get('proxy');
 	let envForTools = Object.assign({}, process.env);
 	if (httpProxy) {
 		envForTools = Object.assign({}, process.env, {
@@ -79,14 +79,19 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		});
 	}
 
+	outputChannel.show();
+	outputChannel.clear();
+
 	// If the go.toolsGopath is set, use its value as the GOPATH for the "go get" child process.
 	// Else use the Current Gopath
 	let toolsGopath = getToolsGopath();
 	if (toolsGopath) {
 		// User has explicitly chosen to use toolsGopath, so ignore GOBIN
 		envForTools['GOBIN'] = '';
+		outputChannel.appendLine(`Using the value ${toolsGopath} from the go.toolsGopath setting.`);
 	} else {
 		toolsGopath = getCurrentGoPath();
+		outputChannel.appendLine(`go.toolsGopath setting is not set. Using GOPATH ${toolsGopath}`);
 	}
 	if (toolsGopath) {
 		const paths = toolsGopath.split(path.delimiter);
@@ -107,17 +112,19 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		return;
 	}
 
+	let installingMsg = `Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${path.sep}bin`;
+
 	// If the user is on Go >= 1.11, tools should be installed with modules enabled.
 	// This ensures that users get the latest tagged version, rather than master,
 	// which may be unstable.
 	let modulesOff = false;
 	if (goVersion.lt('1.11')) {
 		modulesOff = true;
+	} else {
+		installingMsg += ' in module mode.';
 	}
 
-	outputChannel.show();
-	outputChannel.clear();
-	outputChannel.appendLine(`Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${path.sep}bin`);
+	outputChannel.appendLine(installingMsg);
 	missing.forEach((missingTool, index, missing) => {
 		outputChannel.appendLine('  ' + missingTool.name);
 	});
@@ -125,22 +132,33 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	outputChannel.appendLine(''); // Blank line for spacing.
 
 	// Install tools in a temporary directory, to avoid altering go.mod files.
-	const toolsTmpDir = getTempFilePath('go-tools');
-	if (!fs.existsSync(toolsTmpDir)) {
-		fs.mkdirSync(toolsTmpDir);
-	}
+	const toolsTmpDir = fs.mkdtempSync(getTempFilePath('go-tools-'));
+
+	// Write a temporary go.mod file.
+	const tmpGoModFile = path.join(toolsTmpDir, 'go.mod');
+	fs.writeFileSync(tmpGoModFile, 'module tools');
 
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
 		// Disable modules for tools which are installed with the "..." wildcard.
 		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
-		if (modulesOff || isWildcard(tool, goVersion)) {
+		const modulesOffForTool = modulesOff || disableModulesForWildcard(tool, goVersion);
+		if (modulesOffForTool) {
 			envForTools['GO111MODULE'] = 'off';
 		} else {
 			envForTools['GO111MODULE'] = 'on';
 		}
 
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+			const opts = {
+				env: envForTools,
+				cwd: toolsTmpDir,
+			};
 			const callback = (err: Error, stdout: string, stderr: string) => {
+				// Make sure to run `go mod tidy` between tool installations.
+				// This avoids us having to create a fresh go.mod file for each tool.
+				if (!modulesOffForTool) {
+					cp.execFileSync(goRuntimePath, ['mod', 'tidy'], opts);
+				}
 				if (err) {
 					outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
 					const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
@@ -172,7 +190,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				}
 				const args = ['get', '-v'];
 				// Only get tools at master if we are not using modules.
-				if (modulesOff) {
+				if (modulesOffForTool) {
 					args.push('-u');
 				}
 				// Tools with a "mod" suffix should not be installed,
@@ -180,10 +198,6 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				if (hasModSuffix(tool)) {
 					args.push('-d');
 				}
-				const opts = {
-					env: envForTools,
-					cwd: toolsTmpDir,
-				};
 				args.push(getImportPath(tool, goVersion));
 				cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
 					if (stderr.indexOf('unexpected directory layout:') > -1) {
@@ -294,12 +308,12 @@ export async function promptForUpdatingTool(toolName: string) {
 }
 
 export function updateGoPathGoRootFromConfig(): Promise<void> {
-	const goroot = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['goroot'];
+	const goroot = getGoConfig()['goroot'];
 	if (goroot) {
 		process.env['GOROOT'] = resolvePath(goroot);
 	}
 
-	if (process.env['GOPATH'] && process.env['GOROOT']) {
+	if (process.env['GOPATH'] && process.env['GOROOT'] && process.env['GOPROXY']) {
 		return Promise.resolve();
 	}
 
@@ -327,7 +341,7 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 	}
 
 	return new Promise<void>((resolve, reject) => {
-		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT'], (err, stdout, stderr) => {
+		cp.execFile(goRuntimePath, ['env', 'GOPATH', 'GOROOT', 'GOPROXY'], (err, stdout, stderr) => {
 			if (err) {
 				return reject();
 			}
@@ -337,6 +351,9 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 			}
 			if (!process.env['GOROOT'] && envOutput[1] && envOutput[1].trim()) {
 				process.env['GOROOT'] = envOutput[1].trim();
+			}
+			if (!process.env['GOPROXY'] && envOutput[2] && envOutput[2].trim()) {
+				process.env['GOPROXY'] = envOutput[2].trim();
 			}
 			return resolve();
 		});
@@ -374,7 +391,7 @@ export async function offerToInstallTools() {
 							vscode.window.showInformationMessage('Reload VS Code window to enable the use of Go language server');
 						});
 				} else if (selected === disableLabel) {
-					const goConfig = vscode.workspace.getConfiguration('go');
+					const goConfig = getGoConfig();
 					const inspectLanguageServerSetting = goConfig.inspect('useLanguageServer');
 					if (inspectLanguageServerSetting.globalValue === true) {
 						goConfig.update('useLanguageServer', false, vscode.ConfigurationTarget.Global);

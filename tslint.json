@@ -43,7 +43,7 @@
 			true,
 			"check-space"
 		],
-		// "curly": true,
+		"curly": true,
 		"eofline": true,
 		"forin": true,
 		"import-spacing": true,
@@ -75,7 +75,7 @@
 		"no-debugger": true,
 		"no-duplicate-super": true,
 		"no-duplicate-variable": true,
-		// "no-empty": true,
+		"no-empty": true,
 		"no-empty-interface": true,
 		"no-eval": true,
 		"no-internal-module": true,
@@ -93,7 +93,7 @@
 		"no-var-keyword": true,
 		// "no-var-requires": true,
 		// "object-literal-key-quotes": { "options": "consistent-as-needed" },
-		// "object-literal-shorthand": true,
+		"object-literal-shorthand": true,
 		// "object-literal-sort-keys": true,
 		"one-line": [
 			true,
@@ -103,7 +103,7 @@
 			"check-open-brace",
 			"check-whitespace"
 		],
-		// "one-variable-per-declaration": { "options": ["ignore-for-loop"] },
+		"one-variable-per-declaration": { "options": ["ignore-for-loop"] },
 		// "only-arrow-functions": {
 		// 	"options": ["allow-declarations", "allow-named-functions"]
 		// },
@@ -115,7 +115,7 @@
 		// 	}
 		// },
 		"prefer-const": true,
-		// "prefer-for-of": true,
+		"prefer-for-of": true,
 		"quotemark": [
 			true,
 			"single"

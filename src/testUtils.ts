@@ -10,7 +10,7 @@ import vscode = require('vscode');
 import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
-import { getCurrentGoWorkspaceFromGOPATH, parseEnvFile, envPath } from './goPath';
+import { envPath, getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
 import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
 const sendSignal = 'SIGKILL';
@@ -290,7 +290,9 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			// go test emits test results on stdout, which contain file names relative to the package under test
 			outBuf.onLine(line => processTestResultLine(line));
 			outBuf.onDone(last => {
-				if (last) processTestResultLine(last);
+				if (last) {
+					processTestResultLine(last);
+				}
 
 				// If there are any remaining test result lines, emit them to the output channel.
 				if (testResultLines.length > 0) {
