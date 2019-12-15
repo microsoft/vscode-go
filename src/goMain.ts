@@ -360,10 +360,9 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.apply.coverprofile', () => {
 		vscode.window.showInputBox({
-			placeHolder: 'coverage.out',
 			prompt: 'Enter the path to the coverage profile'
 		}).then(coverProfilePath => {
-			if (typeof coverProfilePath === 'undefined') {
+			if (!coverProfilePath) {
 				return;
 			}
 			applyCodeCoverageToAllEditors(coverProfilePath, path.dirname(vscode.window.activeTextEditor.document.fileName));
