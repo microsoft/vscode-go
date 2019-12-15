@@ -303,9 +303,9 @@
         "description": "Cancels running tests."
       },
       {
-        "command": "go.test.load.coverprofile",
-        "title": "Go: Load Cover Profile",
-        "description": "Loads and applies an existing cover profile form file system."
+        "command": "go.apply.coverprofile",
+        "title": "Go: Apply Cover Profile",
+        "description": "Applies existing cover profile."
       },
       {
         "command": "go.godoctor.extract",
