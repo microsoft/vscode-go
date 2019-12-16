@@ -70,7 +70,7 @@ export function generateTestCurrentPackage(): Promise<boolean> {
 	if (!editor) {
 		return;
 	}
-	return generateTests({ dir: path.dirname(editor.document.uri.fsPath) },
+	return generateTests({ dir: path.dirname(editor.document.uri.fsPath), isTestFile: editor.document.fileName.endsWith('_test.go')},
 		getGoConfig(editor.document.uri));
 }
 
@@ -79,7 +79,8 @@ export function generateTestCurrentFile(): Promise<boolean> {
 	if (!editor) {
 		return;
 	}
-	return generateTests({ dir: editor.document.uri.fsPath },
+
+	return generateTests({ dir: editor.document.uri.fsPath, isTestFile: editor.document.fileName.endsWith('_test.go') },
 		getGoConfig(editor.document.uri));
 }
 
@@ -102,13 +103,7 @@ export async function generateTestCurrentFunction(): Promise<boolean> {
 		funcName = funcName.split('.')[1];
 	}
 
-	const currentFilePath = editor.document.fileName;
-	if (!currentFilePath.endsWith('.go')) {
-		vscode.window.showInformationMessage('Cannot toggle test file. File in the editor is not a Go file.');
-		return;
-	}
-
-	return generateTests({ dir: editor.document.uri.fsPath, func: funcName, testFile: currentFilePath.endsWith('_test.go') }, getGoConfig(editor.document.uri));
+	return generateTests({ dir: editor.document.uri.fsPath, func: funcName, isTestFile: editor.document.fileName.endsWith('_test.go') }, getGoConfig(editor.document.uri));
 }
 
 /**
@@ -127,7 +122,7 @@ interface Config {
 	/**
 	 * Whether or not the file to generate test functions for is a test file.
 	 */
-	testFile?: boolean;
+	isTestFile?: boolean;
 }
 
 function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): Promise<boolean> {
@@ -185,9 +180,7 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 				vscode.window.showInformationMessage(message);
 				outputChannel.append(message);
 
-				const isTestFile = (conf.testFile !== undefined && conf.testFile);
-
-				if (testsGenerated && !isTestFile) {
+				if (testsGenerated && !conf.isTestFile) {
 					toggleTestFile();
 				}
 
