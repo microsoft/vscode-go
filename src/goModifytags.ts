@@ -111,11 +111,11 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 	}
 
 	return vscode.window.showInputBox({
-		value: 'json',
+		value: tags,
 		prompt: 'Enter comma separated tag names'
 	}).then(inputTags => {
 		return vscode.window.showInputBox({
-			value: 'json=omitempty,xml=cdata',
+			value: options,
 			prompt: 'Enter comma separated options'
 		}).then(inputOptions => {
 			return [inputTags, inputOptions, transformValue];
