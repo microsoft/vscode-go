@@ -30,12 +30,16 @@ export function getImportPath(tool: Tool, goVersion: GoVersion): string {
 
 /**
  * Returns boolean denoting if the import path for the given tool ends with `/...`
+ * and if the version of Go supports installing wildcard paths in module mode.
  * @param tool  	Object of type `Tool` for the Go tool.
  * @param goVersion The current Go version.
  */
-export function isWildcard(tool: Tool, goVersion: GoVersion): boolean {
+export function disableModulesForWildcard(tool: Tool, goVersion: GoVersion): boolean {
 	const importPath = getImportPath(tool, goVersion);
-	return importPath.endsWith('...');
+	const isWildcard = importPath.endsWith('...');
+
+	// Only Go >= 1.13 supports installing wildcards in module mode.
+	return (isWildcard && goVersion.lt('1.13'));
 }
 
 export function containsTool(tools: Tool[], tool: Tool): boolean {
