@@ -138,15 +138,15 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		// Disable modules for tools which are installed with the "..." wildcard.
 		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
 		const modulesOffForTool = modulesOff || disableModulesForWildcard(tool, goVersion);
+		let tmpGoModFile: string;
 		if (modulesOffForTool) {
 			envForTools['GO111MODULE'] = 'off';
 		} else {
 			envForTools['GO111MODULE'] = 'on';
+			// Write a temporary go.mod file to avoid version conflicts.
+			tmpGoModFile = path.join(toolsTmpDir, 'go.mod');
+			fs.writeFileSync(tmpGoModFile, 'module tools');
 		}
-
-		// Write a temporary go.mod file. This shouldn't affect anything if we've explicitly disabled modules.
-		const tmpGoModFile = path.join(toolsTmpDir, 'go.mod');
-		fs.writeFileSync(tmpGoModFile, 'module tools');
 
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
 			const opts = {
@@ -155,7 +155,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 			};
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				// Make sure to delete the temporary go.mod file, if it exists.
-				if (fs.existsSync(tmpGoModFile)) {
+				if (tmpGoModFile && fs.existsSync(tmpGoModFile)) {
 					fs.unlinkSync(tmpGoModFile);
 				}
 				if (err) {
