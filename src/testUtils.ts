@@ -93,6 +93,10 @@ export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args?: any
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
 }
 
+export function getTestTags(goConfig: vscode.WorkspaceConfiguration): string {
+	return goConfig['testTags'] !== null ? goConfig['testTags'] : goConfig['buildTags'];
+}
+
 /**
  * Returns all Go unit test functions in the given source file.
  *
@@ -193,7 +197,7 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			outputChannel.show(true);
 		}
 
-		const testTags: string = testconfig.goConfig['testTags'] !== null ? testconfig.goConfig['testTags'] : testconfig.goConfig['buildTags'];
+		const testTags: string = getTestTags(testconfig.goConfig);
 		const args: Array<string> = ['test'];
 		const testType: string = testconfig.isBenchmark ? 'Benchmarks' : 'Tests';
 

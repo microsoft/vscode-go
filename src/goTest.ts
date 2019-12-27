@@ -8,7 +8,7 @@ import path = require('path');
 import vscode = require('vscode');
 import { applyCodeCoverageToAllEditors } from './goCover';
 import { isModSupported } from './goModules';
-import { extractInstanceTestName, findAllTestSuiteRuns, getBenchmarkFunctions, getTestFlags, getTestFunctionDebugArgs, getTestFunctions, goTest, TestConfig } from './testUtils';
+import { extractInstanceTestName, findAllTestSuiteRuns, getBenchmarkFunctions, getTestFlags, getTestFunctionDebugArgs, getTestFunctions, goTest, TestConfig, getTestTags } from './testUtils';
 import { getTempFilePath } from './util';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
@@ -106,7 +106,8 @@ async function debugTestAtCursor(editor: vscode.TextEditor, testFunctionName: st
 		program: editor.document.fileName,
 		env: goConfig.get('testEnvVars', {}),
 		envFile: goConfig.get('testEnvFile'),
-		args
+		args,
+		buildFlags: ['-tags', getTestTags(goConfig)].join(' ')
 	};
 	return await vscode.debug.startDebugging(workspaceFolder, debugConfig);
 }
