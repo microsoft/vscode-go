@@ -8,7 +8,6 @@
 import vscode = require('vscode');
 import path = require('path');
 import { goBuild } from './goBuild';
-import { applyCodeCoverageToAllEditors } from './goCover';
 import { parseLanguageServerConfig } from './goLanguageServer';
 import { goLint } from './goLint';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
@@ -16,7 +15,7 @@ import { isModSupported } from './goModules';
 import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
 import { goVet } from './goVet';
 import { getTestFlags, goTest, TestConfig } from './testUtils';
-import { getTempFilePath, ICheckResult } from './util';
+import { ICheckResult } from './util';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
@@ -61,22 +60,17 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	const disableBuildAndVet = lspConfig.enabled && lspConfig.features.diagnostics;
 
 	let testPromise: Thenable<boolean>;
-	let tmpCoverPath: string;
 	const testConfig: TestConfig = {
 		goConfig,
 		dir: cwd,
 		flags: getTestFlags(goConfig),
-		background: true
+		background: true,
+		applyCodeCoverage: !!goConfig['coverOnSave']
 	};
 
 	const runTest = () => {
 		if (testPromise) {
 			return testPromise;
-		}
-
-		if (goConfig['coverOnSave']) {
-			tmpCoverPath = getTempFilePath('go-code-cover');
-			testConfig.flags.push('-coverprofile=' + tmpCoverPath);
 		}
 
 		testPromise = isModSupported(fileUri).then(isMod => {
@@ -122,8 +116,6 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			if (!success) {
 				return [];
 			}
-			// FIXME: it's not obvious that tmpCoverPath comes from runTest()
-			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 		});
 	}
 

@@ -282,7 +282,7 @@ export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent
  * If current editor has Code coverage applied, then remove it.
  * Else run tests to get the coverage and apply.
  */
-export function toggleCoverageCurrentPackage() {
+export async function toggleCoverageCurrentPackage() {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -298,22 +298,20 @@ export function toggleCoverageCurrentPackage() {
 	const cwd = path.dirname(editor.document.uri.fsPath);
 
 	const testFlags = getTestFlags(goConfig);
-	const tmpCoverPath = getTempFilePath('go-code-cover');
-	const args = ['-coverprofile=' + tmpCoverPath, ...testFlags];
+	const isMod = await isModSupported(editor.document.uri);
 	const testConfig: TestConfig = {
 		goConfig,
 		dir: cwd,
-		flags: args,
-		background: true
+		flags: testFlags,
+		background: true,
+		isMod,
+		applyCodeCoverage: true
 	};
-	return isModSupported(editor.document.uri).then(isMod => {
-		testConfig.isMod = isMod;
-		return goTest(testConfig).then(success => {
-			if (!success) {
-				showTestOutput();
-			}
-			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
-		});
+
+	return goTest(testConfig).then(success => {
+		if (!success) {
+			showTestOutput();
+		}
 	});
 }
 

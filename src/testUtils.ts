@@ -11,7 +11,8 @@ import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 import { envPath, getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
-import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath } from './util';
+import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath, getTempFilePath } from './util';
+import { applyCodeCoverageToAllEditors } from './goCover';
 
 const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
@@ -64,6 +65,10 @@ export interface TestConfig {
 	 * Whether the tests are being run in a project that uses Go modules
 	 */
 	isMod?: boolean;
+	/**
+	 * Whether code coverage should be generated and applied.
+	 */
+	applyCodeCoverage?: boolean;
 }
 
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
@@ -187,8 +192,9 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
  *
  * @param goConfig Configuration for the Go extension.
  */
-export function goTest(testconfig: TestConfig): Thenable<boolean> {
-	return new Promise<boolean>(async (resolve, reject) => {
+export async function goTest(testconfig: TestConfig): Promise<boolean> {
+	const tmpCoverPath = getTempFilePath('go-code-cover');
+	const testResult = await new Promise<boolean>(async (resolve, reject) => {
 
 		// We do not want to clear it if tests are already running, as that could
 		// lose valuable output.
@@ -208,6 +214,9 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			args.push('-benchmem', '-run=^$');
 		} else {
 			args.push('-timeout', testconfig.goConfig['testTimeout']);
+			if (testconfig.applyCodeCoverage) {
+				args.push('-coverprofile=' + tmpCoverPath);
+			}
 		}
 		if (testTags && testconfig.flags.indexOf('-tags') === -1) {
 			args.push('-tags', testTags);
@@ -348,6 +357,10 @@ export function goTest(testconfig: TestConfig): Thenable<boolean> {
 			resolve(false);
 		});
 	});
+	if (testconfig.applyCodeCoverage) {
+		await applyCodeCoverageToAllEditors(tmpCoverPath, testconfig.dir);
+	}
+	return testResult;
 }
 
 /**
