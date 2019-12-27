@@ -6,11 +6,10 @@
 'use strict';
 
 import vscode = require('vscode');
-import path = require('path');
 import { CancellationToken, CodeLens, Command, TextDocument } from 'vscode';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 import { GoDocumentSymbolProvider } from './goOutline';
-import { getBenchmarkFunctions, getTestFlags, getTestFunctionDebugArgs, getTestFunctions, getTestTags } from './testUtils';
+import { getBenchmarkFunctions, getTestFunctions } from './testUtils';
 import { getCurrentGoPath, getGoConfig } from './util';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
@@ -84,16 +83,6 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private async getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Promise<CodeLens[]> {
 		const codelens: CodeLens[] = [];
 
-		const program = path.dirname(document.fileName);
-		const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
-		const envFile = vsConfig['testEnvFile'];
-		const buildFlags = getTestFlags(vsConfig);
-		const tags = getTestTags(vsConfig);
-		if (tags && buildFlags.indexOf('-tags') === -1) {
-			buildFlags.push('-tags', tags);
-		}
-		const currentDebugConfig = Object.assign({}, this.debugConfig, { program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
-
 		const testPromise = getTestFunctions(document, token).then(testFunctions => {
 			testFunctions.forEach(func => {
 				const runTestCmd: Command = {
@@ -104,11 +93,10 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 				codelens.push(new CodeLens(func.range, runTestCmd));
 
-				const args = getTestFunctionDebugArgs(document, func.name, testFunctions);
 				const debugTestCmd: Command = {
 					title: 'debug test',
-					command: 'go.debug.startSession',
-					arguments: [Object.assign({}, currentDebugConfig, { args })]
+					command: 'go.debug.cursor',
+					arguments: [{ functionName: func.name }]
 				};
 
 				codelens.push(new CodeLens(func.range, debugTestCmd));
@@ -127,8 +115,8 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 				const debugTestCmd: Command = {
 					title: 'debug benchmark',
-					command: 'go.debug.startSession',
-					arguments: [Object.assign({}, currentDebugConfig, { args: ['-test.bench', '^' + func.name + '$', '-test.run', 'a^'] })]
+					command: 'go.debug.cursor',
+					arguments: [{ functionName: func.name }]
 				};
 
 				codelens.push(new CodeLens(func.range, debugTestCmd));

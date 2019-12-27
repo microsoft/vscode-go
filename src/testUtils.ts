@@ -138,6 +138,9 @@ export function extractInstanceTestName(symbolName: string): string {
  * @param testFunctions The test functions found in the document
  */
 export function getTestFunctionDebugArgs(document: vscode.TextDocument, testFunctionName: string, testFunctions: vscode.DocumentSymbol[]): string[] {
+	if (benchmarkRegex.test(testFunctionName)) {
+		return ['-test.bench', '^' + testFunctionName + '$', '-test.run', 'a^'];
+	}
 	const instanceMethod = extractInstanceTestName(testFunctionName);
 	if (instanceMethod) {
 		const testFns = findAllTestSuiteRuns(document, testFunctions);

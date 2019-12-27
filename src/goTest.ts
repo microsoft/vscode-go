@@ -97,6 +97,21 @@ async function runTestAtCursor(editor: vscode.TextEditor, testFunctionName: stri
 async function debugTestAtCursor(editor: vscode.TextEditor, testFunctionName: string, testFunctions: vscode.DocumentSymbol[], goConfig: vscode.WorkspaceConfiguration) {
 
 	const args = getTestFunctionDebugArgs(editor.document, testFunctionName, testFunctions);
+	const tags = getTestTags(goConfig);
+	const buildFlags = tags ? ['-tags', tags] : [];
+	const flagsFromConfig = getTestFlags(goConfig);
+	let foundArgsFlag = false;
+	flagsFromConfig.forEach(x => {
+		if (foundArgsFlag) {
+			args.push(x);
+			return;
+		}
+		if (x === '-args') {
+			foundArgsFlag = true;
+			return;
+		}
+		buildFlags.push(x);
+	});
 	const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
 	const debugConfig: vscode.DebugConfiguration = {
 		name: 'Debug Test',
@@ -107,7 +122,7 @@ async function debugTestAtCursor(editor: vscode.TextEditor, testFunctionName: st
 		env: goConfig.get('testEnvVars', {}),
 		envFile: goConfig.get('testEnvFile'),
 		args,
-		buildFlags: ['-tags', getTestTags(goConfig)].join(' ')
+		buildFlags: buildFlags.join(' ')
 	};
 	return await vscode.debug.startDebugging(workspaceFolder, debugConfig);
 }
