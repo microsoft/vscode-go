@@ -245,6 +245,8 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 	cwd?: string;
 	mode?: 'local' | 'remote';
 	remotePath?: string;
+	useRelativePaths?: boolean;
+	pathSeparator?: 'auto' | 'windows' | 'unix';
 	port?: number;
 	host?: string;
 	trace?: 'verbose' | 'log' | 'error';
@@ -307,11 +309,25 @@ class Delve {
 	stackTraceDepth: number;
 	isRemoteDebugging: boolean;
 	request: 'attach' | 'launch';
+	/**
+	 * When set to false, the plugin expects source file paths in debug information to be absolute paths
+	 * which is how go puts it by default. Some build systems like Bazel strip out absolute path from
+	 * debug symbols, in which case this property should be set to true for Visual Studio to match sources
+	 * correctly.
+	 */
+	useRelativePaths: boolean;
+	/**
+	 * Explicitly specify which separators (forward or back slashes) were used producing debugging symbols for the binary.
+	 * This is mostly helpful with remote debugging of cross-compiled binaries.
+	 */
+	pathSeparator: 'auto' | 'windows' | 'unix';
 
 	constructor(launchArgs: LaunchRequestArguments | AttachRequestArguments, program: string) {
 		this.request = launchArgs.request;
 		this.program = normalizePath(program);
 		this.remotePath = launchArgs.remotePath;
+		this.useRelativePaths = !!launchArgs.useRelativePaths;
+		this.pathSeparator = launchArgs.pathSeparator ?? 'auto'
 		this.isApiV1 = false;
 		if (typeof launchArgs.apiVersion === 'number') {
 			this.isApiV1 = launchArgs.apiVersion === 1;
@@ -733,10 +749,22 @@ class GoDebugSession extends LoggingDebugSession {
 			args.remotePath = '';
 		}
 
-		if (args.remotePath.length > 0) {
-			this.localPathSeparator = this.findPathSeperator(localPath);
-			this.remotePathSeparator = this.findPathSeperator(args.remotePath);
+		this.localPathSeparator = this.findPathSeperator(localPath);
+		switch(args.pathSeparator) {
+			case 'windows':
+				this.remotePathSeparator = '\\';
+				break;
+			case 'unix':
+				this.remotePathSeparator = '/';
+				break;
+			default:
+					// Poor man 'auto' mode support - try to infer the format of target binary paths through the format of 'remotePath', if one is specified
+					// Ideally delve should read sources from target binary the first time debugger is attached and detect separator automagically
+					this.remotePathSeparator = args.remotePath.length > 0 ? this.findPathSeperator(args.remotePath) : this.localPathSeparator;
+					break;
+		}
 
+		if (args.remotePath.length > 0) {
 			const llist = localPath.split(/\/|\\/).reverse();
 			const rlist = args.remotePath.split(/\/|\\/).reverse();
 			let i = 0;
@@ -851,27 +879,88 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	protected toDebuggerPath(path: string): string {
-		if (this.delve.remotePath.length === 0) {
+		// Fallback to `convertClientPathToDebugger` routine if we are not in a proper `attach` mode.
+		// Ideally we want to support relative paths in `launch` mode as well, if plugin supports
+		// building with external tools (like Bazel or custom `go` wrapper).
+		if (this.delve.request === 'launch' || (this.delve.remotePath.length === 0 && !this.delve.useRelativePaths)) {
 			return this.convertClientPathToDebugger(path);
 		}
-		return path.replace(this.delve.program, this.delve.remotePath).split(this.localPathSeparator).join(this.remotePathSeparator);
+
+		// in `attach` mode `this.delve.program` denotes to the root of the local source files
+		// strip it out to get relative path of the source file
+		let absoluteWorkspacePath = this.pathWithSeparator(this.delve.program, this.localPathSeparator)
+		let relativePath = path.startsWith(absoluteWorkspacePath) ? path.slice(absoluteWorkspacePath.length) : path;
+
+		// convert `path` from absolute to relative and use it for mapping
+		if (this.delve.useRelativePaths) {
+			return this.toRemoteSeparators(relativePath);
+		}
+
+		// Combine relative path of the source file with `remotePath` which is supposed to be an absolute path
+		// on the remote machine. Use remote machine path separators for the resulting path.
+		if (this.delve.remotePath.length > 0) {
+			return this.pathWithSeparator(this.delve.remotePath, this.remotePathSeparator).concat(this.toRemoteSeparators(relativePath));
+		}
+
+		return this.convertClientPathToDebugger(path);
 	}
 
 	protected toLocalPath(pathToConvert: string): string {
+		// it is safe to convert path separators to ones used on running platform, even if they match
+		pathToConvert = this.toLocalSeparators(pathToConvert);
+
+		if (this.delve.useRelativePaths) {
+			// convert `pathToConvert` from relative to absolute
+			let goRootMarkerPath = this.pathWithSeparator('GOROOT', this.localPathSeparator)
+			if (pathToConvert.startsWith(goRootMarkerPath)) {
+				// Bazel replaces a path to standard library with special marker GOROOT
+				// Replace it back with a local GOROOT path so debugging through a standard library code will do just fine
+				const goRootLocal = process.env['GOROOT'];
+				if (goRootLocal) {
+					return path.join(goRootLocal, pathToConvert.slice(goRootMarkerPath.length));
+				}
+			}
+
+			return path.join(this.delve.program, pathToConvert);
+		}
+
 		if (this.delve.remotePath.length === 0) {
 			return this.convertDebuggerPathToClient(pathToConvert);
 		}
 
+		// normalize remote path with local separators and finishing separator
+		let remotePath = this.pathWithSeparator(this.toLocalSeparators(this.delve.remotePath), this.localPathSeparator);
+		if (pathToConvert.startsWith(remotePath)) {
+			return path.join(this.delve.program, pathToConvert.slice(remotePath.length));
+		}
+
 		// Fix for https://github.com/Microsoft/vscode-go/issues/1178
 		// When the pathToConvert is under GOROOT, replace the remote GOROOT with local GOROOT
-		if (!pathToConvert.startsWith(this.delve.remotePath)) {
-			const index = pathToConvert.indexOf(`${this.remotePathSeparator}src${this.remotePathSeparator}`);
-			const goroot = process.env['GOROOT'];
-			if (goroot && index > 0) {
-				return path.join(goroot, pathToConvert.substr(index));
-			}
+		const index = pathToConvert.indexOf(`${this.localPathSeparator}src${this.localPathSeparator}`);
+		const goroot = process.env['GOROOT'];
+		if (goroot && index > 0) {
+			return path.join(goroot, pathToConvert.substr(index));
 		}
-		return pathToConvert.replace(this.delve.remotePath, this.delve.program).split(this.remotePathSeparator).join(this.localPathSeparator);
+
+		return this.convertDebuggerPathToClient(pathToConvert);
+	}
+
+	/** Append separator to the path if it does not have one */
+	private pathWithSeparator(path: string, separator: string) {
+		if (!path.endsWith(separator)) {
+			return path.concat(separator);
+		}
+		return path;
+	}
+
+	/** Convert path separators to ones used on running system */
+	private toLocalSeparators(path: string): string {
+		return path.split('/').join(this.localPathSeparator).split('\\').join(this.localPathSeparator)
+	}
+
+	/** Convert path separators to ones used on remote system */
+	private toRemoteSeparators(path: string): string {
+		return path.split(this.localPathSeparator).join(this.remotePathSeparator);
 	}
 
 	private updateGoroutinesList(goroutines: DebugGoroutine[]): void {

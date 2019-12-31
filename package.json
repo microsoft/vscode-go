@@ -609,6 +609,16 @@
                 "description": "If remote debugging, the path to the source code on the remote machine, if different from the local machine.",
                 "default": ""
               },
+              "useRelativePaths": {
+                "type": "boolean",
+                "description": "Specify that source file paths in debugging information of a targeted binary are relative, rather than absolute, paths. This is useful with 'attach' mode when the binary is produced by deterministic build system like Bazel.",
+                "default": false
+              },
+              "pathSeparator": {
+                "type": "string",
+                "description": "Specify type of path separator (windows or unix path) used in debug information in a binary that debugger attaches to.",
+                "default": "auto"
+              },
               "port": {
                 "type": "number",
                 "description": "The port that the delve debugger will be listening on.",
