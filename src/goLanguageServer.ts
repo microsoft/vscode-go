@@ -12,9 +12,7 @@ import util = require('util');
 import WebRequest = require('web-request');
 import path = require('path');
 import cp = require('child_process');
-import { FormattingOptions, HandleDiagnosticsSignature, LanguageClient, ProvideCompletionItemsSignature, ProvideDefinitionSignature, ProvideDocumentFormattingEditsSignature, ProvideDocumentLinksSignature, ProvideDocumentSymbolsSignature, ProvideHoverSignature, ProvideReferencesSignature, ProvideRenameEditsSignature, ProvideSignatureHelpSignature, ProvideWorkspaceSymbolsSignature, RevealOutputChannelOn, ProvideDocumentHighlightsSignature } from 'vscode-languageclient';
-import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
-import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
+import { FormattingOptions, HandleDiagnosticsSignature, LanguageClient, ProvideDocumentFormattingEditsSignature, ProvideDocumentLinksSignature, RevealOutputChannelOn, NextSignature } from 'vscode-languageclient';
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDocumentFormattingEditProvider } from './goFormat';
@@ -37,11 +35,17 @@ interface LanguageServerConfig {
 	enabled: boolean;
 	flags: string[];
 	features: {
-		diagnostics: boolean;
+		diagnostics: DiagnosticFrequency;
 		format: boolean;
 		documentLink: boolean;
 	};
 	checkForUpdates: boolean;
+}
+
+enum DiagnosticFrequency {
+	Off,
+	OnSave,
+	OnChange,
 }
 
 // registerLanguageFeatures registers providers for all the language features.
@@ -71,6 +75,8 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		promptForUpdatingTool(toolName);
 	}
 
+	const latestDiagnostics = new Map<string, vscode.Diagnostic[]>();
+
 	const c = new LanguageClient(
 		toolName,
 		{
@@ -88,17 +94,37 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			},
 			revealOutputChannelOn: RevealOutputChannelOn.Never,
 			middleware: {
+				didSave: (data: vscode.TextDocument, next: NextSignature<vscode.TextDocument, void>) => {
+					// If the user only wants diagnostics on save, show the diagnostics now.
+					if (config.features.diagnostics == DiagnosticFrequency.OnSave) {
+						const diagnostics = latestDiagnostics.get(data.uri.toString());
+						c.diagnostics.set(data.uri, diagnostics);
+					}
+					return next(data, null);
+				},
+				handleDiagnostics: (uri: vscode.Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
+					if (config.features.diagnostics == DiagnosticFrequency.Off) {
+						return null;
+					}
+					// If the user only wants diagnostics updated on save, 
+					// and this document is open in the editor, don't show the diagnostics.
+					if (config.features.diagnostics == DiagnosticFrequency.OnSave) {
+						latestDiagnostics.set(uri.toString(), diagnostics);
+						for (const editor of vscode.window.visibleTextEditors) {
+							if (editor.document.uri.toString() === uri.toString()) {
+								if (editor.document.isDirty) {
+									return null;
+								}
+							}
+						}
+					}
+					return next(uri, diagnostics);
+				},
 				provideDocumentFormattingEdits: (document: vscode.TextDocument, options: FormattingOptions, token: vscode.CancellationToken, next: ProvideDocumentFormattingEditsSignature) => {
 					if (!config.features.format) {
 						return [];
 					}
 					return next(document, options, token);
-				},
-				handleDiagnostics: (uri: vscode.Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
-					if (!config.features.diagnostics) {
-						return null;
-					}
-					return next(uri, diagnostics);
 				},
 				provideDocumentLinks: (document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentLinksSignature) => {
 					if (!config.features.documentLink) {
@@ -219,20 +245,27 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 export function parseLanguageServerConfig(): LanguageServerConfig {
 	const goConfig = getGoConfig();
 
-	const config = {
+	let diagnostics: DiagnosticFrequency;
+	switch (goConfig['languageServerExperimentalFeatures']['diagnostics']) {
+		case 'off':
+			diagnostics = DiagnosticFrequency.Off;
+			break;
+		case 'onSave':
+			diagnostics = DiagnosticFrequency.OnSave;
+			break;
+		default:
+			diagnostics = DiagnosticFrequency.OnChange;
+	}
+	return {
 		enabled: goConfig['useLanguageServer'],
 		flags: goConfig['languageServerFlags'] || [],
 		features: {
-			// TODO: We should have configs that match these names.
-			// Ultimately, we should have a centralized language server config rather than separate fields.
-			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
+			diagnostics: diagnostics,
 			format: goConfig['languageServerExperimentalFeatures']['format'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
-			highlight: goConfig['languageServerExperimentalFeatures']['highlight'],
 		},
-		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
+		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates'],
 	};
-	return config;
 }
 
 /**
