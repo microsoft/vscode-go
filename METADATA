@@ -1,0 +1,16 @@
+name: "vscode-go"
+description:
+    "Fork of github.com/Microsoft/vscode-go (the VSCode plugin for Go). "
+    "This fork is kept in sync with the upstream while includes "
+    "new features go-tools@google.com team is developing and experimenting. "
+    ""
+
+third_party {
+  url {
+    type: GIT
+    value: "https://github.com/Microsoft/vscode-go"
+  }
+  version: "master"
+  last_upgrade_date { year: 2020 month: 1 day: 8 }
+  license_type: NOTICE
+}
