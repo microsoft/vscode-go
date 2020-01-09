@@ -116,9 +116,11 @@ const goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
 	'package': vscode.SymbolKind.Package,
 	'import': vscode.SymbolKind.Namespace,
 	'variable': vscode.SymbolKind.Variable,
-	'type': vscode.SymbolKind.Interface,
+	'constant': vscode.SymbolKind.Constant,
+	'type': vscode.SymbolKind.TypeParameter,
 	'function': vscode.SymbolKind.Function,
 	'struct': vscode.SymbolKind.Struct,
+	'interface': vscode.SymbolKind.Interface,
 };
 
 function convertToCodeSymbols(
@@ -151,8 +153,10 @@ function convertToCodeSymbols(
 
 		if (decl.type === 'type') {
 			const line = document.lineAt(document.positionAt(start));
-			const regex = new RegExp(`^\\s*type\\s+${decl.label}\\s+struct\\b`);
-			decl.type = regex.test(line.text) ? 'struct' : 'type';
+			const regexStruct = new RegExp(`^\\s*type\\s+${decl.label}\\s+struct\\b`);
+			const regexInterface = new RegExp(`^\\s*type\\s+${decl.label}\\s+interface\\b`);
+			decl.type = regexStruct.test(line.text) ? 'struct' :
+						regexInterface.test(line.text) ? 'interface' : 'type';
 		}
 
 		const symbolInfo = new vscode.DocumentSymbol(
