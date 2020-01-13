@@ -9,8 +9,9 @@ import vscode = require('vscode');
 import path = require('path');
 import { promptForMissingTool } from './goInstallTools';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
-import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars, sendTelemetryEvent } from './util';
+import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 import { packagePathToGoModPathMap } from './goModules';
+import { sendTelemetryEventForDebugConfiguration } from './telemetry';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 
@@ -30,22 +31,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 
 	public resolveDebugConfiguration?(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.DebugConfiguration {
 		if (debugConfiguration) {
-			/* __GDPR__
-				"debugConfiguration" : {
-					"request" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"mode" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"useApiV<NUMBER>": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"apiVersion": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"stopOnEntry": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				}
-			*/
-			sendTelemetryEvent('debugConfiguration', {
-				request: debugConfiguration.request,
-				mode: debugConfiguration.mode,
-				useApiV1: debugConfiguration.useApiV1,
-				apiVersion: debugConfiguration.apiVersion,
-				stopOnEntry: debugConfiguration.stopOnEntry
-			});
+			sendTelemetryEventForDebugConfiguration(debugConfiguration);
 		}
 
 		const activeEditor = vscode.window.activeTextEditor;

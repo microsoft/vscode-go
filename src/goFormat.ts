@@ -9,7 +9,8 @@ import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getGoConfig, getToolsEnvVars, killTree, sendTelemetryEvent } from './util';
+import { getBinPath, getGoConfig, getToolsEnvVars, killTree } from './util';
+import { sendTelemetryEventForFormatting } from './telemetry';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
@@ -89,13 +90,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 				const textEdits: vscode.TextEdit[] = [new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)];
 
 				const timeTaken = Date.now() - t0;
-				/* __GDPR__
-				   "format" : {
-					  "tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					  "timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
-				   }
-				 */
-				sendTelemetryEvent('format', { tool: formatTool }, { timeTaken });
+				sendTelemetryEventForFormatting(formatTool, timeTaken);
 				if (timeTaken > 750) {
 					console.log(`Formatting took too long(${timeTaken}ms). Format On Save feature could be aborted.`);
 				}
