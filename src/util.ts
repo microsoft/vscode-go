@@ -14,7 +14,7 @@ import { outputChannel } from './goStatus';
 import cp = require('child_process');
 import fs = require('fs');
 import os = require('os');
-import { extensionId, sendTelemetryEventForGoVersion, sendTelemetryEventForKillingProcess } from './telemetry';
+import { sendTelemetryEventForGoVersion, sendTelemetryEventForKillingProcess, extensionId } from './telemetry';
 
 let userNameHash: number = 0;
 
@@ -83,7 +83,7 @@ export class GoVersion {
 			this.isDevel = true;
 			this.commit = matchesDevel[0];
 		}
-		sendTelemetryEventForGoVersion(goVersion);
+		sendTelemetryEventForGoVersion(goVersion.format());
 	}
 
 	format(): string {
@@ -280,7 +280,7 @@ export async function getGoVersion(): Promise<GoVersion> {
 		return Promise.resolve(null);
 	}
 	if (goVersion && (goVersion.sv || goVersion.isDevel)) {
-		sendTelemetryEventForGoVersion(goVersion);
+		sendTelemetryEventForGoVersion(goVersion.format());
 		return Promise.resolve(goVersion);
 	}
 	return new Promise<GoVersion>((resolve) => {

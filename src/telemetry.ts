@@ -5,7 +5,6 @@
 
 import vscode = require('vscode');
 import TelemetryReporter from 'vscode-extension-telemetry';
-import { GoVersion } from './util';
 
 export const extensionId: string = 'ms-vscode.Go';
 const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
@@ -160,14 +159,13 @@ export function sendTelemetryEventForKillingProcess(msg: any, matches: any) {
 	sendTelemetryEvent('errorKillingProcess', { message: msg, stack: matches });
 }
 
-export function sendTelemetryEventForGoVersion(goVersion: GoVersion) {
+export function sendTelemetryEventForGoVersion(goVersion: string) {
 	/* __GDPR__
 		"getGoVersion" : {
 			"version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 		}
 	*/
-	sendTelemetryEvent('getGoVersion', { version: `${goVersion.format()}` });
-	return Promise.resolve(goVersion);
+	sendTelemetryEvent('getGoVersion', { version: `${goVersion}` });
 }
 
 export function disposeTelemetryReporter(): Promise<any> {
