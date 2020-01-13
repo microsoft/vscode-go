@@ -96,19 +96,19 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			middleware: {
 				didSave: (data: vscode.TextDocument, next: NextSignature<vscode.TextDocument, void>) => {
 					// If the user only wants diagnostics on save, show the diagnostics now.
-					if (config.features.diagnostics == DiagnosticFrequency.OnSave) {
+					if (config.features.diagnostics === DiagnosticFrequency.OnSave) {
 						const diagnostics = latestDiagnostics.get(data.uri.path);
 						c.diagnostics.set(data.uri, diagnostics);
 					}
 					return next(data, null);
 				},
 				handleDiagnostics: (uri: vscode.Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
-					if (config.features.diagnostics == DiagnosticFrequency.Off) {
+					if (config.features.diagnostics === DiagnosticFrequency.Off) {
 						return null;
 					}
-					// If the user only wants diagnostics updated on save, 
+					// If the user only wants diagnostics updated on save,
 					// and this document is open in the editor, don't show the diagnostics.
-					if (config.features.diagnostics == DiagnosticFrequency.OnSave) {
+					if (config.features.diagnostics === DiagnosticFrequency.OnSave) {
 						latestDiagnostics.set(uri.path, diagnostics);
 						for (const editor of vscode.window.visibleTextEditors) {
 							if (editor.document.uri.toString() === uri.toString()) {
@@ -263,7 +263,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 		enabled: goConfig['useLanguageServer'],
 		flags: goConfig['languageServerFlags'] || [],
 		features: {
-			diagnostics: diagnostics,
+			diagnostics,
 			format: goConfig['languageServerExperimentalFeatures']['format'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
 		},
