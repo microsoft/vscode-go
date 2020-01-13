@@ -135,24 +135,25 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	const toolsTmpDir = fs.mkdtempSync(getTempFilePath('go-tools-'));
 
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
-		// Disable modules for tools which are installed with the "..." wildcard.
-		// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
-		const modulesOffForTool = modulesOff || disableModulesForWildcard(tool, goVersion);
-		let tmpGoModFile: string;
-		if (modulesOffForTool) {
-			envForTools['GO111MODULE'] = 'off';
-		} else {
-			envForTools['GO111MODULE'] = 'on';
-			// Write a temporary go.mod file to avoid version conflicts.
-			tmpGoModFile = path.join(toolsTmpDir, 'go.mod');
-			fs.writeFileSync(tmpGoModFile, 'module tools');
-		}
-
 		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+			// Disable modules for tools which are installed with the "..." wildcard.
+			// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
+			const modulesOffForTool = modulesOff || disableModulesForWildcard(tool, goVersion);
+			let tmpGoModFile: string;
+			if (modulesOffForTool) {
+				envForTools['GO111MODULE'] = 'off';
+			} else {
+				envForTools['GO111MODULE'] = 'on';
+				// Write a temporary go.mod file to avoid version conflicts.
+				tmpGoModFile = path.join(toolsTmpDir, 'go.mod');
+				fs.writeFileSync(tmpGoModFile, 'module tools');
+			}
+
 			const opts = {
 				env: envForTools,
 				cwd: toolsTmpDir,
 			};
+
 			const callback = (err: Error, stdout: string, stderr: string) => {
 				// Make sure to delete the temporary go.mod file, if it exists.
 				if (tmpGoModFile && fs.existsSync(tmpGoModFile)) {
