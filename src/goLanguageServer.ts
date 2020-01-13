@@ -97,7 +97,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 				didSave: (data: vscode.TextDocument, next: NextSignature<vscode.TextDocument, void>) => {
 					// If the user only wants diagnostics on save, show the diagnostics now.
 					if (config.features.diagnostics == DiagnosticFrequency.OnSave) {
-						const diagnostics = latestDiagnostics.get(data.uri.toString());
+						const diagnostics = latestDiagnostics.get(data.uri.path);
 						c.diagnostics.set(data.uri, diagnostics);
 					}
 					return next(data, null);
@@ -109,7 +109,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					// If the user only wants diagnostics updated on save, 
 					// and this document is open in the editor, don't show the diagnostics.
 					if (config.features.diagnostics == DiagnosticFrequency.OnSave) {
-						latestDiagnostics.set(uri.toString(), diagnostics);
+						latestDiagnostics.set(uri.path, diagnostics);
 						for (const editor of vscode.window.visibleTextEditors) {
 							if (editor.document.uri.toString() === uri.toString()) {
 								if (editor.document.isDirty) {
@@ -252,6 +252,9 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			break;
 		case 'onSave':
 			diagnostics = DiagnosticFrequency.OnSave;
+			break;
+		case false: // for backwards compatibility
+			diagnostics = DiagnosticFrequency.Off;
 			break;
 		default:
 			diagnostics = DiagnosticFrequency.OnChange;
