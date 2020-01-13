@@ -507,6 +507,7 @@ It returns the number of bytes written and any write error encountered.
 				const variables = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Variable);
 				const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
 				const structs = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Struct);
+				const interfaces = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Interface);
 
 				assert.equal(packages[0].name, 'main');
 				assert.equal(variables.length, 0);
@@ -514,6 +515,8 @@ It returns the number of bytes written and any write error encountered.
 				assert.equal(functions[1].name, 'main');
 				assert.equal(structs.length, 1);
 				assert.equal(structs[0].name, 'foo');
+				assert.equal(interfaces.length, 1);
+				assert.equal(interfaces[0].name, "circle");
 			});
 		}).then(() => done(), done);
 	});

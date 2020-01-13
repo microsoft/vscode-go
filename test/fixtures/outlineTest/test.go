@@ -6,6 +6,12 @@ import (
 
 var _ string = "foobar"
 
+// const constFoo = "constBar"
+
+type circle struct {
+	radius float64
+}
+
 func print(txt string) {
 	fmt.Println(txt)
 }
