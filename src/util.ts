@@ -83,7 +83,7 @@ export class GoVersion {
 			this.isDevel = true;
 			this.commit = matchesDevel[0];
 		}
-		sendTelemetryEventForGoVersion(goVersion.format());
+		sendTelemetryEventForGoVersion(this.format());
 	}
 
 	format(): string {
