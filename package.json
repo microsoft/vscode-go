@@ -714,7 +714,7 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "Go configuration",
+      "title": "Go",
       "properties": {
         "go.buildOnSave": {
           "type": "string",
