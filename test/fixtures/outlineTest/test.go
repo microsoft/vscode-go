@@ -8,7 +8,7 @@ var _ string = "foobar"
 
 // const constFoo = "constBar"
 
-type circle struct {
+type circle interface {
 	radius float64
 }
 
