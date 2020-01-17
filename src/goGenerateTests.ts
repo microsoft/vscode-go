@@ -98,8 +98,16 @@ export async function generateTestCurrentFunction(): Promise<boolean> {
 		return Promise.resolve(false);
 	}
 	let funcName = currentFunction.name;
-	if (funcName.includes('.')) {
-		funcName = funcName.split('.')[1];
+	if (funcName.includes('.')) {  // receiverType specified
+		let funcNameParts = funcName.match(/^\(\*?(.*)\)\.(.*)$/);
+		if(funcNameParts != null && funcNameParts.length === 3){
+			let rType = funcNameParts[1].replace(/^\w/, c => c.toUpperCase());
+			let fName = funcNameParts[2].replace(/^\w/, c => c.toUpperCase());
+			funcName = rType + fName;
+		} else {
+			funcName = funcName.split('.')[1];
+		}
+		
 	}
 	return generateTests({ dir: editor.document.uri.fsPath, func: funcName }, getGoConfig(editor.document.uri));
 }
