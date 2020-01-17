@@ -516,7 +516,7 @@ It returns the number of bytes written and any write error encountered.
 				assert.equal(structs.length, 1);
 				assert.equal(structs[0].name, 'foo');
 				assert.equal(interfaces.length, 1);
-				assert.equal(interfaces[0].name, "circle");
+				assert.equal(interfaces[0].name, 'circle');
 			});
 		}).then(() => done(), done);
 	});
