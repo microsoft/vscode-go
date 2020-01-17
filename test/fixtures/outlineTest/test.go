@@ -8,10 +8,6 @@ var _ string = "foobar"
 
 // const constFoo = "constBar"
 
-type circle interface {
-	radius float64
-}
-
 func print(txt string) {
 	fmt.Println(txt)
 }
@@ -22,3 +18,8 @@ func main() {
 type foo struct {
 	bar int
 }
+
+type circle interface {
+	radius float64
+}
+
