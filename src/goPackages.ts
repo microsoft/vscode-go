@@ -8,7 +8,8 @@ import cp = require('child_process');
 import path = require('path');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { envPath, fixDriveCasingInWindows, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, isVendorSupported, sendTelemetryEvent } from './util';
+import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, isVendorSupported } from './util';
+import { sendTelemetryEventForGopkgs } from './telemetry';
 
 type GopkgsDone = (res: Map<string, PackageInfo>) => void;
 interface Cache {
@@ -98,13 +99,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 				});
 			});
 			const timeTaken = Date.now() - t0;
-			/* __GDPR__
-				"gopkgs" : {
-					"tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
-				}
-			*/
-			sendTelemetryEvent('gopkgs', {}, { timeTaken });
+			sendTelemetryEventForGopkgs(timeTaken);
 			cacheTimeout = timeTaken > 5000 ? timeTaken : 5000;
 			return resolve(pkgs);
 		});

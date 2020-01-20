@@ -7,10 +7,11 @@ import { installTools } from './goInstallTools';
 import { envPath, fixDriveCasingInWindows } from './goPath';
 import { getTool } from './goTools';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
-import { getBinPath, getGoConfig, getGoVersion, getModuleCache, getToolsEnvVars, sendTelemetryEvent } from './util';
+import { getBinPath, getGoConfig, getGoVersion, getModuleCache, getToolsEnvVars } from './util';
 import path = require('path');
 import cp = require('child_process');
 import vscode = require('vscode');
+import { sendTelemetryEventForModulesUsage } from './telemetry';
 
 export let GO111MODULE: string;
 
@@ -92,10 +93,7 @@ function logModuleUsage() {
 		return;
 	}
 	moduleUsageLogged = true;
-	/* __GDPR__
-		"modules" : {}
-	*/
-	sendTelemetryEvent('modules');
+	sendTelemetryEventForModulesUsage();
 }
 
 const promptedToolsForCurrentSession = new Set<string>();

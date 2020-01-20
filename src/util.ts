@@ -6,7 +6,6 @@
 import vscode = require('vscode');
 import semver = require('semver');
 import path = require('path');
-import TelemetryReporter from 'vscode-extension-telemetry';
 import { NearestNeighborDict, Node } from './avlTree';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 import { getCurrentPackage } from './goModules';
@@ -15,10 +14,8 @@ import { outputChannel } from './goStatus';
 import cp = require('child_process');
 import fs = require('fs');
 import os = require('os');
+import { sendTelemetryEventForGoVersion, sendTelemetryEventForKillingProcess, extensionId } from './telemetry';
 
-const extensionId: string = 'ms-vscode.Go';
-const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
-const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
 let userNameHash: number = 0;
 
 export const goKeywords: string[] = [
@@ -86,12 +83,7 @@ export class GoVersion {
 			this.isDevel = true;
 			this.commit = matchesDevel[0];
 		}
-		/* __GDPR__
-            "getGoVersion" : {
-	  			"version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-   			}
- 		*/
-		sendTelemetryEvent('getGoVersion', { version: this.format() });
+		sendTelemetryEventForGoVersion(this.format());
 	}
 
 	format(): string {
@@ -122,7 +114,6 @@ export class GoVersion {
 
 let goVersion: GoVersion = null;
 let vendorSupport: boolean = null;
-let telemtryReporter: TelemetryReporter;
 let toolsGopath: string;
 
 export function getGoConfig(uri?: vscode.Uri): vscode.WorkspaceConfiguration {
@@ -288,14 +279,8 @@ export async function getGoVersion(): Promise<GoVersion> {
 		console.warn(`Failed to run "go version" as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 		return Promise.resolve(null);
 	}
-
 	if (goVersion && (goVersion.sv || goVersion.isDevel)) {
-		/* __GDPR__
-		   "getGoVersion" : {
-			  "version" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-		   }
-		 */
-		sendTelemetryEvent('getGoVersion', { version: `${goVersion.format()}` });
+		sendTelemetryEventForGoVersion(goVersion.format());
 		return Promise.resolve(goVersion);
 	}
 	return new Promise<GoVersion>((resolve) => {
@@ -353,19 +338,6 @@ export function isGoPathSet(): boolean {
 	}
 
 	return true;
-}
-
-export function sendTelemetryEvent(eventName: string, properties?: { [key: string]: string }, measures?: { [key: string]: number }): void {
-
-	telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
-	telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
-}
-
-export function disposeTelemetryReporter(): Promise<any> {
-	if (telemtryReporter) {
-		return telemtryReporter.dispose();
-	}
-	return Promise.resolve(null);
 }
 
 export function isPositionInString(document: vscode.TextDocument, position: vscode.Position): boolean {
@@ -824,13 +796,7 @@ export function killProcess(p: cp.ChildProcess) {
 			if (e && e.message && e.stack) {
 				const matches = e.stack.match(/(src.go[a-z,A-Z]+\.js)/g);
 				if (matches) {
-					/* __GDPR__
-					   "errorKillingProcess" : {
-						  "message" : { "classification": "CallstackOrException", "purpose": "PerformanceAndHealth" },
-						  "stack": { "classification": "CallstackOrException", "purpose": "PerformanceAndHealth" }
-					   }
-					 */
-					sendTelemetryEvent('errorKillingProcess', { message: e.message, stack: matches });
+					sendTelemetryEventForKillingProcess(e.message, matches);
 				}
 			}
 

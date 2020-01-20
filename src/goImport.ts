@@ -11,7 +11,8 @@ import { promptForMissingTool } from './goInstallTools';
 import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { getImportablePackages } from './goPackages';
 import { envPath } from './goPath';
-import { getBinPath, getImportPath, getToolsEnvVars, parseFilePrelude, sendTelemetryEvent } from './util';
+import { getBinPath, getImportPath, getToolsEnvVars, parseFilePrelude } from './util';
+import { sendTelemetryEventForAddImportCmd } from './telemetry';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -112,12 +113,7 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 export function addImport(arg: { importPath: string, from: string }) {
 	const p = (arg && arg.importPath) ? Promise.resolve(arg.importPath) : askUserForImport();
 	p.then(imp => {
-		/* __GDPR__
-		"addImportCmd" : {
-			"from" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-		}
-		*/
-		sendTelemetryEvent('addImportCmd', { from: (arg && arg.from) || 'cmd' });
+		sendTelemetryEventForAddImportCmd(arg);
 		const edits = getTextEditForAddImport(imp);
 		if (edits && edits.length > 0) {
 			const edit = new vscode.WorkspaceEdit();

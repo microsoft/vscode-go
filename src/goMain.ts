@@ -34,7 +34,8 @@ import { testAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWo
 import { vetCode } from './goVet';
 import { setGlobalState, getFromGlobalState, updateGlobalState } from './stateUtils';
 import { cancelRunningTests, showTestOutput } from './testUtils';
-import { cleanupTempDir, disposeTelemetryReporter, getBinPath, getGoConfig, getCurrentGoPath, getExtensionCommands, getGoVersion, getToolsEnvVars, getToolsGopath, getWorkspaceFolderPath, handleDiagnosticErrors, isGoPathSet, sendTelemetryEvent } from './util';
+import { cleanupTempDir, getBinPath, getGoConfig, getCurrentGoPath, getExtensionCommands, getGoVersion, getToolsEnvVars, getToolsGopath, getWorkspaceFolderPath, handleDiagnosticErrors, isGoPathSet } from './util';
+import { disposeTelemetryReporter, sendTelemetryEventForConfig } from './telemetry';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
@@ -420,90 +421,6 @@ function addOnChangeTextDocumentListeners(ctx: vscode.ExtensionContext) {
 function addOnChangeActiveTextEditorListeners(ctx: vscode.ExtensionContext) {
 	vscode.window.onDidChangeActiveTextEditor(showHideStatus, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(applyCodeCoverage, null, ctx.subscriptions);
-}
-
-function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfiguration) {
-	/* __GDPR__
-	   "goConfig" : {
-		  "buildOnSave" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "buildFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "buildTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "formatTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "formatFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "generateTestsFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "lintOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "lintFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "lintTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "vetOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "vetFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "testOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "testFlags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "coverOnSave": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "coverOnTestPackage": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "coverageDecorator": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "coverageOptions": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "gopath": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "goroot": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "inferGopath": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "toolsGopath": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "gocodeAutoBuild": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "gocodePackageLookupMode": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "useCodeSnippetsOnFunctionSuggest": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "useCodeSnippetsOnFunctionSuggestWithoutType": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "autocompleteUnimportedPackages": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "docsTool": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "useLanguageServer": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "languageServerExperimentalFeatures": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "includeImports": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "addTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "removeTags": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "editorContextMenuCommands": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "liveErrors": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "codeLens": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		  "alternateTools": { "classification": "CustomerContent", "purpose": "FeatureInsight" },
-		  "useGoProxyToCheckForToolUpdates": { "classification": "CustomerContent", "purpose": "FeatureInsight" }
-	   }
-	 */
-	sendTelemetryEvent('goConfig', {
-		buildOnSave: goConfig['buildOnSave'] + '',
-		buildFlags: goConfig['buildFlags'],
-		buildTags: goConfig['buildTags'],
-		formatOnSave: goConfig['formatOnSave'] + '',
-		formatTool: goConfig['formatTool'],
-		formatFlags: goConfig['formatFlags'],
-		lintOnSave: goConfig['lintOnSave'] + '',
-		lintFlags: goConfig['lintFlags'],
-		lintTool: goConfig['lintTool'],
-		generateTestsFlags: goConfig['generateTestsFlags'],
-		vetOnSave: goConfig['vetOnSave'] + '',
-		vetFlags: goConfig['vetFlags'],
-		testOnSave: goConfig['testOnSave'] + '',
-		testFlags: goConfig['testFlags'],
-		coverOnSave: goConfig['coverOnSave'] + '',
-		coverOnTestPackage: goConfig['coverOnTestPackage'] + '',
-		coverageDecorator: goConfig['coverageDecorator'],
-		coverageOptions: goConfig['coverageOptions'],
-		gopath: goConfig['gopath'] ? 'set' : '',
-		goroot: goConfig['goroot'] ? 'set' : '',
-		inferGopath: goConfig['inferGopath'] + '',
-		toolsGopath: goConfig['toolsGopath'] ? 'set' : '',
-		gocodeAutoBuild: goConfig['gocodeAutoBuild'] + '',
-		gocodePackageLookupMode: goConfig['gocodePackageLookupMode'] + '',
-		useCodeSnippetsOnFunctionSuggest: goConfig['useCodeSnippetsOnFunctionSuggest'] + '',
-		useCodeSnippetsOnFunctionSuggestWithoutType: goConfig['useCodeSnippetsOnFunctionSuggestWithoutType'] + '',
-		autocompleteUnimportedPackages: goConfig['autocompleteUnimportedPackages'] + '',
-		docsTool: goConfig['docsTool'],
-		useLanguageServer: goConfig['useLanguageServer'] + '',
-		languageServerExperimentalFeatures: JSON.stringify(goConfig['languageServerExperimentalFeatures']),
-		includeImports: goConfig['gotoSymbol'] && goConfig['gotoSymbol']['includeImports'] + '',
-		addTags: JSON.stringify(goConfig['addTags']),
-		removeTags: JSON.stringify(goConfig['removeTags']),
-		editorContextMenuCommands: JSON.stringify(goConfig['editorContextMenuCommands']),
-		liveErrors: JSON.stringify(goConfig['liveErrors']),
-		codeLens: JSON.stringify(goConfig['enableCodeLens']),
-		alternateTools: JSON.stringify(goConfig['alternateTools']),
-		useGoProxyToCheckForToolUpdates: goConfig['useGoProxyToCheckForToolUpdates'] + '',
-	});
 }
 
 function checkToolExists(tool: string) {
