@@ -31,11 +31,11 @@ export function vetCode(vetWorkspace?: boolean) {
 	diagnosticsStatusBarItem.text = 'Vetting...';
 
 	goVet(documentUri, goConfig, vetWorkspace)
-		.then(warnings => {
+		.then((warnings) => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vetDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
 		})
-		.catch(err => {
+		.catch((err) => {
 			vscode.window.showInformationMessage('Error: ' + err);
 			diagnosticsStatusBarItem.text = 'Vetting Failed';
 		});
@@ -69,7 +69,7 @@ export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfi
 	const vetEnv = Object.assign({}, getToolsEnvVars());
 	const args: string[] = [];
 
-	vetFlags.forEach(flag => {
+	vetFlags.forEach((flag) => {
 		if (flag.startsWith('--vettool=') || flag.startsWith('-vettool=')) {
 			let vetToolPath = flag.substr(flag.indexOf('=') + 1).trim();
 			if (!vetToolPath) {

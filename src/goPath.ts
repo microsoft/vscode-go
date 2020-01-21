@@ -129,7 +129,7 @@ export function parseEnvFile(path: string): { [key: string]: string } {
 
 	try {
 		const buffer = stripBOM(fs.readFileSync(path, 'utf8'));
-		buffer.split('\n').forEach(line => {
+		buffer.split('\n').forEach((line) => {
 			const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
 			if (r !== null) {
 				let value = r[2] || '';

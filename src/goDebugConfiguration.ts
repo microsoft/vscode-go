@@ -60,7 +60,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 
 		const goConfig = getGoConfig(folder && folder.uri);
 		const goToolsEnvVars = getToolsEnvVars();
-		Object.keys(goToolsEnvVars).forEach(key => {
+		Object.keys(goToolsEnvVars).forEach((key) => {
 			if (!debugConfiguration['env'].hasOwnProperty(key)) {
 				debugConfiguration['env'][key] = goToolsEnvVars[key];
 			}
@@ -104,7 +104,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		const ignoreWarningKey = 'ignoreDebugLaunchRemoteWarning';
 		const ignoreWarning = getFromGlobalState(ignoreWarningKey);
 		if (ignoreWarning !== true && debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
-			vscode.window.showWarningMessage('Request type of \'launch\' with mode \'remote\' is deprecated, please use request type \'attach\' with mode \'remote\' instead.', neverAgain).then(result => {
+			vscode.window.showWarningMessage('Request type of \'launch\' with mode \'remote\' is deprecated, please use request type \'attach\' with mode \'remote\' instead.', neverAgain).then((result) => {
 				if (result === neverAgain) {
 					updateGlobalState(ignoreWarningKey, true);
 				}

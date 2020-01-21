@@ -15,7 +15,7 @@ import { getBinPath, getGoConfig, getToolsEnvVars, killTree } from './util';
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 
 	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TextEdit[]> {
-		if (vscode.window.visibleTextEditors.every(e => e.document.fileName !== document.fileName)) {
+		if (vscode.window.visibleTextEditors.every((e) => e.document.fileName !== document.fileName)) {
 			return [];
 		}
 
@@ -39,7 +39,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			formatFlags.push('-style=indent=' + options.tabSize);
 		}
 
-		return this.runFormatter(formatTool, formatFlags, document, token).then(edits => edits, err => {
+		return this.runFormatter(formatTool, formatFlags, document, token).then((edits) => edits, (err) => {
 			if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
 				promptForUpdatingTool(formatTool);
 				return Promise.resolve([]);
@@ -70,15 +70,15 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			const p = cp.spawn(formatCommandBinPath, formatFlags, { env, cwd });
 			token.onCancellationRequested(() => !p.killed && killTree(p.pid));
 			p.stdout.setEncoding('utf8');
-			p.stdout.on('data', data => stdout += data);
-			p.stderr.on('data', data => stderr += data);
-			p.on('error', err => {
+			p.stdout.on('data', (data) => stdout += data);
+			p.stderr.on('data', (data) => stderr += data);
+			p.on('error', (err) => {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool(formatTool);
 					return reject();
 				}
 			});
-			p.on('close', code => {
+			p.on('close', (code) => {
 				if (code !== 0) {
 					return reject(stderr);
 				}

@@ -58,7 +58,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		const prevGoroot = toolsGoInfo[toolsGopath].goroot;
 		const currentGoroot: string = process.env['GOROOT'] && process.env['GOROOT'].toLowerCase();
 		if (prevGoroot && prevGoroot.toLowerCase() !== currentGoroot) {
-			vscode.window.showInformationMessage(`Your current goroot (${currentGoroot}) is different than before (${prevGoroot}), a few Go tools may need recompiling`, updateToolsCmdText).then(selected => {
+			vscode.window.showInformationMessage(`Your current goroot (${currentGoroot}) is different than before (${prevGoroot}), a few Go tools may need recompiling`, updateToolsCmdText).then((selected) => {
 				if (selected === updateToolsCmdText) {
 					installAllTools(true);
 				}
@@ -71,7 +71,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 				if (prevVersion !== currVersionString) {
 					if (prevVersion) {
-						vscode.window.showInformationMessage('Your Go version is different than before, few Go tools may need re-compiling', updateToolsCmdText).then(selected => {
+						vscode.window.showInformationMessage('Your Go version is different than before, few Go tools may need re-compiling', updateToolsCmdText).then((selected) => {
 							if (selected === updateToolsCmdText) {
 								installAllTools(true);
 							}
@@ -303,7 +303,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		goGenerateTests.toggleTestFile();
 	}));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.debug.startSession', config => {
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.debug.startSession', (config) => {
 		let workspaceFolder;
 		if (vscode.window.activeTextEditor) {
 			workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri);
@@ -330,8 +330,8 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			command: 'workbench.action.showAllSymbols',
 			title: 'Go to Symbol in Workspace...'
 		});
-		vscode.window.showQuickPick(extCommands.map(x => x.title)).then(cmd => {
-			const selectedCmd = extCommands.find(x => x.title === cmd);
+		vscode.window.showQuickPick(extCommands.map((x) => x.title)).then((cmd) => {
+			const selectedCmd = extCommands.find((x) => x.title === cmd);
 			if (selectedCmd) {
 				vscode.commands.executeCommand(selectedCmd.command);
 			}
@@ -378,18 +378,18 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 	lintDiagnosticCollection.clear();
 	vetDiagnosticCollection.clear();
 	check(document.uri, goConfig)
-		.then(results => {
-			results.forEach(result => {
+		.then((results) => {
+			results.forEach((result) => {
 				handleDiagnosticErrors(document, result.errors, result.diagnosticCollection);
 			});
 		})
-		.catch(err => {
+		.catch((err) => {
 			vscode.window.showInformationMessage('Error: ' + err);
 		});
 }
 
 function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
-	vscode.workspace.onDidSaveTextDocument(document => {
+	vscode.workspace.onDidSaveTextDocument((document) => {
 		if (document.languageId !== 'go') {
 			return;
 		}
@@ -398,14 +398,14 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 			const ignoreActiveDebugWarningKey = 'ignoreActiveDebugWarningKey';
 			const ignoreActiveDebugWarning = getFromGlobalState(ignoreActiveDebugWarningKey);
 			if (!ignoreActiveDebugWarning) {
-				vscode.window.showWarningMessage('A debug session is currently active. Changes to your Go files may result in unexpected behaviour.', neverAgain).then(result => {
+				vscode.window.showWarningMessage('A debug session is currently active. Changes to your Go files may result in unexpected behaviour.', neverAgain).then((result) => {
 					if (result === neverAgain) {
 						updateGlobalState(ignoreActiveDebugWarningKey, true);
 					}
 				});
 			}
 		}
-		if (vscode.window.visibleTextEditors.some(e => e.document.fileName === document.fileName)) {
+		if (vscode.window.visibleTextEditors.some((e) => e.document.fileName === document.fileName)) {
 			runBuilds(document, getGoConfig(document.uri));
 		}
 

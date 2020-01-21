@@ -19,7 +19,7 @@ export function implCursor() {
 	return vscode.window.showInputBox({
 		placeHolder: 'f *File io.Closer',
 		prompt: 'Enter receiver and interface to implement.'
-	}).then(implInput => {
+	}).then((implInput) => {
 		if (typeof implInput === 'undefined') {
 			return;
 		}
@@ -50,7 +50,7 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 			return;
 		}
 
-		vscode.window.activeTextEditor.edit(editBuilder => {
+		vscode.window.activeTextEditor.edit((editBuilder) => {
 			editBuilder.insert(insertPos, stdout);
 		});
 	});

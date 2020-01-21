@@ -7,7 +7,7 @@
 				"statements"
 			]
 		},
-		// "arrow-parens": true,
+		"arrow-parens": true,
 		"arrow-return-shorthand": true,
 		"ban-types": {
 			"options": [

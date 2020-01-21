@@ -27,7 +27,7 @@ export async function installAllTools(updateExistingToolsOnly: boolean = false) 
 
 	// Update existing tools by finding all tools the user has already installed.
 	if (updateExistingToolsOnly) {
-		installTools(allTools.filter(tool => {
+		installTools(allTools.filter((tool) => {
 			const toolPath = getBinPath(tool.name);
 			return toolPath && path.isAbsolute(toolPath);
 		}), goVersion);
@@ -35,7 +35,7 @@ export async function installAllTools(updateExistingToolsOnly: boolean = false) 
 	}
 
 	// Otherwise, allow the user to select which tools to install or update.
-	vscode.window.showQuickPick(allTools.map(x => {
+	vscode.window.showQuickPick(allTools.map((x) => {
 		const item: vscode.QuickPickItem = {
 			label: x.name,
 			description: x.description
@@ -44,11 +44,11 @@ export async function installAllTools(updateExistingToolsOnly: boolean = false) 
 	}), {
 		canPickMany: true,
 		placeHolder: 'Select the tools to install/update.'
-	}).then(selectedTools => {
+	}).then((selectedTools) => {
 		if (!selectedTools) {
 			return;
 		}
-		installTools(selectedTools.map(x => getTool(x.label)), goVersion);
+		installTools(selectedTools.map((x) => getTool(x.label)), goVersion);
 	});
 }
 
@@ -99,7 +99,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		envForTools['GOPATH'] = toolsGopath;
 	} else {
 		const msg = 'Cannot install Go tools. Set either go.gopath or go.toolsGopath in settings.';
-		vscode.window.showInformationMessage(msg, 'Open User Settings', 'Open Workspace Settings').then(selected => {
+		vscode.window.showInformationMessage(msg, 'Open User Settings', 'Open Workspace Settings').then((selected) => {
 			switch (selected) {
 				case 'Open User Settings':
 					vscode.commands.executeCommand('workbench.action.openGlobalSettings');
@@ -135,7 +135,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	const toolsTmpDir = fs.mkdtempSync(getTempFilePath('go-tools-'));
 
 	return missing.reduce((res: Promise<string[]>, tool: Tool) => {
-		return res.then(sofar => new Promise<string[]>((resolve, reject) => {
+		return res.then((sofar) => new Promise<string[]>((resolve, reject) => {
 			// Disable modules for tools which are installed with the "..." wildcard.
 			// TODO: ... will be supported in Go 1.13, so enable these tools to use modules then.
 			const modulesOffForTool = modulesOff || disableModulesForWildcard(tool, goVersion);
@@ -212,9 +212,9 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 				});
 			});
 		}));
-	}, Promise.resolve([])).then(res => {
+	}, Promise.resolve([])).then((res) => {
 		outputChannel.appendLine(''); // Blank line for spacing
-		const failures = res.filter(x => x != null);
+		const failures = res.filter((x) => x != null);
 		if (failures.length === 0) {
 			if (containsString(missing, 'go-langserver') || containsString(missing, 'gopls')) {
 				outputChannel.appendLine('Reload VS Code window to use the Go language server');
@@ -263,13 +263,13 @@ export async function promptForMissingTool(toolName: string) {
 	if (!containsTool(missing, tool)) {
 		return;
 	}
-	missing = missing.filter(x => x === tool || tool.isImportant);
+	missing = missing.filter((x) => x === tool || tool.isImportant);
 	if (missing.length > 1) {
 		// Offer the option to install all tools.
 		installOptions.push('Install All');
 	}
 	const msg = `The "${tool.name}" command is not available. Run "go get -v ${getImportPath(tool, goVersion)}" to install.`;
-	vscode.window.showInformationMessage(msg, ...installOptions).then(selected => {
+	vscode.window.showInformationMessage(msg, ...installOptions).then((selected) => {
 		switch (selected) {
 			case 'Install':
 				installTools([tool], goVersion);
@@ -295,7 +295,7 @@ export async function promptForUpdatingTool(toolName: string) {
 	}
 	const goVersion = await getGoVersion();
 	const updateMsg = `Your version of ${tool.name} appears to be out of date. Please update for an improved experience.`;
-	vscode.window.showInformationMessage(updateMsg, 'Update').then(selected => {
+	vscode.window.showInformationMessage(updateMsg, 'Update').then((selected) => {
 		switch (selected) {
 			case 'Update':
 				installTools([tool], goVersion);
@@ -370,7 +370,7 @@ export async function offerToInstallTools() {
 
 	const goVersion = await getGoVersion();
 	let missing = await getMissingTools(goVersion);
-	missing = missing.filter(x => x.isImportant);
+	missing = missing.filter((x) => x.isImportant);
 	if (missing.length > 0) {
 		showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
 		vscode.commands.registerCommand('go.promptforinstall', () => {
@@ -384,7 +384,7 @@ export async function offerToInstallTools() {
 		const disableLabel = 'Disable language server';
 		const installLabel = 'Install';
 		vscode.window.showInformationMessage(promptMsg, installLabel, disableLabel)
-			.then(selected => {
+			.then((selected) => {
 				if (selected === installLabel) {
 					installTools([getTool('gopls')], goVersion)
 						.then(() => {
@@ -415,10 +415,10 @@ export async function offerToInstallTools() {
 			command() {
 				outputChannel.clear();
 				outputChannel.appendLine('Below tools are needed for the basic features of the Go extension.');
-				missing.forEach(x => outputChannel.appendLine(x.name));
+				missing.forEach((x) => outputChannel.appendLine(x.name));
 			}
 		};
-		vscode.window.showInformationMessage('Failed to find some of the Go analysis tools. Would you like to install them?', installItem, showItem).then(selection => {
+		vscode.window.showInformationMessage('Failed to find some of the Go analysis tools. Would you like to install them?', installItem, showItem).then((selection) => {
 			if (selection) {
 				selection.command();
 			} else {
@@ -430,12 +430,12 @@ export async function offerToInstallTools() {
 
 function getMissingTools(goVersion: GoVersion): Promise<Tool[]> {
 	const keys = getConfiguredTools(goVersion);
-	return Promise.all<Tool>(keys.map(tool => new Promise<Tool>((resolve, reject) => {
+	return Promise.all<Tool>(keys.map((tool) => new Promise<Tool>((resolve, reject) => {
 		const toolPath = getBinPath(tool.name);
-		fs.exists(toolPath, exists => {
+		fs.exists(toolPath, (exists) => {
 			resolve(exists ? null : tool);
 		});
-	}))).then(res => {
-		return res.filter(x => x != null);
+	}))).then((res) => {
+		return res.filter((x) => x != null);
 	});
 }

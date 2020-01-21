@@ -86,15 +86,15 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 		}
 	}
 
-	Object.keys(fileEnv).forEach(key => envVars[key] = typeof fileEnv[key] === 'string' ? resolvePath(fileEnv[key]) : fileEnv[key]);
-	Object.keys(testEnvConfig).forEach(key => envVars[key] = typeof testEnvConfig[key] === 'string' ? resolvePath(testEnvConfig[key]) : testEnvConfig[key]);
+	Object.keys(fileEnv).forEach((key) => envVars[key] = typeof fileEnv[key] === 'string' ? resolvePath(fileEnv[key]) : fileEnv[key]);
+	Object.keys(testEnvConfig).forEach((key) => envVars[key] = typeof testEnvConfig[key] === 'string' ? resolvePath(testEnvConfig[key]) : testEnvConfig[key]);
 
 	return envVars;
 }
 
 export function getTestFlags(goConfig: vscode.WorkspaceConfiguration, args?: any): string[] {
 	let testFlags: string[] = goConfig['testFlags'] || goConfig['buildFlags'] || [];
-	testFlags = testFlags.map(x => resolvePath(x)); // Use copy of the flags, dont pass the actual object from config
+	testFlags = testFlags.map((x) => resolvePath(x)); // Use copy of the flags, dont pass the actual object from config
 	return (args && args.hasOwnProperty('flags') && Array.isArray(args['flags'])) ? args['flags'] : testFlags;
 }
 
@@ -112,10 +112,10 @@ export function getTestFunctions(doc: vscode.TextDocument, token: vscode.Cancell
 	const documentSymbolProvider = new GoDocumentSymbolProvider(true);
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
-		.then(symbols => symbols[0].children)
-		.then(symbols => {
-			const testify = symbols.some(sym => sym.kind === vscode.SymbolKind.Namespace && sym.name === '"github.com/stretchr/testify/suite"');
-			return symbols.filter(sym =>
+		.then((symbols) => symbols[0].children)
+		.then((symbols) => {
+			const testify = symbols.some((sym) => sym.kind === vscode.SymbolKind.Namespace && sym.name === '"github.com/stretchr/testify/suite"');
+			return symbols.filter((sym) =>
 				sym.kind === vscode.SymbolKind.Function
 				&& (testFuncRegex.test(sym.name) || (testify && testMethodRegex.test(sym.name)))
 			);
@@ -149,7 +149,7 @@ export function getTestFunctionDebugArgs(document: vscode.TextDocument, testFunc
 	const instanceMethod = extractInstanceTestName(testFunctionName);
 	if (instanceMethod) {
 		const testFns = findAllTestSuiteRuns(document, testFunctions);
-		const testSuiteRuns = ['-test.run', `^${testFns.map(t => t.name).join('|')}$`];
+		const testSuiteRuns = ['-test.run', `^${testFns.map((t) => t.name).join('|')}$`];
 		const testSuiteTests = ['-testify.m', `^${instanceMethod}$`];
 		return [...testSuiteRuns, ...testSuiteTests];
 	} else {
@@ -164,9 +164,9 @@ export function getTestFunctionDebugArgs(document: vscode.TextDocument, testFunc
  */
 export function findAllTestSuiteRuns(doc: vscode.TextDocument, allTests: vscode.DocumentSymbol[]): vscode.DocumentSymbol[] {
 	// get non-instance test functions
-	const testFunctions = allTests.filter(t => !testMethodRegex.test(t.name));
+	const testFunctions = allTests.filter((t) => !testMethodRegex.test(t.name));
 	// filter further to ones containing suite.Run()
-	return testFunctions.filter(t => doc.getText(t.range).includes('suite.Run('));
+	return testFunctions.filter((t) => doc.getText(t.range).includes('suite.Run('));
 }
 
 /**
@@ -179,9 +179,9 @@ export function getBenchmarkFunctions(doc: vscode.TextDocument, token: vscode.Ca
 	const documentSymbolProvider = new GoDocumentSymbolProvider();
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
-		.then(symbols => symbols[0].children)
-		.then(symbols =>
-			symbols.filter(sym =>
+		.then((symbols) => symbols[0].children)
+		.then((symbols) =>
+			symbols.filter((sym) =>
 				sym.kind === vscode.SymbolKind.Function
 				&& benchmarkRegex.test(sym.name))
 		);
@@ -239,12 +239,12 @@ export async function goTest(testconfig: TestConfig): Promise<boolean> {
 				targets = ['./...'];
 				pkgMapPromise = getNonVendorPackages(testconfig.dir); // We need the mapping to get absolute paths for the files in the test output
 			} else {
-				pkgMapPromise = getGoVersion().then(goVersion => {
+				pkgMapPromise = getGoVersion().then((goVersion) => {
 					if (goVersion.gt('1.8')) {
 						targets = ['./...'];
 						return null; // We dont need mapping, as we can derive the absolute paths from package path
 					}
-					return getNonVendorPackages(testconfig.dir).then(pkgMap => {
+					return getNonVendorPackages(testconfig.dir).then((pkgMap) => {
 						targets = Array.from(pkgMap.keys());
 						return pkgMap; // We need the individual package paths to pass to `go test`
 					});
@@ -298,30 +298,30 @@ export async function goTest(testconfig: TestConfig): Promise<boolean> {
 				if (result && (pkgMap.has(result[2]) || currentGoWorkspace)) {
 					const packageNameArr = result[2].split('/');
 					const baseDir = pkgMap.get(result[2]) || path.join(currentGoWorkspace, ...packageNameArr);
-					testResultLines.forEach(line => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
+					testResultLines.forEach((line) => outputChannel.appendLine(expandFilePathInOutput(line, baseDir)));
 					testResultLines.splice(0);
 				}
 			};
 
 			// go test emits test results on stdout, which contain file names relative to the package under test
-			outBuf.onLine(line => processTestResultLine(line));
-			outBuf.onDone(last => {
+			outBuf.onLine((line) => processTestResultLine(line));
+			outBuf.onDone((last) => {
 				if (last) {
 					processTestResultLine(last);
 				}
 
 				// If there are any remaining test result lines, emit them to the output channel.
 				if (testResultLines.length > 0) {
-					testResultLines.forEach(line => outputChannel.appendLine(line));
+					testResultLines.forEach((line) => outputChannel.appendLine(line));
 				}
 			});
 
 			// go test emits build errors on stderr, which contain paths relative to the cwd
-			errBuf.onLine(line => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
-			errBuf.onDone(last => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
+			errBuf.onLine((line) => outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir)));
+			errBuf.onDone((last) => last && outputChannel.appendLine(expandFilePathInOutput(last, testconfig.dir)));
 
-			tp.stdout.on('data', chunk => outBuf.append(chunk.toString()));
-			tp.stderr.on('data', chunk => errBuf.append(chunk.toString()));
+			tp.stdout.on('data', (chunk) => outBuf.append(chunk.toString()));
+			tp.stderr.on('data', (chunk) => errBuf.append(chunk.toString()));
 
 			statusBarItem.show();
 
@@ -351,7 +351,7 @@ export async function goTest(testconfig: TestConfig): Promise<boolean> {
 
 			runningTestProcesses.push(tp);
 
-		}, err => {
+		}, (err) => {
 			outputChannel.appendLine(`Error: ${testType} failed.`);
 			outputChannel.appendLine(err);
 			resolve(false);
@@ -375,7 +375,7 @@ export function showTestOutput() {
  */
 export function cancelRunningTests(): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
-		runningTestProcesses.forEach(tp => {
+		runningTestProcesses.forEach((tp) => {
 			tp.kill(sendSignal);
 		});
 		// All processes are now dead. Empty the array to prepare for the next run.
@@ -408,10 +408,10 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 			params = ['-bench', util.format('^(%s)$', testconfig.functions.join('|'))];
 		} else {
 			let testFunctions = testconfig.functions;
-			let testifyMethods = testFunctions.filter(fn => testMethodRegex.test(fn));
+			let testifyMethods = testFunctions.filter((fn) => testMethodRegex.test(fn));
 			if (testifyMethods.length > 0) {
 				// filter out testify methods
-				testFunctions = testFunctions.filter(fn => !testMethodRegex.test(fn));
+				testFunctions = testFunctions.filter((fn) => !testMethodRegex.test(fn));
 				testifyMethods = testifyMethods.map(extractInstanceTestName);
 			}
 

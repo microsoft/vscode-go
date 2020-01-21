@@ -58,7 +58,7 @@ export function definitionLocation(document: vscode.TextDocument, position: vsco
 		goConfig = getGoConfig(document.uri);
 	}
 	const toolForDocs = goConfig['docsTool'] || 'godoc';
-	return getModFolderPath(document.uri).then(modFolderPath => {
+	return getModFolderPath(document.uri).then((modFolderPath) => {
 		const input: GoDefinitionInput = {
 			document,
 			position,
@@ -155,12 +155,12 @@ function definitionLocation_godef(input: GoDefinitionInput, token: vscode.Cancel
 					return resolve(definitionInformation);
 				}
 				match = /^\w+ \(\*?(\w+)\)/.exec(lines[1]);
-				runGodoc(input.cwd, pkgPath, match ? match[1] : '', input.word, token).then(doc => {
+				runGodoc(input.cwd, pkgPath, match ? match[1] : '', input.word, token).then((doc) => {
 					if (doc) {
 						definitionInformation.doc = doc;
 					}
 					resolve(definitionInformation);
-				}).catch(err => {
+				}).catch((err) => {
 					console.log(err);
 					resolve(definitionInformation);
 				});
@@ -308,14 +308,14 @@ export class GoDefinitionProvider implements vscode.DefinitionProvider {
 	}
 
 	public provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Thenable<vscode.Location> {
-		return definitionLocation(document, position, this.goConfig, false, token).then(definitionInfo => {
+		return definitionLocation(document, position, this.goConfig, false, token).then((definitionInfo) => {
 			if (definitionInfo == null || definitionInfo.file == null) {
 				return null;
 			}
 			const definitionResource = vscode.Uri.file(definitionInfo.file);
 			const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
 			return new vscode.Location(definitionResource, pos);
-		}, err => {
+		}, (err) => {
 			const miss = parseMissingError(err);
 			if (miss[0]) {
 				promptForMissingTool(miss[1]);

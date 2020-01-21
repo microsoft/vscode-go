@@ -24,7 +24,7 @@ export async function listPackages(excludeImportedPkgs: boolean = false): Promis
 	const stdLibs: string[] = [];
 	const nonStdLibs: string[] = [];
 	pkgMap.forEach((value, key) => {
-		if (importedPkgs.some(imported => imported === key)) {
+		if (importedPkgs.some((imported) => imported === key)) {
 			return;
 		}
 		if (value.isStd) {
@@ -73,11 +73,11 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	}
 
 	const { imports, pkg } = parseFilePrelude(vscode.window.activeTextEditor.document.getText());
-	if (imports.some(block => block.pkgs.some(pkgpath => pkgpath === arg))) {
+	if (imports.some((block) => block.pkgs.some((pkgpath) => pkgpath === arg))) {
 		return [];
 	}
 
-	const multis = imports.filter(x => x.kind === 'multi');
+	const multis = imports.filter((x) => x.kind === 'multi');
 	if (multis.length > 0) {
 		// There is a multiple import declaration, add to the last one
 		const lastImportSection = multis[multis.length - 1];
@@ -92,7 +92,7 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 		const edits = [];
 
 		edits.push(vscode.TextEdit.insert(new vscode.Position(imports[0].start, 0), 'import (\n\t"' + arg + '"\n'));
-		imports.forEach(element => {
+		imports.forEach((element) => {
 			const currentLine = vscode.window.activeTextEditor.document.lineAt(element.start).text;
 			const updatedLine = currentLine.replace(/^\s*import\s*/, '\t');
 			edits.push(vscode.TextEdit.replace(new vscode.Range(element.start, 0, element.start, currentLine.length), updatedLine));
@@ -112,7 +112,7 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 
 export function addImport(arg: { importPath: string, from: string }) {
 	const p = (arg && arg.importPath) ? Promise.resolve(arg.importPath) : askUserForImport();
-	p.then(imp => {
+	p.then((imp) => {
 		sendTelemetryEventForAddImportCmd(arg);
 		const edits = getTextEditForAddImport(imp);
 		if (edits && edits.length > 0) {

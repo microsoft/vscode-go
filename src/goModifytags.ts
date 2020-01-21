@@ -113,11 +113,11 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 	return vscode.window.showInputBox({
 		value: tags,
 		prompt: 'Enter comma separated tag names'
-	}).then(inputTags => {
+	}).then((inputTags) => {
 		return vscode.window.showInputBox({
 			value: options,
 			prompt: 'Enter comma separated options'
-		}).then(inputOptions => {
+		}).then((inputOptions) => {
 			return [inputTags, inputOptions, transformValue];
 		});
 	});
@@ -137,7 +137,7 @@ function runGomodifytags(args: string[]) {
 			return;
 		}
 		const output = <GomodifytagsOutput>JSON.parse(stdout);
-		vscode.window.activeTextEditor.edit(editBuilder => {
+		vscode.window.activeTextEditor.edit((editBuilder) => {
 			editBuilder.replace(new vscode.Range(output.start - 1, 0, output.end, 0), output.lines.join('\n') + '\n');
 		});
 	});

@@ -40,8 +40,8 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 			return Promise.resolve([]);
 		}
 
-		return this.provideDocumentSymbols(document, token).then(symbols => {
-			return symbols.map(symbol => {
+		return this.provideDocumentSymbols(document, token).then((symbols) => {
+			return symbols.map((symbol) => {
 				let position = symbol.range.start;
 
 				// Add offset for functions as go-outline returns position at the keyword func instead of func name
@@ -66,7 +66,7 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 			includeDeclaration: false
 		};
 		const referenceProvider = new GoReferenceProvider();
-		return referenceProvider.provideReferences(codeLens.document, codeLens.range.start, options, token).then(references => {
+		return referenceProvider.provideReferences(codeLens.document, codeLens.range.start, options, token).then((references) => {
 			codeLens.command = {
 				title: references.length === 1
 					? '1 reference'
@@ -75,7 +75,7 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 				arguments: [codeLens.document.uri, codeLens.range.start, references]
 			};
 			return codeLens;
-		}, err => {
+		}, (err) => {
 			console.log(err);
 			codeLens.command = {
 				title: 'Error finding references',
@@ -89,7 +89,7 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		const symbolProvider = new GoDocumentSymbolProvider();
 		const isTestFile = document.fileName.endsWith('_test.go');
 		const symbols = await symbolProvider.provideDocumentSymbols(document, token);
-		return symbols[0].children.filter(symbol => {
+		return symbols[0].children.filter((symbol) => {
 			if (symbol.kind === vscode.SymbolKind.Interface) {
 				return true;
 			}

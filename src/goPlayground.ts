@@ -32,7 +32,7 @@ export const playgroundCommand = () => {
 	const code = selection.isEmpty
 		? editor.document.getText()
 		: editor.document.getText(selection);
-	goPlay(code, getGoConfig(editor.document.uri).get('playground')).then(result => {
+	goPlay(code, getGoConfig(editor.document.uri).get('playground')).then((result) => {
 		outputChannel.append(result);
 	}, (e: string) => {
 		if (e) {
@@ -42,7 +42,7 @@ export const playgroundCommand = () => {
 };
 
 export function goPlay(code: string, goConfig: vscode.WorkspaceConfiguration): Thenable<string> {
-	const cliArgs = Object.keys(goConfig).map(key => `-${key}=${goConfig[key]}`);
+	const cliArgs = Object.keys(goConfig).map((key) => `-${key}=${goConfig[key]}`);
 	const binaryLocation = getBinPath(TOOL_CMD_NAME);
 
 	return new Promise<string>((resolve, reject) => {

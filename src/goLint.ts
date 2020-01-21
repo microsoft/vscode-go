@@ -30,11 +30,11 @@ export function lintCode(scope?: string) {
 	diagnosticsStatusBarItem.text = 'Linting...';
 
 	goLint(documentUri, goConfig, scope)
-		.then(warnings => {
+		.then((warnings) => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, lintDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
 		})
-		.catch(err => {
+		.catch((err) => {
 			vscode.window.showInformationMessage('Error: ' + err);
 			diagnosticsStatusBarItem.text = 'Linting Failed';
 		});
@@ -71,7 +71,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	const lintEnv = Object.assign({}, getToolsEnvVars());
 	const args: string[] = [];
 
-	lintFlags.forEach(flag => {
+	lintFlags.forEach((flag) => {
 		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
 		if (flag === '--json') {
 			return;

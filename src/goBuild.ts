@@ -35,13 +35,13 @@ export function buildCode(buildWorkspace?: boolean) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Building...';
 
-	isModSupported(documentUri).then(isMod => {
+	isModSupported(documentUri).then((isMod) => {
 		goBuild(documentUri, isMod, goConfig, buildWorkspace)
-		.then(errors => {
+		.then((errors) => {
 			handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
 		})
-		.catch(err => {
+		.catch((err) => {
 			vscode.window.showInformationMessage('Error: ' + err);
 			diagnosticsStatusBarItem.text = 'Build Failed';
 		});
@@ -104,7 +104,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 
 	if (buildWorkspace && currentWorkspace && !isTestFile) {
 		outputChannel.appendLine(`Starting building the current workspace at ${currentWorkspace}`);
-		return getNonVendorPackages(currentWorkspace).then(pkgs => {
+		return getNonVendorPackages(currentWorkspace).then((pkgs) => {
 			running = true;
 			return runTool(
 				buildArgs.concat(Array.from(pkgs.keys())),
@@ -115,7 +115,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 				buildEnv,
 				true,
 				tokenSource.token
-			).then(v => {
+			).then((v) => {
 				updateRunning();
 				return v;
 			});
@@ -143,7 +143,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 		buildEnv,
 		true,
 		tokenSource.token
-	).then(v => {
+	).then((v) => {
 		updateRunning();
 		return v;
 	});

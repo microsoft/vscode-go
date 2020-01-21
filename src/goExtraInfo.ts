@@ -27,13 +27,13 @@ export class GoHoverProvider implements HoverProvider {
 		if (goConfig['docsTool'] === 'guru') {
 			goConfig = Object.assign({}, goConfig, { docsTool: 'godoc' });
 		}
-		return definitionLocation(document, position, goConfig, true, token).then(definitionInfo => {
+		return definitionLocation(document, position, goConfig, true, token).then((definitionInfo) => {
 			if (definitionInfo == null) {
 				return null;
 			}
 			const lines = definitionInfo.declarationlines
-				.filter(line => line !== '')
-				.map(line => line.replace(/\t/g, '    '));
+				.filter((line) => line !== '')
+				.map((line) => line.replace(/\t/g, '    '));
 			let text;
 			text = lines.join('\n').replace(/\n+$/, '');
 			const hoverTexts = new vscode.MarkdownString();

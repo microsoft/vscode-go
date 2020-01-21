@@ -47,7 +47,7 @@ export function containsTool(tools: Tool[], tool: Tool): boolean {
 }
 
 export function containsString(tools: Tool[], toolName: string): boolean {
-	return tools.some(tool => tool.name === toolName);
+	return tools.some((tool) => tool.name === toolName);
 }
 
 export function getTool(name: string): Tool {

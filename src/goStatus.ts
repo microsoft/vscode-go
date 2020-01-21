@@ -31,7 +31,7 @@ export function showHideStatus(editor: vscode.TextEditor) {
 	}
 
 	if (editor) {
-		isModSupported(editor.document.uri).then(isMod => {
+		isModSupported(editor.document.uri).then((isMod) => {
 			if (isMod) {
 				statusBarItemModule.show();
 			} else {

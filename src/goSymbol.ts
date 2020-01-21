@@ -33,7 +33,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 
 	public provideWorkspaceSymbols(query: string, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
 		const convertToCodeSymbols = (decls: GoSymbolDeclaration[], symbols: vscode.SymbolInformation[]): void => {
-			decls.forEach(decl => {
+			decls.forEach((decl) => {
 				let kind: vscode.SymbolKind;
 				if (decl.kind !== '') {
 					kind = this.goKindToCodeKind[decl.kind];
@@ -56,7 +56,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 			return;
 		}
 
-		return getWorkspaceSymbols(root, query, token, goConfig).then(results => {
+		return getWorkspaceSymbols(root, query, token, goConfig).then((results) => {
 			const symbols: vscode.SymbolInformation[] = [];
 			convertToCodeSymbols(results, symbols);
 			return symbols;

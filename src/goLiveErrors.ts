@@ -87,7 +87,7 @@ async function processFile(e: vscode.TextDocumentChangeEvent) {
 			// returns a non-zero exit status if the checks fail
 			const diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
 
-			stderr.split('\n').forEach(error => {
+			stderr.split('\n').forEach((error) => {
 				if (error === null || error.length === 0) {
 					return;
 				}

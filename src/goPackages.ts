@@ -50,9 +50,9 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 		const chunks: any[] = [];
 		const errchunks: any[] = [];
 		let err: any;
-		cmd.stdout.on('data', d => chunks.push(d));
-		cmd.stderr.on('data', d => errchunks.push(d));
-		cmd.on('error', e => err = e);
+		cmd.stdout.on('data', (d) => chunks.push(d));
+		cmd.stderr.on('data', (d) => errchunks.push(d));
+		cmd.on('error', (e) => err = e);
 		cmd.on('close', () => {
 			const pkgs = new Map<string, PackageInfo>();
 			if (err && err.code === 'ENOENT') {
@@ -64,7 +64,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 				if (errorMsg.startsWith('flag provided but not defined: -workDir')) {
 					promptForUpdatingTool('gopkgs');
 					// fallback to gopkgs without -workDir
-					return gopkgs().then(result => resolve(result));
+					return gopkgs().then((result) => resolve(result));
 				}
 
 				console.log(`Running gopkgs failed with "${errorMsg}"\nCheck if you can run \`gopkgs -format {{.Name}};{{.ImportPath}}\` in a terminal successfully.`);
@@ -75,7 +75,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 			if (output.indexOf(';') === -1) {
 				// User might be using the old gopkgs tool, prompt to update
 				promptForUpdatingTool('gopkgs');
-				output.split('\n').forEach(pkgPath => {
+				output.split('\n').forEach((pkgPath) => {
 					if (!pkgPath || !pkgPath.trim()) {
 						return;
 					}
@@ -273,7 +273,7 @@ export function getNonVendorPackages(folderPath: string): Promise<Map<string, st
 			const version = await getGoVersion();
 			const vendorAlreadyExcluded = version.gt('1.8');
 
-			lines.forEach(line => {
+			lines.forEach((line) => {
 				const matches = line.match(pkgToFolderMappingRegex);
 				if (!matches || matches.length !== 3) {
 					return;

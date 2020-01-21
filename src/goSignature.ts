@@ -60,7 +60,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				si = new SignatureInformation(declarationText, res.doc);
 				sig = declarationText.substring(res.name.length);
 			}
-			si.parameters = getParametersAndReturnType(sig).params.map(paramText => new ParameterInformation(paramText));
+			si.parameters = getParametersAndReturnType(sig).params.map((paramText) => new ParameterInformation(paramText));
 			result.signatures = [si];
 			result.activeSignature = 0;
 			result.activeParameter = Math.min(theCall.commas.length, si.parameters.length - 1);

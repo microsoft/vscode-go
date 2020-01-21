@@ -265,7 +265,7 @@ export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent
 		return;
 	}
 
-	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e.document)) {
+	if (vscode.window.visibleTextEditors.every((editor) => editor.document !== e.document)) {
 		return;
 	}
 
@@ -306,7 +306,7 @@ export async function toggleCoverageCurrentPackage() {
 		applyCodeCoverage: true
 	};
 
-	return goTest(testConfig).then(success => {
+	return goTest(testConfig).then((success) => {
 		if (!success) {
 			showTestOutput();
 		}
@@ -314,7 +314,7 @@ export async function toggleCoverageCurrentPackage() {
 }
 
 export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
-	return e.contentChanges.every(change => {
+	return e.contentChanges.every((change) => {
 		// We cannot be sure with using just regex on individual lines whether a multi line change is part of a comment or not
 		// So play it safe and treat it as not a comment
 		if (!change.range.isSingleLine || change.text.includes('\n')) {

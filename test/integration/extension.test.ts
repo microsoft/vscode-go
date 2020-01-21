@@ -104,7 +104,7 @@ suite('Go Extension Tests', () => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		try {
 			const textDocument = await vscode.workspace.openTextDocument(uri);
-			const promises = testCases.map(([position, expected, expectedDoc, expectedParams]) => provider.provideSignatureHelp(textDocument, position, null).then(sigHelp => {
+			const promises = testCases.map(([position, expected, expectedDoc, expectedParams]) => provider.provideSignatureHelp(textDocument, position, null).then((sigHelp) => {
 				assert.ok(sigHelp, `No signature for gogetdocTestData/test.go:${position.line + 1}:${position.character + 1}`);
 				assert.equal(sigHelp.signatures.length, 1, 'unexpected number of overloads');
 				assert.equal(sigHelp.signatures[0].label, expected);
@@ -126,7 +126,7 @@ suite('Go Extension Tests', () => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		try {
 			const textDocument = await vscode.workspace.openTextDocument(uri);
-			const promises = testCases.map(([position, expectedSignature, expectedDocumentation]) => provider.provideHover(textDocument, position, null).then(res => {
+			const promises = testCases.map(([position, expectedSignature, expectedDocumentation]) => provider.provideHover(textDocument, position, null).then((res) => {
 				if (expectedSignature === null && expectedDocumentation === null) {
 					assert.equal(res, null);
 					return;
@@ -268,13 +268,13 @@ It returns the number of bytes written and any write error encountered.
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
 			{ line: 11, severity: 'error', msg: 'undefined: prin' },
 		];
-		getGoVersion().then(async version => {
+		getGoVersion().then(async (version) => {
 			const diagnostics = await check(vscode.Uri.file(path.join(fixturePath, 'errorsTest', 'errors.go')), config);
 			const sortedDiagnostics = ([] as ICheckResult[])
-				.concat.apply([], diagnostics.map(x => x.errors))
+				.concat.apply([], diagnostics.map((x) => x.errors))
 				.sort((a: any, b: any) => a.line - b.line);
 			assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
-			const matchCount = expected.filter(expectedItem => {
+			const matchCount = expected.filter((expectedItem) => {
 				return sortedDiagnostics.some((diag: any) => {
 					return expectedItem.line === diag.line
 						&& expectedItem.severity === diag.severity
@@ -291,7 +291,7 @@ It returns the number of bytes written and any write error encountered.
 			return done();
 		}
 
-		getGoVersion().then(async version => {
+		getGoVersion().then(async (version) => {
 			const uri = vscode.Uri.file(path.join(generateTestsSourcePath, 'generatetests.go'));
 			const document = await vscode.workspace.openTextDocument(uri);
 			const editor = await vscode.window.showTextDocument(document);
@@ -313,7 +313,7 @@ It returns the number of bytes written and any write error encountered.
 			return done();
 		}
 
-		getGoVersion().then(async version => {
+		getGoVersion().then(async (version) => {
 			const uri = vscode.Uri.file(path.join(generateFunctionTestSourcePath, 'generatetests.go'));
 			const document = await vscode.workspace.openTextDocument(uri);
 			const editor = await vscode.window.showTextDocument(document);
@@ -338,7 +338,7 @@ It returns the number of bytes written and any write error encountered.
 			return done();
 		}
 
-		getGoVersion().then(async version => {
+		getGoVersion().then(async (version) => {
 			const uri = vscode.Uri.file(path.join(generatePackageTestSourcePath, 'generatetests.go'));
 			const document = await vscode.workspace.openTextDocument(uri);
 			const editor = await vscode.window.showTextDocument(document);
@@ -426,7 +426,7 @@ It returns the number of bytes written and any write error encountered.
 			try {
 				const editor = await vscode.window.showTextDocument(textDocument);
 				await editor.edit((editBuilder) => {
-					fileEdits.edits.forEach(edit => {
+					fileEdits.edits.forEach((edit) => {
 						edit.applyUsingTextEditorEdit(editBuilder);
 					});
 				});
@@ -445,7 +445,7 @@ It returns the number of bytes written and any write error encountered.
 		});
 
 		const uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'sample_test.go'));
-		vscode.workspace.openTextDocument(uri).then(async document => {
+		vscode.workspace.openTextDocument(uri).then(async (document) => {
 			const editor = await vscode.window.showTextDocument(document);
 			const result = await testCurrentFile(config, false, []);
 			assert.equal(result, true);
@@ -455,10 +455,10 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Outline', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
-		vscode.workspace.openTextDocument(uri).then(document => {
+		vscode.workspace.openTextDocument(uri).then((document) => {
 			const options = { document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Include };
 
-			documentSymbols(options, null).then(outlines => {
+			documentSymbols(options, null).then((outlines) => {
 				const packageSymbols = outlines.filter((x: any) => x.kind === vscode.SymbolKind.Package);
 				const imports = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Namespace);
 				const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
@@ -478,11 +478,11 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Outline imports only', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
-		vscode.workspace.openTextDocument(uri).then(document => {
+		vscode.workspace.openTextDocument(uri).then((document) => {
 			const options = { document, fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only };
 
-			documentSymbols(options, null).then(outlines => {
-				const packageSymbols = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
+			documentSymbols(options, null).then((outlines) => {
+				const packageSymbols = outlines.filter((x) => x.kind === vscode.SymbolKind.Package);
 				const imports = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Namespace);
 				const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
 
@@ -498,9 +498,9 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Outline document symbols', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
-		vscode.workspace.openTextDocument(uri).then(document => {
-			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then(outlines => {
-				const packages = outlines.filter(x => x.kind === vscode.SymbolKind.Package);
+		vscode.workspace.openTextDocument(uri).then((document) => {
+			new GoDocumentSymbolProvider().provideDocumentSymbols(document, null).then((outlines) => {
+				const packages = outlines.filter((x) => x.kind === vscode.SymbolKind.Package);
 				const variables = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Variable);
 				const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
 				const structs = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Struct);
@@ -520,8 +520,8 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test listPackages', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
-		vscode.workspace.openTextDocument(uri).then(document => vscode.window.showTextDocument(document)
-			.then(async editor => {
+		vscode.workspace.openTextDocument(uri).then((document) => vscode.window.showTextDocument(document)
+			.then(async (editor) => {
 				const includeImportedPkgs = await listPackages(false);
 				const excludeImportedPkgs = await listPackages(true);
 				assert.equal(includeImportedPkgs.indexOf('fmt') > -1, true);
@@ -551,27 +551,27 @@ It returns the number of bytes written and any write error encountered.
 		];
 
 		vendorSupportPromise.then(async (vendorSupport: boolean) => {
-			const gopkgsPromise = getAllPackages(workDir).then(pkgMap => {
-				const pkgs = Array.from(pkgMap.keys()).filter(p => pkgMap.get(p).name !== 'main');
+			const gopkgsPromise = getAllPackages(workDir).then((pkgMap) => {
+				const pkgs = Array.from(pkgMap.keys()).filter((p) => pkgMap.get(p).name !== 'main');
 				if (vendorSupport) {
-					vendorPkgsFullPath.forEach(pkg => {
+					vendorPkgsFullPath.forEach((pkg) => {
 						assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
 					});
-					vendorPkgsRelativePath.forEach(pkg => {
+					vendorPkgsRelativePath.forEach((pkg) => {
 						assert.equal(pkgs.indexOf(pkg), -1, `Relative path to vendor package ${pkg} should not be returned by gopkgs command`);
 					});
 				}
 				return Promise.resolve(pkgs);
 			});
 
-			const listPkgPromise: Thenable<string[]> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(async document => {
+			const listPkgPromise: Thenable<string[]> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(async (document) => {
 				const editor = await vscode.window.showTextDocument(document);
 				const pkgs = await listPackages();
 				if (vendorSupport) {
-					vendorPkgsRelativePath.forEach(pkg => {
+					vendorPkgsRelativePath.forEach((pkg) => {
 						assert.equal(pkgs.indexOf(pkg) > -1, true, `Relative path for vendor package ${pkg} not found`);
 					});
-					vendorPkgsFullPath.forEach(pkg => {
+					vendorPkgsFullPath.forEach((pkg) => {
 						assert.equal(pkgs.indexOf(pkg), -1, `Full path for vendor package ${pkg} should be shown by listPackages method`);
 					});
 				}
@@ -613,7 +613,7 @@ It returns the number of bytes written and any write error encountered.
 				cmd.on('close', () => {
 					const pkgs = chunks.join('').split('\n').filter((pkg) => pkg).sort();
 					if (vendorSupport) {
-						vendorPkgs.forEach(pkg => {
+						vendorPkgs.forEach((pkg) => {
 							assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
 						});
 					}
@@ -621,11 +621,11 @@ It returns the number of bytes written and any write error encountered.
 				});
 			});
 
-			const listPkgPromise: Thenable<void> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(async document => {
+			const listPkgPromise: Thenable<void> = vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then(async (document) => {
 				const editor = await vscode.window.showTextDocument(document);
 				const pkgs = await listPackages();
 				if (vendorSupport) {
-					vendorPkgs.forEach(pkg => {
+					vendorPkgs.forEach((pkg) => {
 						assert.equal(pkgs.indexOf(pkg), -1, `Vendor package ${pkg} should not be shown by listPackages method`);
 					});
 				}
@@ -673,18 +673,18 @@ It returns the number of bytes written and any write error encountered.
 			}
 		});
 
-		const withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithoutIgnoringFolders).then(results => {
+		const withoutIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithoutIgnoringFolders).then((results) => {
 			assert.equal(results[0].name, 'WinInfo');
 			assert.equal(results[0].path, path.join(workspacePath, 'vendor/9fans.net/go/acme/acme.go'));
 		});
-		const withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithIgnoringFolders).then(results => {
+		const withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithIgnoringFolders).then((results) => {
 			assert.equal(results.length, 0);
 		});
-		const withoutIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithoutIncludeGoroot).then(results => {
+		const withoutIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithoutIncludeGoroot).then((results) => {
 			assert.equal(results.length, 0);
 		});
-		const withIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithIncludeGoroot).then(results => {
-			assert(results.some(result => result.name === 'Mutex'));
+		const withIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithIncludeGoroot).then((results) => {
+			assert(results.some((result) => result.name === 'Mutex'));
 		});
 
 		return Promise.all([withIgnoringFolders, withoutIgnoringFolders, withIncludingGoroot, withoutIncludingGoroot]);
@@ -704,8 +704,8 @@ encountered.
 		const uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
-			const promises = testCases.map(([position, expectedLabel, expectedDetail, expectedDoc]) => provider.provideCompletionItems(editor.document, position, null).then(async items => {
-				const item = items.items.find(x => x.label === expectedLabel);
+			const promises = testCases.map(([position, expectedLabel, expectedDetail, expectedDoc]) => provider.provideCompletionItems(editor.document, position, null).then(async (items) => {
+				const item = items.items.find((x) => x.label === expectedLabel);
 				assert.equal(!!item, true, 'missing expected item in completion list');
 				assert.equal(item.detail, expectedDetail);
 				const resolvedItemResult: vscode.ProviderResult<vscode.CompletionItem> = provider.resolveCompletionItem(item, null);
@@ -740,50 +740,50 @@ encountered.
 		const baseConfig = vscode.workspace.getConfiguration('go');
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
-			const noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: false } })).then(items => {
+			const noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: false } })).then((items) => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
-				const item = items.find(x => x.label === 'Print');
+				const item = items.find((x) => x.label === 'Print');
 				assert.equal(!item.insertText, true);
 			});
-			const withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items1 => {
+			const withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then((items1) => {
 				items1 = items1 instanceof vscode.CompletionList ? items1.items : items1;
-				const item1 = items1.find(x => x.label === 'Print');
+				const item1 = items1.find((x) => x.label === 'Print');
 				assert.equal((<vscode.SnippetString>item1.insertText).value, 'Print(${1:a ...interface{\\}})');
 			});
-			const withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggestWithoutType: { value: true } })).then(items2 => {
+			const withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggestWithoutType: { value: true } })).then((items2) => {
 				items2 = items2 instanceof vscode.CompletionList ? items2.items : items2;
-				const item2 = items2.find(x => x.label === 'Print');
+				const item2 = items2.find((x) => x.label === 'Print');
 				assert.equal((<vscode.SnippetString>item2.insertText).value, 'Print(${1:a})');
 			});
-			const noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: false } })).then(items3 => {
+			const noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: false } })).then((items3) => {
 				items3 = items3 instanceof vscode.CompletionList ? items3.items : items3;
-				const item3 = items3.find(x => x.label === 'funcAsVariable');
+				const item3 = items3.find((x) => x.label === 'funcAsVariable');
 				assert.equal(!item3.insertText, true);
 			});
-			const withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items4 => {
+			const withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then((items4) => {
 				items4 = items4 instanceof vscode.CompletionList ? items4.items : items4;
-				const item4 = items4.find(x => x.label === 'funcAsVariable');
+				const item4 = items4.find((x) => x.label === 'funcAsVariable');
 				assert.equal((<vscode.SnippetString>item4.insertText).value, 'funcAsVariable(${1:k string})');
 			});
-			const withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggestWithoutType: { value: true } })).then(items5 => {
+			const withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggestWithoutType: { value: true } })).then((items5) => {
 				items5 = items5 instanceof vscode.CompletionList ? items5.items : items5;
-				const item5 = items5.find(x => x.label === 'funcAsVariable');
+				const item5 = items5.find((x) => x.label === 'funcAsVariable');
 				assert.equal((<vscode.SnippetString>item5.insertText).value, 'funcAsVariable(${1:k})');
 			});
-			const noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: false } })).then(items6 => {
+			const noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: false } })).then((items6) => {
 				items6 = items6 instanceof vscode.CompletionList ? items6.items : items6;
-				const item1 = items6.find(x => x.label === 'HandlerFunc');
-				const item2 = items6.find(x => x.label === 'HandlerFuncWithArgNames');
-				const item3 = items6.find(x => x.label === 'HandlerFuncNoReturnType');
+				const item1 = items6.find((x) => x.label === 'HandlerFunc');
+				const item2 = items6.find((x) => x.label === 'HandlerFuncWithArgNames');
+				const item3 = items6.find((x) => x.label === 'HandlerFuncNoReturnType');
 				assert.equal(!item1.insertText, true);
 				assert.equal(!item2.insertText, true);
 				assert.equal(!item3.insertText, true);
 			});
-			const withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items7 => {
+			const withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then((items7) => {
 				items7 = items7 instanceof vscode.CompletionList ? items7.items : items7;
-				const item11 = items7.find(x => x.label === 'HandlerFunc');
-				const item21 = items7.find(x => x.label === 'HandlerFuncWithArgNames');
-				const item31 = items7.find(x => x.label === 'HandlerFuncNoReturnType');
+				const item11 = items7.find((x) => x.label === 'HandlerFunc');
+				const item21 = items7.find((x) => x.label === 'HandlerFuncWithArgNames');
+				const item31 = items7.find((x) => x.label === 'HandlerFuncNoReturnType');
 				assert.equal((<vscode.SnippetString>item11.insertText).value, 'HandlerFunc(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n}) (string, string)');
 				assert.equal((<vscode.SnippetString>item21.insertText).value, 'HandlerFuncWithArgNames(func(${1:w} string, ${2:r} string) {\n\t$3\n}) int');
 				assert.equal((<vscode.SnippetString>item31.insertText).value, 'HandlerFuncNoReturnType(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n})');
@@ -810,19 +810,19 @@ encountered.
 		const baseConfig = vscode.workspace.getConfiguration('go');
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
-			const symbolFollowedByBrackets = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(5, 10), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items => {
+			const symbolFollowedByBrackets = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(5, 10), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then((items) => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
-				const item = items.find(x => x.label === 'Print');
+				const item = items.find((x) => x.label === 'Print');
 				assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is followed by ().');
 			});
-			const symbolAsLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(7, 13), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items1 => {
+			const symbolAsLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(7, 13), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then((items1) => {
 				items1 = items1 instanceof vscode.CompletionList ? items1.items : items1;
-				const item1 = items1.find(x => x.label === 'funcAsVariable');
+				const item1 = items1.find((x) => x.label === 'funcAsVariable');
 				assert.equal(!item1.insertText, true, 'Unexpected snippet when symbol is a parameter inside func call');
 			});
-			const symbolsAsNonLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(8, 11), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items2 => {
+			const symbolsAsNonLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(8, 11), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then((items2) => {
 				items2 = items2 instanceof vscode.CompletionList ? items2.items : items2;
-				const item2 = items2.find(x => x.label === 'funcAsVariable');
+				const item2 = items2.find((x) => x.label === 'funcAsVariable');
 				assert.equal(!item2.insertText, true, 'Unexpected snippet when symbol is one of the parameters inside func call.');
 			});
 			await Promise.all([
@@ -849,9 +849,9 @@ encountered.
 
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
-			const promises = testCases.map(([position, expected]) => provider.provideCompletionItemsInternal(editor.document, position, null, config).then(items => {
+			const promises = testCases.map(([position, expected]) => provider.provideCompletionItemsInternal(editor.document, position, null, config).then((items) => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
-				const labels = items.map(x => x.label);
+				const labels = items.map((x) => x.label);
 				for (const entry of expected) {
 					assert.equal(labels.indexOf(entry) > -1, true, `missing expected item in completion list: ${entry} Actual: ${labels}`);
 				}
@@ -884,10 +884,10 @@ encountered.
 			const editor = await vscode.window.showTextDocument(textDocument);
 			let items = await provider.provideCompletionItemsInternal(editor.document, position, null, config);
 			items = items instanceof vscode.CompletionList ? items.items : items;
-			const labels = items.map(x => x.label);
-			expectedItems.forEach(expectedItem => {
+			const labels = items.map((x) => x.label);
+			expectedItems.forEach((expectedItem) => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
-				const actualItem: vscode.CompletionItem = items.filter(item => item.label === expectedItem.label)[0];
+				const actualItem: vscode.CompletionItem = items.filter((item) => item.label === expectedItem.label)[0];
 				if (!actualItem) {
 					assert.fail(actualItem, expectedItem, `Missing expected item in completion list: ${expectedItem.label} Actual: ${labels}`);
 					return;
@@ -918,8 +918,8 @@ encountered.
 
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
-			const promises = testCases.map(([position, expected]) => provider.provideCompletionItems(editor.document, position, null).then(items => {
-				const labels = items.items.map(x => x.label);
+			const promises = testCases.map(([position, expected]) => provider.provideCompletionItems(editor.document, position, null).then((items) => {
+				const labels = items.items.map((x) => x.label);
 				assert.equal(expected.length, labels.length, `expected number of completions: ${expected.length} Actual: ${labels.length} at position(${position.line + 1},${position.character + 1}) ${labels}`);
 				expected.forEach((entry, index) => {
 					assert.equal(entry, labels[index], `mismatch in comment completion list Expected: ${entry} Actual: ${labels[index]}`);
@@ -942,7 +942,7 @@ encountered.
 			['// This is a comment, complete with punctuation.', '']
 		];
 
-		testCases.forEach(run => {
+		testCases.forEach((run) => {
 			assert.equal(run[1], getImportPath(run[0]));
 		});
 	});
@@ -968,7 +968,7 @@ encountered.
 			playground: { value: { run: true, openbrowser: false, share: false } }
 		});
 
-		goPlay(validCode, goConfig['playground']).then(result => {
+		goPlay(validCode, goConfig['playground']).then((result) => {
 			assert(
 				result.includes('1 2 3 Go!')
 			);
@@ -998,7 +998,7 @@ encountered.
 			playground: { value: { run: true, openbrowser: false, share: true } }
 		});
 
-		goPlay(validCode, goConfig['playground']).then(result => {
+		goPlay(validCode, goConfig['playground']).then((result) => {
 			assert(result.includes('1 2 3 Go!'));
 			assert(result.includes('https://play.golang.org/'));
 		}, (e) => {
@@ -1024,7 +1024,7 @@ encountered.
 			playground: { value: { run: true, openbrowser: false, share: false } }
 		});
 
-		goPlay(invalidCode, goConfig['playground']).then(result => {
+		goPlay(invalidCode, goConfig['playground']).then((result) => {
 			assert.ifError(result);
 		}, (e) => {
 			assert.ok(e);
@@ -1039,7 +1039,7 @@ encountered.
 			buildTags: { value: 'randomtag' }
 		});
 
-		const checkWithTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config1).then(diagnostics => {
+		const checkWithTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config1).then((diagnostics) => {
 			assert.equal(1, diagnostics.length, 'check with buildtag failed. Unexpected errors found');
 			assert.equal(1, diagnostics[0].errors.length, 'check with buildtag failed. Unexpected errors found');
 			assert.equal(diagnostics[0].errors[0].msg, 'undefined: fmt.Prinln');
@@ -1052,7 +1052,7 @@ encountered.
 			buildTags: { value: 'randomtag othertag' }
 		});
 
-		const checkWithMultipleTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config2).then(diagnostics => {
+		const checkWithMultipleTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config2).then((diagnostics) => {
 			assert.equal(1, diagnostics.length, 'check with multiple buildtags failed. Unexpected errors found');
 			assert.equal(1, diagnostics[0].errors.length, 'check with multiple buildtags failed. Unexpected errors found');
 			assert.equal(diagnostics[0].errors[0].msg, 'undefined: fmt.Prinln');
@@ -1065,7 +1065,7 @@ encountered.
 			buildTags: { value: '' }
 		});
 
-		const checkWithoutTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config3).then(diagnostics => {
+		const checkWithoutTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config3).then((diagnostics) => {
 			assert.equal(1, diagnostics.length, 'check without buildtags failed. Unexpected errors found');
 			assert.equal(1, diagnostics[0].errors.length, 'check without buildtags failed. Unexpected errors found');
 			assert.equal(diagnostics[0].errors[0].msg.indexOf('can\'t load package: package test/testfixture/buildTags') > -1, true, `check without buildtags failed. Go files not excluded. ${diagnostics[0].errors[0].msg}`);
@@ -1107,8 +1107,8 @@ encountered.
 		});
 
 		const uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));
-		vscode.workspace.openTextDocument(uri).then(document => {
-			return vscode.window.showTextDocument(document).then(editor => {
+		vscode.workspace.openTextDocument(uri).then((document) => {
+			return vscode.window.showTextDocument(document).then((editor) => {
 				return testCurrentFile(config1, false, []).then((result: boolean) => {
 					assert.equal(result, true);
 					return testCurrentFile(config2, false, []).then((result: boolean) => {
@@ -1128,8 +1128,8 @@ encountered.
 
 	test('Add imports when no imports', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'noimports.go'));
-		vscode.workspace.openTextDocument(uri).then(document => {
-			return vscode.window.showTextDocument(document).then(editor => {
+		vscode.workspace.openTextDocument(uri).then((document) => {
+			return vscode.window.showTextDocument(document).then((editor) => {
 				const expectedText = document.getText() + '\n' + 'import (\n\t"bytes"\n)\n';
 				const edits = getTextEditForAddImport('bytes');
 				const edit = new vscode.WorkspaceEdit();
@@ -1144,7 +1144,7 @@ encountered.
 
 	test('Add imports to an import block', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'groupImports.go'));
-		vscode.workspace.openTextDocument(uri).then(async document => {
+		vscode.workspace.openTextDocument(uri).then(async (document) => {
 			const editor = await vscode.window.showTextDocument(document);
 			const expectedText = document.getText().replace('\t"fmt"\n\t"math"', '\t"bytes"\n\t"fmt"\n\t"math"');
 			const edits = getTextEditForAddImport('bytes');
@@ -1158,7 +1158,7 @@ encountered.
 
 	test('Add imports and collapse single imports to an import block', (done) => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'singleImports.go'));
-		vscode.workspace.openTextDocument(uri).then(async document => {
+		vscode.workspace.openTextDocument(uri).then(async (document) => {
 			const editor = await vscode.window.showTextDocument(document);
 			const expectedText = document.getText().replace('import "fmt"\nimport . "math" // comment', 'import (\n\t"bytes"\n\t"fmt"\n\t. "math" // comment\n)');
 			const edits = getTextEditForAddImport('bytes');

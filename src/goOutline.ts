@@ -92,7 +92,7 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 						options.document = null;
 					}
 					p = null;
-					return runGoOutline(options, token).then(results => {
+					return runGoOutline(options, token).then((results) => {
 						return resolve(results);
 					});
 				}
@@ -130,7 +130,7 @@ function convertToCodeSymbols(
 	byteOffsetToDocumentOffset: (byteOffset: number) => number): vscode.DocumentSymbol[] {
 
 	const symbols: vscode.DocumentSymbol[] = [];
-	(decls || []).forEach(decl => {
+	(decls || []).forEach((decl) => {
 		if (!includeImports && decl.type === 'import') {
 			return;
 		}

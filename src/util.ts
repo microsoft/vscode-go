@@ -329,7 +329,7 @@ export async function isVendorSupported(): Promise<boolean> {
  */
 export function isGoPathSet(): boolean {
 	if (!getCurrentGoPath()) {
-		vscode.window.showInformationMessage('Set GOPATH environment variable and restart VS Code or set GOPATH in Workspace settings', 'Set GOPATH in Workspace Settings').then(selected => {
+		vscode.window.showInformationMessage('Set GOPATH environment variable and restart VS Code or set GOPATH in Workspace settings', 'Set GOPATH in Workspace Settings').then((selected) => {
 			if (selected === 'Set GOPATH in Workspace Settings') {
 				vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
 			}
@@ -409,7 +409,7 @@ export function getToolsEnvVars(): any {
 	const envVars = Object.assign({}, process.env, gopath ? { GOPATH: gopath } : {});
 
 	if (toolsEnvVars && typeof toolsEnvVars === 'object') {
-		Object.keys(toolsEnvVars).forEach(key => envVars[key] = typeof toolsEnvVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : toolsEnvVars[key]);
+		Object.keys(toolsEnvVars).forEach((key) => envVars[key] = typeof toolsEnvVars[key] === 'string' ? resolvePath(toolsEnvVars[key]) : toolsEnvVars[key]);
 	}
 
 	return envVars;
@@ -490,11 +490,11 @@ export class LineBuffer {
 	}
 
 	private fireLine(line: string) {
-		this.lineListeners.forEach(listener => listener(line));
+		this.lineListeners.forEach((listener) => listener(line));
 	}
 
 	private fireDone(last: string) {
-		this.lastListeners.forEach(listener => listener(last));
+		this.lastListeners.forEach((listener) => listener(last));
 	}
 
 	onLine(listener: (line: string) => void) {
@@ -578,7 +578,7 @@ export function guessPackageNameFromFile(filePath: string): Promise<string[]> {
 		const directoryPath = path.dirname(filePath);
 		const dirName = path.basename(directoryPath);
 		let segments = dirName.split(/[\.-]/);
-		segments = segments.filter(val => val !== 'go');
+		segments = segments.filter((val) => val !== 'go');
 
 		if (segments.length === 0 || !/[a-zA-Z_]\w*/.test(segments[segments.length - 1])) {
 			return reject();
@@ -712,7 +712,7 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 	diagnosticCollection.clear();
 
 	const diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
-	errors.forEach(error => {
+	errors.forEach((error) => {
 		const canonicalFile = vscode.Uri.file(error.file).toString();
 		let startColumn = 0;
 		let endColumn = 1;
@@ -760,8 +760,8 @@ export function handleDiagnosticErrors(document: vscode.TextDocument, errors: IC
 }
 
 function deDupeDiagnostics(buildDiagnostics: vscode.Diagnostic[], otherDiagnostics: vscode.Diagnostic[]): vscode.Diagnostic[] {
-	const buildDiagnosticsLines = buildDiagnostics.map(x => x.range.start.line);
-	return otherDiagnostics.filter(x => buildDiagnosticsLines.indexOf(x.range.start.line) === -1);
+	const buildDiagnosticsLines = buildDiagnostics.map((x) => x.range.start.line);
+	return otherDiagnostics.filter((x) => buildDiagnosticsLines.indexOf(x.range.start.line) === -1);
 }
 
 function mapSeverityToVSCodeSeverity(sev: string): vscode.DiagnosticSeverity {
@@ -851,7 +851,7 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 
 export function rmdirRecursive(dir: string) {
 	if (fs.existsSync(dir)) {
-		fs.readdirSync(dir).forEach(file => {
+		fs.readdirSync(dir).forEach((file) => {
 			const relPath = path.join(dir, file);
 			if (fs.lstatSync(relPath).isDirectory()) {
 				rmdirRecursive(dir);
@@ -909,7 +909,7 @@ export function runGodoc(cwd: string, packagePath: string, receiver: string, sym
 	}
 
 	const getCurrentPackagePromise = path.isAbsolute(packagePath) ? getCurrentPackage(packagePath) : Promise.resolve(packagePath);
-	return getCurrentPackagePromise.then(packageImportPath => {
+	return getCurrentPackagePromise.then((packageImportPath) => {
 		return new Promise<string>((resolve, reject) => {
 			if (receiver) {
 				receiver = receiver.replace(/^\*/, '');

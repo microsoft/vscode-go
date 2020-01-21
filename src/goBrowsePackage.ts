@@ -73,14 +73,14 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 			const xtestfiles = matches[4] ? matches[4].split(' ') : [];
 			files = files.concat(testfiles);
 			files = files.concat(xtestfiles);
-			vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then(file => {
+			vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then((file) => {
 				// if user abandoned list, file will be null and path.join will error out.
 				// therefore return.
 				if (!file) {
 					return;
 				}
 
-				vscode.workspace.openTextDocument(path.join(dir, file)).then(document => {
+				vscode.workspace.openTextDocument(path.join(dir, file)).then((document) => {
 					vscode.window.showTextDocument(document);
 				});
 			});
@@ -89,7 +89,7 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 }
 
 function showPackageList(workDir: string) {
-	return getAllPackages(workDir).then(pkgMap => {
+	return getAllPackages(workDir).then((pkgMap) => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (pkgs.length === 0) {
 			return vscode.window.showErrorMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
@@ -98,7 +98,7 @@ function showPackageList(workDir: string) {
 		vscode
 			.window
 			.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
-			.then(pkgFromDropdown => {
+			.then((pkgFromDropdown) => {
 				if (!pkgFromDropdown) {
 					return;
 				}

@@ -23,7 +23,7 @@ async function runGoModEnv(folderPath: string): Promise<string> {
 	}
 	const env = getToolsEnvVars();
 	GO111MODULE = env['GO111MODULE'];
-	return new Promise(resolve => {
+	return new Promise((resolve) => {
 		cp.execFile(goExecutable, ['env', 'GOMOD'], { cwd: folderPath, env: getToolsEnvVars() }, (err, stdout) => {
 			if (err) {
 				console.warn(`Error when running go env GOMOD: ${err}`);
@@ -36,7 +36,7 @@ async function runGoModEnv(folderPath: string): Promise<string> {
 }
 
 export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
-	return getModFolderPath(fileuri).then(modPath => !!modPath);
+	return getModFolderPath(fileuri).then((modPath) => !!modPath);
 }
 
 export const packagePathToGoModPathMap: {[key: string]: string} = {};
@@ -177,7 +177,7 @@ export async function getCurrentPackage(cwd: string): Promise<string> {
 		console.warn(`Failed to run "go list" to find current package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
 		return;
 	}
-	return new Promise<string>(resolve => {
+	return new Promise<string>((resolve) => {
 		const childProcess = cp.spawn(goRuntimePath, ['list'], { cwd, env: getToolsEnvVars() });
 		const chunks: any[] = [];
 		childProcess.stdout.on('data', (stdout) => {
@@ -186,7 +186,7 @@ export async function getCurrentPackage(cwd: string): Promise<string> {
 
 		childProcess.on('close', () => {
 			// Ignore lines that are empty or those that have logs about updating the module cache
-			const pkgs = chunks.join('').toString().split('\n').filter(line => line && line.indexOf(' ') === -1);
+			const pkgs = chunks.join('').toString().split('\n').filter((line) => line && line.indexOf(' ') === -1);
 			if (pkgs.length !== 1) {
 				resolve();
 				return;

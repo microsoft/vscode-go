@@ -48,7 +48,7 @@ interface LanguageServerConfig {
 // It looks to either the language server or the standard providers for these features.
 export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	// Subscribe to notifications for changes to the configuration of the language server.
-	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => watchLanguageServerConfiguration(e)));
+	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration((e) => watchLanguageServerConfiguration(e)));
 
 	const config = parseLanguageServerConfig();
 
@@ -208,7 +208,7 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 	// If there was a change in the configuration of the language server,
 	// then ask the user to reload VS Code.
 	if (reloadMessage) {
-		vscode.window.showInformationMessage(reloadMessage, 'Reload').then(selected => {
+		vscode.window.showInformationMessage(reloadMessage, 'Reload').then((selected) => {
 			if (selected === 'Reload') {
 				vscode.commands.executeCommand('workbench.action.reloadWindow');
 			}
@@ -293,7 +293,7 @@ function allFoldersHaveSameGopath(): boolean {
 		return true;
 	}
 	const tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
-	return vscode.workspace.workspaceFolders.find(x => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
+	return vscode.workspace.workspaceFolders.find((x) => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
 }
 
 // registerUsualProviders registers the language feature providers if the language server is not enabled.
@@ -434,7 +434,7 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	versions.sort(semver.rcompare);
 
 	// The first version in the sorted list without a prerelease tag.
-	return versions.find(version => !version.prerelease || !version.prerelease.length);
+	return versions.find((version) => !version.prerelease || !version.prerelease.length);
 }
 
 async function goplsVersion(goplsPath: string): Promise<string> {

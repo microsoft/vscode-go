@@ -268,7 +268,7 @@ process.on('uncaughtException', (err: any) => {
 });
 
 function logArgsToString(args: any[]): string {
-	return args.map(arg => {
+	return args.map((arg) => {
 		return typeof arg === 'string' ?
 			arg :
 			JSON.stringify(arg);
@@ -405,11 +405,11 @@ class Delve {
 								runArgs.push(...launchArgs.args);
 							}
 							this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), runArgs, { env });
-							this.debugProcess.stderr.on('data', chunk => {
+							this.debugProcess.stderr.on('data', (chunk) => {
 								const str = chunk.toString();
 								if (this.onstderr) { this.onstderr(str); }
 							});
-							this.debugProcess.stdout.on('data', chunk => {
+							this.debugProcess.stdout.on('data', (chunk) => {
 								const str = chunk.toString();
 								if (this.onstdout) { this.onstdout(str); }
 							});
@@ -520,11 +520,11 @@ class Delve {
 				}, 200);
 			}
 
-			this.debugProcess.stderr.on('data', chunk => {
+			this.debugProcess.stderr.on('data', (chunk) => {
 				const str = chunk.toString();
 				if (this.onstderr) { this.onstderr(str); }
 			});
-			this.debugProcess.stdout.on('data', chunk => {
+			this.debugProcess.stdout.on('data', (chunk) => {
 				const str = chunk.toString();
 				if (this.onstdout) { this.onstdout(str); }
 				if (!serverRunning) {
@@ -544,20 +544,20 @@ class Delve {
 	}
 
 	public call<T>(command: string, args: any[], callback: (err: Error, results: T) => void) {
-		this.connection.then(conn => {
+		this.connection.then((conn) => {
 			conn.call('RPCServer.' + command, args, callback);
-		}, err => {
+		}, (err) => {
 			callback(err, null);
 		});
 	}
 
 	public callPromise<T>(command: string, args: any[]): Thenable<T> {
 		return new Promise<T>((resolve, reject) => {
-			this.connection.then(conn => {
+			this.connection.then((conn) => {
 				conn.call<T>(`RPCServer.${command}`, args, (err, res) => {
 					return err ? reject(err) : resolve(res);
 				});
-			}, err => {
+			}, (err) => {
 				reject(err);
 			});
 		});
@@ -601,7 +601,7 @@ class Delve {
 			killTree(this.debugProcess.pid);
 			await removeFile(this.localDebugeePath);
 		};
-		return new Promise(async resolve => {
+		return new Promise(async (resolve) => {
 			// For remote debugging, closing the connection would terminate the
 			// program as well so we just want to disconnect.
 			// See https://www.github.com/go-delve/delve/issues/1587
@@ -792,7 +792,7 @@ class GoDebugSession extends LoggingDebugSession {
 				log('InitializeEvent');
 			}
 			this.sendResponse(response);
-		}, err => {
+		}, (err) => {
 			this.sendErrorResponse(response, 3000, 'Failed to continue: "{e}"', { e: err.toString() });
 			log('ContinueResponse');
 		});
@@ -877,7 +877,7 @@ class GoDebugSession extends LoggingDebugSession {
 	private updateGoroutinesList(goroutines: DebugGoroutine[]): void {
 		// Assume we need to stop all the threads we saw before...
 		const needsToBeStopped = new Set<number>();
-		this.goroutines.forEach(id => needsToBeStopped.add(id));
+		this.goroutines.forEach((id) => needsToBeStopped.add(id));
 		for (const goroutine of goroutines) {
 			// ...but delete from list of threads to stop if we still see it
 			needsToBeStopped.delete(goroutine.id);
@@ -888,7 +888,7 @@ class GoDebugSession extends LoggingDebugSession {
 			this.goroutines.add(goroutine.id);
 		}
 		// Send existed event if it's no longer there
-		needsToBeStopped.forEach(id => {
+		needsToBeStopped.forEach((id) => {
 			this.sendEvent(new ThreadEvent('exited', id));
 			this.goroutines.delete(id);
 		});
@@ -901,13 +901,13 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 		const remoteFile = this.toDebuggerPath(file);
 
-		return Promise.all(this.breakpoints.get(file).map(existingBP => {
+		return Promise.all(this.breakpoints.get(file).map((existingBP) => {
 			log('Clearing: ' + existingBP.id);
 			return this.delve.callPromise('ClearBreakpoint', [this.delve.isApiV1 ? existingBP.id : { Id: existingBP.id }]);
 		})).then(() => {
 			log('All cleared');
 			let existingBreakpoints: DebugBreakpoint[] | undefined;
-			return Promise.all(args.breakpoints.map(breakpoint => {
+			return Promise.all(args.breakpoints.map((breakpoint) => {
 				if (this.delve.remotePath.length === 0) {
 					log('Creating on: ' + file + ':' + breakpoint.line);
 				} else {
@@ -938,7 +938,7 @@ class GoDebugSession extends LoggingDebugSession {
 									return null;
 								}
 							}
-							const matchedBreakpoint = existingBreakpoints.find(breakpoint =>
+							const matchedBreakpoint = existingBreakpoints.find((breakpoint) =>
 								breakpoint.line === breakpointIn.line && breakpoint.file === breakpointIn.file);
 							if (!matchedBreakpoint) {
 								log(`Cannot match breakpoint ${breakpointIn} with existing breakpoints.`);
@@ -950,7 +950,7 @@ class GoDebugSession extends LoggingDebugSession {
 						return null;
 					});
 			}));
-		}).then(newBreakpoints => {
+		}).then((newBreakpoints) => {
 			let convertedBreakpoints: DebugBreakpoint[];
 			if (!this.delve.isApiV1) {
 				// Unwrap breakpoints from v2 apicall
@@ -969,13 +969,13 @@ class GoDebugSession extends LoggingDebugSession {
 					return { verified: false, line: args.lines[i] };
 				}
 			});
-			this.breakpoints.set(file, convertedBreakpoints.filter(x => !!x));
+			this.breakpoints.set(file, convertedBreakpoints.filter((x) => !!x));
 			return breakpoints;
-		}).then(breakpoints => {
+		}).then((breakpoints) => {
 			response.body = { breakpoints };
 			this.sendResponse(response);
 			log('SetBreakPointsResponse');
-		}, err => {
+		}, (err) => {
 			this.sendErrorResponse(response, 2002, 'Failed to set breakpoint: "{e}"', { e: err.toString() });
 			logError(err);
 		});
@@ -998,11 +998,11 @@ class GoDebugSession extends LoggingDebugSession {
 			this.skipStopEventOnce = this.continueRequestRunning;
 			this.delve.callPromise('Command', [{ name: 'halt' }]).then(() => {
 				return this.setBreakPoints(response, args).then(() => {
-					return this.continue(true).then(null, err => {
+					return this.continue(true).then(null, (err) => {
 						logError(`Failed to continue delve after halting it to set breakpoints: "${err.toString()}"`);
 					});
 				});
-			}, err => {
+			}, (err) => {
 				this.skipStopEventOnce = false;
 				logError(err);
 				return this.sendErrorResponse(response, 2008, 'Failed to halt delve before attempting to set breakpoint: "{e}"', { e: err.toString() });
@@ -1032,7 +1032,7 @@ class GoDebugSession extends LoggingDebugSession {
 			const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
 			log('goroutines', goroutines);
 			this.updateGoroutinesList(goroutines);
-			const threads = goroutines.map(goroutine =>
+			const threads = goroutines.map((goroutine) =>
 				new Thread(
 					goroutine.id,
 					goroutine.userCurrentLoc.function ? goroutine.userCurrentLoc.function.name : (goroutine.userCurrentLoc.file + '@' + goroutine.userCurrentLoc.line)
@@ -1166,7 +1166,7 @@ class GoDebugSession extends LoggingDebugSession {
 					return;
 				}
 
-				this.getPackageInfo(this.debugState).then(packageName => {
+				this.getPackageInfo(this.debugState).then((packageName) => {
 					if (!packageName) {
 						this.sendResponse(response);
 						log('ScopesResponse');
@@ -1225,7 +1225,7 @@ class GoDebugSession extends LoggingDebugSession {
 		if (this.packageInfo.has(dir)) {
 			return Promise.resolve(this.packageInfo.get(dir));
 		}
-		return new Promise(resolve => {
+		return new Promise((resolve) => {
 			execFile(getBinPathWithPreferredGopath('go', []), ['list', '-f', '{{.Name}} {{.ImportPath}}'], { cwd: dir, env: this.delve.dlvEnv }, (err, stdout, stderr) => {
 				if (err || stderr || !stdout) {
 					logError(`go list failed on ${dir}: ${stderr || err}`);
@@ -1264,7 +1264,7 @@ class GoDebugSession extends LoggingDebugSession {
 				if (v.children[0].children.length > 0) {
 					// Generate correct fullyQualified names for variable expressions
 					v.children[0].fullyQualifiedName = v.fullyQualifiedName;
-					v.children[0].children.forEach(child => {
+					v.children[0].children.forEach((child) => {
 						child.fullyQualifiedName = v.fullyQualifiedName + '.' + child.name;
 					});
 				}
@@ -1314,7 +1314,7 @@ class GoDebugSession extends LoggingDebugSession {
 			// Default case - structs
 			if (v.children.length > 0) {
 				// Generate correct fullyQualified names for variable expressions
-				v.children.forEach(child => {
+				v.children.forEach((child) => {
 					child.fullyQualifiedName = v.fullyQualifiedName + '.' + child.name;
 				});
 			}
@@ -1333,10 +1333,10 @@ class GoDebugSession extends LoggingDebugSession {
 			// from https://github.com/go-delve/delve/blob/master/Documentation/api/ClientHowto.md#looking-into-variables
 			if ((v.kind === GoReflectKind.Struct && v.len > v.children.length) ||
 				(v.kind === GoReflectKind.Interface && v.children.length > 0 && v.children[0].onlyAddr === true)) {
-				await this.evaluateRequestImpl({ expression: exp }).then(result => {
+				await this.evaluateRequestImpl({ expression: exp }).then((result) => {
 					const variable = this.delve.isApiV1 ? <DebugVariable>result : (<EvalOut>result).Variable;
 					v.children = variable.children;
-				}, err => logError('Failed to evaluate expression - ' + err.toString()));
+				}, (err) => logError('Failed to evaluate expression - ' + err.toString()));
 			}
 		};
 		// expressions passed to loadChildren defined per https://github.com/go-delve/delve/blob/master/Documentation/api/ClientHowto.md#loading-more-of-a-variable
@@ -1525,14 +1525,14 @@ class GoDebugSession extends LoggingDebugSession {
 
 	protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments): void {
 		log('EvaluateRequest');
-		this.evaluateRequestImpl(args).then(out => {
+		this.evaluateRequestImpl(args).then((out) => {
 			const variable = this.delve.isApiV1 ? <DebugVariable>out : (<EvalOut>out).Variable;
 			// #2326: Set the fully qualified name for variable mapping
 			variable.fullyQualifiedName = variable.name;
 			response.body = this.convertDebugVariableToProtocolVariable(variable);
 			this.sendResponse(response);
 			log('EvaluateResponse');
-		}, err => {
+		}, (err) => {
 			this.sendErrorResponse(response, 2009, 'Unable to eval expression: "{e}"', { e: err.toString() });
 		});
 	}
@@ -1557,8 +1557,8 @@ class GoDebugSession extends LoggingDebugSession {
 				Scope: scope,
 				Cfg: this.delve.loadConfig
 			};
-		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then(val => val,
-			err => {
+		const returnValue = this.delve.callPromise<EvalOut | DebugVariable>(this.delve.isApiV1 ? 'EvalSymbol' : 'Eval', [evalSymbolArgs]).then((val) => val,
+			(err) => {
 				logError('Failed to eval expression: ', JSON.stringify(evalSymbolArgs, null, ' '), '\n\rEval error:', err.toString());
 				return Promise.reject(err);
 			});
@@ -1588,9 +1588,9 @@ class GoDebugSession extends LoggingDebugSession {
 	}
 
 	private addFullyQualifiedName(variables: DebugVariable[]) {
-		variables.forEach(local => {
+		variables.forEach((local) => {
 			local.fullyQualifiedName = local.name;
-			local.children.forEach(child => {
+			local.children.forEach((child) => {
 				child.fullyQualifiedName = local.name;
 			});
 		});

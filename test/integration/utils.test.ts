@@ -26,18 +26,18 @@ suite('utils Tests', () => {
 });
 
 suite('GuessPackageNameFromFile Tests', () => {
-	test('package name from main file', done => {
+	test('package name from main file', (done) => {
 		const expectedPackageName = 'main';
 		const filename = 'main.go';
 
 		guessPackageNameFromFile(filename)
-			.then(result => {
+			.then((result) => {
 				assert.equal(result, expectedPackageName);
 			})
 			.then(() => done(), done);
 	});
 
-	test('package name from dirpath', done => {
+	test('package name from dirpath', (done) => {
 		const expectedPackageName = 'package';
 		const fileDir = 'path/package/file.go';
 
@@ -48,7 +48,7 @@ suite('GuessPackageNameFromFile Tests', () => {
 			.then(() => done(), done);
 	});
 
-	test('package name from test file', done => {
+	test('package name from test file', (done) => {
 		const expectedPackageName = 'file';
 		const expectedPackageTestName = 'file_test';
 		const fileDir = 'file_test.go';

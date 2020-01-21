@@ -74,14 +74,14 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 						}
 
 						// Fall back to position of declaration
-						return definitionLocation(document, position, null, false, token).then(definitionInfo => {
+						return definitionLocation(document, position, null, false, token).then((definitionInfo) => {
 							if (definitionInfo == null || definitionInfo.file == null) {
 								return null;
 							}
 							const definitionResource = vscode.Uri.file(definitionInfo.file);
 							const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
 							resolve(new vscode.Location(definitionResource, pos));
-						}, err => {
+						}, (err) => {
 							const miss = parseMissingError(err);
 							if (miss[0]) {
 								promptForMissingTool(miss[1]);
@@ -93,7 +93,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 					}
 
 					const results: vscode.Location[] = [];
-					guruOutput.value.typespos.forEach(ref => {
+					guruOutput.value.typespos.forEach((ref) => {
 						const match = /^(.*):(\d+):(\d+)/.exec(ref.objpos);
 						if (!match)  {
 							return;
