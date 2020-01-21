@@ -223,7 +223,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	envFile?: string;
 	backend?: string;
 	output?: string;
-	/** Delve LoadConfig parameters **/
+	/** Delve LoadConfig parameters */
 	dlvLoadConfig?: LoadConfig;
 	dlvToolPath: string;
 	/** Delve Version */
@@ -249,7 +249,7 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 	host?: string;
 	trace?: 'verbose' | 'log' | 'error';
 	backend?: string;
-	/** Delve LoadConfig parameters **/
+	/** Delve LoadConfig parameters */
 	dlvLoadConfig?: LoadConfig;
 	dlvToolPath: string;
 	/** Delve Version */

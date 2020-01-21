@@ -18,12 +18,12 @@ let lastTestConfig: TestConfig;
 export type TestAtCursorCmd = 'debug' | 'test' | 'benchmark';
 
 /**
-* Executes the unit test at the primary cursor using `go test`. Output
-* is sent to the 'Go' channel.
-*
-* @param goConfig Configuration for the Go extension.
-* @param cmd Whether the command is test , benchmark or debug.
-*/
+ * Executes the unit test at the primary cursor using `go test`. Output
+ * is sent to the 'Go' channel.
+ * @param goConfig Configuration for the Go extension.
+ * @param cmd Whether the command is test , benchmark or debug.
+ * @param args
+ */
 export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: TestAtCursorCmd, args: any) {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor) {

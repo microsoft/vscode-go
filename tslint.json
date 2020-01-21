@@ -55,7 +55,7 @@
 		// 	"options": ["always-prefix"]
 		// },
 		"interface-over-type-literal": true,
-		// "jsdoc-format": true,
+		"jsdoc-format": true,
 		"label-position": true,
 		"max-classes-per-file": {
 			"options": 2
