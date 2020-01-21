@@ -60,7 +60,7 @@
 		"max-classes-per-file": {
 			"options": 2
 		},
-		// "max-line-length": { "options": 120 },
+		"max-line-length": { "options": 120 },
 		"member-access": true,
 		"member-ordering": {
 			"options": {

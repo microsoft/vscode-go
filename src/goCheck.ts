@@ -19,7 +19,7 @@ import { ICheckResult } from './util';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
-const neverAgain = { title: 'Don\'t Show Again' };
+const neverAgain = { title: `Don't Show Again` };
 
 export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 	if (e.document.isUntitled) {
@@ -34,7 +34,10 @@ export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEv
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
-	if ((ctx.globalState.get('ignoreGeneratedCodeWarning') !== true) && e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
+	if (
+		ctx.globalState.get('ignoreGeneratedCodeWarning') !== true &&
+		e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)
+	) {
 		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then((result) => {
 			if (result === neverAgain) {
 				ctx.globalState.update('ignoreGeneratedCodeWarning', true);
@@ -81,9 +84,11 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	};
 
 	if (!disableBuildAndVet && !!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
-		runningToolsPromises.push(isModSupported(fileUri)
-			.then((isMod) => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace'))
-			.then((errors) => ({ diagnosticCollection: buildDiagnosticCollection, errors })));
+		runningToolsPromises.push(
+			isModSupported(fileUri)
+				.then((isMod) => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace'))
+				.then((errors) => ({ diagnosticCollection: buildDiagnosticCollection, errors }))
+		);
 	}
 
 	if (!!goConfig['testOnSave']) {
@@ -102,13 +107,21 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
-		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'])
-			.then((errors) => ({ diagnosticCollection: lintDiagnosticCollection, errors })));
+		runningToolsPromises.push(
+			goLint(fileUri, goConfig, goConfig['lintOnSave']).then((errors) => ({
+				diagnosticCollection: lintDiagnosticCollection,
+				errors
+			}))
+		);
 	}
 
 	if (!disableBuildAndVet && !!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
-		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace')
-			.then((errors) => ({ diagnosticCollection: vetDiagnosticCollection, errors })));
+		runningToolsPromises.push(
+			goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace').then((errors) => ({
+				diagnosticCollection: vetDiagnosticCollection,
+				errors
+			}))
+		);
 	}
 
 	if (!!goConfig['coverOnSave']) {

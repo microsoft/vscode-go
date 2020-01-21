@@ -14,8 +14,10 @@ import { sendTelemetryEventForDebugConfiguration } from './telemetry';
 import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
-
-	public provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): vscode.DebugConfiguration[] {
+	public provideDebugConfigurations(
+		folder: vscode.WorkspaceFolder | undefined,
+		token?: vscode.CancellationToken
+	): vscode.DebugConfiguration[] {
 		return [
 			{
 				name: 'Launch',
@@ -29,13 +31,18 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		];
 	}
 
-	public resolveDebugConfiguration?(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.DebugConfiguration {
+	public resolveDebugConfiguration?(
+		folder: vscode.WorkspaceFolder | undefined,
+		debugConfiguration: vscode.DebugConfiguration,
+		token?: vscode.CancellationToken
+	): vscode.DebugConfiguration {
 		if (debugConfiguration) {
 			sendTelemetryEventForDebugConfiguration(debugConfiguration);
 		}
 
 		const activeEditor = vscode.window.activeTextEditor;
-		if (!debugConfiguration || !debugConfiguration.request) { // if 'request' is missing interpret this as a missing launch.json
+		if (!debugConfiguration || !debugConfiguration.request) {
+			// if 'request' is missing interpret this as a missing launch.json
 			if (!activeEditor || activeEditor.document.languageId !== 'go') {
 				return;
 			}
@@ -82,7 +89,10 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		if (!debugConfiguration.hasOwnProperty('dlvLoadConfig') && dlvConfig.hasOwnProperty('dlvLoadConfig')) {
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
 		}
-		if (!debugConfiguration.hasOwnProperty('showGlobalVariables') && dlvConfig.hasOwnProperty('showGlobalVariables')) {
+		if (
+			!debugConfiguration.hasOwnProperty('showGlobalVariables') &&
+			dlvConfig.hasOwnProperty('showGlobalVariables')
+		) {
 			debugConfiguration['showGlobalVariables'] = dlvConfig['showGlobalVariables'];
 		}
 		if (debugConfiguration.request === 'attach' && !debugConfiguration['cwd']) {
@@ -96,21 +106,31 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 
 		if (debugConfiguration['mode'] === 'auto') {
-			debugConfiguration['mode'] = (activeEditor && activeEditor.document.fileName.endsWith('_test.go')) ? 'test' : 'debug';
+			debugConfiguration['mode'] =
+				activeEditor && activeEditor.document.fileName.endsWith('_test.go') ? 'test' : 'debug';
 		}
-		debugConfiguration['currentFile'] = activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
+		debugConfiguration['currentFile'] =
+			activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
 
-		const neverAgain = { title: 'Don\'t Show Again' };
+		const neverAgain = { title: `Don't Show Again` };
 		const ignoreWarningKey = 'ignoreDebugLaunchRemoteWarning';
 		const ignoreWarning = getFromGlobalState(ignoreWarningKey);
-		if (ignoreWarning !== true && debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
-			vscode.window.showWarningMessage('Request type of \'launch\' with mode \'remote\' is deprecated, please use request type \'attach\' with mode \'remote\' instead.', neverAgain).then((result) => {
-				if (result === neverAgain) {
-					updateGlobalState(ignoreWarningKey, true);
-				}
-			});
+		if (
+			ignoreWarning !== true &&
+			debugConfiguration.request === 'launch' &&
+			debugConfiguration['mode'] === 'remote'
+		) {
+			vscode.window
+				.showWarningMessage(
+					`Request type of 'launch' with mode 'remote' is deprecated, please use request type 'attach' with mode 'remote' instead.`,
+					neverAgain
+				)
+				.then((result) => {
+					if (result === neverAgain) {
+						updateGlobalState(ignoreWarningKey, true);
+					}
+				});
 		}
 		return debugConfiguration;
 	}
-
 }

@@ -17,7 +17,7 @@ export function sendTelemetryEventForModulesUsage() {
 	sendTelemetryEvent('modules');
 }
 
-export function sendTelemetryEventForAddImportCmd(arg: { importPath: string, from: string }) {
+export function sendTelemetryEventForAddImportCmd(arg: { importPath: string; from: string }) {
 	/* __GDPR__
 		"addImportCmd" : {
 			"from" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
@@ -145,7 +145,7 @@ export function sendTelemetryEventForConfig(goConfig: vscode.WorkspaceConfigurat
 		liveErrors: JSON.stringify(goConfig['liveErrors']),
 		codeLens: JSON.stringify(goConfig['enableCodeLens']),
 		alternateTools: JSON.stringify(goConfig['alternateTools']),
-		useGoProxyToCheckForToolUpdates: goConfig['useGoProxyToCheckForToolUpdates'] + '',
+		useGoProxyToCheckForToolUpdates: goConfig['useGoProxyToCheckForToolUpdates'] + ''
 	});
 }
 
@@ -177,7 +177,13 @@ export function disposeTelemetryReporter(): Promise<any> {
 
 let telemtryReporter: TelemetryReporter;
 
-function sendTelemetryEvent(eventName: string, properties?: { [key: string]: string }, measures?: { [key: string]: number }): void {
-	telemtryReporter = telemtryReporter ? telemtryReporter : new TelemetryReporter(extensionId, extensionVersion, aiKey);
+function sendTelemetryEvent(
+	eventName: string,
+	properties?: { [key: string]: string },
+	measures?: { [key: string]: number }
+): void {
+	telemtryReporter = telemtryReporter
+		? telemtryReporter
+		: new TelemetryReporter(extensionId, extensionVersion, aiKey);
 	telemtryReporter.sendTelemetryEvent(eventName, properties, measures);
 }

@@ -17,7 +17,11 @@ export function isDiffToolAvailable(): boolean {
 	return diffToolAvailable;
 }
 
-export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE }
+export enum EditTypes {
+	EDIT_DELETE,
+	EDIT_INSERT,
+	EDIT_REPLACE
+}
 
 export class Edit {
 	public start: Position;
@@ -124,7 +128,6 @@ function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 	});
 
 	return filePatches;
-
 }
 
 /**
@@ -149,7 +152,8 @@ export function getEdits(fileName: string, oldStr: string, newStr: string): File
 /**
  * Uses diff module to parse given diff string and returns edits for files
  *
- * @param diffStr : Diff string in unified format. http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
+ * @param diffStr : Diff string in unified format.
+ * http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
  *
  * @returns Array of FilePatch objects, one for each file
  */

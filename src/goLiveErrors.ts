@@ -22,15 +22,19 @@ interface GoLiveErrorsConfig {
 let runner: NodeJS.Timer;
 
 export function goLiveErrorsEnabled() {
-	const goConfig = <GoLiveErrorsConfig>(getGoConfig()['liveErrors']);
+	const goConfig = <GoLiveErrorsConfig>getGoConfig()['liveErrors'];
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
 	const files = vscode.workspace.getConfiguration('files', null);
 	const autoSave = files['autoSave'];
 	const autoSaveDelay = files['autoSaveDelay'];
-	if (autoSave !== null && autoSave !== undefined &&
-		autoSave === 'afterDelay' && autoSaveDelay < goConfig.delay * 1.5) {
+	if (
+		autoSave !== null &&
+		autoSave !== undefined &&
+		autoSave === 'afterDelay' &&
+		autoSaveDelay < goConfig.delay * 1.5
+	) {
 		return false;
 	}
 	return goConfig.enabled;

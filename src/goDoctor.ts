@@ -49,12 +49,7 @@ async function extract(type: typeOfExtraction): Promise<void> {
 		return;
 	}
 
-	runGoDoctor(
-		newName,
-		activeEditor.selection,
-		activeEditor.document.fileName,
-		type
-	);
+	runGoDoctor(newName, activeEditor.selection, activeEditor.document.fileName, type);
 }
 
 /**
@@ -82,8 +77,9 @@ function runGoDoctor(
 			[
 				'-w',
 				'-pos',
-				`${selection.start.line + 1},${selection.start.character +
-				1}:${selection.end.line + 1},${selection.end.character}`,
+				`${selection.start.line + 1},${selection.start.character + 1}:${selection.end.line + 1},${
+					selection.end.character
+				}`,
 				'-file',
 				fileName,
 				type,

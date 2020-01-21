@@ -13,9 +13,7 @@ suite('utils Tests', () => {
 		process.env['test1'] = 'abcd';
 		process.env['test2'] = 'defg';
 
-		const actual = substituteEnv(
-			' ${env:test1} \r\n ${env:test2}\r\n${env:test1}'
-		);
+		const actual = substituteEnv(' ${env:test1} \r\n ${env:test2}\r\n${env:test1}');
 		const expected = ' abcd \r\n defg\r\nabcd';
 
 		assert.equal(actual, expected);

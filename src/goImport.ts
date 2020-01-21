@@ -17,9 +17,10 @@ import { getBinPath, getImportPath, getToolsEnvVars, parseFilePrelude } from './
 const missingToolMsg = 'Missing tool: ';
 
 export async function listPackages(excludeImportedPkgs: boolean = false): Promise<string[]> {
-	const importedPkgs = excludeImportedPkgs && vscode.window.activeTextEditor
-		? await getImports(vscode.window.activeTextEditor.document)
-		: [];
+	const importedPkgs =
+		excludeImportedPkgs && vscode.window.activeTextEditor
+			? await getImports(vscode.window.activeTextEditor.document)
+			: [];
 	const pkgMap = await getImportablePackages(vscode.window.activeTextEditor.document.fileName, true);
 	const stdLibs: string[] = [];
 	const nonStdLibs: string[] = [];
@@ -43,7 +44,11 @@ export async function listPackages(excludeImportedPkgs: boolean = false): Promis
  * @returns Array of imported package paths wrapped in a promise
  */
 async function getImports(document: vscode.TextDocument): Promise<string[]> {
-	const options = { fileName: document.fileName, importsOption: GoOutlineImportsOptions.Only, document };
+	const options = {
+		fileName: document.fileName,
+		importsOption: GoOutlineImportsOptions.Only,
+		document
+	};
 	const symbols = await documentSymbols(options, null);
 	if (!symbols || !symbols.length) {
 		return [];
@@ -95,12 +100,16 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 		imports.forEach((element) => {
 			const currentLine = vscode.window.activeTextEditor.document.lineAt(element.start).text;
 			const updatedLine = currentLine.replace(/^\s*import\s*/, '\t');
-			edits.push(vscode.TextEdit.replace(new vscode.Range(element.start, 0, element.start, currentLine.length), updatedLine));
+			edits.push(
+				vscode.TextEdit.replace(
+					new vscode.Range(element.start, 0, element.start, currentLine.length),
+					updatedLine
+				)
+			);
 		});
 		edits.push(vscode.TextEdit.insert(new vscode.Position(imports[imports.length - 1].end + 1, 0), ')\n'));
 
 		return edits;
-
 	} else if (pkg && pkg.start >= 0) {
 		// There are no import declarations, but there is a package declaration
 		return [vscode.TextEdit.insert(new vscode.Position(pkg.start + 1, 0), '\nimport (\n\t"' + arg + '"\n)\n')];
@@ -110,8 +119,8 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	}
 }
 
-export function addImport(arg: { importPath: string, from: string }) {
-	const p = (arg && arg.importPath) ? Promise.resolve(arg.importPath) : askUserForImport();
+export function addImport(arg: { importPath: string; from: string }) {
+	const p = arg && arg.importPath ? Promise.resolve(arg.importPath) : askUserForImport();
 	p.then((imp) => {
 		sendTelemetryEventForAddImportCmd(arg);
 		const edits = getTextEditForAddImport(imp);
@@ -157,7 +166,9 @@ export function addImportToWorkspace() {
 
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		vscode.window.showErrorMessage(`Failed to run "go list" to find the package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		vscode.window.showErrorMessage(
+			`Failed to run "go list" to find the package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`
+		);
 		return;
 	}
 	const env = getToolsEnvVars();
@@ -177,6 +188,10 @@ export function addImportToWorkspace() {
 			return;
 		}
 
-		vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0, null, { uri: importPathUri });
+		vscode.workspace.updateWorkspaceFolders(
+			vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders.length : 0,
+			null,
+			{ uri: importPathUri }
+		);
 	});
 }

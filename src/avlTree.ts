@@ -41,11 +41,7 @@ export class Node<K, V> {
 	 * @param key The key of the new node.
 	 * @param value The value of the new node.
 	 */
-	constructor(
-		public key: K,
-		public value: V
-	) {
-	}
+	constructor(public key: K, public value: V) {}
 
 	/**
 	 * Performs a right rotate on this node.
@@ -128,9 +124,8 @@ const enum BalanceState {
 }
 
 export class NearestNeighborDict<K, V> {
-
-	public static NUMERIC_DISTANCE_FUNCTION = (a: number, b: number) => a > b ? a - b : b - a;
-	public static DEFAULT_COMPARE_FUNCTION = (a: any, b: any) => a > b ? 1 : a < b ? -1 : 0;
+	public static NUMERIC_DISTANCE_FUNCTION = (a: number, b: number) => (a > b ? a - b : b - a);
+	public static DEFAULT_COMPARE_FUNCTION = (a: any, b: any) => (a > b ? 1 : a < b ? -1 : 0);
 
 	protected root: Node<K, V> = null;
 
@@ -217,10 +212,12 @@ export class NearestNeighborDict<K, V> {
 	}
 
 	/**
-	 * Gets a node within the tree with a specific key, or the node closest (as measured by this._distance) to that node if the key is not present
+	 * Gets a node within the tree with a specific key, or the node closest (as measured by this._distance)
+	 * to that node if the key is not present
 	 * @param key The key being searched for.
 	 * @param root The root of the tree to search in.
-	 * @param closest The current best estimate of the node closest to the node being searched for, as measured by this._distance
+	 * @param closest The current best estimate of the node closest to the node being searched for,
+	 * as measured by this._distance
 	 * @return The (key, value) pair of the node with key nearest the given key in value.
 	 */
 	private _getNearest(key: K, root: Node<K, V>, closest: Node<K, V>): Node<K, V> {
@@ -247,15 +244,24 @@ export class NearestNeighborDict<K, V> {
 	private _getBalanceState(node: Node<K, V>): BalanceState {
 		const heightDifference = node.leftHeight - node.rightHeight;
 		switch (heightDifference) {
-			case -2: return BalanceState.UNBALANCED_RIGHT;
-			case -1: return BalanceState.SLIGHTLY_UNBALANCED_RIGHT;
-			case 1: return BalanceState.SLIGHTLY_UNBALANCED_LEFT;
-			case 2: return BalanceState.UNBALANCED_LEFT;
-			case 0: return BalanceState.BALANCED;
+			case -2:
+				return BalanceState.UNBALANCED_RIGHT;
+			case -1:
+				return BalanceState.SLIGHTLY_UNBALANCED_RIGHT;
+			case 1:
+				return BalanceState.SLIGHTLY_UNBALANCED_LEFT;
+			case 2:
+				return BalanceState.UNBALANCED_LEFT;
+			case 0:
+				return BalanceState.BALANCED;
 			default: {
 				console.error('Internal error: Avl tree should never be more than two levels unbalanced');
-				if (heightDifference > 0) { return BalanceState.UNBALANCED_LEFT; }
-				if (heightDifference < 0) { return BalanceState.UNBALANCED_RIGHT; }
+				if (heightDifference > 0) {
+					return BalanceState.UNBALANCED_LEFT;
+				}
+				if (heightDifference < 0) {
+					return BalanceState.UNBALANCED_RIGHT;
+				}
 			}
 		}
 	}

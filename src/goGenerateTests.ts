@@ -70,8 +70,7 @@ export function generateTestCurrentPackage(): Promise<boolean> {
 	if (!editor) {
 		return;
 	}
-	return generateTests({ dir: path.dirname(editor.document.uri.fsPath) },
-		getGoConfig(editor.document.uri));
+	return generateTests({ dir: path.dirname(editor.document.uri.fsPath) }, getGoConfig(editor.document.uri));
 }
 
 export function generateTestCurrentFile(): Promise<boolean> {
@@ -79,8 +78,7 @@ export function generateTestCurrentFile(): Promise<boolean> {
 	if (!editor) {
 		return;
 	}
-	return generateTests({ dir: editor.document.uri.fsPath },
-		getGoConfig(editor.document.uri));
+	return generateTests({ dir: editor.document.uri.fsPath }, getGoConfig(editor.document.uri));
 }
 
 export async function generateTestCurrentFunction(): Promise<boolean> {
@@ -91,7 +89,9 @@ export async function generateTestCurrentFunction(): Promise<boolean> {
 
 	const functions = await getFunctions(editor.document);
 	const selection = editor.selection;
-	const currentFunction: vscode.DocumentSymbol = functions.find((func) => selection && func.range.contains(selection.start));
+	const currentFunction: vscode.DocumentSymbol = functions.find(
+		(func) => selection && func.range.contains(selection.start)
+	);
 
 	if (!currentFunction) {
 		vscode.window.showInformationMessage('No function found at cursor.');
@@ -161,11 +161,14 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 
 				// Expected stdout is of the format "Generated TestMain\nGenerated Testhello\n"
 				if (stdout.startsWith(generatedWord)) {
-					const lines = stdout.split('\n').filter((element) => {
-						return element.startsWith(generatedWord);
-					}).map((element) => {
-						return element.substr(generatedWord.length);
-					});
+					const lines = stdout
+						.split('\n')
+						.filter((element) => {
+							return element.startsWith(generatedWord);
+						})
+						.map((element) => {
+							return element.substr(generatedWord.length);
+						});
 					message = `Generated ${lines.join(', ')}`;
 					testsGenerated = true;
 				}

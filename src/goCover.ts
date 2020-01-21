@@ -22,7 +22,7 @@ let decorators: {
 	uncoveredHighlightDecorator: vscode.TextEditorDecorationType;
 };
 let decoratorConfig: {
-	[key: string]: any
+	[key: string]: any;
 	type: string;
 	coveredHighlightColor: string;
 	uncoveredHighlightColor: string;
@@ -58,10 +58,18 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 		goConfig.update('coverageDecorator', { type: inspectResult.globalValue }, vscode.ConfigurationTarget.Global);
 	}
 	if (typeof inspectResult.workspaceValue === 'string') {
-		goConfig.update('coverageDecorator', { type: inspectResult.workspaceValue }, vscode.ConfigurationTarget.Workspace);
+		goConfig.update(
+			'coverageDecorator',
+			{ type: inspectResult.workspaceValue },
+			vscode.ConfigurationTarget.Workspace
+		);
 	}
 	if (typeof inspectResult.workspaceFolderValue === 'string') {
-		goConfig.update('coverageDecorator', { type: inspectResult.workspaceValue }, vscode.ConfigurationTarget.WorkspaceFolder);
+		goConfig.update(
+			'coverageDecorator',
+			{ type: inspectResult.workspaceValue },
+			vscode.ConfigurationTarget.WorkspaceFolder
+		);
 	}
 
 	// Update the decorators
@@ -84,7 +92,7 @@ export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 	};
 
 	// Update from configuration
-	if (typeof (coverageDecoratorConfig) === 'string') {
+	if (typeof coverageDecoratorConfig === 'string') {
 		decoratorConfig.type = coverageDecoratorConfig;
 	} else {
 		for (const k in coverageDecoratorConfig) {
@@ -101,10 +109,18 @@ function setDecorators() {
 	disposeDecorators();
 	decorators = {
 		type: decoratorConfig.type,
-		coveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutterSvgs[decoratorConfig.coveredGutterStyle] }),
-		uncoveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutterSvgs[decoratorConfig.uncoveredGutterStyle] }),
-		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: decoratorConfig.coveredHighlightColor }),
-		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: decoratorConfig.uncoveredHighlightColor })
+		coveredGutterDecorator: vscode.window.createTextEditorDecorationType({
+			gutterIconPath: gutterSvgs[decoratorConfig.coveredGutterStyle]
+		}),
+		uncoveredGutterDecorator: vscode.window.createTextEditorDecorationType({
+			gutterIconPath: gutterSvgs[decoratorConfig.uncoveredGutterStyle]
+		}),
+		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({
+			backgroundColor: decoratorConfig.coveredHighlightColor
+		}),
+		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({
+			backgroundColor: decoratorConfig.uncoveredHighlightColor
+		})
 	};
 }
 
@@ -245,11 +261,21 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 			isCoverageApplied = true;
 			const coverageData = coverageFiles[filename];
 			if (coverageOptions === 'showCoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-				editor.setDecorations(decorators.type === 'gutter' ? decorators.coveredGutterDecorator : decorators.coveredHighlightDecorator, coverageData.coveredRange);
+				editor.setDecorations(
+					decorators.type === 'gutter'
+						? decorators.coveredGutterDecorator
+						: decorators.coveredHighlightDecorator,
+					coverageData.coveredRange
+				);
 			}
 
 			if (coverageOptions === 'showUncoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-				editor.setDecorations(decorators.type === 'gutter' ? decorators.uncoveredGutterDecorator : decorators.uncoveredHighlightDecorator, coverageData.uncoveredRange);
+				editor.setDecorations(
+					decorators.type === 'gutter'
+						? decorators.uncoveredGutterDecorator
+						: decorators.uncoveredHighlightDecorator,
+					coverageData.uncoveredRange
+				);
 			}
 		}
 	}
@@ -323,6 +349,6 @@ export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
 
 		const text = e.document.lineAt(change.range.start).text;
 		const idx = text.search('//');
-		return (idx > -1 && idx <= change.range.start.character);
+		return idx > -1 && idx <= change.range.start.character;
 	});
 }

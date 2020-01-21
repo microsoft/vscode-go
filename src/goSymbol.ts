@@ -21,17 +21,19 @@ interface GoSymbolDeclaration {
 }
 
 export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
-
 	private goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
 		package: vscode.SymbolKind.Package,
 		import: vscode.SymbolKind.Namespace,
 		var: vscode.SymbolKind.Variable,
 		type: vscode.SymbolKind.Interface,
 		func: vscode.SymbolKind.Function,
-		const: vscode.SymbolKind.Constant,
+		const: vscode.SymbolKind.Constant
 	};
 
-	public provideWorkspaceSymbols(query: string, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
+	public provideWorkspaceSymbols(
+		query: string,
+		token: vscode.CancellationToken
+	): Thenable<vscode.SymbolInformation[]> {
 		const convertToCodeSymbols = (decls: GoSymbolDeclaration[], symbols: vscode.SymbolInformation[]): void => {
 			decls.forEach((decl) => {
 				let kind: vscode.SymbolKind;
@@ -44,11 +46,14 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 					kind,
 					new vscode.Range(pos, pos),
 					vscode.Uri.file(decl.path),
-					'');
+					''
+				);
 				symbols.push(symbolInfo);
 			});
 		};
-		const root = getWorkspaceFolderPath(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
+		const root = getWorkspaceFolderPath(
+			vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri
+		);
 		const goConfig = getGoConfig();
 
 		if (!root && !goConfig.gotoSymbol.includeGoroot) {
@@ -64,7 +69,13 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 	}
 }
 
-export function getWorkspaceSymbols(workspacePath: string, query: string, token: vscode.CancellationToken, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
+export function getWorkspaceSymbols(
+	workspacePath: string,
+	query: string,
+	token: vscode.CancellationToken,
+	goConfig?: vscode.WorkspaceConfiguration,
+	ignoreFolderFeatureOn: boolean = true
+): Thenable<GoSymbolDeclaration[]> {
 	if (!goConfig) {
 		goConfig = getGoConfig();
 	}
@@ -72,7 +83,8 @@ export function getWorkspaceSymbols(workspacePath: string, query: string, token:
 	const calls: Promise<GoSymbolDeclaration[]>[] = [];
 
 	const ignoreFolders: string[] = gotoSymbolConfig ? gotoSymbolConfig['ignoreFolders'] : [];
-	const baseArgs = (ignoreFolderFeatureOn && ignoreFolders && ignoreFolders.length > 0) ? ['-ignore', ignoreFolders.join(',')] : [];
+	const baseArgs =
+		ignoreFolderFeatureOn && ignoreFolders && ignoreFolders.length > 0 ? ['-ignore', ignoreFolders.join(',')] : [];
 
 	calls.push(callGoSymbols([...baseArgs, workspacePath, query], token));
 

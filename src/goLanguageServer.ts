@@ -11,7 +11,23 @@ import path = require('path');
 import semver = require('semver');
 import util = require('util');
 import vscode = require('vscode');
-import { FormattingOptions, HandleDiagnosticsSignature, LanguageClient, ProvideCompletionItemsSignature, ProvideDefinitionSignature, ProvideDocumentFormattingEditsSignature, ProvideDocumentHighlightsSignature, ProvideDocumentLinksSignature, ProvideDocumentSymbolsSignature, ProvideHoverSignature, ProvideReferencesSignature, ProvideRenameEditsSignature, ProvideSignatureHelpSignature, ProvideWorkspaceSymbolsSignature, RevealOutputChannelOn } from 'vscode-languageclient';
+import {
+	FormattingOptions,
+	HandleDiagnosticsSignature,
+	LanguageClient,
+	ProvideCompletionItemsSignature,
+	ProvideDefinitionSignature,
+	ProvideDocumentFormattingEditsSignature,
+	ProvideDocumentHighlightsSignature,
+	ProvideDocumentLinksSignature,
+	ProvideDocumentSymbolsSignature,
+	ProvideHoverSignature,
+	ProvideReferencesSignature,
+	ProvideRenameEditsSignature,
+	ProvideSignatureHelpSignature,
+	ProvideWorkspaceSymbolsSignature,
+	RevealOutputChannelOn
+} from 'vscode-languageclient';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import WebRequest = require('web-request');
@@ -76,31 +92,45 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		{
 			command: path,
 			args: ['-mode=stdio', ...config.flags],
-			options: { env },
+			options: { env }
 		},
 		{
 			initializationOptions: {},
 			documentSelector: ['go', 'go.mod', 'go.sum'],
 			uriConverters: {
 				// Apply file:/// scheme to all file paths.
-				code2Protocol: (uri: vscode.Uri): string => (uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
-				protocol2Code: (uri: string) => vscode.Uri.parse(uri),
+				code2Protocol: (uri: vscode.Uri): string =>
+					(uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
+				protocol2Code: (uri: string) => vscode.Uri.parse(uri)
 			},
 			revealOutputChannelOn: RevealOutputChannelOn.Never,
 			middleware: {
-				provideDocumentFormattingEdits: (document: vscode.TextDocument, options: FormattingOptions, token: vscode.CancellationToken, next: ProvideDocumentFormattingEditsSignature) => {
+				provideDocumentFormattingEdits: (
+					document: vscode.TextDocument,
+					options: FormattingOptions,
+					token: vscode.CancellationToken,
+					next: ProvideDocumentFormattingEditsSignature
+				) => {
 					if (!config.features.format) {
 						return [];
 					}
 					return next(document, options, token);
 				},
-				handleDiagnostics: (uri: vscode.Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
+				handleDiagnostics: (
+					uri: vscode.Uri,
+					diagnostics: vscode.Diagnostic[],
+					next: HandleDiagnosticsSignature
+				) => {
 					if (!config.features.diagnostics) {
 						return null;
 					}
 					return next(uri, diagnostics);
 				},
-				provideDocumentLinks: (document: vscode.TextDocument, token: vscode.CancellationToken, next: ProvideDocumentLinksSignature) => {
+				provideDocumentLinks: (
+					document: vscode.TextDocument,
+					token: vscode.CancellationToken,
+					next: ProvideDocumentLinksSignature
+				) => {
 					if (!config.features.documentLink) {
 						return null;
 					}
@@ -113,7 +143,9 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	c.onReady().then(() => {
 		const capabilities = c.initializeResult && c.initializeResult.capabilities;
 		if (!capabilities) {
-			return vscode.window.showErrorMessage('The language server is not able to serve any features at the moment.');
+			return vscode.window.showErrorMessage(
+				'The language server is not able to serve any features at the moment.'
+			);
 		}
 
 		// Fallback to default providers for unsupported or disabled features.
@@ -121,10 +153,12 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		if (!capabilities.completionProvider) {
 			const provider = new GoCompletionItemProvider(ctx.globalState);
 			ctx.subscriptions.push(provider);
-			ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '\"'));
+			ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '"'));
 		}
 		if (!config.features.format || !capabilities.documentFormattingProvider) {
-			ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
+			ctx.subscriptions.push(
+				vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider())
+			);
 		}
 
 		if (!capabilities.renameProvider) {
@@ -132,7 +166,9 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		}
 
 		if (!capabilities.typeDefinitionProvider) {
-			ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
+			ctx.subscriptions.push(
+				vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider())
+			);
 		}
 
 		if (!capabilities.hoverProvider) {
@@ -148,11 +184,15 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		}
 
 		if (!capabilities.documentSymbolProvider) {
-			ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
+			ctx.subscriptions.push(
+				vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider())
+			);
 		}
 
 		if (!capabilities.signatureHelpProvider) {
-			ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
+			ctx.subscriptions.push(
+				vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ',')
+			);
 		}
 
 		if (!capabilities.workspaceSymbolProvider) {
@@ -160,22 +200,26 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		}
 
 		if (!capabilities.implementationProvider) {
-			ctx.subscriptions.push(vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider()));
+			ctx.subscriptions.push(
+				vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider())
+			);
 		}
 	});
 
 	let languageServerDisposable = c.start();
 	ctx.subscriptions.push(languageServerDisposable);
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', async () => {
-		if (c.diagnostics) {
-			c.diagnostics.clear();
-		}
-		await c.stop();
-		languageServerDisposable.dispose();
-		languageServerDisposable = c.start();
-		ctx.subscriptions.push(languageServerDisposable);
-	}));
+	ctx.subscriptions.push(
+		vscode.commands.registerCommand('go.languageserver.restart', async () => {
+			if (c.diagnostics) {
+				c.diagnostics.clear();
+			}
+			await c.stop();
+			languageServerDisposable.dispose();
+			languageServerDisposable = c.start();
+			ctx.subscriptions.push(languageServerDisposable);
+		})
+	);
 
 	// gopls is the only language server that provides live diagnostics on type,
 	// so use gotype if it's not enabled.
@@ -201,7 +245,10 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 		}
 	}
 
-	if (e.affectsConfiguration('go.languageServerFlags') || e.affectsConfiguration('go.languageServerExperimentalFeatures')) {
+	if (
+		e.affectsConfiguration('go.languageServerFlags') ||
+		e.affectsConfiguration('go.languageServerExperimentalFeatures')
+	) {
 		reloadMessage = 'Reload VS Code window for the changes in language server settings to take effect';
 	}
 
@@ -228,7 +275,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
 			format: goConfig['languageServerExperimentalFeatures']['format'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
-			highlight: goConfig['languageServerExperimentalFeatures']['highlight'],
+			highlight: goConfig['languageServerExperimentalFeatures']['highlight']
 		},
 		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
 	};
@@ -250,7 +297,9 @@ export function getLanguageServerToolPath(): string {
 
 	// Check that all workspace folders are configured with the same GOPATH.
 	if (!allFoldersHaveSameGopath()) {
-		vscode.window.showInformationMessage('The Go language server is currently not supported in a multi-root set-up with different GOPATHs.');
+		vscode.window.showInformationMessage(
+			'The Go language server is currently not supported in a multi-root set-up with different GOPATHs.'
+		);
 		return;
 	}
 
@@ -279,13 +328,14 @@ export function getLanguageServerToolPath(): string {
 	}
 	// Only gopls and go-langserver are supported.
 	if (languageServerOfChoice !== 'gopls' && languageServerOfChoice !== 'go-langserver') {
-		vscode.window.showErrorMessage(`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window`);
+		vscode.window.showErrorMessage(
+			`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window`
+		);
 		return;
 	}
 	// Otherwise, prompt the user to install the language server.
 	promptForMissingTool(languageServerOfChoice);
 	vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server.');
-
 }
 
 function allFoldersHaveSameGopath(): boolean {
@@ -300,15 +350,19 @@ function allFoldersHaveSameGopath(): boolean {
 function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	const provider = new GoCompletionItemProvider(ctx.globalState);
 	ctx.subscriptions.push(provider);
-	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '\"'));
+	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '"'));
 	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
 	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
 	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
 	ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
-	ctx.subscriptions.push(vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ','));
+	ctx.subscriptions.push(
+		vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ',')
+	);
 	ctx.subscriptions.push(vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider()));
-	ctx.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider()));
+	ctx.subscriptions.push(
+		vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider())
+	);
 	ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
 	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
@@ -424,7 +478,7 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	for (const version of data.trim().split('\n')) {
 		const parsed = semver.parse(version, {
 			includePrerelease: true,
-			loose: true,
+			loose: true
 		});
 		versions.push(parsed);
 	}
@@ -505,7 +559,7 @@ async function goProxyRequest(tool: Tool, endpoint: string): Promise<any> {
 		let data: string;
 		try {
 			data = await WebRequest.json<string>(url, {
-				throwResponseError: true,
+				throwResponseError: true
 			});
 		} catch (e) {
 			return null;

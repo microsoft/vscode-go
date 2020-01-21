@@ -25,7 +25,9 @@ export function goGetPackage() {
 
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return vscode.window.showErrorMessage(`Failed to run "go get" to get package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return vscode.window.showErrorMessage(
+			`Failed to run "go get" to get package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`
+		);
 	}
 
 	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });

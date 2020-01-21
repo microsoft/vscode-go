@@ -13,8 +13,11 @@ import { sendTelemetryEventForFormatting } from './telemetry';
 import { getBinPath, getGoConfig, getToolsEnvVars, killTree } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
-
-	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TextEdit[]> {
+	public provideDocumentFormattingEdits(
+		document: vscode.TextDocument,
+		options: vscode.FormattingOptions,
+		token: vscode.CancellationToken
+	): vscode.ProviderResult<vscode.TextEdit[]> {
 		if (vscode.window.visibleTextEditors.every((e) => e.document.fileName !== document.fileName)) {
 			return [];
 		}
@@ -39,19 +42,27 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			formatFlags.push('-style=indent=' + options.tabSize);
 		}
 
-		return this.runFormatter(formatTool, formatFlags, document, token).then((edits) => edits, (err) => {
-			if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
-				promptForUpdatingTool(formatTool);
-				return Promise.resolve([]);
+		return this.runFormatter(formatTool, formatFlags, document, token).then(
+			(edits) => edits,
+			(err) => {
+				if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
+					promptForUpdatingTool(formatTool);
+					return Promise.resolve([]);
+				}
+				if (err) {
+					console.log(err);
+					return Promise.reject('Check the console in dev tools to find errors when formatting.');
+				}
 			}
-			if (err) {
-				console.log(err);
-				return Promise.reject('Check the console in dev tools to find errors when formatting.');
-			}
-		});
+		);
 	}
 
-	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
+	private runFormatter(
+		formatTool: string,
+		formatFlags: string[],
+		document: vscode.TextDocument,
+		token: vscode.CancellationToken
+	): Thenable<vscode.TextEdit[]> {
 		const formatCommandBinPath = getBinPath(formatTool);
 
 		return new Promise<vscode.TextEdit[]>((resolve, reject) => {
@@ -70,8 +81,8 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			const p = cp.spawn(formatCommandBinPath, formatFlags, { env, cwd });
 			token.onCancellationRequested(() => !p.killed && killTree(p.pid));
 			p.stdout.setEncoding('utf8');
-			p.stdout.on('data', (data) => stdout += data);
-			p.stderr.on('data', (data) => stderr += data);
+			p.stdout.on('data', (data) => (stdout += data));
+			p.stderr.on('data', (data) => (stderr += data));
 			p.on('error', (err) => {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool(formatTool);
@@ -87,7 +98,9 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 				// VS Code will calculate minimal edits to be applied
 				const fileStart = new vscode.Position(0, 0);
 				const fileEnd = document.lineAt(document.lineCount - 1).range.end;
-				const textEdits: vscode.TextEdit[] = [new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)];
+				const textEdits: vscode.TextEdit[] = [
+					new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)
+				];
 
 				const timeTaken = Date.now() - t0;
 				sendTelemetryEventForFormatting(formatTool, timeTaken);

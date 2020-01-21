@@ -9,8 +9,12 @@ import vscode = require('vscode');
 import { listPackages } from './goImport';
 
 export class GoCodeActionProvider implements vscode.CodeActionProvider {
-	public provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext, token: vscode.CancellationToken): Thenable<vscode.Command[]> {
-
+	public provideCodeActions(
+		document: vscode.TextDocument,
+		range: vscode.Range,
+		context: vscode.CodeActionContext,
+		token: vscode.CancellationToken
+	): Thenable<vscode.Command[]> {
 		const promises = context.diagnostics.map((diag) => {
 			// When a name is not found but could refer to a package, offer to add import
 			if (diag.message.indexOf('undefined: ') === 0) {

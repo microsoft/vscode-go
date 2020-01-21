@@ -12,7 +12,7 @@ import fs = require('fs');
 import os = require('os');
 import path = require('path');
 
-let binPathCache: { [bin: string]: string; } = {};
+let binPathCache: { [bin: string]: string } = {};
 
 export const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
 
@@ -40,7 +40,7 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 		return alternateTool;
 	}
 
-	const binname = (alternateTool && !path.isAbsolute(alternateTool)) ? alternateTool : toolName;
+	const binname = alternateTool && !path.isAbsolute(alternateTool) ? alternateTool : toolName;
 	for (const preferred of preferredGopaths) {
 		if (typeof preferred === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder
@@ -177,8 +177,11 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 	// under any of the workspaces in $GOPATH
 	for (const workspace of workspaces) {
 		const possibleCurrentWorkspace = path.join(workspace, 'src');
-		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)
-			|| (process.platform === 'win32' && currentFileDirPath.toLowerCase().startsWith(possibleCurrentWorkspace.toLowerCase()))) {
+		if (
+			currentFileDirPath.startsWith(possibleCurrentWorkspace) ||
+			(process.platform === 'win32' &&
+				currentFileDirPath.toLowerCase().startsWith(possibleCurrentWorkspace.toLowerCase()))
+		) {
 			// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)
 			// both parent & child workspace in the nested workspaces pair can make it inside the above if block
 			// Therefore, the below check will take longer (more specific to current file) of the two
@@ -192,7 +195,9 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 
 // Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
 export function fixDriveCasingInWindows(pathToFix: string): string {
-	return (process.platform === 'win32' && pathToFix) ? pathToFix.substr(0, 1).toUpperCase() + pathToFix.substr(1) : pathToFix;
+	return process.platform === 'win32' && pathToFix
+		? pathToFix.substr(0, 1).toUpperCase() + pathToFix.substr(1)
+		: pathToFix;
 }
 
 /**

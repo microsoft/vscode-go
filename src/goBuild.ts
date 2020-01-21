@@ -11,7 +11,17 @@ import { getNonVendorPackages } from './goPackages';
 import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
 import { getTestFlags } from './testUtils';
-import { getCurrentGoPath, getGoConfig, getModuleCache, getTempFilePath, getToolsEnvVars, getWorkspaceFolderPath, handleDiagnosticErrors, ICheckResult, runTool } from './util';
+import {
+	getCurrentGoPath,
+	getGoConfig,
+	getModuleCache,
+	getTempFilePath,
+	getToolsEnvVars,
+	getWorkspaceFolderPath,
+	handleDiagnosticErrors,
+	ICheckResult,
+	runTool
+} from './util';
 /**
  * Builds current package or workspace.
  */
@@ -23,7 +33,9 @@ export function buildCode(buildWorkspace?: boolean) {
 			return;
 		}
 		if (editor.document.languageId !== 'go') {
-			vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to build');
+			vscode.window.showInformationMessage(
+				'File in the active editor is not a Go file, cannot find current package to build'
+			);
 			return;
 		}
 	}
@@ -37,14 +49,14 @@ export function buildCode(buildWorkspace?: boolean) {
 
 	isModSupported(documentUri).then((isMod) => {
 		goBuild(documentUri, isMod, goConfig, buildWorkspace)
-		.then((errors) => {
-			handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
-			diagnosticsStatusBarItem.hide();
-		})
-		.catch((err) => {
-			vscode.window.showInformationMessage('Error: ' + err);
-			diagnosticsStatusBarItem.text = 'Build Failed';
-		});
+			.then((errors) => {
+				handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
+				diagnosticsStatusBarItem.hide();
+			})
+			.catch((err) => {
+				vscode.window.showInformationMessage('Error: ' + err);
+				diagnosticsStatusBarItem.text = 'Build Failed';
+			});
 	});
 }
 
@@ -56,7 +68,12 @@ export function buildCode(buildWorkspace?: boolean) {
  * @param goConfig Configuration for the Go extension.
  * @param buildWorkspace If true builds code in all workspace.
  */
-export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
+export async function goBuild(
+	fileUri: vscode.Uri,
+	isMod: boolean,
+	goConfig: vscode.WorkspaceConfiguration,
+	buildWorkspace?: boolean
+): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;
 	if (tokenSource) {
@@ -73,7 +90,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 	};
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
-	const cwd = (buildWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+	const cwd = buildWorkspace && currentWorkspace ? currentWorkspace : path.dirname(fileUri.fsPath);
 	if (!path.isAbsolute(cwd)) {
 		return Promise.resolve([]);
 	}
@@ -86,7 +103,11 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 	const buildEnv = Object.assign({}, getToolsEnvVars());
 	const tmpPath = getTempFilePath('go-code-check');
 	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
-	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
+	const buildFlags: string[] = isTestFile
+		? getTestFlags(goConfig)
+		: Array.isArray(goConfig['buildFlags'])
+		? [...goConfig['buildFlags']]
+		: [];
 	const buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
 
 	if (goConfig['installDependenciesWhenBuilding'] === true && !isMod) {
@@ -130,7 +151,9 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 	if (currentGoWorkspace && !isMod) {
 		importPath = cwd.substr(currentGoWorkspace.length + 1);
 	} else {
-		outputChannel.appendLine(`Not able to determine import path of current package by using cwd: ${cwd} and Go workspace: ${currentGoWorkspace}`);
+		outputChannel.appendLine(
+			`Not able to determine import path of current package by using cwd: ${cwd} and Go workspace: ${currentGoWorkspace}`
+		);
 	}
 
 	running = true;

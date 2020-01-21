@@ -18,7 +18,9 @@ export let GO111MODULE: string;
 async function runGoModEnv(folderPath: string): Promise<string> {
 	const goExecutable = getBinPath('go');
 	if (!goExecutable) {
-		console.warn(`Failed to run "go env GOMOD" to find mod file as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		console.warn(
+			`Failed to run "go env GOMOD" to find mod file as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`
+		);
 		return;
 	}
 	const env = getToolsEnvVars();
@@ -39,7 +41,7 @@ export function isModSupported(fileuri: vscode.Uri): Promise<boolean> {
 	return getModFolderPath(fileuri).then((modPath) => !!modPath);
 }
 
-export const packagePathToGoModPathMap: {[key: string]: string} = {};
+export const packagePathToGoModPathMap: { [key: string]: string } = {};
 
 export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 	const pkgPath = path.dirname(fileuri.fsPath);
@@ -67,10 +69,13 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 
 		if (goConfig['inferGopath'] === true) {
 			goConfig.update('inferGopath', false, vscode.ConfigurationTarget.WorkspaceFolder);
-			vscode.window.showInformationMessage('The "inferGopath" setting is disabled for this workspace because Go modules are being used.');
+			vscode.window.showInformationMessage(
+				'The "inferGopath" setting is disabled for this workspace because Go modules are being used.'
+			);
 		}
 		if (goConfig['useLanguageServer'] === false) {
-			const promptMsg = 'For better performance using Go modules, you can try the experimental Go language server, gopls.';
+			const promptMsg =
+				'For better performance using Go modules, you can try the experimental Go language server, gopls.';
 			const choseToUpdateLS = await promptToUpdateToolForModules('gopls', promptMsg, goConfig);
 			promptFormatTool = promptFormatTool && !choseToUpdateLS;
 		} else if (promptFormatTool) {
@@ -79,7 +84,8 @@ export async function getModFolderPath(fileuri: vscode.Uri): Promise<string> {
 		}
 
 		if (promptFormatTool) {
-			const promptMsgForFormatTool = '`goreturns` doesnt support auto-importing missing imports when using Go modules yet. Please update the "formatTool" setting to `goimports`.';
+			const promptMsgForFormatTool =
+				'`goreturns` doesnt support auto-importing missing imports when using Go modules yet. Please update the "formatTool" setting to `goimports`.';
 			await promptToUpdateToolForModules('switchFormatToolToGoimports', promptMsgForFormatTool, goConfig);
 		}
 	}
@@ -97,7 +103,11 @@ function logModuleUsage() {
 }
 
 const promptedToolsForCurrentSession = new Set<string>();
-export async function promptToUpdateToolForModules(tool: string, promptMsg: string, goConfig?: vscode.WorkspaceConfiguration): Promise<boolean> {
+export async function promptToUpdateToolForModules(
+	tool: string,
+	promptMsg: string,
+	goConfig?: vscode.WorkspaceConfiguration
+): Promise<boolean> {
 	if (promptedToolsForCurrentSession.has(tool)) {
 		return false;
 	}
@@ -106,11 +116,7 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 		return false;
 	}
 	const goVersion = await getGoVersion();
-	const selected = await vscode.window.showInformationMessage(
-		promptMsg,
-		'Update',
-		'Later',
-		`Don't show again`);
+	const selected = await vscode.window.showInformationMessage(promptMsg, 'Update', 'Later', `Don't show again`);
 	let choseToUpdate = false;
 	switch (selected) {
 		case 'Update':
@@ -121,8 +127,7 @@ export async function promptToUpdateToolForModules(tool: string, promptMsg: stri
 			if (tool === 'switchFormatToolToGoimports') {
 				goConfig.update('formatTool', 'goimports', vscode.ConfigurationTarget.Global);
 			} else {
-			installTools([getTool(tool)], goVersion)
-				.then(() => {
+				installTools([getTool(tool)], goVersion).then(() => {
 					if (tool === 'gopls') {
 						if (goConfig.get('useLanguageServer') === false) {
 							goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.Global);
@@ -174,7 +179,9 @@ export async function getCurrentPackage(cwd: string): Promise<string> {
 
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		console.warn(`Failed to run "go list" to find current package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		console.warn(
+			`Failed to run "go list" to find current package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`
+		);
 		return;
 	}
 	return new Promise<string>((resolve) => {
@@ -186,7 +193,11 @@ export async function getCurrentPackage(cwd: string): Promise<string> {
 
 		childProcess.on('close', () => {
 			// Ignore lines that are empty or those that have logs about updating the module cache
-			const pkgs = chunks.join('').toString().split('\n').filter((line) => line && line.indexOf(' ') === -1);
+			const pkgs = chunks
+				.join('')
+				.toString()
+				.split('\n')
+				.filter((line) => line && line.indexOf(' ') === -1);
 			if (pkgs.length !== 1) {
 				resolve();
 				return;

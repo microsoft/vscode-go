@@ -9,15 +9,32 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
-import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getFileArchive, getGoConfig, getToolsEnvVars, killTree } from './util';
+import {
+	byteOffsetAt,
+	canonicalizeGOPATHPrefix,
+	getBinPath,
+	getFileArchive,
+	getGoConfig,
+	getToolsEnvVars,
+	killTree
+} from './util';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
-
-	public provideReferences(document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
+	public provideReferences(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		options: { includeDeclaration: boolean },
+		token: vscode.CancellationToken
+	): Thenable<vscode.Location[]> {
 		return this.doFindReferences(document, position, options, token);
 	}
 
-	private doFindReferences(document: vscode.TextDocument, position: vscode.Position, options: { includeDeclaration: boolean }, token: vscode.CancellationToken): Thenable<vscode.Location[]> {
+	private doFindReferences(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		options: { includeDeclaration: boolean },
+		token: vscode.CancellationToken
+	): Thenable<vscode.Location[]> {
 		return new Promise<vscode.Location[]>((resolve, reject) => {
 			// get current word
 			const wordRange = document.getWordRangeAtPosition(position);
@@ -61,14 +78,19 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 						const referenceResource = vscode.Uri.file(path.resolve(cwd, file));
 
 						if (!options.includeDeclaration) {
-							if (document.uri.fsPath === referenceResource.fsPath &&
-								position.line === Number(lineStartStr) - 1) {
+							if (
+								document.uri.fsPath === referenceResource.fsPath &&
+								position.line === Number(lineStartStr) - 1
+							) {
 								continue;
 							}
 						}
 
 						const range = new vscode.Range(
-							+lineStartStr - 1, +colStartStr - 1, +lineEndStr - 1, +colEndStr
+							+lineStartStr - 1,
+							+colStartStr - 1,
+							+lineEndStr - 1,
+							+colEndStr
 						);
 						results.push(new vscode.Location(referenceResource, range));
 					}
@@ -80,10 +102,7 @@ export class GoReferenceProvider implements vscode.ReferenceProvider {
 			if (process.pid) {
 				process.stdin.end(getFileArchive(document));
 			}
-			token.onCancellationRequested(() =>
-				killTree(process.pid)
-			);
+			token.onCancellationRequested(() => killTree(process.pid));
 		});
 	}
-
 }

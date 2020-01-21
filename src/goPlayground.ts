@@ -29,16 +29,17 @@ export const playgroundCommand = () => {
 	outputChannel.appendLine('Upload to the Go Playground in progress...\n');
 
 	const selection = editor.selection;
-	const code = selection.isEmpty
-		? editor.document.getText()
-		: editor.document.getText(selection);
-	goPlay(code, getGoConfig(editor.document.uri).get('playground')).then((result) => {
-		outputChannel.append(result);
-	}, (e: string) => {
-		if (e) {
-			outputChannel.append(e);
+	const code = selection.isEmpty ? editor.document.getText() : editor.document.getText(selection);
+	goPlay(code, getGoConfig(editor.document.uri).get('playground')).then(
+		(result) => {
+			outputChannel.append(result);
+		},
+		(e: string) => {
+			if (e) {
+				outputChannel.append(e);
+			}
 		}
-	});
+	);
 };
 
 export function goPlay(code: string, goConfig: vscode.WorkspaceConfiguration): Thenable<string> {

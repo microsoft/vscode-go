@@ -10,7 +10,16 @@ import path = require('path');
 import vscode = require('vscode');
 import { adjustWordPosition, definitionLocation, parseMissingError } from './goDeclaration';
 import { promptForMissingTool } from './goInstallTools';
-import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getFileArchive, getGoConfig, getToolsEnvVars, goBuiltinTypes, killTree } from './util';
+import {
+	byteOffsetAt,
+	canonicalizeGOPATHPrefix,
+	getBinPath,
+	getFileArchive,
+	getGoConfig,
+	getToolsEnvVars,
+	goBuiltinTypes,
+	killTree
+} from './util';
 
 interface GuruDescribeOutput {
 	desc: string;
@@ -32,7 +41,11 @@ interface GuruDefinitionOutput {
 }
 
 export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
-	public provideTypeDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Definition> {
+	public provideTypeDefinition(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken
+	): vscode.ProviderResult<vscode.Definition> {
 		const adjustedPos = adjustWordPosition(document, position);
 		if (!adjustedPos[0]) {
 			return Promise.resolve(null);
@@ -66,36 +79,41 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 
 					const guruOutput = <GuruDescribeOutput>JSON.parse(stdout.toString());
 					if (!guruOutput.value || !guruOutput.value.typespos) {
-						if (guruOutput.value
-							&& guruOutput.value.type
-							&& !goBuiltinTypes.has(guruOutput.value.type)
-							&& guruOutput.value.type !== 'invalid type') {
-							console.log('no typespos from guru\'s output - try to update guru tool');
+						if (
+							guruOutput.value &&
+							guruOutput.value.type &&
+							!goBuiltinTypes.has(guruOutput.value.type) &&
+							guruOutput.value.type !== 'invalid type'
+						) {
+							console.log(`no typespos from guru's output - try to update guru tool`);
 						}
 
 						// Fall back to position of declaration
-						return definitionLocation(document, position, null, false, token).then((definitionInfo) => {
-							if (definitionInfo == null || definitionInfo.file == null) {
-								return null;
+						return definitionLocation(document, position, null, false, token).then(
+							(definitionInfo) => {
+								if (definitionInfo == null || definitionInfo.file == null) {
+									return null;
+								}
+								const definitionResource = vscode.Uri.file(definitionInfo.file);
+								const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
+								resolve(new vscode.Location(definitionResource, pos));
+							},
+							(err) => {
+								const miss = parseMissingError(err);
+								if (miss[0]) {
+									promptForMissingTool(miss[1]);
+								} else if (err) {
+									return Promise.reject(err);
+								}
+								return Promise.resolve(null);
 							}
-							const definitionResource = vscode.Uri.file(definitionInfo.file);
-							const pos = new vscode.Position(definitionInfo.line, definitionInfo.column);
-							resolve(new vscode.Location(definitionResource, pos));
-						}, (err) => {
-							const miss = parseMissingError(err);
-							if (miss[0]) {
-								promptForMissingTool(miss[1]);
-							} else if (err) {
-								return Promise.reject(err);
-							}
-							return Promise.resolve(null);
-						});
+						);
 					}
 
 					const results: vscode.Location[] = [];
 					guruOutput.value.typespos.forEach((ref) => {
 						const match = /^(.*):(\d+):(\d+)/.exec(ref.objpos);
-						if (!match)  {
+						if (!match) {
 							return;
 						}
 						const [_, file, line, col] = match;
@@ -112,9 +130,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			if (process.pid) {
 				process.stdin.end(getFileArchive(document));
 			}
-			token.onCancellationRequested(() =>
-				killTree(process.pid)
-			);
+			token.onCancellationRequested(() => killTree(process.pid));
 		});
 	}
 }
