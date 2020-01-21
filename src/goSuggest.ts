@@ -48,9 +48,9 @@ interface GoCodeSuggestion {
 }
 
 class ExtendedCompletionItem extends vscode.CompletionItem {
-	package?: string;
-	receiver?: string;
-	fileName: string;
+	public package?: string;
+	public receiver?: string;
+	public fileName: string;
 }
 
 const lineCommentFirstWordRegex = /^\s*\/\/\s+[\S]*$/;

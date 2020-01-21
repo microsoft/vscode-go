@@ -20,10 +20,10 @@ export function isDiffToolAvailable(): boolean {
 export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE }
 
 export class Edit {
-	action: number;
-	start: Position;
-	end: Position;
-	text: string;
+	private action: number;
+	public start: Position;
+	public end: Position;
+	public text: string;
 
 	constructor(action: number, start: Position) {
 		this.action = action;
@@ -32,7 +32,7 @@ export class Edit {
 	}
 
 	// Creates TextEdit for current Edit
-	apply(): TextEdit {
+	public apply(): TextEdit {
 		switch (this.action) {
 			case EditTypes.EDIT_INSERT:
 				return TextEdit.insert(this.start, this.text);
@@ -46,7 +46,7 @@ export class Edit {
 	}
 
 	// Applies Edit using given TextEditorEdit
-	applyUsingTextEditorEdit(editBuilder: TextEditorEdit): void {
+	public applyUsingTextEditorEdit(editBuilder: TextEditorEdit): void {
 		switch (this.action) {
 			case EditTypes.EDIT_INSERT:
 				editBuilder.insert(this.start, this.text);
@@ -63,7 +63,7 @@ export class Edit {
 	}
 
 	// Applies Edits to given WorkspaceEdit
-	applyUsingWorkspaceEdit(workspaceEdit: WorkspaceEdit, fileUri: Uri): void {
+	public applyUsingWorkspaceEdit(workspaceEdit: WorkspaceEdit, fileUri: Uri): void {
 		switch (this.action) {
 			case EditTypes.EDIT_INSERT:
 				workspaceEdit.insert(fileUri, this.start, this.text);

@@ -32,7 +32,7 @@ interface GuruDefinitionOutput {
 }
 
 export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
-	provideTypeDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Definition> {
+	public provideTypeDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): vscode.ProviderResult<vscode.Definition> {
 		const adjustedPos = adjustWordPosition(document, position);
 		if (!adjustedPos[0]) {
 			return Promise.resolve(null);

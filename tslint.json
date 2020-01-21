@@ -61,7 +61,7 @@
 			"options": 2
 		},
 		// "max-line-length": { "options": 120 },
-		// "member-access": true,
+		"member-access": true,
 		// "member-ordering": {
 		// 	"options": {
 		// 		"order": "statics-first"

@@ -70,9 +70,9 @@ export const goBuiltinTypes: Set<string> = new Set<string>([
 ]);
 
 export class GoVersion {
-	sv: semver.SemVer;
-	commit: string;
-	isDevel: boolean;
+	public sv: semver.SemVer;
+	private commit: string;
+	public isDevel: boolean;
 
 	constructor(version: string) {
 		const matchesRelease = /go version go(\d.\d+).*/.exec(version);
@@ -86,14 +86,14 @@ export class GoVersion {
 		sendTelemetryEventForGoVersion(this.format());
 	}
 
-	format(): string {
+	public format(): string {
 		if (this.sv) {
 			return this.sv.format();
 		}
 		return `devel +${this.commit}`;
 	}
 
-	lt(version: string): boolean {
+	public lt(version: string): boolean {
 		// Assume a developer version is always above any released version.
 		// This is not necessarily true.
 		if (this.isDevel || !this.sv) {
@@ -102,7 +102,7 @@ export class GoVersion {
 		return semver.lt(this.sv, semver.coerce(version));
 	}
 
-	gt(version: string): boolean {
+	public gt(version: string): boolean {
 		// Assume a developer version is always above any released version.
 		// This is not necessarily true.
 		if (this.isDevel || !this.sv) {
@@ -472,7 +472,7 @@ export class LineBuffer {
 	private lineListeners: { (line: string): void; }[] = [];
 	private lastListeners: { (last: string): void; }[] = [];
 
-	append(chunk: string) {
+	public append(chunk: string) {
 		this.buf += chunk;
 		do {
 			const idx = this.buf.indexOf('\n');
@@ -485,7 +485,7 @@ export class LineBuffer {
 		} while (true);
 	}
 
-	done() {
+	public done() {
 		this.fireDone(this.buf !== '' ? this.buf : null);
 	}
 
@@ -497,11 +497,11 @@ export class LineBuffer {
 		this.lastListeners.forEach((listener) => listener(last));
 	}
 
-	onLine(listener: (line: string) => void) {
+	public onLine(listener: (line: string) => void) {
 		this.lineListeners.push(listener);
 	}
 
-	onDone(listener: (last: string) => void) {
+	public onDone(listener: (last: string) => void) {
 		this.lastListeners.push(listener);
 	}
 }

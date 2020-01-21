@@ -292,21 +292,21 @@ function normalizePath(filePath: string) {
 }
 
 class Delve {
-	program: string;
-	remotePath: string;
-	localDebugeePath: string | undefined;
-	debugProcess: ChildProcess;
-	loadConfig: LoadConfig;
-	connection: Promise<RPCConnection>;
-	onstdout: (str: string) => void;
-	onstderr: (str: string) => void;
-	onclose: (code: number) => void;
-	noDebug: boolean;
-	isApiV1: boolean;
-	dlvEnv: any;
-	stackTraceDepth: number;
-	isRemoteDebugging: boolean;
-	request: 'attach' | 'launch';
+	public program: string;
+	public remotePath: string;
+	private localDebugeePath: string | undefined;
+	private debugProcess: ChildProcess;
+	public loadConfig: LoadConfig;
+	public connection: Promise<RPCConnection>;
+	public onstdout: (str: string) => void;
+	public onstderr: (str: string) => void;
+	public onclose: (code: number) => void;
+	public noDebug: boolean;
+	public isApiV1: boolean;
+	public dlvEnv: any;
+	public stackTraceDepth: number;
+	public isRemoteDebugging: boolean;
+	private request: 'attach' | 'launch';
 
 	constructor(launchArgs: LaunchRequestArguments | AttachRequestArguments, program: string) {
 		this.request = launchArgs.request;
