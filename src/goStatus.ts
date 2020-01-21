@@ -5,9 +5,9 @@
 
 'use strict';
 
+import vscode = require('vscode');
 import { GO_MODE } from './goMode';
 import { isModSupported } from './goModules';
-import vscode = require('vscode');
 
 export let outputChannel = vscode.window.createOutputChannel('Go');
 

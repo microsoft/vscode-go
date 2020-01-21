@@ -5,8 +5,8 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import { isAbsolute } from 'path';
+import vscode = require('vscode');
 import { CancellationToken, CodeLens, Range, TextDocument } from 'vscode';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 import { GoDocumentSymbolProvider } from './goOutline';

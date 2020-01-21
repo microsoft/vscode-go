@@ -5,10 +5,10 @@
 
 'use strict';
 
-import vscode = require('vscode');
-import path = require('path');
 import fs = require('fs');
+import path = require('path');
 import rl = require('readline');
+import vscode = require('vscode');
 import { isModSupported } from './goModules';
 import { getTestFlags, goTest, showTestOutput, TestConfig } from './testUtils';
 import { getGoConfig, getTempFilePath } from './util';
@@ -166,16 +166,16 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				const coverage = getCoverageData(filePath);
 				const range = new vscode.Range(
 					// Start Line converted to zero based
-					parseInt(fileRange[2]) - 1,
+					parseInt(fileRange[2], 10) - 1,
 					// Start Column converted to zero based
-					parseInt(fileRange[3]) - 1,
+					parseInt(fileRange[3], 10) - 1,
 					// End Line converted to zero based
-					parseInt(fileRange[4]) - 1,
+					parseInt(fileRange[4], 10) - 1,
 					// End Column converted to zero based
-					parseInt(fileRange[5]) - 1
+					parseInt(fileRange[5], 10) - 1
 				);
 				// If is Covered (CoverCount > 0)
-				if (parseInt(fileRange[7]) > 0) {
+				if (parseInt(fileRange[7], 10) > 0) {
 					coverage.coveredRange.push(range);
 				}
 				// Not Covered

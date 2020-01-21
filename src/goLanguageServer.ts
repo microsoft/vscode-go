@@ -5,16 +5,16 @@
 
 'use strict';
 
-import moment = require('moment');
-import semver = require('semver');
-import vscode = require('vscode');
-import util = require('util');
-import WebRequest = require('web-request');
-import path = require('path');
 import cp = require('child_process');
-import { FormattingOptions, HandleDiagnosticsSignature, LanguageClient, ProvideCompletionItemsSignature, ProvideDefinitionSignature, ProvideDocumentFormattingEditsSignature, ProvideDocumentLinksSignature, ProvideDocumentSymbolsSignature, ProvideHoverSignature, ProvideReferencesSignature, ProvideRenameEditsSignature, ProvideSignatureHelpSignature, ProvideWorkspaceSymbolsSignature, RevealOutputChannelOn, ProvideDocumentHighlightsSignature } from 'vscode-languageclient';
+import moment = require('moment');
+import path = require('path');
+import semver = require('semver');
+import util = require('util');
+import vscode = require('vscode');
+import { FormattingOptions, HandleDiagnosticsSignature, LanguageClient, ProvideCompletionItemsSignature, ProvideDefinitionSignature, ProvideDocumentFormattingEditsSignature, ProvideDocumentHighlightsSignature, ProvideDocumentLinksSignature, ProvideDocumentSymbolsSignature, ProvideHoverSignature, ProvideReferencesSignature, ProvideRenameEditsSignature, ProvideSignatureHelpSignature, ProvideWorkspaceSymbolsSignature, RevealOutputChannelOn } from 'vscode-languageclient';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
+import WebRequest = require('web-request');
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoHoverProvider } from './goExtraInfo';
 import { GoDocumentFormattingEditProvider } from './goFormat';

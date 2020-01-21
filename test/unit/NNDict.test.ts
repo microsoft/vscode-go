@@ -4,7 +4,7 @@
  *--------------------------------------------------------*/
 
 import * as assert from 'assert';
-import { Node, NearestNeighborDict } from '../../src/avlTree';
+import { NearestNeighborDict, Node } from '../../src/avlTree';
 
 suite('NearestNeighborDict Tests', () => {
 	test('basic insert/get: random', () => {

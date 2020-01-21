@@ -3,9 +3,9 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import vscode = require('vscode');
 import { execFile } from 'child_process';
 import * as path from 'path';
+import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
 import { outputChannel } from './goStatus';
 import { getBinPath, getGoConfig } from './util';

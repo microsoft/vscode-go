@@ -5,8 +5,8 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import path = require('path');
+import vscode = require('vscode');
 import { goBuild } from './goBuild';
 import { parseLanguageServerConfig } from './goLanguageServer';
 import { goLint } from './goLint';

@@ -4,6 +4,7 @@
  *--------------------------------------------------------*/
 
 import * as assert from 'assert';
+import cp = require('child_process');
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -22,7 +23,6 @@ import { GoCompletionItemProvider } from '../../src/goSuggest';
 import { getWorkspaceSymbols } from '../../src/goSymbol';
 import { testCurrentFile } from '../../src/goTest';
 import { getBinPath, getCurrentGoPath, getGoVersion, getImportPath, getToolsGopath, ICheckResult, isVendorSupported } from '../../src/util';
-import cp = require('child_process');
 
 suite('Go Extension Tests', () => {
 	const gopath = getCurrentGoPath();

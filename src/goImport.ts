@@ -5,14 +5,14 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
+import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
 import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { getImportablePackages } from './goPackages';
 import { envPath } from './goPath';
-import { getBinPath, getImportPath, getToolsEnvVars, parseFilePrelude } from './util';
 import { sendTelemetryEventForAddImportCmd } from './telemetry';
+import { getBinPath, getImportPath, getToolsEnvVars, parseFilePrelude } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 

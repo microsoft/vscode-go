@@ -5,11 +5,11 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
-import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getGoConfig, getFileArchive, getToolsEnvVars, killTree } from './util';
+import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getFileArchive, getGoConfig, getToolsEnvVars, killTree } from './util';
 
 export class GoReferenceProvider implements vscode.ReferenceProvider {
 

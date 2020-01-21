@@ -5,12 +5,12 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import vscode = require('vscode');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getGoConfig, getToolsEnvVars, killTree } from './util';
 import { sendTelemetryEventForFormatting } from './telemetry';
+import { getBinPath, getGoConfig, getToolsEnvVars, killTree } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 

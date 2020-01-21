@@ -5,10 +5,10 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
+import vscode = require('vscode');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getGoConfig, getFileArchive, getToolsEnvVars, killProcess, makeMemoizedByteOffsetConverter } from './util';
+import { getBinPath, getFileArchive, getGoConfig, getToolsEnvVars, killProcess, makeMemoizedByteOffsetConverter } from './util';
 
 // Keep in sync with https://github.com/ramya-rao-a/go-outline
 export interface GoOutlineRange {

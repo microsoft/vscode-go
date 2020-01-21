@@ -5,12 +5,12 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import vscode = require('vscode');
 import { adjustWordPosition, definitionLocation, parseMissingError } from './goDeclaration';
 import { promptForMissingTool } from './goInstallTools';
-import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getGoConfig, getFileArchive, getToolsEnvVars, goBuiltinTypes, killTree } from './util';
+import { byteOffsetAt, canonicalizeGOPATHPrefix, getBinPath, getFileArchive, getGoConfig, getToolsEnvVars, goBuiltinTypes, killTree } from './util';
 
 interface GuruDescribeOutput {
 	desc: string;
@@ -100,7 +100,7 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 						}
 						const [_, file, line, col] = match;
 						const referenceResource = vscode.Uri.file(file);
-						const pos = new vscode.Position(parseInt(line) - 1, parseInt(col) - 1);
+						const pos = new vscode.Position(parseInt(line, 10) - 1, parseInt(col, 10) - 1);
 						results.push(new vscode.Location(referenceResource, pos));
 					});
 

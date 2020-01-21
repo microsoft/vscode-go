@@ -9,8 +9,8 @@
  * This file is loaded by both the extension and debug adapter, so it cannot import 'vscode'
  */
 import fs = require('fs');
-import path = require('path');
 import os = require('os');
+import path = require('path');
 
 let binPathCache: { [bin: string]: string; } = {};
 

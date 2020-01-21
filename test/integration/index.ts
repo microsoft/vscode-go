@@ -2,9 +2,9 @@
  * Copyright (C) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
-import * as path from 'path';
-import * as Mocha from 'mocha';
 import * as glob from 'glob';
+import * as Mocha from 'mocha';
+import * as path from 'path';
 export function run(): Promise<void> {
 	// Create the mocha test
 	const mocha = new Mocha({

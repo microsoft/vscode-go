@@ -5,14 +5,14 @@
 
 'use strict';
 
-import vscode = require('vscode');
+import cp = require('child_process');
 import fs = require('fs');
 import path = require('path');
-import cp = require('child_process');
+import vscode = require('vscode');
 import { getLanguageServerToolPath } from './goLanguageServer';
 import { envPath, getToolFromToolPath } from './goPath';
 import { hideGoStatus, outputChannel, showGoStatus } from './goStatus';
-import { containsString, containsTool, getConfiguredTools, getImportPath, getTool, hasModSuffix, isGocode, Tool, disableModulesForWildcard } from './goTools';
+import { containsString, containsTool, disableModulesForWildcard, getConfiguredTools, getImportPath, getTool, hasModSuffix, isGocode, Tool } from './goTools';
 import { getBinPath, getCurrentGoPath, getGoConfig, getGoVersion, getTempFilePath, getToolsGopath, GoVersion, resolvePath } from './util';
 
 // declinedUpdates tracks the tools that the user has declined to update.

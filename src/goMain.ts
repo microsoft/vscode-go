@@ -32,10 +32,10 @@ import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
 import { showHideStatus } from './goStatus';
 import { testAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWorkspace } from './goTest';
 import { vetCode } from './goVet';
-import { setGlobalState, getFromGlobalState, updateGlobalState } from './stateUtils';
-import { cancelRunningTests, showTestOutput } from './testUtils';
-import { cleanupTempDir, getBinPath, getGoConfig, getCurrentGoPath, getExtensionCommands, getGoVersion, getToolsEnvVars, getToolsGopath, getWorkspaceFolderPath, handleDiagnosticErrors, isGoPathSet } from './util';
+import { getFromGlobalState, setGlobalState, updateGlobalState } from './stateUtils';
 import { disposeTelemetryReporter, sendTelemetryEventForConfig } from './telemetry';
+import { cancelRunningTests, showTestOutput } from './testUtils';
+import { cleanupTempDir, getBinPath, getCurrentGoPath, getExtensionCommands, getGoConfig, getGoVersion, getToolsEnvVars, getToolsGopath, getWorkspaceFolderPath, handleDiagnosticErrors, isGoPathSet } from './util';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;

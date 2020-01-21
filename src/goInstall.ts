@@ -3,13 +3,13 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
+import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import { isModSupported } from './goModules';
 import { envPath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { outputChannel } from './goStatus';
 import { getBinPath, getCurrentGoPath, getGoConfig, getModuleCache, getToolsEnvVars } from './util';
-import cp = require('child_process');
 
 export async function installCurrentPackage(): Promise<void> {
 	const editor = vscode.window.activeTextEditor;

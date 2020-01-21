@@ -7,12 +7,12 @@ import path = require('path');
 import util = require('util');
 import vscode = require('vscode');
 
+import { applyCodeCoverageToAllEditors } from './goCover';
 import { getCurrentPackage } from './goModules';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getNonVendorPackages } from './goPackages';
 import { envPath, getCurrentGoWorkspaceFromGOPATH, parseEnvFile } from './goPath';
-import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, LineBuffer, resolvePath, getTempFilePath } from './util';
-import { applyCodeCoverageToAllEditors } from './goCover';
+import { getBinPath, getCurrentGoPath, getGoVersion, getTempFilePath, getToolsEnvVars, LineBuffer, resolvePath } from './util';
 
 const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');

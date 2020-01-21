@@ -3,18 +3,18 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import vscode = require('vscode');
-import semver = require('semver');
+import cp = require('child_process');
+import fs = require('fs');
+import os = require('os');
 import path = require('path');
+import semver = require('semver');
+import vscode = require('vscode');
 import { NearestNeighborDict, Node } from './avlTree';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 import { getCurrentPackage } from './goModules';
 import { envPath, fixDriveCasingInWindows, getBinPathWithPreferredGopath, getInferredGopath, resolveHomeDir } from './goPath';
 import { outputChannel } from './goStatus';
-import cp = require('child_process');
-import fs = require('fs');
-import os = require('os');
-import { sendTelemetryEventForGoVersion, sendTelemetryEventForKillingProcess, extensionId } from './telemetry';
+import { extensionId, sendTelemetryEventForGoVersion, sendTelemetryEventForKillingProcess } from './telemetry';
 
 let userNameHash: number = 0;
 

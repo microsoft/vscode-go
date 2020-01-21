@@ -5,8 +5,8 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
+import vscode = require('vscode');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { getBinPath, getGoConfig, getToolsEnvVars, getWorkspaceFolderPath, killProcess } from './util';
 

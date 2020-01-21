@@ -5,8 +5,8 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
+import vscode = require('vscode');
 import { buildCode } from './goBuild';
 import { envPath } from './goPath';
 import { outputChannel } from './goStatus';

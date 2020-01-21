@@ -5,8 +5,8 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
+import vscode = require('vscode');
 import { Edit, FilePatch, getEditsFromUnifiedDiffStr, isDiffToolAvailable } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 import { outputChannel } from './goStatus';

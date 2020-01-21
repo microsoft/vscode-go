@@ -5,9 +5,9 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import vscode = require('vscode');
 import { getAllPackages } from './goPackages';
 import { envPath } from './goPath';
 import { getBinPath, getCurrentGoPath, getImportPath } from './util';

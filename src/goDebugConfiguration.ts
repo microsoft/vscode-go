@@ -5,13 +5,13 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import path = require('path');
+import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
-import { getFromGlobalState, updateGlobalState } from './stateUtils';
-import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 import { packagePathToGoModPathMap } from './goModules';
+import { getFromGlobalState, updateGlobalState } from './stateUtils';
 import { sendTelemetryEventForDebugConfiguration } from './telemetry';
+import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
 

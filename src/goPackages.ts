@@ -3,13 +3,13 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import vscode = require('vscode');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { envPath, fixDriveCasingInWindows, getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, isVendorSupported } from './util';
 import { sendTelemetryEventForGopkgs } from './telemetry';
+import { getBinPath, getCurrentGoPath, getGoVersion, getToolsEnvVars, isVendorSupported } from './util';
 
 type GopkgsDone = (res: Map<string, PackageInfo>) => void;
 interface Cache {

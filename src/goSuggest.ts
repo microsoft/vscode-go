@@ -5,9 +5,9 @@
 
 'use strict';
 
+import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
-import cp = require('child_process');
 import { getTextEditForAddImport } from './goImport';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { isModSupported } from './goModules';

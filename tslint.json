@@ -107,20 +107,20 @@
 		// "only-arrow-functions": {
 		// 	"options": ["allow-declarations", "allow-named-functions"]
 		// },
-		// "ordered-imports": {
-		// 	"options": {
-		// 		"import-sources-order": "case-insensitive",
-		// 		"module-source-path": "full",
-		// 		"named-imports-order": "case-insensitive"
-		// 	}
-		// },
+		"ordered-imports": {
+			"options": {
+				"import-sources-order": "case-insensitive",
+				"module-source-path": "full",
+				"named-imports-order": "case-insensitive"
+			}
+		},
 		"prefer-const": true,
 		"prefer-for-of": true,
 		"quotemark": [
 			true,
 			"single"
 		],
-		// "radix": true,
+		"radix": true,
 		"semicolon": true,
 		"space-before-function-paren": {
 			"options": {

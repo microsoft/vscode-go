@@ -3,17 +3,17 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import * as path from 'path';
-import * as os from 'os';
+import { ChildProcess, execFile, execSync, spawn, spawnSync } from 'child_process';
 import * as fs from 'fs';
-import * as util from 'util';
-import { DebugProtocol } from 'vscode-debugprotocol';
-import { DebugSession, InitializedEvent, TerminatedEvent, ThreadEvent, StoppedEvent, OutputEvent, Thread, StackFrame, Scope, Source, Handles, LoggingDebugSession, Logger, logger, Breakpoint } from 'vscode-debugadapter';
 import { existsSync, lstatSync } from 'fs';
-import { basename, dirname, extname } from 'path';
-import { spawn, ChildProcess, execSync, spawnSync, execFile } from 'child_process';
 import { Client, RPCConnection } from 'json-rpc2';
-import { parseEnvFile, getBinPathWithPreferredGopath, getInferredGopath, getCurrentGoWorkspaceFromGOPATH, envPath, fixDriveCasingInWindows } from '../goPath';
+import * as os from 'os';
+import * as path from 'path';
+import { basename, dirname, extname } from 'path';
+import * as util from 'util';
+import { Breakpoint, DebugSession, Handles, InitializedEvent, logger, Logger, LoggingDebugSession, OutputEvent, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, ThreadEvent } from 'vscode-debugadapter';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { envPath, fixDriveCasingInWindows, getBinPathWithPreferredGopath, getCurrentGoWorkspaceFromGOPATH, getInferredGopath, parseEnvFile } from '../goPath';
 
 const fsAccess = util.promisify(fs.access);
 const fsUnlink = util.promisify(fs.unlink);
