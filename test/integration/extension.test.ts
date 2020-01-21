@@ -147,7 +147,7 @@ suite('Go Extension Tests', () => {
 
 	test('Test Definition Provider using godoc', (done) => {
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'docsTool': { value: 'godoc' }
+			docsTool: { value: 'godoc' }
 		});
 		testDefinitionProvider(config).then(() => done(), done);
 	});
@@ -158,7 +158,7 @@ suite('Go Extension Tests', () => {
 			return done();
 		}
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'docsTool': { value: 'gogetdoc' }
+			docsTool: { value: 'gogetdoc' }
 		});
 		testDefinitionProvider(config).then(() => done(), done);
 	}).timeout(10000);
@@ -177,7 +177,7 @@ encountered.
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'docsTool': { value: 'godoc' }
+			docsTool: { value: 'godoc' }
 		});
 		testSignatureHelpProvider(config, testCases).then(() => done(), done);
 	});
@@ -199,7 +199,7 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(41, 47), 'EmptyLine(s string) string', 'EmptyLine has docs\n\nwith a blank line in the middle\n', ['s string']]
 		];
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'docsTool': { value: 'gogetdoc' }
+			docsTool: { value: 'gogetdoc' }
 		});
 		testSignatureHelpProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
@@ -222,7 +222,7 @@ encountered.
 			[new vscode.Position(23, 4), 'print func(txt string)', 'This is an unexported function so couldn\'t get this comment on hover :( Not\nanymore!!\n']
 		];
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'docsTool': { value: 'godoc' }
+			docsTool: { value: 'godoc' }
 		});
 		testHoverProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
@@ -250,19 +250,19 @@ It returns the number of bytes written and any write error encountered.
 			[new vscode.Position(28, 6), 'func IPv4Mask(a, b, c, d byte) IPMask', 'IPv4Mask returns the IP mask (in 4-byte form) of the\nIPv4 mask a.b.c.d.\n']
 		];
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'docsTool': { value: 'gogetdoc' }
+			docsTool: { value: 'gogetdoc' }
 		});
 		testHoverProvider(config, testCases).then(() => done(), done);
 	}).timeout(10000);
 
 	test('Error checking', (done) => {
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'package' },
-			'vetFlags': { value: ['-all'] },
-			'lintOnSave': { value: 'package' },
-			'lintTool': { value: 'golint' },
-			'lintFlags': { value: [] },
-			'buildOnSave': { value: 'package' },
+			vetOnSave: { value: 'package' },
+			vetFlags: { value: ['-all'] },
+			lintOnSave: { value: 'package' },
+			lintTool: { value: 'golint' },
+			lintFlags: { value: [] },
+			buildOnSave: { value: 'package' },
 		});
 		const expected = [
 			{ line: 7, severity: 'warning', msg: 'exported function Print2 should have comment or be unexported' },
@@ -301,8 +301,7 @@ It returns the number of bytes written and any write error encountered.
 			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
 				return Promise.resolve();
-			}
-			else {
+			} else {
 				return Promise.reject('generatetests_test.go not found');
 			}
 		}).then(() => done(), done);
@@ -327,8 +326,7 @@ It returns the number of bytes written and any write error encountered.
 			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
 				return Promise.resolve();
-			}
-			else {
+			} else {
 				return Promise.reject('generatetests_test.go not found');
 			}
 		}).then(() => done(), done);
@@ -350,8 +348,7 @@ It returns the number of bytes written and any write error encountered.
 			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 			if (fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'))) {
 				return Promise.resolve();
-			}
-			else {
+			} else {
 				return Promise.reject('generatetests_test.go not found');
 			}
 		}).then(() => done(), done);
@@ -444,7 +441,7 @@ It returns the number of bytes written and any write error encountered.
 
 	test('Test Env Variables are passed to Tests', (done) => {
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'testEnvVars': { value: { 'dummyEnvVar': 'dummyEnvValue', 'dummyNonString': 1 } }
+			testEnvVars: { value: { dummyEnvVar: 'dummyEnvValue', dummyNonString: 1 } }
 		});
 
 		const uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'sample_test.go'));
@@ -648,30 +645,30 @@ It returns the number of bytes written and any write error encountered.
 
 		const workspacePath = path.join(toolsGopath, 'src', 'github.com', 'rogpeppe', 'godef');
 		const configWithoutIgnoringFolders = Object.create(vscode.workspace.getConfiguration('go'), {
-			'gotoSymbol': {
+			gotoSymbol: {
 				value: {
-					'ignoreFolders': []
+					ignoreFolders: []
 				}
 			}
 		});
 		const configWithIgnoringFolders = Object.create(vscode.workspace.getConfiguration('go'), {
-			'gotoSymbol': {
+			gotoSymbol: {
 				value: {
-					'ignoreFolders': ['vendor']
+					ignoreFolders: ['vendor']
 				}
 			}
 		});
 		const configWithIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
-			'gotoSymbol': {
+			gotoSymbol: {
 				value: {
-					'includeGoroot': true
+					includeGoroot: true
 				}
 			}
 		});
 		const configWithoutIncludeGoroot = Object.create(vscode.workspace.getConfiguration('go'), {
-			'gotoSymbol': {
+			gotoSymbol: {
 				value: {
-					'includeGoroot': false
+					includeGoroot: false
 				}
 			}
 		});
@@ -743,37 +740,37 @@ encountered.
 		const baseConfig = vscode.workspace.getConfiguration('go');
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
-			const noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items => {
+			const noFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: false } })).then(items => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
 				const item = items.find(x => x.label === 'Print');
 				assert.equal(!item.insertText, true);
 			});
-			const withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items1 => {
+			const withFunctionSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items1 => {
 				items1 = items1 instanceof vscode.CompletionList ? items1.items : items1;
 				const item1 = items1.find(x => x.label === 'Print');
 				assert.equal((<vscode.SnippetString>item1.insertText).value, 'Print(${1:a ...interface{\\}})');
 			});
-			const withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items2 => {
+			const withFunctionSnippetNotype = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(9, 6), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggestWithoutType: { value: true } })).then(items2 => {
 				items2 = items2 instanceof vscode.CompletionList ? items2.items : items2;
 				const item2 = items2.find(x => x.label === 'Print');
 				assert.equal((<vscode.SnippetString>item2.insertText).value, 'Print(${1:a})');
 			});
-			const noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items3 => {
+			const noFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: false } })).then(items3 => {
 				items3 = items3 instanceof vscode.CompletionList ? items3.items : items3;
 				const item3 = items3.find(x => x.label === 'funcAsVariable');
 				assert.equal(!item3.insertText, true);
 			});
-			const withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items4 => {
+			const withFunctionAsVarSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items4 => {
 				items4 = items4 instanceof vscode.CompletionList ? items4.items : items4;
 				const item4 = items4.find(x => x.label === 'funcAsVariable');
 				assert.equal((<vscode.SnippetString>item4.insertText).value, 'funcAsVariable(${1:k string})');
 			});
-			const withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggestWithoutType': { value: true } })).then(items5 => {
+			const withFunctionAsVarSnippetNoType = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(11, 3), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggestWithoutType: { value: true } })).then(items5 => {
 				items5 = items5 instanceof vscode.CompletionList ? items5.items : items5;
 				const item5 = items5.find(x => x.label === 'funcAsVariable');
 				assert.equal((<vscode.SnippetString>item5.insertText).value, 'funcAsVariable(${1:k})');
 			});
-			const noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: false } })).then(items6 => {
+			const noFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: false } })).then(items6 => {
 				items6 = items6 instanceof vscode.CompletionList ? items6.items : items6;
 				const item1 = items6.find(x => x.label === 'HandlerFunc');
 				const item2 = items6.find(x => x.label === 'HandlerFuncWithArgNames');
@@ -782,7 +779,7 @@ encountered.
 				assert.equal(!item2.insertText, true);
 				assert.equal(!item3.insertText, true);
 			});
-			const withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items7 => {
+			const withFunctionAsTypeSnippet = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(14, 0), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items7 => {
 				items7 = items7 instanceof vscode.CompletionList ? items7.items : items7;
 				const item11 = items7.find(x => x.label === 'HandlerFunc');
 				const item21 = items7.find(x => x.label === 'HandlerFuncWithArgNames');
@@ -813,17 +810,17 @@ encountered.
 		const baseConfig = vscode.workspace.getConfiguration('go');
 		vscode.workspace.openTextDocument(uri).then(async (textDocument) => {
 			const editor = await vscode.window.showTextDocument(textDocument);
-			const symbolFollowedByBrackets = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(5, 10), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items => {
+			const symbolFollowedByBrackets = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(5, 10), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
 				const item = items.find(x => x.label === 'Print');
 				assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is followed by ().');
 			});
-			const symbolAsLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(7, 13), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items1 => {
+			const symbolAsLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(7, 13), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items1 => {
 				items1 = items1 instanceof vscode.CompletionList ? items1.items : items1;
 				const item1 = items1.find(x => x.label === 'funcAsVariable');
 				assert.equal(!item1.insertText, true, 'Unexpected snippet when symbol is a parameter inside func call');
 			});
-			const symbolsAsNonLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(8, 11), null, Object.create(baseConfig, { 'useCodeSnippetsOnFunctionSuggest': { value: true } })).then(items2 => {
+			const symbolsAsNonLastParameter = provider.provideCompletionItemsInternal(editor.document, new vscode.Position(8, 11), null, Object.create(baseConfig, { useCodeSnippetsOnFunctionSuggest: { value: true } })).then(items2 => {
 				items2 = items2 instanceof vscode.CompletionList ? items2.items : items2;
 				const item2 = items2.find(x => x.label === 'funcAsVariable');
 				assert.equal(!item2.insertText, true, 'Unexpected snippet when symbol is one of the parameters inside func call.');
@@ -841,7 +838,7 @@ encountered.
 
 	test('Test Completion on unimported packages', (done) => {
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'autocompleteUnimportedPackages': { value: true }
+			autocompleteUnimportedPackages: { value: true }
 		});
 		const provider = new GoCompletionItemProvider();
 		const testCases: [vscode.Position, string[]][] = [
@@ -868,7 +865,7 @@ encountered.
 
 	test('Test Completion on unimported packages (multiple)', (done) => {
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
-			'gocodeFlags': { value: ['-builtin'] }
+			gocodeFlags: { value: ['-builtin'] }
 		});
 		const provider = new GoCompletionItemProvider();
 		const position = new vscode.Position(3, 14);
@@ -968,7 +965,7 @@ encountered.
 				fmt.Print("Go!")
 			}`;
 		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
-			'playground': { value: { run: true, openbrowser: false, share: false } }
+			playground: { value: { run: true, openbrowser: false, share: false } }
 		});
 
 		goPlay(validCode, goConfig['playground']).then(result => {
@@ -998,7 +995,7 @@ encountered.
 				fmt.Print("Go!")
 			}`;
 		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
-			'playground': { value: { run: true, openbrowser: false, share: true } }
+			playground: { value: { run: true, openbrowser: false, share: true } }
 		});
 
 		goPlay(validCode, goConfig['playground']).then(result => {
@@ -1024,7 +1021,7 @@ encountered.
 				fmt.Print("not a main package, sorry")
 			}`;
 		const goConfig = Object.create(vscode.workspace.getConfiguration('go'), {
-			'playground': { value: { run: true, openbrowser: false, share: false } }
+			playground: { value: { run: true, openbrowser: false, share: false } }
 		});
 
 		goPlay(invalidCode, goConfig['playground']).then(result => {
@@ -1036,10 +1033,10 @@ encountered.
 
 	test('Build Tags checking', (done) => {
 		const config1 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'buildTags': { value: 'randomtag' }
+			vetOnSave: { value: 'off' },
+			lintOnSave: { value: 'off' },
+			buildOnSave: { value: 'package' },
+			buildTags: { value: 'randomtag' }
 		});
 
 		const checkWithTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config1).then(diagnostics => {
@@ -1049,10 +1046,10 @@ encountered.
 		});
 
 		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'buildTags': { value: 'randomtag othertag' }
+			vetOnSave: { value: 'off' },
+			lintOnSave: { value: 'off' },
+			buildOnSave: { value: 'package' },
+			buildTags: { value: 'randomtag othertag' }
 		});
 
 		const checkWithMultipleTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config2).then(diagnostics => {
@@ -1062,10 +1059,10 @@ encountered.
 		});
 
 		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'buildTags': { value: '' }
+			vetOnSave: { value: 'off' },
+			lintOnSave: { value: 'off' },
+			buildOnSave: { value: 'package' },
+			buildTags: { value: '' }
 		});
 
 		const checkWithoutTags = check(vscode.Uri.file(path.join(fixturePath, 'buildTags', 'hello.go')), config3).then(diagnostics => {
@@ -1081,32 +1078,32 @@ encountered.
 	test('Test Tags checking', (done) => {
 
 		const config1 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'testTags': { value: null },
-			'buildTags': { value: 'randomtag' }
+			vetOnSave: { value: 'off' },
+			lintOnSave: { value: 'off' },
+			buildOnSave: { value: 'package' },
+			testTags: { value: null },
+			buildTags: { value: 'randomtag' }
 		});
 
 		const config2 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'testTags': { value: 'randomtag' }
+			vetOnSave: { value: 'off' },
+			lintOnSave: { value: 'off' },
+			buildOnSave: { value: 'package' },
+			testTags: { value: 'randomtag' }
 		});
 
 		const config3 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'testTags': { value: 'randomtag othertag' }
+			vetOnSave: { value: 'off' },
+			lintOnSave: { value: 'off' },
+			buildOnSave: { value: 'package' },
+			testTags: { value: 'randomtag othertag' }
 		});
 
 		const config4 = Object.create(vscode.workspace.getConfiguration('go'), {
-			'vetOnSave': { value: 'off' },
-			'lintOnSave': { value: 'off' },
-			'buildOnSave': { value: 'package' },
-			'testTags': { value: '' }
+			vetOnSave: { value: 'off' },
+			lintOnSave: { value: 'off' },
+			buildOnSave: { value: 'package' },
+			testTags: { value: '' }
 		});
 
 		const uri = vscode.Uri.file(path.join(fixturePath, 'testTags', 'hello_test.go'));

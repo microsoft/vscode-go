@@ -840,8 +840,7 @@ export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: nu
 		let charDelta: number;
 		if (byteDelta > 0) {
 			charDelta = buffer.toString('utf8', nearest.key, byteOffset).length;
-		}
-		else {
+		} else {
 			charDelta = -buffer.toString('utf8', byteOffset, nearest.key).length;
 		}
 

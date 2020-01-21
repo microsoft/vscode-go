@@ -18,13 +18,13 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 	public provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): vscode.DebugConfiguration[] {
 		return [
 			{
-				'name': 'Launch',
-				'type': 'go',
-				'request': 'launch',
-				'mode': 'auto',
-				'program': '${fileDirname}',
-				'env': {},
-				'args': []
+				name: 'Launch',
+				type: 'go',
+				request: 'launch',
+				mode: 'auto',
+				program: '${fileDirname}',
+				env: {},
+				args: []
 			}
 		];
 	}
@@ -41,11 +41,11 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			}
 
 			debugConfiguration = {
-				'name': 'Launch',
-				'type': 'go',
-				'request': 'launch',
-				'mode': 'auto',
-				'program': activeEditor.document.fileName
+				name: 'Launch',
+				type: 'go',
+				request: 'launch',
+				mode: 'auto',
+				program: activeEditor.document.fileName
 			};
 		}
 
@@ -53,7 +53,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 
 		const gopath = getCurrentGoPath(folder ? folder.uri : null);
 		if (!debugConfiguration['env']) {
-			debugConfiguration['env'] = { 'GOPATH': gopath };
+			debugConfiguration['env'] = { GOPATH: gopath };
 		} else if (!debugConfiguration['env']['GOPATH']) {
 			debugConfiguration['env']['GOPATH'] = gopath;
 		}

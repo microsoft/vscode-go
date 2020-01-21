@@ -233,8 +233,7 @@ export class NearestNeighborDict<K, V> {
 
 		if (result < 0) {
 			return root.left ? this._getNearest(key, root.left, closest) : closest;
-		}
-		else {
+		} else {
 			return root.right ? this._getNearest(key, root.right, closest) : closest;
 		}
 	}

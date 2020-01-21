@@ -24,7 +24,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		const callerPos = this.previousTokenPosition(document, theCall.openParen);
 		// Temporary fix to fall back to godoc if guru is the set docsTool
 		if (goConfig['docsTool'] === 'guru') {
-			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
+			goConfig = Object.assign({}, goConfig, { docsTool: 'godoc' });
 		}
 		try {
 			const res = await definitionLocation(document, callerPos, goConfig, true, token);
@@ -50,8 +50,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				const funcName = declarationText.substring(0, nameEnd);
 				sig = declarationText.substring(sigStart);
 				si = new SignatureInformation(funcName + sig, res.doc);
-			}
-			else if (res.toolUsed === 'gogetdoc') {
+			} else if (res.toolUsed === 'gogetdoc') {
 				// declaration is of the form "func Add(a int, b int) int"
 				declarationText = declarationText.substring(5);
 				const funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it

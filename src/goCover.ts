@@ -177,9 +177,7 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				// If is Covered (CoverCount > 0)
 				if (parseInt(fileRange[7], 10) > 0) {
 					coverage.coveredRange.push(range);
-				}
-				// Not Covered
-				else {
+				} else {
 					coverage.uncoveredRange.push(range);
 				}
 				setCoverageData(filePath, coverage);

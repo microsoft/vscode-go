@@ -23,12 +23,12 @@ interface GoSymbolDeclaration {
 export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
 
 	private goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
-		'package': vscode.SymbolKind.Package,
-		'import': vscode.SymbolKind.Namespace,
-		'var': vscode.SymbolKind.Variable,
-		'type': vscode.SymbolKind.Interface,
-		'func': vscode.SymbolKind.Function,
-		'const': vscode.SymbolKind.Constant,
+		package: vscode.SymbolKind.Package,
+		import: vscode.SymbolKind.Namespace,
+		var: vscode.SymbolKind.Variable,
+		type: vscode.SymbolKind.Interface,
+		func: vscode.SymbolKind.Function,
+		const: vscode.SymbolKind.Constant,
 	};
 
 	public provideWorkspaceSymbols(query: string, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {

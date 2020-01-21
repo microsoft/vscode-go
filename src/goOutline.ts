@@ -113,14 +113,14 @@ export function runGoOutline(options: GoOutlineOptions, token: vscode.Cancellati
 }
 
 const goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
-	'package': vscode.SymbolKind.Package,
-	'import': vscode.SymbolKind.Namespace,
-	'variable': vscode.SymbolKind.Variable,
-	'constant': vscode.SymbolKind.Constant,
-	'type': vscode.SymbolKind.TypeParameter,
-	'function': vscode.SymbolKind.Function,
-	'struct': vscode.SymbolKind.Struct,
-	'interface': vscode.SymbolKind.Interface,
+	package: vscode.SymbolKind.Package,
+	import: vscode.SymbolKind.Namespace,
+	variable: vscode.SymbolKind.Variable,
+	constant: vscode.SymbolKind.Constant,
+	type: vscode.SymbolKind.TypeParameter,
+	function: vscode.SymbolKind.Function,
+	struct: vscode.SymbolKind.Struct,
+	interface: vscode.SymbolKind.Interface,
 };
 
 function convertToCodeSymbols(

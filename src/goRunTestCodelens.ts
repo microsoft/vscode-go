@@ -15,12 +15,12 @@ import { getCurrentGoPath, getGoConfig } from './util';
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private readonly benchmarkRegex = /^Benchmark.+/;
 	private readonly debugConfig: any = {
-		'name': 'Launch',
-		'type': 'go',
-		'request': 'launch',
-		'mode': 'test',
-		'env': {
-			'GOPATH': getCurrentGoPath() // Passing current GOPATH to Delve as it runs in another process
+		name: 'Launch',
+		type: 'go',
+		request: 'launch',
+		mode: 'test',
+		env: {
+			GOPATH: getCurrentGoPath() // Passing current GOPATH to Delve as it runs in another process
 		}
 	};
 

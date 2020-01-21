@@ -1333,7 +1333,7 @@ class GoDebugSession extends LoggingDebugSession {
 			// from https://github.com/go-delve/delve/blob/master/Documentation/api/ClientHowto.md#looking-into-variables
 			if ((v.kind === GoReflectKind.Struct && v.len > v.children.length) ||
 				(v.kind === GoReflectKind.Interface && v.children.length > 0 && v.children[0].onlyAddr === true)) {
-				await this.evaluateRequestImpl({ 'expression': exp }).then(result => {
+				await this.evaluateRequestImpl({ expression: exp }).then(result => {
 					const variable = this.delve.isApiV1 ? <DebugVariable>result : (<EvalOut>result).Variable;
 					v.children = variable.children;
 				}, err => logError('Failed to evaluate expression - ' + err.toString()));

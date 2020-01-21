@@ -91,14 +91,14 @@
 		"no-unsafe-finally": true,
 		"no-unused-expression": true,
 		"no-var-keyword": true,
-		// "no-var-requires": true,
-		// "object-literal-key-quotes": { "options": "consistent-as-needed" },
+		"no-var-requires": true,
+		"object-literal-key-quotes": { "options": "consistent-as-needed" },
 		"object-literal-shorthand": true,
 		// "object-literal-sort-keys": true,
 		"one-line": [
 			true,
 			"check-catch",
-			// "check-else",
+			"check-else",
 			"check-finally",
 			"check-open-brace",
 			"check-whitespace"
