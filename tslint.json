@@ -37,7 +37,6 @@
 				]
 			]
 		},
-		// "callable-types": true,
 		"class-name": true,
 		"comment-format": [
 			true,
@@ -51,9 +50,6 @@
 			true,
 			"tabs"
 		],
-		// "interface-name": {
-		// 	"options": ["always-prefix"]
-		// },
 		"interface-over-type-literal": true,
 		"jsdoc-format": true,
 		"label-position": true,
@@ -94,7 +90,6 @@
 		"no-var-requires": true,
 		"object-literal-key-quotes": { "options": "consistent-as-needed" },
 		"object-literal-shorthand": true,
-		// "object-literal-sort-keys": true,
 		"one-line": [
 			true,
 			"check-catch",
