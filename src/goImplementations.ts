@@ -87,17 +87,17 @@ export class GoImplementationProvider implements vscode.ImplementationProvider {
 					}
 					args.push('-json', 'implements', `${filename}:#${offset.toString()}`);
 
-					const guruProcess = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
-						if (err && (<any>err).code === 'ENOENT') {
+					const guruProcess = cp.execFile(goGuru, args, { env }, (guruErr, guruStdOut, guruStdErr) => {
+						if (guruErr && (<any>guruErr).code === 'ENOENT') {
 							promptForMissingTool('guru');
 							return resolve(null);
 						}
 
-						if (err) {
-							return reject(err);
+						if (guruErr) {
+							return reject(guruErr);
 						}
 
-						const guruOutput = <GuruImplementsOutput>JSON.parse(stdout.toString());
+						const guruOutput = <GuruImplementsOutput>JSON.parse(guruStdOut.toString());
 						const results: vscode.Location[] = [];
 						const addResults = (list: GuruImplementsRef[]) => {
 							list.forEach((ref: GuruImplementsRef) => {

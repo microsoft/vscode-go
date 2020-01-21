@@ -84,7 +84,7 @@
 		"no-namespace": true,
 		"no-reference": true,
 		"no-reference-import": true,
-		// "no-shadowed-variable": true,
+		"no-shadowed-variable": true,
 		"no-string-throw": true,
 		"no-trailing-whitespace": true,
 		"no-unnecessary-initializer": true,

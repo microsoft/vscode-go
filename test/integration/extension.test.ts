@@ -460,7 +460,10 @@ It returns the number of bytes written and any write error encountered.
 					config
 				);
 				const sortedDiagnostics = ([] as ICheckResult[]).concat
-					.apply([], diagnostics.map((x) => x.errors))
+					.apply(
+						[],
+						diagnostics.map((x) => x.errors)
+					)
 					.sort((a: any, b: any) => a.line - b.line);
 				assert.equal(sortedDiagnostics.length > 0, true, `Failed to get linter results`);
 				const matchCount = expected.filter((expectedItem) => {
@@ -969,9 +972,10 @@ encountered.
 							const item = items.items.find((x) => x.label === expectedLabel);
 							assert.equal(!!item, true, 'missing expected item in completion list');
 							assert.equal(item.detail, expectedDetail);
-							const resolvedItemResult: vscode.ProviderResult<
-								vscode.CompletionItem
-							> = provider.resolveCompletionItem(item, null);
+							const resolvedItemResult: vscode.ProviderResult<vscode.CompletionItem> = provider.resolveCompletionItem(
+								item,
+								null
+							);
 							if (!resolvedItemResult) {
 								return;
 							}
@@ -1582,20 +1586,18 @@ encountered.
 		vscode.workspace
 			.openTextDocument(uri)
 			.then((document) => {
-				return vscode.window.showTextDocument(document).then((editor) => {
-					return testCurrentFile(config1, false, []).then((result: boolean) => {
-						assert.equal(result, true);
-						return testCurrentFile(config2, false, []).then((result: boolean) => {
-							assert.equal(result, true);
-							return testCurrentFile(config3, false, []).then((result: boolean) => {
-								assert.equal(result, true);
-								return testCurrentFile(config4, false, []).then((result: boolean) => {
-									assert.equal(result, false);
-									return Promise.resolve();
-								});
-							});
-						});
-					});
+				return vscode.window.showTextDocument(document).then(async (editor) => {
+					const result1 = await testCurrentFile(config1, false, []);
+					assert.equal(result1, true);
+
+					const result2 = await testCurrentFile(config2, false, []);
+					assert.equal(result2, true);
+
+					const result3 = await testCurrentFile(config3, false, []);
+					assert.equal(result3, true);
+
+					const result4 = await testCurrentFile(config4, false, []);
+					assert.equal(result4, false);
 				});
 			})
 			.then(done, done);

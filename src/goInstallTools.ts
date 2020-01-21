@@ -75,7 +75,10 @@ export async function installAllTools(updateExistingToolsOnly: boolean = false) 
 			if (!selectedTools) {
 				return;
 			}
-			installTools(selectedTools.map((x) => getTool(x.label)), goVersion);
+			installTools(
+				selectedTools.map((x) => getTool(x.label)),
+				goVersion
+			);
 		});
 }
 
@@ -156,7 +159,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	}
 
 	outputChannel.appendLine(installingMsg);
-	missing.forEach((missingTool, index, missing) => {
+	missing.forEach((missingTool) => {
 		outputChannel.appendLine('  ' + missingTool.name);
 	});
 
@@ -273,7 +276,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 			}
 
 			outputChannel.appendLine(failures.length + ' tools failed to install.\n');
-			failures.forEach((failure, index, failures) => {
+			failures.forEach((failure) => {
 				const reason = failure.split(';;');
 				outputChannel.appendLine(reason[0] + ':');
 				outputChannel.appendLine(reason[1]);
@@ -431,7 +434,34 @@ export async function offerToInstallTools() {
 	if (missing.length > 0) {
 		showGoStatus('Analysis Tools Missing', 'go.promptforinstall', 'Not all Go tools are available on the GOPATH');
 		vscode.commands.registerCommand('go.promptforinstall', () => {
-			promptForInstall(missing, goVersion);
+			const installItem = {
+				title: 'Install',
+				command() {
+					hideGoStatus();
+					installTools(missing, goVersion);
+				}
+			};
+			const showItem = {
+				title: 'Show',
+				command() {
+					outputChannel.clear();
+					outputChannel.appendLine('Below tools are needed for the basic features of the Go extension.');
+					missing.forEach((x) => outputChannel.appendLine(x.name));
+				}
+			};
+			vscode.window
+				.showInformationMessage(
+					'Failed to find some of the Go analysis tools. Would you like to install them?',
+					installItem,
+					showItem
+				)
+				.then((selection) => {
+					if (selection) {
+						selection.command();
+					} else {
+						hideGoStatus();
+					}
+				});
 		});
 	}
 
@@ -458,37 +488,6 @@ export async function offerToInstallTools() {
 				}
 			}
 		});
-	}
-
-	function promptForInstall(missing: Tool[], goVersion: GoVersion) {
-		const installItem = {
-			title: 'Install',
-			command() {
-				hideGoStatus();
-				installTools(missing, goVersion);
-			}
-		};
-		const showItem = {
-			title: 'Show',
-			command() {
-				outputChannel.clear();
-				outputChannel.appendLine('Below tools are needed for the basic features of the Go extension.');
-				missing.forEach((x) => outputChannel.appendLine(x.name));
-			}
-		};
-		vscode.window
-			.showInformationMessage(
-				'Failed to find some of the Go analysis tools. Would you like to install them?',
-				installItem,
-				showItem
-			)
-			.then((selection) => {
-				if (selection) {
-					selection.command();
-				} else {
-					hideGoStatus();
-				}
-			});
 	}
 }
 

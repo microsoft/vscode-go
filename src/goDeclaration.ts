@@ -199,8 +199,8 @@ function definitionLocation_godef(
 						}
 						resolve(definitionInformation);
 					})
-					.catch((err) => {
-						console.log(err);
+					.catch((runGoDocErr) => {
+						console.log(runGoDocErr);
 						resolve(definitionInformation);
 					});
 			} catch (e) {

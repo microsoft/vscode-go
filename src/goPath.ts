@@ -121,14 +121,14 @@ export function stripBOM(s: string): string {
 	return s;
 }
 
-export function parseEnvFile(path: string): { [key: string]: string } {
+export function parseEnvFile(envFilePath: string): { [key: string]: string } {
 	const env: { [key: string]: any } = {};
-	if (!path) {
+	if (!envFilePath) {
 		return env;
 	}
 
 	try {
-		const buffer = stripBOM(fs.readFileSync(path, 'utf8'));
+		const buffer = stripBOM(fs.readFileSync(envFilePath, 'utf8'));
 		buffer.split('\n').forEach((line) => {
 			const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
 			if (r !== null) {
@@ -141,7 +141,7 @@ export function parseEnvFile(path: string): { [key: string]: string } {
 		});
 		return env;
 	} catch (e) {
-		throw new Error(`Cannot load environment variables from file ${path}`);
+		throw new Error(`Cannot load environment variables from file ${envFilePath}`);
 	}
 }
 

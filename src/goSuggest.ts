@@ -299,16 +299,16 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 
 			// stamblerre/gocode does not support -unimported-packages flags.
 			if (this.isGoMod) {
-				const idx = this.gocodeFlags.indexOf('-unimported-packages');
-				if (idx >= 0) {
-					this.gocodeFlags.splice(idx, 1);
+				const unimportedPkgIndex = this.gocodeFlags.indexOf('-unimported-packages');
+				if (unimportedPkgIndex >= 0) {
+					this.gocodeFlags.splice(unimportedPkgIndex, 1);
 				}
 			}
 
 			// -exclude-docs is something we use internally and is not related to gocode
-			const idx = this.gocodeFlags.indexOf('-exclude-docs');
-			if (idx >= 0) {
-				this.gocodeFlags.splice(idx, 1);
+			const excludeDocsIndex = this.gocodeFlags.indexOf('-exclude-docs');
+			if (excludeDocsIndex >= 0) {
+				this.gocodeFlags.splice(excludeDocsIndex, 1);
 				this.excludeDocs = true;
 			}
 
@@ -532,7 +532,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 				const optionsToSet: string[][] = [];
 				const setOption = () => {
 					const [name, value] = optionsToSet.pop();
-					cp.execFile(gocode, ['set', name, value], { env }, (err, stdout, stderr) => {
+					cp.execFile(gocode, ['set', name, value], { env }, () => {
 						if (optionsToSet.length) {
 							setOption();
 						} else {

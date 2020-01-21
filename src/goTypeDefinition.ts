@@ -66,15 +66,15 @@ export class GoTypeDefinitionProvider implements vscode.TypeDefinitionProvider {
 			const args = buildTags ? ['-tags', buildTags] : [];
 			args.push('-json', '-modified', 'describe', `${filename}:#${offset.toString()}`);
 
-			const process = cp.execFile(goGuru, args, { env }, (err, stdout, stderr) => {
+			const process = cp.execFile(goGuru, args, { env }, (guruErr, stdout, stderr) => {
 				try {
-					if (err && (<any>err).code === 'ENOENT') {
+					if (guruErr && (<any>guruErr).code === 'ENOENT') {
 						promptForMissingTool('guru');
 						return resolve(null);
 					}
 
-					if (err) {
-						return reject(err);
+					if (guruErr) {
+						return reject(guruErr);
 					}
 
 					const guruOutput = <GuruDescribeOutput>JSON.parse(stdout.toString());

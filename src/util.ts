@@ -118,7 +118,7 @@ export class GoVersion {
 	}
 }
 
-let goVersion: GoVersion = null;
+let cachedGoVersion: GoVersion = null;
 let vendorSupport: boolean = null;
 let toolsGopath: string;
 
@@ -165,9 +165,9 @@ export function parseFilePrelude(text: string): Prelude {
 			}
 		} else if (ret.imports.length) {
 			if (ret.imports[ret.imports.length - 1].end === -1) {
-				const pkgMatch = line.match(/"([^"]+)"/);
-				if (pkgMatch) {
-					ret.imports[ret.imports.length - 1].pkgs.push(pkgMatch[1]);
+				const importPkgMatch = line.match(/"([^"]+)"/);
+				if (importPkgMatch) {
+					ret.imports[ret.imports.length - 1].pkgs.push(importPkgMatch[1]);
 				}
 			}
 		}
@@ -289,14 +289,14 @@ export async function getGoVersion(): Promise<GoVersion> {
 		);
 		return Promise.resolve(null);
 	}
-	if (goVersion && (goVersion.sv || goVersion.isDevel)) {
-		sendTelemetryEventForGoVersion(goVersion.format());
-		return Promise.resolve(goVersion);
+	if (cachedGoVersion && (cachedGoVersion.sv || cachedGoVersion.isDevel)) {
+		sendTelemetryEventForGoVersion(cachedGoVersion.format());
+		return Promise.resolve(cachedGoVersion);
 	}
 	return new Promise<GoVersion>((resolve) => {
 		cp.execFile(goRuntimePath, ['version'], {}, (err, stdout, stderr) => {
-			goVersion = new GoVersion(stdout);
-			if (!goVersion.sv && !goVersion.isDevel) {
+			cachedGoVersion = new GoVersion(stdout);
+			if (!cachedGoVersion.sv && !cachedGoVersion.isDevel) {
 				if (err || stderr) {
 					console.log(`Error when running the command "${goRuntimePath} version": `, err || stderr);
 				} else {
@@ -305,7 +305,7 @@ export async function getGoVersion(): Promise<GoVersion> {
 					);
 				}
 			}
-			return resolve(goVersion);
+			return resolve(cachedGoVersion);
 		});
 	});
 }
@@ -402,10 +402,10 @@ function resolveToolsGopath(): string {
 
 	// If any of the folders in multi root have toolsGopath set, use it.
 	for (const folder of vscode.workspace.workspaceFolders) {
-		let toolsGopath = <string>getGoConfig(folder.uri).inspect('toolsGopath').workspaceFolderValue;
-		toolsGopath = resolvePath(toolsGopath, folder.uri.fsPath);
-		if (toolsGopath) {
-			return toolsGopath;
+		let toolsGopathFromConfig = <string>getGoConfig(folder.uri).inspect('toolsGopath').workspaceFolderValue;
+		toolsGopathFromConfig = resolvePath(toolsGopathFromConfig, folder.uri.fsPath);
+		if (toolsGopathFromConfig) {
+			return toolsGopathFromConfig;
 		}
 	}
 }
@@ -764,13 +764,13 @@ export function handleDiagnosticErrors(
 		let startColumn = 0;
 		let endColumn = 1;
 		if (document && document.uri.toString() === canonicalFile) {
-			const range = new vscode.Range(
+			const tempRange = new vscode.Range(
 				error.line - 1,
 				0,
 				error.line - 1,
 				document.lineAt(error.line - 1).range.end.character + 1
 			);
-			const text = document.getText(range);
+			const text = document.getText(tempRange);
 			const [_, leading, trailing] = /^(\s*).*(\s*)$/.exec(text);
 			if (!error.col) {
 				startColumn = leading.length;

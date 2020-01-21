@@ -76,13 +76,13 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	}
 
 	// The user has opted into the language server.
-	const path = getLanguageServerToolPath();
-	const toolName = getToolFromToolPath(path);
+	const languageServerToolPath = getLanguageServerToolPath();
+	const toolName = getToolFromToolPath(languageServerToolPath);
 	const env = getToolsEnvVars();
 
 	// The user may not have the most up-to-date version of the language server.
 	const tool = getTool(toolName);
-	const update = await shouldUpdateLanguageServer(tool, path, config.checkForUpdates);
+	const update = await shouldUpdateLanguageServer(tool, languageServerToolPath, config.checkForUpdates);
 	if (update) {
 		promptForUpdatingTool(toolName);
 	}
@@ -90,7 +90,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	const c = new LanguageClient(
 		toolName,
 		{
-			command: path,
+			command: languageServerToolPath,
 			args: ['-mode=stdio', ...config.flags],
 			options: { env }
 		},
@@ -370,7 +370,11 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 
 const defaultLatestVersion = semver.coerce('0.1.7');
 const defaultLatestVersionTime = moment('2019-09-18', 'YYYY-MM-DD');
-async function shouldUpdateLanguageServer(tool: Tool, path: string, makeProxyCall: boolean): Promise<boolean> {
+async function shouldUpdateLanguageServer(
+	tool: Tool,
+	languageServerToolPath: string,
+	makeProxyCall: boolean
+): Promise<boolean> {
 	// Only support updating gopls for now.
 	if (tool.name !== 'gopls') {
 		return false;
@@ -379,7 +383,7 @@ async function shouldUpdateLanguageServer(tool: Tool, path: string, makeProxyCal
 	// First, run the "gopls version" command and parse its results.
 	// If "gopls" is so old that it doesn't have the "gopls version" command,
 	// or its version doesn't match our expectations, prompt the user to download.
-	const usersVersion = await goplsVersion(path);
+	const usersVersion = await goplsVersion(languageServerToolPath);
 	if (!usersVersion) {
 		return true;
 	}

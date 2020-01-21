@@ -337,8 +337,8 @@ export async function goTest(testconfig: TestConfig): Promise<boolean> {
 					if (result && (pkgMap.has(result[2]) || currentGoWorkspace)) {
 						const packageNameArr = result[2].split('/');
 						const baseDir = pkgMap.get(result[2]) || path.join(currentGoWorkspace, ...packageNameArr);
-						testResultLines.forEach((line) =>
-							outputChannel.appendLine(expandFilePathInOutput(line, baseDir))
+						testResultLines.forEach((testResultLine) =>
+							outputChannel.appendLine(expandFilePathInOutput(testResultLine, baseDir))
 						);
 						testResultLines.splice(0);
 					}
