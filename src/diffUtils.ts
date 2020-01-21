@@ -20,10 +20,10 @@ export function isDiffToolAvailable(): boolean {
 export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE }
 
 export class Edit {
-	private action: number;
 	public start: Position;
 	public end: Position;
 	public text: string;
+	private action: number;
 
 	constructor(action: number, start: Position) {
 		this.action = action;

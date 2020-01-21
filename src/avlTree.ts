@@ -159,6 +159,15 @@ export class NearestNeighborDict<K, V> {
 	}
 
 	/**
+	 * Gets a node within the tree with a specific key, or the nearest neighbor to that node if it does not exist.
+	 * @param key The key being searched for.
+	 * @return The (key, value) pair of the node with key nearest the given key in value.
+	 */
+	public getNearest(key: K): Node<K, V> {
+		return this._getNearest(key, this.root, this.root);
+	}
+
+	/**
 	 * Inserts a new node with a specific key into the tree.
 	 * @param key The key being inserted.
 	 * @param root The root of the tree to insert in.
@@ -205,15 +214,6 @@ export class NearestNeighborDict<K, V> {
 		}
 
 		return root;
-	}
-
-	/**
-	 * Gets a node within the tree with a specific key, or the nearest neighbor to that node if it does not exist.
-	 * @param key The key being searched for.
-	 * @return The (key, value) pair of the node with key nearest the given key in value.
-	 */
-	public getNearest(key: K): Node<K, V> {
-		return this._getNearest(key, this.root, this.root);
 	}
 
 	/**

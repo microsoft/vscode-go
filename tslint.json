@@ -62,11 +62,11 @@
 		},
 		// "max-line-length": { "options": 120 },
 		"member-access": true,
-		// "member-ordering": {
-		// 	"options": {
-		// 		"order": "statics-first"
-		// 	}
-		// },
+		"member-ordering": {
+			"options": {
+				"order": "statics-first"
+			}
+		},
 		"new-parens": true,
 		"no-arg": true,
 		"no-conditional-assignment": true,

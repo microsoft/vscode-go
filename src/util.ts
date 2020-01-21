@@ -71,8 +71,8 @@ export const goBuiltinTypes: Set<string> = new Set<string>([
 
 export class GoVersion {
 	public sv: semver.SemVer;
-	private commit: string;
 	public isDevel: boolean;
+	private commit: string;
 
 	constructor(version: string) {
 		const matchesRelease = /go version go(\d.\d+).*/.exec(version);
@@ -489,20 +489,20 @@ export class LineBuffer {
 		this.fireDone(this.buf !== '' ? this.buf : null);
 	}
 
-	private fireLine(line: string) {
-		this.lineListeners.forEach((listener) => listener(line));
-	}
-
-	private fireDone(last: string) {
-		this.lastListeners.forEach((listener) => listener(last));
-	}
-
 	public onLine(listener: (line: string) => void) {
 		this.lineListeners.push(listener);
 	}
 
 	public onDone(listener: (last: string) => void) {
 		this.lastListeners.push(listener);
+	}
+
+	private fireLine(line: string) {
+		this.lineListeners.forEach((listener) => listener(line));
+	}
+
+	private fireDone(last: string) {
+		this.lastListeners.forEach((listener) => listener(last));
 	}
 }
 
