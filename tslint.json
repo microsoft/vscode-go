@@ -104,9 +104,9 @@
 			"check-whitespace"
 		],
 		"one-variable-per-declaration": { "options": ["ignore-for-loop"] },
-		// "only-arrow-functions": {
-		// 	"options": ["allow-declarations", "allow-named-functions"]
-		// },
+		"only-arrow-functions": {
+			"options": ["allow-declarations", "allow-named-functions"]
+		},
 		"ordered-imports": {
 			"options": {
 				"import-sources-order": "case-insensitive",

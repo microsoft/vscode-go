@@ -109,7 +109,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 function getAllPackagesNoCache(workDir: string): Promise<Map<string, PackageInfo>> {
 	return new Promise<Map<string, PackageInfo>>((resolve, reject) => {
 		// Use subscription style to guard costly/long running invocation
-		const callback = function(pkgMap: Map<string, PackageInfo>) {
+		const callback = (pkgMap: Map<string, PackageInfo>) => {
 			resolve(pkgMap);
 		};
 

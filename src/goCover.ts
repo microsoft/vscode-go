@@ -153,7 +153,7 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				output: undefined
 			});
 
-			lines.on('line', function(data: string) {
+			lines.on('line', (data: string) => {
 				// go test coverageprofile generates output:
 				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits CoverCount
 				// The first line will be "mode: set" which will be ignored
