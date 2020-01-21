@@ -3,9 +3,9 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import vscode = require('vscode');
 import { execFile } from 'child_process';
 import * as path from 'path';
+import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
 import { outputChannel } from './goStatus';
 import { getBinPath, getGoConfig } from './util';
@@ -29,20 +29,21 @@ export const playgroundCommand = () => {
 	outputChannel.appendLine('Upload to the Go Playground in progress...\n');
 
 	const selection = editor.selection;
-	const code = selection.isEmpty
-		? editor.document.getText()
-		: editor.document.getText(selection);
-	goPlay(code, getGoConfig(editor.document.uri).get('playground')).then(result => {
-		outputChannel.append(result);
-	}, (e: string) => {
-		if (e) {
-			outputChannel.append(e);
+	const code = selection.isEmpty ? editor.document.getText() : editor.document.getText(selection);
+	goPlay(code, getGoConfig(editor.document.uri).get('playground')).then(
+		(result) => {
+			outputChannel.append(result);
+		},
+		(e: string) => {
+			if (e) {
+				outputChannel.append(e);
+			}
 		}
-	});
+	);
 };
 
 export function goPlay(code: string, goConfig: vscode.WorkspaceConfiguration): Thenable<string> {
-	const cliArgs = Object.keys(goConfig).map(key => `-${key}=${goConfig[key]}`);
+	const cliArgs = Object.keys(goConfig).map((key) => `-${key}=${goConfig[key]}`);
 	const binaryLocation = getBinPath(TOOL_CMD_NAME);
 
 	return new Promise<string>((resolve, reject) => {
