@@ -6,6 +6,7 @@
   "author": {
     "name": "Microsoft Corporation - Development Labs"
   },
+  "license": "MIT",
   "icon": "images/go-logo-blue.png",
   "categories": [
     "Programming Languages",
