@@ -325,11 +325,6 @@
       {
         "type": "go",
         "label": "Go",
-        "enableBreakpointsFor": {
-          "languageIds": [
-            "go"
-          ]
-        },
         "program": "./out/src/debugAdapter/goDebug.js",
         "runtime": "node",
         "languages": [
