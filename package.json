@@ -321,6 +321,7 @@
         "description": "Restart the running instance of the language server"
       }
     ],
+    "breakpoints": [{ "language": "go" }],
     "debuggers": [
       {
         "type": "go",
