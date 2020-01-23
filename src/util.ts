@@ -1052,3 +1052,6 @@ export function isPositionInComment(document: vscode.TextDocument, position: vsc
 	}
 	return false;
 }
+
+// isForNightly is true if the source code is built for a preview version of the extension.
+export const isForNightly: boolean = extensionId.endsWith('.go-nightly');
