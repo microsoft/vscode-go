@@ -421,6 +421,7 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
+const acceptGoplsPrerelease = false;
 const defaultLatestVersion = semver.coerce('0.3.1');
 const defaultLatestVersionTime = moment('2020-02-04', 'YYYY-MM-DD');
 async function shouldUpdateLanguageServer(
@@ -544,6 +545,9 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	}
 	versions.sort(semver.rcompare);
 
+	if (acceptGoplsPrerelease) {
+		return versions[0];  // The first one (newest one).
+	}
 	// The first version in the sorted list without a prerelease tag.
 	return versions.find((version) => !version.prerelease || !version.prerelease.length);
 }
