@@ -144,9 +144,12 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 		return;
 	}
 
-	let installingMsg = `Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${toolsGopath}${
-		path.sep
-	}bin`;
+	let binpath = toolsGopath + path.sep + "bin";
+	if(envForTools['GOBIN'] != undefined && envForTools['GOBIN'] != ''){
+		binpath = "GOBIN path " + envForTools['GOBIN']
+	}
+
+	let installingMsg = `Installing ${missing.length} ${missing.length > 1 ? 'tools' : 'tool'} at ${binpath}`;
 
 	// If the user is on Go >= 1.11, tools should be installed with modules enabled.
 	// This ensures that users get the latest tagged version, rather than master,
