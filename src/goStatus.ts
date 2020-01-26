@@ -5,9 +5,9 @@
 
 'use strict';
 
+import vscode = require('vscode');
 import { GO_MODE } from './goMode';
 import { isModSupported } from './goModules';
-import vscode = require('vscode');
 
 export let outputChannel = vscode.window.createOutputChannel('Go');
 
@@ -16,7 +16,8 @@ export let diagnosticsStatusBarItem = vscode.window.createStatusBarItem(vscode.S
 let statusBarEntry: vscode.StatusBarItem;
 const statusBarItemModule = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItemModule.text = '$(megaphone) Go Modules';
-statusBarItemModule.tooltip = 'Modules is enabled for this project. Click to learn more about Modules support in VS Code.';
+statusBarItemModule.tooltip =
+	'Modules is enabled for this project. Click to learn more about Modules support in VS Code.';
 statusBarItemModule.command = 'go.open.modulewiki';
 
 export function showHideStatus(editor: vscode.TextEditor) {
@@ -31,7 +32,7 @@ export function showHideStatus(editor: vscode.TextEditor) {
 	}
 
 	if (editor) {
-		isModSupported(editor.document.uri).then(isMod => {
+		isModSupported(editor.document.uri).then((isMod) => {
 			if (isMod) {
 				statusBarItemModule.show();
 			} else {

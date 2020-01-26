@@ -1,4 +1,4 @@
-## 0.12.0 - Coming Soon
+## 0.12.0 - 31st December, 2019
 
 ### Language server updates
 
@@ -24,6 +24,9 @@
 * [Zac Bergquist (@zmb3)](https://github.com/zmb3)
     * Activate the Go extension when the workspace contains Go files rather than wait for a Go file to be opened. [Feature Request 2821](https://github.com/Microsoft/vscode-go/issues/2821) implemented with [PR 2859](https://github.com/Microsoft/vscode-go/pull/2859)
 
+* [Nisheet Sinvhal (@Ashniu123)](https://github.com/Ashniu123)
+    * Use tags and options specified in the `go.addTags` and `go.removeTags` settings as placeholders in the input boxes that appear when running the `Go: Add Tags To Struct Fields` and `Go: Remove Tags From Struct Fields` commands. [Feature Request 2929](https://github.com/Microsoft/vscode-go/issues/2929) implemented with [PR 2944](https://github.com/Microsoft/vscode-go/pull/2944)
+
 ### Others
 
 * [Ryan Boehning (@y0ssar1an)](https://github.com/y0ssar1an)
@@ -31,6 +34,14 @@
 
 * [Luis GG (@lggomez)](https://github.com/lggomez)
     * Update package dependencies. [PR 2900](https://github.com/Microsoft/vscode-go/pull/2900)
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Fix issues with installing single tools when using the `Go: Install/Update Tools` command. Fixes [Bug 2936](https://github.com/Microsoft/vscode-go/issues/2936) with [PR 2945](https://github.com/Microsoft/vscode-go/pull/2945) and [PR 2948](https://github.com/Microsoft/vscode-go/pull/2948)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Ensure the build tags from `go.buildTags` and `go.testTags` are respected by the `Go: Debug Test At Cursor` command. Fixes [Bug 2953](https://github.com/Microsoft/vscode-go/issues/2953) with [commit d6b6668](https://github.com/microsoft/vscode-go/commit/d6b666873a7fd75916dca77fa2bb0139d8f17c8f)
+    * Ensure that test arguments passed to `go.testFlags` are treated as arguments and not build flags by delve when debugging tests. Fixes [Bug 2115](https://github.com/Microsoft/vscode-go/issues/2115) with [commit 9ab7b8bff](https://github.com/microsoft/vscode-go/commit/9ab7b8bff49c38830ae4625718f605ba73fec0dc)
+
 
 
 ## 0.11.9 - 5th November, 2019
