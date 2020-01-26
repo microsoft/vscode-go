@@ -42,6 +42,7 @@ suite('Go Extension Tests', () => {
 		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
 		return;
 	}
+	console.log(`Using GOPATH: ${gopath}`);
 
 	const repoPath = path.join(gopath, 'src', 'test');
 	const fixturePath = path.join(repoPath, 'testfixture');
@@ -49,12 +50,10 @@ suite('Go Extension Tests', () => {
 	const generateTestsSourcePath = path.join(repoPath, 'generatetests');
 	const generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
 	const generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
-	const testPath = path.join(__dirname, 'tests');
 	const toolsGopath = getToolsGopath() || getCurrentGoPath();
 
 	suiteSetup(() => {
 		fs.removeSync(repoPath);
-		fs.removeSync(testPath);
 		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'test.go'), path.join(fixturePath, 'baseTest', 'test.go'));
 		fs.copySync(
 			path.join(fixtureSourcePath, 'baseTest', 'sample_test.go'),
@@ -103,18 +102,6 @@ suite('Go Extension Tests', () => {
 		fs.copySync(
 			path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'),
 			path.join(fixturePath, 'linterTest', 'linter_2.go')
-		);
-		fs.copySync(
-			path.join(fixtureSourcePath, 'errorsTest', 'errors.go'),
-			path.join(testPath, 'errorsTest', 'errors.go')
-		);
-		fs.copySync(
-			path.join(fixtureSourcePath, 'linterTest', 'linter_1.go'),
-			path.join(testPath, 'linterTest', 'linter_1.go')
-		);
-		fs.copySync(
-			path.join(fixtureSourcePath, 'linterTest', 'linter_2.go'),
-			path.join(testPath, 'linterTest', 'linter_2.go')
 		);
 		fs.copySync(
 			path.join(fixtureSourcePath, 'buildTags', 'hello.go'),
@@ -184,7 +171,6 @@ suite('Go Extension Tests', () => {
 
 	suiteTeardown(() => {
 		fs.removeSync(repoPath);
-		fs.removeSync(testPath);
 	});
 
 	async function testDefinitionProvider(goConfig: vscode.WorkspaceConfiguration): Promise<any> {
