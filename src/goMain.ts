@@ -39,7 +39,7 @@ import { lintCode } from './goLint';
 import { GO_MODE } from './goMode';
 import { addTags, removeTags } from './goModifytags';
 import { GO111MODULE, isModSupported } from './goModules';
-import { clearCacheForTools } from './goPath';
+import { clearCacheForTools, fileExists } from './goPath';
 import { playgroundCommand } from './goPlayground';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
@@ -471,9 +471,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			return;
 		}
 		vscode.window.showInputBox({
-			prompt: 'Enter the path to the coverage profile'
+			prompt: 'Enter the path to the coverage profile for current package'
 		}).then((coverProfilePath) => {
 			if (!coverProfilePath) {
+				return;
+			}
+			if (!fileExists(coverProfilePath)) {
+				vscode.window.showErrorMessage(`Cannot find the file ${coverProfilePath}`);
 				return;
 			}
 			applyCodeCoverageToAllEditors(coverProfilePath, path.dirname(vscode.window.activeTextEditor.document.fileName));
