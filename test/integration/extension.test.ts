@@ -465,8 +465,6 @@ It returns the number of bytes written and any write error encountered.
 
 		const testFileGenerated = fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'));
 		assert.equal(testFileGenerated, true, 'Test file not generated.');
-
-		await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	});
 
 	test('Test Generate unit tests skeleton for a function', async () => {
@@ -484,8 +482,6 @@ It returns the number of bytes written and any write error encountered.
 
 		const testFileGenerated = fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'));
 		assert.equal(testFileGenerated, true, 'Test file not generated.');
-
-		await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	});
 
 	test('Test Generate unit tests skeleton for package', async () => {
@@ -502,8 +498,6 @@ It returns the number of bytes written and any write error encountered.
 
 		const testFileGenerated = fs.existsSync(path.join(generateTestsSourcePath, 'generatetests_test.go'));
 		assert.equal(testFileGenerated, true, 'Test file not generated.');
-
-		await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	});
 
 	test('Test diffUtils.getEditsFromUnifiedDiffStr', async () => {
@@ -889,7 +883,6 @@ encountered.
 			})
 		);
 		await Promise.all(promises);
-		await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	});
 
 	test('Test Completion Snippets For Functions', async () => {
@@ -1038,7 +1031,6 @@ encountered.
 			noFunctionAsTypeSnippet,
 			withFunctionAsTypeSnippet
 		]);
-		return await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	}).timeout(10000);
 
 	test('Test No Completion Snippets For Functions', async () => {
@@ -1095,7 +1087,6 @@ encountered.
 				);
 			});
 		await Promise.all([symbolFollowedByBrackets, symbolAsLastParameter, symbolsAsNonLastParameter]);
-		return await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	});
 
 	test('Test Completion on unimported packages', async () => {
@@ -1125,7 +1116,6 @@ encountered.
 			})
 		);
 		await Promise.all(promises);
-		return await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	});
 
 	test('Test Completion on unimported packages (multiple)', async () => {
@@ -1164,7 +1154,6 @@ encountered.
 			assert.equal(actualItem.additionalTextEdits.length, 1);
 			assert.equal(actualItem.additionalTextEdits[0].newText, expectedItem.import);
 		});
-		return await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	});
 
 	test('Test Completion on Comments for Exported Members', async () => {
@@ -1205,7 +1194,6 @@ encountered.
 			})
 		);
 		await Promise.all(promises);
-		return await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 	});
 
 	test('getImportPath()', () => {
