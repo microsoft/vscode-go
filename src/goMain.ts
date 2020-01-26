@@ -5,8 +5,8 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import * as path from 'path';
+import vscode = require('vscode');
 import { browsePackages } from './goBrowsePackage';
 import { buildCode } from './goBuild';
 import { check, notifyIfGeneratedFile, removeTestStatus } from './goCheck';
@@ -472,7 +472,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 		}
 		vscode.window.showInputBox({
 			prompt: 'Enter the path to the coverage profile'
-		}).then(coverProfilePath => {
+		}).then((coverProfilePath) => {
 			if (!coverProfilePath) {
 				return;
 			}
