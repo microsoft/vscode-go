@@ -306,6 +306,11 @@
         "description": "Cancels running tests."
       },
       {
+        "command": "go.apply.coverprofile",
+        "title": "Go: Apply Cover Profile",
+        "description": "Applies existing cover profile."
+      },
+      {
         "command": "go.godoctor.extract",
         "title": "Go: Extract to function",
         "description": "Extract to function using godoctor."
