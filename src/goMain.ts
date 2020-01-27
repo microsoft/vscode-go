@@ -5,6 +5,7 @@
 
 'use strict';
 
+import * as path from 'path';
 import vscode = require('vscode');
 import { browsePackages } from './goBrowsePackage';
 import { buildCode } from './goBuild';
@@ -12,6 +13,7 @@ import { check, notifyIfGeneratedFile, removeTestStatus } from './goCheck';
 import { GoCodeActionProvider } from './goCodeAction';
 import {
 	applyCodeCoverage,
+	applyCodeCoverageToAllEditors,
 	initCoverageDecorators,
 	removeCodeCoverageOnFileChange,
 	toggleCoverageCurrentPackage,
@@ -37,7 +39,7 @@ import { lintCode } from './goLint';
 import { GO_MODE } from './goMode';
 import { addTags, removeTags } from './goModifytags';
 import { GO111MODULE, isModSupported } from './goModules';
-import { clearCacheForTools } from './goPath';
+import { clearCacheForTools, fileExists } from './goPath';
 import { playgroundCommand } from './goPlayground';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
@@ -462,6 +464,25 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.build.workspace', () => buildCode(true)));
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.install.package', installCurrentPackage));
+
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.apply.coverprofile', () => {
+		if (!vscode.window.activeTextEditor || !vscode.window.activeTextEditor.document.fileName.endsWith('.go')) {
+			vscode.window.showErrorMessage('Cannot apply coverage profile when no Go file is open.');
+			return;
+		}
+		vscode.window.showInputBox({
+			prompt: 'Enter the path to the coverage profile for current package'
+		}).then((coverProfilePath) => {
+			if (!coverProfilePath) {
+				return;
+			}
+			if (!fileExists(coverProfilePath)) {
+				vscode.window.showErrorMessage(`Cannot find the file ${coverProfilePath}`);
+				return;
+			}
+			applyCodeCoverageToAllEditors(coverProfilePath, path.dirname(vscode.window.activeTextEditor.document.fileName));
+		});
+	}));
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g

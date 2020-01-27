@@ -96,7 +96,7 @@ function correctBinname(toolName: string) {
 	return toolName;
 }
 
-function fileExists(filePath: string): boolean {
+export function fileExists(filePath: string): boolean {
 	let exists = true;
 	try {
 		exists = fs.statSync(filePath).isFile();
