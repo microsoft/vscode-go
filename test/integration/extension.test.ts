@@ -36,7 +36,8 @@ import {
 	isVendorSupported
 } from '../../src/util';
 
-suite('Go Extension Tests', () => {
+suite('Go Extension Tests', function() {
+	this.timeout(10000);
 	const gopath = getCurrentGoPath();
 	if (!gopath) {
 		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
@@ -257,7 +258,7 @@ suite('Go Extension Tests', () => {
 			docsTool: { value: 'gogetdoc' }
 		});
 		await testDefinitionProvider(config);
-	}).timeout(10000);
+	});
 
 	test('Test SignatureHelp Provider using godoc', async () => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
@@ -339,7 +340,7 @@ It returns the number of bytes written and any write error encountered.
 			docsTool: { value: 'gogetdoc' }
 		});
 		await testSignatureHelpProvider(config, testCases);
-	}).timeout(10000);
+	});
 
 	test('Test Hover Provider using godoc', async () => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
@@ -366,7 +367,7 @@ encountered.
 			docsTool: { value: 'godoc' }
 		});
 		await testHoverProvider(config, testCases);
-	}).timeout(10000);
+	});
 
 	test('Test Hover Provider using gogetdoc', async () => {
 		const gogetdocPath = getBinPath('gogetdoc');
@@ -411,7 +412,7 @@ It returns the number of bytes written and any write error encountered.
 			docsTool: { value: 'gogetdoc' }
 		});
 		await testHoverProvider(config, testCases);
-	}).timeout(10000);
+	});
 
 	test('Error checking', async () => {
 		const config = Object.create(vscode.workspace.getConfiguration('go'), {
@@ -449,7 +450,7 @@ It returns the number of bytes written and any write error encountered.
 			});
 		});
 		assert.equal(matchCount.length >= expected.length, true, `Failed to match expected errors`);
-	}).timeout(10000);
+	});
 
 	test('Test Generate unit tests skeleton for file', async () => {
 		const gotestsPath = getBinPath('gotests');
@@ -576,7 +577,7 @@ It returns the number of bytes written and any write error encountered.
 
 		const result = await testCurrentFile(config, false, []);
 		assert.equal(result, true);
-	}).timeout(10000);
+	});
 
 	test('Test Outline', async () => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'outlineTest', 'test.go'));
@@ -841,7 +842,7 @@ It returns the number of bytes written and any write error encountered.
 		);
 
 		return Promise.all([withIgnoringFolders, withoutIgnoringFolders, withIncludingGoroot, withoutIncludingGoroot]);
-	}).timeout(10000);
+	});
 
 	test('Test Completion', async () => {
 		const printlnDoc = `Println formats using the default formats for its operands and writes to
@@ -1031,7 +1032,7 @@ encountered.
 			noFunctionAsTypeSnippet,
 			withFunctionAsTypeSnippet
 		]);
-	}).timeout(10000);
+	});
 
 	test('Test No Completion Snippets For Functions', async () => {
 		const provider = new GoCompletionItemProvider();
@@ -1412,7 +1413,7 @@ encountered.
 
 		const result4 = await testCurrentFile(config4, false, []);
 		assert.equal(result4, false);
-	}).timeout(10000);
+	});
 
 	test('Add imports when no imports', async () => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'noimports.go'));
@@ -1472,7 +1473,7 @@ encountered.
 		editor.selection = selection;
 		await runFillStruct(editor);
 		assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
-	}).timeout(10000);
+	});
 
 	test('Fill struct - select line', async () => {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'fillStruct', 'input_2.go'));
@@ -1485,5 +1486,5 @@ encountered.
 		editor.selection = selection;
 		await runFillStruct(editor);
 		assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
-	}).timeout(10000);
+	});
 });
