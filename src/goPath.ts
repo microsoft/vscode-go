@@ -41,15 +41,12 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 	}
 
 	const binname = alternateTool && !path.isAbsolute(alternateTool) ? alternateTool : toolName;
-	const env = Object.assign({}, process.env);
-	if (env['GOBIN'] != undefined){
-		const path = getBinPathFromEnvVar(binname, env['GOBIN'], false);
-		if (path) {
-			binPathCache[toolName] = path;
-			return path;
-		}
+	const pathFromGoBin = getBinPathFromEnvVar(binname, process.env['GOBIN'], false);
+	if (pathFromGoBin) {
+		binPathCache[toolName] = pathFromGoBin;
+		return pathFromGoBin;
 	}
-
+	
 	for (const preferred of preferredGopaths) {
 		if (typeof preferred === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder
