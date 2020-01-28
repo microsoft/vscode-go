@@ -146,7 +146,7 @@ export function parseEnvFile(envFilePath: string): { [key: string]: string } {
 }
 
 export function parseEnvFiles(envFilePaths: string[]): { [key: string]: string }[] {
-	return envFilePaths.map(envFilePath => parseEnvFile(envFilePath));
+	return envFilePaths.map((envFilePath) => parseEnvFile(envFilePath));
 }
 
 // Walks up given folder path to return the closest ancestor that has `src` as a child
