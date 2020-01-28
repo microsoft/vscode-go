@@ -53,6 +53,8 @@ suite('Go Extension Tests', function() {
 	const generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
 	const toolsGopath = getToolsGopath() || getCurrentGoPath();
 
+	const dummyCancellationSource = new vscode.CancellationTokenSource();
+
 	suiteSetup(() => {
 		fs.removeSync(repoPath);
 		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'test.go'), path.join(fixturePath, 'baseTest', 'test.go'));
@@ -179,7 +181,7 @@ suite('Go Extension Tests', function() {
 		const uri = vscode.Uri.file(path.join(fixturePath, 'baseTest', 'test.go'));
 		const position = new vscode.Position(10, 3);
 		const textDocument = await vscode.workspace.openTextDocument(uri);
-		const definitionInfo = await provider.provideDefinition(textDocument, position, null);
+		const definitionInfo = await provider.provideDefinition(textDocument, position, dummyCancellationSource.token);
 
 		assert.equal(
 			definitionInfo.uri.path.toLowerCase(),
@@ -199,7 +201,7 @@ suite('Go Extension Tests', function() {
 		const textDocument = await vscode.workspace.openTextDocument(uri);
 
 		const promises = testCases.map(([position, expected, expectedDoc, expectedParams]) =>
-			provider.provideSignatureHelp(textDocument, position, null).then((sigHelp) => {
+			provider.provideSignatureHelp(textDocument, position, dummyCancellationSource.token).then((sigHelp) => {
 				assert.ok(
 					sigHelp,
 					`No signature for gogetdocTestData/test.go:${position.line + 1}:${position.character + 1}`
@@ -218,14 +220,14 @@ suite('Go Extension Tests', function() {
 
 	async function testHoverProvider(
 		goConfig: vscode.WorkspaceConfiguration,
-		testCases: [vscode.Position, string, string][]
+		testCases: [vscode.Position, string | null, string | null][]
 	): Promise<any> {
 		const provider = new GoHoverProvider(goConfig);
 		const uri = vscode.Uri.file(path.join(fixturePath, 'gogetdocTestData', 'test.go'));
 		const textDocument = await vscode.workspace.openTextDocument(uri);
 
 		const promises = testCases.map(([position, expectedSignature, expectedDocumentation]) =>
-			provider.provideHover(textDocument, position, null).then((res) => {
+			provider.provideHover(textDocument, position, dummyCancellationSource.token).then((res) => {
 				if (expectedSignature === null && expectedDocumentation === null) {
 					assert.equal(res, null);
 					return;
@@ -348,7 +350,7 @@ standard output. Spaces are always added between operands and a newline is
 appended. It returns the number of bytes written and any write error
 encountered.
 `;
-		const testCases: [vscode.Position, string, string][] = [
+		const testCases: [vscode.Position, string | null, string | null][] = [
 			// [new vscode.Position(3,3), '/usr/local/go/src/fmt'],
 			[new vscode.Position(0, 3), null, null], // keyword
 			[new vscode.Position(23, 14), null, null], // inside a string
@@ -380,7 +382,7 @@ encountered.
 Spaces are always added between operands and a newline is appended.
 It returns the number of bytes written and any write error encountered.
 `;
-		const testCases: [vscode.Position, string, string][] = [
+		const testCases: [vscode.Position, string | null, string | null][] = [
 			[new vscode.Position(0, 3), null, null], // keyword
 			[new vscode.Position(23, 11), null, null], // inside a string
 			[new vscode.Position(20, 0), null, null], // just a }
@@ -511,7 +513,7 @@ It returns the number of bytes written and any write error encountered.
 			cp.exec(`diff -u ${file1path} ${file2path}`, (err, stdout, stderr) => {
 				const filePatches: FilePatch[] = getEditsFromUnifiedDiffStr(stdout);
 
-				if (!filePatches && filePatches.length !== 1) {
+				if (!filePatches || filePatches.length !== 1) {
 					assert.fail(null, null, 'Failed to get patches for the test file', '');
 				}
 
@@ -588,7 +590,7 @@ It returns the number of bytes written and any write error encountered.
 			importsOption: GoOutlineImportsOptions.Include
 		};
 
-		const outlines = await documentSymbols(options, null);
+		const outlines = await documentSymbols(options, dummyCancellationSource.token);
 		const packageSymbols = outlines.filter((x: any) => x.kind === vscode.SymbolKind.Package);
 		const imports = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Namespace);
 		const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
@@ -611,7 +613,7 @@ It returns the number of bytes written and any write error encountered.
 			importsOption: GoOutlineImportsOptions.Only
 		};
 
-		const outlines = await documentSymbols(options, null);
+		const outlines = await documentSymbols(options, dummyCancellationSource.token);
 		const packageSymbols = outlines.filter((x) => x.kind === vscode.SymbolKind.Package);
 		const imports = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Namespace);
 		const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
@@ -628,7 +630,7 @@ It returns the number of bytes written and any write error encountered.
 		const document = await vscode.workspace.openTextDocument(uri);
 		const symbolProvider = new GoDocumentSymbolProvider();
 
-		const outlines = await symbolProvider.provideDocumentSymbols(document, null);
+		const outlines = await symbolProvider.provideDocumentSymbols(document, dummyCancellationSource.token);
 		const packages = outlines.filter((x) => x.kind === vscode.SymbolKind.Package);
 		const variables = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Variable);
 		const functions = outlines[0].children.filter((x: any) => x.kind === vscode.SymbolKind.Function);
@@ -674,7 +676,10 @@ It returns the number of bytes written and any write error encountered.
 		const vendorPkgsRelativePath = ['9fans.net/go/acme', '9fans.net/go/plan9', '9fans.net/go/plan9/client'];
 
 		const gopkgsPromise = getAllPackages(workDir).then((pkgMap) => {
-			const pkgs = Array.from(pkgMap.keys()).filter((p) => pkgMap.get(p).name !== 'main');
+			const pkgs = Array.from(pkgMap.keys()).filter((p) => {
+				const pkg = pkgMap.get(p);
+				return pkg && pkg.name !== 'main';
+			});
 			if (vendorSupport) {
 				vendorPkgsFullPath.forEach((pkg) => {
 					assert.equal(pkgs.indexOf(pkg) > -1, true, `Package not found by goPkgs: ${pkg}`);
@@ -816,30 +821,36 @@ It returns the number of bytes written and any write error encountered.
 		const withoutIgnoringFolders = getWorkspaceSymbols(
 			workspacePath,
 			'WinInfo',
-			null,
+			dummyCancellationSource.token,
 			configWithoutIgnoringFolders
 		).then((results) => {
 			assert.equal(results[0].name, 'WinInfo');
 			assert.equal(results[0].path, path.join(workspacePath, 'vendor/9fans.net/go/acme/acme.go'));
 		});
-		const withIgnoringFolders = getWorkspaceSymbols(workspacePath, 'WinInfo', null, configWithIgnoringFolders).then(
-			(results) => {
-				assert.equal(results.length, 0);
-			}
-		);
+		const withIgnoringFolders = getWorkspaceSymbols(
+			workspacePath,
+			'WinInfo',
+			dummyCancellationSource.token,
+			configWithIgnoringFolders
+		).then((results) => {
+			assert.equal(results.length, 0);
+		});
 		const withoutIncludingGoroot = getWorkspaceSymbols(
 			workspacePath,
 			'Mutex',
-			null,
+			dummyCancellationSource.token,
 			configWithoutIncludeGoroot
 		).then((results) => {
 			assert.equal(results.length, 0);
 		});
-		const withIncludingGoroot = getWorkspaceSymbols(workspacePath, 'Mutex', null, configWithIncludeGoroot).then(
-			(results) => {
-				assert(results.some((result) => result.name === 'Mutex'));
-			}
-		);
+		const withIncludingGoroot = getWorkspaceSymbols(
+			workspacePath,
+			'Mutex',
+			dummyCancellationSource.token,
+			configWithIncludeGoroot
+		).then((results) => {
+			assert(results.some((result) => result.name === 'Mutex'));
+		});
 
 		return Promise.all([withIgnoringFolders, withoutIgnoringFolders, withIncludingGoroot, withoutIncludingGoroot]);
 	});
@@ -851,7 +862,7 @@ appended. It returns the number of bytes written and any write error
 encountered.
 `;
 		const provider = new GoCompletionItemProvider();
-		const testCases: [vscode.Position, string, string, string][] = [
+		const testCases: [vscode.Position, string, string | null, string | null][] = [
 			[new vscode.Position(7, 4), 'fmt', 'fmt', null],
 			[new vscode.Position(7, 6), 'Println', 'func(a ...interface{}) (n int, err error)', printlnDoc]
 		];
@@ -860,28 +871,32 @@ encountered.
 		const editor = await vscode.window.showTextDocument(textDocument);
 
 		const promises = testCases.map(([position, expectedLabel, expectedDetail, expectedDoc]) =>
-			provider.provideCompletionItems(editor.document, position, null).then(async (items) => {
-				const item = items.items.find((x) => x.label === expectedLabel);
-				assert.equal(!!item, true, 'missing expected item in completion list');
-				assert.equal(item.detail, expectedDetail);
-				const resolvedItemResult: vscode.ProviderResult<vscode.CompletionItem> = provider.resolveCompletionItem(
-					item,
-					null
-				);
-				if (!resolvedItemResult) {
-					return;
-				}
-				if (resolvedItemResult instanceof vscode.CompletionItem) {
-					if (resolvedItemResult.documentation) {
-						assert.equal((<vscode.MarkdownString>resolvedItemResult.documentation).value, expectedDoc);
+			provider
+				.provideCompletionItems(editor.document, position, dummyCancellationSource.token)
+				.then(async (items) => {
+					const item = items.items.find((x) => x.label === expectedLabel);
+					if (!item) {
+						assert.fail('missing expected item in completion list');
 					}
-					return;
-				}
-				const resolvedItem = await resolvedItemResult;
-				if (resolvedItem) {
-					assert.equal((<vscode.MarkdownString>resolvedItem.documentation).value, expectedDoc);
-				}
-			})
+					assert.equal(item.detail, expectedDetail);
+					const resolvedItemResult: vscode.ProviderResult<vscode.CompletionItem> = provider.resolveCompletionItem(
+						item,
+						dummyCancellationSource.token
+					);
+					if (!resolvedItemResult) {
+						return;
+					}
+					if (resolvedItemResult instanceof vscode.CompletionItem) {
+						if (resolvedItemResult.documentation) {
+							assert.equal((<vscode.MarkdownString>resolvedItemResult.documentation).value, expectedDoc);
+						}
+						return;
+					}
+					const resolvedItem = await resolvedItemResult;
+					if (resolvedItem) {
+						assert.equal((<vscode.MarkdownString>resolvedItem.documentation).value, expectedDoc);
+					}
+				})
 		);
 		await Promise.all(promises);
 	});
@@ -897,7 +912,7 @@ encountered.
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(9, 6),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggest: { value: false }
 				})
@@ -905,13 +920,16 @@ encountered.
 			.then((items) => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
 				const item = items.find((x) => x.label === 'Print');
+				if (!item) {
+					assert.fail('Suggestion with label "Print" not found in test case noFunctionSnippet.');
+				}
 				assert.equal(!item.insertText, true);
 			});
 		const withFunctionSnippet = provider
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(9, 6),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggest: { value: true }
 				})
@@ -919,13 +937,16 @@ encountered.
 			.then((items1) => {
 				items1 = items1 instanceof vscode.CompletionList ? items1.items : items1;
 				const item1 = items1.find((x) => x.label === 'Print');
+				if (!item1) {
+					assert.fail('Suggestion with label "Print" not found in test case withFunctionSnippet.');
+				}
 				assert.equal((<vscode.SnippetString>item1.insertText).value, 'Print(${1:a ...interface{\\}})');
 			});
 		const withFunctionSnippetNotype = provider
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(9, 6),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggestWithoutType: { value: true }
 				})
@@ -933,13 +954,16 @@ encountered.
 			.then((items2) => {
 				items2 = items2 instanceof vscode.CompletionList ? items2.items : items2;
 				const item2 = items2.find((x) => x.label === 'Print');
+				if (!item2) {
+					assert.fail('Suggestion with label "Print" not found in test case withFunctionSnippetNotype.');
+				}
 				assert.equal((<vscode.SnippetString>item2.insertText).value, 'Print(${1:a})');
 			});
 		const noFunctionAsVarSnippet = provider
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(11, 3),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggest: { value: false }
 				})
@@ -947,13 +971,16 @@ encountered.
 			.then((items3) => {
 				items3 = items3 instanceof vscode.CompletionList ? items3.items : items3;
 				const item3 = items3.find((x) => x.label === 'funcAsVariable');
+				if (!item3) {
+					assert.fail('Suggestion with label "Print" not found in test case noFunctionAsVarSnippet.');
+				}
 				assert.equal(!item3.insertText, true);
 			});
 		const withFunctionAsVarSnippet = provider
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(11, 3),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggest: { value: true }
 				})
@@ -961,13 +988,16 @@ encountered.
 			.then((items4) => {
 				items4 = items4 instanceof vscode.CompletionList ? items4.items : items4;
 				const item4 = items4.find((x) => x.label === 'funcAsVariable');
+				if (!item4) {
+					assert.fail('Suggestion with label "Print" not found in test case withFunctionAsVarSnippet.');
+				}
 				assert.equal((<vscode.SnippetString>item4.insertText).value, 'funcAsVariable(${1:k string})');
 			});
 		const withFunctionAsVarSnippetNoType = provider
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(11, 3),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggestWithoutType: { value: true }
 				})
@@ -975,13 +1005,16 @@ encountered.
 			.then((items5) => {
 				items5 = items5 instanceof vscode.CompletionList ? items5.items : items5;
 				const item5 = items5.find((x) => x.label === 'funcAsVariable');
+				if (!item5) {
+					assert.fail('Suggestion with label "Print" not found in test case withFunctionAsVarSnippetNoType.');
+				}
 				assert.equal((<vscode.SnippetString>item5.insertText).value, 'funcAsVariable(${1:k})');
 			});
 		const noFunctionAsTypeSnippet = provider
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(14, 0),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggest: { value: false }
 				})
@@ -991,15 +1024,28 @@ encountered.
 				const item1 = items6.find((x) => x.label === 'HandlerFunc');
 				const item2 = items6.find((x) => x.label === 'HandlerFuncWithArgNames');
 				const item3 = items6.find((x) => x.label === 'HandlerFuncNoReturnType');
+				if (!item1) {
+					assert.fail('Suggestion with label "HandlerFunc" not found in test case noFunctionAsTypeSnippet.');
+				}
 				assert.equal(!item1.insertText, true);
+				if (!item2) {
+					assert.fail(
+						'Suggestion with label "HandlerFuncWithArgNames" not found in test case noFunctionAsTypeSnippet.'
+					);
+				}
 				assert.equal(!item2.insertText, true);
+				if (!item3) {
+					assert.fail(
+						'Suggestion with label "HandlerFuncNoReturnType" not found in test case noFunctionAsTypeSnippet.'
+					);
+				}
 				assert.equal(!item3.insertText, true);
 			});
 		const withFunctionAsTypeSnippet = provider
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(14, 0),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggest: { value: true }
 				})
@@ -1009,14 +1055,29 @@ encountered.
 				const item11 = items7.find((x) => x.label === 'HandlerFunc');
 				const item21 = items7.find((x) => x.label === 'HandlerFuncWithArgNames');
 				const item31 = items7.find((x) => x.label === 'HandlerFuncNoReturnType');
+				if (!item11) {
+					assert.fail(
+						'Suggestion with label "HandlerFunc" not found in test case withFunctionAsTypeSnippet.'
+					);
+				}
 				assert.equal(
 					(<vscode.SnippetString>item11.insertText).value,
 					'HandlerFunc(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n}) (string, string)'
 				);
+				if (!item21) {
+					assert.fail(
+						'Suggestion with label "HandlerFuncWithArgNames" not found in test case withFunctionAsTypeSnippet.'
+					);
+				}
 				assert.equal(
 					(<vscode.SnippetString>item21.insertText).value,
 					'HandlerFuncWithArgNames(func(${1:w} string, ${2:r} string) {\n\t$3\n}) int'
 				);
+				if (!item31) {
+					assert.fail(
+						'Suggestion with label "HandlerFuncNoReturnType" not found in test case withFunctionAsTypeSnippet.'
+					);
+				}
 				assert.equal(
 					(<vscode.SnippetString>item31.insertText).value,
 					'HandlerFuncNoReturnType(func(${1:arg1} string, ${2:arg2} string) {\n\t$3\n})'
@@ -1045,7 +1106,7 @@ encountered.
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(5, 10),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggest: { value: true }
 				})
@@ -1053,13 +1114,16 @@ encountered.
 			.then((items) => {
 				items = items instanceof vscode.CompletionList ? items.items : items;
 				const item = items.find((x) => x.label === 'Print');
+				if (!item) {
+					assert.fail('Suggestion with label "Print" not found in test case symbolFollowedByBrackets.');
+				}
 				assert.equal(!item.insertText, true, 'Unexpected snippet when symbol is followed by ().');
 			});
 		const symbolAsLastParameter = provider
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(7, 13),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggest: { value: true }
 				})
@@ -1067,13 +1131,16 @@ encountered.
 			.then((items1) => {
 				items1 = items1 instanceof vscode.CompletionList ? items1.items : items1;
 				const item1 = items1.find((x) => x.label === 'funcAsVariable');
+				if (!item1) {
+					assert.fail('Suggestion with label "funcAsVariable" not found in test case symbolAsLastParameter.');
+				}
 				assert.equal(!item1.insertText, true, 'Unexpected snippet when symbol is a parameter inside func call');
 			});
 		const symbolsAsNonLastParameter = provider
 			.provideCompletionItemsInternal(
 				editor.document,
 				new vscode.Position(8, 11),
-				null,
+				dummyCancellationSource.token,
 				Object.create(baseConfig, {
 					useCodeSnippetsOnFunctionSuggest: { value: true }
 				})
@@ -1081,6 +1148,11 @@ encountered.
 			.then((items2) => {
 				items2 = items2 instanceof vscode.CompletionList ? items2.items : items2;
 				const item2 = items2.find((x) => x.label === 'funcAsVariable');
+				if (!item2) {
+					assert.fail(
+						'Suggestion with label "funcAsVariable" not found in test case symbolsAsNonLastParameter.'
+					);
+				}
 				assert.equal(
 					!item2.insertText,
 					true,
@@ -1104,17 +1176,19 @@ encountered.
 		const editor = await vscode.window.showTextDocument(textDocument);
 
 		const promises = testCases.map(([position, expected]) =>
-			provider.provideCompletionItemsInternal(editor.document, position, null, config).then((items) => {
-				items = items instanceof vscode.CompletionList ? items.items : items;
-				const labels = items.map((x) => x.label);
-				for (const entry of expected) {
-					assert.equal(
-						labels.indexOf(entry) > -1,
-						true,
-						`missing expected item in completion list: ${entry} Actual: ${labels}`
-					);
-				}
-			})
+			provider
+				.provideCompletionItemsInternal(editor.document, position, dummyCancellationSource.token, config)
+				.then((items) => {
+					items = items instanceof vscode.CompletionList ? items.items : items;
+					const labels = items.map((x) => x.label);
+					for (const entry of expected) {
+						assert.equal(
+							labels.indexOf(entry) > -1,
+							true,
+							`missing expected item in completion list: ${entry} Actual: ${labels}`
+						);
+					}
+				})
 		);
 		await Promise.all(promises);
 	});
@@ -1139,11 +1213,15 @@ encountered.
 		const textDocument = await vscode.workspace.openTextDocument(uri);
 		const editor = await vscode.window.showTextDocument(textDocument);
 
-		let items = await provider.provideCompletionItemsInternal(editor.document, position, null, config);
-		items = items instanceof vscode.CompletionList ? items.items : items;
+		const completionResult = await provider.provideCompletionItemsInternal(
+			editor.document,
+			position,
+			dummyCancellationSource.token,
+			config
+		);
+		const items = completionResult instanceof vscode.CompletionList ? completionResult.items : completionResult;
 		const labels = items.map((x) => x.label);
 		expectedItems.forEach((expectedItem) => {
-			items = items instanceof vscode.CompletionList ? items.items : items;
 			const actualItem: vscode.CompletionItem = items.filter((item) => item.label === expectedItem.label)[0];
 			if (!actualItem) {
 				assert.fail(
@@ -1151,6 +1229,9 @@ encountered.
 					expectedItem,
 					`Missing expected item in completion list: ${expectedItem.label} Actual: ${labels}`
 				);
+			}
+			if (!actualItem.additionalTextEdits) {
+				assert.fail(`Missing additionalTextEdits on suggestion for ${actualItem}`);
 			}
 			assert.equal(actualItem.additionalTextEdits.length, 1);
 			assert.equal(actualItem.additionalTextEdits[0].newText, expectedItem.import);
@@ -1176,7 +1257,7 @@ encountered.
 		const editor = await vscode.window.showTextDocument(textDocument);
 
 		const promises = testCases.map(([position, expected]) =>
-			provider.provideCompletionItems(editor.document, position, null).then((items) => {
+			provider.provideCompletionItems(editor.document, position, dummyCancellationSource.token).then((items) => {
 				const labels = items.items.map((x) => x.label);
 				assert.equal(
 					expected.length,
@@ -1425,7 +1506,10 @@ encountered.
 		const edit = new vscode.WorkspaceEdit();
 		edit.set(document.uri, edits);
 		return vscode.workspace.applyEdit(edit).then(() => {
-			assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+			assert.equal(
+				vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.getText(),
+				expectedText
+			);
 			return Promise.resolve();
 		});
 	});
@@ -1440,7 +1524,7 @@ encountered.
 		const edit = new vscode.WorkspaceEdit();
 		edit.set(document.uri, edits);
 		await vscode.workspace.applyEdit(edit);
-		assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+		assert.equal(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.getText(), expectedText);
 	});
 
 	test('Add imports and collapse single imports to an import block', async () => {
@@ -1458,7 +1542,7 @@ encountered.
 		const edit = new vscode.WorkspaceEdit();
 		edit.set(document.uri, edits);
 		await vscode.workspace.applyEdit(edit);
-		assert.equal(vscode.window.activeTextEditor.document.getText(), expectedText);
+		assert.equal(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.getText(), expectedText);
 	});
 
 	test('Fill struct', async () => {
@@ -1472,7 +1556,7 @@ encountered.
 		const selection = new vscode.Selection(12, 15, 12, 15);
 		editor.selection = selection;
 		await runFillStruct(editor);
-		assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
+		assert.equal(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.getText(), golden);
 	});
 
 	test('Fill struct - select line', async () => {
@@ -1485,6 +1569,6 @@ encountered.
 		const selection = new vscode.Selection(7, 0, 7, 10);
 		editor.selection = selection;
 		await runFillStruct(editor);
-		assert.equal(vscode.window.activeTextEditor.document.getText(), golden);
+		assert.equal(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.getText(), golden);
 	});
 });
