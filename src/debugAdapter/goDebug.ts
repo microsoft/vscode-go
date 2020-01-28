@@ -34,8 +34,7 @@ import {
 	getBinPathWithPreferredGopath,
 	getCurrentGoWorkspaceFromGOPATH,
 	getInferredGopath,
-	parseEnvFile,
-	parseEnvFiles
+	parseEnvFile
 } from '../goPath';
 
 const fsAccess = util.promisify(fs.access);
@@ -391,21 +390,22 @@ class Delve {
 				}
 
 				// read env from disk and merge into env variables
-				const envs = [process.env];
+				const fileEnvs = [];
 				try {
 					if (typeof launchArgs.envFile === 'string') {
-						envs.push(parseEnvFile(launchArgs.envFile));
+						fileEnvs.push(parseEnvFile(launchArgs.envFile));
 					}
 					if (Array.isArray(launchArgs.envFile)) {
-						envs.push(...parseEnvFiles(launchArgs.envFile));
+						launchArgs.envFile.forEach((envFile) => {
+							fileEnvs.push(parseEnvFile(envFile));
+						});
 					}
 				} catch (e) {
 					return reject(e);
 				}
 
 				const launchArgsEnv = launchArgs.env || {};
-				envs.push(launchArgsEnv);
-				env = Object.assign({}, ...envs);
+				env = Object.assign({}, process.env, ...fileEnvs, launchArgsEnv);
 
 				const dirname = isProgramDirectory ? program : path.dirname(program);
 				if (!env['GOPATH'] && (mode === 'debug' || mode === 'test')) {
