@@ -465,24 +465,31 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 	ctx.subscriptions.push(vscode.commands.registerCommand('go.install.package', installCurrentPackage));
 
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.apply.coverprofile', () => {
-		if (!vscode.window.activeTextEditor || !vscode.window.activeTextEditor.document.fileName.endsWith('.go')) {
-			vscode.window.showErrorMessage('Cannot apply coverage profile when no Go file is open.');
-			return;
-		}
-		vscode.window.showInputBox({
-			prompt: 'Enter the path to the coverage profile for current package'
-		}).then((coverProfilePath) => {
-			if (!coverProfilePath) {
+	ctx.subscriptions.push(
+		vscode.commands.registerCommand('go.apply.coverprofile', () => {
+			if (!vscode.window.activeTextEditor || !vscode.window.activeTextEditor.document.fileName.endsWith('.go')) {
+				vscode.window.showErrorMessage('Cannot apply coverage profile when no Go file is open.');
 				return;
 			}
-			if (!fileExists(coverProfilePath)) {
-				vscode.window.showErrorMessage(`Cannot find the file ${coverProfilePath}`);
-				return;
-			}
-			applyCodeCoverageToAllEditors(coverProfilePath, path.dirname(vscode.window.activeTextEditor.document.fileName));
-		});
-	}));
+			vscode.window
+				.showInputBox({
+					prompt: 'Enter the path to the coverage profile for current package'
+				})
+				.then((coverProfilePath) => {
+					if (!coverProfilePath) {
+						return;
+					}
+					if (!fileExists(coverProfilePath)) {
+						vscode.window.showErrorMessage(`Cannot find the file ${coverProfilePath}`);
+						return;
+					}
+					applyCodeCoverageToAllEditors(
+						coverProfilePath,
+						path.dirname(vscode.window.activeTextEditor.document.fileName)
+					);
+				});
+		})
+	);
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
 		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g
