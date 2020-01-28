@@ -15,7 +15,12 @@ import { getBinPath, getToolsEnvVars } from './util';
 const inputRegex = /^(\w+\ \*?\w+\ )?([\w./]+)$/;
 
 export function implCursor() {
-	const cursor = vscode.window.activeTextEditor.selection;
+	const editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showErrorMessage('No active editor found.');
+		return;
+	}
+	const cursor = editor.selection;
 	return vscode.window
 		.showInputBox({
 			placeHolder: 'f *File io.Closer',
@@ -35,16 +40,16 @@ export function implCursor() {
 			// if matches[1] is undefined then detect receiver type
 			// take first character and use as receiver name
 
-			runGoImpl([matches[1], matches[2]], cursor.start);
+			runGoImpl([matches[1], matches[2]], cursor.start, editor);
 		});
 }
 
-function runGoImpl(args: string[], insertPos: vscode.Position) {
+function runGoImpl(args: string[], insertPos: vscode.Position, editor: vscode.TextEditor) {
 	const goimpl = getBinPath('impl');
 	const p = cp.execFile(
 		goimpl,
 		args,
-		{ env: getToolsEnvVars(), cwd: dirname(vscode.window.activeTextEditor.document.fileName) },
+		{ env: getToolsEnvVars(), cwd: dirname(editor.document.fileName) },
 		(err, stdout, stderr) => {
 			if (err && (<any>err).code === 'ENOENT') {
 				promptForMissingTool('impl');
@@ -56,7 +61,7 @@ function runGoImpl(args: string[], insertPos: vscode.Position) {
 				return;
 			}
 
-			vscode.window.activeTextEditor.edit((editBuilder) => {
+			editor.edit((editBuilder) => {
 				editBuilder.insert(insertPos, stdout);
 			});
 		}

@@ -60,7 +60,7 @@ async function getImports(document: vscode.TextDocument): Promise<string[]> {
 	return imports;
 }
 
-async function askUserForImport(): Promise<string> {
+async function askUserForImport(): Promise<string | undefined> {
 	try {
 		const packages = await listPackages(true);
 		return vscode.window.showQuickPick(packages);
@@ -120,13 +120,21 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 }
 
 export function addImport(arg: { importPath: string; from: string }) {
+	const editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showErrorMessage('No active editor found to add imports.');
+		return;
+	}
 	const p = arg && arg.importPath ? Promise.resolve(arg.importPath) : askUserForImport();
 	p.then((imp) => {
+		if (!imp) {
+			return;
+		}
 		sendTelemetryEventForAddImportCmd(arg);
 		const edits = getTextEditForAddImport(imp);
 		if (edits && edits.length > 0) {
 			const edit = new vscode.WorkspaceEdit();
-			edit.set(vscode.window.activeTextEditor.document.uri, edits);
+			edit.set(editor.document.uri, edits);
 			vscode.workspace.applyEdit(edit);
 		}
 	});
@@ -134,6 +142,10 @@ export function addImport(arg: { importPath: string; from: string }) {
 
 export function addImportToWorkspace() {
 	const editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showErrorMessage('No active editor found to determine current package.');
+		return;
+	}
 	const selection = editor.selection;
 
 	let importPath = '';

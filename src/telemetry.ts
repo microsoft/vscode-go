@@ -7,7 +7,8 @@ import vscode = require('vscode');
 import TelemetryReporter from 'vscode-extension-telemetry';
 
 export const extensionId: string = 'ms-vscode.Go';
-const extensionVersion: string = vscode.extensions.getExtension(extensionId).packageJSON.version;
+const extension = vscode.extensions.getExtension(extensionId);
+const extensionVersion: string = extension ? extension.packageJSON.version : '';
 const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
 
 export function sendTelemetryEventForModulesUsage() {

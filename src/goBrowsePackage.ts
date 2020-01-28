@@ -14,11 +14,10 @@ import { getBinPath, getCurrentGoPath, getImportPath } from './util';
 
 export function browsePackages() {
 	let workDir = '';
-	let currentUri: vscode.Uri = null;
 	let selectedText = '';
 	const editor = vscode.window.activeTextEditor;
 	if (editor) {
-		currentUri = vscode.window.activeTextEditor.document.uri;
+		const currentUri = editor.document.uri;
 		workDir = path.dirname(currentUri.fsPath);
 		const selection = editor.selection;
 		if (!selection.isEmpty) {
@@ -30,7 +29,7 @@ export function browsePackages() {
 		}
 		selectedText = getImportPath(selectedText) || selectedText.trim();
 	} else if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length === 1) {
-		currentUri = vscode.workspace.workspaceFolders[0].uri;
+		const currentUri = vscode.workspace.workspaceFolders[0].uri;
 		workDir = currentUri.fsPath;
 	}
 

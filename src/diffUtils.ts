@@ -4,14 +4,17 @@
  *--------------------------------------------------------*/
 
 import jsDiff = require('diff');
-import { Position, Range, TextEdit, TextEditorEdit, Uri, WorkspaceEdit } from 'vscode';
+import { Position, Range, TextEditorEdit, Uri, WorkspaceEdit } from 'vscode';
 import { getBinPathFromEnvVar } from './goPath';
 
-let diffToolAvailable: boolean = null;
+let diffToolAvailable: boolean | null = null;
 
 export function isDiffToolAvailable(): boolean {
 	if (diffToolAvailable == null) {
 		const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
+		if (!envPath) {
+			return false;
+		}
 		diffToolAvailable = getBinPathFromEnvVar('diff', envPath, false) != null;
 	}
 	return diffToolAvailable;
@@ -33,20 +36,6 @@ export class Edit {
 		this.action = action;
 		this.start = start;
 		this.text = '';
-	}
-
-	// Creates TextEdit for current Edit
-	public apply(): TextEdit {
-		switch (this.action) {
-			case EditTypes.EDIT_INSERT:
-				return TextEdit.insert(this.start, this.text);
-
-			case EditTypes.EDIT_DELETE:
-				return TextEdit.delete(new Range(this.start, this.end));
-
-			case EditTypes.EDIT_REPLACE:
-				return TextEdit.replace(new Range(this.start, this.end), this.text);
-		}
 	}
 
 	// Applies Edit using given TextEditorEdit
@@ -99,7 +88,7 @@ export interface FilePatch {
 function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 	const filePatches: FilePatch[] = [];
 	diffOutput.forEach((uniDiff: jsDiff.IUniDiff) => {
-		let edit: Edit = null;
+		let edit: Edit;
 		const edits: Edit[] = [];
 		uniDiff.hunks.forEach((hunk: jsDiff.IHunk) => {
 			let startLine = hunk.oldStart;

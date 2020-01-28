@@ -58,7 +58,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 
 		debugConfiguration['packagePathToGoModPathMap'] = packagePathToGoModPathMap;
 
-		const gopath = getCurrentGoPath(folder ? folder.uri : null);
+		const gopath = getCurrentGoPath(folder ? folder.uri : undefined);
 		if (!debugConfiguration['env']) {
 			debugConfiguration['env'] = { GOPATH: gopath };
 		} else if (!debugConfiguration['env']['GOPATH']) {
@@ -73,7 +73,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			}
 		});
 
-		const dlvConfig: { [key: string]: any } = goConfig.get('delveConfig');
+		const dlvConfig = goConfig.get<any>('delveConfig');
 		let useApiV1 = false;
 		if (debugConfiguration.hasOwnProperty('useApiV1')) {
 			useApiV1 = debugConfiguration['useApiV1'] === true;

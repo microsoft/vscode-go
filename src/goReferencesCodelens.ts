@@ -26,7 +26,7 @@ export class GoReferencesCodeLensProvider extends GoBaseCodeLensProvider {
 		if (!this.enabled) {
 			return [];
 		}
-		const codeLensConfig: { [key: string]: any } = getGoConfig(document.uri).get('enableCodeLens');
+		const codeLensConfig = getGoConfig(document.uri).get<{ [key: string]: any }>('enableCodeLens');
 		const codelensEnabled = codeLensConfig ? codeLensConfig['references'] : false;
 		if (!codelensEnabled) {
 			return Promise.resolve([]);

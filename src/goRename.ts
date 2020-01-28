@@ -56,7 +56,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gorename');
-						return resolve(null);
+						return reject('Could not find gorename tool.');
 					}
 					if (err) {
 						const errMsg = stderr ? 'Rename failed: ' + stderr.replace(/\n/g, ' ') : 'Rename failed';

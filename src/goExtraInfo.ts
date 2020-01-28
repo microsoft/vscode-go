@@ -11,7 +11,7 @@ import { definitionLocation } from './goDeclaration';
 import { getGoConfig } from './util';
 
 export class GoHoverProvider implements HoverProvider {
-	private goConfig: WorkspaceConfiguration = null;
+	private goConfig: WorkspaceConfiguration | undefined;
 
 	constructor(goConfig?: WorkspaceConfiguration) {
 		this.goConfig = goConfig;

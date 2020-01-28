@@ -19,7 +19,7 @@ const generatedWord = 'Generated ';
 /**
  * If current active editor has a Go file, returns the editor.
  */
-function checkActiveEditor(): vscode.TextEditor {
+function checkActiveEditor(): vscode.TextEditor | undefined {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('Cannot generate unit tests. No editor selected.');

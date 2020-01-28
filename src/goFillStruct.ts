@@ -26,7 +26,7 @@ export function runFillStruct(editor: vscode.TextEditor): Promise<void> {
 	return execFillStruct(editor, args);
 }
 
-function getCommonArgs(editor: vscode.TextEditor): string[] {
+function getCommonArgs(editor: vscode.TextEditor): string[] | undefined {
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
@@ -50,7 +50,7 @@ function getCommonArgs(editor: vscode.TextEditor): string[] {
 function getTabsCount(editor: vscode.TextEditor): number {
 	const startline = editor.selection.start.line;
 	const tabs = editor.document.lineAt(startline).text.match('^\t*');
-	return tabs.length;
+	return tabs ? tabs.length : 0;
 }
 
 function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void> {

@@ -29,7 +29,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			return [];
 		}
 		const config = getGoConfig(document.uri);
-		const codeLensConfig: { [key: string]: any } = config.get('enableCodeLens');
+		const codeLensConfig = config.get<{ [key: string]: any }>('enableCodeLens');
 		const codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
 		if (!codelensEnabled || !document.fileName.endsWith('_test.go')) {
 			return [];
@@ -55,7 +55,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		const symbols = await documentSymbolProvider.provideDocumentSymbols(document, token);
 		const pkg = symbols[0];
 		if (!pkg) {
-			return;
+			return [];
 		}
 		const range = pkg.range;
 		const packageCodeLens = [

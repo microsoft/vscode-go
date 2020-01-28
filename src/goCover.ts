@@ -54,22 +54,28 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 	// Update the coverageDecorator in User config, if they are using the old style.
 	const goConfig = getGoConfig();
 	const inspectResult = goConfig.inspect('coverageDecorator');
-	if (typeof inspectResult.globalValue === 'string') {
-		goConfig.update('coverageDecorator', { type: inspectResult.globalValue }, vscode.ConfigurationTarget.Global);
-	}
-	if (typeof inspectResult.workspaceValue === 'string') {
-		goConfig.update(
-			'coverageDecorator',
-			{ type: inspectResult.workspaceValue },
-			vscode.ConfigurationTarget.Workspace
-		);
-	}
-	if (typeof inspectResult.workspaceFolderValue === 'string') {
-		goConfig.update(
-			'coverageDecorator',
-			{ type: inspectResult.workspaceValue },
-			vscode.ConfigurationTarget.WorkspaceFolder
-		);
+	if (inspectResult) {
+		if (typeof inspectResult.globalValue === 'string') {
+			goConfig.update(
+				'coverageDecorator',
+				{ type: inspectResult.globalValue },
+				vscode.ConfigurationTarget.Global
+			);
+		}
+		if (typeof inspectResult.workspaceValue === 'string') {
+			goConfig.update(
+				'coverageDecorator',
+				{ type: inspectResult.workspaceValue },
+				vscode.ConfigurationTarget.Workspace
+			);
+		}
+		if (typeof inspectResult.workspaceFolderValue === 'string') {
+			goConfig.update(
+				'coverageDecorator',
+				{ type: inspectResult.workspaceValue },
+				vscode.ConfigurationTarget.WorkspaceFolder
+			);
+		}
 	}
 
 	// Update the decorators
