@@ -71,7 +71,10 @@ export function generateTestCurrentPackage(): Promise<boolean> {
 		return;
 	}
 	return generateTests(
-		{ dir: path.dirname(editor.document.uri.fsPath), isTestFile: editor.document.fileName.endsWith('_test.go') },
+		{
+			dir: path.dirname(editor.document.uri.fsPath),
+			isTestFile: editor.document.fileName.endsWith('_test.go')
+		},
 		getGoConfig(editor.document.uri)
 	);
 }
@@ -83,7 +86,10 @@ export function generateTestCurrentFile(): Promise<boolean> {
 	}
 
 	return generateTests(
-		{ dir: editor.document.uri.fsPath, isTestFile: editor.document.fileName.endsWith('_test.go') },
+		{
+			dir: editor.document.uri.fsPath,
+			isTestFile: editor.document.fileName.endsWith('_test.go')
+		},
 		getGoConfig(editor.document.uri)
 	);
 }
@@ -114,7 +120,11 @@ export async function generateTestCurrentFunction(): Promise<boolean> {
 	}
 
 	return generateTests(
-		{ dir: editor.document.uri.fsPath, func: funcName, isTestFile: editor.document.fileName.endsWith('_test.go') },
+		{
+			dir: editor.document.uri.fsPath,
+			func: funcName,
+			isTestFile: editor.document.fileName.endsWith('_test.go')
+		},
 		getGoConfig(editor.document.uri)
 	);
 }
