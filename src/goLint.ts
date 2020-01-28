@@ -1,9 +1,22 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, resolvePath, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getToolsGopath } from './util';
-import { outputChannel } from './goStatus';
-import { diagnosticsStatusBarItem } from './goStatus';
 import { lintDiagnosticCollection } from './goMain';
+import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
+import {
+	getGoConfig,
+	getToolsEnvVars,
+	getToolsGopath,
+	getWorkspaceFolderPath,
+	handleDiagnosticErrors,
+	ICheckResult,
+	resolvePath,
+	runTool
+} from './util';
 /**
  * Runs linter on the current file, package or workspace.
  */
@@ -14,23 +27,25 @@ export function lintCode(scope?: string) {
 		return;
 	}
 	if (editor.document.languageId !== 'go' && scope !== 'workspace') {
-		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to lint');
+		vscode.window.showInformationMessage(
+			'File in the active editor is not a Go file, cannot find current package to lint'
+		);
 		return;
 	}
 
 	const documentUri = editor ? editor.document.uri : null;
-	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const goConfig = getGoConfig(documentUri);
 
 	outputChannel.clear(); // Ensures stale output from lint on save is cleared
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Linting...';
 
 	goLint(documentUri, goConfig, scope)
-		.then(warnings => {
+		.then((warnings) => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, lintDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
 		})
-		.catch(err => {
+		.catch((err) => {
 			vscode.window.showInformationMessage('Error: ' + err);
 			diagnosticsStatusBarItem.text = 'Linting Failed';
 		});
@@ -43,7 +58,11 @@ export function lintCode(scope?: string) {
  * @param goConfig Configuration for the Go extension.
  * @param scope Scope in which to run the linter.
  */
-export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, scope?: string): Promise<ICheckResult[]> {
+export function goLint(
+	fileUri: vscode.Uri,
+	goConfig: vscode.WorkspaceConfiguration,
+	scope?: string
+): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;
 	if (tokenSource) {
@@ -56,7 +75,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
 
-	const cwd = (scope === 'workspace' && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+	const cwd = scope === 'workspace' && currentWorkspace ? currentWorkspace : path.dirname(fileUri.fsPath);
 
 	if (!path.isAbsolute(cwd)) {
 		return Promise.resolve([]);
@@ -67,7 +86,7 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	const lintEnv = Object.assign({}, getToolsEnvVars());
 	const args: string[] = [];
 
-	lintFlags.forEach(flag => {
+	lintFlags.forEach((flag) => {
 		// --json is not a valid flag for golint and in gometalinter, it is used to print output in json which we dont want
 		if (flag === '--json') {
 			return;
@@ -114,20 +133,14 @@ export function goLint(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurat
 	}
 
 	running = true;
-	const lintPromise = runTool(
-		args,
-		cwd,
-		'warning',
-		false,
-		lintTool,
-		lintEnv,
-		false,
-		tokenSource.token
-	).then((result) => {
-		if (closureEpoch === epoch)
-			running = false;
-		return result;
-	});
+	const lintPromise = runTool(args, cwd, 'warning', false, lintTool, lintEnv, false, tokenSource.token).then(
+		(result) => {
+			if (closureEpoch === epoch) {
+				running = false;
+			}
+			return result;
+		}
+	);
 
 	return lintPromise;
 }

@@ -5,28 +5,43 @@
 
 'use strict';
 
-import { GO_MODE } from './goMode';
 import vscode = require('vscode');
+import { GO_MODE } from './goMode';
+import { isModSupported } from './goModules';
 
 export let outputChannel = vscode.window.createOutputChannel('Go');
 
 export let diagnosticsStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 
 let statusBarEntry: vscode.StatusBarItem;
+const statusBarItemModule = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+statusBarItemModule.text = '$(megaphone) Go Modules';
+statusBarItemModule.tooltip =
+	'Modules is enabled for this project. Click to learn more about Modules support in VS Code.';
+statusBarItemModule.command = 'go.open.modulewiki';
 
-export function showHideStatus() {
-	if (!statusBarEntry) {
-		return;
+export function showHideStatus(editor: vscode.TextEditor) {
+	if (statusBarEntry) {
+		if (!editor) {
+			statusBarEntry.hide();
+		} else if (vscode.languages.match(GO_MODE, editor.document)) {
+			statusBarEntry.show();
+		} else {
+			statusBarEntry.hide();
+		}
 	}
-	if (!vscode.window.activeTextEditor) {
-		statusBarEntry.hide();
-		return;
+
+	if (editor) {
+		isModSupported(editor.document.uri).then((isMod) => {
+			if (isMod) {
+				statusBarItemModule.show();
+			} else {
+				statusBarItemModule.hide();
+			}
+		});
+	} else {
+		statusBarItemModule.hide();
 	}
-	if (vscode.languages.match(GO_MODE, vscode.window.activeTextEditor.document)) {
-		statusBarEntry.show();
-		return;
-	}
-	statusBarEntry.hide();
 }
 
 export function hideGoStatus() {

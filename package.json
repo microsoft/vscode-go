@@ -1,12 +1,13 @@
 {
   "name": "Go",
-  "version": "0.10.2",
+  "version": "0.12.0",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
     "name": "Microsoft Corporation - Development Labs"
   },
-  "icon": "images/goIcon.png",
+  "license": "MIT",
+  "icon": "images/go-logo-blue.png",
   "categories": [
     "Programming Languages",
     "Snippets",
@@ -15,7 +16,7 @@
     "Formatters"
   ],
   "galleryBanner": {
-    "color": "#CFB69A",
+    "color": "#F2F2F2",
     "theme": "light"
   },
   "private": true,
@@ -27,36 +28,48 @@
     "multi-root ready"
   ],
   "scripts": {
-    "vscode:prepublish": "tsc -p ./",
-    "compile": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "node ./node_modules/vscode/bin/test",
-    "lint": "node ./node_modules/tslint/bin/tslint ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
-    "fix-lint": "node ./node_modules/tslint/bin/tslint --fix ./src/*.ts ./src/debugAdapter/*.ts ./test/*.ts",
-    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js",
+    "lint": "node ./node_modules/tslint/bin/tslint --project tsconfig.json",
+    "fix-lint": "node ./node_modules/tslint/bin/tslint --fix --project tsconfig.json",
+    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "extensionDependencies": [],
   "dependencies": {
-    "diff": "^3.5.0",
+    "diff": "^4.0.1",
     "json-rpc2": "^1.0.2",
-    "vscode-debugadapter": "^1.32.1",
-    "vscode-debugprotocol": "^1.32.0",
-    "vscode-extension-telemetry": "^0.1.0",
-    "vscode-languageclient": "~4.4.0"
+    "moment": "^2.24.0",
+    "semver": "^6.3.0",
+    "vscode-debugadapter": "^1.36.0",
+    "vscode-debugprotocol": "^1.36.0",
+    "vscode-extension-telemetry": "^0.1.2",
+    "vscode-languageclient": "^6.0.1",
+    "web-request": "^1.0.7"
   },
   "devDependencies": {
-    "@types/fs-extra": "^5.0.4",
-    "@types/mocha": "^5.2.5",
-    "@types/node": "^8.10.43",
-    "fs-extra": "^7.0.1",
-    "tslint": "^5.11.0",
-    "typescript": "^3.1.3",
-    "vscode": "^1.1.33"
+    "@types/fs-extra": "^8.0.0",
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.7.2",
+    "@types/semver": "^6.0.1",
+    "@types/vscode": "^1.25.0",
+    "fs-extra": "^8.1.0",
+    "glob": "^7.1.4",
+    "mocha": "^6.2.0",
+    "tslint": "^5.19.0",
+    "typescript": "^3.7.2",
+    "vscode-test": "^1.2.3",
+    "prettier": "^1.16.4"
   },
   "engines": {
-    "vscode": "^1.25.0"
+    "vscode": "^1.30.0"
   },
   "activationEvents": [
+    "workspaceContains:**/*.go",
     "onLanguage:go",
     "onCommand:go.gopath",
     "onCommand:go.tools.install",
@@ -81,7 +94,8 @@
         ],
         "aliases": [
           "Go Module File"
-        ]
+        ],
+        "configuration": "./languages/go.mod.language-configuration.json"
       },
       {
         "id": "go.sum",
@@ -292,6 +306,11 @@
         "description": "Cancels running tests."
       },
       {
+        "command": "go.apply.coverprofile",
+        "title": "Go: Apply Cover Profile",
+        "description": "Applies existing cover profile."
+      },
+      {
         "command": "go.godoctor.extract",
         "title": "Go: Extract to function",
         "description": "Extract to function using godoctor."
@@ -300,17 +319,18 @@
         "command": "go.godoctor.var",
         "title": "Go: Extract to variable",
         "description": "Extract to variable using godoctor."
+      },
+      {
+        "command": "go.languageserver.restart",
+        "title": "Go: Restart Language Server",
+        "description": "Restart the running instance of the language server"
       }
     ],
+    "breakpoints": [{ "language": "go" }],
     "debuggers": [
       {
         "type": "go",
         "label": "Go",
-        "enableBreakpointsFor": {
-          "languageIds": [
-            "go"
-          ]
-        },
         "program": "./out/src/debugAdapter/goDebug.js",
         "runtime": "node",
         "languages": [
@@ -366,19 +386,27 @@
             }
           },
           {
+            "label": "Go: Attach to local process",
+            "description": "Attach to an existing process by process ID",
+            "body": {
+              "name": "${1:Attach to Process}",
+              "type": "go",
+              "request": "attach",
+              "mode": "local",
+              "processId": 0
+            }
+          },
+          {
             "label": "Go: Connect to server",
             "description": "Connect to a remote headless debug server",
             "body": {
-              "name": "${3:Connect to server}",
+              "name": "${1:Connect to server}",
               "type": "go",
-              "request": "launch",
+              "request": "attach",
               "mode": "remote",
-              "remotePath": "^\"\\${workspaceFolder}${1:}\"",
+              "remotePath": "^\"\\${workspaceFolder}\"",
               "port": 2345,
-              "host": "127.0.0.1",
-              "program": "^\"\\${workspaceFolder}${1:}\"",
-              "env": {},
-              "args": []
+              "host": "127.0.0.1"
             }
           }
         ],
@@ -560,13 +588,143 @@
                 "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not."
               }
             }
+          },
+          "attach": {
+            "required": [],
+            "properties": {
+              "processId": {
+                "type": "number",
+                "description": "The ID of the process to be debugged."
+              },
+              "mode": {
+                "enum": [
+                  "local",
+                  "remote"
+                ],
+                "description": "Indicates local or remote debugging.  Local maps to the dlv 'attach' command, remote maps to 'connect'.",
+                "default": "local"
+              },
+              "showLog": {
+                "type": "boolean",
+                "description": "Show log output from the delve debugger.",
+                "default": false
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Workspace relative or absolute path to the working directory of the program being debugged. Default is the current workspace.",
+                "default": "${workspaceFolder}"
+              },
+              "remotePath": {
+                "type": "string",
+                "description": "If remote debugging, the path to the source code on the remote machine, if different from the local machine.",
+                "default": ""
+              },
+              "port": {
+                "type": "number",
+                "description": "The port that the delve debugger will be listening on.",
+                "default": 2345
+              },
+              "host": {
+                "type": "string",
+                "description": "The host name of the machine the delve debugger will be listening on.",
+                "default": "127.0.0.1"
+              },
+              "trace": {
+                "type": "string",
+                "enum": [
+                  "log",
+                  "verbose",
+                  "error"
+                ],
+                "default": "error",
+                "description": "Various levels of logging shown in the debug console. When set to 'log' or 'verbose', the logs will also be written to a file."
+              },
+              "backend": {
+                "type": "string",
+                "enum": [
+                  "default",
+                  "native",
+                  "lldb"
+                ],
+                "description": "Backend used by delve. Only available in delve version 0.12.2 and above."
+              },
+              "logOutput": {
+                "type": "string",
+                "enum": [
+                  "debugger",
+                  "gdbwire",
+                  "lldbout",
+                  "debuglineerr",
+                  "rpc"
+                ],
+                "description": "Comma separated list of components that should produce debug output.",
+                "default": "debugger"
+              },
+              "dlvLoadConfig": {
+                "type": "object",
+                "properties": {
+                  "followPointers": {
+                    "type": "boolean",
+                    "description": "FollowPointers requests pointers to be automatically dereferenced",
+                    "default": true
+                  },
+                  "maxVariableRecurse": {
+                    "type": "number",
+                    "description": "MaxVariableRecurse is how far to recurse when evaluating nested types",
+                    "default": 1
+                  },
+                  "maxStringLen": {
+                    "type": "number",
+                    "description": "MaxStringLen is the maximum number of bytes read from a string",
+                    "default": 64
+                  },
+                  "maxArrayValues": {
+                    "type": "number",
+                    "description": "MaxArrayValues is the maximum number of elements read from an array, a slice or a map",
+                    "default": 64
+                  },
+                  "maxStructFields": {
+                    "type": "number",
+                    "description": "MaxStructFields is the maximum number of fields read from a struct, -1 will read all fields",
+                    "default": -1
+                  }
+                },
+                "description": "LoadConfig describes to delve, how to load values from target's memory",
+                "default": {
+                  "followPointers": true,
+                  "maxVariableRecurse": 1,
+                  "maxStringLen": 64,
+                  "maxArrayValues": 64,
+                  "maxStructFields": -1
+                }
+              },
+              "apiVersion": {
+                "type": "number",
+                "enum": [
+                  1,
+                  2
+                ],
+                "description": "Delve Api Version to use. Default value is 2.",
+                "default": 2
+              },
+              "stackTraceDepth": {
+                "type": "number",
+                "description": "Maximum depth of stack trace collected from Delve",
+                "default": 50
+              },
+              "showGlobalVariables": {
+                "type": "boolean",
+                "default": true,
+                "description": "Boolean value to indicate whether global package variables should be shown in the variables pane or not."
+              }
+            }
           }
         }
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "Go configuration",
+      "title": "Go",
       "properties": {
         "go.buildOnSave": {
           "type": "string",
@@ -628,10 +786,10 @@
           "scope": "resource",
           "enum": [
             "golint",
-            "gometalinter",
             "golangci-lint",
             "revive",
-            "staticcheck"
+            "staticcheck",
+            "gometalinter"
           ]
         },
         "go.lintFlags": {
@@ -666,7 +824,7 @@
         "go.formatTool": {
           "type": "string",
           "default": "goreturns",
-          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format. Not applicable when using the language server. Choosing 'goimport' or 'goreturns' will add missing imports and remove unused imports.",
+          "description": "Pick 'gofmt', 'goimports', 'goreturns' or 'goformat' to run on format. Not applicable when using the language server. Choosing 'goimports' or 'goreturns' will add missing imports and remove unused imports.",
           "scope": "resource",
           "enum": [
             "gofmt",
@@ -735,6 +893,11 @@
           "type": "boolean",
           "default": false,
           "description": "If true, shows test coverage when Go: Test Function at cursor command is run."
+        },
+        "go.coverOnSingleTestFile": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, shows test coverage when Go: Test Single File command is run."
         },
         "go.coverageOptions": {
           "type": "string",
@@ -924,12 +1087,12 @@
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
-          "description": "Experimental: Use Go language server from Google or Sourcegraph for Hover, Definition, Signature Help, Auto Completion and Formatting features instead of tools like godef, gocode and goreturns"
+          "description": "Use the Go language server \"gopls\" from Google for powering language features like code navigation, completion, formatting & diagnostics."
         },
         "go.languageServerFlags": {
           "type": "array",
           "default": [],
-          "description": "Flags like -trace and -logfile to be used while running the language server."
+          "description": "Flags like -rpc.trace and -logfile to be used while running the language server."
         },
         "go.languageServerExperimentalFeatures": {
           "type": "object",
@@ -939,72 +1102,28 @@
               "default": false,
               "description": "If true, gofmt is used by the language server to format files."
             },
-            "autoComplete": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will provide code completion results."
-            },
-            "rename": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Rename feature."
-            },
-            "goToDefinition": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to/Peek Definition feature."
-            },
-            "goToTypeDefinition": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to/Peek Type Definition feature."
-            },
-            "hover": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the hover feature."
-            },
-            "findReferences": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Find/Peek References feature."
-            },
-            "signatureHelp": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Signature Help/Parameter Hints feature."
-            },
-            "documentSymbols": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to Document Symbols/Outline/Breadcrumbs feature."
-            },
-            "workspaceSymbols": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to Workspace Symbols feature."
-            },
             "diagnostics": {
               "type": "boolean",
-              "default": false,
+              "default": true,
               "description": "If true, the language server will provide build, vet errors and the extension will ignore the `buildOnSave`, `vetOnSave` settings."
+            },
+            "documentLink": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, the language server will provide clickable Godoc links for import statements."
             }
           },
           "default": {
             "format": true,
-            "autoComplete": true,
-            "rename": true,
-            "goToDefinition": true,
-            "hover": true,
-            "signatureHelp": true,
-            "goToTypeDefinition": true,
-            "goToImplementation": true,
-            "documentSymbols": true,
-            "workspaceSymbols": true,
-            "findReferences": true,
-            "diagnostics": false
+            "diagnostics": true,
+            "documentLink": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
+        },
+        "go.useGoProxyToCheckForToolUpdates": {
+          "type": "boolean",
+          "default": true,
+          "description": "When enabled, the extension automatically checks the Go proxy if there are updates available for the Go tools (at present, only gopls) it depends on and prompts the user accordingly"
         },
         "go.gotoSymbol.includeImports": {
           "type": "boolean",
@@ -1346,6 +1465,11 @@
               "type": "string",
               "default": "gopkgs",
               "description": "Alternate tool to use instead of the gopkgs binary or alternate path to use for the gopkgs binary."
+            },
+            "gopls": {
+              "type": "string",
+              "default": "gopls",
+              "description": "Alternate tool to use instead of the gopls binary or alternate path to use for the gopls binary."
             },
             "go-outline": {
               "type": "string",

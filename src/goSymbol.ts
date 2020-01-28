@@ -1,13 +1,14 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, getToolsEnvVars, killProcess } from './util';
+import vscode = require('vscode');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
+import { getBinPath, getGoConfig, getToolsEnvVars, getWorkspaceFolderPath, killProcess } from './util';
 
 // Keep in sync with github.com/acroca/go-symbols'
 interface GoSymbolDeclaration {
@@ -20,19 +21,21 @@ interface GoSymbolDeclaration {
 }
 
 export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
-
 	private goKindToCodeKind: { [key: string]: vscode.SymbolKind } = {
-		'package': vscode.SymbolKind.Package,
-		'import': vscode.SymbolKind.Namespace,
-		'var': vscode.SymbolKind.Variable,
-		'type': vscode.SymbolKind.Interface,
-		'func': vscode.SymbolKind.Function,
-		'const': vscode.SymbolKind.Constant,
+		package: vscode.SymbolKind.Package,
+		import: vscode.SymbolKind.Namespace,
+		var: vscode.SymbolKind.Variable,
+		type: vscode.SymbolKind.Interface,
+		func: vscode.SymbolKind.Function,
+		const: vscode.SymbolKind.Constant
 	};
 
-	public provideWorkspaceSymbols(query: string, token: vscode.CancellationToken): Thenable<vscode.SymbolInformation[]> {
+	public provideWorkspaceSymbols(
+		query: string,
+		token: vscode.CancellationToken
+	): Thenable<vscode.SymbolInformation[]> {
 		const convertToCodeSymbols = (decls: GoSymbolDeclaration[], symbols: vscode.SymbolInformation[]): void => {
-			decls.forEach(decl => {
+			decls.forEach((decl) => {
 				let kind: vscode.SymbolKind;
 				if (decl.kind !== '') {
 					kind = this.goKindToCodeKind[decl.kind];
@@ -43,23 +46,22 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 					kind,
 					new vscode.Range(pos, pos),
 					vscode.Uri.file(decl.path),
-					'');
+					''
+				);
 				symbols.push(symbolInfo);
 			});
 		};
-		let root = vscode.workspace.rootPath;
-		if (vscode.window.activeTextEditor && vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) {
-			root = vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath;
-		}
-
-		const goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		const root = getWorkspaceFolderPath(
+			vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri
+		);
+		const goConfig = getGoConfig();
 
 		if (!root && !goConfig.gotoSymbol.includeGoroot) {
 			vscode.window.showInformationMessage('No workspace is open to find symbols.');
 			return;
 		}
 
-		return getWorkspaceSymbols(root, query, token, goConfig).then(results => {
+		return getWorkspaceSymbols(root, query, token, goConfig).then((results) => {
 			const symbols: vscode.SymbolInformation[] = [];
 			convertToCodeSymbols(results, symbols);
 			return symbols;
@@ -67,21 +69,28 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 	}
 }
 
-export function getWorkspaceSymbols(workspacePath: string, query: string, token: vscode.CancellationToken, goConfig?: vscode.WorkspaceConfiguration, ignoreFolderFeatureOn: boolean = true): Thenable<GoSymbolDeclaration[]> {
+export function getWorkspaceSymbols(
+	workspacePath: string,
+	query: string,
+	token: vscode.CancellationToken,
+	goConfig?: vscode.WorkspaceConfiguration,
+	ignoreFolderFeatureOn: boolean = true
+): Thenable<GoSymbolDeclaration[]> {
 	if (!goConfig) {
-		goConfig = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+		goConfig = getGoConfig();
 	}
 	const gotoSymbolConfig = goConfig['gotoSymbol'];
 	const calls: Promise<GoSymbolDeclaration[]>[] = [];
 
 	const ignoreFolders: string[] = gotoSymbolConfig ? gotoSymbolConfig['ignoreFolders'] : [];
-	const baseArgs = (ignoreFolderFeatureOn && ignoreFolders && ignoreFolders.length > 0) ? ['-ignore', ignoreFolders.join(',')] : [];
+	const baseArgs =
+		ignoreFolderFeatureOn && ignoreFolders && ignoreFolders.length > 0 ? ['-ignore', ignoreFolders.join(',')] : [];
 
 	calls.push(callGoSymbols([...baseArgs, workspacePath, query], token));
 
 	if (gotoSymbolConfig.includeGoroot) {
-		const gorootCall = getGoroot()
-			.then(goRoot => callGoSymbols([...baseArgs, goRoot, query], token));
+		const goRoot = process.env['GOROOT'];
+		const gorootCall = callGoSymbols([...baseArgs, goRoot, query], token);
 		calls.push(gorootCall);
 	}
 
@@ -117,23 +126,6 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 			const result = stdout.toString();
 			const decls = <GoSymbolDeclaration[]>JSON.parse(result);
 			return resolve(decls);
-		});
-	});
-}
-
-function getGoroot(): Promise<string> {
-	const goExecutable = getBinPath('go');
-	if (!goExecutable) {
-		return Promise.reject(new Error('Cannot find "go" binary. Update PATH or GOROOT appropriately'));
-	}
-	return new Promise((resolve, reject) => {
-		cp.execFile(goExecutable, ['env', 'GOROOT'], (err, stdout) => {
-			if (err) {
-				reject(err);
-				return;
-			}
-			const [goRoot] = stdout.split('\n');
-			resolve(goRoot.trim());
 		});
 	});
 }

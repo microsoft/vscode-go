@@ -3,9 +3,8 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { guessPackageNameFromFile } from '../src/util';
 import * as assert from 'assert';
-import { substituteEnv } from '../src/util';
+import { guessPackageNameFromFile, substituteEnv } from '../../src/util';
 
 suite('utils Tests', () => {
 	test('substituteEnv: default', () => {
@@ -14,9 +13,7 @@ suite('utils Tests', () => {
 		process.env['test1'] = 'abcd';
 		process.env['test2'] = 'defg';
 
-		const actual = substituteEnv(
-			' ${env:test1} \r\n ${env:test2}\r\n${env:test1}'
-		);
+		const actual = substituteEnv(' ${env:test1} \r\n ${env:test2}\r\n${env:test1}');
 		const expected = ' abcd \r\n defg\r\nabcd';
 
 		assert.equal(actual, expected);
@@ -27,18 +24,18 @@ suite('utils Tests', () => {
 });
 
 suite('GuessPackageNameFromFile Tests', () => {
-	test('package name from main file', done => {
+	test('package name from main file', (done) => {
 		const expectedPackageName = 'main';
 		const filename = 'main.go';
 
 		guessPackageNameFromFile(filename)
-			.then(result => {
+			.then((result) => {
 				assert.equal(result, expectedPackageName);
 			})
 			.then(() => done(), done);
 	});
 
-	test('package name from dirpath', done => {
+	test('package name from dirpath', (done) => {
 		const expectedPackageName = 'package';
 		const fileDir = 'path/package/file.go';
 
@@ -49,7 +46,7 @@ suite('GuessPackageNameFromFile Tests', () => {
 			.then(() => done(), done);
 	});
 
-	test('package name from test file', done => {
+	test('package name from test file', (done) => {
 		const expectedPackageName = 'file';
 		const expectedPackageTestName = 'file_test';
 		const fileDir = 'file_test.go';
@@ -62,4 +59,3 @@ suite('GuessPackageNameFromFile Tests', () => {
 			.then(() => done(), done);
 	});
 });
-

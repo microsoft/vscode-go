@@ -1,16 +1,17 @@
 /*---------------------------------------------------------
  * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
 'use strict';
 
-import vscode = require('vscode');
-import path = require('path');
 import fs = require('fs');
+import path = require('path');
 import rl = require('readline');
-import { getTempFilePath } from './util';
-import { showTestOutput, goTest, TestConfig, getTestFlags } from './testUtils';
+import vscode = require('vscode');
 import { isModSupported } from './goModules';
+import { getTestFlags, goTest, showTestOutput, TestConfig } from './testUtils';
+import { getGoConfig, getTempFilePath } from './util';
 
 let gutterSvgs: { [key: string]: string };
 let decorators: {
@@ -21,7 +22,7 @@ let decorators: {
 	uncoveredHighlightDecorator: vscode.TextEditorDecorationType;
 };
 let decoratorConfig: {
-	[key: string]: any
+	[key: string]: any;
 	type: string;
 	coveredHighlightColor: string;
 	uncoveredHighlightColor: string;
@@ -50,18 +51,25 @@ export function initCoverageDecorators(ctx: vscode.ExtensionContext) {
 		verticalyellow: ctx.asAbsolutePath('images/gutter-vertyellow.svg')
 	};
 
-	const editor = vscode.window.activeTextEditor;
 	// Update the coverageDecorator in User config, if they are using the old style.
-	const goConfig = vscode.workspace.getConfiguration('go', editor ? editor.document.uri : null);
+	const goConfig = getGoConfig();
 	const inspectResult = goConfig.inspect('coverageDecorator');
 	if (typeof inspectResult.globalValue === 'string') {
 		goConfig.update('coverageDecorator', { type: inspectResult.globalValue }, vscode.ConfigurationTarget.Global);
 	}
 	if (typeof inspectResult.workspaceValue === 'string') {
-		goConfig.update('coverageDecorator', { type: inspectResult.workspaceValue }, vscode.ConfigurationTarget.Workspace);
+		goConfig.update(
+			'coverageDecorator',
+			{ type: inspectResult.workspaceValue },
+			vscode.ConfigurationTarget.Workspace
+		);
 	}
 	if (typeof inspectResult.workspaceFolderValue === 'string') {
-		goConfig.update('coverageDecorator', { type: inspectResult.workspaceValue }, vscode.ConfigurationTarget.WorkspaceFolder);
+		goConfig.update(
+			'coverageDecorator',
+			{ type: inspectResult.workspaceValue },
+			vscode.ConfigurationTarget.WorkspaceFolder
+		);
 	}
 
 	// Update the decorators
@@ -84,7 +92,7 @@ export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 	};
 
 	// Update from configuration
-	if (typeof (coverageDecoratorConfig) === 'string') {
+	if (typeof coverageDecoratorConfig === 'string') {
 		decoratorConfig.type = coverageDecoratorConfig;
 	} else {
 		for (const k in coverageDecoratorConfig) {
@@ -94,16 +102,25 @@ export function updateCodeCoverageDecorators(coverageDecoratorConfig: any) {
 		}
 	}
 	setDecorators();
+	vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
 }
 
 function setDecorators() {
 	disposeDecorators();
 	decorators = {
 		type: decoratorConfig.type,
-		coveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutterSvgs[decoratorConfig.coveredGutterStyle] }),
-		uncoveredGutterDecorator: vscode.window.createTextEditorDecorationType({ gutterIconPath: gutterSvgs[decoratorConfig.uncoveredGutterStyle] }),
-		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: decoratorConfig.coveredHighlightColor }),
-		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({ backgroundColor: decoratorConfig.uncoveredHighlightColor })
+		coveredGutterDecorator: vscode.window.createTextEditorDecorationType({
+			gutterIconPath: gutterSvgs[decoratorConfig.coveredGutterStyle]
+		}),
+		uncoveredGutterDecorator: vscode.window.createTextEditorDecorationType({
+			gutterIconPath: gutterSvgs[decoratorConfig.uncoveredGutterStyle]
+		}),
+		coveredHighlightDecorator: vscode.window.createTextEditorDecorationType({
+			backgroundColor: decoratorConfig.coveredHighlightColor
+		}),
+		uncoveredHighlightDecorator: vscode.window.createTextEditorDecorationType({
+			backgroundColor: decoratorConfig.uncoveredHighlightColor
+		})
 	};
 }
 
@@ -152,36 +169,37 @@ export function applyCodeCoverageToAllEditors(coverProfilePath: string, packageD
 				output: undefined
 			});
 
-			lines.on('line', function(data: string) {
+			lines.on('line', (data: string) => {
 				// go test coverageprofile generates output:
 				//    filename:StartLine.StartColumn,EndLine.EndColumn Hits CoverCount
 				// The first line will be "mode: set" which will be ignored
 				const fileRange = data.match(/([^:]+)\:([\d]+)\.([\d]+)\,([\d]+)\.([\d]+)\s([\d]+)\s([\d]+)/);
-				if (!fileRange) return;
+				if (!fileRange) {
+					return;
+				}
 
 				const filePath = path.join(packageDirPath, path.basename(fileRange[1]));
 				const coverage = getCoverageData(filePath);
 				const range = new vscode.Range(
 					// Start Line converted to zero based
-					parseInt(fileRange[2]) - 1,
+					parseInt(fileRange[2], 10) - 1,
 					// Start Column converted to zero based
-					parseInt(fileRange[3]) - 1,
+					parseInt(fileRange[3], 10) - 1,
 					// End Line converted to zero based
-					parseInt(fileRange[4]) - 1,
+					parseInt(fileRange[4], 10) - 1,
 					// End Column converted to zero based
-					parseInt(fileRange[5]) - 1
+					parseInt(fileRange[5], 10) - 1
 				);
 				// If is Covered (CoverCount > 0)
-				if (parseInt(fileRange[7]) > 0) {
+				if (parseInt(fileRange[7], 10) > 0) {
 					coverage.coveredRange.push(range);
-				}
-				// Not Covered
-				else {
+				} else {
 					coverage.uncoveredRange.push(range);
 				}
 				setCoverageData(filePath, coverage);
 			});
 			lines.on('close', () => {
+				setDecorators();
 				vscode.window.visibleTextEditors.forEach(applyCodeCoverage);
 				resolve();
 			});
@@ -236,20 +254,28 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 		return;
 	}
 
-	const cfg = vscode.workspace.getConfiguration('go', editor.document.uri);
+	const cfg = getGoConfig(editor.document.uri);
 	const coverageOptions = cfg['coverageOptions'];
-	setDecorators();
-
 	for (const filename in coverageFiles) {
 		if (editor.document.uri.fsPath.endsWith(filename)) {
 			isCoverageApplied = true;
 			const coverageData = coverageFiles[filename];
 			if (coverageOptions === 'showCoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-				editor.setDecorations(decorators.type === 'gutter' ? decorators.coveredGutterDecorator : decorators.coveredHighlightDecorator, coverageData.coveredRange);
+				editor.setDecorations(
+					decorators.type === 'gutter'
+						? decorators.coveredGutterDecorator
+						: decorators.coveredHighlightDecorator,
+					coverageData.coveredRange
+				);
 			}
 
 			if (coverageOptions === 'showUncoveredCodeOnly' || coverageOptions === 'showBothCoveredAndUncoveredCode') {
-				editor.setDecorations(decorators.type === 'gutter' ? decorators.uncoveredGutterDecorator : decorators.uncoveredHighlightDecorator, coverageData.uncoveredRange);
+				editor.setDecorations(
+					decorators.type === 'gutter'
+						? decorators.uncoveredGutterDecorator
+						: decorators.uncoveredHighlightDecorator,
+					coverageData.uncoveredRange
+				);
 			}
 		}
 	}
@@ -265,7 +291,7 @@ export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent
 		return;
 	}
 
-	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e.document)) {
+	if (vscode.window.visibleTextEditors.every((editor) => editor.document !== e.document)) {
 		return;
 	}
 
@@ -280,7 +306,7 @@ export function removeCodeCoverageOnFileChange(e: vscode.TextDocumentChangeEvent
  * If current editor has Code coverage applied, then remove it.
  * Else run tests to get the coverage and apply.
  */
-export function toggleCoverageCurrentPackage() {
+export async function toggleCoverageCurrentPackage() {
 	const editor = vscode.window.activeTextEditor;
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
@@ -292,31 +318,29 @@ export function toggleCoverageCurrentPackage() {
 		return;
 	}
 
-	const goConfig = vscode.workspace.getConfiguration('go', editor.document.uri);
+	const goConfig = getGoConfig();
 	const cwd = path.dirname(editor.document.uri.fsPath);
 
-	const args = getTestFlags(goConfig);
-	const tmpCoverPath = getTempFilePath('go-code-cover');
-	args.push('-coverprofile=' + tmpCoverPath);
+	const testFlags = getTestFlags(goConfig);
+	const isMod = await isModSupported(editor.document.uri);
 	const testConfig: TestConfig = {
-		goConfig: goConfig,
+		goConfig,
 		dir: cwd,
-		flags: args,
-		background: true
+		flags: testFlags,
+		background: true,
+		isMod,
+		applyCodeCoverage: true
 	};
-	return isModSupported(editor.document.uri).then(isMod => {
-		testConfig.isMod = isMod;
-		return goTest(testConfig).then(success => {
-			if (!success) {
-				showTestOutput();
-			}
-			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
-		});
+
+	return goTest(testConfig).then((success) => {
+		if (!success) {
+			showTestOutput();
+		}
 	});
 }
 
 export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
-	return e.contentChanges.every(change => {
+	return e.contentChanges.every((change) => {
 		// We cannot be sure with using just regex on individual lines whether a multi line change is part of a comment or not
 		// So play it safe and treat it as not a comment
 		if (!change.range.isSingleLine || change.text.includes('\n')) {
@@ -325,6 +349,6 @@ export function isPartOfComment(e: vscode.TextDocumentChangeEvent): boolean {
 
 		const text = e.document.lineAt(change.range.start).text;
 		const idx = text.search('//');
-		return (idx > -1 && idx <= change.range.start.character);
+		return idx > -1 && idx <= change.range.start.character;
 	});
 }

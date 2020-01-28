@@ -1,13 +1,27 @@
+/*---------------------------------------------------------
+ * Copyright (C) Microsoft Corporation. All rights reserved.
+ * Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------*/
+
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getCurrentGoPath, getTempFilePath, getModuleCache } from './util';
-import { outputChannel } from './goStatus';
-import { getNonVendorPackages } from './goPackages';
-import { getTestFlags } from './testUtils';
-import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
-import { diagnosticsStatusBarItem } from './goStatus';
-import { isModSupported } from './goModules';
 import { buildDiagnosticCollection } from './goMain';
+import { isModSupported } from './goModules';
+import { getNonVendorPackages } from './goPackages';
+import { getCurrentGoWorkspaceFromGOPATH } from './goPath';
+import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
+import { getTestFlags } from './testUtils';
+import {
+	getCurrentGoPath,
+	getGoConfig,
+	getModuleCache,
+	getTempFilePath,
+	getToolsEnvVars,
+	getWorkspaceFolderPath,
+	handleDiagnosticErrors,
+	ICheckResult,
+	runTool
+} from './util';
 /**
  * Builds current package or workspace.
  */
@@ -19,28 +33,30 @@ export function buildCode(buildWorkspace?: boolean) {
 			return;
 		}
 		if (editor.document.languageId !== 'go') {
-			vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to build');
+			vscode.window.showInformationMessage(
+				'File in the active editor is not a Go file, cannot find current package to build'
+			);
 			return;
 		}
 	}
 
 	const documentUri = editor ? editor.document.uri : null;
-	const goConfig = vscode.workspace.getConfiguration('go', documentUri);
+	const goConfig = getGoConfig(documentUri);
 
 	outputChannel.clear(); // Ensures stale output from build on save is cleared
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Building...';
 
-	isModSupported(documentUri).then(isMod => {
+	isModSupported(documentUri).then((isMod) => {
 		goBuild(documentUri, isMod, goConfig, buildWorkspace)
-		.then(errors => {
-			handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
-			diagnosticsStatusBarItem.hide();
-		})
-		.catch(err => {
-			vscode.window.showInformationMessage('Error: ' + err);
-			diagnosticsStatusBarItem.text = 'Build Failed';
-		});
+			.then((errors) => {
+				handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
+				diagnosticsStatusBarItem.hide();
+			})
+			.catch((err) => {
+				vscode.window.showInformationMessage('Error: ' + err);
+				diagnosticsStatusBarItem.text = 'Build Failed';
+			});
 	});
 }
 
@@ -52,7 +68,12 @@ export function buildCode(buildWorkspace?: boolean) {
  * @param goConfig Configuration for the Go extension.
  * @param buildWorkspace If true builds code in all workspace.
  */
-export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vscode.WorkspaceConfiguration, buildWorkspace?: boolean): Promise<ICheckResult[]> {
+export async function goBuild(
+	fileUri: vscode.Uri,
+	isMod: boolean,
+	goConfig: vscode.WorkspaceConfiguration,
+	buildWorkspace?: boolean
+): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;
 	if (tokenSource) {
@@ -63,12 +84,13 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 	}
 	tokenSource = new vscode.CancellationTokenSource();
 	const updateRunning = () => {
-		if (closureEpoch === epoch)
+		if (closureEpoch === epoch) {
 			running = false;
+		}
 	};
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
-	const cwd = (buildWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+	const cwd = buildWorkspace && currentWorkspace ? currentWorkspace : path.dirname(fileUri.fsPath);
 	if (!path.isAbsolute(cwd)) {
 		return Promise.resolve([]);
 	}
@@ -81,7 +103,11 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 	const buildEnv = Object.assign({}, getToolsEnvVars());
 	const tmpPath = getTempFilePath('go-code-check');
 	const isTestFile = fileUri && fileUri.fsPath.endsWith('_test.go');
-	const buildFlags: string[] = isTestFile ? getTestFlags(goConfig) : (Array.isArray(goConfig['buildFlags']) ? [...goConfig['buildFlags']] : []);
+	const buildFlags: string[] = isTestFile
+		? getTestFlags(goConfig)
+		: Array.isArray(goConfig['buildFlags'])
+		? [...goConfig['buildFlags']]
+		: [];
 	const buildArgs: string[] = isTestFile ? ['test', '-c'] : ['build'];
 
 	if (goConfig['installDependenciesWhenBuilding'] === true && !isMod) {
@@ -99,7 +125,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 
 	if (buildWorkspace && currentWorkspace && !isTestFile) {
 		outputChannel.appendLine(`Starting building the current workspace at ${currentWorkspace}`);
-		return getNonVendorPackages(currentWorkspace).then(pkgs => {
+		return getNonVendorPackages(currentWorkspace).then((pkgs) => {
 			running = true;
 			return runTool(
 				buildArgs.concat(Array.from(pkgs.keys())),
@@ -110,18 +136,27 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 				buildEnv,
 				true,
 				tokenSource.token
-			).then(v => {
+			).then((v) => {
 				updateRunning();
 				return v;
 			});
 		});
 	}
 
+	outputChannel.appendLine(`Starting building the current package at ${cwd}`);
+
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
 	const currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
-	const importPath = (currentGoWorkspace && !isMod) ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+	let importPath = '.';
+	if (currentGoWorkspace && !isMod) {
+		importPath = cwd.substr(currentGoWorkspace.length + 1);
+	} else {
+		outputChannel.appendLine(
+			`Not able to determine import path of current package by using cwd: ${cwd} and Go workspace: ${currentGoWorkspace}`
+		);
+	}
+
 	running = true;
-	outputChannel.appendLine(`Starting building the current package at ${cwd}`);
 	return runTool(
 		buildArgs.concat('-o', tmpPath, importPath),
 		cwd,
@@ -131,7 +166,7 @@ export async function goBuild(fileUri: vscode.Uri, isMod: boolean, goConfig: vsc
 		buildEnv,
 		true,
 		tokenSource.token
-	).then(v => {
+	).then((v) => {
 		updateRunning();
 		return v;
 	});
