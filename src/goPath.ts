@@ -46,7 +46,7 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 		binPathCache[toolName] = pathFromGoBin;
 		return pathFromGoBin;
 	}
-	
+
 	for (const preferred of preferredGopaths) {
 		if (typeof preferred === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder
