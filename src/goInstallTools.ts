@@ -8,6 +8,7 @@
 import cp = require('child_process');
 import fs = require('fs');
 import path = require('path');
+import { SemVer } from 'semver';
 import vscode = require('vscode');
 import { getLanguageServerToolPath } from './goLanguageServer';
 import { envPath, getToolFromToolPath } from './goPath';
@@ -18,6 +19,7 @@ import {
 	disableModulesForWildcard,
 	getConfiguredTools,
 	getImportPath,
+	getImportPathWithVersion,
 	getTool,
 	hasModSuffix,
 	isGocode,
@@ -89,11 +91,21 @@ export async function installAllTools(updateExistingToolsOnly: boolean = false) 
 }
 
 /**
+ * ToolAtVersion is a Tool with version annotation.
+ * Lack of version implies the latest version
+ */
+export interface ToolAtVersion extends Tool {
+	version?: SemVer;
+}
+
+/**
  * Installs given array of missing tools. If no input is given, the all tools are installed
  *
- * @param string[] array of tool names to be installed
+ * @param missing array of tool names and optionally, their versions to be installed.
+ *                If a tool's version is not specified, it will install the latest.
+ * @param goVersion version of Go that affects how to install the tool. (e.g. modules vs legacy GOPATH mode)
  */
-export function installTools(missing: Tool[], goVersion: GoVersion): Promise<void> {
+export function installTools(missing: ToolAtVersion[], goVersion: GoVersion): Promise<void> {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
 		vscode.window.showErrorMessage(
@@ -169,7 +181,11 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 
 	outputChannel.appendLine(installingMsg);
 	missing.forEach((missingTool) => {
-		outputChannel.appendLine('  ' + missingTool.name);
+		let toolName = missingTool.name;
+		if (missingTool.version) {
+			toolName += '@' + missingTool.version;
+		}
+		outputChannel.appendLine('  ' + toolName);
 	});
 
 	outputChannel.appendLine(''); // Blank line for spacing.
@@ -178,7 +194,7 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 	const toolsTmpDir = fs.mkdtempSync(getTempFilePath('go-tools-'));
 
 	return missing
-		.reduce((res: Promise<string[]>, tool: Tool) => {
+		.reduce((res: Promise<string[]>, tool: ToolAtVersion) => {
 			return res.then(
 				(sofar) =>
 					new Promise<string[]>((resolve, reject) => {
@@ -199,18 +215,18 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 							env: envForTools,
 							cwd: toolsTmpDir
 						};
-
 						const callback = (err: Error, stdout: string, stderr: string) => {
 							// Make sure to delete the temporary go.mod file, if it exists.
 							if (tmpGoModFile && fs.existsSync(tmpGoModFile)) {
 								fs.unlinkSync(tmpGoModFile);
 							}
+							const importPath = getImportPathWithVersion(tool, tool.version, goVersion);
 							if (err) {
-								outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' FAILED');
+								outputChannel.appendLine('Installing ' + importPath + ' FAILED');
 								const failureReason = tool.name + ';;' + err + stdout.toString() + stderr.toString();
 								resolve([...sofar, failureReason]);
 							} else {
-								outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
+								outputChannel.appendLine('Installing ' + importPath + ' SUCCEEDED');
 								resolve([...sofar, null]);
 							}
 						};
@@ -246,11 +262,17 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 							if (hasModSuffix(tool)) {
 								args.push('-d');
 							}
-							args.push(getImportPath(tool, goVersion));
+							let importPath: string;
+							if (modulesOffForTool) {
+								importPath = getImportPath(tool, goVersion);
+							} else {
+								importPath = getImportPathWithVersion(tool, tool.version, goVersion);
+							}
+							args.push(importPath);
 							cp.execFile(goRuntimePath, args, opts, (err, stdout, stderr) => {
 								if (stderr.indexOf('unexpected directory layout:') > -1) {
 									outputChannel.appendLine(
-										`Installing ${tool.name} failed with error "unexpected directory layout". Retrying...`
+										`Installing ${importPath} failed with error "unexpected directory layout". Retrying...`
 									);
 									cp.execFile(goRuntimePath, args, opts, callback);
 								} else if (!err && hasModSuffix(tool)) {
@@ -351,23 +373,27 @@ export async function promptForMissingTool(toolName: string) {
 	});
 }
 
-export async function promptForUpdatingTool(toolName: string) {
+export async function promptForUpdatingTool(toolName: string, newVersion?: SemVer) {
 	const tool = getTool(toolName);
+	const toolVersion = {...tool, version: newVersion}; // ToolWithVersion
 
 	// If user has declined to update, then don't prompt.
 	if (containsTool(declinedUpdates, tool)) {
 		return;
 	}
 	const goVersion = await getGoVersion();
-	const updateMsg = `Your version of ${tool.name} appears to be out of date. Please update for an improved experience.`;
+	let updateMsg = `Your version of ${tool.name} appears to be out of date. Please update for an improved experience.`;
 	const choices: string[] = ['Update'];
 	if (toolName === `gopls`) {
-		choices.push('Release Notes'); // TODO(hyangah): pass more info such as version, release note location.
+		choices.push('Release Notes');
+	}
+	if (newVersion) {
+		updateMsg = `New version of ${tool.name} (${newVersion}) is available. Please update for an improved experience.`;
 	}
 	vscode.window.showInformationMessage(updateMsg, ...choices).then((selected) => {
 		switch (selected) {
 			case 'Update':
-				installTools([tool], goVersion);
+				installTools([toolVersion], goVersion);
 				break;
 			case 'Release Notes':
 				vscode.commands.executeCommand(
