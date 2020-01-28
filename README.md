@@ -62,7 +62,7 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 
 - Build-on-save to compile code and show build errors. (using `go build` and `go test`)
 - Vet-on-save to run `go vet` and show errors as warnings
-- Lint-on-save to show linting errors as warnings (using `golint`, `gometalinter`, `staticcheck`, `golangci-lint` or `revive`)
+- Lint-on-save to show linting errors as warnings (using `golint`, `staticcheck`, `golangci-lint` or `revive`)
 - Semantic/Syntactic error reporting as you type (using `gotype-live`)
 
 ### Testing
