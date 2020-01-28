@@ -70,7 +70,13 @@ export function generateTestCurrentPackage(): Promise<boolean> {
 	if (!editor) {
 		return;
 	}
-	return generateTests({ dir: path.dirname(editor.document.uri.fsPath) }, getGoConfig(editor.document.uri));
+	return generateTests(
+		{
+			dir: path.dirname(editor.document.uri.fsPath),
+			isTestFile: editor.document.fileName.endsWith('_test.go')
+		},
+		getGoConfig(editor.document.uri)
+	);
 }
 
 export function generateTestCurrentFile(): Promise<boolean> {
@@ -78,7 +84,14 @@ export function generateTestCurrentFile(): Promise<boolean> {
 	if (!editor) {
 		return;
 	}
-	return generateTests({ dir: editor.document.uri.fsPath }, getGoConfig(editor.document.uri));
+
+	return generateTests(
+		{
+			dir: editor.document.uri.fsPath,
+			isTestFile: editor.document.fileName.endsWith('_test.go')
+		},
+		getGoConfig(editor.document.uri)
+	);
 }
 
 export async function generateTestCurrentFunction(): Promise<boolean> {
@@ -99,13 +112,21 @@ export async function generateTestCurrentFunction(): Promise<boolean> {
 	}
 	let funcName = currentFunction.name;
 	const funcNameParts = funcName.match(/^\(\*?(.*)\)\.(.*)$/);
-	if (funcNameParts != null && funcNameParts.length === 3) {  // receiver type specified
+	if (funcNameParts != null && funcNameParts.length === 3) {
+		// receiver type specified
 		const rType = funcNameParts[1].replace(/^\w/, (c) => c.toUpperCase());
 		const fName = funcNameParts[2].replace(/^\w/, (c) => c.toUpperCase());
 		funcName = rType + fName;
 	}
 
-	return generateTests({ dir: editor.document.uri.fsPath, func: funcName }, getGoConfig(editor.document.uri));
+	return generateTests(
+		{
+			dir: editor.document.uri.fsPath,
+			func: funcName,
+			isTestFile: editor.document.fileName.endsWith('_test.go')
+		},
+		getGoConfig(editor.document.uri)
+	);
 }
 
 /**
@@ -120,6 +141,11 @@ interface Config {
 	 * Specific function names to generate tests skeleton.
 	 */
 	func?: string;
+
+	/**
+	 * Whether or not the file to generate test functions for is a test file.
+	 */
+	isTestFile?: boolean;
 }
 
 function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): Promise<boolean> {
@@ -179,7 +205,8 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 
 				vscode.window.showInformationMessage(message);
 				outputChannel.append(message);
-				if (testsGenerated) {
+
+				if (testsGenerated && !conf.isTestFile) {
 					toggleTestFile();
 				}
 
