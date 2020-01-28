@@ -5,16 +5,20 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import vscode = require('vscode');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getGoConfig, getToolsEnvVars, killTree, sendTelemetryEvent } from './util';
+import { sendTelemetryEventForFormatting } from './telemetry';
+import { getBinPath, getGoConfig, getToolsEnvVars, killTree } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
-
-	public provideDocumentFormattingEdits(document: vscode.TextDocument, options: vscode.FormattingOptions, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TextEdit[]> {
-		if (vscode.window.visibleTextEditors.every(e => e.document.fileName !== document.fileName)) {
+	public provideDocumentFormattingEdits(
+		document: vscode.TextDocument,
+		options: vscode.FormattingOptions,
+		token: vscode.CancellationToken
+	): vscode.ProviderResult<vscode.TextEdit[]> {
+		if (vscode.window.visibleTextEditors.every((e) => e.document.fileName !== document.fileName)) {
 			return [];
 		}
 
@@ -38,19 +42,27 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			formatFlags.push('-style=indent=' + options.tabSize);
 		}
 
-		return this.runFormatter(formatTool, formatFlags, document, token).then(edits => edits, err => {
-			if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
-				promptForUpdatingTool(formatTool);
-				return Promise.resolve([]);
+		return this.runFormatter(formatTool, formatFlags, document, token).then(
+			(edits) => edits,
+			(err) => {
+				if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
+					promptForUpdatingTool(formatTool);
+					return Promise.resolve([]);
+				}
+				if (err) {
+					console.log(err);
+					return Promise.reject('Check the console in dev tools to find errors when formatting.');
+				}
 			}
-			if (err) {
-				console.log(err);
-				return Promise.reject('Check the console in dev tools to find errors when formatting.');
-			}
-		});
+		);
 	}
 
-	private runFormatter(formatTool: string, formatFlags: string[], document: vscode.TextDocument, token: vscode.CancellationToken): Thenable<vscode.TextEdit[]> {
+	private runFormatter(
+		formatTool: string,
+		formatFlags: string[],
+		document: vscode.TextDocument,
+		token: vscode.CancellationToken
+	): Thenable<vscode.TextEdit[]> {
 		const formatCommandBinPath = getBinPath(formatTool);
 
 		return new Promise<vscode.TextEdit[]>((resolve, reject) => {
@@ -69,15 +81,15 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			const p = cp.spawn(formatCommandBinPath, formatFlags, { env, cwd });
 			token.onCancellationRequested(() => !p.killed && killTree(p.pid));
 			p.stdout.setEncoding('utf8');
-			p.stdout.on('data', data => stdout += data);
-			p.stderr.on('data', data => stderr += data);
-			p.on('error', err => {
+			p.stdout.on('data', (data) => (stdout += data));
+			p.stderr.on('data', (data) => (stderr += data));
+			p.on('error', (err) => {
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool(formatTool);
 					return reject();
 				}
 			});
-			p.on('close', code => {
+			p.on('close', (code) => {
 				if (code !== 0) {
 					return reject(stderr);
 				}
@@ -86,16 +98,12 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 				// VS Code will calculate minimal edits to be applied
 				const fileStart = new vscode.Position(0, 0);
 				const fileEnd = document.lineAt(document.lineCount - 1).range.end;
-				const textEdits: vscode.TextEdit[] = [new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)];
+				const textEdits: vscode.TextEdit[] = [
+					new vscode.TextEdit(new vscode.Range(fileStart, fileEnd), stdout)
+				];
 
 				const timeTaken = Date.now() - t0;
-				/* __GDPR__
-				   "format" : {
-					  "tool" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					  "timeTaken": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
-				   }
-				 */
-				sendTelemetryEvent('format', { tool: formatTool }, { timeTaken });
+				sendTelemetryEventForFormatting(formatTool, timeTaken);
 				if (timeTaken > 750) {
 					console.log(`Formatting took too long(${timeTaken}ms). Format On Save feature could be aborted.`);
 				}

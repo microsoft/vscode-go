@@ -1,11 +1,12 @@
 {
   "name": "Go",
-  "version": "0.11.7",
+  "version": "0.12.0",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
     "name": "Microsoft Corporation - Development Labs"
   },
+  "license": "MIT",
   "icon": "images/go-logo-blue.png",
   "categories": [
     "Programming Languages",
@@ -34,7 +35,8 @@
     "test": "node ./out/test/runTest.js",
     "lint": "node ./node_modules/tslint/bin/tslint --project tsconfig.json",
     "fix-lint": "node ./node_modules/tslint/bin/tslint --fix --project tsconfig.json",
-    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
+    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "extensionDependencies": [],
   "dependencies": {
@@ -45,7 +47,7 @@
     "vscode-debugadapter": "^1.36.0",
     "vscode-debugprotocol": "^1.36.0",
     "vscode-extension-telemetry": "^0.1.2",
-    "vscode-languageclient": "~5.2.1",
+    "vscode-languageclient": "^6.0.1",
     "web-request": "^1.0.7"
   },
   "devDependencies": {
@@ -59,13 +61,15 @@
     "glob": "^7.1.4",
     "mocha": "^6.2.0",
     "tslint": "^5.19.0",
-    "typescript": "^3.6.2",
-    "vscode-test": "^1.2.0"
+    "typescript": "^3.7.2",
+    "vscode-test": "^1.2.3",
+    "prettier": "^1.16.4"
   },
   "engines": {
     "vscode": "^1.30.0"
   },
   "activationEvents": [
+    "workspaceContains:**/*.go",
     "onLanguage:go",
     "onCommand:go.gopath",
     "onCommand:go.tools.install",
@@ -302,6 +306,11 @@
         "description": "Cancels running tests."
       },
       {
+        "command": "go.apply.coverprofile",
+        "title": "Go: Apply Cover Profile",
+        "description": "Applies existing cover profile."
+      },
+      {
         "command": "go.godoctor.extract",
         "title": "Go: Extract to function",
         "description": "Extract to function using godoctor."
@@ -317,15 +326,11 @@
         "description": "Restart the running instance of the language server"
       }
     ],
+    "breakpoints": [{ "language": "go" }],
     "debuggers": [
       {
         "type": "go",
         "label": "Go",
-        "enableBreakpointsFor": {
-          "languageIds": [
-            "go"
-          ]
-        },
         "program": "./out/src/debugAdapter/goDebug.js",
         "runtime": "node",
         "languages": [
@@ -489,8 +494,14 @@
                 "description": "Various levels of logging shown in the debug console. When set to 'log' or 'verbose', the logs will also be written to a file."
               },
               "envFile": {
-                "type": "string",
-                "description": "Absolute path to a file containing environment variable definitions.",
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "description": "Absolute path to a file containing environment variable definitions. Multiple files can be specified by provided an array of absolute paths",
                 "default": "${workspaceFolder}/.env"
               },
               "backend": {
@@ -713,7 +724,7 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "Go configuration",
+      "title": "Go",
       "properties": {
         "go.buildOnSave": {
           "type": "string",
@@ -882,6 +893,11 @@
           "type": "boolean",
           "default": false,
           "description": "If true, shows test coverage when Go: Test Function at cursor command is run."
+        },
+        "go.coverOnSingleTestFile": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, shows test coverage when Go: Test Single File command is run."
         },
         "go.coverageOptions": {
           "type": "string",
@@ -1071,7 +1087,7 @@
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
-          "description": "Experimental: Use Go language server from Google or Sourcegraph for Hover, Definition, Signature Help, Auto Completion and Formatting features instead of tools like godef, gocode and goreturns"
+          "description": "Use the Go language server \"gopls\" from Google for powering language features like code navigation, completion, formatting & diagnostics."
         },
         "go.languageServerFlags": {
           "type": "array",
@@ -1086,51 +1102,6 @@
               "default": false,
               "description": "If true, gofmt is used by the language server to format files."
             },
-            "autoComplete": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will provide code completion results."
-            },
-            "rename": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Rename feature."
-            },
-            "goToDefinition": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to/Peek Definition feature."
-            },
-            "goToTypeDefinition": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to/Peek Type Definition feature."
-            },
-            "hover": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the hover feature."
-            },
-            "findReferences": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Find/Peek References feature."
-            },
-            "signatureHelp": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Signature Help/Parameter Hints feature."
-            },
-            "documentSymbols": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to Document Symbols/Outline/Breadcrumbs feature."
-            },
-            "workspaceSymbols": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to Workspace Symbols feature."
-            },
             "diagnostics": {
               "type": "boolean",
               "default": true,
@@ -1140,33 +1111,12 @@
               "type": "boolean",
               "default": true,
               "description": "If true, the language server will provide clickable Godoc links for import statements."
-            },
-            "incrementalSync": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will accept incremental document synchronization."
-            },
-            "highlight": {
-              "type": "boolean",
-              "default": true,
-              "description": "If true, the language server will be used to highlighting selected text."
             }
           },
           "default": {
             "format": true,
-            "autoComplete": true,
-            "rename": true,
-            "goToDefinition": true,
-            "hover": true,
-            "signatureHelp": true,
-            "goToTypeDefinition": true,
-            "goToImplementation": true,
-            "documentSymbols": true,
-            "workspaceSymbols": true,
-            "findReferences": true,
             "diagnostics": true,
-            "documentLink": true,
-            "highlight": true
+            "documentLink": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },

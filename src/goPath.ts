@@ -9,10 +9,10 @@
  * This file is loaded by both the extension and debug adapter, so it cannot import 'vscode'
  */
 import fs = require('fs');
-import path = require('path');
 import os = require('os');
+import path = require('path');
 
-let binPathCache: { [bin: string]: string; } = {};
+let binPathCache: { [bin: string]: string } = {};
 
 export const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
 
@@ -20,8 +20,8 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 	toolName = correctBinname(toolName);
 	if (envVarValue) {
 		const paths = envVarValue.split(path.delimiter);
-		for (let i = 0; i < paths.length; i++) {
-			const binpath = path.join(paths[i], appendBinToPath ? 'bin' : '', toolName);
+		for (const p of paths) {
+			const binpath = path.join(p, appendBinToPath ? 'bin' : '', toolName);
 			if (fileExists(binpath)) {
 				return binpath;
 			}
@@ -31,18 +31,20 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 }
 
 export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths: string[], alternateTool?: string) {
-	if (binPathCache[toolName]) return binPathCache[toolName];
+	if (binPathCache[toolName]) {
+		return binPathCache[toolName];
+	}
 
 	if (alternateTool && path.isAbsolute(alternateTool) && fileExists(alternateTool)) {
 		binPathCache[toolName] = alternateTool;
 		return alternateTool;
 	}
 
-	const binname = (alternateTool && !path.isAbsolute(alternateTool)) ? alternateTool : toolName;
-	for (let i = 0; i < preferredGopaths.length; i++) {
-		if (typeof preferredGopaths[i] === 'string') {
+	const binname = alternateTool && !path.isAbsolute(alternateTool) ? alternateTool : toolName;
+	for (const preferred of preferredGopaths) {
+		if (typeof preferred === 'string') {
 			// Search in the preferred GOPATH workspace's bin folder
-			const pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferredGopaths[i], true);
+			const pathFrompreferredGoPath = getBinPathFromEnvVar(binname, preferred, true);
 			if (pathFrompreferredGoPath) {
 				binPathCache[toolName] = pathFrompreferredGoPath;
 				return pathFrompreferredGoPath;
@@ -79,13 +81,13 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 }
 
 function correctBinname(toolName: string) {
-	if (process.platform === 'win32')
+	if (process.platform === 'win32') {
 		return toolName + '.exe';
-	else
-		return toolName;
+	}
+	return toolName;
 }
 
-function fileExists(filePath: string): boolean {
+export function fileExists(filePath: string): boolean {
 	let exists = true;
 	try {
 		exists = fs.statSync(filePath).isFile();
@@ -106,7 +108,9 @@ export function clearCacheForTools() {
  * Exapnds ~ to homedir in non-Windows platform
  */
 export function resolveHomeDir(inputPath: string): string {
-	if (!inputPath || !inputPath.trim()) return inputPath;
+	if (!inputPath || !inputPath.trim()) {
+		return inputPath;
+	}
 	return inputPath.startsWith('~') ? path.join(os.homedir(), inputPath.substr(1)) : inputPath;
 }
 
@@ -117,15 +121,15 @@ export function stripBOM(s: string): string {
 	return s;
 }
 
-export function parseEnvFile(path: string): { [key: string]: string } {
+export function parseEnvFile(envFilePath: string): { [key: string]: string } {
 	const env: { [key: string]: any } = {};
-	if (!path) {
+	if (!envFilePath) {
 		return env;
 	}
 
 	try {
-		const buffer = stripBOM(fs.readFileSync(path, 'utf8'));
-		buffer.split('\n').forEach(line => {
+		const buffer = stripBOM(fs.readFileSync(envFilePath, 'utf8'));
+		buffer.split('\n').forEach((line) => {
 			const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
 			if (r !== null) {
 				let value = r[2] || '';
@@ -137,7 +141,7 @@ export function parseEnvFile(path: string): { [key: string]: string } {
 		});
 		return env;
 	} catch (e) {
-		throw new Error(`Cannot load environment variables from file ${path}`);
+		throw new Error(`Cannot load environment variables from file ${envFilePath}`);
 	}
 }
 
@@ -171,10 +175,13 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 
 	// Find current workspace by checking if current file is
 	// under any of the workspaces in $GOPATH
-	for (let i = 0; i < workspaces.length; i++) {
-		const possibleCurrentWorkspace = path.join(workspaces[i], 'src');
-		if (currentFileDirPath.startsWith(possibleCurrentWorkspace)
-			|| (process.platform === 'win32' && currentFileDirPath.toLowerCase().startsWith(possibleCurrentWorkspace.toLowerCase()))) {
+	for (const workspace of workspaces) {
+		const possibleCurrentWorkspace = path.join(workspace, 'src');
+		if (
+			currentFileDirPath.startsWith(possibleCurrentWorkspace) ||
+			(process.platform === 'win32' &&
+				currentFileDirPath.toLowerCase().startsWith(possibleCurrentWorkspace.toLowerCase()))
+		) {
 			// In case of nested workspaces, (example: both /Users/me and /Users/me/src/a/b/c are in $GOPATH)
 			// both parent & child workspace in the nested workspaces pair can make it inside the above if block
 			// Therefore, the below check will take longer (more specific to current file) of the two
@@ -188,7 +195,9 @@ export function getCurrentGoWorkspaceFromGOPATH(gopath: string, currentFileDirPa
 
 // Workaround for issue in https://github.com/Microsoft/vscode/issues/9448#issuecomment-244804026
 export function fixDriveCasingInWindows(pathToFix: string): string {
-	return (process.platform === 'win32' && pathToFix) ? pathToFix.substr(0, 1).toUpperCase() + pathToFix.substr(1) : pathToFix;
+	return process.platform === 'win32' && pathToFix
+		? pathToFix.substr(0, 1).toUpperCase() + pathToFix.substr(1)
+		: pathToFix;
 }
 
 /**

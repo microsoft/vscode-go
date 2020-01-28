@@ -5,9 +5,9 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
 import path = require('path');
+import vscode = require('vscode');
 import { getAllPackages } from './goPackages';
 import { envPath } from './goPath';
 import { getBinPath, getCurrentGoPath, getImportPath } from './util';
@@ -35,13 +35,14 @@ export function browsePackages() {
 	}
 
 	showPackageFiles(selectedText, true, workDir);
-
 }
 
 function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDir: string) {
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return vscode.window.showErrorMessage(`Failed to run "go list" to fetch packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return vscode.window.showErrorMessage(
+			`Failed to run "go list" to fetch packages as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`
+		);
 	}
 
 	if (!pkg && showAllPkgsIfPkgNotFound) {
@@ -56,50 +57,59 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 		options['cwd'] = workDir;
 	}
 
-	cp.execFile(goRuntimePath, ['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg], options, (err, stdout, stderr) => {
-		if (!stdout || stdout.indexOf(':') === -1) {
-			if (showAllPkgsIfPkgNotFound) {
-				return showPackageList(workDir);
+	cp.execFile(
+		goRuntimePath,
+		['list', '-f', '{{.Dir}}:{{.GoFiles}}:{{.TestGoFiles}}:{{.XTestGoFiles}}', pkg],
+		options,
+		(err, stdout, stderr) => {
+			if (!stdout || stdout.indexOf(':') === -1) {
+				if (showAllPkgsIfPkgNotFound) {
+					return showPackageList(workDir);
+				}
+
+				return;
 			}
 
-			return;
-		}
+			const matches = stdout && stdout.match(/(.*):\[(.*)\]:\[(.*)\]:\[(.*)\]/);
+			if (matches) {
+				const dir = matches[1];
+				let files = matches[2] ? matches[2].split(' ') : [];
+				const testfiles = matches[3] ? matches[3].split(' ') : [];
+				const xtestfiles = matches[4] ? matches[4].split(' ') : [];
+				files = files.concat(testfiles);
+				files = files.concat(xtestfiles);
+				vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then((file) => {
+					// if user abandoned list, file will be null and path.join will error out.
+					// therefore return.
+					if (!file) {
+						return;
+					}
 
-		const matches = stdout && stdout.match(/(.*):\[(.*)\]:\[(.*)\]:\[(.*)\]/);
-		if (matches) {
-			const dir = matches[1];
-			let files = matches[2] ? matches[2].split(' ') : [];
-			const testfiles = matches[3] ? matches[3].split(' ') : [];
-			const xtestfiles = matches[4] ? matches[4].split(' ') : [];
-			files = files.concat(testfiles);
-			files = files.concat(xtestfiles);
-			vscode.window.showQuickPick(files, { placeHolder: `Below are Go files from ${pkg}` }).then(file => {
-				// if user abandoned list, file will be null and path.join will error out.
-				// therefore return.
-				if (!file) return;
-
-				vscode.workspace.openTextDocument(path.join(dir, file)).then(document => {
-					vscode.window.showTextDocument(document);
+					vscode.workspace.openTextDocument(path.join(dir, file)).then((document) => {
+						vscode.window.showTextDocument(document);
+					});
 				});
-			});
+			}
 		}
-	});
+	);
 }
 
 function showPackageList(workDir: string) {
-	return getAllPackages(workDir).then(pkgMap => {
+	return getAllPackages(workDir).then((pkgMap) => {
 		const pkgs: string[] = Array.from(pkgMap.keys());
 		if (pkgs.length === 0) {
-			return vscode.window.showErrorMessage('Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.');
+			return vscode.window.showErrorMessage(
+				'Could not find packages. Ensure `gopkgs -format {{.Name}};{{.ImportPath}}` runs successfully.'
+			);
 		}
 
-		vscode
-			.window
+		vscode.window
 			.showQuickPick(pkgs.sort(), { placeHolder: 'Select a package to browse' })
-			.then(pkgFromDropdown => {
-				if (!pkgFromDropdown) return;
+			.then((pkgFromDropdown) => {
+				if (!pkgFromDropdown) {
+					return;
+				}
 				showPackageFiles(pkgFromDropdown, false, workDir);
 			});
 	});
-
 }
