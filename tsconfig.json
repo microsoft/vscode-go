@@ -13,7 +13,7 @@
 		"alwaysStrict": true,
 		"strictBindCallApply": true,
 		"strictFunctionTypes": true,
-		//"strictNullChecks": true,
+		"strictNullChecks": true,
 		//"strictPropertyInitialization": true,
 	},
 	"exclude": [
