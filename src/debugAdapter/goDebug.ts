@@ -396,7 +396,6 @@ class Delve {
 					if (typeof launchArgs.envFile === 'string') {
 						envs.push(parseEnvFile(launchArgs.envFile));
 					}
-	
 					if (Array.isArray(launchArgs.envFile)) {
 						envs.push(...parseEnvFiles(launchArgs.envFile));
 					}
