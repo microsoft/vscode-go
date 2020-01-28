@@ -242,7 +242,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	init?: string;
 	trace?: 'verbose' | 'log' | 'error';
 	/** Optional path to .env file. */
-	envFile?: string;
+	envFile?: string | string[];
 	backend?: string;
 	output?: string;
 	/** Delve LoadConfig parameters */
@@ -390,15 +390,22 @@ class Delve {
 				}
 
 				// read env from disk and merge into env variables
-				let fileEnv = {};
+				const fileEnvs = [];
 				try {
-					fileEnv = parseEnvFile(launchArgs.envFile);
+					if (typeof launchArgs.envFile === 'string') {
+						fileEnvs.push(parseEnvFile(launchArgs.envFile));
+					}
+					if (Array.isArray(launchArgs.envFile)) {
+						launchArgs.envFile.forEach((envFile) => {
+							fileEnvs.push(parseEnvFile(envFile));
+						});
+					}
 				} catch (e) {
 					return reject(e);
 				}
 
 				const launchArgsEnv = launchArgs.env || {};
-				env = Object.assign({}, process.env, fileEnv, launchArgsEnv);
+				env = Object.assign({}, process.env, ...fileEnvs, launchArgsEnv);
 
 				const dirname = isProgramDirectory ? program : path.dirname(program);
 				if (!env['GOPATH'] && (mode === 'debug' || mode === 'test')) {

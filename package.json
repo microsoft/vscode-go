@@ -494,8 +494,14 @@
                 "description": "Various levels of logging shown in the debug console. When set to 'log' or 'verbose', the logs will also be written to a file."
               },
               "envFile": {
-                "type": "string",
-                "description": "Absolute path to a file containing environment variable definitions.",
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "description": "Absolute path to a file containing environment variable definitions. Multiple files can be specified by provided an array of absolute paths",
                 "default": "${workspaceFolder}/.env"
               },
               "backend": {
