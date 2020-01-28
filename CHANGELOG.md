@@ -1,3 +1,21 @@
+## 0.12.1 - Coming Soon...
+
+* [Henry Kwan (@piengeng)](https://github.com/piengeng)
+    * The outline feature now shows constants different from variables, and interfaces different from types. [PR 2973](https://github.com/Microsoft/vscode-go/pull/2973)
+
+* [@marcel-basel](https://github.com/marcel-basel)
+    * The `Go: Generate Unit Tests For Function` commands now respects the receiver type and generate tests only for
+    current function instead of all functions that match the name. Fixes [Bug 2282](https://github.com/Microsoft/vscode-go/issues/2282) with [PR 2987](https://github.com/Microsoft/vscode-go/pull/2987)
+
+* [Tobias Salzmann (@Eun)](https://github.com/Eun)
+    * A new command `Go: Apply Cover Profile` to apply code coverage decorators from a custom cover profile. [Feature Request 1596](https://github.com/Microsoft/vscode-go/issues/1596) implemented with [PR 2361](https://github.com/Microsoft/vscode-go/pull/2361)
+
+* [@SteelPhase](https://github.com/SteelPhase)
+    * The `envFile` in the debug configuration now supports configuring multiple env files. [Feature Request 1746](https://github.com/Microsoft/vscode-go/issues/1746) implemented with [PR 2395](https://github.com/Microsoft/vscode-go/pull/2395)
+
+* [Drake Gens (@drakegens)](https://github.com/drakegens)  
+    * Skip attempts to toggle the test file after generating unit tests for functions in a test file. Fixes [Bug 2822](https://github.com/Microsoft/vscode-go/issues/2822) with [PR 2883](https://github.com/Microsoft/vscode-go/pull/2883)
+
 ## 0.12.0 - 31st December, 2019
 
 ### Language server updates
