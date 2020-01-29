@@ -78,9 +78,17 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 	// The user has opted into the language server.
 	const languageServerToolPath = getLanguageServerToolPath();
 	const toolName = getToolFromToolPath(languageServerToolPath);
+	if (!toolName) {
+		// language server binary is not installed yet.
+		// Return immediately. The information messages such as
+		// offering to install missing tools, and suggesting to
+		// reload the window after installing the language server
+		// should be presented by now.
+		return;
+	}
 	const env = getToolsEnvVars();
 
-	// The user may not have the most up-to-date version of the language server.
+	// If installed, check. The user may not have the most up-to-date version of the language server.
 	const tool = getTool(toolName);
 	const update = await shouldUpdateLanguageServer(tool, languageServerToolPath, config.checkForUpdates);
 	if (update) {
