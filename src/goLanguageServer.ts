@@ -234,22 +234,31 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 	}
 
 	const config = parseLanguageServerConfig();
+	let shouldRestartServer: boolean;
 	let reloadMessage: string;
 
-	// If the user has disabled or enabled the language server.
+	// If the user enabled the language server, we just need to start it.
 	if (e.affectsConfiguration('go.useLanguageServer')) {
 		if (config.enabled) {
-			reloadMessage = 'Reload VS Code window to enable the use of language server';
+			shouldRestartServer = true;
 		} else {
-			reloadMessage = 'Reload VS Code window to disable the use of language server';
+			// If the user has disabled the language server, we will need to
+			// reactivate the extension to register the correct providers,
+			// so suggest a full VS Code reload.
+			reloadMessage = 'Reload VS Code window to disable the use of language server.';
 		}
 	}
 
-	if (
-		e.affectsConfiguration('go.languageServerFlags') ||
-		e.affectsConfiguration('go.languageServerExperimentalFeatures')
-	) {
-		reloadMessage = 'Reload VS Code window for the changes in language server settings to take effect';
+	// If the flags to the language server have changed,
+	// all that's necessary is a server restart.
+	if (e.affectsConfiguration('go.languageServerFlags')) {
+		// TODO(rstambler): This should be doable by creating a new client.
+		reloadMessage = 'Reload VS Code window for changes in the language server flags to take effect.';
+	}
+	// If the features provided by the language server have changed,
+	// the extensions requires a full reactivation.
+	if (e.affectsConfiguration('go.languageServerExperimentalFeatures')) {
+		reloadMessage = 'Reload VS Code window for the changes in language server features to take effect.';
 	}
 
 	// If there was a change in the configuration of the language server,
@@ -260,6 +269,8 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 				vscode.commands.executeCommand('workbench.action.reloadWindow');
 			}
 		});
+	} else if (shouldRestartServer) {
+		vscode.commands.executeCommand('go.languageserver.restart');
 	}
 }
 
@@ -329,13 +340,12 @@ export function getLanguageServerToolPath(): string {
 	// Only gopls and go-langserver are supported.
 	if (languageServerOfChoice !== 'gopls' && languageServerOfChoice !== 'go-langserver') {
 		vscode.window.showErrorMessage(
-			`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window`
+			`Cannot find the language server ${languageServerOfChoice}. Please install it.`
 		);
 		return;
 	}
 	// Otherwise, prompt the user to install the language server.
 	promptForMissingTool(languageServerOfChoice);
-	vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server.');
 }
 
 function allFoldersHaveSameGopath(): boolean {

@@ -135,12 +135,6 @@ export async function promptToUpdateToolForModules(
 						if (goConfig.inspect('useLanguageServer').workspaceFolderValue === false) {
 							goConfig.update('useLanguageServer', true, vscode.ConfigurationTarget.WorkspaceFolder);
 						}
-						const reloadMsg = 'Reload VS Code window to enable the use of Go language server';
-						vscode.window.showInformationMessage(reloadMsg, 'Reload').then((selectedForReload) => {
-							if (selectedForReload === 'Reload') {
-								vscode.commands.executeCommand('workbench.action.reloadWindow');
-							}
-						});
 					}
 				});
 			}

@@ -13,7 +13,6 @@ import { getLanguageServerToolPath } from './goLanguageServer';
 import { envPath, getToolFromToolPath } from './goPath';
 import { hideGoStatus, outputChannel, showGoStatus } from './goStatus';
 import {
-	containsString,
 	containsTool,
 	disableModulesForWildcard,
 	getConfiguredTools,
@@ -205,6 +204,10 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 								resolve([...sofar, failureReason]);
 							} else {
 								outputChannel.appendLine('Installing ' + getImportPath(tool, goVersion) + ' SUCCEEDED');
+								// If a new version of gopls has been installed, restart the language server.
+								if (tool.name === 'gopls') {
+									vscode.commands.executeCommand('go.languageserver.restart');
+								}
 								resolve([...sofar, null]);
 							}
 						};
@@ -271,9 +274,6 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 			outputChannel.appendLine(''); // Blank line for spacing
 			const failures = res.filter((x) => x != null);
 			if (failures.length === 0) {
-				if (containsString(missing, 'go-langserver') || containsString(missing, 'gopls')) {
-					outputChannel.appendLine('Reload VS Code window to use the Go language server');
-				}
 				outputChannel.appendLine('All tools successfully installed. You are ready to Go :).');
 				return;
 			}
