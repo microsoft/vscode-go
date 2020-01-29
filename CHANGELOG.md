@@ -6,6 +6,7 @@
 * [@marcel-basel](https://github.com/marcel-basel)
     * The `Go: Generate Unit Tests For Function` commands now respects the receiver type and generate tests only for
     current function instead of all functions that match the name. Fixes [Bug 2282](https://github.com/Microsoft/vscode-go/issues/2282) with [PR 2987](https://github.com/Microsoft/vscode-go/pull/2987)
+    * Use `GOBIN` to look for the installed Go tools as well. Fixes [Bug 2122](https://github.com/Microsoft/vscode-go/issues/2122) with [PR 3001](https://github.com/Microsoft/vscode-go/pull/3001)
 
 * [Tobias Salzmann (@Eun)](https://github.com/Eun)
     * A new command `Go: Apply Cover Profile` to apply code coverage decorators from a custom cover profile. [Feature Request 1596](https://github.com/Microsoft/vscode-go/issues/1596) implemented with [PR 2361](https://github.com/Microsoft/vscode-go/pull/2361)
@@ -15,6 +16,9 @@
 
 * [Drake Gens (@drakegens)](https://github.com/drakegens)  
     * Skip attempts to toggle the test file after generating unit tests for functions in a test file. Fixes [Bug 2822](https://github.com/Microsoft/vscode-go/issues/2822) with [PR 2883](https://github.com/Microsoft/vscode-go/pull/2883)
+
+* [Jakub Warczarek (@programmer04)](https://github.com/programmer04)
+    * Improve the code snippet for the for loop by replacing `index` with `i`. [Feature Request 2943](https://github.com/Microsoft/vscode-go/issues/2943) implemented with [PR 3010](https://github.com/Microsoft/vscode-go/pull/3010)
 
 ## 0.12.0 - 31st December, 2019
 
