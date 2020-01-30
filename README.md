@@ -36,16 +36,16 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 
 ### IntelliSense
 
-- Auto Completion of symbols as you type (using `gocode`)
-- Signature Help for functions as you type (using `gogetdoc` or `godef`+`go doc`)
-- Quick Info on the symbol as you hover over it (using `gogetdoc` or `godef`+`go doc`)
+- Auto Completion of symbols as you type (using `gopls` or `gocode`)
+- Signature Help for functions as you type (using `gopls` or `gogetdoc` or `godef`+`go doc`)
+- Quick Info on the symbol as you hover over it (using `gopls` or `gogetdoc` or `godef`+`go doc`)
 
 ### Code Navigation
 
-- Go to or Peek Definition of symbols (using `gogetdoc` or `godef`+`go doc`)
-- Find References of symbols and Implementations of interfaces (using `guru`)
+- Go to or Peek Definition of symbols (using `gopls` or `gogetdoc` or `godef`+`go doc`)
+- Find References of symbols and Implementations of interfaces (using `gopls` or `guru`)
 - Go to symbol in file or see the file outline (using `go-outline`)
-- Go to symbol in workspace (using `go-symbols`)
+- Go to symbol in workspace (using `gopls` or `go-symbols`)
 - Toggle between a Go program and the corresponding test file.
 
 ### Code Editing
@@ -93,7 +93,7 @@ You will see `Analysis Tools Missing` in the bottom right, clicking this will of
 
 **Note 2**: The `Format on save` feature has a timeout of 750ms after which the formatting is aborted. You can change this timeout using the setting `editor.formatOnSaveTimeout`. This feature gets disabled when you have enabled the `Auto Save` feature in Visual Studio Code.
 
-**Note 3**:  This extension uses `gocode` to provide completion lists as you type. If you have disabled the `go.buildOnSave` setting, then you may not get fresh results from not-yet-built dependencies. Therefore, ensure you have built your dependencies manually in such cases.
+**Note 3**:  Unless `go.useLanguageServer` is set to `true`, this extension uses `gocode` to provide completion lists as you type. If you have disabled the `go.buildOnSave` setting, then you may not get fresh results from not-yet-built dependencies. Therefore, ensure you have built your dependencies manually in such cases.
 
 ### Customizing the Go extension features
 
@@ -126,7 +126,8 @@ If you want to manually install/update the language server,
 
 Below are the settings you can use to control the use of the language server. You need to reload the VS Code window for any changes in these settings to take effect.
 
-- Set `go.useLanguageServer` to `true` to enable the use of language server
+- Set `go.useLanguageServer` to `true` to enable the use of language server.
+- When using `gopls`, see the [recommended settings](https://github.com/golang/tools/blob/master/gopls/doc/vscode.md).
 - Some of the features from the language server can be disabled if needed using the setting `go.languageServerExperimentalFeatures`. Below are the features you can thus control. By default, all are set to `true` i.e are enabled.
 ```json
   "go.languageServerExperimentalFeatures": {
