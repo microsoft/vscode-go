@@ -854,7 +854,8 @@ class GoDebugSession extends LoggingDebugSession {
 	protected toLocalPath(pathToConvert: string): string {
 		if (this.delve.remotePath.length === 0) {
 			if (!!this.delve.sourceRoot) {
-				return this.convertDebuggerPathToClient(this.delve.sourceRoot + this.findPathSeperator(pathToConvert) + pathToConvert);
+				return this.convertDebuggerPathToClient(
+					this.delve.sourceRoot + this.findPathSeperator(pathToConvert) + pathToConvert);
 			} else {
 				return this.convertDebuggerPathToClient(pathToConvert);
 			}
