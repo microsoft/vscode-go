@@ -30,12 +30,16 @@ export function getImportPath(tool: Tool, goVersion: GoVersion): string {
 
 /**
  * Returns boolean denoting if the import path for the given tool ends with `/...`
+ * and if the version of Go supports installing wildcard paths in module mode.
  * @param tool  	Object of type `Tool` for the Go tool.
  * @param goVersion The current Go version.
  */
-export function isWildcard(tool: Tool, goVersion: GoVersion): boolean {
+export function disableModulesForWildcard(tool: Tool, goVersion: GoVersion): boolean {
 	const importPath = getImportPath(tool, goVersion);
-	return importPath.endsWith('...');
+	const isWildcard = importPath.endsWith('...');
+
+	// Only Go >= 1.13 supports installing wildcards in module mode.
+	return isWildcard && goVersion.lt('1.13');
 }
 
 export function containsTool(tools: Tool[], tool: Tool): boolean {
@@ -43,7 +47,7 @@ export function containsTool(tools: Tool[], tool: Tool): boolean {
 }
 
 export function containsString(tools: Tool[], toolName: string): boolean {
-	return tools.some(tool => tool.name === toolName);
+	return tools.some((tool) => tool.name === toolName);
 }
 
 export function getTool(name: string): Tool {
@@ -82,7 +86,7 @@ export function getConfiguredTools(goVersion: GoVersion): Tool[] {
 		'impl',
 		'fillstruct',
 		'goplay',
-		'godoctor',
+		'godoctor'
 	]) {
 		maybeAddTool(name);
 	}
@@ -134,156 +138,156 @@ const allToolsInformation: { [key: string]: Tool } = {
 		name: 'gocode',
 		importPath: 'github.com/mdempsky/gocode',
 		isImportant: true,
-		description: 'Auto-completion, does not work with modules',
+		description: 'Auto-completion, does not work with modules'
 	},
 	'gocode-gomod': {
 		name: 'gocode-gomod',
 		importPath: 'github.com/stamblerre/gocode',
 		isImportant: true,
-		description: 'Auto-completion, works with modules',
+		description: 'Auto-completion, works with modules'
 	},
 	'gopkgs': {
 		name: 'gopkgs',
 		importPath: 'github.com/uudashr/gopkgs/cmd/gopkgs',
 		isImportant: true,
-		description: 'Auto-completion of unimported packages & Add Import feature',
+		description: 'Auto-completion of unimported packages & Add Import feature'
 	},
 	'go-outline': {
 		name: 'go-outline',
 		importPath: 'github.com/ramya-rao-a/go-outline',
 		isImportant: true,
-		description: 'Go to symbol in file',
+		description: 'Go to symbol in file'
 	},
 	'go-symbols': {
 		name: 'go-symbols',
 		importPath: 'github.com/acroca/go-symbols',
 		isImportant: false,
-		description: 'Go to symbol in workspace',
+		description: 'Go to symbol in workspace'
 	},
 	'guru': {
 		name: 'guru',
 		importPath: 'golang.org/x/tools/cmd/guru',
 		isImportant: false,
-		description: 'Find all references and Go to implementation of symbols',
+		description: 'Find all references and Go to implementation of symbols'
 	},
 	'gorename': {
 		name: 'gorename',
 		importPath: 'golang.org/x/tools/cmd/gorename',
 		isImportant: false,
-		description: 'Rename symbols',
+		description: 'Rename symbols'
 	},
 	'gomodifytags': {
 		name: 'gomodifytags',
 		importPath: 'github.com/fatih/gomodifytags',
 		isImportant: false,
-		description: 'Modify tags on structs',
+		description: 'Modify tags on structs'
 	},
 	'goplay': {
 		name: 'goplay',
 		importPath: 'github.com/haya14busa/goplay/cmd/goplay',
 		isImportant: false,
-		description: 'The Go playground',
+		description: 'The Go playground'
 	},
 	'impl': {
 		name: 'impl',
 		importPath: 'github.com/josharian/impl',
 		isImportant: false,
-		description: 'Stubs for interfaces',
+		description: 'Stubs for interfaces'
 	},
 	'gotype-live': {
 		name: 'gotype-live',
 		importPath: 'github.com/tylerb/gotype-live',
 		isImportant: false,
-		description: 'Show errors as you type',
+		description: 'Show errors as you type'
 	},
 	'godef': {
 		name: 'godef',
 		importPath: 'github.com/rogpeppe/godef',
 		isImportant: true,
-		description: 'Go to definition',
+		description: 'Go to definition'
 	},
 	'gogetdoc': {
 		name: 'gogetdoc',
 		importPath: 'github.com/zmb3/gogetdoc',
 		isImportant: true,
-		description: 'Go to definition & text shown on hover',
+		description: 'Go to definition & text shown on hover'
 	},
 	'goimports': {
 		name: 'goimports',
 		importPath: 'golang.org/x/tools/cmd/goimports',
 		isImportant: true,
-		description: 'Formatter',
+		description: 'Formatter'
 	},
 	'goreturns': {
 		name: 'goreturns',
 		importPath: 'github.com/sqs/goreturns',
 		isImportant: true,
-		description: 'Formatter',
+		description: 'Formatter'
 	},
 	'goformat': {
 		name: 'goformat',
 		importPath: 'winterdrache.de/goformat/goformat',
 		isImportant: false,
-		description: 'Formatter',
+		description: 'Formatter'
 	},
 	'golint': {
 		name: 'golint',
 		importPath: 'golang.org/x/lint/golint',
 		isImportant: true,
-		description: 'Linter',
+		description: 'Linter'
 	},
 	'gotests': {
 		name: 'gotests',
 		importPath: 'github.com/cweill/gotests/...',
 		isImportant: false,
-		description: 'Generate unit tests',
+		description: 'Generate unit tests'
 	},
 	'staticcheck': {
 		name: 'staticcheck',
 		importPath: 'honnef.co/go/tools/...',
 		isImportant: true,
-		description: 'Linter',
+		description: 'Linter'
 	},
 	'golangci-lint': {
 		name: 'golangci-lint',
 		importPath: 'github.com/golangci/golangci-lint/cmd/golangci-lint',
 		isImportant: true,
-		description: 'Linter',
+		description: 'Linter'
 	},
 	'revive': {
 		name: 'revive',
 		importPath: 'github.com/mgechev/revive',
 		isImportant: true,
-		description: 'Linter',
+		description: 'Linter'
 	},
 	'go-langserver': {
 		name: 'go-langserver',
 		importPath: 'github.com/sourcegraph/go-langserver',
 		isImportant: false,
-		description: 'Language Server from Sourcegraph',
+		description: 'Language Server from Sourcegraph'
 	},
 	'gopls': {
 		name: 'gopls',
 		importPath: 'golang.org/x/tools/gopls',
 		isImportant: false,
-		description: 'Language Server from Google',
+		description: 'Language Server from Google'
 	},
 	'dlv': {
 		name: 'dlv',
 		importPath: 'github.com/go-delve/delve/cmd/dlv',
 		isImportant: false,
-		description: 'Debugging',
+		description: 'Debugging'
 	},
 	'fillstruct': {
 		name: 'fillstruct',
 		importPath: 'github.com/davidrjenni/reftools/cmd/fillstruct',
 		isImportant: false,
-		description: 'Fill structs with defaults',
+		description: 'Fill structs with defaults'
 	},
 	'godoctor': {
 		name: 'godoctor',
 		importPath: 'github.com/godoctor/godoctor',
 		isImportant: false,
-		description: 'Extract to functions and variables',
-	},
+		description: 'Extract to functions and variables'
+	}
 };

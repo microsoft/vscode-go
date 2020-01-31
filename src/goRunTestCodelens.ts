@@ -6,22 +6,21 @@
 'use strict';
 
 import vscode = require('vscode');
-import path = require('path');
 import { CancellationToken, CodeLens, Command, TextDocument } from 'vscode';
 import { GoBaseCodeLensProvider } from './goBaseCodelens';
 import { GoDocumentSymbolProvider } from './goOutline';
-import { getBenchmarkFunctions, getTestFlags, getTestFunctionDebugArgs, getTestFunctions } from './testUtils';
+import { getBenchmarkFunctions, getTestFunctions } from './testUtils';
 import { getCurrentGoPath, getGoConfig } from './util';
 
 export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 	private readonly benchmarkRegex = /^Benchmark.+/;
 	private readonly debugConfig: any = {
-		'name': 'Launch',
-		'type': 'go',
-		'request': 'launch',
-		'mode': 'test',
-		'env': {
-			'GOPATH': getCurrentGoPath() // Passing current GOPATH to Delve as it runs in another process
+		name: 'Launch',
+		type: 'go',
+		request: 'launch',
+		mode: 'test',
+		env: {
+			GOPATH: getCurrentGoPath() // Passing current GOPATH to Delve as it runs in another process
 		}
 	};
 
@@ -30,7 +29,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 			return [];
 		}
 		const config = getGoConfig(document.uri);
-		const codeLensConfig: { [key: string]: any } = config.get('enableCodeLens');
+		const codeLensConfig = config.get<{ [key: string]: any }>('enableCodeLens');
 		const codelensEnabled = codeLensConfig ? codeLensConfig['runtest'] : false;
 		if (!codelensEnabled || !document.fileName.endsWith('_test.go')) {
 			return [];
@@ -56,7 +55,7 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 		const symbols = await documentSymbolProvider.provideDocumentSymbols(document, token);
 		const pkg = symbols[0];
 		if (!pkg) {
-			return;
+			return [];
 		}
 		const range = pkg.range;
 		const packageCodeLens = [
@@ -69,33 +68,34 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 				command: 'go.test.file'
 			})
 		];
-		if (symbols[0].children.some(sym => sym.kind === vscode.SymbolKind.Function && this.benchmarkRegex.test(sym.name))) {
-			packageCodeLens.push(new CodeLens(range, {
-				title: 'run package benchmarks',
-				command: 'go.benchmark.package'
-			}), new CodeLens(range, {
-				title: 'run file benchmarks',
-				command: 'go.benchmark.file'
-			}));
+		if (
+			symbols[0].children.some(
+				(sym) => sym.kind === vscode.SymbolKind.Function && this.benchmarkRegex.test(sym.name)
+			)
+		) {
+			packageCodeLens.push(
+				new CodeLens(range, {
+					title: 'run package benchmarks',
+					command: 'go.benchmark.package'
+				}),
+				new CodeLens(range, {
+					title: 'run file benchmarks',
+					command: 'go.benchmark.file'
+				})
+			);
 		}
 		return packageCodeLens;
 	}
 
-	private async getCodeLensForFunctions(vsConfig: vscode.WorkspaceConfiguration, document: TextDocument, token: CancellationToken): Promise<CodeLens[]> {
+	private async getCodeLensForFunctions(
+		vsConfig: vscode.WorkspaceConfiguration,
+		document: TextDocument,
+		token: CancellationToken
+	): Promise<CodeLens[]> {
 		const codelens: CodeLens[] = [];
 
-		const program = path.dirname(document.fileName);
-		const env = Object.assign({}, this.debugConfig.env, vsConfig['testEnvVars']);
-		const envFile = vsConfig['testEnvFile'];
-		const buildFlags = getTestFlags(vsConfig);
-		if (vsConfig['buildTags'] && buildFlags.indexOf('-tags') === -1) {
-			buildFlags.push('-tags');
-			buildFlags.push(`${vsConfig['buildTags']}`);
-		}
-		const currentDebugConfig = Object.assign({}, this.debugConfig, { program, env, envFile, buildFlags: buildFlags.map(x => `'${x}'`).join(' ') });
-
-		const testPromise = getTestFunctions(document, token).then(testFunctions => {
-			testFunctions.forEach(func => {
+		const testPromise = getTestFunctions(document, token).then((testFunctions) => {
+			testFunctions.forEach((func) => {
 				const runTestCmd: Command = {
 					title: 'run test',
 					command: 'go.test.cursor',
@@ -104,19 +104,18 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 				codelens.push(new CodeLens(func.range, runTestCmd));
 
-				const args = getTestFunctionDebugArgs(document, func.name, testFunctions);
 				const debugTestCmd: Command = {
 					title: 'debug test',
-					command: 'go.debug.startSession',
-					arguments: [Object.assign({}, currentDebugConfig, { args })]
+					command: 'go.debug.cursor',
+					arguments: [{ functionName: func.name }]
 				};
 
 				codelens.push(new CodeLens(func.range, debugTestCmd));
 			});
 		});
 
-		const benchmarkPromise = getBenchmarkFunctions(document, token).then(benchmarkFunctions => {
-			benchmarkFunctions.forEach(func => {
+		const benchmarkPromise = getBenchmarkFunctions(document, token).then((benchmarkFunctions) => {
+			benchmarkFunctions.forEach((func) => {
 				const runBenchmarkCmd: Command = {
 					title: 'run benchmark',
 					command: 'go.benchmark.cursor',
@@ -127,13 +126,12 @@ export class GoRunTestCodeLensProvider extends GoBaseCodeLensProvider {
 
 				const debugTestCmd: Command = {
 					title: 'debug benchmark',
-					command: 'go.debug.startSession',
-					arguments: [Object.assign({}, currentDebugConfig, { args: ['-test.bench', '^' + func.name + '$', '-test.run', 'a^'] })]
+					command: 'go.debug.cursor',
+					arguments: [{ functionName: func.name }]
 				};
 
 				codelens.push(new CodeLens(func.range, debugTestCmd));
 			});
-
 		});
 
 		await Promise.all([testPromise, benchmarkPromise]);
