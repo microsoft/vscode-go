@@ -9,7 +9,7 @@ import * as path from 'path';
 import vscode = require('vscode');
 import { browsePackages } from './goBrowsePackage';
 import { buildCode } from './goBuild';
-import { check, notifyIfGeneratedFile, removeTestStatus } from './goCheck';
+import { check, checksOnFileEdit, removeTestStatus } from './goCheck';
 import { GoCodeActionProvider } from './goCodeAction';
 import {
 	applyCodeCoverage,
@@ -556,7 +556,7 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 function addOnChangeTextDocumentListeners(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
-	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(checksOnFileEdit, ctx, ctx.subscriptions);
 }
 
 function addOnChangeActiveTextEditorListeners(ctx: vscode.ExtensionContext) {

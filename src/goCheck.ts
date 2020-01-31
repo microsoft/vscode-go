@@ -29,11 +29,16 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 	statusBarItem.text = '';
 }
 
-export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEvent) {
+export function checksOnFileEdit(this: void, e: vscode.TextDocumentChangeEvent) {
 	const ctx: any = this;
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
+	notifyIfGeneratedFile(ctx, e);
+	notifyOnBuildTagMismatch(ctx, e);
+}
+
+function notifyIfGeneratedFile(ctx: any, e: vscode.TextDocumentChangeEvent) {
 	if (
 		ctx.globalState.get('ignoreGeneratedCodeWarning') !== true &&
 		e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)
@@ -41,6 +46,66 @@ export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEv
 		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then((result) => {
 			if (result === neverAgain) {
 				ctx.globalState.update('ignoreGeneratedCodeWarning', true);
+			}
+		});
+	}
+}
+
+function notifyOnBuildTagMismatch(ctx: any, e: vscode.TextDocumentChangeEvent) {
+	if (ctx.globalState.get('ignoreBuildTagMismatchWarning') === true) {
+		return;
+	}
+
+	const fileBuildTags = [];
+	for (let i = 0; i < e.document.lineCount; i++) {
+		const line = e.document.lineAt(i);
+		if (line.isEmptyOrWhitespace) {
+			break;
+		}
+		const bldTagLine = line.text.match(/^\/\/\s*\+build\s+(.+)$/);
+		if (bldTagLine) {
+			if (i === e.contentChanges[0].range.start.line) {
+				return;  // editing +build tag line
+			}
+			fileBuildTags.push(bldTagLine[1]);
+		}
+	}
+
+	if (fileBuildTags.length === 0) {
+		return;  // no build tags in file
+	}
+
+	let areInSetting = false;
+	const goConfig = vscode.workspace.getConfiguration('go', e.document.uri);
+	let settBldTags = goConfig['buildTags'];
+
+	if (settBldTags) {
+		const splChr = settBldTags.includes(',') ? ',' : ' ';
+		settBldTags = settBldTags.split(splChr);
+		areInSetting = fileBuildTags.every((tag: string) => {
+			// build tags OR array containing AND array
+			// e.g // +build linux,386 darwin,!cgo
+			// [[linux,386], [darwin,!cgo]]
+			const orPrts = tag.split(' ');
+			const orAndPrts = orPrts.map((or) => or.split(','));
+			return orAndPrts.some((orAnd) => {
+				return orAnd.every((and) => {
+					return settBldTags.some((cbf: string) => {
+						return cbf.trim() === and.replace('!', '').trim();
+					});
+				});
+			});
+		});
+	}
+
+	if (!areInSetting) {
+		const openSettings = {title: 'Open settings'};
+		vscode.window.showInformationMessage(`Build tags in file are not found in setting "go.buildTags"`, neverAgain, openSettings).then((result) => {
+			if (result === neverAgain) {
+				ctx.globalState.update('ignoreBuildTagMismatchWarning', true);
+			}
+			if (result === openSettings) {
+				vscode.commands.executeCommand('workbench.action.openGlobalSettings');
 			}
 		});
 	}
