@@ -1,4 +1,4 @@
-## 0.12.1 - Coming Soon...
+## 0.13.0 - 3rd February, 2020
 
 * [Henry Kwan (@piengeng)](https://github.com/piengeng)
     * The outline feature now shows constants different from variables, and interfaces different from types. [PR 2973](https://github.com/Microsoft/vscode-go/pull/2973)
