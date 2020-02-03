@@ -22,7 +22,7 @@ export function getBinPathFromEnvVar(toolName: string, envVarValue: string, appe
 		const paths = envVarValue.split(path.delimiter);
 		for (const p of paths) {
 			const binpath = path.join(p, appendBinToPath ? 'bin' : '', toolName);
-			if (fileExists(binpath)) {
+			if (executableFileExists(binpath)) {
 				return binpath;
 			}
 		}
@@ -35,7 +35,7 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 		return binPathCache[toolName];
 	}
 
-	if (alternateTool && path.isAbsolute(alternateTool) && fileExists(alternateTool)) {
+	if (alternateTool && path.isAbsolute(alternateTool) && executableFileExists(alternateTool)) {
 		binPathCache[toolName] = alternateTool;
 		return alternateTool;
 	}
@@ -75,7 +75,7 @@ export function getBinPathWithPreferredGopath(toolName: string, preferredGopaths
 	// Check default path for go
 	if (toolName === 'go') {
 		const defaultPathForGo = process.platform === 'win32' ? 'C:\\Go\\bin\\go.exe' : '/usr/local/go/bin/go';
-		if (fileExists(defaultPathForGo)) {
+		if (executableFileExists(defaultPathForGo)) {
 			binPathCache[toolName] = defaultPathForGo;
 			return defaultPathForGo;
 		}
@@ -93,7 +93,7 @@ function correctBinname(toolName: string) {
 	return toolName;
 }
 
-export function fileExists(filePath: string): boolean {
+function executableFileExists(filePath: string): boolean {
 	let exists = true;
 	try {
 		exists = fs.statSync(filePath).isFile();
@@ -104,6 +104,14 @@ export function fileExists(filePath: string): boolean {
 		exists = false;
 	}
 	return exists;
+}
+
+export function fileExists(filePath: string): boolean {
+	try {
+		return fs.statSync(filePath).isFile();
+	} catch (e) {
+		return false;
+	}
 }
 
 export function clearCacheForTools() {
