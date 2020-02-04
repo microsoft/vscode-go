@@ -314,7 +314,6 @@ export async function promptForMissingTool(toolName: string) {
 			return;
 		}
 	}
-
 	const installOptions = ['Install'];
 	let missing = await getMissingTools(goVersion);
 	if (!containsTool(missing, tool)) {

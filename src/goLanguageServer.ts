@@ -15,21 +15,10 @@ import {
 	FormattingOptions,
 	HandleDiagnosticsSignature,
 	LanguageClient,
-	ProvideCompletionItemsSignature,
-	ProvideDefinitionSignature,
 	ProvideDocumentFormattingEditsSignature,
-	ProvideDocumentHighlightsSignature,
 	ProvideDocumentLinksSignature,
-	ProvideDocumentSymbolsSignature,
-	ProvideHoverSignature,
-	ProvideReferencesSignature,
-	ProvideRenameEditsSignature,
-	ProvideSignatureHelpSignature,
-	ProvideWorkspaceSymbolsSignature,
 	RevealOutputChannelOn
 } from 'vscode-languageclient';
-import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
-import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import WebRequest = require('web-request');
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoHoverProvider } from './goExtraInfo';
@@ -291,13 +280,11 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 }
 
 /**
- * Get the absolute path to the language server to be used.
- * If the required tool is not available, then user is prompted to install it.
- * This supports the language servers from both Google and Sourcegraph with the
- * former getting a precedence over the latter
+ * If the user has enabled the language server, return the absolute path to the
+ * correct binary. If the required tool is not available, prompt the user to
+ * install it. Only gopls (Google) and go-langserver (Sourcegraph) are supported.
  */
 export function getLanguageServerToolPath(): string {
-	// If language server is not enabled, return
 	const goConfig = getGoConfig();
 	if (!goConfig['useLanguageServer']) {
 		return;
@@ -311,39 +298,43 @@ export function getLanguageServerToolPath(): string {
 		return;
 	}
 
-	// Get the path to gopls or any alternative that the user might have set for gopls.
-	const goplsBinaryPath = getBinPath('gopls');
-	if (path.isAbsolute(goplsBinaryPath)) {
-		return goplsBinaryPath;
-	}
-
-	// Get the path to go-langserver or any alternative that the user might have set for go-langserver.
-	const golangserverBinaryPath = getBinPath('go-langserver');
-	if (path.isAbsolute(golangserverBinaryPath)) {
-		return golangserverBinaryPath;
-	}
-
-	// If no language server path has been found, notify the user.
+	// Determine which language server the user has selected.
+	// gopls is the default choice.
 	let languageServerOfChoice = 'gopls';
 	if (goConfig['alternateTools']) {
 		const goplsAlternate = goConfig['alternateTools']['gopls'];
+
+		// Check if the user has set the deprecated "go-langserver" setting.
 		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
-		if (typeof goplsAlternate === 'string') {
+		if (golangserverAlternate) {
+			vscode.window.showErrorMessage(`The "go.alternateTools" setting for "go-langserver" has been deprecated. Please use "gopls" instead.`);
+			return;
+		}
+		if (goplsAlternate) {
+			if (typeof goplsAlternate !== 'string') {
+				vscode.window.showErrorMessage(`Unexpected type for "go.alternateTools" setting for "gopls": ${typeof goplsAlternate}.`);
+				return;
+			}
 			languageServerOfChoice = getToolFromToolPath(goplsAlternate);
-		} else if (typeof golangserverAlternate === 'string') {
-			languageServerOfChoice = getToolFromToolPath(golangserverAlternate);
 		}
 	}
-	// Only gopls and go-langserver are supported.
+	// Get the path to the language server binary.
+	const languageServerBinPath = getBinPath(languageServerOfChoice);
+	if (path.isAbsolute(languageServerBinPath)) {
+		return languageServerBinPath;
+	}
+
+	// Installation of gopls and go-langserver is supported.
+	// Other language servers must be installed manually.
 	if (languageServerOfChoice !== 'gopls' && languageServerOfChoice !== 'go-langserver') {
 		vscode.window.showErrorMessage(
-			`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window`
+			`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window.`
 		);
 		return;
 	}
+
 	// Otherwise, prompt the user to install the language server.
 	promptForMissingTool(languageServerOfChoice);
-	vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server.');
 }
 
 function allFoldersHaveSameGopath(): boolean {
