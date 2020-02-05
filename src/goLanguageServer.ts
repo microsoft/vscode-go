@@ -282,7 +282,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 /**
  * If the user has enabled the language server, return the absolute path to the
  * correct binary. If the required tool is not available, prompt the user to
- * install it. Only gopls (Google) and go-langserver (Sourcegraph) are supported.
+ * install it. Only gopls is officially supported.
  */
 export function getLanguageServerToolPath(): string {
 	const goConfig = getGoConfig();
