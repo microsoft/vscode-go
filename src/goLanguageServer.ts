@@ -307,7 +307,8 @@ export function getLanguageServerToolPath(): string {
 		// Check if the user has set the deprecated "go-langserver" setting.
 		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
 		if (golangserverAlternate) {
-			vscode.window.showErrorMessage(`The "go.alternateTools" setting for "go-langserver" has been deprecated. Please use "gopls" instead.`);
+			vscode.window.showErrorMessage(`The "go.alternateTools" setting for "go-langserver" has been deprecated.
+Please set "gopls" instead, and then reload the VS Code window.`);
 			return;
 		}
 		if (goplsAlternate) {
