@@ -229,6 +229,15 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 		})
 	);
 
+	// A custom command to trigger both completion and signature help.
+	// It is used when providing a completion for a function that has parameters.
+	ctx.subscriptions.push(
+		vscode.commands.registerCommand('go.gopls.functionCompletion', async () =>  {
+			vscode.commands.executeCommand('editor.action.triggerSuggest');
+			vscode.commands.executeCommand('editor.action.triggerParameterHints');
+		})
+	);
+
 	// gopls is the only language server that provides live diagnostics on type,
 	// so use gotype if it's not enabled.
 	if (!(toolName === 'gopls' && config.features['diagnostics'])) {
