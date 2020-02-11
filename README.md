@@ -36,16 +36,16 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 
 ### IntelliSense
 
-- Auto Completion of symbols as you type (using `gopls` or `gocode`)
-- Signature Help for functions as you type (using `gopls` or `gogetdoc` or `godef`+`go doc`)
-- Quick Info on the symbol as you hover over it (using `gopls` or `gogetdoc` or `godef`+`go doc`)
+- Auto Completion of symbols as you type (using language server or `gocode`)
+- Signature Help for functions as you type (using language server or `gogetdoc` or `godef`+`go doc`)
+- Quick Info on the symbol as you hover over it (using language server or `gogetdoc` or `godef`+`go doc`)
 
 ### Code Navigation
 
-- Go to or Peek Definition of symbols (using `gopls` or `gogetdoc` or `godef`+`go doc`)
-- Find References of symbols and Implementations of interfaces (using `gopls` or `guru`)
+- Go to or Peek Definition of symbols (using language server or `gogetdoc` or `godef`+`go doc`)
+- Find References of symbols and Implementations of interfaces (using language server or `guru`)
 - Go to symbol in file or see the file outline (using `go-outline`)
-- Go to symbol in workspace (using `gopls` or `go-symbols`)
+- Go to symbol in workspace (using language server or `go-symbols`)
 - Toggle between a Go program and the corresponding test file.
 
 ### Code Editing
@@ -117,7 +117,7 @@ Previously, we added support to use `go-langserver`, the [language server from S
 
 Ideally, you would see prompts to use/install/update the language server.
 Follow the prompts and the language server should get set up correctly.
-If you want to manually install/update the language server, 
+If you want to manually install/update the language server,
 - Ensure you have set `go.useLanguageServer` to `true` in your settings
 - Use the `Go: Install/Update Tools` command, select `gopls` from the list and press Ok.
 
