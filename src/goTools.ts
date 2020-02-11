@@ -124,11 +124,7 @@ export function getConfiguredTools(goVersion: GoVersion): Tool[] {
 	// Add the language server for Go versions > 1.10 if user has choosen to do so.
 	// Respect the go.alternateTools setting.
 	if (goConfig['useLanguageServer'] && goVersion.gt('1.10')) {
-		if (goConfig['alternateTools']['gopls']) {
-			maybeAddTool(goConfig['alternateTools']['gopls']);
-		} else {
-			maybeAddTool('gopls');
-		}
+		maybeAddTool('gopls');
 	}
 
 	if (goLiveErrorsEnabled()) {

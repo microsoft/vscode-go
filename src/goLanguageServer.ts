@@ -327,7 +327,7 @@ Please set "gopls" instead, and then reload the VS Code window.`);
 
 	// Installation of gopls and go-langserver is supported.
 	// Other language servers must be installed manually.
-	if (languageServerOfChoice !== 'gopls' && languageServerOfChoice !== 'go-langserver') {
+	if (languageServerOfChoice !== 'gopls') {
 		vscode.window.showErrorMessage(
 			`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window.`
 		);
