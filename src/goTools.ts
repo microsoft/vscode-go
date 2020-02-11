@@ -261,12 +261,6 @@ const allToolsInformation: { [key: string]: Tool } = {
 		isImportant: true,
 		description: 'Linter'
 	},
-	'go-langserver': {
-		name: 'go-langserver',
-		importPath: 'github.com/sourcegraph/go-langserver',
-		isImportant: false,
-		description: 'Language Server from Sourcegraph'
-	},
 	'gopls': {
 		name: 'gopls',
 		importPath: 'golang.org/x/tools/gopls',
