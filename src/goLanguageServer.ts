@@ -305,8 +305,7 @@ export function getLanguageServerToolPath(): string {
 		const goplsAlternate = goConfig['alternateTools']['gopls'];
 
 		// Check if the user has set the deprecated "go-langserver" setting.
-		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
-		if (golangserverAlternate) {
+		if (goConfig['alternateTools']['go-langserver']) {
 			vscode.window.showErrorMessage(`The "go.alternateTools" setting for "go-langserver" has been deprecated.
 Please set "gopls" instead, and then reload the VS Code window.`);
 			return;
@@ -325,8 +324,7 @@ Please set "gopls" instead, and then reload the VS Code window.`);
 		return languageServerBinPath;
 	}
 
-	// Installation of gopls and go-langserver is supported.
-	// Other language servers must be installed manually.
+	// Installation of gopls is supported. Other language servers must be installed manually.
 	if (languageServerOfChoice !== 'gopls') {
 		vscode.window.showErrorMessage(
 			`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window.`
