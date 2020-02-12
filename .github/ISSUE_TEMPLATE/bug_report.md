@@ -27,8 +27,10 @@ Please answer these questions before submitting your issue. Thanks!
 	- <Paste VS Code version here>
 - Check your installed extensions to get the version of the VS Code Go extension 
 	- <Paste Go extension version here>
-- Run `go env GOOS GOARCH` to get the operating system and processor arhcitecture details
-	- <Paste OS and arch details here>
+- Run `go env` to get the environment variable affecting go's functionalities (note: please check the output and remove any confidential info such as directory path)
+	- <Paste go env output here>
+- If using `gopls`, run `gopls version`
+    - <Paste gopls version here>
 
 ### Share the Go related settings you have added/edited
 
@@ -46,5 +48,3 @@ A clear and concise description of what you expected to happen.
 
 ### Screenshots or recordings
 If applicable, add screenshots or recordings to help explain your problem.
-
-
