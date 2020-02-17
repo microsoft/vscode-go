@@ -62,7 +62,7 @@
 		},
 		"for statement": {
 			"prefix": "for",
-			"body": "for ${1:index} := 0; $1 < ${2:count}; $1${3:++} {\n\t$0\n}",
+			"body": "for ${1:i} := 0; $1 < ${2:count}; $1${3:++} {\n\t$0\n}",
 			"description": "Snippet for a for loop"
 		},
 		"for range statement": {
