@@ -1,3 +1,71 @@
+## 0.13.0 - 3rd February, 2020
+
+* [Henry Kwan (@piengeng)](https://github.com/piengeng)
+    * The outline feature now shows constants different from variables, and interfaces different from types. [PR 2973](https://github.com/Microsoft/vscode-go/pull/2973)
+
+* [@marcel-basel](https://github.com/marcel-basel)
+    * The `Go: Generate Unit Tests For Function` commands now respects the receiver type and generate tests only for
+    current function instead of all functions that match the name. Fixes [Bug 2282](https://github.com/Microsoft/vscode-go/issues/2282) with [PR 2987](https://github.com/Microsoft/vscode-go/pull/2987)
+    * Use `GOBIN` to look for the installed Go tools as well. Fixes [Bug 2122](https://github.com/Microsoft/vscode-go/issues/2122) with [PR 3001](https://github.com/Microsoft/vscode-go/pull/3001)
+
+* [Tobias Salzmann (@Eun)](https://github.com/Eun)
+    * A new command `Go: Apply Cover Profile` to apply code coverage decorators from a custom cover profile. [Feature Request 1596](https://github.com/Microsoft/vscode-go/issues/1596) implemented with [PR 2361](https://github.com/Microsoft/vscode-go/pull/2361)
+
+* [@SteelPhase](https://github.com/SteelPhase)
+    * The `envFile` in the debug configuration now supports configuring multiple env files. [Feature Request 1746](https://github.com/Microsoft/vscode-go/issues/1746) implemented with [PR 2395](https://github.com/Microsoft/vscode-go/pull/2395)
+
+* [Drake Gens (@drakegens)](https://github.com/drakegens)  
+    * Skip attempts to toggle the test file after generating unit tests for functions in a test file. Fixes [Bug 2822](https://github.com/Microsoft/vscode-go/issues/2822) with [PR 2883](https://github.com/Microsoft/vscode-go/pull/2883)
+
+* [Jakub Warczarek (@programmer04)](https://github.com/programmer04)
+    * Improve the code snippet for the for loop by replacing `index` with `i`. [Feature Request 2943](https://github.com/Microsoft/vscode-go/issues/2943) implemented with [PR 3010](https://github.com/Microsoft/vscode-go/pull/3010)
+
+## 0.12.0 - 31st December, 2019
+
+### Language server updates
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * The setting `go.languageServerExperimentalFeatures` which allows you to disable experimental features from the
+    language server has been trimmed the features that can be thus disabled to the below as rest of the features are
+    deemed to be stable.
+        - format
+        - documentLink
+        - diagnostics
+    * Fix error "Cannot read property 'clear' of undefined" that appears on running the command `Restart language server` if the language server had not started successfully. 
+     
+
+### New features
+
+* [Oleg Kovalov (@cristaloleg)](https://github.com/cristaloleg)
+    * New setting `go.coverOnSingleTestFile` to enable applying code coverage resulting from running all tests in current file either using
+    the code lens `run file tests` or the command `Go: Test File`. [Feature Request 2873](https://github.com/Microsoft/vscode-go/issues/2873) implemented with [PR 2884](https://github.com/Microsoft/vscode-go/pull/2884)
+
+* [C S Madhav (@csmadhav)](https://github.com/csmadhav)
+    * Add the option `Don't show again` to the warning that appears on saving changes to files when in the midst of debugging. [Feature Request 2880](https://github.com/Microsoft/vscode-go/issues/2880) implemented with [PR 2906](https://github.com/Microsoft/vscode-go/pull/2906)
+
+* [Zac Bergquist (@zmb3)](https://github.com/zmb3)
+    * Activate the Go extension when the workspace contains Go files rather than wait for a Go file to be opened. [Feature Request 2821](https://github.com/Microsoft/vscode-go/issues/2821) implemented with [PR 2859](https://github.com/Microsoft/vscode-go/pull/2859)
+
+* [Nisheet Sinvhal (@Ashniu123)](https://github.com/Ashniu123)
+    * Use tags and options specified in the `go.addTags` and `go.removeTags` settings as placeholders in the input boxes that appear when running the `Go: Add Tags To Struct Fields` and `Go: Remove Tags From Struct Fields` commands. [Feature Request 2929](https://github.com/Microsoft/vscode-go/issues/2929) implemented with [PR 2944](https://github.com/Microsoft/vscode-go/pull/2944)
+
+### Others
+
+* [Ryan Boehning (@y0ssar1an)](https://github.com/y0ssar1an)
+    * Update travis.yml with latest VM and improve time taken during cloning step. For more details, see [PR 2915](https://github.com/Microsoft/vscode-go/pull/2915)
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+    * Update package dependencies. [PR 2900](https://github.com/Microsoft/vscode-go/pull/2900)
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Fix issues with installing single tools when using the `Go: Install/Update Tools` command. Fixes [Bug 2936](https://github.com/Microsoft/vscode-go/issues/2936) with [PR 2945](https://github.com/Microsoft/vscode-go/pull/2945) and [PR 2948](https://github.com/Microsoft/vscode-go/pull/2948)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Ensure the build tags from `go.buildTags` and `go.testTags` are respected by the `Go: Debug Test At Cursor` command. Fixes [Bug 2953](https://github.com/Microsoft/vscode-go/issues/2953) with [commit d6b6668](https://github.com/microsoft/vscode-go/commit/d6b666873a7fd75916dca77fa2bb0139d8f17c8f)
+    * Ensure that test arguments passed to `go.testFlags` are treated as arguments and not build flags by delve when debugging tests. Fixes [Bug 2115](https://github.com/Microsoft/vscode-go/issues/2115) with [commit 9ab7b8bff](https://github.com/microsoft/vscode-go/commit/9ab7b8bff49c38830ae4625718f605ba73fec0dc)
+
+
+
 ## 0.11.9 - 5th November, 2019
 
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)

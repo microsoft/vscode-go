@@ -3,13 +3,13 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
+import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import { isModSupported } from './goModules';
 import { envPath, getCurrentGoWorkspaceFromGOPATH } from './goPath';
 import { outputChannel } from './goStatus';
 import { getBinPath, getCurrentGoPath, getGoConfig, getModuleCache, getToolsEnvVars } from './util';
-import cp = require('child_process');
 
 export async function installCurrentPackage(): Promise<void> {
 	const editor = vscode.window.activeTextEditor;
@@ -18,13 +18,17 @@ export async function installCurrentPackage(): Promise<void> {
 		return;
 	}
 	if (editor.document.languageId !== 'go') {
-		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to install');
+		vscode.window.showInformationMessage(
+			'File in the active editor is not a Go file, cannot find current package to install'
+		);
 		return;
 	}
 
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		vscode.window.showErrorMessage(`Failed to run "go install" to install the package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		vscode.window.showErrorMessage(
+			`Failed to run "go install" to install the package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`
+		);
 		return;
 	}
 
@@ -47,7 +51,7 @@ export async function installCurrentPackage(): Promise<void> {
 
 	// Find the right importPath instead of directly using `.`. Fixes https://github.com/Microsoft/vscode-go/issues/846
 	const currentGoWorkspace = getCurrentGoWorkspaceFromGOPATH(getCurrentGoPath(), cwd);
-	const importPath = (currentGoWorkspace && !isMod) ? cwd.substr(currentGoWorkspace.length + 1) : '.';
+	const importPath = currentGoWorkspace && !isMod ? cwd.substr(currentGoWorkspace.length + 1) : '.';
 	args.push(importPath);
 
 	outputChannel.clear();

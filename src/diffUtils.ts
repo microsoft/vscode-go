@@ -3,27 +3,34 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { Position, Range, TextEdit, TextEditorEdit, Uri, WorkspaceEdit } from 'vscode';
-import { getBinPathFromEnvVar } from './goPath';
 import jsDiff = require('diff');
+import { Position, Range, TextEditorEdit, Uri, WorkspaceEdit } from 'vscode';
+import { getBinPathFromEnvVar } from './goPath';
 
-let diffToolAvailable: boolean = null;
+let diffToolAvailable: boolean | null = null;
 
 export function isDiffToolAvailable(): boolean {
 	if (diffToolAvailable == null) {
 		const envPath = process.env['PATH'] || (process.platform === 'win32' ? process.env['Path'] : null);
+		if (!envPath) {
+			return false;
+		}
 		diffToolAvailable = getBinPathFromEnvVar('diff', envPath, false) != null;
 	}
 	return diffToolAvailable;
 }
 
-export enum EditTypes { EDIT_DELETE, EDIT_INSERT, EDIT_REPLACE }
+export enum EditTypes {
+	EDIT_DELETE,
+	EDIT_INSERT,
+	EDIT_REPLACE
+}
 
 export class Edit {
-	action: number;
-	start: Position;
-	end: Position;
-	text: string;
+	public start: Position;
+	public end: Position;
+	public text: string;
+	private action: number;
 
 	constructor(action: number, start: Position) {
 		this.action = action;
@@ -31,22 +38,8 @@ export class Edit {
 		this.text = '';
 	}
 
-	// Creates TextEdit for current Edit
-	apply(): TextEdit {
-		switch (this.action) {
-			case EditTypes.EDIT_INSERT:
-				return TextEdit.insert(this.start, this.text);
-
-			case EditTypes.EDIT_DELETE:
-				return TextEdit.delete(new Range(this.start, this.end));
-
-			case EditTypes.EDIT_REPLACE:
-				return TextEdit.replace(new Range(this.start, this.end), this.text);
-		}
-	}
-
 	// Applies Edit using given TextEditorEdit
-	applyUsingTextEditorEdit(editBuilder: TextEditorEdit): void {
+	public applyUsingTextEditorEdit(editBuilder: TextEditorEdit): void {
 		switch (this.action) {
 			case EditTypes.EDIT_INSERT:
 				editBuilder.insert(this.start, this.text);
@@ -63,7 +56,7 @@ export class Edit {
 	}
 
 	// Applies Edits to given WorkspaceEdit
-	applyUsingWorkspaceEdit(workspaceEdit: WorkspaceEdit, fileUri: Uri): void {
+	public applyUsingWorkspaceEdit(workspaceEdit: WorkspaceEdit, fileUri: Uri): void {
 		switch (this.action) {
 			case EditTypes.EDIT_INSERT:
 				workspaceEdit.insert(fileUri, this.start, this.text);
@@ -95,7 +88,7 @@ export interface FilePatch {
 function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 	const filePatches: FilePatch[] = [];
 	diffOutput.forEach((uniDiff: jsDiff.IUniDiff) => {
-		let edit: Edit = null;
+		let edit: Edit;
 		const edits: Edit[] = [];
 		uniDiff.hunks.forEach((hunk: jsDiff.IHunk) => {
 			let startLine = hunk.oldStart;
@@ -124,7 +117,6 @@ function parseUniDiffs(diffOutput: jsDiff.IUniDiff[]): FilePatch[] {
 	});
 
 	return filePatches;
-
 }
 
 /**
@@ -149,7 +141,8 @@ export function getEdits(fileName: string, oldStr: string, newStr: string): File
 /**
  * Uses diff module to parse given diff string and returns edits for files
  *
- * @param diffStr : Diff string in unified format. http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
+ * @param diffStr : Diff string in unified format.
+ * http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
  *
  * @returns Array of FilePatch objects, one for each file
  */
