@@ -35,6 +35,9 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 		token: vscode.CancellationToken
 	): Thenable<vscode.SymbolInformation[]> {
 		const convertToCodeSymbols = (decls: GoSymbolDeclaration[], symbols: vscode.SymbolInformation[]): void => {
+			if (!decls) {
+				return;
+			}
 			for (const decl of decls) {
 				let kind: vscode.SymbolKind;
 				if (decl.kind !== '') {
