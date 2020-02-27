@@ -148,7 +148,7 @@ const allToolsInformation: { [key: string]: Tool } = {
 	},
 	'gopkgs': {
 		name: 'gopkgs',
-		importPath: 'github.com/uudashr/gopkgs/cmd/gopkgs',
+		importPath: 'github.com/uudashr/gopkgs/v2/cmd/gopkgs',
 		isImportant: true,
 		description: 'Auto-completion of unimported packages & Add Import feature'
 	},
