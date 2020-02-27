@@ -42,7 +42,13 @@ const declinedInstalls: Tool[] = [];
 
 export async function installAllTools(updateExistingToolsOnly: boolean = false) {
 	const goVersion = await getGoVersion();
-	const allTools = getConfiguredTools(goVersion);
+	let allTools = getConfiguredTools(goVersion);
+
+	// exclude tools replaced by alternateTools.
+	const alternateTools: { [key: string]: string } = getGoConfig().get('alternateTools');
+	allTools = allTools.filter((tool) => {
+		return !alternateTools[tool.name];
+	});
 
 	// Update existing tools by finding all tools the user has already installed.
 	if (updateExistingToolsOnly) {
