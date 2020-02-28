@@ -376,8 +376,8 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
-const defaultLatestVersion = semver.coerce('0.1.7');
-const defaultLatestVersionTime = moment('2019-09-18', 'YYYY-MM-DD');
+const defaultLatestVersion = semver.coerce('0.3.1');
+const defaultLatestVersionTime = moment('2020-02-04', 'YYYY-MM-DD');
 async function shouldUpdateLanguageServer(
 	tool: Tool,
 	languageServerToolPath: string,
