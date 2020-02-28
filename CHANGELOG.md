@@ -1,3 +1,15 @@
+## 0.13.1 - 27th February, 2020
+
+* [Ilya Danilkin (@nezorflame)](https://github.com/nezorflame)
+    * Use v2 of the `gopkgs` tool to avoid the error in tool installation. Fixes [Bug 3050](https://github.com/Microsoft/vscode-go/issues/3050) with [PR 3057](https://github.com/Microsoft/vscode-go/pull/3057)
+
+* [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
+    * Stop tools listed in the `go.alternateTools` setting from appearing in the drop down resulting
+    from the `Go: Install/Update Tools` command. Fixes [Bug 3024](https://github.com/Microsoft/vscode-go/issues/3024) with [PR 3046](https://github.com/Microsoft/vscode-go/pull/3046)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Ensure users on versions older than 0.3.1 of `gopls` get prompted to update the language server.
+
 ## 0.13.0 - 3rd February, 2020
 
 * [Henry Kwan (@piengeng)](https://github.com/piengeng)
