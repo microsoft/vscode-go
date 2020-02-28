@@ -363,19 +363,15 @@ export async function promptForUpdatingTool(toolName: string) {
 	const updateMsg = `Your version of ${tool.name} appears to be out of date. Please update for an improved experience.`;
 	var choices: string[] = ['Update'];
 	if (toolName == `gopls`) {
-		choices.push('Release Note');  // TODO(hyangah): pass more info such as version, release note location.
+		choices.push('Release Notes');  // TODO(hyangah): pass more info such as version, release note location.
 	}
 	vscode.window.showInformationMessage(updateMsg, ...choices).then((selected) => {
 		switch (selected) {
 			case 'Update':
 				installTools([tool], goVersion);
 				break;
-			case 'Release Note':
-				if (toolName == `gopls`) {
-					vscode.commands.executeCommand('vscode.open', vscode.Uri.parse('https://github.com/golang/go/issues/33030#issuecomment-510151934'));			
-				} else {					
-					vscode.commands.executeCommand('vscode.open', vscode.Uri.parse('https://pkg.go.dev/'+tool.importPath+'?tab=overview'));
-				}
+			case 'Release Notes':
+				vscode.commands.executeCommand('vscode.open', vscode.Uri.parse('https://github.com/golang/go/issues/33030#issuecomment-510151934'));			
 				break;
 			default:
 				declinedUpdates.push(tool);
