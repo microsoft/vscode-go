@@ -26,7 +26,8 @@ import {
 	ProvideRenameEditsSignature,
 	ProvideSignatureHelpSignature,
 	ProvideWorkspaceSymbolsSignature,
-	RevealOutputChannelOn
+	RevealOutputChannelOn,
+	Command
 } from 'vscode-languageclient';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
@@ -143,6 +144,44 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 						return null;
 					}
 					return next(document, token);
+				},
+				provideCompletionItem: (
+					document: vscode.TextDocument,
+					position: vscode.Position,
+					context: vscode.CompletionContext,
+					token: vscode.CancellationToken,
+					next: ProvideCompletionItemsSignature
+				) => {
+						const editorParamHintsEnabled = vscode.workspace.getConfiguration('editor.parameterHints', document.uri)['enabled'];
+						const goParamHintsEnabled = vscode.workspace.getConfiguration('[go]', document.uri)['editor.parameterHints.enabled'];
+
+						var paramHintsEnabled: boolean = false;
+						if (typeof goParamHintsEnabled === 'undefined') {
+							paramHintsEnabled = editorParamHintsEnabled;
+						} else {
+							paramHintsEnabled = goParamHintsEnabled;
+						}
+						var cmd: Command = undefined;
+						if (paramHintsEnabled) {
+							cmd = {title: 'triggerParameterHints', command: 'editor.action.triggerParameterHints'};
+						}
+						
+						function configureCommands(
+							r: vscode.CompletionItem[] | vscode.CompletionList | null | undefined):
+							vscode.CompletionItem[] | vscode.CompletionList | null | undefined {
+							if (r) {
+								(Array.isArray(r) ? r : r.items).forEach((i: vscode.CompletionItem) => {
+									i.command = cmd;
+								});
+							}
+							return r;
+						}
+						const isThenable = <T>(obj: vscode.ProviderResult<T>): obj is Thenable<T> => obj && (<any>obj)['then'];
+						const ret = next(document, position, context, token);
+						if (isThenable<vscode.CompletionItem[] | vscode.CompletionList | null | undefined>(ret)) {
+							return ret.then(configureCommands);
+						}
+						return configureCommands(ret);
 				}
 			}
 		}
