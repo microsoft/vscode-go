@@ -12,6 +12,7 @@ import semver = require('semver');
 import util = require('util');
 import vscode = require('vscode');
 import {
+	Command,
 	FormattingOptions,
 	HandleDiagnosticsSignature,
 	LanguageClient,
@@ -26,8 +27,7 @@ import {
 	ProvideRenameEditsSignature,
 	ProvideSignatureHelpSignature,
 	ProvideWorkspaceSymbolsSignature,
-	RevealOutputChannelOn,
-	Command
+	RevealOutputChannelOn
 } from 'vscode-languageclient';
 import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
 import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
@@ -152,36 +152,47 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					token: vscode.CancellationToken,
 					next: ProvideCompletionItemsSignature
 				) => {
-						const editorParamHintsEnabled = vscode.workspace.getConfiguration('editor.parameterHints', document.uri)['enabled'];
-						const goParamHintsEnabled = vscode.workspace.getConfiguration('[go]', document.uri)['editor.parameterHints.enabled'];
+					// TODO(hyangah): when v1.42+ api is available, we can simplify
+					// language-specific configuration lookup using the new
+					// ConfigurationScope.
+					//    const paramHintsEnabled = vscode.workspace.getConfiguration(
+					//          'editor.parameterHints',
+					//          { languageId: 'go', uri: document.uri });
 
-						var paramHintsEnabled: boolean = false;
-						if (typeof goParamHintsEnabled === 'undefined') {
-							paramHintsEnabled = editorParamHintsEnabled;
-						} else {
-							paramHintsEnabled = goParamHintsEnabled;
+					const editorParamHintsEnabled = vscode.workspace.getConfiguration(
+						'editor.parameterHints', document.uri)['enabled'];
+					const goParamHintsEnabled = vscode.workspace.getConfiguration(
+						'[go]', document.uri)['editor.parameterHints.enabled'];
+
+					let paramHintsEnabled: boolean = false;
+					if (typeof goParamHintsEnabled === 'undefined') {
+						paramHintsEnabled = editorParamHintsEnabled;
+					} else {
+						paramHintsEnabled = goParamHintsEnabled;
+					}
+					let cmd: Command;
+					if (paramHintsEnabled) {
+						cmd = { title: 'triggerParameterHints', command: 'editor.action.triggerParameterHints' };
+					}
+
+					function configureCommands(
+						r: vscode.CompletionItem[] | vscode.CompletionList | null | undefined):
+						vscode.CompletionItem[] | vscode.CompletionList | null | undefined {
+						if (r) {
+							(Array.isArray(r) ? r : r.items).forEach((i: vscode.CompletionItem) => {
+								i.command = cmd;
+							});
 						}
-						var cmd: Command = undefined;
-						if (paramHintsEnabled) {
-							cmd = {title: 'triggerParameterHints', command: 'editor.action.triggerParameterHints'};
-						}
-						
-						function configureCommands(
-							r: vscode.CompletionItem[] | vscode.CompletionList | null | undefined):
-							vscode.CompletionItem[] | vscode.CompletionList | null | undefined {
-							if (r) {
-								(Array.isArray(r) ? r : r.items).forEach((i: vscode.CompletionItem) => {
-									i.command = cmd;
-								});
-							}
-							return r;
-						}
-						const isThenable = <T>(obj: vscode.ProviderResult<T>): obj is Thenable<T> => obj && (<any>obj)['then'];
-						const ret = next(document, position, context, token);
-						if (isThenable<vscode.CompletionItem[] | vscode.CompletionList | null | undefined>(ret)) {
-							return ret.then(configureCommands);
-						}
-						return configureCommands(ret);
+						return r;
+					}
+					const ret = next(document, position, context, token);
+
+					const isThenable = <T>(obj: vscode.ProviderResult<T>): obj is Thenable<T> => obj && (<any>obj)['then'];
+					if (isThenable<vscode.CompletionItem[] | vscode.CompletionList | null | undefined>(ret)) {
+						return ret.then(configureCommands);
+					}
+					return configureCommands(ret);
+
 				}
 			}
 		}
