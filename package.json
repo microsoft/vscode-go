@@ -1,11 +1,14 @@
 {
-  "name": "Go",
-  "version": "0.12.0",
-  "publisher": "ms-vscode",
-  "description": "Rich Go language support for Visual Studio Code",
+  "name": "go-nightly",
+  "displayName": "Go Nightly",
+  "version": "2020.3.144",
+  "publisher": "golang",
+  "description": "Rich Go language support for Visual Studio Code (Nightly)",
   "author": {
-    "name": "Microsoft Corporation - Development Labs"
+    "name": "Go Team at Google"
   },
+  "preview": true,
+  "license": "MIT",
   "icon": "images/go-logo-blue.png",
   "categories": [
     "Programming Languages",
@@ -21,7 +24,10 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-go.git"
+    "url": "https://github.com/golang/vscode-go"
+  },
+  "bugs": {
+    "url": "https://github.com/golang/vscode-go/issues"
   },
   "keywords": [
     "multi-root ready"
@@ -34,7 +40,8 @@
     "test": "node ./out/test/runTest.js",
     "lint": "node ./node_modules/tslint/bin/tslint --project tsconfig.json",
     "fix-lint": "node ./node_modules/tslint/bin/tslint --fix --project tsconfig.json",
-    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
+    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "extensionDependencies": [],
   "dependencies": {
@@ -45,7 +52,7 @@
     "vscode-debugadapter": "^1.36.0",
     "vscode-debugprotocol": "^1.36.0",
     "vscode-extension-telemetry": "^0.1.2",
-    "vscode-languageclient": "~5.2.1",
+    "vscode-languageclient": "6.1.0",
     "web-request": "^1.0.7"
   },
   "devDependencies": {
@@ -60,10 +67,11 @@
     "mocha": "^6.2.0",
     "tslint": "^5.19.0",
     "typescript": "^3.7.2",
-    "vscode-test": "^1.2.3"
+    "vscode-test": "^1.2.3",
+    "prettier": "^1.16.4"
   },
   "engines": {
-    "vscode": "^1.30.0"
+    "vscode": "^1.41.0"
   },
   "activationEvents": [
     "workspaceContains:**/*.go",
@@ -303,6 +311,11 @@
         "description": "Cancels running tests."
       },
       {
+        "command": "go.apply.coverprofile",
+        "title": "Go: Apply Cover Profile",
+        "description": "Applies existing cover profile."
+      },
+      {
         "command": "go.godoctor.extract",
         "title": "Go: Extract to function",
         "description": "Extract to function using godoctor."
@@ -318,15 +331,15 @@
         "description": "Restart the running instance of the language server"
       }
     ],
+    "breakpoints": [
+      {
+        "language": "go"
+      }
+    ],
     "debuggers": [
       {
         "type": "go",
         "label": "Go",
-        "enableBreakpointsFor": {
-          "languageIds": [
-            "go"
-          ]
-        },
         "program": "./out/src/debugAdapter/goDebug.js",
         "runtime": "node",
         "languages": [
@@ -490,8 +503,14 @@
                 "description": "Various levels of logging shown in the debug console. When set to 'log' or 'verbose', the logs will also be written to a file."
               },
               "envFile": {
-                "type": "string",
-                "description": "Absolute path to a file containing environment variable definitions.",
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "description": "Absolute path to a file containing environment variable definitions. Multiple files can be specified by provided an array of absolute paths",
                 "default": "${workspaceFolder}/.env"
               },
               "backend": {
@@ -714,7 +733,7 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "Go configuration",
+      "title": "Go",
       "properties": {
         "go.buildOnSave": {
           "type": "string",
@@ -778,8 +797,7 @@
             "golint",
             "golangci-lint",
             "revive",
-            "staticcheck",
-            "gometalinter"
+            "staticcheck"
           ]
         },
         "go.lintFlags": {
@@ -1077,7 +1095,7 @@
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
-          "description": "Experimental: Use Go language server from Google or Sourcegraph for Hover, Definition, Signature Help, Auto Completion and Formatting features instead of tools like godef, gocode and goreturns"
+          "description": "Use the Go language server \"gopls\" from Google for powering language features like code navigation, completion, formatting & diagnostics."
         },
         "go.languageServerFlags": {
           "type": "array",
@@ -1441,11 +1459,6 @@
               "type": "string",
               "default": "go",
               "description": "Alternate tool to use instead of the go binary or alternate path to use for the go binary."
-            },
-            "gometalinter": {
-              "type": "string",
-              "default": "gometalinter",
-              "description": "Alternate tool to use instead of the gometalinter binary or alternate path to use for the gometalinter binary."
             },
             "gocode": {
               "type": "string",
