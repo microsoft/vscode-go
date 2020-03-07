@@ -277,8 +277,8 @@ export function installTools(missing: Tool[], goVersion: GoVersion): Promise<voi
 			outputChannel.appendLine(''); // Blank line for spacing
 			const failures = res.filter((x) => x != null);
 			if (failures.length === 0) {
-				if (containsString(missing, 'go-langserver') || containsString(missing, 'gopls')) {
-					outputChannel.appendLine('Reload VS Code window to use the Go language server');
+				if (containsString(missing, 'gopls')) {
+					outputChannel.appendLine('Reload VS Code window to use the Go language server.');
 				}
 				outputChannel.appendLine('All tools successfully installed. You are ready to Go :).');
 				return;
@@ -320,7 +320,6 @@ export async function promptForMissingTool(toolName: string) {
 			return;
 		}
 	}
-
 	const installOptions = ['Install'];
 	let missing = await getMissingTools(goVersion);
 	if (!containsTool(missing, tool)) {
