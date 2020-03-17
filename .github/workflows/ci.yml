@@ -2,10 +2,6 @@ name: build
 
 on: [push, pull_request]
 
-env:
-  GOPATH: /tmp/go
-  # Because some tests require explicit setting of GOPATH. TODO: FIX THEM.
-   
 jobs:
   build:
     name: ${{ matrix.os }} ${{ matrix.version }}
