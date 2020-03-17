@@ -305,9 +305,16 @@ function logError(...args: any[]) {
 	logger.error(logArgsToString(args));
 }
 
+function findPathSeparator(filePath: string) {
+	return filePath.includes('/') ? '/' : '\\';
+}
+
 function normalizePath(filePath: string) {
 	if (process.platform === 'win32') {
+		const pathSeparator = findPathSeparator(filePath);
 		filePath = path.normalize(filePath);
+		// Normalize will replace everything with backslash on Windows.
+		filePath = filePath.replace(/\\/g, pathSeparator);
 		return fixDriveCasingInWindows(filePath);
 	}
 	return filePath;
@@ -754,13 +761,6 @@ class GoDebugSession extends LoggingDebugSession {
 		log('InitializeResponse');
 	}
 
-	protected findPathSeperator(filePath: string) {
-		if (/^(\w:[\\/]|\\\\)/.test(filePath)) {
-			return '\\';
-		}
-		return filePath.includes('/') ? '/' : '\\';
-	}
-
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
 		if (!args.program) {
 			this.sendErrorResponse(
@@ -835,10 +835,13 @@ class GoDebugSession extends LoggingDebugSession {
 		if (this.delve.remotePath.length === 0) {
 			return this.convertClientPathToDebugger(filePath);
 		}
+		// When the filePath has a different path separator
+		// than the local path separator (cross-compilation),
+		// the split and join logic won't work.
+		// See github.com/microsoft/vscode-go/issues/2010.
+		filePath = filePath.replace(/\/|\\/g, this.remotePathSeparator);
 		return filePath
-			.replace(this.delve.program, this.delve.remotePath)
-			.split(this.localPathSeparator)
-			.join(this.remotePathSeparator);
+			.replace(this.delve.program.replace(/\/|\\/g, this.remotePathSeparator), this.delve.remotePath);
 	}
 
 	protected toLocalPath(pathToConvert: string): string {
@@ -1392,8 +1395,8 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 
 		if (args.remotePath.length > 0) {
-			this.localPathSeparator = this.findPathSeperator(localPath);
-			this.remotePathSeparator = this.findPathSeperator(args.remotePath);
+			this.localPathSeparator = findPathSeparator(localPath);
+			this.remotePathSeparator = findPathSeparator(args.remotePath);
 
 			const llist = localPath.split(/\/|\\/).reverse();
 			const rlist = args.remotePath.split(/\/|\\/).reverse();
