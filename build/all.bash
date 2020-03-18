@@ -52,7 +52,8 @@ run_test_in_docker() {
 }
 
 prepare_nightly() {
-  local VER=`git log -1 --format=%cd-%h --date="format:%Y.%-m.%-d"`
+  local VER=`git log -1 --format=%cd --date="format:%Y.%-m.%-d.%-H"`
+  local COMMIT=`git log -1 --format=%H`
   echo "**** Preparing nightly release : $VER ***"
 
   # Update package.json
@@ -68,7 +69,8 @@ prepare_nightly() {
 .bugs.url="https://github.com/golang/vscode-go/issues"
 ') > /tmp/package.json && mv /tmp/package.json package.json
 
-  # TODO(hyangah): Update README.md and CHANGELOG.md
+  # TODO(hyangah): Update README.md
+  echo "**Release ${VER} @ ${COMMIT}** " | cat - CHANGELOG.md > /tmp/CHANGELOG.md.new && mv /tmp/CHANGELOG.md.new CHANGELOG.md
 }
 
 main() {
