@@ -97,12 +97,20 @@ export function runGoOutline(
 				if (err && (<any>err).code === 'ENOENT') {
 					promptForMissingTool('go-outline');
 				}
-				if (stderr && stderr.startsWith('flag provided but not defined: ')) {
+				if (
+					stderr &&
+					(
+						stderr.startsWith('flag provided but not defined: ') ||
+						stderr.match(/The flag '[^']*' is an unknown flag/)
+					)
+				) {
 					promptForUpdatingTool('go-outline');
-					if (stderr.startsWith('flag provided but not defined: -imports-only')) {
+					if (stderr.startsWith('flag provided but not defined: -imports-only') ||
+					    stderr.startsWith("The flag '-imports-only' is an unknown flag")) {
 						options.importsOption = GoOutlineImportsOptions.Include;
 					}
-					if (stderr.startsWith('flag provided but not defined: -modified')) {
+					if (stderr.startsWith('flag provided but not defined: -modified') ||
+					    stderr.startsWith("The flag '-modified' is an unknown flag")) {
 						options.document = null;
 					}
 					p = null;

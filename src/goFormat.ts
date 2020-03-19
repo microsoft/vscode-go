@@ -45,7 +45,13 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 		return this.runFormatter(formatTool, formatFlags, document, token).then(
 			(edits) => edits,
 			(err) => {
-				if (typeof err === 'string' && err.startsWith('flag provided but not defined: -srcdir')) {
+				if (
+					typeof err === 'string' &&
+					(
+						err.startsWith('flag provided but not defined: -srcdir') ||
+						err.startsWith("The flag '-srcdir' is an unknown flag.")
+					)
+				) {
 					promptForUpdatingTool(formatTool);
 					return Promise.resolve([]);
 				}

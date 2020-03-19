@@ -332,7 +332,8 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 							);
 							this.killMsgShown = true;
 						}
-						if (stderr.startsWith('flag provided but not defined:')) {
+						if (stderr.startsWith('flag provided but not defined:') ||
+						    stderr.match(/The flag '[^']*' is an unknown flag/)) {
 							promptForUpdatingTool(gocodeName);
 						}
 						return reject();

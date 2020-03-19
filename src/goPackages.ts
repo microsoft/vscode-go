@@ -61,7 +61,8 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 
 			const errorMsg = errchunks.join('').trim() || (err && err.message);
 			if (errorMsg) {
-				if (errorMsg.startsWith('flag provided but not defined: -workDir')) {
+				if (errorMsg.startsWith('flag provided but not defined: -workDir') ||
+				    errorMsg.startsWith("The flag '-workDir' is an unknown flag.")) {
 					promptForUpdatingTool('gopkgs');
 					// fallback to gopkgs without -workDir
 					return gopkgs().then((result) => resolve(result));

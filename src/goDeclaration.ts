@@ -162,7 +162,13 @@ function definitionLocation_godef(
 						);
 						return reject(stderr);
 					}
-					if (stderr.indexOf('flag provided but not defined: -r') !== -1) {
+					if (
+						stderr &&
+						(
+							(stderr.indexOf('flag provided but not defined: -r') >= 0 ) ||
+							(stderr.indexOf("The flag '-r' is an unknown flag.") >= 0 )
+						)
+					) {
 						promptForUpdatingTool('godef');
 						p = null;
 						return definitionLocation_godef(input, token, false).then(resolve, reject);
@@ -245,7 +251,13 @@ function definitionLocation_gogetdoc(
 				if (err && (<any>err).code === 'ENOENT') {
 					return reject(missingToolMsg + 'gogetdoc');
 				}
-				if (stderr && stderr.startsWith('flag provided but not defined: -tags')) {
+				if (
+					stderr &&
+					(
+						stderr.startsWith('flag provided but not defined: -tags') ||
+						stderr.startsWith("The flag '-tags' is an unknown flag.")
+					)
+				) {
 					p = null;
 					return definitionLocation_gogetdoc(input, token, false).then(resolve, reject);
 				}

@@ -103,7 +103,8 @@ export function getWorkspaceSymbols(
 			if (err && (<any>err).code === 'ENOENT') {
 				promptForMissingTool('go-symbols');
 			}
-			if (err.message.startsWith('flag provided but not defined: -ignore')) {
+			if (err.message.startsWith('flag provided but not defined: -ignore') ||
+			    err.message.startsWith("The flag '-ignore' is an unknown flag")) {
 				promptForUpdatingTool('go-symbols');
 				return getWorkspaceSymbols(workspacePath, query, token, goConfig, false);
 			}
@@ -121,7 +122,14 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 
 	return new Promise((resolve, reject) => {
 		p = cp.execFile(gosyms, args, { maxBuffer: 1024 * 1024, env }, (err, stdout, stderr) => {
-			if (err && stderr && stderr.startsWith('flag provided but not defined: -ignore')) {
+			if (
+				err &&
+				stderr &&
+				(
+					stderr.startsWith('flag provided but not defined: -ignore') ||
+					stderr.startsWith("The flag '-ignore' is an unknown flag")
+				)
+			) {
 				return reject(new Error(stderr));
 			} else if (err) {
 				return reject(err);
