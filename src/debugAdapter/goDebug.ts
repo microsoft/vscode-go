@@ -835,10 +835,9 @@ class GoDebugSession extends LoggingDebugSession {
 		if (this.delve.remotePath.length === 0) {
 			return this.convertClientPathToDebugger(filePath);
 		}
-		// When the filePath has a different path separator
-		// than the local path separator (cross-compilation),
-		// the split and join logic won't work.
-		// See github.com/microsoft/vscode-go/issues/2010.
+		// The filePath may have a different path separator than the localPath
+		// So, update it to use the same separator as the remote path to ease
+		// in replacing the local path in it with remote path
 		filePath = filePath.replace(/\/|\\/g, this.remotePathSeparator);
 		return filePath
 			.replace(this.delve.program.replace(/\/|\\/g, this.remotePathSeparator), this.delve.remotePath);
