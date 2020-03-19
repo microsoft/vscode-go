@@ -52,7 +52,10 @@ run_test_in_docker() {
 }
 
 prepare_nightly() {
-  local VER=`git log -1 --format=%cd --date="format:%Y.%-m.%-d.%-H"`
+  # Version format: YYYY.MM.DDHH based on the latest commit timestamp.
+  # e.g. 2020.1.510 is the version built based on a commit that was made
+  #      on 2020/01/05 10:00
+  local VER=`git log -1 --format=%cd --date="format:%Y.%-m.%-d%H"`
   local COMMIT=`git log -1 --format=%H`
   echo "**** Preparing nightly release : $VER ***"
 
