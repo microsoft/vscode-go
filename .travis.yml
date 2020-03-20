@@ -17,7 +17,6 @@ matrix:
 
 os:
   - osx
-  - linux
 
 before_install:
   # Call xvfb directly on linux runs and give it time to start
