@@ -1,4 +1,4 @@
-FROM golang:latest AS gobuilder
+FROM golang:1.14 AS gobuilder
 
 ENV GO111MODULE on
 ENV GOBIN /gobin
@@ -29,7 +29,7 @@ RUN go get -u -v \
   	github.com/ramya-rao-a/go-outline \
   	github.com/rogpeppe/godef \
   	github.com/sqs/goreturns \
-  	github.com/uudashr/gopkgs/cmd/gopkgs \
+  	github.com/uudashr/gopkgs/v2/cmd/gopkgs \
   	github.com/zmb3/gogetdoc \
   	golang.org/x/lint/golint \
   	golang.org/x/tools/cmd/gorename
