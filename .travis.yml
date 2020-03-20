@@ -17,18 +17,19 @@ matrix:
 
 os:
   - osx
+  - linux
 
 before_install:
   # Call xvfb directly on linux runs and give it time to start
   - if [[ $TRAVIS_OS_NAME == "linux" ]]; then
     export DISPLAY=:99.0;
-    Xvfb :99 &
+    Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
     sleep 3;
     sudo apt-get update && sudo apt-get install -y libsecret-1-0;
     fi
 
 install:
-  - TRAVIS_NODE_VERSION="6";
+  - TRAVIS_NODE_VERSION="8";
   # Clear out whatever version of NVM Travis has as it is old.
   - rm -rf ~/.nvm;
     # Grab NVM.
@@ -49,7 +50,7 @@ install:
   - go get -u -v github.com/ramya-rao-a/go-outline
   - go get -u -v github.com/rogpeppe/godef
   - go get -u -v github.com/sqs/goreturns
-  - go get -u -v github.com/uudashr/gopkgs/cmd/gopkgs
+  - go get -u -v github.com/uudashr/gopkgs/v2/cmd/gopkgs
   - go get -u -v github.com/zmb3/gogetdoc
   - go get -u -v golang.org/x/lint/golint
   - go get -u -v golang.org/x/tools/cmd/gorename
