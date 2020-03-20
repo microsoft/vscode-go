@@ -1,7 +1,7 @@
 {
   "name": "go-nightly",
   "displayName": "Go Nightly",
-  "version": "0.0.0-development",
+  "version": "0.0.0",
   "publisher": "golang",
   "description": "Rich Go language support for Visual Studio Code (Nightly)",
   "author": {
@@ -144,6 +144,11 @@
         "command": "go.gopath",
         "title": "Go: Current GOPATH",
         "description": "See the currently set GOPATH."
+      },
+      {
+        "command": "go.locate.tools",
+        "title": "Go: Locate Configured Tools",
+        "description": "List all configured tools."
       },
       {
         "command": "go.test.cursor",
