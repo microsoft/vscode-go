@@ -46,7 +46,14 @@ import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
 import { showHideStatus } from './goStatus';
 import { testAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWorkspace } from './goTest';
 import { vetCode } from './goVet';
-import { getFromGlobalState, setGlobalState, updateGlobalState } from './stateUtils';
+import {
+	getFromGlobalState,
+	getFromWorkspaceState,
+	setGlobalState,
+	setWorkspaceState,
+	updateGlobalState,
+	updateWorkspaceState
+} from './stateUtils';
 import { disposeTelemetryReporter, sendTelemetryEventForConfig } from './telemetry';
 import { cancelRunningTests, showTestOutput } from './testUtils';
 import {
@@ -69,6 +76,7 @@ export let vetDiagnosticCollection: vscode.DiagnosticCollection;
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	setGlobalState(ctx.globalState);
+	setWorkspaceState(ctx.workspaceState);
 
 	updateGoPathGoRootFromConfig().then(async () => {
 		const updateToolsCmdText = 'Update tools';
@@ -471,14 +479,17 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				vscode.window.showErrorMessage('Cannot apply coverage profile when no Go file is open.');
 				return;
 			}
+			const lastCoverProfilePathKey = 'lastCoverProfilePathKey';
 			vscode.window
 				.showInputBox({
-					prompt: 'Enter the path to the coverage profile for current package'
+					prompt: 'Enter the path to the coverage profile for current package',
+					value: getFromWorkspaceState(lastCoverProfilePathKey, ''),
 				})
 				.then((coverProfilePath) => {
 					if (!coverProfilePath) {
 						return;
 					}
+					updateWorkspaceState(lastCoverProfilePathKey, coverProfilePath);
 					if (!fileExists(coverProfilePath)) {
 						vscode.window.showErrorMessage(`Cannot find the file ${coverProfilePath}`);
 						return;
