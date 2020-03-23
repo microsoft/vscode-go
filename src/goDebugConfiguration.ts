@@ -112,26 +112,6 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		debugConfiguration['currentFile'] =
 			activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
 
-		const neverAgain = { title: `Don't Show Again` };
-		const ignoreWarningKey = 'ignoreDebugLaunchRemoteWarning';
-		const ignoreWarning = getFromGlobalState(ignoreWarningKey);
-		if (
-			ignoreWarning !== true &&
-			debugConfiguration.request === 'launch' &&
-			debugConfiguration['mode'] === 'remote'
-		) {
-			vscode.window
-				.showWarningMessage(
-					`Request type of 'launch' with mode 'remote' is deprecated, please use request type 'attach' with mode 'remote' instead.`,
-					neverAgain
-				)
-				.then((result) => {
-					if (result === neverAgain) {
-						updateGlobalState(ignoreWarningKey, true);
-					}
-				});
-		}
-
 		if (debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
 			this.showWarning(
 				'ignoreDebugLaunchRemoteWarning',
