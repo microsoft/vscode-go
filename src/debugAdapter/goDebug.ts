@@ -702,7 +702,7 @@ class Delve {
 					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: isLocalDebugging }]);
 				} catch (err) {
 					log('DetachResponse');
-					logError(err, 'Failed to detach');
+					logError(`Failed to detach - ${err.toString() || ''}`);
 					shouldForceClean = isLocalDebugging;
 				}
 			}
