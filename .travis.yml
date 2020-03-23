@@ -3,9 +3,9 @@ language: go
 dist: bionic
 
 go:
-  - 1.11.x
   - 1.12.x
   - 1.13.x
+  - 1.14.x
   - tip
 
 git:
@@ -17,7 +17,6 @@ matrix:
 
 os:
   - osx
-  - linux
 
 before_install:
   # Call xvfb directly on linux runs and give it time to start

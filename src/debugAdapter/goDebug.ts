@@ -132,6 +132,7 @@ interface DebugThread {
 	id: number;
 	line: number;
 	pc: number;
+	goroutineID: number;
 	function?: DebugFunction;
 }
 
@@ -153,6 +154,7 @@ interface DebugFunction {
 	goType: number;
 	args: DebugVariable[];
 	locals: DebugVariable[];
+	optimized: boolean;
 }
 
 interface ListVarsOut {
@@ -305,9 +307,16 @@ function logError(...args: any[]) {
 	logger.error(logArgsToString(args));
 }
 
+function findPathSeparator(filePath: string) {
+	return filePath.includes('/') ? '/' : '\\';
+}
+
 function normalizePath(filePath: string) {
 	if (process.platform === 'win32') {
+		const pathSeparator = findPathSeparator(filePath);
 		filePath = path.normalize(filePath);
+		// Normalize will replace everything with backslash on Windows.
+		filePath = filePath.replace(/\\/g, pathSeparator);
 		return fixDriveCasingInWindows(filePath);
 	}
 	return filePath;
@@ -693,7 +702,7 @@ class Delve {
 					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: isLocalDebugging }]);
 				} catch (err) {
 					log('DetachResponse');
-					logError(`Failed to detach - ${err.toString() || ''}`);
+					logError(err, 'Failed to detach');
 					shouldForceClean = isLocalDebugging;
 				}
 			}
@@ -752,13 +761,6 @@ class GoDebugSession extends LoggingDebugSession {
 		response.body.supportsSetVariable = true;
 		this.sendResponse(response);
 		log('InitializeResponse');
-	}
-
-	protected findPathSeperator(filePath: string) {
-		if (/^(\w:[\\/]|\\\\)/.test(filePath)) {
-			return '\\';
-		}
-		return filePath.includes('/') ? '/' : '\\';
 	}
 
 	protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments): void {
@@ -835,10 +837,12 @@ class GoDebugSession extends LoggingDebugSession {
 		if (this.delve.remotePath.length === 0) {
 			return this.convertClientPathToDebugger(filePath);
 		}
+		// The filePath may have a different path separator than the localPath
+		// So, update it to use the same separator as the remote path to ease
+		// in replacing the local path in it with remote path
+		filePath = filePath.replace(/\/|\\/g, this.remotePathSeparator);
 		return filePath
-			.replace(this.delve.program, this.delve.remotePath)
-			.split(this.localPathSeparator)
-			.join(this.remotePathSeparator);
+			.replace(this.delve.program.replace(/\/|\\/g, this.remotePathSeparator), this.delve.remotePath);
 	}
 
 	protected toLocalPath(pathToConvert: string): string {
@@ -872,7 +876,7 @@ class GoDebugSession extends LoggingDebugSession {
 			// We use NonBlocking so the call would return immediately.
 			this.debugState = await this.delve.getDebugState();
 		} catch (error) {
-			logError(`Failed to get state ${String(error)}`);
+			this.logDelveError(error, 'Failed to get state');
 		}
 
 		if (!this.debugState.Running && !this.continueRequestRunning) {
@@ -883,15 +887,13 @@ class GoDebugSession extends LoggingDebugSession {
 				() => {
 					return this.setBreakPoints(response, args).then(() => {
 						return this.continue(true).then(null, (err) => {
-							logError(
-								`Failed to continue delve after halting it to set breakpoints: "${err.toString()}"`
-							);
+							this.logDelveError(err, 'Failed to continue delve after halting it to set breakpoints');
 						});
 					});
 				},
 				(err) => {
 					this.skipStopEventOnce = false;
-					logError(err);
+					this.logDelveError(err, 'Failed to halt delve before attempting to set breakpoint');
 					return this.sendErrorResponse(
 						response,
 						2008,
@@ -919,7 +921,7 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 
 			if (err) {
-				logError('Failed to get threads - ' + err.toString());
+				this.logDelveError(err, 'Failed to get threads');
 				return this.sendErrorResponse(response, 2003, 'Unable to display threads: "{e}"', {
 					e: err.toString()
 				});
@@ -961,7 +963,7 @@ class GoDebugSession extends LoggingDebugSession {
 			[stackTraceIn],
 			(err, out) => {
 				if (err) {
-					logError('Failed to produce stack trace!');
+					this.logDelveError(err, 'Failed to produce stacktrace');
 					return this.sendErrorResponse(response, 2004, 'Unable to produce stack trace: "{e}"', {
 						e: err.toString()
 					});
@@ -1002,7 +1004,7 @@ class GoDebugSession extends LoggingDebugSession {
 			this.delve.isApiV1 ? [listLocalVarsIn] : [{ scope: listLocalVarsIn, cfg: this.delve.loadConfig }],
 			(err, out) => {
 				if (err) {
-					logError('Failed to list local variables - ' + err.toString());
+					this.logDelveError(err, 'Failed to get list local variables');
 					return this.sendErrorResponse(response, 2005, 'Unable to list locals: "{e}"', {
 						e: err.toString()
 					});
@@ -1018,7 +1020,7 @@ class GoDebugSession extends LoggingDebugSession {
 						: [{ scope: listLocalFunctionArgsIn, cfg: this.delve.loadConfig }],
 					(listFunctionErr, outArgs) => {
 						if (listFunctionErr) {
-							logError('Failed to list function args - ' + listFunctionErr.toString());
+							this.logDelveError(listFunctionErr, 'Failed to list function args');
 							return this.sendErrorResponse(response, 2006, 'Unable to list args: "{e}"', {
 								e: listFunctionErr.toString()
 							});
@@ -1098,7 +1100,7 @@ class GoDebugSession extends LoggingDebugSession {
 								this.delve.isApiV1 ? [filter] : [{ filter, cfg: this.delve.loadConfig }],
 								(listPkgVarsErr, listPkgVarsOut) => {
 									if (listPkgVarsErr) {
-										logError('Failed to list global vars - ' + listPkgVarsErr.toString());
+										this.logDelveError(listPkgVarsErr, 'Failed to list global vars');
 										return this.sendErrorResponse(
 											response,
 											2007,
@@ -1170,7 +1172,7 @@ class GoDebugSession extends LoggingDebugSession {
 						const variable = this.delve.isApiV1 ? <DebugVariable>result : (<EvalOut>result).Variable;
 						v.children = variable.children;
 					},
-					(err) => logError('Failed to evaluate expression - ' + err.toString())
+					(err) => this.logDelveError(err, 'Failed to evaluate expression')
 				);
 			}
 		};
@@ -1249,7 +1251,7 @@ class GoDebugSession extends LoggingDebugSession {
 		log('NextRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'next' }], (err, out) => {
 			if (err) {
-				logError('Failed to next - ' + err.toString());
+				this.logDelveError(err, 'Failed to next');
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			log('next state', state);
@@ -1264,7 +1266,7 @@ class GoDebugSession extends LoggingDebugSession {
 		log('StepInRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'step' }], (err, out) => {
 			if (err) {
-				logError('Failed to step - ' + err.toString());
+				this.logDelveError(err, 'Failed to step in');
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			log('stop state', state);
@@ -1279,7 +1281,7 @@ class GoDebugSession extends LoggingDebugSession {
 		log('StepOutRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'stepOut' }], (err, out) => {
 			if (err) {
-				logError('Failed to stepout - ' + err.toString());
+				this.logDelveError(err, 'Failed to step out');
 			}
 			const state = this.delve.isApiV1 ? <DebuggerState>out : (<CommandOut>out).State;
 			log('stepout state', state);
@@ -1294,7 +1296,7 @@ class GoDebugSession extends LoggingDebugSession {
 		log('PauseRequest');
 		this.delve.call<DebuggerState | CommandOut>('Command', [{ name: 'halt' }], (err, out) => {
 			if (err) {
-				logError('Failed to halt - ' + err.toString());
+				this.logDelveError(err, 'Failed to halt');
 				return this.sendErrorResponse(response, 2010, 'Unable to halt execution: "{e}"', {
 					e: err.toString()
 				});
@@ -1343,7 +1345,7 @@ class GoDebugSession extends LoggingDebugSession {
 		this.delve.call(this.delve.isApiV1 ? 'SetSymbol' : 'Set', [setSymbolArgs], (err) => {
 			if (err) {
 				const errMessage = `Failed to set variable: ${err.toString()}`;
-				logError(errMessage);
+				this.logDelveError(err, 'Failed to set variable');
 				return this.sendErrorResponse(response, 2010, errMessage);
 			}
 			response.body = { value: args.value };
@@ -1392,8 +1394,8 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 
 		if (args.remotePath.length > 0) {
-			this.localPathSeparator = this.findPathSeperator(localPath);
-			this.remotePathSeparator = this.findPathSeperator(args.remotePath);
+			this.localPathSeparator = findPathSeparator(localPath);
+			this.remotePathSeparator = findPathSeparator(args.remotePath);
 
 			const llist = localPath.split(/\/|\\/).reverse();
 			const rlist = args.remotePath.split(/\/|\\/).reverse();
@@ -1741,7 +1743,7 @@ class GoDebugSession extends LoggingDebugSession {
 			// [TODO] Can we avoid doing this? https://github.com/Microsoft/vscode/issues/40#issuecomment-161999881
 			this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [], (err, out) => {
 				if (err) {
-					logError('Failed to get threads - ' + err.toString());
+					this.logDelveError(err, 'Failed to get threads');
 				}
 				const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
 				this.updateGoroutinesList(goroutines);
@@ -1781,7 +1783,7 @@ class GoDebugSession extends LoggingDebugSession {
 		if (!calledWhenSettingBreakpoint) {
 			errorCallback = (err: any) => {
 				if (err) {
-					logError('Failed to continue - ' + err.toString());
+					this.logDelveError(err, 'Failed to continue');
 				}
 				this.handleReenterDebug('breakpoint');
 				throw err;
@@ -1818,7 +1820,7 @@ class GoDebugSession extends LoggingDebugSession {
 			.then(
 				(val) => val,
 				(err) => {
-					logError(
+					log(
 						'Failed to eval expression: ',
 						JSON.stringify(evalSymbolArgs, null, ' '),
 						'\n\rEval error:',
@@ -1837,6 +1839,87 @@ class GoDebugSession extends LoggingDebugSession {
 				child.fullyQualifiedName = local.name;
 			});
 		});
+	}
+
+	private logDelveError(err: any, message: string) {
+		if (err === undefined) {
+			return;
+		}
+
+		let errorMessage = err.toString();
+		// Handle unpropagated fatalpanic errors with a more user friendly message:
+		// https://github.com/microsoft/vscode-go/issues/1903#issuecomment-460126884
+		// https://github.com/go-delve/delve/issues/852
+		// This affects macOS only although we're agnostic of the OS at this stage, only handle the error
+		if (errorMessage === 'bad access') {
+			errorMessage = 'unpropagated fatalpanic: signal SIGSEGV (EXC_BAD_ACCESS). This fatalpanic is not traceable on macOS, see https://github.com/go-delve/delve/issues/852';
+		}
+
+		logError(message + ' - ' + errorMessage);
+
+		if (errorMessage === 'bad access') {
+			logError('WARNING: this stack might not be from the expected active goroutine');
+		}
+
+		this.dumpStacktrace();
+	}
+
+	private async dumpStacktrace() {
+		// Get current goroutine
+		// Debugger may be stopped at this point but we still can (and need) to obtain state and stacktrace
+		let goroutineId = 0;
+		try {
+			const stateCallResult = await this.delve.getDebugState();
+			// In some fault scenarios there may not be a currentGoroutine available from the debugger state
+			// Use the current thread
+			if (!stateCallResult.currentGoroutine) {
+				goroutineId = stateCallResult.currentThread.goroutineID;
+			} else {
+				goroutineId = stateCallResult.currentGoroutine.id;
+			}
+		} catch (error) {
+			logError('dumpStacktrace - Failed to get debugger state ' + error);
+		}
+
+		// Get goroutine stacktrace
+		const stackTraceIn = { id: goroutineId, depth: this.delve.stackTraceDepth };
+		if (!this.delve.isApiV1) {
+			Object.assign(stackTraceIn, { full: false, cfg: this.delve.loadConfig });
+		}
+		this.delve.call<DebugLocation[] | StacktraceOut>(
+			this.delve.isApiV1 ?
+				'StacktraceGoroutine' : 'Stacktrace', [stackTraceIn], (err, out) => {
+					if (err) {
+						logError('dumpStacktrace: Failed to produce stack trace' + err);
+						return;
+					}
+					const locations = this.delve.isApiV1 ? <DebugLocation[]>out : (<StacktraceOut>out).Locations;
+					log('locations', locations);
+					const stackFrames = locations.map((location, frameId) => {
+						const uniqueStackFrameId = this.stackFrameHandles.create([goroutineId, frameId]);
+						return new StackFrame(
+							uniqueStackFrameId,
+							location.function ? location.function.name : '<unknown>',
+							location.file === '<autogenerated>' ? null : new Source(
+								path.basename(location.file),
+								this.toLocalPath(location.file)
+							),
+							location.line,
+							0
+						);
+					});
+
+					// Dump stacktrace into error logger
+					logError(`Last known immediate stacktrace (goroutine id ${goroutineId}):`);
+					let output = '';
+					stackFrames.forEach((stackFrame) => {
+						output = output.concat(`\t${stackFrame.source.path}:${stackFrame.line}\n`);
+						if (stackFrame.name) {
+							output = output.concat(`\t\t${stackFrame.name}\n`);
+						}
+					});
+					logError(output);
+				});
 	}
 }
 

@@ -35,7 +35,10 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 		token: vscode.CancellationToken
 	): Thenable<vscode.SymbolInformation[]> {
 		const convertToCodeSymbols = (decls: GoSymbolDeclaration[], symbols: vscode.SymbolInformation[]): void => {
-			decls.forEach((decl) => {
+			if (!decls) {
+				return;
+			}
+			for (const decl of decls) {
 				let kind: vscode.SymbolKind;
 				if (decl.kind !== '') {
 					kind = this.goKindToCodeKind[decl.kind];
@@ -49,7 +52,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 					''
 				);
 				symbols.push(symbolInfo);
-			});
+			}
 		};
 		const root = getWorkspaceFolderPath(
 			vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri

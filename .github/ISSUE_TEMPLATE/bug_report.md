@@ -27,7 +27,7 @@ Please answer these questions before submitting your issue. Thanks!
 	- <Paste VS Code version here>
 - Check your installed extensions to get the version of the VS Code Go extension 
 	- <Paste Go extension version here>
-- Run `go env GOOS GOARCH` to get the operating system and processor arhcitecture details
+- Run `go env GOOS GOARCH` to get the operating system and processor architecture details
 	- <Paste OS and arch details here>
 
 ### Share the Go related settings you have added/edited
