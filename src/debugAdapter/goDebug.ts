@@ -1820,7 +1820,7 @@ class GoDebugSession extends LoggingDebugSession {
 			.then(
 				(val) => val,
 				(err) => {
-					logError(
+					log(
 						'Failed to eval expression: ',
 						JSON.stringify(evalSymbolArgs, null, ' '),
 						'\n\rEval error:',
