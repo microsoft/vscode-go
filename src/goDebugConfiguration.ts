@@ -109,8 +109,6 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			debugConfiguration['mode'] =
 				activeEditor && activeEditor.document.fileName.endsWith('_test.go') ? 'test' : 'debug';
 		}
-		debugConfiguration['currentFile'] =
-			activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
 
 		const neverAgain = { title: `Don't Show Again` };
 		const ignoreWarningKey = 'ignoreDebugLaunchRemoteWarning';
