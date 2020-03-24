@@ -118,7 +118,9 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				`Request type of 'launch' with mode 'remote' is deprecated, please use request type 'attach' with mode 'remote' instead.`);
 		}
 
-		if (debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
+		if (debugConfiguration.request === 'attach'
+			&& debugConfiguration['mode'] === 'remote'
+			&& debugConfiguration['program']) {
 			this.showWarning(
 				'ignoreUsingRemotePathAndProgramWarning',
 				`Request type of 'attach' with mode 'remote' does not work with 'program' attribute, please use 'cwd' attribute instead.`);
