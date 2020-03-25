@@ -26,9 +26,9 @@ git merge --no-commit "origin/upstream" || echo "Ignoring conflict..."
 
 COMMIT=`git log --format=%h -n 1 "origin/upstream"`
 
-gcloud builds submit --config=build/cloud.yaml || echo "Build failed.  Please address the issue..."
+gcloud builds submit --config=build/cloudbuild.yaml || echo "Build failed. Please address the issue..."
 
 git commit -m "sync: merge microsoft/vscode-go@${COMMIT} into master"
 
-git codereview mail -r hyangah@gmail.com,rstambler@golang.org HEAD
+git codereview mail HEAD
 cd - && git worktree remove "${WORKTREE}"
