@@ -435,6 +435,7 @@ class Delve {
 							runOptions.cwd = program;
 							runArgs.push('.');
 						} else {
+							runOptions.cwd = dirname;
 							runArgs.push(program);
 						}
 						if (launchArgs.args) {

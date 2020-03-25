@@ -47,13 +47,13 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				return;
 			}
 
-			debugConfiguration = {
+			debugConfiguration = Object.assign(debugConfiguration || {}, {
 				name: 'Launch',
 				type: 'go',
 				request: 'launch',
 				mode: 'auto',
 				program: activeEditor.document.fileName
-			};
+			});
 		}
 
 		debugConfiguration['packagePathToGoModPathMap'] = packagePathToGoModPathMap;
