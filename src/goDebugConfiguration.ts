@@ -47,7 +47,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				return;
 			}
 
-			debugConfiguration = Object.assign(debugConfiguration, {
+			debugConfiguration = Object.assign(debugConfiguration || {}, {
 				name: 'Launch',
 				type: 'go',
 				request: 'launch',
