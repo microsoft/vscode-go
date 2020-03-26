@@ -325,21 +325,23 @@ export async function goTest(testconfig: TestConfig): Promise<boolean> {
 
 				// 1=ok/FAIL, 2=package, 3=time/(cached)
 				const packageResultLineRE = /^(ok|FAIL)[ \t]+(.+?)[ \t]+([0-9\.]+s|\(cached\))/;
+				const lineWithErrorRE = /^(\t|\s\s\s\s)\S/;
 				const testResultLines: string[] = [];
 
 				const processTestResultLine = (line: string) => {
-					if (!testconfig.includeSubDirectories) {
-						outputChannel.appendLine(expandFilePathInOutput(line, testconfig.dir));
-						return;
-					}
 					testResultLines.push(line);
 					const result = line.match(packageResultLineRE);
 					if (result && (pkgMap.has(result[2]) || currentGoWorkspace)) {
+						const hasTestFailed = line.startsWith('FAIL');
 						const packageNameArr = result[2].split('/');
 						const baseDir = pkgMap.get(result[2]) || path.join(currentGoWorkspace, ...packageNameArr);
-						testResultLines.forEach((testResultLine) =>
-							outputChannel.appendLine(expandFilePathInOutput(testResultLine, baseDir))
-						);
+						testResultLines.forEach((testResultLine) => {
+							if (hasTestFailed && lineWithErrorRE.test(testResultLine)) {
+								outputChannel.appendLine(expandFilePathInOutput(testResultLine, baseDir));
+							} else {
+								outputChannel.appendLine(testResultLine);
+							}
+						});
 						testResultLines.splice(0);
 					}
 				};

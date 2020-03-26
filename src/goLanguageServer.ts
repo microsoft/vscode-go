@@ -160,9 +160,12 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					//          { languageId: 'go', uri: document.uri });
 
 					const editorParamHintsEnabled = vscode.workspace.getConfiguration(
-						'editor.parameterHints', document.uri)['enabled'];
-					const goParamHintsEnabled = vscode.workspace.getConfiguration(
-						'[go]', document.uri)['editor.parameterHints.enabled'];
+						'editor.parameterHints',
+						document.uri
+					)['enabled'];
+					const goParamHintsEnabled = vscode.workspace.getConfiguration('[go]', document.uri)[
+						'editor.parameterHints.enabled'
+					];
 
 					let paramHintsEnabled: boolean = false;
 					if (typeof goParamHintsEnabled === 'undefined') {
@@ -176,8 +179,8 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					}
 
 					function configureCommands(
-						r: vscode.CompletionItem[] | vscode.CompletionList | null | undefined):
-						vscode.CompletionItem[] | vscode.CompletionList | null | undefined {
+						r: vscode.CompletionItem[] | vscode.CompletionList | null | undefined
+					): vscode.CompletionItem[] | vscode.CompletionList | null | undefined {
 						if (r) {
 							(Array.isArray(r) ? r : r.items).forEach((i: vscode.CompletionItem) => {
 								i.command = cmd;
@@ -187,12 +190,12 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					}
 					const ret = next(document, position, context, token);
 
-					const isThenable = <T>(obj: vscode.ProviderResult<T>): obj is Thenable<T> => obj && (<any>obj)['then'];
+					const isThenable = <T>(obj: vscode.ProviderResult<T>): obj is Thenable<T> =>
+						obj && (<any>obj)['then'];
 					if (isThenable<vscode.CompletionItem[] | vscode.CompletionList | null | undefined>(ret)) {
 						return ret.then(configureCommands);
 					}
 					return configureCommands(ret);
-
 				}
 			}
 		}
