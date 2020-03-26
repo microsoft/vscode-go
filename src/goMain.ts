@@ -5,6 +5,7 @@
 
 'use strict';
 
+import fs = require('fs');
 import * as path from 'path';
 import vscode = require('vscode');
 import { browsePackages } from './goBrowsePackage';
@@ -43,8 +44,9 @@ import { clearCacheForTools, fileExists } from './goPath';
 import { playgroundCommand } from './goPlayground';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
-import { showHideStatus } from './goStatus';
+import { outputChannel, showHideStatus } from './goStatus';
 import { testAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWorkspace } from './goTest';
+import { getConfiguredTools } from './goTools';
 import { vetCode } from './goVet';
 import {
 	getFromGlobalState,
@@ -194,6 +196,43 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 			vscode.window.showInformationMessage(msg);
 			return gopath;
+		})
+	);
+
+	ctx.subscriptions.push(
+		vscode.commands.registerCommand('go.locate.tools', async () => {
+			outputChannel.show();
+			outputChannel.clear();
+			outputChannel.appendLine('Checking configured tools....');
+			// Tool's path search is done by getBinPathWithPreferredGopath
+			// which searches places in the following order
+			// 1) absolute path for the alternateTool
+			// 2) GOBIN
+			// 3) toolsGopath
+			// 4) gopath
+			// 5) GOROOT
+			// 6) PATH
+			outputChannel.appendLine('GOBIN: ' + process.env['GOBIN']);
+			outputChannel.appendLine('toolsGopath: ' + getToolsGopath());
+			outputChannel.appendLine('gopath: ' + getCurrentGoPath());
+			outputChannel.appendLine('GOROOT: ' + process.env['GOROOT']);
+			outputChannel.appendLine('PATH: ' + process.env['PATH']);
+			outputChannel.appendLine('');
+
+			const goVersion = await getGoVersion();
+			const allTools = getConfiguredTools(goVersion);
+
+			allTools.forEach((tool) => {
+				const toolPath = getBinPath(tool.name);
+				// TODO(hyangah): print alternate tool info if set.
+				let msg = 'not installed';
+				if (path.isAbsolute(toolPath)) {
+					// getBinPath returns the absolute path is the tool exists.
+					// (See getBinPathWithPreferredGopath which is called underneath)
+					msg = 'installed';
+				}
+				outputChannel.appendLine(`   ${tool.name}: ${toolPath} ${msg}`);
+			});
 		})
 	);
 
