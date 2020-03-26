@@ -24,7 +24,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				type: 'go',
 				request: 'launch',
 				mode: 'auto',
-				program: '${file}',
+				program: '${fileDirname}',
 				env: {},
 				args: []
 			}
