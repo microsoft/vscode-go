@@ -4,7 +4,7 @@ The Debug Adapter code runs in a separate Nodejs process spawned by Visual Studi
 
 Please see [The Debug Adapter Protocol](https://code.visualstudio.com/blogs/2018/08/07/debug-adapter-protocol-website) to understand how the Debug Adapter acts as an intermediary between VS Code and the debugger which in case of Go is [delve](https://github.com/derekparker/delve)
 
-# Preliminary steps
+## Set up local dev environment
 
 Clone this [repo](https://github.com/Microsoft/vscode-go) and then run `npm install`
 

@@ -5,9 +5,19 @@
 
 import path = require('path');
 import vscode = require('vscode');
-import { getToolsEnvVars, runTool, ICheckResult, handleDiagnosticErrors, getWorkspaceFolderPath, getGoVersion, getGoConfig, getTimeoutConfiguration, resolvePath } from './util';
 import { vetDiagnosticCollection } from './goMain';
 import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
+import {
+	getGoConfig,
+	getGoVersion,
+	getTimeoutConfiguration,
+	getToolsEnvVars,
+	getWorkspaceFolderPath,
+	handleDiagnosticErrors,
+	ICheckResult,
+	resolvePath,
+	runTool
+} from './util';
 
 /**
  * Runs go vet in the current package or workspace.
@@ -19,7 +29,9 @@ export function vetCode(vetWorkspace?: boolean) {
 		return;
 	}
 	if (editor.document.languageId !== 'go' && !vetWorkspace) {
-		vscode.window.showInformationMessage('File in the active editor is not a Go file, cannot find current package to vet');
+		vscode.window.showInformationMessage(
+			'File in the active editor is not a Go file, cannot find current package to vet'
+		);
 		return;
 	}
 
@@ -31,11 +43,11 @@ export function vetCode(vetWorkspace?: boolean) {
 	diagnosticsStatusBarItem.text = 'Vetting...';
 
 	goVet(documentUri, goConfig, vetWorkspace, getTimeoutConfiguration('onCommand', goConfig))
-		.then(warnings => {
+		.then((warnings) => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vetDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
 		})
-		.catch(err => {
+		.catch((err) => {
 			vscode.window.showInformationMessage('Error: ' + err);
 			diagnosticsStatusBarItem.text = 'Vetting Failed';
 		});
@@ -48,7 +60,12 @@ export function vetCode(vetWorkspace?: boolean) {
  * @param goConfig Configuration for the Go extension.
  * @param vetWorkspace If true vets code in all workspace.
  */
-export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfiguration, vetWorkspace: boolean, timeout: number): Promise<ICheckResult[]> {
+export async function goVet(
+	fileUri: vscode.Uri,
+	goConfig: vscode.WorkspaceConfiguration,
+	vetWorkspace?: boolean,
+	timeout?: number
+): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;
 	if (tokenSource) {
@@ -60,7 +77,7 @@ export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfi
 	tokenSource = new vscode.CancellationTokenSource();
 
 	const currentWorkspace = getWorkspaceFolderPath(fileUri);
-	const cwd = (vetWorkspace && currentWorkspace) ? currentWorkspace : path.dirname(fileUri.fsPath);
+	const cwd = vetWorkspace && currentWorkspace ? currentWorkspace : path.dirname(fileUri.fsPath);
 	if (!path.isAbsolute(cwd)) {
 		return Promise.resolve([]);
 	}
@@ -69,7 +86,7 @@ export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfi
 	const vetEnv = Object.assign({}, getToolsEnvVars());
 	const args: string[] = [];
 
-	vetFlags.forEach(flag => {
+	vetFlags.forEach((flag) => {
 		if (flag.startsWith('--vettool=') || flag.startsWith('-vettool=')) {
 			let vetToolPath = flag.substr(flag.indexOf('=') + 1).trim();
 			if (!vetToolPath) {
@@ -89,7 +106,7 @@ export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfi
 		tagsArg.push(goConfig['buildTags']);
 	}
 
-	let vetArgs = ['vet', ...args, ...tagsArg, vetWorkspace ? './...' :  '.'];
+	let vetArgs = ['vet', ...args, ...tagsArg, vetWorkspace ? './...' : '.'];
 	if (goVersion.lt('1.10') && args.length) {
 		vetArgs = ['tool', 'vet', ...args, ...tagsArg, '.'];
 	}
@@ -105,7 +122,7 @@ export async function goVet(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfi
 		null,
 		vetEnv,
 		false,
-			timeout,
+		timeout,
 		tokenSource.token
 	).then((result) => {
 		if (closureEpoch === epoch) {

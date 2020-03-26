@@ -1,4 +1,38 @@
-## 0.12.0 - Coming Soon
+## 0.13.1 - 27th February, 2020
+
+* [Ilya Danilkin (@nezorflame)](https://github.com/nezorflame)
+    * Use v2 of the `gopkgs` tool to avoid the error in tool installation. Fixes [Bug 3050](https://github.com/Microsoft/vscode-go/issues/3050) with [PR 3057](https://github.com/Microsoft/vscode-go/pull/3057)
+
+* [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
+    * Stop tools listed in the `go.alternateTools` setting from appearing in the drop down resulting
+    from the `Go: Install/Update Tools` command. Fixes [Bug 3024](https://github.com/Microsoft/vscode-go/issues/3024) with [PR 3046](https://github.com/Microsoft/vscode-go/pull/3046)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Ensure users on versions older than 0.3.1 of `gopls` get prompted to update the language server.
+
+## 0.13.0 - 3rd February, 2020
+
+* [Henry Kwan (@piengeng)](https://github.com/piengeng)
+    * The outline feature now shows constants different from variables, and interfaces different from types. [PR 2973](https://github.com/Microsoft/vscode-go/pull/2973)
+
+* [@marcel-basel](https://github.com/marcel-basel)
+    * The `Go: Generate Unit Tests For Function` commands now respects the receiver type and generate tests only for
+    current function instead of all functions that match the name. Fixes [Bug 2282](https://github.com/Microsoft/vscode-go/issues/2282) with [PR 2987](https://github.com/Microsoft/vscode-go/pull/2987)
+    * Use `GOBIN` to look for the installed Go tools as well. Fixes [Bug 2122](https://github.com/Microsoft/vscode-go/issues/2122) with [PR 3001](https://github.com/Microsoft/vscode-go/pull/3001)
+
+* [Tobias Salzmann (@Eun)](https://github.com/Eun)
+    * A new command `Go: Apply Cover Profile` to apply code coverage decorators from a custom cover profile. [Feature Request 1596](https://github.com/Microsoft/vscode-go/issues/1596) implemented with [PR 2361](https://github.com/Microsoft/vscode-go/pull/2361)
+
+* [@SteelPhase](https://github.com/SteelPhase)
+    * The `envFile` in the debug configuration now supports configuring multiple env files. [Feature Request 1746](https://github.com/Microsoft/vscode-go/issues/1746) implemented with [PR 2395](https://github.com/Microsoft/vscode-go/pull/2395)
+
+* [Drake Gens (@drakegens)](https://github.com/drakegens)  
+    * Skip attempts to toggle the test file after generating unit tests for functions in a test file. Fixes [Bug 2822](https://github.com/Microsoft/vscode-go/issues/2822) with [PR 2883](https://github.com/Microsoft/vscode-go/pull/2883)
+
+* [Jakub Warczarek (@programmer04)](https://github.com/programmer04)
+    * Improve the code snippet for the for loop by replacing `index` with `i`. [Feature Request 2943](https://github.com/Microsoft/vscode-go/issues/2943) implemented with [PR 3010](https://github.com/Microsoft/vscode-go/pull/3010)
+
+## 0.12.0 - 31st December, 2019
 
 ### Language server updates
 
@@ -24,6 +58,9 @@
 * [Zac Bergquist (@zmb3)](https://github.com/zmb3)
     * Activate the Go extension when the workspace contains Go files rather than wait for a Go file to be opened. [Feature Request 2821](https://github.com/Microsoft/vscode-go/issues/2821) implemented with [PR 2859](https://github.com/Microsoft/vscode-go/pull/2859)
 
+* [Nisheet Sinvhal (@Ashniu123)](https://github.com/Ashniu123)
+    * Use tags and options specified in the `go.addTags` and `go.removeTags` settings as placeholders in the input boxes that appear when running the `Go: Add Tags To Struct Fields` and `Go: Remove Tags From Struct Fields` commands. [Feature Request 2929](https://github.com/Microsoft/vscode-go/issues/2929) implemented with [PR 2944](https://github.com/Microsoft/vscode-go/pull/2944)
+
 ### Others
 
 * [Ryan Boehning (@y0ssar1an)](https://github.com/y0ssar1an)
@@ -31,6 +68,14 @@
 
 * [Luis GG (@lggomez)](https://github.com/lggomez)
     * Update package dependencies. [PR 2900](https://github.com/Microsoft/vscode-go/pull/2900)
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Fix issues with installing single tools when using the `Go: Install/Update Tools` command. Fixes [Bug 2936](https://github.com/Microsoft/vscode-go/issues/2936) with [PR 2945](https://github.com/Microsoft/vscode-go/pull/2945) and [PR 2948](https://github.com/Microsoft/vscode-go/pull/2948)
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Ensure the build tags from `go.buildTags` and `go.testTags` are respected by the `Go: Debug Test At Cursor` command. Fixes [Bug 2953](https://github.com/Microsoft/vscode-go/issues/2953) with [commit d6b6668](https://github.com/microsoft/vscode-go/commit/d6b666873a7fd75916dca77fa2bb0139d8f17c8f)
+    * Ensure that test arguments passed to `go.testFlags` are treated as arguments and not build flags by delve when debugging tests. Fixes [Bug 2115](https://github.com/Microsoft/vscode-go/issues/2115) with [commit 9ab7b8bff](https://github.com/microsoft/vscode-go/commit/9ab7b8bff49c38830ae4625718f605ba73fec0dc)
+
 
 
 ## 0.11.9 - 5th November, 2019

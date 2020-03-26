@@ -5,16 +5,33 @@
 
 'use strict';
 
-import { CancellationToken, ParameterInformation, Position, SignatureHelp, SignatureHelpProvider, SignatureInformation, TextDocument, WorkspaceConfiguration } from 'vscode';
+import {
+	CancellationToken,
+	ParameterInformation,
+	Position,
+	SignatureHelp,
+	SignatureHelpProvider,
+	SignatureInformation,
+	TextDocument,
+	WorkspaceConfiguration
+} from 'vscode';
 import { definitionLocation } from './goDeclaration';
-import { getParametersAndReturnType, isPositionInString, isPositionInComment, getTimeoutConfiguration, getGoConfig } from './util';
+import {
+	getGoConfig,
+	getParametersAndReturnType,
+	getTimeoutConfiguration,
+	isPositionInComment,
+	isPositionInString
+} from './util';
 
 export class GoSignatureHelpProvider implements SignatureHelpProvider {
+	constructor(private goConfig?: WorkspaceConfiguration) {}
 
-	constructor(private goConfig?: WorkspaceConfiguration) {
-	}
-
-	public async provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken): Promise<SignatureHelp> {
+	public async provideSignatureHelp(
+		document: TextDocument,
+		position: Position,
+		token: CancellationToken
+	): Promise<SignatureHelp> {
 		let goConfig = this.goConfig || getGoConfig(document.uri);
 		const timeout = getTimeoutConfiguration('onType', this.goConfig);
 
@@ -25,7 +42,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 		const callerPos = this.previousTokenPosition(document, theCall.openParen);
 		// Temporary fix to fall back to godoc if guru is the set docsTool
 		if (goConfig['docsTool'] === 'guru') {
-			goConfig = Object.assign({}, goConfig, { 'docsTool': 'godoc' });
+			goConfig = Object.assign({}, goConfig, { docsTool: 'godoc' });
 		}
 		try {
 			const res = await definitionLocation(document, callerPos, goConfig, true, timeout, token);
@@ -51,8 +68,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				const funcName = declarationText.substring(0, nameEnd);
 				sig = declarationText.substring(sigStart);
 				si = new SignatureInformation(funcName + sig, res.doc);
-			}
-			else if (res.toolUsed === 'gogetdoc') {
+			} else if (res.toolUsed === 'gogetdoc') {
 				// declaration is of the form "func Add(a int, b int) int"
 				declarationText = declarationText.substring(5);
 				const funcNameStart = declarationText.indexOf(res.name + '('); // Find 'functionname(' to remove anything before it
@@ -62,7 +78,9 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 				si = new SignatureInformation(declarationText, res.doc);
 				sig = declarationText.substring(res.name.length);
 			}
-			si.parameters = getParametersAndReturnType(sig).params.map(paramText => new ParameterInformation(paramText));
+			si.parameters = getParametersAndReturnType(sig).params.map(
+				(paramText) => new ParameterInformation(paramText)
+			);
 			result.signatures = [si];
 			result.activeSignature = 0;
 			result.activeParameter = Math.min(theCall.commas.length, si.parameters.length - 1);
@@ -86,13 +104,15 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 	/**
 	 * Goes through the function params' lines and gets the number of commas and the start position of the call.
 	 */
-	private walkBackwardsToBeginningOfCall(document: TextDocument, position: Position): { openParen: Position, commas: Position[] } | null {
+	private walkBackwardsToBeginningOfCall(
+		document: TextDocument,
+		position: Position
+	): { openParen: Position; commas: Position[] } | null {
 		let parenBalance = 0;
 		let maxLookupLines = 30;
 		const commas = [];
 
-		for (let lineNr = position.line; lineNr >= 0 && maxLookupLines >= 0; lineNr-- , maxLookupLines--) {
-
+		for (let lineNr = position.line; lineNr >= 0 && maxLookupLines >= 0; lineNr--, maxLookupLines--) {
 			const line = document.lineAt(lineNr);
 
 			// Stop processing if we're inside a comment
@@ -101,9 +121,10 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 			}
 
 			// if its current line, get the text until the position given, otherwise get the full line.
-			const [currentLine, characterPosition] = lineNr === position.line
-				? [line.text.substring(0, position.character), position.character]
-				: [line.text, line.text.length - 1];
+			const [currentLine, characterPosition] =
+				lineNr === position.line
+					? [line.text.substring(0, position.character), position.character]
+					: [line.text, line.text.length - 1];
 
 			for (let char = characterPosition; char >= 0; char--) {
 				switch (currentLine[char]) {
@@ -121,7 +142,7 @@ export class GoSignatureHelpProvider implements SignatureHelpProvider {
 						break;
 					case ',':
 						const commaPos = new Position(lineNr, char);
-						if ((parenBalance === 0) && !isPositionInString(document, commaPos)) {
+						if (parenBalance === 0 && !isPositionInString(document, commaPos)) {
 							commas.push(commaPos);
 						}
 						break;

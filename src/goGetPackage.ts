@@ -5,12 +5,12 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
-import { getImportPath, getCurrentGoPath, getBinPath, getTimeoutConfiguration, killProcess } from './util';
+import vscode = require('vscode');
 import { buildCode } from './goBuild';
 import { envPath } from './goPath';
 import { outputChannel } from './goStatus';
+import { getBinPath, getCurrentGoPath, getImportPath, getTimeoutConfiguration, killProcess } from './util';
 
 export function goGetPackage() {
 	const editor = vscode.window.activeTextEditor;
@@ -25,7 +25,9 @@ export function goGetPackage() {
 
 	const goRuntimePath = getBinPath('go');
 	if (!goRuntimePath) {
-		return vscode.window.showErrorMessage(`Failed to run "go get" to get package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`);
+		return vscode.window.showErrorMessage(
+			`Failed to run "go get" to get package as the "go" binary cannot be found in either GOROOT(${process.env['GOROOT']}) or PATH(${envPath})`
+		);
 	}
 
 	const env = Object.assign({}, process.env, { GOPATH: getCurrentGoPath() });

@@ -5,13 +5,13 @@
 
 'use strict';
 
+import cp = require('child_process');
+import path = require('path');
 import vscode = require('vscode');
-import { getBinPath, getToolsEnvVars, getTimeoutConfiguration, killProcess, getGoConfig } from './util';
 import { promptForMissingTool } from './goInstallTools';
 import { buildDiagnosticCollection } from './goMain';
 import { isModSupported } from './goModules';
-import cp = require('child_process');
-import path = require('path');
+import { getBinPath, getGoConfig, getTimeoutConfiguration, getToolsEnvVars, killProcess } from './util';
 
 // Interface for settings configuration for adding and removing tags
 interface GoLiveErrorsConfig {
@@ -22,15 +22,19 @@ interface GoLiveErrorsConfig {
 let runner: NodeJS.Timer;
 
 export function goLiveErrorsEnabled() {
-	const goConfig = <GoLiveErrorsConfig>(getGoConfig()['liveErrors']);
+	const goConfig = <GoLiveErrorsConfig>getGoConfig()['liveErrors'];
 	if (goConfig === null || goConfig === undefined || !goConfig.enabled) {
 		return false;
 	}
 	const files = vscode.workspace.getConfiguration('files', null);
 	const autoSave = files['autoSave'];
 	const autoSaveDelay = files['autoSaveDelay'];
-	if (autoSave !== null && autoSave !== undefined &&
-		autoSave === 'afterDelay' && autoSaveDelay < goConfig.delay * 1.5) {
+	if (
+		autoSave !== null &&
+		autoSave !== undefined &&
+		autoSave === 'afterDelay' &&
+		autoSaveDelay < goConfig.delay * 1.5
+	) {
 		return false;
 	}
 	return goConfig.enabled;
@@ -88,7 +92,7 @@ async function processFile(e: vscode.TextDocumentChangeEvent) {
 			// returns a non-zero exit status if the checks fail
 			const diagnosticMap: Map<string, vscode.Diagnostic[]> = new Map();
 
-			stderr.split('\n').forEach(error => {
+			stderr.split('\n').forEach((error) => {
 				if (error === null || error.length === 0) {
 					return;
 				}

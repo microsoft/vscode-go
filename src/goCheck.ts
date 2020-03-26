@@ -5,22 +5,21 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import path = require('path');
+import vscode = require('vscode');
 import { goBuild } from './goBuild';
-import { applyCodeCoverageToAllEditors } from './goCover';
 import { parseLanguageServerConfig } from './goLanguageServer';
-import { ICheckResult, getTempFilePath, getTimeoutConfiguration } from './util';
 import { goLint } from './goLint';
 import { buildDiagnosticCollection, lintDiagnosticCollection, vetDiagnosticCollection } from './goMain';
 import { isModSupported } from './goModules';
 import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
 import { goVet } from './goVet';
 import { getTestFlags, goTest, TestConfig } from './testUtils';
+import { getTempFilePath, getTimeoutConfiguration, ICheckResult } from './util';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
-const neverAgain = { title: 'Don\'t Show Again' };
+const neverAgain = { title: `Don't Show Again` };
 
 export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 	if (e.document.isUntitled) {
@@ -35,8 +34,11 @@ export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEv
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
-	if ((ctx.globalState.get('ignoreGeneratedCodeWarning') !== true) && e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)) {
-		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then(result => {
+	if (
+		ctx.globalState.get('ignoreGeneratedCodeWarning') !== true &&
+		e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)
+	) {
+		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then((result) => {
 			if (result === neverAgain) {
 				ctx.globalState.update('ignoreGeneratedCodeWarning', true);
 			}
@@ -62,12 +64,12 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	const timeout = getTimeoutConfiguration('onSave', goConfig);
 	let testPromise: Thenable<boolean>;
-	let tmpCoverPath: string;
 	const testConfig: TestConfig = {
 		goConfig,
 		dir: cwd,
 		flags: getTestFlags(goConfig),
-		background: true
+		background: true,
+		applyCodeCoverage: !!goConfig['coverOnSave']
 	};
 
 	const runTest = () => {
@@ -75,12 +77,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 			return testPromise;
 		}
 
-		if (goConfig['coverOnSave']) {
-			tmpCoverPath = getTempFilePath('go-code-cover');
-			testConfig.flags.push('-coverprofile=' + tmpCoverPath);
-		}
-
-		testPromise = isModSupported(fileUri).then(isMod => {
+		testPromise = isModSupported(fileUri).then((isMod) => {
 			testConfig.isMod = isMod;
 			return goTest(testConfig);
 		});
@@ -88,15 +85,17 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	};
 
 	if (!disableBuildAndVet && !!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
-		runningToolsPromises.push(isModSupported(fileUri)
-			.then(isMod => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace', timeout))
-			.then(errors => ({ diagnosticCollection: buildDiagnosticCollection, errors })));
+		runningToolsPromises.push(
+			isModSupported(fileUri)
+				.then((isMod) => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace', timeout))
+				.then((errors) => ({ diagnosticCollection: buildDiagnosticCollection, errors }))
+		);
 	}
 
 	if (!!goConfig['testOnSave']) {
 		statusBarItem.show();
 		statusBarItem.text = 'Tests Running';
-		runTest().then(success => {
+		runTest().then((success) => {
 			if (statusBarItem.text === '') {
 				return;
 			}
@@ -109,22 +108,28 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	}
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
-		runningToolsPromises.push(goLint(fileUri, goConfig, goConfig['lintOnSave'], timeout)
-			.then(errors => ({ diagnosticCollection: lintDiagnosticCollection, errors })));
+		runningToolsPromises.push(
+			goLint(fileUri, goConfig, goConfig['lintOnSave'], timeout).then((errors) => ({
+				diagnosticCollection: lintDiagnosticCollection,
+				errors
+			}))
+		);
 	}
 
 	if (!disableBuildAndVet && !!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
-		runningToolsPromises.push(goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace', timeout)
-			.then(errors => ({ diagnosticCollection: vetDiagnosticCollection, errors })));
+		runningToolsPromises.push(
+			goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace', timeout).then((errors) => ({
+				diagnosticCollection: vetDiagnosticCollection,
+				errors
+			}))
+		);
 	}
 
 	if (!!goConfig['coverOnSave']) {
-		runTest().then(success => {
+		runTest().then((success) => {
 			if (!success) {
 				return [];
 			}
-			// FIXME: it's not obvious that tmpCoverPath comes from runTest()
-			return applyCodeCoverageToAllEditors(tmpCoverPath, testConfig.dir);
 		});
 	}
 

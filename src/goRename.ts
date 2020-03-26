@@ -5,22 +5,39 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import cp = require('child_process');
-import { getBinPath, byteOffsetAt, canonicalizeGOPATHPrefix, getToolsEnvVars, killProcess, getTimeoutConfiguration, getGoConfig } from './util';
+import vscode = require('vscode');
 import { Edit, FilePatch, getEditsFromUnifiedDiffStr, isDiffToolAvailable } from './diffUtils';
 import { promptForMissingTool } from './goInstallTools';
 import { outputChannel } from './goStatus';
+import {
+	byteOffsetAt,
+	canonicalizeGOPATHPrefix,
+	getBinPath,
+	getGoConfig,
+	getTimeoutConfiguration,
+	getToolsEnvVars,
+	killProcess
+} from './util';
 
 export class GoRenameProvider implements vscode.RenameProvider {
-
-	public provideRenameEdits(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
+	public provideRenameEdits(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		newName: string,
+		token: vscode.CancellationToken
+	): Thenable<vscode.WorkspaceEdit> {
 		return vscode.workspace.saveAll(false).then(() => {
 			return this.doRename(document, position, newName, token);
 		});
 	}
 
-	private doRename(document: vscode.TextDocument, position: vscode.Position, newName: string, token: vscode.CancellationToken): Thenable<vscode.WorkspaceEdit> {
+	private doRename(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		newName: string,
+		token: vscode.CancellationToken
+	): Thenable<vscode.WorkspaceEdit> {
 		return new Promise<vscode.WorkspaceEdit>((resolve, reject) => {
 			const filename = canonicalizeGOPATHPrefix(document.fileName);
 			const range = document.getWordRangeAtPosition(position);
@@ -28,7 +45,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			const offset = byteOffsetAt(document, pos);
 			const env = getToolsEnvVars();
 			const gorename = getBinPath('gorename');
-			const buildTags = getGoConfig(document.uri)['buildTags'] ;
+			const buildTags = getGoConfig(document.uri)['buildTags'];
 			const gorenameArgs = ['-offset', filename + ':#' + offset, '-to', newName];
 			if (buildTags) {
 				gorenameArgs.push('-tags', buildTags);
@@ -52,7 +69,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 				try {
 					if (err && (<any>err).code === 'ENOENT') {
 						promptForMissingTool('gorename');
-						return resolve(null);
+						return reject('Could not find gorename tool.');
 					}
 					if (err) {
 						const errMsg = stderr ? 'Rename failed: ' + stderr.replace(/\n/g, ' ') : 'Rename failed';
@@ -85,5 +102,4 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			}, getTimeoutConfiguration('onCommand'));
 		});
 	}
-
 }

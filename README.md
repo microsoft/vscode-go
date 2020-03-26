@@ -36,16 +36,16 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 
 ### IntelliSense
 
-- Auto Completion of symbols as you type (using `gocode`)
-- Signature Help for functions as you type (using `gogetdoc` or `godef`+`go doc`)
-- Quick Info on the symbol as you hover over it (using `gogetdoc` or `godef`+`go doc`)
+- Auto Completion of symbols as you type (using language server or `gocode`)
+- Signature Help for functions as you type (using language server or `gogetdoc` or `godef`+`go doc`)
+- Quick Info on the symbol as you hover over it (using language server or `gogetdoc` or `godef`+`go doc`)
 
 ### Code Navigation
 
-- Go to or Peek Definition of symbols (using `gogetdoc` or `godef`+`go doc`)
-- Find References of symbols and Implementations of interfaces (using `guru`)
+- Go to or Peek Definition of symbols (using language server or `gogetdoc` or `godef`+`go doc`)
+- Find References of symbols and Implementations of interfaces (using language server or `guru`)
 - Go to symbol in file or see the file outline (using `go-outline`)
-- Go to symbol in workspace (using `go-symbols`)
+- Go to symbol in workspace (using language server or `go-symbols`)
 - Toggle between a Go program and the corresponding test file.
 
 ### Code Editing
@@ -62,7 +62,7 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 
 - Build-on-save to compile code and show build errors. (using `go build` and `go test`)
 - Vet-on-save to run `go vet` and show errors as warnings
-- Lint-on-save to show linting errors as warnings (using `golint`, `gometalinter`, `staticcheck`, `golangci-lint` or `revive`)
+- Lint-on-save to show linting errors as warnings (using `golint`, `staticcheck`, `golangci-lint` or `revive`)
 - Semantic/Syntactic error reporting as you type (using `gotype-live`)
 
 ### Testing
@@ -93,7 +93,7 @@ You will see `Analysis Tools Missing` in the bottom right, clicking this will of
 
 **Note 2**: The `Format on save` feature has a timeout of 750ms after which the formatting is aborted. You can change this timeout using the setting `editor.formatOnSaveTimeout`. This feature gets disabled when you have enabled the `Auto Save` feature in Visual Studio Code.
 
-**Note 3**:  This extension uses `gocode` to provide completion lists as you type. If you have disabled the `go.buildOnSave` setting, then you may not get fresh results from not-yet-built dependencies. Therefore, ensure you have built your dependencies manually in such cases.
+**Note 3**:  Unless `go.useLanguageServer` is set to `true`, this extension uses `gocode` to provide completion lists as you type. If you have disabled the `go.buildOnSave` setting, then you may not get fresh results from not-yet-built dependencies. Therefore, ensure you have built your dependencies manually in such cases.
 
 ### Customizing the Go extension features
 
@@ -108,49 +108,36 @@ Previously, we added support to use `go-langserver`, the [language server from S
 
 - If you are already using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules. We do suggest you to move to using `gopls` though.
     - To do so, delete the `go-langserver` binary/executable in your machine and this extension will prompt you to install `gopls` after a reload of the VS Code window.
-- Since the language server from Google provides much better support for Go modules, you will be prompted about it when the extension detects that you are working on a project that uses Go modules.
-- If you have never used language server before, and now opt to use it, you will be prompted to install and use the language server from Google as long as you are using a Go version > 1.10
+- If you are working on a project that uses Go modules, you will be prompted to use the language server from Google as it provides much better support for Go modules.
+- If you have never used language server before, and now opt to use it, you will be prompted to install and use the language server from Google as long as you are using a Go version > 1.10.
 
 > Note: The language server from Google supports Go version > 1.10 only
+
+#### Install/Update the Go language server
+
+Ideally, you would see prompts to use/install/update the language server.
+Follow the prompts and the language server should get set up correctly.
+If you want to manually install/update the language server,
+- Ensure you have set `go.useLanguageServer` to `true` in your settings
+- Use the `Go: Install/Update Tools` command, select `gopls` from the list and press Ok.
+
 
 #### Settings to control the use of the Go language server
 
 Below are the settings you can use to control the use of the language server. You need to reload the VS Code window for any changes in these settings to take effect.
 
-- Set `go.useLanguageServer` to `true` to enable the use of language server
-- Use the setting `go.languageServerExperimentalFeatures` to control which features do you want to be powered by the language server. Below are the various features you can control. By default, all are set to `true`.
+- Set `go.useLanguageServer` to `true` to enable the use of language server.
+- When using `gopls`, see the [recommended settings](https://github.com/golang/tools/blob/master/gopls/doc/vscode.md).
+- Some of the features from the language server can be disabled if needed using the setting `go.languageServerExperimentalFeatures`. Below are the features you can thus control. By default, all are set to `true` i.e are enabled.
 ```json
   "go.languageServerExperimentalFeatures": {
     "format": true,
-    "autoComplete": true,
-    "rename": true,
-    "goToDefinition": true,
-    "hover": true,
-    "signatureHelp": true,
-    "goToTypeDefinition": true,
-    "goToImplementation": true,
-    "documentSymbols": true,
-    "workspaceSymbols": true,
-    "findReferences": true,
     "diagnostics": true,
     "documentLink": true
   }
 ```
 - Set `"go.languageServerFlags": ["-logfile", "path to a text file that exists"]` to collect logs in a log file.
 - Set `"go.languageServerFlags": ["-rpc.trace"]` to see the complete rpc trace in the output panel (`View` -> `Output` -> `gopls`)
-
-
-#### Setting to change the language server being used
-
-If you want to try out other language servers, for example, [bingo](https://github.com/saibing/bingo), then install it and add the below setting
-
-```json
-"go.alternateTools": {
-  "gopls": "bingo"
-}
-```
-
-This will tell the Go extension to use `bingo` in place of `gopls`.
 
 #### Provide feedback on gopls
 

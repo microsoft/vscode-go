@@ -5,10 +5,18 @@
 
 'use strict';
 
-import vscode = require('vscode');
-import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, getTimeoutConfiguration, killProcess, getGoConfig } from './util';
-import { promptForMissingTool } from './goInstallTools';
 import cp = require('child_process');
+import vscode = require('vscode');
+import { promptForMissingTool } from './goInstallTools';
+import {
+	byteOffsetAt,
+	getBinPath,
+	getFileArchive,
+	getGoConfig,
+	getTimeoutConfiguration,
+	getToolsEnvVars,
+	killProcess
+} from './util';
 
 // Interface for the output from gomodifytags
 interface GomodifytagsOutput {
@@ -49,7 +57,6 @@ export function addTags(commandArgs: GoTagsConfig) {
 		}
 		runGomodifytags(args);
 	});
-
 }
 
 export function removeTags(commandArgs: GoTagsConfig) {
@@ -86,7 +93,10 @@ function getCommonArgs(): string[] {
 		return;
 	}
 	const args = ['-modified', '-file', editor.document.fileName, '-format', 'json'];
-	if (editor.selection.start.line === editor.selection.end.line && editor.selection.start.character === editor.selection.end.character) {
+	if (
+		editor.selection.start.line === editor.selection.end.line &&
+		editor.selection.start.character === editor.selection.end.character
+	) {
 		// Add tags to the whole struct
 		const offset = byteOffsetAt(editor.document, editor.selection.start);
 		args.push('-offset');
@@ -103,24 +113,32 @@ function getCommonArgs(): string[] {
 function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): Thenable<string[]> {
 	const tags = commandArgs && commandArgs.hasOwnProperty('tags') ? commandArgs['tags'] : config['tags'];
 	const options = commandArgs && commandArgs.hasOwnProperty('options') ? commandArgs['options'] : config['options'];
-	const promptForTags = commandArgs && commandArgs.hasOwnProperty('promptForTags') ? commandArgs['promptForTags'] : config['promptForTags'];
-	const transformValue: string = commandArgs && commandArgs.hasOwnProperty('transform') ? commandArgs['transform'] : config['transform'];
+	const promptForTags =
+		commandArgs && commandArgs.hasOwnProperty('promptForTags')
+			? commandArgs['promptForTags']
+			: config['promptForTags'];
+	const transformValue: string =
+		commandArgs && commandArgs.hasOwnProperty('transform') ? commandArgs['transform'] : config['transform'];
 
 	if (!promptForTags) {
 		return Promise.resolve([tags, options, transformValue]);
 	}
 
-	return vscode.window.showInputBox({
-		value: tags,
-		prompt: 'Enter comma separated tag names'
-	}).then(inputTags => {
-		return vscode.window.showInputBox({
-			value: options,
-			prompt: 'Enter comma separated options'
-		}).then(inputOptions => {
-			return [inputTags, inputOptions, transformValue];
+	return vscode.window
+		.showInputBox({
+			value: tags,
+			prompt: 'Enter comma separated tag names'
+		})
+		.then((inputTags) => {
+			return vscode.window
+				.showInputBox({
+					value: options,
+					prompt: 'Enter comma separated options'
+				})
+				.then((inputOptions) => {
+					return [inputTags, inputOptions, transformValue];
+				});
 		});
-	});
 }
 
 function runGomodifytags(args: string[]) {
@@ -138,7 +156,7 @@ function runGomodifytags(args: string[]) {
 			return;
 		}
 		const output = <GomodifytagsOutput>JSON.parse(stdout);
-		vscode.window.activeTextEditor.edit(editBuilder => {
+		vscode.window.activeTextEditor.edit((editBuilder) => {
 			editBuilder.replace(new vscode.Range(output.start - 1, 0, output.end, 0), output.lines.join('\n') + '\n');
 		});
 	});
