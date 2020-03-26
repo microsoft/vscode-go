@@ -32,6 +32,9 @@
 * [Carlton Henderson (@CarltonHenderson)](https://github.com/CarltonHenderson)
     * Fix issue of no linting warnings when using a custom output format with `golangci-lint`. [PR 3112](https://github.com/Microsoft/vscode-go/pull/3112)
 
+* [Alexandre Vilain (@alexandrevilain)](https://github.com/alexandrevilain)
+    * Retain last used cover profile path in the input box when using the command `Go: Apply Cover Profile`
+
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Expand suspected relative file paths in test output only in case of error messages. Fixes [Bug 1836](https://github.com/Microsoft/vscode-go/issues/1836) with [commit 893b29bbf](https://github.com/microsoft/vscode-go/commit/893b29bbfed41a0baf711df2651ed6d1fe544483) & [commit 92d149c8](https://github.com/microsoft/vscode-go/commit/92d149c8dee8d1fc4bcc399af43c78c5b8a75214)
 
