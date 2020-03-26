@@ -480,19 +480,22 @@ export function activate(ctx: vscode.ExtensionContext): void {
 				return;
 			}
 			const lastCoverProfilePathKey = 'lastCoverProfilePathKey';
+			const lastCoverProfilePath = getFromWorkspaceState(lastCoverProfilePathKey, '');
 			vscode.window
 				.showInputBox({
 					prompt: 'Enter the path to the coverage profile for current package',
-					value: getFromWorkspaceState(lastCoverProfilePathKey, ''),
+					value: lastCoverProfilePath,
 				})
 				.then((coverProfilePath) => {
 					if (!coverProfilePath) {
 						return;
 					}
-					updateWorkspaceState(lastCoverProfilePathKey, coverProfilePath);
 					if (!fileExists(coverProfilePath)) {
 						vscode.window.showErrorMessage(`Cannot find the file ${coverProfilePath}`);
 						return;
+					}
+					if (coverProfilePath !== lastCoverProfilePath) {
+						updateWorkspaceState(lastCoverProfilePathKey, coverProfilePath);
 					}
 					applyCodeCoverageToAllEditors(
 						coverProfilePath,
