@@ -9,9 +9,9 @@ import { existsSync, lstatSync } from 'fs';
 import { Client, RPCConnection } from 'json-rpc2';
 import * as os from 'os';
 import * as path from 'path';
+import kill = require('tree-kill');
 import * as util from 'util';
 import {
-	Breakpoint,
 	DebugSession,
 	Handles,
 	InitializedEvent,
@@ -36,7 +36,6 @@ import {
 	getInferredGopath,
 	parseEnvFile
 } from '../goPath';
-import { killTree } from '../util';
 
 const fsAccess = util.promisify(fs.access);
 const fsUnlink = util.promisify(fs.unlink);
@@ -654,7 +653,7 @@ class Delve {
 
 		const isLocalDebugging: boolean = this.request === 'launch' && !!this.debugProcess;
 		const forceCleanup = async () => {
-			killTree(this.debugProcess.pid);
+			kill(this.debugProcess.pid, (err) => console.log('Error killing debug process: ' + err));
 			await removeFile(this.localDebugeePath);
 		};
 		return new Promise(async (resolve) => {
