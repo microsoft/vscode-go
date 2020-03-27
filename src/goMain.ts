@@ -5,7 +5,6 @@
 
 'use strict';
 
-import fs = require('fs');
 import * as path from 'path';
 import vscode = require('vscode');
 import { browsePackages } from './goBrowsePackage';
@@ -225,13 +224,13 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			allTools.forEach((tool) => {
 				const toolPath = getBinPath(tool.name);
 				// TODO(hyangah): print alternate tool info if set.
-				fs.exists(toolPath, (exists) => {
-					let msg = 'not found';
-					if (exists) {
-						msg = 'installed';
-					}
-					outputChannel.appendLine(`   ${tool.name}: ${toolPath} ${msg}`);
-				});
+				let msg = 'not installed';
+				if (path.isAbsolute(toolPath)) {
+					// getBinPath returns the absolute path is the tool exists.
+					// (See getBinPathWithPreferredGopath which is called underneath)
+					msg = 'installed';
+				}
+				outputChannel.appendLine(`   ${tool.name}: ${toolPath} ${msg}`);
 			});
 		})
 	);
