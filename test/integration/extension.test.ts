@@ -1452,8 +1452,8 @@ encountered.
 					diagnostics[0].errors.length,
 					'check without buildtags failed. Unexpected errors found'
 				);
-				assert.equal(
-					diagnostics[0].errors[0].msg.indexOf(`can't load package: package test/testfixture/buildTags`) > -1,
+				const errMsg = diagnostics[0].errors[0].msg;
+				assert.equal(errMsg.includes(`can't load package: package test/testfixture/buildTags`) || errMsg.includes(`build constraints exclude all Go files`),
 					true,
 					`check without buildtags failed. Go files not excluded. ${diagnostics[0].errors[0].msg}`
 				);
