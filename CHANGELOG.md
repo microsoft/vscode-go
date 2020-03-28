@@ -1,3 +1,43 @@
+## 0.14.0 - Coming soon...
+
+### Language Server improvements
+
+* [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
+    * Include link to `gopls` release notes when prompting to update the tool.
+    * When using `gopls` with parameter hints is disabled , avoid showing the parameter hints after auto-completing a method. Fixes [Bug 3075](https://github.com/Microsoft/vscode-go/issues/3075) with [PR 3084](https://github.com/Microsoft/vscode-go/pull/3084)
+
+* Add a note here on improvements due to updating the language client
+* Add a note on go-langserver no longer being supported
+ 
+### Debugging improvements
+
+* [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
+    * Fix the `Run: Start Without Debugging` command when using modules or when there is no launch.json file. Fixes [Bug 3121](https://github.com/Microsoft/vscode-go/issues/3121) with [PR 3125](https://github.com/Microsoft/vscode-go/pull/3125)
+
+* [Quoc Truong (@quoctruong)](https://github.com/quoctruong)
+    * Fix issue of breakpoints not being hit due to mismatch in the path separators in the file paths
+    used by VS Code and the file paths returned by delve. Fixes [Bug 2010](https://github.com/Microsoft/vscode-go/issues/2010) with [PR 3108](https://github.com/Microsoft/vscode-go/pull/3108)
+    * Show warning if `cwd` is not passed when remote debugging in `attach` mode. [PR 2999](https://github.com/Microsoft/vscode-go/pull/2999) 
+
+* [Luis GG (@lggomez)](https://github.com/lggomez)
+    * Add stacktrace dump and better error messages on EXC_BAD_ACCESS panics. Fixes [Bug 1903](https://github.com/Microsoft/vscode-go/issues/1903) with [PR 2904](https://github.com/Microsoft/vscode-go/pull/2904) 
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Show debug watch failures as warnings instead of errors to reduce the noise in debug console.
+    Fixes [Bug 3006](https://github.com/Microsoft/vscode-go/issues/3006) with [commit 430362e](https://github.com/microsoft/vscode-go/commit/430362e2553680af91817d27e52bf9af12ae1824)
+    * Run the package when the `Run: Start Without Debugging` command is executed with the `program` attribute in the debug configuration points to a folder. Previously, this would result in debugging the package instead. [Feature Request 3096](https://github.com/Microsoft/vscode-go/issues/3096) implemented with [commit 78518d7e](https://github.com/microsoft/vscode-go/commit/78518d7e9736670d75fe2cd648c7c3eb23413157)
+
+### Other improvements
+
+* [Carlton Henderson (@CarltonHenderson)](https://github.com/CarltonHenderson)
+    * Fix issue of no linting warnings when using a custom output format with `golangci-lint`. [PR 3112](https://github.com/Microsoft/vscode-go/pull/3112)
+
+* [Alexandre Vilain (@alexandrevilain)](https://github.com/alexandrevilain)
+    * Retain last used cover profile path in the input box when using the command `Go: Apply Cover Profile`
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Expand suspected relative file paths in test output only in case of error messages. Fixes [Bug 1836](https://github.com/Microsoft/vscode-go/issues/1836) with [commit 893b29bbf](https://github.com/microsoft/vscode-go/commit/893b29bbfed41a0baf711df2651ed6d1fe544483) & [commit 92d149c8](https://github.com/microsoft/vscode-go/commit/92d149c8dee8d1fc4bcc399af43c78c5b8a75214)
+
 ## 0.13.1 - 27th February, 2020
 
 * [Ilya Danilkin (@nezorflame)](https://github.com/nezorflame)

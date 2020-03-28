@@ -144,6 +144,11 @@
         "description": "See the currently set GOPATH."
       },
       {
+        "command": "go.locate.tools",
+        "title": "Go: Locate Configured Go Tools",
+        "description": "List all the Go tools being used by this extension along with their locations."
+      },
+      {
         "command": "go.test.cursor",
         "title": "Go: Test Function At Cursor",
         "description": "Runs a unit test at the cursor."

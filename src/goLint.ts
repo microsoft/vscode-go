@@ -120,6 +120,11 @@ export function goLint(
 			// print only file:number:column
 			args.push('--print-issued-lines=false');
 		}
+		if (args.indexOf('--out-format=colored-line-number') === -1) {
+			// print file:number:column.
+			// Explicit override in case .golangci.yml calls for a format we don't understand
+			args.push('--out-format=colored-line-number');
+		}
 	}
 
 	if (scope === 'workspace' && currentWorkspace) {
