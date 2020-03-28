@@ -19,6 +19,7 @@ import {
 	generateTestCurrentPackage
 } from '../../src/goGenerateTests';
 import { getTextEditForAddImport, listPackages } from '../../src/goImport';
+import { updateGoPathGoRootFromConfig } from '../../src/goInstallTools';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
 import { getAllPackages } from '../../src/goPackages';
 import { goPlay } from '../../src/goPlayground';
@@ -36,46 +37,39 @@ import {
 	isVendorSupported
 } from '../../src/util';
 
-function queryDefaultGopathSync(): string | null {
-	const goExecutable = getBinPath('go');
-	if (!goExecutable) {
-		console.warn(`Failed to run "go env GOPATH" to find mod file as the "go" binary cannot be found`);
-		return null;
-	}
-	let gopath: string;
-	try {
-		const stdout = cp.execFileSync(goExecutable, ['env', 'GOPATH']);
-		console.log(`Got go env GOPATH result: ${stdout}`);
-		gopath = stdout.toString().trim();
-	} catch (err) {
-		console.warn(`Error when running go env GOPATH: ${err}`);
-	}
-	return gopath;
-}
-
 suite('Go Extension Tests', function() {
 	this.timeout(10000);
-	let gopath = getCurrentGoPath();
-	if (!gopath) {
-			gopath = queryDefaultGopathSync();
-	}
-	if (!gopath) {
-		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
-		return;
-	}
-	console.log(`Using GOPATH: ${gopath}`);
-
-	const repoPath = path.join(gopath, 'src', 'test');
-	const fixturePath = path.join(repoPath, 'testfixture');
-	const fixtureSourcePath = path.join(__dirname, '..', '..', '..', 'test', 'fixtures');
-	const generateTestsSourcePath = path.join(repoPath, 'generatetests');
-	const generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
-	const generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
-	const toolsGopath = getToolsGopath() || gopath;
 
 	const dummyCancellationSource = new vscode.CancellationTokenSource();
 
-	suiteSetup(() => {
+	// suiteSetup will initialize the following vars.
+	let gopath: string;
+	let repoPath: string;
+	let fixturePath: string;
+	let fixtureSourcePath: string;
+	let generateTestsSourcePath: string;
+	let generateFunctionTestSourcePath: string;
+	let generatePackageTestSourcePath: string;
+	let toolsGopath: string;
+
+	suiteSetup(async () => {
+		await updateGoPathGoRootFromConfig();
+
+		gopath = getCurrentGoPath();
+		if (!gopath) {
+			assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
+			return;
+		}
+		console.log(`Using GOPATH: ${gopath}`);
+
+		repoPath = path.join(gopath, 'src', 'test');
+		fixturePath = path.join(repoPath, 'testfixture');
+		fixtureSourcePath = path.join(__dirname, '..', '..', '..', 'test', 'fixtures');
+		generateTestsSourcePath = path.join(repoPath, 'generatetests');
+		generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
+		generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
+		toolsGopath = getToolsGopath() || gopath;
+
 		fs.removeSync(repoPath);
 		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'test.go'), path.join(fixturePath, 'baseTest', 'test.go'));
 		fs.copySync(
@@ -1283,7 +1277,7 @@ encountered.
 					expected.length,
 					labels.length,
 					`expected number of completions: ${expected.length} Actual: ${
-						labels.length
+					labels.length
 					} at position(${position.line + 1},${position.character + 1}) ${labels}`
 				);
 				expected.forEach((entry, index) => {
