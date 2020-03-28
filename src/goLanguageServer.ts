@@ -344,10 +344,10 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 }
 
 /**
- * Get the absolute path to the language server to be used.
- * If the required tool is not available, then user is prompted to install it.
- * This supports the language servers from both Google and Sourcegraph with the
- * former getting a precedence over the latter
+ *
+ * If the user has enabled the language server, return the absolute path to the
+ * correct binary. If the required tool is not available, prompt the user to
+ * install it. Only gopls is officially supported.
  */
 export function getLanguageServerToolPath(): string {
 	// If language server is not enabled, return
@@ -363,40 +363,32 @@ export function getLanguageServerToolPath(): string {
 		);
 		return;
 	}
-
-	// Get the path to gopls or any alternative that the user might have set for gopls.
+	// Get the path to gopls (getBinPath checks for alternate tools).
 	const goplsBinaryPath = getBinPath('gopls');
 	if (path.isAbsolute(goplsBinaryPath)) {
 		return goplsBinaryPath;
 	}
-
-	// Get the path to go-langserver or any alternative that the user might have set for go-langserver.
-	const golangserverBinaryPath = getBinPath('go-langserver');
-	if (path.isAbsolute(golangserverBinaryPath)) {
-		return golangserverBinaryPath;
-	}
-
-	// If no language server path has been found, notify the user.
-	let languageServerOfChoice = 'gopls';
-	if (goConfig['alternateTools']) {
-		const goplsAlternate = goConfig['alternateTools']['gopls'];
-		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
-		if (typeof goplsAlternate === 'string') {
-			languageServerOfChoice = getToolFromToolPath(goplsAlternate);
-		} else if (typeof golangserverAlternate === 'string') {
-			languageServerOfChoice = getToolFromToolPath(golangserverAlternate);
+	const alternateTools = goConfig['alternateTools'];
+	if (alternateTools) {
+		// The user's alternate language server was not found.
+		const goplsAlternate = alternateTools['gopls'];
+		if (goplsAlternate) {
+			vscode.window.showErrorMessage(
+				`Cannot find the alternate tool ${goplsAlternate} configured for gopls.
+Please install it and reload this VS Code window.`
+			);
+			return;
 		}
-	}
-	// Only gopls and go-langserver are supported.
-	if (languageServerOfChoice !== 'gopls' && languageServerOfChoice !== 'go-langserver') {
-		vscode.window.showErrorMessage(
-			`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window`
-		);
+		// Check if the user has the deprecated "go-langserver" setting.
+		// Suggest deleting it if the alternate tool is gopls.
+		if (alternateTools['go-langserver']) {
+			vscode.window.showErrorMessage(`Support for "go-langserver" has been deprecated.
+The recommended language server is gopls. Delete the alternate tool setting for "go-langserver" to use gopls, or change "go-langserver" to "gopls" in your settings.json and reload the VS Code window.`);
+		}
 		return;
 	}
-	// Otherwise, prompt the user to install the language server.
-	promptForMissingTool(languageServerOfChoice);
-	vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server.');
+	// Prompt the user to install gopls.
+	promptForMissingTool('gopls');
 }
 
 function allFoldersHaveSameGopath(): boolean {
