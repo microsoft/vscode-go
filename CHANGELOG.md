@@ -1,13 +1,4 @@
 ## 0.14.0 - Coming soon...
-
-### Language Server improvements
-
-* [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
-    * Include link to `gopls` release notes when prompting to update the tool.
-    * When using `gopls` with parameter hints is disabled , avoid showing the parameter hints after auto-completing a method. Fixes [Bug 3075](https://github.com/Microsoft/vscode-go/issues/3075) with [PR 3084](https://github.com/Microsoft/vscode-go/pull/3084)
-
-* Add a note here on improvements due to updating the language client
-* Add a note on go-langserver no longer being supported
  
 ### Debugging improvements
 
@@ -22,6 +13,10 @@
 * [Luis GG (@lggomez)](https://github.com/lggomez)
     * Add stacktrace dump and better error messages on EXC_BAD_ACCESS panics. Fixes [Bug 1903](https://github.com/Microsoft/vscode-go/issues/1903) with [PR 2904](https://github.com/Microsoft/vscode-go/pull/2904) 
 
+* [@marcel-basel](https://github.com/marcel-basel)
+    * When debugging with the `program` attribute in the debug configuration pointing to a file, debug
+    just the file and not the entire package. This allows one to debug single files when a folder has multiple files with the `main` function. [Feature Request 1229](https://github.com/Microsoft/vscode-go/issues/1229) implemented with [PR 3016](https://github.com/Microsoft/vscode-go/pull/3016)
+
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Show debug watch failures as warnings instead of errors to reduce the noise in debug console.
     Fixes [Bug 3006](https://github.com/Microsoft/vscode-go/issues/3006) with [commit 430362e](https://github.com/microsoft/vscode-go/commit/430362e2553680af91817d27e52bf9af12ae1824)
@@ -33,10 +28,22 @@
     * Fix issue of no linting warnings when using a custom output format with `golangci-lint`. [PR 3112](https://github.com/Microsoft/vscode-go/pull/3112)
 
 * [Alexandre Vilain (@alexandrevilain)](https://github.com/alexandrevilain)
-    * Retain last used cover profile path in the input box when using the command `Go: Apply Cover Profile`
+    * Retain last used cover profile path in the input box when using the command `Go: Apply Cover Profile`. [PR 3119](https://github.com/Microsoft/vscode-go/pull/3119) 
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Expand suspected relative file paths in test output only in case of error messages. Fixes [Bug 1836](https://github.com/Microsoft/vscode-go/issues/1836) with [commit 893b29bbf](https://github.com/microsoft/vscode-go/commit/893b29bbfed41a0baf711df2651ed6d1fe544483) & [commit 92d149c8](https://github.com/microsoft/vscode-go/commit/92d149c8dee8d1fc4bcc399af43c78c5b8a75214)
+
+* [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
+    * Include link to `gopls` release notes when prompting to update the tool.
+    * When using `gopls` with parameter hints is disabled , avoid showing the parameter hints after auto-completing a method. Fixes [Bug 3075](https://github.com/Microsoft/vscode-go/issues/3075) with [PR 3084](https://github.com/Microsoft/vscode-go/pull/3084)
+    * New command `Go: Locate Configured Go Tools` that prints the location of the Go tools that this
+    extension depends on
+
+* [Zac Bergquist (@zmb3)](https://github.com/zmb3)
+    * Fix the cancelling of stale processes on non Windows machines. [PR 3131](https://github.com/Microsoft/vscode-go/pull/3131) 
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * Remove support for the language server from Sourcegraph. [PR 3127](https://github.com/Microsoft/vscode-go/pull/3127) 
 
 ## 0.13.1 - 27th February, 2020
 
