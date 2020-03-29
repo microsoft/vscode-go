@@ -9,9 +9,9 @@ import { existsSync, lstatSync } from 'fs';
 import { Client, RPCConnection } from 'json-rpc2';
 import * as os from 'os';
 import * as path from 'path';
+import kill = require('tree-kill');
 import * as util from 'util';
 import {
-	Breakpoint,
 	DebugSession,
 	Handles,
 	InitializedEvent,
@@ -661,7 +661,7 @@ class Delve {
 
 		const isLocalDebugging: boolean = this.request === 'launch' && !!this.debugProcess;
 		const forceCleanup = async () => {
-			killTree(this.debugProcess.pid);
+			kill(this.debugProcess.pid, (err) => console.log('Error killing debug process: ' + err));
 			await removeFile(this.localDebugeePath);
 		};
 		return new Promise(async (resolve) => {
@@ -1925,28 +1925,6 @@ class GoDebugSession extends LoggingDebugSession {
 
 function random(low: number, high: number): number {
 	return Math.floor(Math.random() * (high - low) + low);
-}
-
-function killTree(processId: number): void {
-	if (process.platform === 'win32') {
-		const TASK_KILL = 'C:\\Windows\\System32\\taskkill.exe';
-
-		// when killing a process in Windows its child processes are *not* killed but become root processes.
-		// Therefore we use TASKKILL.EXE
-		try {
-			execSync(`${TASK_KILL} /F /T /PID ${processId}`);
-		} catch (err) {
-			logError(`Error killing process tree: ${err.toString() || ''}`);
-		}
-	} else {
-		// on linux and OS X we kill all direct and indirect child processes as well
-		try {
-			const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
-			spawnSync(cmd, [processId.toString()]);
-		} catch (err) {
-			logError(`Error killing process tree: ${err.toString() || ''}`);
-		}
-	}
 }
 
 async function removeFile(filePath: string): Promise<void> {
