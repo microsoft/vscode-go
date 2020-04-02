@@ -72,8 +72,9 @@ prepare_nightly() {
 .bugs.url="https://github.com/golang/vscode-go/issues"
 ') > /tmp/package.json && mv /tmp/package.json package.json
 
+  # Replace CHANGELOG.md with CHANGELOG.md.nightly + Release commit info.
   # TODO(hyangah): Update README.md
-  echo "**Release ${VER} @ ${COMMIT}** " | cat - CHANGELOG.md > /tmp/CHANGELOG.md.new && mv /tmp/CHANGELOG.md.new CHANGELOG.md
+  printf "**Release ${VER} @ ${COMMIT}** \n\n" | cat - CHANGELOG.md.nightly > /tmp/CHANGELOG.md.new && mv /tmp/CHANGELOG.md.new CHANGELOG.md
 }
 
 main() {
