@@ -431,12 +431,11 @@ class Delve {
 						if (launchArgs.buildFlags) {
 							runArgs.push(launchArgs.buildFlags);
 						}
+						runArgs.push(program);
 						if (isProgramDirectory) {
 							runOptions.cwd = program;
-							runArgs.push('.');
 						} else {
 							runOptions.cwd = dirname;
-							runArgs.push(program);
 						}
 						if (launchArgs.args) {
 							runArgs.push(...launchArgs.args);
