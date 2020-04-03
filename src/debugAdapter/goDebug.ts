@@ -427,15 +427,15 @@ class Delve {
 					if (mode === 'debug') {
 						this.noDebug = true;
 						const runArgs = ['run'];
-						const runOptions: { [key: string]: any } = { env };
+						const runOptions: { [key: string]: any } = { cwd: dirname, env };
 						if (launchArgs.buildFlags) {
 							runArgs.push(launchArgs.buildFlags);
 						}
-						runArgs.push(program);
 						if (isProgramDirectory) {
-							runOptions.cwd = program;
-						} else {
-							runOptions.cwd = dirname;
+							runArgs.push("*.go");
+						}
+						else {
+							runArgs.push(program);
 						}
 						if (launchArgs.args) {
 							runArgs.push(...launchArgs.args);
@@ -472,7 +472,7 @@ class Delve {
 				if (!existsSync(launchArgs.dlvToolPath)) {
 					log(
 						`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${
-							env['GOPATH'] ? ', ' + env['GOPATH'] : ''
+						env['GOPATH'] ? ', ' + env['GOPATH'] : ''
 						} or ${envPath}`
 					);
 					return reject(
@@ -1360,8 +1360,8 @@ class GoDebugSession extends LoggingDebugSession {
 			args.trace === 'verbose'
 				? Logger.LogLevel.Verbose
 				: args.trace === 'log'
-				? Logger.LogLevel.Log
-				: Logger.LogLevel.Error;
+					? Logger.LogLevel.Log
+					: Logger.LogLevel.Error;
 		const logPath =
 			this.logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-go-debug.txt') : undefined;
 		logger.setup(this.logLevel, logPath);
