@@ -432,7 +432,7 @@ class Delve {
 							runArgs.push(launchArgs.buildFlags);
 						}
 						if (isProgramDirectory) {
-							runArgs.push("*.go");
+							runArgs.push('.');
 						}
 						else {
 							runArgs.push(program);
