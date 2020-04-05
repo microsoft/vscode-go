@@ -523,7 +523,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			vscode.window
 				.showInputBox({
 					prompt: 'Enter the path to the coverage profile for current package',
-					value: lastCoverProfilePath,
+					value: lastCoverProfilePath
 				})
 				.then((coverProfilePath) => {
 					if (!coverProfilePath) {
