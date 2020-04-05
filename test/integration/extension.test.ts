@@ -20,8 +20,8 @@ import {
 	generateTestCurrentPackage
 } from '../../src/goGenerateTests';
 import { getTextEditForAddImport, listPackages } from '../../src/goImport';
-import { goLint } from '../../src/goLint';
 import { updateGoPathGoRootFromConfig } from '../../src/goInstallTools';
+import { goLint } from '../../src/goLint';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
 import { getAllPackages } from '../../src/goPackages';
 import { goPlay } from '../../src/goPlayground';
