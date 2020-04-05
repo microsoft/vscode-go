@@ -17,20 +17,10 @@ import {
 	HandleDiagnosticsSignature,
 	LanguageClient,
 	ProvideCompletionItemsSignature,
-	ProvideDefinitionSignature,
 	ProvideDocumentFormattingEditsSignature,
-	ProvideDocumentHighlightsSignature,
 	ProvideDocumentLinksSignature,
-	ProvideDocumentSymbolsSignature,
-	ProvideHoverSignature,
-	ProvideReferencesSignature,
-	ProvideRenameEditsSignature,
-	ProvideSignatureHelpSignature,
-	ProvideWorkspaceSymbolsSignature,
 	RevealOutputChannelOn
 } from 'vscode-languageclient';
-import { ProvideImplementationSignature } from 'vscode-languageclient/lib/implementation';
-import { ProvideTypeDefinitionSignature } from 'vscode-languageclient/lib/typeDefinition';
 import WebRequest = require('web-request');
 import { GoDefinitionProvider } from './goDeclaration';
 import { GoHoverProvider } from './goExtraInfo';
@@ -208,61 +198,10 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 				'The language server is not able to serve any features at the moment.'
 			);
 		}
-
 		// Fallback to default providers for unsupported or disabled features.
-
-		if (!capabilities.completionProvider) {
-			const provider = new GoCompletionItemProvider(ctx.globalState);
-			ctx.subscriptions.push(provider);
-			ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '"'));
-		}
 		if (!config.features.format || !capabilities.documentFormattingProvider) {
 			ctx.subscriptions.push(
 				vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider())
-			);
-		}
-
-		if (!capabilities.renameProvider) {
-			ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
-		}
-
-		if (!capabilities.typeDefinitionProvider) {
-			ctx.subscriptions.push(
-				vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider())
-			);
-		}
-
-		if (!capabilities.hoverProvider) {
-			ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
-		}
-
-		if (!capabilities.definitionProvider) {
-			ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
-		}
-
-		if (!capabilities.referencesProvider) {
-			ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
-		}
-
-		if (!capabilities.documentSymbolProvider) {
-			ctx.subscriptions.push(
-				vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider())
-			);
-		}
-
-		if (!capabilities.signatureHelpProvider) {
-			ctx.subscriptions.push(
-				vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ',')
-			);
-		}
-
-		if (!capabilities.workspaceSymbolProvider) {
-			ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
-		}
-
-		if (!capabilities.implementationProvider) {
-			ctx.subscriptions.push(
-				vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider())
 			);
 		}
 	});
@@ -336,7 +275,6 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
 			format: goConfig['languageServerExperimentalFeatures']['format'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
-			highlight: goConfig['languageServerExperimentalFeatures']['highlight']
 		},
 		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
 	};
