@@ -45,7 +45,6 @@ interface LanguageServerConfig {
 	flags: string[];
 	features: {
 		diagnostics: boolean;
-		format: boolean;
 		documentLink: boolean;
 	};
 	checkForUpdates: boolean;
@@ -104,17 +103,6 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			},
 			revealOutputChannelOn: RevealOutputChannelOn.Never,
 			middleware: {
-				provideDocumentFormattingEdits: (
-					document: vscode.TextDocument,
-					options: FormattingOptions,
-					token: vscode.CancellationToken,
-					next: ProvideDocumentFormattingEditsSignature
-				) => {
-					if (!config.features.format) {
-						return [];
-					}
-					return next(document, options, token);
-				},
 				handleDiagnostics: (
 					uri: vscode.Uri,
 					diagnostics: vscode.Diagnostic[],
@@ -198,12 +186,6 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 				'The language server is not able to serve any features at the moment.'
 			);
 		}
-		// Fallback to default providers for unsupported or disabled features.
-		if (!config.features.format || !capabilities.documentFormattingProvider) {
-			ctx.subscriptions.push(
-				vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider())
-			);
-		}
 	});
 
 	let languageServerDisposable = c.start();
@@ -220,12 +202,6 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			ctx.subscriptions.push(languageServerDisposable);
 		})
 	);
-
-	// gopls is the only language server that provides live diagnostics on type,
-	// so use gotype if it's not enabled.
-	if (!(toolName === 'gopls' && config.features['diagnostics'])) {
-		vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
-	}
 }
 
 function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
@@ -273,7 +249,6 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			// TODO: We should have configs that match these names.
 			// Ultimately, we should have a centralized language server config rather than separate fields.
 			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
-			format: goConfig['languageServerExperimentalFeatures']['format'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
 		},
 		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
