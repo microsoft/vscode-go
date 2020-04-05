@@ -754,7 +754,7 @@ export function runTool(
 			}
 		});
 		processTimeout = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			reject(new Error(`Timeout executing tool - ${toolName ? toolName : goRuntimePath}`));
 		}, timeout);
 	});
@@ -857,22 +857,6 @@ export function getWorkspaceFolderPath(fileUri?: vscode.Uri): string {
 	const folders = vscode.workspace.workspaceFolders;
 	if (folders && folders.length) {
 		return fixDriveCasingInWindows(folders[0].uri.fsPath);
-	}
-}
-
-export function killProcess(p: cp.ChildProcess) {
-	if (p) {
-		try {
-			p.kill();
-		} catch (e) {
-			console.log('Error killing process: ' + e);
-			if (e && e.message && e.stack) {
-				const matches = e.stack.match(/(src.go[a-z,A-Z]+\.js)/g);
-				if (matches) {
-					sendTelemetryEventForKillingProcess(e.message, matches);
-				}
-			}
-		}
 	}
 }
 

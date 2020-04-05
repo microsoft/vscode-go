@@ -21,7 +21,7 @@ import {
 	getWorkspaceFolderPath,
 	goKeywords,
 	isPositionInString,
-	killProcess,
+	killTree,
 	runGodoc
 } from './util';
 
@@ -141,7 +141,7 @@ function definitionLocation_godef(
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);
-			killProcess(p);
+			killTree(p.pid);
 		});
 	}
 
@@ -224,7 +224,7 @@ function definitionLocation_godef(
 			p.stdin.end(input.document.getText());
 		}
 		processTimeout = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			reject(new Error('Timeout executing tool - godef'));
 		}, timeout);
 	});
@@ -247,7 +247,7 @@ function definitionLocation_gogetdoc(
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);
-			killProcess(p);
+			killTree(p.pid);
 		});
 	}
 
@@ -309,7 +309,7 @@ function definitionLocation_gogetdoc(
 			p.stdin.end(getFileArchive(input.document));
 		}
 		processTimeout = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			reject(new Error('Timeout executing tool - gogetdoc'));
 		}, timeout);
 	});
@@ -331,7 +331,7 @@ function definitionLocation_guru(
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);
-			killProcess(p);
+			killTree(p.pid);
 		});
 	}
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -376,7 +376,7 @@ function definitionLocation_guru(
 			p.stdin.end(getFileArchive(input.document));
 		}
 		processTimeout = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			reject(new Error('Timeout executing tool - guru'));
 		}, timeout);
 	});

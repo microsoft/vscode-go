@@ -10,7 +10,7 @@ import vscode = require('vscode');
 import { buildCode } from './goBuild';
 import { envPath } from './goPath';
 import { outputChannel } from './goStatus';
-import { getBinPath, getCurrentGoPath, getImportPath, getTimeoutConfiguration, killProcess } from './util';
+import { getBinPath, getCurrentGoPath, getImportPath, getTimeoutConfiguration, killTree } from './util';
 
 export function goGetPackage() {
 	const editor = vscode.window.activeTextEditor;
@@ -47,7 +47,7 @@ export function goGetPackage() {
 		vscode.window.showInformationMessage(`Package already exists: ${importPath}`);
 	});
 	const processTimeout = setTimeout(() => {
-		killProcess(p);
+		killTree(p.pid);
 		vscode.window.showErrorMessage('Timeout executing "go get" to get the package');
 	}, getTimeoutConfiguration('onCommand'));
 }

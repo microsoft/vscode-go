@@ -20,7 +20,7 @@ import {
 	getModuleCache,
 	getTimeoutConfiguration,
 	getToolsEnvVars,
-	killProcess
+	killTree
 } from './util';
 
 export let GO111MODULE: string;
@@ -198,7 +198,7 @@ export async function getCurrentPackage(cwd: string): Promise<string> {
 		const p = cp.spawn(goRuntimePath, ['list'], { cwd, env: getToolsEnvVars() });
 		const chunks: any[] = [];
 		const waitTimer = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			reject(new Error('Timeout executing tool - go list'));
 		}, getTimeoutConfiguration('onCommand'));
 

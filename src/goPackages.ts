@@ -16,7 +16,7 @@ import {
 	getTimeoutConfiguration,
 	getToolsEnvVars,
 	isVendorSupported,
-	killProcess,
+	killTree,
 	timeoutForLongRunningProcess
 } from './util';
 
@@ -61,7 +61,7 @@ function gopkgs(workDir?: string): Promise<Map<string, PackageInfo>> {
 		const errchunks: any[] = [];
 		let err: any;
 		const waitTimer = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			console.log(`Running gopkgs failed due to timeout.`);
 			resolve(pkgs);
 		}, timeoutForLongRunningProcess);
@@ -304,7 +304,7 @@ export function getNonVendorPackages(currentFolderPath: string, timeout?: number
 		);
 		const chunks: any[] = [];
 		const waitTimer = setTimeout(() => {
-			killProcess(childProcess);
+			killTree(childProcess.pid);
 			reject(new Error('Timeout executing tool - go list'));
 		}, timeout);
 

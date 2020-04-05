@@ -10,7 +10,7 @@ import path = require('path');
 import vscode = require('vscode');
 import { getAllPackages } from './goPackages';
 import { envPath } from './goPath';
-import { getBinPath, getCurrentGoPath, getImportPath, getTimeoutConfiguration, killProcess } from './util';
+import { getBinPath, getCurrentGoPath, getImportPath, getTimeoutConfiguration, killTree } from './util';
 
 export function browsePackages() {
 	let workDir = '';
@@ -93,7 +93,7 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 		});
 
 	const processTimeout = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			vscode.window.showErrorMessage('Timeout executing "go list" to fetch packages.');
 		}, getTimeoutConfiguration('onCommand'));
 }

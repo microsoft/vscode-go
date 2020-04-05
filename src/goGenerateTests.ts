@@ -12,7 +12,7 @@ import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { outputChannel } from './goStatus';
-import { getBinPath, getGoConfig, getTimeoutConfiguration, getToolsEnvVars, killProcess } from './util';
+import { getBinPath, getGoConfig, getTimeoutConfiguration, getToolsEnvVars, killTree } from './util';
 
 const generatedWord = 'Generated ';
 
@@ -219,7 +219,7 @@ function generateTests(conf: Config, goConfig: vscode.WorkspaceConfiguration): P
 			}
 		});
 		const processTimeout = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			reject(new Error('Timeout executing tool - gotests'));
 		}, getTimeoutConfiguration('onCommand', goConfig));
 	});

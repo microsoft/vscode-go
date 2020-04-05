@@ -26,7 +26,7 @@ import {
 	guessPackageNameFromFile,
 	isPositionInComment,
 	isPositionInString,
-	killProcess,
+	killTree,
 	parseFilePrelude,
 	runGodoc
 } from './util';
@@ -273,7 +273,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 		if (path.isAbsolute(gocode)) {
 			const p = cp.spawn(gocode, ['close'], { env: getToolsEnvVars(), });
 			setTimeout(() => {
-				killProcess(p);
+				killTree(p.pid);
 			}, getTimeoutConfiguration('onCommand'));
 		}
 	}
@@ -320,7 +320,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 			// Spawn `gocode` process
 			const p = cp.spawn(gocode, [...this.gocodeFlags, 'autocomplete', filename, '' + offset], { env });
 			const waitTimer = setTimeout(() => {
-				killProcess(p);
+				killTree(p.pid);
 				reject(new Error('Timeout executing tool - gocode'));
 			}, getTimeoutConfiguration('onType', config));
 			p.stdout.on('data', (data) => {

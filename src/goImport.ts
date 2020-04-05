@@ -12,7 +12,7 @@ import { documentSymbols, GoOutlineImportsOptions } from './goOutline';
 import { getImportablePackages } from './goPackages';
 import { envPath } from './goPath';
 import { sendTelemetryEventForAddImportCmd } from './telemetry';
-import { getBinPath, getImportPath, getTimeoutConfiguration, getToolsEnvVars, killProcess, parseFilePrelude } from './util';
+import { getBinPath, getImportPath, getTimeoutConfiguration, getToolsEnvVars, killTree, parseFilePrelude } from './util';
 
 const missingToolMsg = 'Missing tool: ';
 
@@ -208,7 +208,7 @@ export function addImportToWorkspace() {
 		);
 	});
 	const processTimeout = setTimeout(() => {
-		killProcess(p);
+		killTree(p.pid);
 		vscode.window.showErrorMessage('Timout executing - go list');
 	}, getTimeoutConfiguration('onCommand'));
 }

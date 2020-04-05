@@ -11,7 +11,7 @@ import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
 import { buildDiagnosticCollection } from './goMain';
 import { isModSupported } from './goModules';
-import { getBinPath, getGoConfig, getTimeoutConfiguration, getToolsEnvVars, killProcess } from './util';
+import { getBinPath, getGoConfig, getTimeoutConfiguration, getToolsEnvVars, killTree } from './util';
 
 // Interface for settings configuration for adding and removing tags
 interface GoLiveErrorsConfig {
@@ -118,6 +118,6 @@ async function processFile(e: vscode.TextDocumentChangeEvent) {
 		p.stdin.end(fileContents);
 	}
 	const processTimeout = setTimeout(() => {
-		killProcess(p);
+		killTree(p.pid);
 	}, getTimeoutConfiguration('onType'));
 }

@@ -14,7 +14,7 @@ import {
 	getGoConfig,
 	getTimeoutConfiguration,
 	getToolsEnvVars,
-	killProcess,
+	killTree,
 	makeMemoizedByteOffsetConverter
 } from './util';
 
@@ -92,7 +92,7 @@ export function runGoOutline(
 		if (token) {
 			token.onCancellationRequested(() => {
 				clearTimeout(processTimout);
-				killProcess(p);
+				killTree(p.pid);
 			});
 		}
 
@@ -130,7 +130,7 @@ export function runGoOutline(
 			p.stdin.end(getFileArchive(options.document));
 		}
 		processTimout = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			reject(new Error('Timeout executing tool - gooutline'));
 		}, getTimeoutConfiguration('onCommand'));
 	});

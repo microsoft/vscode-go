@@ -10,7 +10,7 @@ import path = require('path');
 import vscode = require('vscode');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { sendTelemetryEventForFormatting } from './telemetry';
-import { getBinPath, getGoConfig, getTimeoutConfiguration, getToolsEnvVars, killProcess, killTree } from './util';
+import { getBinPath, getGoConfig, getTimeoutConfiguration, getToolsEnvVars, killTree } from './util';
 
 export class GoDocumentFormattingEditProvider implements vscode.DocumentFormattingEditProvider {
 	public provideDocumentFormattingEdits(
@@ -80,7 +80,7 @@ export class GoDocumentFormattingEditProvider implements vscode.DocumentFormatti
 			// Use spawn instead of exec to avoid maxBufferExceeded error
 			const p = cp.spawn(formatCommandBinPath, formatFlags, { env, cwd });
 			const waitTimer = setTimeout(() => {
-				killProcess(p);
+				killTree(p.pid);
 				reject(new Error(`Timeout executing tool - ${formatTool}`));
 			}, getTimeoutConfiguration('onCommand'));
 			token.onCancellationRequested(() => !p.killed && killTree(p.pid));

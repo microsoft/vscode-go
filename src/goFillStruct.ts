@@ -14,7 +14,7 @@ import {
 	getFileArchive,
 	getTimeoutConfiguration,
 	getToolsEnvVars,
-	killProcess
+	killTree
 } from './util';
 
 // Interface for the output from fillstruct
@@ -107,7 +107,7 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 			p.stdin.end(input);
 		}
 		const processTimeout = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			reject(new Error('Timeout executing tool - fillstruct'));
 		}, getTimeoutConfiguration('onCommand'));
 	});

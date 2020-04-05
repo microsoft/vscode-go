@@ -17,7 +17,7 @@ import {
 	getGoConfig,
 	getTimeoutConfiguration,
 	getToolsEnvVars,
-	killProcess
+	killTree
 } from './util';
 
 export class GoRenameProvider implements vscode.RenameProvider {
@@ -60,7 +60,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 			if (token) {
 				token.onCancellationRequested(() => {
 					clearTimeout(processTimeout);
-					killProcess(p);
+					killTree(p.pid);
 				});
 			}
 
@@ -97,7 +97,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 				}
 			});
 			processTimeout = setTimeout(() => {
-				killProcess(p);
+				killTree(p.pid);
 				reject(new Error('Timeout executing tool - gorename'));
 			}, getTimeoutConfiguration('onCommand'));
 		});

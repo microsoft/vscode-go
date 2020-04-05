@@ -8,7 +8,7 @@
 import cp = require('child_process');
 import vscode = require('vscode');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getGoConfig, getTimeoutConfiguration, getToolsEnvVars, getWorkspaceFolderPath, killProcess } from './util';
+import { getBinPath, getGoConfig, getTimeoutConfiguration, getToolsEnvVars, getWorkspaceFolderPath, killTree } from './util';
 
 // Keep in sync with github.com/acroca/go-symbols'
 interface GoSymbolDeclaration {
@@ -117,7 +117,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 	if (token) {
 		token.onCancellationRequested(() => {
 			clearTimeout(processTimeout);
-			killProcess(p);
+			killTree(p.pid);
 		});
 	}
 
@@ -140,7 +140,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 			return resolve(decls);
 		});
 		processTimeout = setTimeout(() => {
-			killProcess(p);
+			killTree(p.pid);
 			reject(new Error('Timeout executing tool - go-symbols'));
 		}, getTimeoutConfiguration('onCommand'));
 	});

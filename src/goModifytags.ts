@@ -15,7 +15,7 @@ import {
 	getGoConfig,
 	getTimeoutConfiguration,
 	getToolsEnvVars,
-	killProcess
+	killTree
 } from './util';
 
 // Interface for the output from gomodifytags
@@ -164,7 +164,7 @@ function runGomodifytags(args: string[]) {
 		p.stdin.end(input);
 	}
 	const processTimeout = setTimeout(() => {
-		killProcess(p);
+		killTree(p.pid);
 		vscode.window.showErrorMessage('Timout executing - gomodifytags');
 	}, getTimeoutConfiguration('onCommand'));
 }
