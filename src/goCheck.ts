@@ -15,7 +15,7 @@ import { isModSupported } from './goModules';
 import { diagnosticsStatusBarItem, outputChannel } from './goStatus';
 import { goVet } from './goVet';
 import { getTestFlags, goTest, TestConfig } from './testUtils';
-import { getTempFilePath, getTimeoutConfiguration, ICheckResult } from './util';
+import { getTimeoutConfiguration, ICheckResult } from './util';
 
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.showOutput';
