@@ -7,6 +7,7 @@ import * as assert from 'assert';
 import cp = require('child_process');
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import { FilePatch, getEdits, getEditsFromUnifiedDiffStr } from '../../src/diffUtils';
 import { check } from '../../src/goCheck';
@@ -19,6 +20,8 @@ import {
 	generateTestCurrentPackage
 } from '../../src/goGenerateTests';
 import { getTextEditForAddImport, listPackages } from '../../src/goImport';
+import { updateGoPathGoRootFromConfig } from '../../src/goInstallTools';
+import { goLint } from '../../src/goLint';
 import { documentSymbols, GoDocumentSymbolProvider, GoOutlineImportsOptions } from '../../src/goOutline';
 import { getAllPackages } from '../../src/goPackages';
 import { goPlay } from '../../src/goPlayground';
@@ -38,24 +41,37 @@ import {
 
 suite('Go Extension Tests', function() {
 	this.timeout(10000);
-	const gopath = getCurrentGoPath();
-	if (!gopath) {
-		assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
-		return;
-	}
-	console.log(`Using GOPATH: ${gopath}`);
-
-	const repoPath = path.join(gopath, 'src', 'test');
-	const fixturePath = path.join(repoPath, 'testfixture');
-	const fixtureSourcePath = path.join(__dirname, '..', '..', '..', 'test', 'fixtures');
-	const generateTestsSourcePath = path.join(repoPath, 'generatetests');
-	const generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
-	const generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
-	const toolsGopath = getToolsGopath() || getCurrentGoPath();
 
 	const dummyCancellationSource = new vscode.CancellationTokenSource();
 
-	suiteSetup(() => {
+	// suiteSetup will initialize the following vars.
+	let gopath: string;
+	let repoPath: string;
+	let fixturePath: string;
+	let fixtureSourcePath: string;
+	let generateTestsSourcePath: string;
+	let generateFunctionTestSourcePath: string;
+	let generatePackageTestSourcePath: string;
+	let toolsGopath: string;
+
+	suiteSetup(async () => {
+		await updateGoPathGoRootFromConfig();
+
+		gopath = getCurrentGoPath();
+		if (!gopath) {
+			assert.ok(gopath, 'Cannot run tests if GOPATH is not set as environment variable');
+			return;
+		}
+		console.log(`Using GOPATH: ${gopath}`);
+
+		repoPath = path.join(gopath, 'src', 'test');
+		fixturePath = path.join(repoPath, 'testfixture');
+		fixtureSourcePath = path.join(__dirname, '..', '..', '..', 'test', 'fixtures');
+		generateTestsSourcePath = path.join(repoPath, 'generatetests');
+		generateFunctionTestSourcePath = path.join(repoPath, 'generatefunctiontest');
+		generatePackageTestSourcePath = path.join(repoPath, 'generatePackagetest');
+		toolsGopath = getToolsGopath() || gopath;
+
 		fs.removeSync(repoPath);
 		fs.copySync(path.join(fixtureSourcePath, 'baseTest', 'test.go'), path.join(fixturePath, 'baseTest', 'test.go'));
 		fs.copySync(
@@ -174,6 +190,10 @@ suite('Go Extension Tests', function() {
 
 	suiteTeardown(() => {
 		fs.removeSync(repoPath);
+	});
+
+	teardown(() => {
+		sinon.restore();
 	});
 
 	async function testDefinitionProvider(goConfig: vscode.WorkspaceConfiguration): Promise<any> {
@@ -414,6 +434,29 @@ It returns the number of bytes written and any write error encountered.
 			docsTool: { value: 'gogetdoc' }
 		});
 		await testHoverProvider(config, testCases);
+	});
+
+	test('Linting - concurrent process cancelation', async () => {
+		const util = require('../../src/util');
+		sinon.spy(util, 'runTool');
+		sinon.spy(util, 'killTree');
+
+		const config = Object.create(vscode.workspace.getConfiguration('go'), {
+			vetOnSave: { value: 'package' },
+			vetFlags: { value: ['-all'] },
+			buildOnSave: { value: 'package' },
+			lintOnSave: { value: 'package' },
+			// simulate a long running lint process by sleeping for a couple seconds
+			lintTool: { value: 'sleep' },
+			lintFlags: { value: ['2'] }
+		});
+
+		const results = await Promise.all([
+			goLint(vscode.Uri.file(path.join(fixturePath, 'linterTest', 'linter_1.go')), config),
+			goLint(vscode.Uri.file(path.join(fixturePath, 'linterTest', 'linter_2.go')), config)
+		]);
+		assert.equal(util.runTool.callCount, 2, 'should have launched 2 lint jobs');
+		assert.equal(util.killTree.callCount, 1, 'should have killed 1 lint job before launching the next');
 	});
 
 	test('Error checking', async () => {
@@ -1263,7 +1306,7 @@ encountered.
 					expected.length,
 					labels.length,
 					`expected number of completions: ${expected.length} Actual: ${
-						labels.length
+					labels.length
 					} at position(${position.line + 1},${position.character + 1}) ${labels}`
 				);
 				expected.forEach((entry, index) => {
@@ -1438,8 +1481,8 @@ encountered.
 					diagnostics[0].errors.length,
 					'check without buildtags failed. Unexpected errors found'
 				);
-				assert.equal(
-					diagnostics[0].errors[0].msg.indexOf(`can't load package: package test/testfixture/buildTags`) > -1,
+				const errMsg = diagnostics[0].errors[0].msg;
+				assert.equal(errMsg.includes(`can't load package: package test/testfixture/buildTags`) || errMsg.includes(`build constraints exclude all Go files`),
 					true,
 					`check without buildtags failed. Go files not excluded. ${diagnostics[0].errors[0].msg}`
 				);

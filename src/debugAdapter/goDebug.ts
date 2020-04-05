@@ -9,9 +9,9 @@ import { existsSync, lstatSync } from 'fs';
 import { Client, RPCConnection } from 'json-rpc2';
 import * as os from 'os';
 import * as path from 'path';
+import kill = require('tree-kill');
 import * as util from 'util';
 import {
-	Breakpoint,
 	DebugSession,
 	Handles,
 	InitializedEvent,
@@ -256,7 +256,6 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 	stackTraceDepth: number;
 
 	showGlobalVariables?: boolean;
-	currentFile: string;
 	packagePathToGoModPathMap: { [key: string]: string };
 }
 
@@ -282,7 +281,6 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 	stackTraceDepth: number;
 
 	showGlobalVariables?: boolean;
-	currentFile: string;
 }
 
 process.on('uncaughtException', (err: any) => {
@@ -427,46 +425,47 @@ class Delve {
 
 				if (!!launchArgs.noDebug) {
 					if (mode === 'debug') {
-						if (isProgramDirectory && launchArgs.currentFile) {
-							program = launchArgs.currentFile;
-							isProgramDirectory = false;
+						this.noDebug = true;
+						const runArgs = ['run'];
+						const runOptions: { [key: string]: any } = { env };
+						if (launchArgs.buildFlags) {
+							runArgs.push(launchArgs.buildFlags);
+						}
+						if (isProgramDirectory) {
+							runOptions.cwd = program;
+							runArgs.push('.');
+						} else {
+							runOptions.cwd = dirname;
+							runArgs.push(program);
+						}
+						if (launchArgs.args) {
+							runArgs.push(...launchArgs.args);
 						}
 
-						if (!isProgramDirectory) {
-							this.noDebug = true;
-							const runArgs = ['run'];
-							if (launchArgs.buildFlags) {
-								runArgs.push(launchArgs.buildFlags);
+						this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), runArgs, runOptions);
+						this.debugProcess.stderr.on('data', (chunk) => {
+							const str = chunk.toString();
+							if (this.onstderr) {
+								this.onstderr(str);
 							}
-							runArgs.push(program);
-							if (launchArgs.args) {
-								runArgs.push(...launchArgs.args);
+						});
+						this.debugProcess.stdout.on('data', (chunk) => {
+							const str = chunk.toString();
+							if (this.onstdout) {
+								this.onstdout(str);
 							}
-							this.debugProcess = spawn(getBinPathWithPreferredGopath('go', []), runArgs, { env });
-							this.debugProcess.stderr.on('data', (chunk) => {
-								const str = chunk.toString();
-								if (this.onstderr) {
-									this.onstderr(str);
-								}
-							});
-							this.debugProcess.stdout.on('data', (chunk) => {
-								const str = chunk.toString();
-								if (this.onstdout) {
-									this.onstdout(str);
-								}
-							});
-							this.debugProcess.on('close', (code) => {
-								logError('Process exiting with code: ' + code);
-								if (this.onclose) {
-									this.onclose(code);
-								}
-							});
-							this.debugProcess.on('error', (err) => {
-								reject(err);
-							});
-							resolve();
-							return;
-						}
+						});
+						this.debugProcess.on('close', (code) => {
+							logError('Process exiting with code: ' + code);
+							if (this.onclose) {
+								this.onclose(code);
+							}
+						});
+						this.debugProcess.on('error', (err) => {
+							reject(err);
+						});
+						resolve();
+						return;
 					}
 				}
 				this.noDebug = false;
@@ -484,7 +483,7 @@ class Delve {
 
 				const currentGOWorkspace = getCurrentGoWorkspaceFromGOPATH(env['GOPATH'], dirname);
 				dlvArgs.push(mode || 'debug');
-				if (mode === 'exec') {
+				if (mode === 'exec' || (mode === 'debug' && !isProgramDirectory)) {
 					dlvArgs.push(program);
 				} else if (currentGOWorkspace && !launchArgs.packagePathToGoModPathMap[dirname]) {
 					dlvArgs.push(dirname.substr(currentGOWorkspace.length + 1));
@@ -662,7 +661,7 @@ class Delve {
 
 		const isLocalDebugging: boolean = this.request === 'launch' && !!this.debugProcess;
 		const forceCleanup = async () => {
-			killTree(this.debugProcess.pid);
+			kill(this.debugProcess.pid, (err) => console.log('Error killing debug process: ' + err));
 			await removeFile(this.localDebugeePath);
 		};
 		return new Promise(async (resolve) => {
@@ -702,7 +701,7 @@ class Delve {
 					await this.callPromise('Detach', [this.isApiV1 ? true : { Kill: isLocalDebugging }]);
 				} catch (err) {
 					log('DetachResponse');
-					logError(err, 'Failed to detach');
+					logError(`Failed to detach - ${err.toString() || ''}`);
 					shouldForceClean = isLocalDebugging;
 				}
 			}
@@ -822,8 +821,8 @@ class GoDebugSession extends LoggingDebugSession {
 	): Promise<void> {
 		log('ConfigurationDoneRequest');
 		if (this.stopOnEntry) {
-			this.sendEvent(new StoppedEvent('breakpoint', 1));
-			log('StoppedEvent("breakpoint")');
+			this.sendEvent(new StoppedEvent('entry', 1));
+			log('StoppedEvent("entry")');
 			this.sendResponse(response);
 		} else {
 			this.debugState = await this.delve.getDebugState();
@@ -841,8 +840,7 @@ class GoDebugSession extends LoggingDebugSession {
 		// So, update it to use the same separator as the remote path to ease
 		// in replacing the local path in it with remote path
 		filePath = filePath.replace(/\/|\\/g, this.remotePathSeparator);
-		return filePath
-			.replace(this.delve.program.replace(/\/|\\/g, this.remotePathSeparator), this.delve.remotePath);
+		return filePath.replace(this.delve.program.replace(/\/|\\/g, this.remotePathSeparator), this.delve.remotePath);
 	}
 
 	protected toLocalPath(pathToConvert: string): string {
@@ -1852,7 +1850,8 @@ class GoDebugSession extends LoggingDebugSession {
 		// https://github.com/go-delve/delve/issues/852
 		// This affects macOS only although we're agnostic of the OS at this stage, only handle the error
 		if (errorMessage === 'bad access') {
-			errorMessage = 'unpropagated fatalpanic: signal SIGSEGV (EXC_BAD_ACCESS). This fatalpanic is not traceable on macOS, see https://github.com/go-delve/delve/issues/852';
+			errorMessage =
+				'unpropagated fatalpanic: signal SIGSEGV (EXC_BAD_ACCESS). This fatalpanic is not traceable on macOS, see https://github.com/go-delve/delve/issues/852';
 		}
 
 		logError(message + ' - ' + errorMessage);
@@ -1887,66 +1886,45 @@ class GoDebugSession extends LoggingDebugSession {
 			Object.assign(stackTraceIn, { full: false, cfg: this.delve.loadConfig });
 		}
 		this.delve.call<DebugLocation[] | StacktraceOut>(
-			this.delve.isApiV1 ?
-				'StacktraceGoroutine' : 'Stacktrace', [stackTraceIn], (err, out) => {
-					if (err) {
-						logError('dumpStacktrace: Failed to produce stack trace' + err);
-						return;
-					}
-					const locations = this.delve.isApiV1 ? <DebugLocation[]>out : (<StacktraceOut>out).Locations;
-					log('locations', locations);
-					const stackFrames = locations.map((location, frameId) => {
-						const uniqueStackFrameId = this.stackFrameHandles.create([goroutineId, frameId]);
-						return new StackFrame(
-							uniqueStackFrameId,
-							location.function ? location.function.name : '<unknown>',
-							location.file === '<autogenerated>' ? null : new Source(
-								path.basename(location.file),
-								this.toLocalPath(location.file)
-							),
-							location.line,
-							0
-						);
-					});
-
-					// Dump stacktrace into error logger
-					logError(`Last known immediate stacktrace (goroutine id ${goroutineId}):`);
-					let output = '';
-					stackFrames.forEach((stackFrame) => {
-						output = output.concat(`\t${stackFrame.source.path}:${stackFrame.line}\n`);
-						if (stackFrame.name) {
-							output = output.concat(`\t\t${stackFrame.name}\n`);
-						}
-					});
-					logError(output);
+			this.delve.isApiV1 ? 'StacktraceGoroutine' : 'Stacktrace',
+			[stackTraceIn],
+			(err, out) => {
+				if (err) {
+					logError('dumpStacktrace: Failed to produce stack trace' + err);
+					return;
+				}
+				const locations = this.delve.isApiV1 ? <DebugLocation[]>out : (<StacktraceOut>out).Locations;
+				log('locations', locations);
+				const stackFrames = locations.map((location, frameId) => {
+					const uniqueStackFrameId = this.stackFrameHandles.create([goroutineId, frameId]);
+					return new StackFrame(
+						uniqueStackFrameId,
+						location.function ? location.function.name : '<unknown>',
+						location.file === '<autogenerated>'
+							? null
+							: new Source(path.basename(location.file), this.toLocalPath(location.file)),
+						location.line,
+						0
+					);
 				});
+
+				// Dump stacktrace into error logger
+				logError(`Last known immediate stacktrace (goroutine id ${goroutineId}):`);
+				let output = '';
+				stackFrames.forEach((stackFrame) => {
+					output = output.concat(`\t${stackFrame.source.path}:${stackFrame.line}\n`);
+					if (stackFrame.name) {
+						output = output.concat(`\t\t${stackFrame.name}\n`);
+					}
+				});
+				logError(output);
+			}
+		);
 	}
 }
 
 function random(low: number, high: number): number {
 	return Math.floor(Math.random() * (high - low) + low);
-}
-
-function killTree(processId: number): void {
-	if (process.platform === 'win32') {
-		const TASK_KILL = 'C:\\Windows\\System32\\taskkill.exe';
-
-		// when killing a process in Windows its child processes are *not* killed but become root processes.
-		// Therefore we use TASKKILL.EXE
-		try {
-			execSync(`${TASK_KILL} /F /T /PID ${processId}`);
-		} catch (err) {
-			logError(`Error killing process tree: ${err.toString() || ''}`);
-		}
-	} else {
-		// on linux and OS X we kill all direct and indirect child processes as well
-		try {
-			const cmd = path.join(__dirname, '../../../scripts/terminateProcess.sh');
-			spawnSync(cmd, [processId.toString()]);
-		} catch (err) {
-			logError(`Error killing process tree: ${err.toString() || ''}`);
-		}
-	}
 }
 
 async function removeFile(filePath: string): Promise<void> {

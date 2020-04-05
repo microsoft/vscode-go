@@ -44,6 +44,7 @@
     "json-rpc2": "^1.0.2",
     "moment": "^2.24.0",
     "semver": "^6.3.0",
+    "tree-kill": "^1.2.2",
     "vscode-debugadapter": "^1.36.0",
     "vscode-debugprotocol": "^1.36.0",
     "vscode-extension-telemetry": "^0.1.2",
@@ -56,14 +57,16 @@
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.7.2",
     "@types/semver": "^6.0.1",
+    "@types/sinon": "^7.5.2",
     "@types/vscode": "^1.25.0",
     "fs-extra": "^8.1.0",
     "glob": "^7.1.4",
     "mocha": "^6.2.0",
+    "prettier": "^1.16.4",
+    "sinon": "^9.0.1",
     "tslint": "^5.19.0",
     "typescript": "^3.7.2",
-    "vscode-test": "^1.2.3",
-    "prettier": "^1.16.4"
+    "vscode-test": "^1.2.3"
   },
   "engines": {
     "vscode": "^1.41.0"
@@ -139,6 +142,11 @@
         "command": "go.gopath",
         "title": "Go: Current GOPATH",
         "description": "See the currently set GOPATH."
+      },
+      {
+        "command": "go.locate.tools",
+        "title": "Go: Locate Configured Go Tools",
+        "description": "List all the Go tools being used by this extension along with their locations."
       },
       {
         "command": "go.test.cursor",
