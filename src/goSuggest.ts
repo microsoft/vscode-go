@@ -271,7 +271,7 @@ export class GoCompletionItemProvider implements vscode.CompletionItemProvider, 
 		const gocodeName = this.isGoMod ? 'gocode-gomod' : 'gocode';
 		const gocode = getBinPath(gocodeName);
 		if (path.isAbsolute(gocode)) {
-			const p = cp.spawn(gocode, ['close'], { env: getToolsEnvVars(), });
+			const p = cp.spawn(gocode, ['close'], { env: getToolsEnvVars() });
 			setTimeout(() => {
 				killTree(p.pid);
 			}, getTimeoutConfiguration('onCommand'));

@@ -91,9 +91,9 @@ export function definitionLocation(
 					: getWorkspaceFolderPath(document.uri) || path.dirname(document.fileName)
 		};
 		if (toolForDocs === 'godoc') {
-				return definitionLocation_godef(input, timeout, token);
+			return definitionLocation_godef(input, timeout, token);
 		} else if (toolForDocs === 'guru') {
-				return definitionLocation_guru(input, timeout, token);
+			return definitionLocation_guru(input, timeout, token);
 		}
 		return definitionLocation_gogetdoc(input, timeout, token, true);
 	});

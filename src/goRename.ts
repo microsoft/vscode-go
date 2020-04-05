@@ -64,7 +64,7 @@ export class GoRenameProvider implements vscode.RenameProvider {
 				});
 			}
 
-			p = cp.execFile(gorename, gorenameArgs, {env}, (err, stdout, stderr) => {
+			p = cp.execFile(gorename, gorenameArgs, { env }, (err, stdout, stderr) => {
 				clearTimeout(processTimeout);
 				try {
 					if (err && (<any>err).code === 'ENOENT') {

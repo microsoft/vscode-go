@@ -90,12 +90,13 @@ function showPackageFiles(pkg: string, showAllPkgsIfPkgNotFound: boolean, workDi
 					});
 				});
 			}
-		});
+		}
+	);
 
 	const processTimeout = setTimeout(() => {
-			killTree(p.pid);
-			vscode.window.showErrorMessage('Timeout executing "go list" to fetch packages.');
-		}, getTimeoutConfiguration('onCommand'));
+		killTree(p.pid);
+		vscode.window.showErrorMessage('Timeout executing "go list" to fetch packages.');
+	}, getTimeoutConfiguration('onCommand'));
 }
 
 function showPackageList(workDir: string) {

@@ -660,7 +660,8 @@ export function runTool(
 	printUnexpectedOutput: boolean,
 	// tslint:disable-next-line: no-shadowed-variable
 	timeout: number,
-	token?: vscode.CancellationToken): Promise<ICheckResult[]> {
+	token?: vscode.CancellationToken
+): Promise<ICheckResult[]> {
 	const goRuntimePath = getBinPath('go');
 	let cmd: string;
 	if (toolName) {
@@ -1016,7 +1017,7 @@ export function runGodoc(
 
 export const timeoutForLongRunningProcess = 120000;
 
-export function getTimeoutConfiguration(operationType?: string, goConfig?: vscode.WorkspaceConfiguration ): number {
+export function getTimeoutConfiguration(operationType?: string, goConfig?: vscode.WorkspaceConfiguration): number {
 	const defaultTimeout = 60000;
 	if (!operationType) {
 		return defaultTimeout;
@@ -1024,11 +1025,14 @@ export function getTimeoutConfiguration(operationType?: string, goConfig?: vscod
 	if (!goConfig) {
 		goConfig = vscode.workspace.getConfiguration(
 			'go',
-			vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null);
+			vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null
+		);
 	}
 	const execTimeout: { [key: string]: any } = goConfig.get('operationTimeout');
-	if (execTimeout.hasOwnProperty(operationType) &&
-		(typeof execTimeout[operationType] === 'number' && execTimeout[operationType] > 0)) {
+	if (
+		execTimeout.hasOwnProperty(operationType) &&
+		typeof execTimeout[operationType] === 'number' && execTimeout[operationType] > 0
+	) {
 		return execTimeout[operationType];
 	}
 	return defaultTimeout;
