@@ -821,8 +821,8 @@ class GoDebugSession extends LoggingDebugSession {
 	): Promise<void> {
 		log('ConfigurationDoneRequest');
 		if (this.stopOnEntry) {
-			this.sendEvent(new StoppedEvent('breakpoint', 1));
-			log('StoppedEvent("breakpoint")');
+			this.sendEvent(new StoppedEvent('entry', 1));
+			log('StoppedEvent("entry")');
 			this.sendResponse(response);
 		} else {
 			this.debugState = await this.delve.getDebugState();
