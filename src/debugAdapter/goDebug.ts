@@ -433,8 +433,7 @@ class Delve {
 						}
 						if (isProgramDirectory) {
 							runArgs.push('.');
-						}
-						else {
+						} else {
 							runArgs.push(program);
 						}
 						if (launchArgs.args) {
@@ -472,7 +471,7 @@ class Delve {
 				if (!existsSync(launchArgs.dlvToolPath)) {
 					log(
 						`Couldn't find dlv at the Go tools path, ${process.env['GOPATH']}${
-						env['GOPATH'] ? ', ' + env['GOPATH'] : ''
+							env['GOPATH'] ? ', ' + env['GOPATH'] : ''
 						} or ${envPath}`
 					);
 					return reject(
@@ -1360,8 +1359,8 @@ class GoDebugSession extends LoggingDebugSession {
 			args.trace === 'verbose'
 				? Logger.LogLevel.Verbose
 				: args.trace === 'log'
-					? Logger.LogLevel.Log
-					: Logger.LogLevel.Error;
+				? Logger.LogLevel.Log
+				: Logger.LogLevel.Error;
 		const logPath =
 			this.logLevel !== Logger.LogLevel.Error ? path.join(os.tmpdir(), 'vscode-go-debug.txt') : undefined;
 		logger.setup(this.logLevel, logPath);
