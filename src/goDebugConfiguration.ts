@@ -136,7 +136,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			return;
 		}
 
-		const neverAgain = { title: "Don't Show Again" };
+		const neverAgain = { title: `Don't Show Again` };
 		vscode.window.showWarningMessage(warningMessage, neverAgain).then((result) => {
 			if (result === neverAgain) {
 				updateGlobalState(ignoreWarningKey, true);
