@@ -427,15 +427,13 @@ class Delve {
 					if (mode === 'debug') {
 						this.noDebug = true;
 						const runArgs = ['run'];
-						const runOptions: { [key: string]: any } = { env };
+						const runOptions: { [key: string]: any } = { cwd: dirname, env };
 						if (launchArgs.buildFlags) {
 							runArgs.push(launchArgs.buildFlags);
 						}
 						if (isProgramDirectory) {
-							runOptions.cwd = program;
 							runArgs.push('.');
 						} else {
-							runOptions.cwd = dirname;
 							runArgs.push(program);
 						}
 						if (launchArgs.args) {
