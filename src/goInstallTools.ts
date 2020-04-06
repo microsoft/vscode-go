@@ -185,7 +185,7 @@ export function installTools(missing: ToolAtVersion[], goVersion: GoVersion): Pr
 		if (missingTool.version) {
 			toolName += '@' + missingTool.version;
 		}
-		outputChannel.appendLine('  ' + missingTool.name);
+		outputChannel.appendLine('  ' + toolName);
 	});
 
 	outputChannel.appendLine(''); // Blank line for spacing.

@@ -436,12 +436,7 @@ async function shouldUpdateLanguageServer(
 	}
 
 	// First, run the "gopls version" command and parse its results.
-	// If "gopls" is so old that it doesn't have the "gopls version" command,
-	// or its version doesn't match our expectations, prompt the user to download.
 	const usersVersion = await goplsVersion(languageServerToolPath);
-	if (!usersVersion) {
-		return null;
-	}
 
 	// We might have a developer version. Don't make the user update.
 	if (usersVersion === '(devel)') {
@@ -454,6 +449,13 @@ async function shouldUpdateLanguageServer(
 	// If we failed to get the gopls version, pick the one we know to be latest at the time of this extension's last update
 	if (!latestVersion) {
 		latestVersion = defaultLatestVersion;
+	}
+
+	// If "gopls" is so old that it doesn't have the "gopls version" command,
+	// or its version doesn't match our expectations, usersVersion will be empty.
+	// Suggest the latestVersion.
+	if (!usersVersion) {
+		return latestVersion;
 	}
 
 	// The user may have downloaded golang.org/x/tools/gopls@master,
