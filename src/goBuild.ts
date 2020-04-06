@@ -49,7 +49,7 @@ export function buildCode(buildWorkspace?: boolean) {
 	diagnosticsStatusBarItem.text = 'Building...';
 
 	isModSupported(documentUri).then((isMod) => {
-		goBuild(documentUri, isMod, goConfig, buildWorkspace, getTimeoutConfiguration('onCommand', goConfig))
+		goBuild(documentUri, isMod, goConfig, getTimeoutConfiguration('onCommand', goConfig), buildWorkspace)
 			.then((errors) => {
 				handleDiagnosticErrors(editor ? editor.document : null, errors, buildDiagnosticCollection);
 				diagnosticsStatusBarItem.hide();
@@ -67,14 +67,15 @@ export function buildCode(buildWorkspace?: boolean) {
  * @param fileUri Document uri.
  * @param isMod Boolean denoting if modules are being used.
  * @param goConfig Configuration for the Go extension.
+ * @param timeout Number of milliseconds to wait until declaring the operation as timed out
  * @param buildWorkspace If true builds code in all workspace.
  */
 export async function goBuild(
 	fileUri: vscode.Uri,
 	isMod: boolean,
 	goConfig: vscode.WorkspaceConfiguration,
-	buildWorkspace?: boolean,
-	timeout?: number
+	timeout: number,
+	buildWorkspace?: boolean
 ): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;

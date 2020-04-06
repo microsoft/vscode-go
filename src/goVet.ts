@@ -42,7 +42,7 @@ export function vetCode(vetWorkspace?: boolean) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Vetting...';
 
-	goVet(documentUri, goConfig, vetWorkspace, getTimeoutConfiguration('onCommand', goConfig))
+	goVet(documentUri, goConfig, getTimeoutConfiguration('onCommand', goConfig), vetWorkspace)
 		.then((warnings) => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, vetDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
@@ -58,13 +58,14 @@ export function vetCode(vetWorkspace?: boolean) {
  *
  * @param fileUri Document uri.
  * @param goConfig Configuration for the Go extension.
+ * @param timeout Number of milliseconds to wait until declaring the operation as timed out
  * @param vetWorkspace If true vets code in all workspace.
  */
 export async function goVet(
 	fileUri: vscode.Uri,
 	goConfig: vscode.WorkspaceConfiguration,
-	vetWorkspace?: boolean,
-	timeout?: number
+	timeout: number,
+	vetWorkspace?: boolean
 ): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;

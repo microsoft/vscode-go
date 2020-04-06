@@ -42,7 +42,7 @@ export function lintCode(scope?: string) {
 	diagnosticsStatusBarItem.show();
 	diagnosticsStatusBarItem.text = 'Linting...';
 
-	goLint(documentUri, goConfig, scope, getTimeoutConfiguration('onCommand', goConfig))
+	goLint(documentUri, goConfig, getTimeoutConfiguration('onCommand', goConfig), scope)
 		.then((warnings) => {
 			handleDiagnosticErrors(editor ? editor.document : null, warnings, lintDiagnosticCollection);
 			diagnosticsStatusBarItem.hide();
@@ -58,13 +58,14 @@ export function lintCode(scope?: string) {
  *
  * @param fileUri Document uri.
  * @param goConfig Configuration for the Go extension.
+ * @param timeout Number of milliseconds to wait until declaring the operation as timed out
  * @param scope Scope in which to run the linter.
  */
 export function goLint(
 	fileUri: vscode.Uri,
 	goConfig: vscode.WorkspaceConfiguration,
-	scope?: string,
-	timeout?: number
+	timeout: number,
+	scope?: string
 ): Promise<ICheckResult[]> {
 	epoch++;
 	const closureEpoch = epoch;

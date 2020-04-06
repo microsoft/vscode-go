@@ -87,7 +87,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 	if (!disableBuildAndVet && !!goConfig['buildOnSave'] && goConfig['buildOnSave'] !== 'off') {
 		runningToolsPromises.push(
 			isModSupported(fileUri)
-				.then((isMod) => goBuild(fileUri, isMod, goConfig, goConfig['buildOnSave'] === 'workspace', timeout))
+				.then((isMod) => goBuild(fileUri, isMod, goConfig, timeout, goConfig['buildOnSave'] === 'workspace'))
 				.then((errors) => ({ diagnosticCollection: buildDiagnosticCollection, errors }))
 		);
 	}
@@ -109,7 +109,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!!goConfig['lintOnSave'] && goConfig['lintOnSave'] !== 'off') {
 		runningToolsPromises.push(
-			goLint(fileUri, goConfig, goConfig['lintOnSave'], timeout).then((errors) => ({
+			goLint(fileUri, goConfig, timeout, goConfig['lintOnSave']).then((errors) => ({
 				diagnosticCollection: lintDiagnosticCollection,
 				errors
 			}))
@@ -118,7 +118,7 @@ export function check(fileUri: vscode.Uri, goConfig: vscode.WorkspaceConfigurati
 
 	if (!disableBuildAndVet && !!goConfig['vetOnSave'] && goConfig['vetOnSave'] !== 'off') {
 		runningToolsPromises.push(
-			goVet(fileUri, goConfig, goConfig['vetOnSave'] === 'workspace', timeout).then((errors) => ({
+			goVet(fileUri, goConfig, timeout, goConfig['vetOnSave'] === 'workspace').then((errors) => ({
 				diagnosticCollection: vetDiagnosticCollection,
 				errors
 			}))
