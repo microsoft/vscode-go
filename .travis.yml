@@ -54,6 +54,7 @@ install:
   - go get -u -v github.com/zmb3/gogetdoc
   - go get -u -v golang.org/x/lint/golint
   - go get -u -v golang.org/x/tools/cmd/gorename
+  - GO111MODULE=on go get golang.org/x/tools/gopls
 
 script:
   - npm run lint
