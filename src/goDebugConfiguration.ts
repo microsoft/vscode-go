@@ -113,15 +113,19 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		if (debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
 			this.showWarning(
 				'ignoreDebugLaunchRemoteWarning',
-				`Request type of 'launch' with mode 'remote' is deprecated, please use request type 'attach' with mode 'remote' instead.`);
+				`Request type of 'launch' with mode 'remote' is deprecated, please use request type 'attach' with mode 'remote' instead.`
+			);
 		}
 
-		if (debugConfiguration.request === 'attach'
-			&& debugConfiguration['mode'] === 'remote'
-			&& debugConfiguration['program']) {
+		if (
+			debugConfiguration.request === 'attach' &&
+			debugConfiguration['mode'] === 'remote' &&
+			debugConfiguration['program']
+		) {
 			this.showWarning(
 				'ignoreUsingRemotePathAndProgramWarning',
-				`Request type of 'attach' with mode 'remote' does not work with 'program' attribute, please use 'cwd' attribute instead.`);
+				`Request type of 'attach' with mode 'remote' does not work with 'program' attribute, please use 'cwd' attribute instead.`
+			);
 		}
 		return debugConfiguration;
 	}
@@ -132,7 +136,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			return;
 		}
 
-		const neverAgain = { title: 'Don\'t Show Again' };
+		const neverAgain = { title: `Don't Show Again` };
 		vscode.window.showWarningMessage(warningMessage, neverAgain).then((result) => {
 			if (result === neverAgain) {
 				updateGlobalState(ignoreWarningKey, true);

@@ -427,15 +427,13 @@ class Delve {
 					if (mode === 'debug') {
 						this.noDebug = true;
 						const runArgs = ['run'];
-						const runOptions: { [key: string]: any } = { env };
+						const runOptions: { [key: string]: any } = { cwd: dirname, env };
 						if (launchArgs.buildFlags) {
 							runArgs.push(launchArgs.buildFlags);
 						}
 						if (isProgramDirectory) {
-							runOptions.cwd = program;
 							runArgs.push('.');
 						} else {
-							runOptions.cwd = dirname;
 							runArgs.push(program);
 						}
 						if (launchArgs.args) {
@@ -821,8 +819,8 @@ class GoDebugSession extends LoggingDebugSession {
 	): Promise<void> {
 		log('ConfigurationDoneRequest');
 		if (this.stopOnEntry) {
-			this.sendEvent(new StoppedEvent('breakpoint', 1));
-			log('StoppedEvent("breakpoint")');
+			this.sendEvent(new StoppedEvent('entry', 1));
+			log('StoppedEvent("entry")');
 			this.sendResponse(response);
 		} else {
 			this.debugState = await this.delve.getDebugState();
