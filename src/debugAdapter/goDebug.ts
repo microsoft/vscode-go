@@ -25,7 +25,6 @@ import {
 	StoppedEvent,
 	TerminatedEvent,
 	Thread,
-	ThreadEvent
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import {
@@ -721,7 +720,6 @@ class GoDebugSession extends LoggingDebugSession {
 	private breakpoints: Map<string, DebugBreakpoint[]>;
 	// Editing breakpoints requires halting delve, skip sending Stop Event to VS Code in such cases
 	private skipStopEventOnce: boolean;
-	private goroutines: Set<number>;
 	private debugState: DebuggerState;
 	private delve: Delve;
 	private localPathSeparator: string;
@@ -741,7 +739,6 @@ class GoDebugSession extends LoggingDebugSession {
 		this.variableHandles = new Handles<DebugVariable>();
 		this.skipStopEventOnce = false;
 		this.stopOnEntry = false;
-		this.goroutines = new Set<number>();
 		this.debugState = null;
 		this.delve = null;
 		this.breakpoints = new Map<string, DebugBreakpoint[]>();
@@ -924,7 +921,6 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 			const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
 			log('goroutines', goroutines);
-			this.updateGoroutinesList(goroutines);
 			const threads = goroutines.map(
 				(goroutine) =>
 					new Thread(
@@ -1472,26 +1468,6 @@ class GoDebugSession extends LoggingDebugSession {
 		);
 	}
 
-	private updateGoroutinesList(goroutines: DebugGoroutine[]): void {
-		// Assume we need to stop all the threads we saw before...
-		const needsToBeStopped = new Set<number>();
-		this.goroutines.forEach((id) => needsToBeStopped.add(id));
-		for (const goroutine of goroutines) {
-			// ...but delete from list of threads to stop if we still see it
-			needsToBeStopped.delete(goroutine.id);
-			if (!this.goroutines.has(goroutine.id)) {
-				// Send started event if it's new
-				this.sendEvent(new ThreadEvent('started', goroutine.id));
-			}
-			this.goroutines.add(goroutine.id);
-		}
-		// Send existed event if it's no longer there
-		needsToBeStopped.forEach((id) => {
-			this.sendEvent(new ThreadEvent('exited', id));
-			this.goroutines.delete(id);
-		});
-	}
-
 	private setBreakPoints(
 		response: DebugProtocol.SetBreakpointsResponse,
 		args: DebugProtocol.SetBreakpointsArguments
@@ -1736,13 +1712,19 @@ class GoDebugSession extends LoggingDebugSession {
 			this.sendEvent(new TerminatedEvent());
 			log('TerminatedEvent');
 		} else {
-			// [TODO] Can we avoid doing this? https://github.com/Microsoft/vscode/issues/40#issuecomment-161999881
-			this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [], (err, out) => {
+			// Delve blocks on continue and does not support events, so there is no way to
+			// refresh the list of goroutines while the program is running. And when the program is
+			// stopped, the development tool will issue a threads request and update the list of
+			// threads in the UI even without the optional thread events. Therefore, instead of
+			// analyzing all goroutines here, only retrieve the current one.
+			// TODO(polina): validate the assumption in this code that the first goroutine
+			// is the current one. So far it appears to me that this is always the main goroutine
+			// with id 1.
+			this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [{count: 1}], (err, out) => {
 				if (err) {
 					this.logDelveError(err, 'Failed to get threads');
 				}
 				const goroutines = this.delve.isApiV1 ? <DebugGoroutine[]>out : (<ListGoroutinesOut>out).Goroutines;
-				this.updateGoroutinesList(goroutines);
 				if (!this.debugState.currentGoroutine && goroutines.length > 0) {
 					this.debugState.currentGoroutine = goroutines[0];
 				}
