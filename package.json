@@ -48,7 +48,7 @@
     "vscode-debugadapter": "^1.36.0",
     "vscode-debugprotocol": "^1.36.0",
     "vscode-extension-telemetry": "^0.1.2",
-    "vscode-languageclient": "6.1.0",
+    "vscode-languageclient": "~5.2.1",
     "web-request": "^1.0.7"
   },
   "devDependencies": {
@@ -69,7 +69,7 @@
     "vscode-test": "^1.2.3"
   },
   "engines": {
-    "vscode": "^1.41.0"
+    "vscode": "^1.30.0"
   },
   "activationEvents": [
     "workspaceContains:**/*.go",
@@ -334,11 +334,7 @@
         "description": "Restart the running instance of the language server"
       }
     ],
-    "breakpoints": [
-      {
-        "language": "go"
-      }
-    ],
+    "breakpoints": [{ "language": "go" }],
     "debuggers": [
       {
         "type": "go",
