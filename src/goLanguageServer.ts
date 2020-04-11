@@ -12,6 +12,7 @@ import semver = require('semver');
 import util = require('util');
 import vscode = require('vscode');
 import {
+	Command,
 	FormattingOptions,
 	HandleDiagnosticsSignature,
 	LanguageClient,
@@ -143,6 +144,58 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 						return null;
 					}
 					return next(document, token);
+				},
+				provideCompletionItem: (
+					document: vscode.TextDocument,
+					position: vscode.Position,
+					context: vscode.CompletionContext,
+					token: vscode.CancellationToken,
+					next: ProvideCompletionItemsSignature
+				) => {
+					// TODO(hyangah): when v1.42+ api is available, we can simplify
+					// language-specific configuration lookup using the new
+					// ConfigurationScope.
+					//    const paramHintsEnabled = vscode.workspace.getConfiguration(
+					//          'editor.parameterHints',
+					//          { languageId: 'go', uri: document.uri });
+
+					const editorParamHintsEnabled = vscode.workspace.getConfiguration(
+						'editor.parameterHints',
+						document.uri
+					)['enabled'];
+					const goParamHintsEnabled = vscode.workspace.getConfiguration('[go]', document.uri)[
+						'editor.parameterHints.enabled'
+					];
+
+					let paramHintsEnabled: boolean = false;
+					if (typeof goParamHintsEnabled === 'undefined') {
+						paramHintsEnabled = editorParamHintsEnabled;
+					} else {
+						paramHintsEnabled = goParamHintsEnabled;
+					}
+					let cmd: Command;
+					if (paramHintsEnabled) {
+						cmd = { title: 'triggerParameterHints', command: 'editor.action.triggerParameterHints' };
+					}
+
+					function configureCommands(
+						r: vscode.CompletionItem[] | vscode.CompletionList | null | undefined
+					): vscode.CompletionItem[] | vscode.CompletionList | null | undefined {
+						if (r) {
+							(Array.isArray(r) ? r : r.items).forEach((i: vscode.CompletionItem) => {
+								i.command = cmd;
+							});
+						}
+						return r;
+					}
+					const ret = next(document, position, context, token);
+
+					const isThenable = <T>(obj: vscode.ProviderResult<T>): obj is Thenable<T> =>
+						obj && (<any>obj)['then'];
+					if (isThenable<vscode.CompletionItem[] | vscode.CompletionList | null | undefined>(ret)) {
+						return ret.then(configureCommands);
+					}
+					return configureCommands(ret);
 				}
 			}
 		}
@@ -291,10 +344,10 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 }
 
 /**
- * Get the absolute path to the language server to be used.
- * If the required tool is not available, then user is prompted to install it.
- * This supports the language servers from both Google and Sourcegraph with the
- * former getting a precedence over the latter
+ *
+ * If the user has enabled the language server, return the absolute path to the
+ * correct binary. If the required tool is not available, prompt the user to
+ * install it. Only gopls is officially supported.
  */
 export function getLanguageServerToolPath(): string {
 	// If language server is not enabled, return
@@ -310,40 +363,32 @@ export function getLanguageServerToolPath(): string {
 		);
 		return;
 	}
-
-	// Get the path to gopls or any alternative that the user might have set for gopls.
+	// Get the path to gopls (getBinPath checks for alternate tools).
 	const goplsBinaryPath = getBinPath('gopls');
 	if (path.isAbsolute(goplsBinaryPath)) {
 		return goplsBinaryPath;
 	}
-
-	// Get the path to go-langserver or any alternative that the user might have set for go-langserver.
-	const golangserverBinaryPath = getBinPath('go-langserver');
-	if (path.isAbsolute(golangserverBinaryPath)) {
-		return golangserverBinaryPath;
-	}
-
-	// If no language server path has been found, notify the user.
-	let languageServerOfChoice = 'gopls';
-	if (goConfig['alternateTools']) {
-		const goplsAlternate = goConfig['alternateTools']['gopls'];
-		const golangserverAlternate = goConfig['alternateTools']['go-langserver'];
-		if (typeof goplsAlternate === 'string') {
-			languageServerOfChoice = getToolFromToolPath(goplsAlternate);
-		} else if (typeof golangserverAlternate === 'string') {
-			languageServerOfChoice = getToolFromToolPath(golangserverAlternate);
+	const alternateTools = goConfig['alternateTools'];
+	if (alternateTools) {
+		// The user's alternate language server was not found.
+		const goplsAlternate = alternateTools['gopls'];
+		if (goplsAlternate) {
+			vscode.window.showErrorMessage(
+				`Cannot find the alternate tool ${goplsAlternate} configured for gopls.
+Please install it and reload this VS Code window.`
+			);
+			return;
 		}
-	}
-	// Only gopls and go-langserver are supported.
-	if (languageServerOfChoice !== 'gopls' && languageServerOfChoice !== 'go-langserver') {
-		vscode.window.showErrorMessage(
-			`Cannot find the language server ${languageServerOfChoice}. Please install it and reload this VS Code window`
-		);
+		// Check if the user has the deprecated "go-langserver" setting.
+		// Suggest deleting it if the alternate tool is gopls.
+		if (alternateTools['go-langserver']) {
+			vscode.window.showErrorMessage(`Support for "go-langserver" has been deprecated.
+The recommended language server is gopls. Delete the alternate tool setting for "go-langserver" to use gopls, or change "go-langserver" to "gopls" in your settings.json and reload the VS Code window.`);
+		}
 		return;
 	}
-	// Otherwise, prompt the user to install the language server.
-	promptForMissingTool(languageServerOfChoice);
-	vscode.window.showInformationMessage('Reload VS Code window after installing the Go language server.');
+	// Prompt the user to install gopls.
+	promptForMissingTool('gopls');
 }
 
 function allFoldersHaveSameGopath(): boolean {
@@ -376,8 +421,8 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
-const defaultLatestVersion = semver.coerce('0.1.7');
-const defaultLatestVersionTime = moment('2019-09-18', 'YYYY-MM-DD');
+const defaultLatestVersion = semver.coerce('0.3.1');
+const defaultLatestVersionTime = moment('2020-02-04', 'YYYY-MM-DD');
 async function shouldUpdateLanguageServer(
 	tool: Tool,
 	languageServerToolPath: string,

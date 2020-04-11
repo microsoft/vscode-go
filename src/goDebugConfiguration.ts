@@ -47,13 +47,13 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				return;
 			}
 
-			debugConfiguration = {
+			debugConfiguration = Object.assign(debugConfiguration || {}, {
 				name: 'Launch',
 				type: 'go',
 				request: 'launch',
 				mode: 'auto',
 				program: activeEditor.document.fileName
-			};
+			});
 		}
 
 		debugConfiguration['packagePathToGoModPathMap'] = packagePathToGoModPathMap;
@@ -109,28 +109,38 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 			debugConfiguration['mode'] =
 				activeEditor && activeEditor.document.fileName.endsWith('_test.go') ? 'test' : 'debug';
 		}
-		debugConfiguration['currentFile'] =
-			activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
 
-		const neverAgain = { title: `Don't Show Again` };
-		const ignoreWarningKey = 'ignoreDebugLaunchRemoteWarning';
-		const ignoreWarning = getFromGlobalState(ignoreWarningKey);
+		if (debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
+			this.showWarning(
+				'ignoreDebugLaunchRemoteWarning',
+				`Request type of 'launch' with mode 'remote' is deprecated, please use request type 'attach' with mode 'remote' instead.`
+			);
+		}
+
 		if (
-			ignoreWarning !== true &&
-			debugConfiguration.request === 'launch' &&
-			debugConfiguration['mode'] === 'remote'
+			debugConfiguration.request === 'attach' &&
+			debugConfiguration['mode'] === 'remote' &&
+			debugConfiguration['program']
 		) {
-			vscode.window
-				.showWarningMessage(
-					`Request type of 'launch' with mode 'remote' is deprecated, please use request type 'attach' with mode 'remote' instead.`,
-					neverAgain
-				)
-				.then((result) => {
-					if (result === neverAgain) {
-						updateGlobalState(ignoreWarningKey, true);
-					}
-				});
+			this.showWarning(
+				'ignoreUsingRemotePathAndProgramWarning',
+				`Request type of 'attach' with mode 'remote' does not work with 'program' attribute, please use 'cwd' attribute instead.`
+			);
 		}
 		return debugConfiguration;
+	}
+
+	private showWarning(ignoreWarningKey: string, warningMessage: string) {
+		const ignoreWarning = getFromGlobalState(ignoreWarningKey);
+		if (ignoreWarning) {
+			return;
+		}
+
+		const neverAgain = { title: `Don't Show Again` };
+		vscode.window.showWarningMessage(warningMessage, neverAgain).then((result) => {
+			if (result === neverAgain) {
+				updateGlobalState(ignoreWarningKey, true);
+			}
+		});
 	}
 }

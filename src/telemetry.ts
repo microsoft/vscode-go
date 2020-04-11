@@ -183,6 +183,9 @@ function sendTelemetryEvent(
 	properties?: { [key: string]: string },
 	measures?: { [key: string]: number }
 ): void {
+	if (!aiKey) {
+		return; // cannot enable telemetry
+	}
 	telemtryReporter = telemtryReporter
 		? telemtryReporter
 		: new TelemetryReporter(extensionId, extensionVersion, aiKey);

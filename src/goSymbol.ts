@@ -8,7 +8,7 @@
 import cp = require('child_process');
 import vscode = require('vscode');
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { getBinPath, getGoConfig, getToolsEnvVars, getWorkspaceFolderPath, killProcess } from './util';
+import { getBinPath, getGoConfig, getToolsEnvVars, getWorkspaceFolderPath, killTree } from './util';
 
 // Keep in sync with github.com/acroca/go-symbols'
 interface GoSymbolDeclaration {
@@ -35,7 +35,10 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 		token: vscode.CancellationToken
 	): Thenable<vscode.SymbolInformation[]> {
 		const convertToCodeSymbols = (decls: GoSymbolDeclaration[], symbols: vscode.SymbolInformation[]): void => {
-			decls.forEach((decl) => {
+			if (!decls) {
+				return;
+			}
+			for (const decl of decls) {
 				let kind: vscode.SymbolKind;
 				if (decl.kind !== '') {
 					kind = this.goKindToCodeKind[decl.kind];
@@ -49,7 +52,7 @@ export class GoWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider
 					''
 				);
 				symbols.push(symbolInfo);
-			});
+			}
 		};
 		const root = getWorkspaceFolderPath(
 			vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri
@@ -113,7 +116,7 @@ function callGoSymbols(args: string[], token: vscode.CancellationToken): Promise
 	let p: cp.ChildProcess;
 
 	if (token) {
-		token.onCancellationRequested(() => killProcess(p));
+		token.onCancellationRequested(() => killTree(p.pid));
 	}
 
 	return new Promise((resolve, reject) => {

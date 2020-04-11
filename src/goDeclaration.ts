@@ -20,7 +20,7 @@ import {
 	getWorkspaceFolderPath,
 	goKeywords,
 	isPositionInString,
-	killProcess,
+	killTree,
 	runGodoc
 } from './util';
 
@@ -135,7 +135,7 @@ function definitionLocation_godef(
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 	if (token) {
-		token.onCancellationRequested(() => killProcess(p));
+		token.onCancellationRequested(() => killTree(p.pid));
 	}
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -226,7 +226,7 @@ function definitionLocation_gogetdoc(
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 	if (token) {
-		token.onCancellationRequested(() => killProcess(p));
+		token.onCancellationRequested(() => killTree(p.pid));
 	}
 
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
@@ -300,7 +300,7 @@ function definitionLocation_guru(
 	const env = getToolsEnvVars();
 	let p: cp.ChildProcess;
 	if (token) {
-		token.onCancellationRequested(() => killProcess(p));
+		token.onCancellationRequested(() => killTree(p.pid));
 	}
 	return new Promise<GoDefinitionInformation>((resolve, reject) => {
 		p = cp.execFile(

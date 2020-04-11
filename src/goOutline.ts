@@ -13,7 +13,7 @@ import {
 	getFileArchive,
 	getGoConfig,
 	getToolsEnvVars,
-	killProcess,
+	killTree,
 	makeMemoizedByteOffsetConverter
 } from './util';
 
@@ -88,7 +88,7 @@ export function runGoOutline(
 
 		let p: cp.ChildProcess;
 		if (token) {
-			token.onCancellationRequested(() => killProcess(p));
+			token.onCancellationRequested(() => killTree(p.pid));
 		}
 
 		// Spawn `go-outline` process
