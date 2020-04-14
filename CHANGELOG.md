@@ -20,7 +20,7 @@
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
     * Show debug watch failures as warnings instead of errors to reduce the noise in debug console.
     Fixes [Bug 3006](https://github.com/Microsoft/vscode-go/issues/3006) with [commit 430362e](https://github.com/microsoft/vscode-go/commit/430362e2553680af91817d27e52bf9af12ae1824)
-    * Run the package when the `Run: Start Without Debugging` command is executed with the `program` attribute in the debug configuration points to a folder. Previously, this would result in debugging the package instead. [Feature Request 3096](https://github.com/Microsoft/vscode-go/issues/3096) implemented with [commit 78518d7e](https://github.com/microsoft/vscode-go/commit/78518d7e9736670d75fe2cd648c7c3eb23413157)
+    * Use `go run .` instead of passing the current file to the `go run` command when the command `Run: Start Without Debugging` command is executed with the `program` attribute in the debug configuration pointing to a folder. Previously, this would result in errors for cases when the current file uses members from a separate file in the same pacakge. [Feature Request 3096](https://github.com/Microsoft/vscode-go/issues/3096) implemented with [commit 78518d7e](https://github.com/microsoft/vscode-go/commit/78518d7e9736670d75fe2cd648c7c3eb23413157)
 
 * [polinasok](https://github.com/https://github.com/polinasok)
     * Use 'entry' as stopped event reason when stopping on entry.  [PR 3150](https://github.com/Microsoft/vscode-go/pull/3150)
