@@ -1,0 +1,1 @@
+The Release Notes for the Go extension to VS Code is captured in the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md)
