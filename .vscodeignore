@@ -8,4 +8,4 @@ test/
 **/*.map
 **/tslint.json
 build/**/*
-Documentation/
+docs/
