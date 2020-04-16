@@ -1,4 +1,10 @@
-## 0.14.0 - Coming soon...
+## 0.14.1 - 15th April, 2020
+
+* [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)
+    * Update the version of `vscode-languageclient` being used to make use of all the upstream fixes. This changes the min version of the VS Code for
+    upcoming updates of this extension to be 1.41. Older versions of VS Code will no longer receive any updates from this extension.
+
+## 0.14.0 - 15th April, 2020
  
 ### Debugging improvements
 

@@ -441,7 +441,8 @@ export function updateGoPathGoRootFromConfig(): Promise<void> {
 		process.env[pathEnvVar] &&
 		(<string>process.env[pathEnvVar]).split(path.delimiter).indexOf(goRuntimeBasePath) === -1
 	) {
-		process.env[pathEnvVar] += path.delimiter + goRuntimeBasePath;
+		// Place the goRuntimeBasePath to the front so tools use the same version of go.
+		process.env[pathEnvVar] = goRuntimeBasePath + path.delimiter + process.env[pathEnvVar];
 	}
 
 	return new Promise<void>((resolve, reject) => {
