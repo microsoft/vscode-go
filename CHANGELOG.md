@@ -1,4 +1,4 @@
-## 0.14.0 - Coming soon...
+## 0.14.0 - 15th April, 2020
  
 ### Debugging improvements
 
