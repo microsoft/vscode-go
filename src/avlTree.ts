@@ -41,7 +41,31 @@ export class Node<K, V> {
 	 * @param key The key of the new node.
 	 * @param value The value of the new node.
 	 */
-	constructor(public key: K, public value: V) {}
+	constructor(public key: K, public value: V) { }
+
+	/**
+	 * Convenience function to get the height of the left child of the node,
+	 * returning -1 if the node is null.
+	 * @return The height of the left child, or -1 if it doesn't exist.
+	 */
+	public get leftHeight(): number {
+		if (!this.left) {
+			return -1;
+		}
+		return this.left.height;
+	}
+
+	/**
+	 * Convenience function to get the height of the right child of the node,
+	 * returning -1 if the node is null.
+	 * @return The height of the right child, or -1 if it doesn't exist.
+	 */
+	public get rightHeight(): number {
+		if (!this.right) {
+			return -1;
+		}
+		return this.right.height;
+	}
 
 	/**
 	 * Performs a right rotate on this node.
@@ -77,30 +101,6 @@ export class Node<K, V> {
 		this.height = Math.max(this.leftHeight, this.rightHeight) + 1;
 		other.height = Math.max(other.rightHeight, this.height) + 1;
 		return other;
-	}
-
-	/**
-	 * Convenience function to get the height of the left child of the node,
-	 * returning -1 if the node is null.
-	 * @return The height of the left child, or -1 if it doesn't exist.
-	 */
-	public get leftHeight(): number {
-		if (!this.left) {
-			return -1;
-		}
-		return this.left.height;
-	}
-
-	/**
-	 * Convenience function to get the height of the right child of the node,
-	 * returning -1 if the node is null.
-	 * @return The height of the right child, or -1 if it doesn't exist.
-	 */
-	public get rightHeight(): number {
-		if (!this.right) {
-			return -1;
-		}
-		return this.right.height;
 	}
 }
 
