@@ -2,7 +2,7 @@
 
 **Q: I installed the plugin, but none of the features are working. Why?**
 
-**A:** Make sure to install all the dependent Go tools. Run `Go: Install/Update Tools`. If you want to install only selected tools, then go through the [Go tools that this plugin depends on](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) and install the ones you need manually
+**A:** Make sure to install all the dependent Go tools. Run `Go: Install/Update Tools`. If you want to install only selected tools, then go through the [Go tools that this plugin depends on](Go-tools-that-the-Go-extension-depends-on) and install the ones you need manually
 
 If you see an error of the form `command <command-name-here> not found`, it means that the extension has failed to activate and register its commands. Please try to uninstall and re-install the extension.
 
@@ -43,15 +43,15 @@ If you see an error of the form `command <command-name-here> not found`, it mean
 
 **Q: How does the plugin determine the GOPATH to use?**
 
-**A:** See [GOPATH in the VS Code Go extension](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension)
+**A:** See [GOPATH in the VS Code Go extension](GOPATH-in-the-VS-Code-Go-extension.md)
 
 **Q: Does VS Code support Go modules?**
 
-**A:** See [Go modules support in VS Code](https://github.com/Microsoft/vscode-go/wiki/Go-modules-support-in-Visual-Studio-Code)
+**A:** See [Go modules support in VS Code](Go-modules-support-in-Visual-Studio-Code.md)
 
 **Q: Why is code navigation and code completion slow when using Go modules?**
 
-Please see [Go modules support in VS Code](https://github.com/Microsoft/vscode-go/wiki/Go-modules-support-in-Visual-Studio-Code)
+Please see [Go modules support in VS Code](Go-modules-support-in-Visual-Studio-Code.md)
 
 **Q: Can I use language server when using Go modules?**
 
@@ -95,4 +95,4 @@ log an issue in the [gocode](https://github.com/mdempsky/gocode) repo. If you ar
 
 **Q: How do I get the features/bug fixes that are implemented but not released yet? How do I get the beta version of the Go extension?**
 
-**A:** See [Install the beta version](https://github.com/Microsoft/vscode-go/wiki/Use-the-beta-version-of-the-latest-Go-extension)
+**A:** See [Install the beta version](Use-the-beta-version-of-the-latest-Go-extension.md)
