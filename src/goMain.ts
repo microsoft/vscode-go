@@ -21,11 +21,15 @@ import {
 	updateCodeCoverageDecorators
 } from './goCover';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';
+import { GoDefinitionProvider } from './goDeclaration';
 import { extractFunction, extractVariable } from './goDoctor';
+import { GoHoverProvider } from './goExtraInfo';
 import { runFillStruct } from './goFillStruct';
+import { GoDocumentFormattingEditProvider } from './goFormat';
 import * as goGenerateTests from './goGenerateTests';
 import { goGetPackage } from './goGetPackage';
 import { implCursor } from './goImpl';
+import { GoImplementationProvider } from './goImplementations';
 import { addImport, addImportToWorkspace } from './goImport';
 import { installCurrentPackage } from './goInstall';
 import {
@@ -35,18 +39,26 @@ import {
 	promptForMissingTool,
 	updateGoPathGoRootFromConfig
 } from './goInstallTools';
-import { registerLanguageFeatures } from './goLanguageServer';
+import { startLanguageServer } from './goLanguageServer';
 import { lintCode } from './goLint';
+import { parseLiveFile } from './goLiveErrors';
 import { GO_MODE } from './goMode';
 import { addTags, removeTags } from './goModifytags';
 import { GO111MODULE, isModSupported } from './goModules';
+import { GoDocumentSymbolProvider } from './goOutline';
 import { clearCacheForTools, fileExists } from './goPath';
 import { playgroundCommand } from './goPlayground';
+import { GoReferenceProvider } from './goReferences';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
+import { GoRenameProvider } from './goRename';
 import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
+import { GoSignatureHelpProvider } from './goSignature';
 import { outputChannel, showHideStatus } from './goStatus';
+import { GoCompletionItemProvider } from './goSuggest';
+import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { testAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWorkspace } from './goTest';
 import { getConfiguredTools } from './goTools';
+import { GoTypeDefinitionProvider } from './goTypeDefinition';
 import { vetCode } from './goVet';
 import {
 	getFromGlobalState,
@@ -134,7 +146,10 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		// This handles all of the configurations and registrations for the language server.
 		// It also registers the necessary language feature providers that the language server may not support.
-		await registerLanguageFeatures(ctx);
+		const ok = await startLanguageServer(ctx);
+		if (!ok) {
+			registerUsualProviders(ctx);
+		}
 
 		if (
 			vscode.window.activeTextEditor &&
@@ -604,6 +619,28 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 		null,
 		ctx.subscriptions
 	);
+}
+
+// registerUsualProviders registers the language feature providers if the language server is not enabled.
+function registerUsualProviders(ctx: vscode.ExtensionContext) {
+	const provider = new GoCompletionItemProvider(ctx.globalState);
+	ctx.subscriptions.push(provider);
+	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '"'));
+	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
+	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
+	ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
+	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
+	ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
+	ctx.subscriptions.push(
+		vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ',')
+	);
+	ctx.subscriptions.push(vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider()));
+	ctx.subscriptions.push(
+		vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider())
+	);
+	ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
+	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
+	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
 function addOnChangeTextDocumentListeners(ctx: vscode.ExtensionContext) {

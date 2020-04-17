@@ -48,10 +48,19 @@
     "vscode-debugadapter": "^1.36.0",
     "vscode-debugprotocol": "^1.36.0",
     "vscode-extension-telemetry": "^0.1.2",
+<<<<<<< HEAD
     "vscode-languageclient": "6.1.0",
     "web-request": "^1.0.7"
   },
   "devDependencies": {
+=======
+    "vscode-languageclient": "^6.1.3",
+    "web-request": "^1.0.7",
+    "deep-equal": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/deep-equal": "^1.0.1",
+>>>>>>> 6633ad7... src/goLanguageServer.ts: respect configuration changes on server restart
     "@types/fs-extra": "^8.0.0",
     "@types/glob": "^7.1.1",
     "@types/mocha": "^5.2.7",
