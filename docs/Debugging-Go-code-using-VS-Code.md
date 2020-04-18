@@ -2,13 +2,13 @@
 
 There are 2 ways to install delve
 - Run the command `Go: Install/Update Tools`, select `dlv`, press `Ok` to install/update delve
-- Or install it manually install delve as per the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation).
+- Or install it manually install delve as per the [Installation Instructions](https://github.com/go-delve/delve/tree/master/Documentation/installation).
 
 ## Set up configurations in your settings
 
 The below settings are used by the debugger. You may not need to add/change any of them to have debugging working in simple cases, but do give them a read sometime
-- `go.gopath`. See [GOPATH in VS Code](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension)
-- `go.inferGopath`. See [GOPATH in VS Code](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension)
+- `go.gopath`. See [GOPATH in VS Code](GOPATH-in-the-VS-Code-Go-extension.md)
+- `go.inferGopath`. See [GOPATH in VS Code](GOPATH-in-the-VS-Code-Go-extension.md)
 - `go.delveConfig`
      - `apiVersion`: Controls the version of delve apis to be used when launching the delve headless server. Default is 2.
      - `dlvLoadConfig`: Not applicable when `apiVersion` is 1. The configuration passed to delve. Controls [various features of delve](https://github.com/Microsoft/vscode-go/blob/0.6.85/package.json#L431-L468) that affects the variables shown in the debug pane.
@@ -205,7 +205,7 @@ If you have issues debugging your Go code, first try to update your version of d
 
 ### Debug the debugger using source code
 
-If you want to dig deeper and debug the debugger using source code of this extension, see [building-and-debugging-the-extension](https://github.com/Microsoft/vscode-go/wiki/Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code#building-and-debugging-the-extension)
+If you want to dig deeper and debug the debugger using source code of this extension, see [building-and-debugging-the-extension](Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code#building-and-debugging-the-extension.md)
 
 ### Common issues
 

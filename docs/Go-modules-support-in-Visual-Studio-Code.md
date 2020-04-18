@@ -1,4 +1,4 @@
-VS Code uses a host of [Go tools](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) to provide features like code navigation, code completion, build, lint etc. 
+VS Code uses a host of [Go tools](Go-tools-that-the-Go-extension-depends-on.md) to provide features like code navigation, code completion, build, lint etc. 
 
 > ⚠️ These tools **do not** provide a good support for [Go modules](https://blog.golang.org/modules2019) yet. 
 
@@ -21,7 +21,7 @@ Known issues in VS Code when using `gopls`:
 To troubleshoot the language server, please see [Troubleshooting gopls](https://github.com/golang/go/wiki/gopls#troubleshooting)
 
 
-If you don't want to use the language server for any reason, then please know that not all the [Go tools](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) that this extension depends on supports Go modules. https://github.com/golang/go/issues/24661 is the issue used by the Go tools team to track the update of Go modules support in various Go tools.
+If you don't want to use the language server for any reason, then please know that not all the [Go tools](Go-tools-that-the-Go-extension-depends-on.md) that this extension depends on supports Go modules. https://github.com/golang/go/issues/24661 is the issue used by the Go tools team to track the update of Go modules support in various Go tools.
 
 ## FAQ
 
