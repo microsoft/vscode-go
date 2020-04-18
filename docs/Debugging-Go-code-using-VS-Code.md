@@ -234,6 +234,11 @@ You may see this in the debug console, while trying to run in the `test` mode. T
 
 **_Solution_**: Ensure that the `program` attribute points to the folder that contains the test files you want to run.
 
+#### delve/launch hangs with no messages when using WSL
+Try running ```delve debug ./main``` at the WSL command line and see if you get a prompt
+
+**_Solution_**: Ensure you are running the WSL 2 Kernel, which (as of 4/15/2020) requires an early release of the Windows 10 OS.  This is available to anyone via the Windows Insider program.  See [WSL 2 Installation](https://docs.microsoft.com/en-us/windows/wsl/wsl2-install)
+
 #### could not launch process: could not fork/exec
 
 ##### OSX 
