@@ -8,10 +8,24 @@ Please see [The Debug Adapter Protocol](https://code.visualstudio.com/blogs/2018
 
 Clone this [repo](https://github.com/Microsoft/vscode-go) and then run `npm install`
 
-```
+```shell
 git clone https://github.com/Microsoft/vscode-go
 cd vscode-go
 npm install
+```
+
+#### Debug Adapter compilation:
+You might want to compile the debug adapter to verify your changes. Additionally, debug symbols must be updated whenever you want to set breakpoints accurately. For the vscode-go project, there is a build task available which will start the Typescript compiler in watch mode, detecting errors on code changes and updating debug symbols automatically.
+
+The project on the debugAdapter folder level doesn´t have this task included, but the `tsc` compiler can be started manually via the following steps:
+
+1. Install `tsc`, if you haven't done so yet:
+```shell
+npm install -g typescript
+```
+2. In the debugAdapter directory, start `tsc` in watch mode, using this extension's Typescript configuration rules:
+```shell
+tsc -w -p ../../
 ```
 
 ## Debugging the Go Debug Adapter

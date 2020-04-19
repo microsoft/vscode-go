@@ -931,7 +931,7 @@ class GoDebugSession extends LoggingDebugSession {
 							});
 						} else if (this.rewindRequestRunning) {
 							return this.rewind(true).then(null, (err) => {
-								logError(`Failed to rewind delve after halting it to set breakpoints: "${err.toString()}"`);
+								this.logDelveError(err, 'Failed to rewind delve after halting it to set breakpoints');
 							});
 						}
 					});

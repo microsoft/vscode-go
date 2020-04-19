@@ -207,9 +207,11 @@ A few of these are available in the editor context menu as an experimental featu
 
 ### _Optional_: Debugging
 
-To use the debugger, you must currently manually install `delve`.  See the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation) for full details.  On MacOS it requires creating a self-signed cert to sign the `dlv` binary.
+To use the debugger, you must currently manually [install delve](https://github.com/derekparker/delve/tree/master/Documentation/installation). For more read [Debugging Go Code Using VS Code](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code).
 
-For more read [Debugging Go Code Using VS Code](https://github.com/Microsoft/vscode-go/wiki/Debugging-Go-code-using-VS-Code).
+#### Debugging in WSL
+
+If using WSL on Windows, you will need the WSL 2 Linux kernel.  See [WSL 2 Installation](https://docs.microsoft.com/en-us/windows/wsl/wsl2-install) and note the Window 10 build version requirements. 
 
 #### Remote Debugging
 
