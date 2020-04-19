@@ -438,14 +438,25 @@
                   "remote",
                   "test",
                   "exec",
-                  "replay"
+                  "replay",
+                  "core"
                 ],
                 "description": "One of 'auto', 'debug', 'remote', 'test', 'exec', replay'.",
                 "default": "auto"
               },
+              "executable": {
+                "type": "string",
+                "description": "Compiled program to be targeted in replay in required scenarios",
+                "default": ""
+              },
               "traceDirectory": {
                 "type": "string",
                 "description": "Directory in which the record trace is located. For use on 'replay' mode only",
+                "default": ""
+              },
+              "coreDumpDirectory": {
+                "type": "string",
+                "description": "Directory in which the core dump is located. For use on 'core' mode only",
                 "default": ""
               },
               "stopOnEntry": {
@@ -528,6 +539,7 @@
                   "default",
                   "native",
                   "lldb",
+                  "coredump",
                   "rr"
                 ],
                 "description": "Backend used by delve. Only available in delve version 0.12.2 and above."
