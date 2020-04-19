@@ -1,11 +1,12 @@
 {
   "name": "Go",
-  "version": "0.11.9",
+  "version": "0.14.1",
   "publisher": "ms-vscode",
   "description": "Rich Go language support for Visual Studio Code",
   "author": {
     "name": "Microsoft Corporation - Development Labs"
   },
+  "license": "MIT",
   "icon": "images/go-logo-blue.png",
   "categories": [
     "Programming Languages",
@@ -34,38 +35,44 @@
     "test": "node ./out/test/runTest.js",
     "lint": "node ./node_modules/tslint/bin/tslint --project tsconfig.json",
     "fix-lint": "node ./node_modules/tslint/bin/tslint --fix --project tsconfig.json",
-    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit"
+    "unit-test": "node ./node_modules/mocha/bin/_mocha -u tdd --timeout 5000 --colors ./out/test/unit",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "extensionDependencies": [],
   "dependencies": {
-    "diff": "^4.0.1",
+    "diff": "^4.0.2",
     "json-rpc2": "^1.0.2",
     "moment": "^2.24.0",
-    "semver": "^6.3.0",
-    "vscode-debugadapter": "^1.36.0",
-    "vscode-debugprotocol": "^1.36.0",
+    "semver": "^7.3.2",
+    "tree-kill": "^1.2.2",
+    "vscode-debugadapter": "^1.40.0",
+    "vscode-debugprotocol": "^1.40.0",
     "vscode-extension-telemetry": "^0.1.2",
-    "vscode-languageclient": "~5.2.1",
+    "vscode-languageclient": "6.1.0",
     "web-request": "^1.0.7"
   },
   "devDependencies": {
-    "@types/fs-extra": "^8.0.0",
+    "@types/fs-extra": "^8.1.0",
     "@types/glob": "^7.1.1",
-    "@types/mocha": "^5.2.7",
-    "@types/node": "^12.7.2",
-    "@types/semver": "^6.0.1",
-    "@types/vscode": "^1.25.0",
-    "fs-extra": "^8.1.0",
-    "glob": "^7.1.4",
-    "mocha": "^6.2.0",
-    "tslint": "^5.19.0",
-    "typescript": "^3.6.2",
-    "vscode-test": "^1.2.0"
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^13.11.1",
+    "@types/semver": "^7.1.0",
+    "@types/sinon": "^9.0.0",
+    "@types/vscode": "^1.41.0",
+    "fs-extra": "^9.0.0",
+    "glob": "^7.1.6",
+    "mocha": "^7.1.1",
+    "prettier": "^2.0.4",
+    "sinon": "^9.0.2",
+    "tslint": "^6.1.1",
+    "typescript": "^3.8.3",
+    "vscode-test": "^1.3.0"
   },
   "engines": {
-    "vscode": "^1.30.0"
+    "vscode": "^1.41.0"
   },
   "activationEvents": [
+    "workspaceContains:**/*.go",
     "onLanguage:go",
     "onCommand:go.gopath",
     "onCommand:go.tools.install",
@@ -135,6 +142,11 @@
         "command": "go.gopath",
         "title": "Go: Current GOPATH",
         "description": "See the currently set GOPATH."
+      },
+      {
+        "command": "go.locate.tools",
+        "title": "Go: Locate Configured Go Tools",
+        "description": "List all the Go tools being used by this extension along with their locations."
       },
       {
         "command": "go.test.cursor",
@@ -302,6 +314,11 @@
         "description": "Cancels running tests."
       },
       {
+        "command": "go.apply.coverprofile",
+        "title": "Go: Apply Cover Profile",
+        "description": "Applies existing cover profile."
+      },
+      {
         "command": "go.godoctor.extract",
         "title": "Go: Extract to function",
         "description": "Extract to function using godoctor."
@@ -317,15 +334,15 @@
         "description": "Restart the running instance of the language server"
       }
     ],
+    "breakpoints": [
+      {
+        "language": "go"
+      }
+    ],
     "debuggers": [
       {
         "type": "go",
         "label": "Go",
-        "enableBreakpointsFor": {
-          "languageIds": [
-            "go"
-          ]
-        },
         "program": "./out/src/debugAdapter/goDebug.js",
         "runtime": "node",
         "languages": [
@@ -351,7 +368,7 @@
               "type": "go",
               "request": "launch",
               "mode": "debug",
-              "program": "^\"${1:\\${file}}\""
+              "program": "^\"${1:\\${file\\}}\""
             }
           },
           {
@@ -489,8 +506,14 @@
                 "description": "Various levels of logging shown in the debug console. When set to 'log' or 'verbose', the logs will also be written to a file."
               },
               "envFile": {
-                "type": "string",
-                "description": "Absolute path to a file containing environment variable definitions.",
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "description": "Absolute path to a file containing environment variable definitions. Multiple files can be specified by provided an array of absolute paths",
                 "default": "${workspaceFolder}/.env"
               },
               "backend": {
@@ -713,7 +736,7 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "Go configuration",
+      "title": "Go",
       "properties": {
         "go.buildOnSave": {
           "type": "string",
@@ -777,8 +800,7 @@
             "golint",
             "golangci-lint",
             "revive",
-            "staticcheck",
-            "gometalinter"
+            "staticcheck"
           ]
         },
         "go.lintFlags": {
@@ -1076,7 +1098,7 @@
         "go.useLanguageServer": {
           "type": "boolean",
           "default": false,
-          "description": "Experimental: Use Go language server from Google or Sourcegraph for Hover, Definition, Signature Help, Auto Completion and Formatting features instead of tools like godef, gocode and goreturns"
+          "description": "Use the Go language server \"gopls\" from Google for powering language features like code navigation, completion, formatting & diagnostics."
         },
         "go.languageServerFlags": {
           "type": "array",
@@ -1091,51 +1113,6 @@
               "default": false,
               "description": "If true, gofmt is used by the language server to format files."
             },
-            "autoComplete": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will provide code completion results."
-            },
-            "rename": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Rename feature."
-            },
-            "goToDefinition": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to/Peek Definition feature."
-            },
-            "goToTypeDefinition": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to/Peek Type Definition feature."
-            },
-            "hover": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the hover feature."
-            },
-            "findReferences": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Find/Peek References feature."
-            },
-            "signatureHelp": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Signature Help/Parameter Hints feature."
-            },
-            "documentSymbols": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to Document Symbols/Outline/Breadcrumbs feature."
-            },
-            "workspaceSymbols": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will be used for the Go to Workspace Symbols feature."
-            },
             "diagnostics": {
               "type": "boolean",
               "default": true,
@@ -1145,33 +1122,12 @@
               "type": "boolean",
               "default": true,
               "description": "If true, the language server will provide clickable Godoc links for import statements."
-            },
-            "incrementalSync": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, the language server will accept incremental document synchronization."
-            },
-            "highlight": {
-              "type": "boolean",
-              "default": true,
-              "description": "If true, the language server will be used to highlighting selected text."
             }
           },
           "default": {
             "format": true,
-            "autoComplete": true,
-            "rename": true,
-            "goToDefinition": true,
-            "hover": true,
-            "signatureHelp": true,
-            "goToTypeDefinition": true,
-            "goToImplementation": true,
-            "documentSymbols": true,
-            "workspaceSymbols": true,
-            "findReferences": true,
             "diagnostics": true,
-            "documentLink": true,
-            "highlight": true
+            "documentLink": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
@@ -1505,11 +1461,6 @@
               "type": "string",
               "default": "go",
               "description": "Alternate tool to use instead of the go binary or alternate path to use for the go binary."
-            },
-            "gometalinter": {
-              "type": "string",
-              "default": "gometalinter",
-              "description": "Alternate tool to use instead of the gometalinter binary or alternate path to use for the gometalinter binary."
             },
             "gocode": {
               "type": "string",

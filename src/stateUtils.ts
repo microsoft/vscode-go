@@ -6,6 +6,7 @@
 import vscode = require('vscode');
 
 let globalState: vscode.Memento;
+let workspaceState: vscode.Memento;
 
 export function getFromGlobalState(key: string, defaultValue?: any) {
 	if (!globalState) {
@@ -23,4 +24,22 @@ export function updateGlobalState(key: string, value: any) {
 
 export function setGlobalState(state: vscode.Memento) {
 	globalState = state;
+}
+
+export function getFromWorkspaceState(key: string, defaultValue?: any) {
+	if (!workspaceState) {
+		return defaultValue;
+	}
+	return workspaceState.get(key, defaultValue);
+}
+
+export function updateWorkspaceState(key: string, value: any) {
+	if (!workspaceState) {
+		return;
+	}
+	return workspaceState.update(key, value);
+}
+
+export function setWorkspaceState(state: vscode.Memento) {
+	workspaceState = state;
 }

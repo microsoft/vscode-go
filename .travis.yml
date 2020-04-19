@@ -1,17 +1,19 @@
 language: go
 
+dist: bionic
+
 go:
-  - 1.10.x
-  - 1.11.x
   - 1.12.x
   - 1.13.x
+  - 1.14.x
   - tip
+
+git:
+  depth: 1
 
 matrix:
   allow_failures:
     - go: tip
-
-sudo: false
 
 os:
   - osx
@@ -19,15 +21,15 @@ os:
 
 before_install:
   # Call xvfb directly on linux runs and give it time to start
-  - if [ $TRAVIS_OS_NAME == "linux" ]; then
+  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then
     export DISPLAY=:99.0;
-    Xvfb :99 &
+    Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
     sleep 3;
     sudo apt-get update && sudo apt-get install -y libsecret-1-0;
     fi
 
 install:
-  - TRAVIS_NODE_VERSION="6";
+  - TRAVIS_NODE_VERSION="8";
   # Clear out whatever version of NVM Travis has as it is old.
   - rm -rf ~/.nvm;
     # Grab NVM.
@@ -40,18 +42,18 @@ install:
   - nvm install $TRAVIS_NODE_VERSION;
   - npm install
   - npm run vscode:prepublish
-  - if [[ "$(go version)" =~ "go version go1.8" ]]; then go get -u -v github.com/nsf/gocode; else go get -u -v github.com/mdempsky/gocode; fi
-  - go get -u -v github.com/rogpeppe/godef
-  - if [[ "$(go version)" =~ "go version go1.8" ]]; then echo skipping gogetdoc; else go get -u -v github.com/zmb3/gogetdoc; fi
-  - if [[ "$(go version)" =~ "go version go1.8" ]]; then echo skipping golint; else go get -u -v golang.org/x/lint/golint; fi
-  - go get -u -v github.com/ramya-rao-a/go-outline
-  - go get -u -v github.com/sqs/goreturns
-  - go get -u -v golang.org/x/tools/cmd/gorename
-  - go get -u -v github.com/uudashr/gopkgs/cmd/gopkgs
   - go get -u -v github.com/acroca/go-symbols
   - go get -u -v github.com/cweill/gotests/...
-  - go get -u -v github.com/haya14busa/goplay/cmd/goplay
   - go get -u -v github.com/davidrjenni/reftools/cmd/fillstruct
+  - go get -u -v github.com/haya14busa/goplay/cmd/goplay
+  - go get -u -v github.com/mdempsky/gocode
+  - go get -u -v github.com/ramya-rao-a/go-outline
+  - go get -u -v github.com/rogpeppe/godef
+  - go get -u -v github.com/sqs/goreturns
+  - go get -u -v github.com/uudashr/gopkgs/v2/cmd/gopkgs
+  - go get -u -v github.com/zmb3/gogetdoc
+  - go get -u -v golang.org/x/lint/golint
+  - go get -u -v golang.org/x/tools/cmd/gorename
 
 script:
   - npm run lint

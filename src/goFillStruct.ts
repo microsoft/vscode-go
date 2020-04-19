@@ -5,10 +5,10 @@
 
 'use strict';
 
+import cp = require('child_process');
 import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
 import { byteOffsetAt, getBinPath, getFileArchive, getToolsEnvVars, makeMemoizedByteOffsetConverter } from './util';
-import cp = require('child_process');
 
 // Interface for the output from fillstruct
 interface GoFillStructOutput {
@@ -26,7 +26,7 @@ export function runFillStruct(editor: vscode.TextEditor): Promise<void> {
 	return execFillStruct(editor, args);
 }
 
-function getCommonArgs(editor: vscode.TextEditor): string[] {
+function getCommonArgs(editor: vscode.TextEditor): string[] | undefined {
 	if (!editor) {
 		vscode.window.showInformationMessage('No editor is active.');
 		return;
@@ -50,7 +50,7 @@ function getCommonArgs(editor: vscode.TextEditor): string[] {
 function getTabsCount(editor: vscode.TextEditor): number {
 	const startline = editor.selection.start.line;
 	const tabs = editor.document.lineAt(startline).text.match('^\t*');
-	return tabs.length;
+	return tabs ? tabs.length : 0;
 }
 
 function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void> {
@@ -80,14 +80,18 @@ function execFillStruct(editor: vscode.TextEditor, args: string[]): Promise<void
 				const indent = '\t'.repeat(tabsCount);
 				const offsetConverter = makeMemoizedByteOffsetConverter(Buffer.from(editor.document.getText()));
 
-				editor.edit(editBuilder => {
-					output.forEach((structToFill) => {
-						const out = structToFill.code.replace(/\n/g, '\n' + indent);
-						const rangeToReplace = new vscode.Range(editor.document.positionAt(offsetConverter(structToFill.start)),
-							editor.document.positionAt(offsetConverter(structToFill.end)));
-						editBuilder.replace(rangeToReplace, out);
-					});
-				}).then(() => resolve());
+				editor
+					.edit((editBuilder) => {
+						output.forEach((structToFill) => {
+							const out = structToFill.code.replace(/\n/g, '\n' + indent);
+							const rangeToReplace = new vscode.Range(
+								editor.document.positionAt(offsetConverter(structToFill.start)),
+								editor.document.positionAt(offsetConverter(structToFill.end))
+							);
+							editBuilder.replace(rangeToReplace, out);
+						});
+					})
+					.then(() => resolve());
 			} catch (e) {
 				reject(e);
 			}
