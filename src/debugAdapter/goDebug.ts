@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------*/
 
-import { ChildProcess, execFile, execSync, spawn, spawnSync } from 'child_process';
+import { ChildProcess, execFile, spawn } from 'child_process';
 import * as fs from 'fs';
 import { existsSync, lstatSync } from 'fs';
 import { Client, RPCConnection } from 'json-rpc2';
@@ -35,8 +35,6 @@ import {
 	getInferredGopath,
 	parseEnvFile
 } from '../goPath';
-import { json } from 'web-request';
-import { resolve } from 'dns';
 
 const fsAccess = util.promisify(fs.access);
 const fsUnlink = util.promisify(fs.unlink);
@@ -1021,7 +1019,7 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 			// Set the goroutine id to 0, as it is required by delve to successfully
 			// retrieve the active stacktrace during a core dump debug scenario
-			goroutineId = 0
+			goroutineId = 0;
 		}
 
 		// delve does not support frame paging, so we ask for a large depth
@@ -1644,7 +1642,7 @@ class GoDebugSession extends LoggingDebugSession {
 				let convertedBreakpoints: DebugBreakpoint[];
 				if (!this.delve.isApiV1) {
 					// Unwrap breakpoints from v2 apicall
-					convertedBreakpoints = newBreakpoints.map((bp, i) => {
+					convertedBreakpoints = newBreakpoints.map((bp) => {
 						return bp ? (bp as CreateBreakpointOut).Breakpoint : null;
 					});
 				} else {
@@ -1679,10 +1677,10 @@ class GoDebugSession extends LoggingDebugSession {
 				}
 			);
 	}
-	
+
 	private async isCoreDumpRecord(): Promise<boolean> {
-		let recordedStatus = await this.getRecordedState()
-		log('Recorded ' + JSON.stringify(recordedStatus))
+		const recordedStatus = await this.getRecordedState();
+		log('Recorded ' + JSON.stringify(recordedStatus));
 		return recordedStatus.Recorded && this.delve.mode === LaunchMode.Core;
 	}
 
