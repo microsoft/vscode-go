@@ -19,7 +19,7 @@ import {
 	trackCodeCoverageRemovalOnFileChange,
 	removeCodeCoverageOnFileSave,
 	toggleCoverageCurrentPackage,
-	updateCodeCoverageDecorators,
+	updateCodeCoverageDecorators
 } from './goCover';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';
 import { extractFunction, extractVariable } from './goDoctor';
@@ -34,7 +34,7 @@ import {
 	installTools,
 	offerToInstallTools,
 	promptForMissingTool,
-	updateGoPathGoRootFromConfig,
+	updateGoPathGoRootFromConfig
 } from './goInstallTools';
 import { registerLanguageFeatures } from './goLanguageServer';
 import { lintCode } from './goLint';
@@ -55,7 +55,7 @@ import {
 	setGlobalState,
 	setWorkspaceState,
 	updateGlobalState,
-	updateWorkspaceState,
+	updateWorkspaceState
 } from './stateUtils';
 import { disposeTelemetryReporter, sendTelemetryEventForConfig } from './telemetry';
 import { cancelRunningTests, showTestOutput } from './testUtils';
@@ -70,7 +70,7 @@ import {
 	getToolsGopath,
 	getWorkspaceFolderPath,
 	handleDiagnosticErrors,
-	isGoPathSet,
+	isGoPathSet
 } from './util';
 
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
@@ -470,19 +470,19 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			const extCommands = getExtensionCommands();
 			extCommands.push({
 				command: 'editor.action.goToDeclaration',
-				title: 'Go to Definition',
+				title: 'Go to Definition'
 			});
 			extCommands.push({
 				command: 'editor.action.goToImplementation',
-				title: 'Go to Implementation',
+				title: 'Go to Implementation'
 			});
 			extCommands.push({
 				command: 'workbench.action.gotoSymbol',
-				title: 'Go to Symbol in File...',
+				title: 'Go to Symbol in File...'
 			});
 			extCommands.push({
 				command: 'workbench.action.showAllSymbols',
-				title: 'Go to Symbol in Workspace...',
+				title: 'Go to Symbol in Workspace...'
 			});
 			vscode.window.showQuickPick(extCommands.map((x) => x.title)).then((cmd) => {
 				const selectedCmd = extCommands.find((x) => x.title === cmd);
@@ -524,7 +524,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			vscode.window
 				.showInputBox({
 					prompt: 'Enter the path to the coverage profile for current package',
-					value: lastCoverProfilePath,
+					value: lastCoverProfilePath
 				})
 				.then((coverProfilePath) => {
 					if (!coverProfilePath) {
@@ -546,7 +546,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 	);
 
 	vscode.languages.setLanguageConfiguration(GO_MODE.language, {
-		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
+		wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g
 	});
 
 	sendTelemetryEventForConfig(getGoConfig());
