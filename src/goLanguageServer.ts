@@ -302,7 +302,6 @@ The recommended language server is gopls. Delete the alternate tool setting for 
 		}
 	}
 
-	console.log('promptForMissingTools(gopls)');
 	// Prompt the user to install gopls.
 	promptForMissingTool('gopls');
 }
