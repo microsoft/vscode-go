@@ -16,9 +16,9 @@ import {
 	applyCodeCoverage,
 	applyCodeCoverageToAllEditors,
 	initCoverageDecorators,
-	trackCodeCoverageRemovalOnFileChange,
 	removeCodeCoverageOnFileSave,
 	toggleCoverageCurrentPackage,
+	trackCodeCoverageRemovalOnFileChange,
 	updateCodeCoverageDecorators
 } from './goCover';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';

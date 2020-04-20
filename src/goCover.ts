@@ -302,7 +302,7 @@ export function removeCodeCoverageOnFileSave(e: vscode.TextDocument) {
 		return;
 	}
 
-	if (vscode.window.visibleTextEditors.every(editor => editor.document !== e)) {
+	if (vscode.window.visibleTextEditors.every((editor) => editor.document !== e)) {
 		return;
 	}
 
