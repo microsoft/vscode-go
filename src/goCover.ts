@@ -292,9 +292,9 @@ export function applyCodeCoverage(editor: vscode.TextEditor) {
 }
 
 /**
- * Listener for file save
- * A save in a Go file means the coverage data is stale, if it is dirty and the diff
- * is in code and not comments. Therefore it should be cleared.
+ * Listener for file save that clears potential stale coverage data.
+ * Local cache tracks files with changes outside of comments to determine
+ * files for which the save event can cause stale coverage data.
  * @param e TextDocument
  */
 export function removeCodeCoverageOnFileSave(e: vscode.TextDocument) {
@@ -313,8 +313,8 @@ export function removeCodeCoverageOnFileSave(e: vscode.TextDocument) {
 }
 
 /**
- * Listener for change in the editor.
- * A change in a Go file means the coverage data is stale. Therefore it should be cleared on save.
+ * Listener for file change that tracks files with changes outside of comments
+ * to determine files for which an eventual save can cause stale coverage data.
  * @param e TextDocumentChangeEvent
  */
 export function trackCodeCoverageRemovalOnFileChange(e: vscode.TextDocumentChangeEvent) {
