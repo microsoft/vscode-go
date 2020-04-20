@@ -24,7 +24,7 @@ import {
 	StackFrame,
 	StoppedEvent,
 	TerminatedEvent,
-	Thread,
+	Thread
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import {
@@ -1399,16 +1399,9 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 
 			if (i) {
-				localPath =
-					llist
-						.reverse()
-						.slice(0, -i)
-						.join(this.localPathSeparator) + this.localPathSeparator;
+				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
 				args.remotePath =
-					rlist
-						.reverse()
-						.slice(0, -i)
-						.join(this.remotePathSeparator) + this.remotePathSeparator;
+					rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
 			} else if (
 				args.remotePath.length > 1 &&
 				(args.remotePath.endsWith('\\') || args.remotePath.endsWith('/'))
@@ -1720,7 +1713,7 @@ class GoDebugSession extends LoggingDebugSession {
 			// TODO(polina): validate the assumption in this code that the first goroutine
 			// is the current one. So far it appears to me that this is always the main goroutine
 			// with id 1.
-			this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [{count: 1}], (err, out) => {
+			this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [{ count: 1 }], (err, out) => {
 				if (err) {
 					this.logDelveError(err, 'Failed to get threads');
 				}

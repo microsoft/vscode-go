@@ -250,7 +250,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			// TODO: We should have configs that match these names.
 			// Ultimately, we should have a centralized language server config rather than separate fields.
 			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
-			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
+			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink']
 		},
 		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
 	};
@@ -462,7 +462,7 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	versions.sort(semver.rcompare);
 
 	if (acceptGoplsPrerelease) {
-		return versions[0];  // The first one (newest one).
+		return versions[0]; // The first one (newest one).
 	}
 	// The first version in the sorted list without a prerelease tag.
 	return versions.find((version) => !version.prerelease || !version.prerelease.length);
