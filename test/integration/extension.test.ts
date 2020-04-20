@@ -39,7 +39,7 @@ import {
 	isVendorSupported
 } from '../../src/util';
 
-suite('Go Extension Tests', function() {
+suite('Go Extension Tests', function () {
 	this.timeout(10000);
 
 	const dummyCancellationSource = new vscode.CancellationTokenSource();
@@ -1305,9 +1305,9 @@ encountered.
 				assert.equal(
 					expected.length,
 					labels.length,
-					`expected number of completions: ${expected.length} Actual: ${
-						labels.length
-					} at position(${position.line + 1},${position.character + 1}) ${labels}`
+					`expected number of completions: ${expected.length} Actual: ${labels.length} at position(${
+						position.line + 1
+					},${position.character + 1}) ${labels}`
 				);
 				expected.forEach((entry, index) => {
 					assert.equal(

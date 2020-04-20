@@ -38,7 +38,7 @@ import { GoCompletionItemProvider } from './goSuggest';
 import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { getTool, Tool } from './goTools';
 import { GoTypeDefinitionProvider } from './goTypeDefinition';
-import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars, isForNightly } from './util';
+import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 
 interface LanguageServerConfig {
 	enabled: boolean;
@@ -250,7 +250,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			// TODO: We should have configs that match these names.
 			// Ultimately, we should have a centralized language server config rather than separate fields.
 			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
-			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
+			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink']
 		},
 		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
 	};
@@ -335,6 +335,7 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
+const acceptGoplsPrerelease = true;  // For nightly, we accept the prerelease version.
 const defaultLatestVersion = semver.coerce('0.3.1');
 const defaultLatestVersionTime = moment('2020-02-04', 'YYYY-MM-DD');
 async function shouldUpdateLanguageServer(
@@ -356,7 +357,7 @@ async function shouldUpdateLanguageServer(
 	}
 
 	// Get the latest gopls version. If it is for nightly, using the prereleased version is ok.
-	let latestVersion = makeProxyCall ? await latestGopls(tool, isForNightly) : defaultLatestVersion;
+	let latestVersion = makeProxyCall ? await latestGopls(tool) : defaultLatestVersion;
 
 	// If we failed to get the gopls version, pick the one we know to be latest at the time of this extension's last update
 	if (!latestVersion) {
@@ -438,7 +439,7 @@ async function goplsVersionTimestamp(tool: Tool, version: semver.SemVer): Promis
 	return time;
 }
 
-async function latestGopls(tool: Tool, includePrerelease: boolean): Promise<semver.SemVer> {
+async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	// If the user has a version of gopls that we understand,
 	// ask the proxy for the latest version, and if the user's version is older,
 	// prompt them to update.
@@ -460,8 +461,8 @@ async function latestGopls(tool: Tool, includePrerelease: boolean): Promise<semv
 	}
 	versions.sort(semver.rcompare);
 
-	if (includePrerelease) {
-		return versions[0];  // The first one in the prerelease.
+	if (acceptGoplsPrerelease) {
+		return versions[0]; // The first one (newest one).
 	}
 	// The first version in the sorted list without a prerelease tag.
 	return versions.find((version) => !version.prerelease || !version.prerelease.length);

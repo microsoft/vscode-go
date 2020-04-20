@@ -279,10 +279,7 @@ export function getNonVendorPackages(currentFolderPath: string): Promise<Map<str
 		});
 
 		childProcess.on('close', async (status) => {
-			const lines = chunks
-				.join('')
-				.toString()
-				.split('\n');
+			const lines = chunks.join('').toString().split('\n');
 			const result = new Map<string, string>();
 
 			const version = await getGoVersion();

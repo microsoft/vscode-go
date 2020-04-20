@@ -375,7 +375,7 @@ export async function promptForMissingTool(toolName: string) {
 
 export async function promptForUpdatingTool(toolName: string, newVersion?: SemVer) {
 	const tool = getTool(toolName);
-	const toolVersion = {...tool, version: newVersion}; // ToolWithVersion
+	const toolVersion = { ...tool, version: newVersion }; // ToolWithVersion
 
 	// If user has declined to update, then don't prompt.
 	if (containsTool(declinedUpdates, tool)) {

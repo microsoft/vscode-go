@@ -2,13 +2,13 @@
 
 There are 2 ways to install delve
 - Run the command `Go: Install/Update Tools`, select `dlv`, press `Ok` to install/update delve
-- Or install it manually install delve as per the [Installation Instructions](https://github.com/derekparker/delve/tree/master/Documentation/installation).
+- Or install it manually install delve as per the [Installation Instructions](https://github.com/go-delve/delve/tree/master/Documentation/installation).
 
 ## Set up configurations in your settings
 
 The below settings are used by the debugger. You may not need to add/change any of them to have debugging working in simple cases, but do give them a read sometime
-- `go.gopath`. See [GOPATH in VS Code](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension)
-- `go.inferGopath`. See [GOPATH in VS Code](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension)
+- `go.gopath`. See [GOPATH in VS Code](GOPATH-in-the-VS-Code-Go-extension.md)
+- `go.inferGopath`. See [GOPATH in VS Code](GOPATH-in-the-VS-Code-Go-extension.md)
 - `go.delveConfig`
      - `apiVersion`: Controls the version of delve apis to be used when launching the delve headless server. Default is 2.
      - `dlvLoadConfig`: Not applicable when `apiVersion` is 1. The configuration passed to delve. Controls [various features of delve](https://github.com/Microsoft/vscode-go/blob/0.6.85/package.json#L431-L468) that affects the variables shown in the debug pane.
@@ -205,7 +205,7 @@ If you have issues debugging your Go code, first try to update your version of d
 
 ### Debug the debugger using source code
 
-If you want to dig deeper and debug the debugger using source code of this extension, see [building-and-debugging-the-extension](https://github.com/Microsoft/vscode-go/wiki/Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code#building-and-debugging-the-extension)
+If you want to dig deeper and debug the debugger using source code of this extension, see [building-and-debugging-the-extension](Building,-Debugging-and-Sideloading-the-extension-in-Visual-Studio-Code#building-and-debugging-the-extension.md)
 
 ### Common issues
 
@@ -233,6 +233,11 @@ your `GOPATH/bin`
 You may see this in the debug console, while trying to run in the `test` mode. This happens when the `program` attribute points to a folder with no test files.
 
 **_Solution_**: Ensure that the `program` attribute points to the folder that contains the test files you want to run.
+
+#### delve/launch hangs with no messages when using WSL
+Try running ```delve debug ./main``` at the WSL command line and see if you get a prompt
+
+**_Solution_**: Ensure you are running the WSL 2 Kernel, which (as of 4/15/2020) requires an early release of the Windows 10 OS.  This is available to anyone via the Windows Insider program.  See [WSL 2 Installation](https://docs.microsoft.com/en-us/windows/wsl/wsl2-install)
 
 #### could not launch process: could not fork/exec
 
