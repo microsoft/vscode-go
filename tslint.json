@@ -7,7 +7,7 @@
 				"statements"
 			]
 		},
-		// "arrow-parens": true,
+		"arrow-parens": true,
 		"arrow-return-shorthand": true,
 		"ban-types": {
 			"options": [
@@ -37,13 +37,12 @@
 				]
 			]
 		},
-		// "callable-types": true,
 		"class-name": true,
 		"comment-format": [
 			true,
 			"check-space"
 		],
-		// "curly": true,
+		"curly": true,
 		"eofline": true,
 		"forin": true,
 		"import-spacing": true,
@@ -51,22 +50,19 @@
 			true,
 			"tabs"
 		],
-		// "interface-name": {
-		// 	"options": ["always-prefix"]
-		// },
 		"interface-over-type-literal": true,
-		// "jsdoc-format": true,
+		"jsdoc-format": true,
 		"label-position": true,
 		"max-classes-per-file": {
 			"options": 2
 		},
-		// "max-line-length": { "options": 120 },
-		// "member-access": true,
-		// "member-ordering": {
-		// 	"options": {
-		// 		"order": "statics-first"
-		// 	}
-		// },
+		"max-line-length": { "options": 120 },
+		"member-access": true,
+		"member-ordering": {
+			"options": {
+				"order": "statics-first"
+			}
+		},
 		"new-parens": true,
 		"no-arg": true,
 		"no-conditional-assignment": true,
@@ -75,7 +71,7 @@
 		"no-debugger": true,
 		"no-duplicate-super": true,
 		"no-duplicate-variable": true,
-		// "no-empty": true,
+		"no-empty": true,
 		"no-empty-interface": true,
 		"no-eval": true,
 		"no-internal-module": true,
@@ -84,43 +80,42 @@
 		"no-namespace": true,
 		"no-reference": true,
 		"no-reference-import": true,
-		// "no-shadowed-variable": true,
+		"no-shadowed-variable": true,
 		"no-string-throw": true,
 		"no-trailing-whitespace": true,
 		"no-unnecessary-initializer": true,
 		"no-unsafe-finally": true,
 		"no-unused-expression": true,
 		"no-var-keyword": true,
-		// "no-var-requires": true,
-		// "object-literal-key-quotes": { "options": "consistent-as-needed" },
-		// "object-literal-shorthand": true,
-		// "object-literal-sort-keys": true,
+		"no-var-requires": true,
+		"object-literal-key-quotes": { "options": "consistent-as-needed" },
+		"object-literal-shorthand": true,
 		"one-line": [
 			true,
 			"check-catch",
-			// "check-else",
+			"check-else",
 			"check-finally",
 			"check-open-brace",
 			"check-whitespace"
 		],
-		// "one-variable-per-declaration": { "options": ["ignore-for-loop"] },
-		// "only-arrow-functions": {
-		// 	"options": ["allow-declarations", "allow-named-functions"]
-		// },
-		// "ordered-imports": {
-		// 	"options": {
-		// 		"import-sources-order": "case-insensitive",
-		// 		"module-source-path": "full",
-		// 		"named-imports-order": "case-insensitive"
-		// 	}
-		// },
+		"one-variable-per-declaration": { "options": ["ignore-for-loop"] },
+		"only-arrow-functions": {
+			"options": ["allow-declarations", "allow-named-functions"]
+		},
+		"ordered-imports": {
+			"options": {
+				"import-sources-order": "case-insensitive",
+				"module-source-path": "full",
+				"named-imports-order": "case-insensitive"
+			}
+		},
 		"prefer-const": true,
-		// "prefer-for-of": true,
+		"prefer-for-of": true,
 		"quotemark": [
 			true,
 			"single"
 		],
-		// "radix": true,
+		"radix": true,
 		"semicolon": true,
 		"space-before-function-paren": {
 			"options": {

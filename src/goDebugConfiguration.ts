@@ -5,79 +5,75 @@
 
 'use strict';
 
-import vscode = require('vscode');
 import path = require('path');
+import vscode = require('vscode');
 import { promptForMissingTool } from './goInstallTools';
+import { packagePathToGoModPathMap } from './goModules';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
-import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars, sendTelemetryEvent } from './util';
+import { sendTelemetryEventForDebugConfiguration } from './telemetry';
+import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 
 export class GoDebugConfigurationProvider implements vscode.DebugConfigurationProvider {
-
-	public provideDebugConfigurations(folder: vscode.WorkspaceFolder | undefined, token?: vscode.CancellationToken): vscode.DebugConfiguration[] {
+	public provideDebugConfigurations(
+		folder: vscode.WorkspaceFolder | undefined,
+		token?: vscode.CancellationToken
+	): vscode.DebugConfiguration[] {
 		return [
 			{
-				'name': 'Launch',
-				'type': 'go',
-				'request': 'launch',
-				'mode': 'auto',
-				'program': '${fileDirname}',
-				'env': {},
-				'args': []
+				name: 'Launch',
+				type: 'go',
+				request: 'launch',
+				mode: 'auto',
+				program: '${fileDirname}',
+				env: {},
+				args: []
 			}
 		];
 	}
 
-	public resolveDebugConfiguration?(folder: vscode.WorkspaceFolder | undefined, debugConfiguration: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.DebugConfiguration {
+	public resolveDebugConfiguration?(
+		folder: vscode.WorkspaceFolder | undefined,
+		debugConfiguration: vscode.DebugConfiguration,
+		token?: vscode.CancellationToken
+	): vscode.DebugConfiguration {
 		if (debugConfiguration) {
-			/* __GDPR__
-				"debugConfiguration" : {
-					"request" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"mode" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"useApiV<NUMBER>": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"apiVersion": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"stopOnEntry": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				}
-			*/
-			sendTelemetryEvent('debugConfiguration', {
-				request: debugConfiguration.request,
-				mode: debugConfiguration.mode,
-				useApiV1: debugConfiguration.useApiV1,
-				apiVersion: debugConfiguration.apiVersion,
-				stopOnEntry: debugConfiguration.stopOnEntry
-			});
+			sendTelemetryEventForDebugConfiguration(debugConfiguration);
 		}
 
 		const activeEditor = vscode.window.activeTextEditor;
-		if (!debugConfiguration || !debugConfiguration.request) { // if 'request' is missing interpret this as a missing launch.json
+		if (!debugConfiguration || !debugConfiguration.request) {
+			// if 'request' is missing interpret this as a missing launch.json
 			if (!activeEditor || activeEditor.document.languageId !== 'go') {
 				return;
 			}
 
-			debugConfiguration = {
-				'name': 'Launch',
-				'type': 'go',
-				'request': 'launch',
-				'mode': 'auto',
-				'program': activeEditor.document.fileName
-			};
+			debugConfiguration = Object.assign(debugConfiguration || {}, {
+				name: 'Launch',
+				type: 'go',
+				request: 'launch',
+				mode: 'auto',
+				program: path.dirname(activeEditor.document.fileName)  // matches ${fileDirname}
+			});
 		}
 
-		const gopath = getCurrentGoPath(folder ? folder.uri : null);
+		debugConfiguration['packagePathToGoModPathMap'] = packagePathToGoModPathMap;
+
+		const gopath = getCurrentGoPath(folder ? folder.uri : undefined);
 		if (!debugConfiguration['env']) {
-			debugConfiguration['env'] = { 'GOPATH': gopath };
+			debugConfiguration['env'] = { GOPATH: gopath };
 		} else if (!debugConfiguration['env']['GOPATH']) {
 			debugConfiguration['env']['GOPATH'] = gopath;
 		}
 
 		const goConfig = getGoConfig(folder && folder.uri);
 		const goToolsEnvVars = getToolsEnvVars();
-		Object.keys(goToolsEnvVars).forEach(key => {
+		Object.keys(goToolsEnvVars).forEach((key) => {
 			if (!debugConfiguration['env'].hasOwnProperty(key)) {
 				debugConfiguration['env'][key] = goToolsEnvVars[key];
 			}
 		});
 
-		const dlvConfig: { [key: string]: any } = goConfig.get('delveConfig');
+		const dlvConfig = goConfig.get<any>('delveConfig');
 		let useApiV1 = false;
 		if (debugConfiguration.hasOwnProperty('useApiV1')) {
 			useApiV1 = debugConfiguration['useApiV1'] === true;
@@ -93,7 +89,10 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		if (!debugConfiguration.hasOwnProperty('dlvLoadConfig') && dlvConfig.hasOwnProperty('dlvLoadConfig')) {
 			debugConfiguration['dlvLoadConfig'] = dlvConfig['dlvLoadConfig'];
 		}
-		if (!debugConfiguration.hasOwnProperty('showGlobalVariables') && dlvConfig.hasOwnProperty('showGlobalVariables')) {
+		if (
+			!debugConfiguration.hasOwnProperty('showGlobalVariables') &&
+			dlvConfig.hasOwnProperty('showGlobalVariables')
+		) {
 			debugConfiguration['showGlobalVariables'] = dlvConfig['showGlobalVariables'];
 		}
 		if (debugConfiguration.request === 'attach' && !debugConfiguration['cwd']) {
@@ -107,21 +106,41 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 		}
 
 		if (debugConfiguration['mode'] === 'auto') {
-			debugConfiguration['mode'] = (activeEditor && activeEditor.document.fileName.endsWith('_test.go')) ? 'test' : 'debug';
+			debugConfiguration['mode'] =
+				activeEditor && activeEditor.document.fileName.endsWith('_test.go') ? 'test' : 'debug';
 		}
-		debugConfiguration['currentFile'] = activeEditor && activeEditor.document.languageId === 'go' && activeEditor.document.fileName;
 
-		const neverAgain = { title: 'Don\'t Show Again' };
-		const ignoreWarningKey = 'ignoreDebugLaunchRemoteWarning';
-		const ignoreWarning = getFromGlobalState(ignoreWarningKey);
-		if (ignoreWarning !== true && debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
-			vscode.window.showWarningMessage('Request type of \'launch\' with mode \'remote\' is deprecated, please use request type \'attach\' with mode \'remote\' instead.', neverAgain).then(result => {
-				if (result === neverAgain) {
-					updateGlobalState(ignoreWarningKey, true);
-				}
-			});
+		if (debugConfiguration.request === 'launch' && debugConfiguration['mode'] === 'remote') {
+			this.showWarning(
+				'ignoreDebugLaunchRemoteWarning',
+				`Request type of 'launch' with mode 'remote' is deprecated, please use request type 'attach' with mode 'remote' instead.`
+			);
+		}
+
+		if (
+			debugConfiguration.request === 'attach' &&
+			debugConfiguration['mode'] === 'remote' &&
+			debugConfiguration['program']
+		) {
+			this.showWarning(
+				'ignoreUsingRemotePathAndProgramWarning',
+				`Request type of 'attach' with mode 'remote' does not work with 'program' attribute, please use 'cwd' attribute instead.`
+			);
 		}
 		return debugConfiguration;
 	}
 
+	private showWarning(ignoreWarningKey: string, warningMessage: string) {
+		const ignoreWarning = getFromGlobalState(ignoreWarningKey);
+		if (ignoreWarning) {
+			return;
+		}
+
+		const neverAgain = { title: `Don't Show Again` };
+		vscode.window.showWarningMessage(warningMessage, neverAgain).then((result) => {
+			if (result === neverAgain) {
+				updateGlobalState(ignoreWarningKey, true);
+			}
+		});
+	}
 }
