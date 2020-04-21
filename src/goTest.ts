@@ -20,6 +20,7 @@ import {
 	TestConfig
 } from './testUtils';
 import { getTempFilePath } from './util';
+import { Range } from 'vscode';
 
 // lastTestConfig holds a reference to the last executed TestConfig which allows
 // the last test to be easily re-executed.
@@ -105,6 +106,69 @@ async function runTestAtCursor(
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
 	return goTest(testConfig);
+}
+
+/**
+* Executes the sub unit test at the primary cursor using `go test`. Output
+* is sent to the 'Go' channel.
+*
+* @param goConfig Configuration for the Go extension.
+* @param cmd Whether the command is test , benchmark or debug.
+*/
+export function subTestAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: TestAtCursorCmd, args: any) {
+	const editor = vscode.window.activeTextEditor;
+	if (!editor) {
+		vscode.window.showInformationMessage('No editor is active.');
+		return;
+	}
+	if (!editor.document.fileName.endsWith('_test.go')) {
+		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
+		return;
+	}
+
+	editor.document.save().then(async () => {
+		try {
+			const testFunctions = await getTestFunctions(editor.document, null);
+			// We use functionName if it was provided as argument
+			// Otherwise find any test function containing the cursor.
+			const currentTestFunctions = testFunctions.filter(func => func.range.contains(editor.selection.start))
+			const testFunctionName = args && args.functionName
+				? args.functionName
+				: currentTestFunctions
+					.map(el => el.name)[0];
+
+			if (!testFunctionName) {
+				vscode.window.showInformationMessage('No test function found at cursor.');
+				return;
+			}
+
+			const testFunction = currentTestFunctions[0]
+			const runRegex = /t.Run\("(.*)"/
+			var lineText: String
+			var match: RegExpMatchArray | null
+			for (var i = editor.selection.start.line; i >= testFunction.range.start.line; i--) {
+				lineText = editor.document.lineAt(i).text
+				match = lineText.match(runRegex)
+				if (match) {
+					break
+				}
+			}
+			if (!match){
+				vscode.window.showInformationMessage('No sub test function found at cursor.');
+				return;
+			}
+
+			const subTestName = testFunctionName + "/" + match[1]
+
+			if (cmd === 'test') {
+				await runTestAtCursor(editor, subTestName, testFunctions, goConfig, cmd, args);
+			} else {
+				throw new Error('Unsupported command.');
+			}
+		} catch (err) {
+			console.error(err);
+		}
+	});
 }
 
 /**
