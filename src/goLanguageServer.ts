@@ -80,9 +80,10 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 
 	// If installed, check. The user may not have the most up-to-date version of the language server.
 	const tool = getTool(toolName);
-	const update = await shouldUpdateLanguageServer(tool, languageServerToolPath, config.checkForUpdates);
-	if (update) {
-		promptForUpdatingTool(toolName);
+	const versionToUpdate = await shouldUpdateLanguageServer(tool, languageServerToolPath, config.checkForUpdates);
+
+	if (versionToUpdate) {
+		promptForUpdatingTool(toolName, versionToUpdate);
 	}
 
 	const c = new LanguageClient(
@@ -249,7 +250,7 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			// TODO: We should have configs that match these names.
 			// Ultimately, we should have a centralized language server config rather than separate fields.
 			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
-			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink'],
+			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink']
 		},
 		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
 	};
@@ -334,29 +335,25 @@ function registerUsualProviders(ctx: vscode.ExtensionContext) {
 	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
+const acceptGoplsPrerelease = false;
 const defaultLatestVersion = semver.coerce('0.3.1');
 const defaultLatestVersionTime = moment('2020-02-04', 'YYYY-MM-DD');
 async function shouldUpdateLanguageServer(
 	tool: Tool,
 	languageServerToolPath: string,
 	makeProxyCall: boolean
-): Promise<boolean> {
+): Promise<semver.SemVer> {
 	// Only support updating gopls for now.
 	if (tool.name !== 'gopls') {
-		return false;
+		return null;
 	}
 
 	// First, run the "gopls version" command and parse its results.
-	// If "gopls" is so old that it doesn't have the "gopls version" command,
-	// or its version doesn't match our expectations, prompt the user to download.
 	const usersVersion = await goplsVersion(languageServerToolPath);
-	if (!usersVersion) {
-		return true;
-	}
 
 	// We might have a developer version. Don't make the user update.
 	if (usersVersion === '(devel)') {
-		return false;
+		return null;
 	}
 
 	// Get the latest gopls version.
@@ -365,6 +362,13 @@ async function shouldUpdateLanguageServer(
 	// If we failed to get the gopls version, pick the one we know to be latest at the time of this extension's last update
 	if (!latestVersion) {
 		latestVersion = defaultLatestVersion;
+	}
+
+	// If "gopls" is so old that it doesn't have the "gopls version" command,
+	// or its version doesn't match our expectations, usersVersion will be empty.
+	// Suggest the latestVersion.
+	if (!usersVersion) {
+		return latestVersion;
 	}
 
 	// The user may have downloaded golang.org/x/tools/gopls@master,
@@ -376,12 +380,12 @@ async function shouldUpdateLanguageServer(
 		if (!latestTime) {
 			latestTime = defaultLatestVersionTime;
 		}
-		return usersTime.isBefore(latestTime);
+		return usersTime.isBefore(latestTime) ? latestVersion : null;
 	}
 
 	// If the user's version does not contain a timestamp,
 	// default to a semver comparison of the two versions.
-	return semver.lt(usersVersion, latestVersion);
+	return semver.lt(usersVersion, latestVersion) ? latestVersion : null;
 }
 
 // Copied from src/cmd/go/internal/modfetch.
@@ -457,6 +461,9 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 	}
 	versions.sort(semver.rcompare);
 
+	if (acceptGoplsPrerelease) {
+		return versions[0]; // The first one (newest one).
+	}
 	// The first version in the sorted list without a prerelease tag.
 	return versions.find((version) => !version.prerelease || !version.prerelease.length);
 }

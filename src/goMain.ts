@@ -16,8 +16,9 @@ import {
 	applyCodeCoverage,
 	applyCodeCoverageToAllEditors,
 	initCoverageDecorators,
-	removeCodeCoverageOnFileChange,
+	removeCodeCoverageOnFileSave,
 	toggleCoverageCurrentPackage,
+	trackCodeCoverageRemovalOnFileChange,
 	updateCodeCoverageDecorators
 } from './goCover';
 import { GoDebugConfigurationProvider } from './goDebugConfiguration';
@@ -575,6 +576,7 @@ function runBuilds(document: vscode.TextDocument, goConfig: vscode.WorkspaceConf
 }
 
 function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
+	vscode.workspace.onDidSaveTextDocument(removeCodeCoverageOnFileSave, null, ctx.subscriptions);
 	vscode.workspace.onDidSaveTextDocument(
 		(document) => {
 			if (document.languageId !== 'go') {
@@ -607,7 +609,7 @@ function addOnSaveTextDocumentListeners(ctx: vscode.ExtensionContext) {
 }
 
 function addOnChangeTextDocumentListeners(ctx: vscode.ExtensionContext) {
-	vscode.workspace.onDidChangeTextDocument(removeCodeCoverageOnFileChange, null, ctx.subscriptions);
+	vscode.workspace.onDidChangeTextDocument(trackCodeCoverageRemovalOnFileChange, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(removeTestStatus, null, ctx.subscriptions);
 	vscode.workspace.onDidChangeTextDocument(notifyIfGeneratedFile, ctx, ctx.subscriptions);
 }

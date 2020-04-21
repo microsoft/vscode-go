@@ -5,6 +5,7 @@
 
 'use strict';
 
+import { SemVer } from 'semver';
 import { goLiveErrorsEnabled } from './goLiveErrors';
 import { getGoConfig, GoVersion } from './util';
 
@@ -28,6 +29,13 @@ export function getImportPath(tool: Tool, goVersion: GoVersion): string {
 	return tool.importPath;
 }
 
+export function getImportPathWithVersion(tool: Tool, version: SemVer, goVersion: GoVersion): string {
+	const importPath = getImportPath(tool, goVersion);
+	if (version) {
+		return importPath + '@v' + version;
+	}
+	return importPath;
+}
 /**
  * Returns boolean denoting if the import path for the given tool ends with `/...`
  * and if the version of Go supports installing wildcard paths in module mode.
