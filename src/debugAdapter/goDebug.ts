@@ -273,7 +273,6 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 
 	executable?: string;
 	traceDirectory?: string;
-	coreDumpDirectory?: string;
 }
 
 interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
@@ -512,7 +511,7 @@ class Delve {
 						return reject('Invalid debugger backend. Only coredump is supported for core mode');
 					}
 					dlvArgs.push(launchArgs.executable);
-					dlvArgs.push(launchArgs.coreDumpDirectory);
+					dlvArgs.push(launchArgs.coreDumpPath);
 				} else if (currentGOWorkspace && !launchArgs.packagePathToGoModPathMap[dirname]) {
 					dlvArgs.push(dirname.substr(currentGOWorkspace.length + 1));
 				}

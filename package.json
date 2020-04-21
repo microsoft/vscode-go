@@ -454,9 +454,9 @@
                 "description": "Directory in which the record trace is located. For use on 'replay' mode only",
                 "default": ""
               },
-              "coreDumpDirectory": {
+              "coreDumpPath": {
                 "type": "string",
-                "description": "Directory in which the core dump is located. For use on 'core' mode only",
+                "description": "Path to the core dump file to open. For use on 'core' mode only",
                 "default": ""
               },
               "stopOnEntry": {
