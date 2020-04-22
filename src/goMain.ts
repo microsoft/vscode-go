@@ -46,7 +46,7 @@ import { playgroundCommand } from './goPlayground';
 import { GoReferencesCodeLensProvider } from './goReferencesCodelens';
 import { GoRunTestCodeLensProvider } from './goRunTestCodelens';
 import { outputChannel, showHideStatus } from './goStatus';
-import { testAtCursor, subTestAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWorkspace } from './goTest';
+import { subTestAtCursor, testAtCursor, testCurrentFile, testCurrentPackage, testPrevious, testWorkspace } from './goTest';
 import { getConfiguredTools } from './goTools';
 import { vetCode } from './goVet';
 import {
@@ -277,7 +277,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 			testAtCursor(goConfig, 'test', args);
 		})
 	);
-	
+
 	ctx.subscriptions.push(
 		vscode.commands.registerCommand('go.subtest.cursor', (args) => {
 			const goConfig = getGoConfig();

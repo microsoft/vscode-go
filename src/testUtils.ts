@@ -455,7 +455,7 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 			// in running all the test methods, but one of them should call testify's `suite.Run(...)`
 			// which will result in the correct thing to happen
 			if (testFunctions.length > 0) {
-				if (testFunctions.length = 1) {
+				if (testFunctions.length === 1) {
 					params = params.concat(['-run', util.format('^%s$', testFunctions.pop())]);
 				} else {
 					params = params.concat(['-run', util.format('^(%s)$', testFunctions.join('|'))]);
