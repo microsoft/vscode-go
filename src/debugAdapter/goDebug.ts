@@ -843,13 +843,28 @@ class GoDebugSession extends LoggingDebugSession {
 			return this.convertDebuggerPathToClient(pathToConvert);
 		}
 
-		// Fix for https://github.com/Microsoft/vscode-go/issues/1178
-		// When the pathToConvert is under GOROOT, replace the remote GOROOT with local GOROOT
+		// When the pathToConvert is under GOROOT or Go module cache, replace path appropriately
 		if (!pathToConvert.startsWith(this.delve.remotePath)) {
+			// Fix for https://github.com/Microsoft/vscode-go/issues/1178
 			const index = pathToConvert.indexOf(`${this.remotePathSeparator}src${this.remotePathSeparator}`);
 			const goroot = process.env['GOROOT'];
 			if (goroot && index > 0) {
 				return path.join(goroot, pathToConvert.substr(index));
+			}
+
+			const indexGoModCache = pathToConvert.indexOf(
+				`${this.remotePathSeparator}pkg${this.remotePathSeparator}mod${this.remotePathSeparator}`
+			);
+			const gopath = (process.env['GOPATH'] || '').split(path.delimiter)[0];
+
+			if (gopath && indexGoModCache > 0) {
+				return path.join(
+					gopath,
+					pathToConvert
+						.substr(indexGoModCache)
+						.split(this.remotePathSeparator)
+						.join(this.localPathSeparator)
+				);
 			}
 		}
 		return pathToConvert
