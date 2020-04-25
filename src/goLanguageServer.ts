@@ -455,7 +455,9 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 			includePrerelease: true,
 			loose: true
 		});
-		versions.push(parsed);
+		if (parsed) {
+			versions.push(parsed);
+		}
 	}
 	if (versions.length === 0) {
 		return null;
