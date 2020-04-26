@@ -40,7 +40,7 @@ import {
 	promptForMissingTool,
 	updateGoPathGoRootFromConfig
 } from './goInstallTools';
-import { startLanguageServer } from './goLanguageServer';
+import { registerLanguageFeatures } from './goLanguageServer';
 import { lintCode } from './goLint';
 import { parseLiveFile } from './goLiveErrors';
 import { GO_MODE } from './goMode';
@@ -147,7 +147,7 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		// This handles all of the configurations and registrations for the language server.
 		// It also registers the necessary language feature providers that the language server may not support.
-		const ok = await startLanguageServer(ctx);
+		const ok = await registerLanguageFeatures(ctx);
 		if (!ok) {
 			registerUsualProviders(ctx);
 		}

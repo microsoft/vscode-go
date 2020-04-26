@@ -49,19 +49,20 @@ let serverOutputChannel: vscode.OutputChannel;
 
 // startLanguageServer starts the language server (if enabled), returning
 // true on success.
-export async function startLanguageServer(ctx: vscode.ExtensionContext): Promise<boolean> {
+export async function registerLanguageFeatures(ctx: vscode.ExtensionContext): Promise<boolean> {
 	// Subscribe to notifications for changes to the configuration of the language server.
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration((e) => watchLanguageServerConfiguration(e)));
 
-	// Support a command to restart the language server.
-	ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', () => {
-		return restartLanguageServer(ctx, parseLanguageServerConfig());
-	}));
-
 	const config = parseLanguageServerConfig();
-	if (!config || !config.enabled) {
+	if (!config.enabled) {
 		return false;
 	}
+
+	// Support a command to restart the language server, if it's enabled.
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', () => {
+		return startLanguageServer(ctx, parseLanguageServerConfig());
+	}));
+
 	const tool = getTool(config.serverName);
 	if (!tool) {
 		return false;
@@ -72,10 +73,10 @@ export async function startLanguageServer(ctx: vscode.ExtensionContext): Promise
 	}
 	// This function handles the case when the server isn't started yet,
 	// so we can call it to start the language server.
-	return restartLanguageServer(ctx, config);
+	return startLanguageServer(ctx, config);
 }
 
-async function restartLanguageServer(ctx: vscode.ExtensionContext, config: LanguageServerConfig): Promise<boolean> {
+async function startLanguageServer(ctx: vscode.ExtensionContext, config: LanguageServerConfig): Promise<boolean> {
 	// If the client has already been started, make sure to clear existing
 	// diagnostics and stop it.
 	if (languageClient) {
