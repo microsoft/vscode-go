@@ -66,8 +66,8 @@ export async function startLanguageServer(ctx: vscode.ExtensionContext): Promise
 	if (!tool) {
 		return false;
 	}
-	const update = await shouldUpdateLanguageServer(tool, config.path, config.checkForUpdates);
-	if (update) {
+	const versionToUpdate = await shouldUpdateLanguageServer(tool, config.path, config.checkForUpdates);
+	if (versionToUpdate) {
 		promptForUpdatingTool(tool.name);
 	}
 	// This function handles the case when the server isn't started yet,
