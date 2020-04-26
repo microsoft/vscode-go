@@ -63,14 +63,19 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext): Pr
 		return startLanguageServer(ctx, parseLanguageServerConfig());
 	}));
 
-	const tool = getTool(config.serverName);
-	if (!tool) {
-		return false;
+	// If the language server is gopls, we can check if the user needs to
+	// update their gopls version.
+	if (config.serverName === 'gopls') {
+		const tool = getTool(config.serverName);
+		if (!tool) {
+			return false;
+		}
+		const versionToUpdate = await shouldUpdateLanguageServer(tool, config.path, config.checkForUpdates);
+		if (versionToUpdate) {
+			promptForUpdatingTool(tool.name);
+		}
 	}
-	const versionToUpdate = await shouldUpdateLanguageServer(tool, config.path, config.checkForUpdates);
-	if (versionToUpdate) {
-		promptForUpdatingTool(tool.name);
-	}
+
 	// This function handles the case when the server isn't started yet,
 	// so we can call it to start the language server.
 	return startLanguageServer(ctx, config);
@@ -99,7 +104,7 @@ async function startLanguageServer(ctx: vscode.ExtensionContext, config: Languag
 		if (!config.enabled || !config.path) {
 			return false;
 		}
-		rebuildLanguageClient(config);
+		buildLanguageClient(config);
 	}
 
 	languageServerDisposable = languageClient.start();
@@ -108,7 +113,7 @@ async function startLanguageServer(ctx: vscode.ExtensionContext, config: Languag
 	return true;
 }
 
-function rebuildLanguageClient(config: LanguageServerConfig) {
+function buildLanguageClient(config: LanguageServerConfig) {
 	// Reuse the same output channel for each instance of the server.
 	if (!serverOutputChannel) {
 		serverOutputChannel = vscode.window.createOutputChannel(config.serverName);
