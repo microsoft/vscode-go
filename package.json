@@ -59,7 +59,7 @@
     "@types/node": "^13.11.1",
     "@types/semver": "^7.1.0",
     "@types/sinon": "^9.0.0",
-    "@types/vscode": "^1.44.0",
+    "@types/vscode": "^1.41.0",
     "fs-extra": "^9.0.0",
     "glob": "^7.1.6",
     "mocha": "^7.1.1",

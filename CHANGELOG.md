@@ -1,3 +1,34 @@
+## 0.14.2 - Coming Soon...
+
+* [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
+    * Allow debugging when having multiple versions of Go. Fixes [Bug 3152](https://github.com/Microsoft/vscode-go/issues/3152) with [PR 3159](https://github.com/Microsoft/vscode-go/pull/3159)
+    * Fix bug introduced in the last update where there is no prompt to install/update `gopls`. Fixes [Bug 3194](https://github.com/Microsoft/vscode-go/issues/3194) with [PR 3197](https://github.com/Microsoft/vscode-go/pull/3197)
+
+* [@tom-shan](https://github.com/tom-shan)
+    * Fix placeholder in the debug configuration snippet for debugging single file. Fixes [Bug 3154](https://github.com/Microsoft/vscode-go/issues/3154) with [PR 3155](https://github.com/Microsoft/vscode-go/pull/3155)
+
+* [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
+    * When using the language server, drop support for disabling `format` and `highlight` features. [PR 3156](https://github.com/Microsoft/vscode-go/pull/3156)
+
+* [Mike Patnode (@mpatnode)](https://github.com/mpatnode)
+    * Add note to use WSL 2 for debugging to work in Windows Subsystem for Linux. [PR 3167](https://github.com/Microsoft/vscode-go/pull/3167)
+
+* [mo2zie (@stdupp)](https://github.com/stdupp)
+    * Fix the `Go: Fill struct` to work correctly when file has multi byte characters. [PR 2611](https://github.com/Microsoft/vscode-go/pull/2611)
+
+* [Kegsay @Kegsay](https://github.com/Kegsay)
+    * Invalidate applied code coverage on file save instead of on file change. Fixes [Bug 2551](https://github.com/Microsoft/vscode-go/issues/2551) with [PR 2853](https://github.com/Microsoft/vscode-go/pull/2853)
+
+* [Felipe Munhoz (@fnmunhoz)](https://github.com/fnmunhoz)
+    * Allow setting breakpoints on a file from the module cache. [PR 3079](https://github.com/Microsoft/vscode-go/pull/3079)
+
+* [@neclepsio](https://github.com/neclepsio)
+    * Fix bug where gopls does not start behind a blocking proxy. Fixes [Bug 3204](https://github.com/Microsoft/vscode-go/issues/3204) with [PR 3205](https://github.com/Microsoft/vscode-go/pull/3205)
+
+* [@polinasok](https://github.com/https://github.com/polinasok)
+    * Improve the error message seen when debugging for "bad access". [PR 3196](https://github.com/Microsoft/vscode-go/pull/3196)
+
+
 ## 0.14.1 - 15th April, 2020
 
 * [Ramya Rao (@ramya-rao-a)](https://github.com/ramya-rao-a)

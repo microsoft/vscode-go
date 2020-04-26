@@ -860,6 +860,22 @@ export const killTree = (processId: number): void => {
 	});
 };
 
+export function killProcess(p: cp.ChildProcess) {
+	if (p) {
+		try {
+			p.kill();
+		} catch (e) {
+			console.log('Error killing process: ' + e);
+			if (e && e.message && e.stack) {
+				const matches = e.stack.match(/(src.go[a-z,A-Z]+\.js)/g);
+				if (matches) {
+					sendTelemetryEventForKillingProcess(e.message, matches);
+				}
+			}
+		}
+	}
+}
+
 export function makeMemoizedByteOffsetConverter(buffer: Buffer): (byteOffset: number) => number {
 	const defaultValue = new Node<number, number>(0, 0); // 0 bytes will always be 0 characters
 	const memo = new NearestNeighborDict(defaultValue, NearestNeighborDict.NUMERIC_DISTANCE_FUNCTION);

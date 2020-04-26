@@ -24,7 +24,7 @@ import {
 	StackFrame,
 	StoppedEvent,
 	TerminatedEvent,
-	Thread,
+	Thread
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import {
@@ -843,13 +843,28 @@ class GoDebugSession extends LoggingDebugSession {
 			return this.convertDebuggerPathToClient(pathToConvert);
 		}
 
-		// Fix for https://github.com/Microsoft/vscode-go/issues/1178
-		// When the pathToConvert is under GOROOT, replace the remote GOROOT with local GOROOT
+		// When the pathToConvert is under GOROOT or Go module cache, replace path appropriately
 		if (!pathToConvert.startsWith(this.delve.remotePath)) {
+			// Fix for https://github.com/Microsoft/vscode-go/issues/1178
 			const index = pathToConvert.indexOf(`${this.remotePathSeparator}src${this.remotePathSeparator}`);
 			const goroot = process.env['GOROOT'];
 			if (goroot && index > 0) {
 				return path.join(goroot, pathToConvert.substr(index));
+			}
+
+			const indexGoModCache = pathToConvert.indexOf(
+				`${this.remotePathSeparator}pkg${this.remotePathSeparator}mod${this.remotePathSeparator}`
+			);
+			const gopath = (process.env['GOPATH'] || '').split(path.delimiter)[0];
+
+			if (gopath && indexGoModCache > 0) {
+				return path.join(
+					gopath,
+					pathToConvert
+						.substr(indexGoModCache)
+						.split(this.remotePathSeparator)
+						.join(this.localPathSeparator)
+				);
 			}
 		}
 		return pathToConvert
@@ -1399,16 +1414,9 @@ class GoDebugSession extends LoggingDebugSession {
 			}
 
 			if (i) {
-				localPath =
-					llist
-						.reverse()
-						.slice(0, -i)
-						.join(this.localPathSeparator) + this.localPathSeparator;
+				localPath = llist.reverse().slice(0, -i).join(this.localPathSeparator) + this.localPathSeparator;
 				args.remotePath =
-					rlist
-						.reverse()
-						.slice(0, -i)
-						.join(this.remotePathSeparator) + this.remotePathSeparator;
+					rlist.reverse().slice(0, -i).join(this.remotePathSeparator) + this.remotePathSeparator;
 			} else if (
 				args.remotePath.length > 1 &&
 				(args.remotePath.endsWith('\\') || args.remotePath.endsWith('/'))
@@ -1720,7 +1728,7 @@ class GoDebugSession extends LoggingDebugSession {
 			// TODO(polina): validate the assumption in this code that the first goroutine
 			// is the current one. So far it appears to me that this is always the main goroutine
 			// with id 1.
-			this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [{count: 1}], (err, out) => {
+			this.delve.call<DebugGoroutine[] | ListGoroutinesOut>('ListGoroutines', [{ count: 1 }], (err, out) => {
 				if (err) {
 					this.logDelveError(err, 'Failed to get threads');
 				}
@@ -1825,21 +1833,19 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 
 		let errorMessage = err.toString();
-		// Handle unpropagated fatalpanic errors with a more user friendly message:
+		// Use a more user friendly message for an unpropagated SIGSEGV (EXC_BAD_ACCESS)
+		// signal that delve is unable to send back to the target process to be
+		// handled as a panic.
 		// https://github.com/microsoft/vscode-go/issues/1903#issuecomment-460126884
 		// https://github.com/go-delve/delve/issues/852
-		// This affects macOS only although we're agnostic of the OS at this stage, only handle the error
+		// This affects macOS only although we're agnostic of the OS at this stage.
 		if (errorMessage === 'bad access') {
+			// Reuse the panic message from the Go runtime.
 			errorMessage =
-				'unpropagated fatalpanic: signal SIGSEGV (EXC_BAD_ACCESS). This fatalpanic is not traceable on macOS, see https://github.com/go-delve/delve/issues/852';
+				`runtime error: invalid memory address or nil pointer dereference [signal SIGSEGV: segmentation violation]\nUnable to propogate EXC_BAD_ACCESS signal to target process and panic (see https://github.com/go-delve/delve/issues/852)`;
 		}
 
 		logError(message + ' - ' + errorMessage);
-
-		if (errorMessage === 'bad access') {
-			logError('WARNING: this stack might not be from the expected active goroutine');
-		}
-
 		this.dumpStacktrace();
 	}
 

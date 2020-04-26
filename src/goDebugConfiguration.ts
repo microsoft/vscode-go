@@ -52,7 +52,7 @@ export class GoDebugConfigurationProvider implements vscode.DebugConfigurationPr
 				type: 'go',
 				request: 'launch',
 				mode: 'auto',
-				program: path.dirname(activeEditor.document.fileName)  // matches ${fileDirname}
+				program: path.dirname(activeEditor.document.fileName) // matches ${fileDirname}
 			});
 		}
 

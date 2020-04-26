@@ -18,11 +18,11 @@ import {
 	getGoVersion,
 	getTempFilePath,
 	getToolsEnvVars,
+	killTree,
 	LineBuffer,
 	resolvePath
 } from './util';
 
-const sendSignal = 'SIGKILL';
 const outputChannel = vscode.window.createOutputChannel('Go Tests');
 const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 statusBarItem.command = 'go.test.cancel';
@@ -372,14 +372,6 @@ export async function goTest(testconfig: TestConfig): Promise<boolean> {
 					outBuf.done();
 					errBuf.done();
 
-					if (code) {
-						outputChannel.appendLine(`Error: ${testType} failed.`);
-					} else if (signal === sendSignal) {
-						outputChannel.appendLine(`Error: ${testType} terminated by user.`);
-					} else {
-						outputChannel.appendLine(`Success: ${testType} passed.`);
-					}
-
 					const index = runningTestProcesses.indexOf(tp, 0);
 					if (index > -1) {
 						runningTestProcesses.splice(index, 1);
@@ -420,7 +412,7 @@ export function showTestOutput() {
 export function cancelRunningTests(): Thenable<boolean> {
 	return new Promise<boolean>((resolve, reject) => {
 		runningTestProcesses.forEach((tp) => {
-			tp.kill(sendSignal);
+			killTree(tp.pid);
 		});
 		// All processes are now dead. Empty the array to prepare for the next run.
 		runningTestProcesses.splice(0, runningTestProcesses.length);
