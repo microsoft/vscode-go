@@ -44,7 +44,7 @@
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"--extensionTestsPath=${workspaceFolder}/out/test/integration/index",
 				"--timeout",
-				"999999",
+				"999999"
 			],
 			"stopOnEntry": false,
 			"sourceMaps": true,
@@ -52,6 +52,27 @@
 				"${workspaceFolder}/out/test/**/*.js"
 			],
 			"preLaunchTask": "npm: watch"
+		},
+		{
+			"name": "Launch Extension Tests with Gopls",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			// the workspace path should be GOPATH
+			"args": [
+				"--disable-extensions",
+				"--extensionDevelopmentPath=${workspaceFolder}",
+				"--extensionTestsPath=${workspaceFolder}/out/test/gopls/index",
+				"--user-data-dir", "${workspaceFolder}/test/gopls/testfixtures/src/workspace",
+				"--timeout", "999999",
+				"${workspaceFolder}/test/gopls/testfixtures/src/workspace"  // gopls requires a workspace to work with.
+			],
+			"stopOnEntry": false,
+			"sourceMaps": true,
+			"outFiles": [
+				"${workspaceFolder}/out/test/**/*.js"
+			],
+			"preLaunchTask": "npm: watch",
 		},
 		{
 			"type": "node",

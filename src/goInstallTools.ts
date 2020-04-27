@@ -543,9 +543,7 @@ function getMissingTools(goVersion: GoVersion): Promise<Tool[]> {
 			(tool) =>
 				new Promise<Tool>((resolve, reject) => {
 					const toolPath = getBinPath(tool.name);
-					fs.exists(toolPath, (exists) => {
-						resolve(exists ? null : tool);
-					});
+					resolve(path.isAbsolute(toolPath) ? null : tool);
 				})
 		)
 	).then((res) => {

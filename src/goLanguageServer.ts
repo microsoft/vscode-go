@@ -6,6 +6,7 @@
 'use strict';
 
 import cp = require('child_process');
+import deepEqual = require('deep-equal');
 import moment = require('moment');
 import path = require('path');
 import semver = require('semver');
@@ -13,36 +14,24 @@ import util = require('util');
 import vscode = require('vscode');
 import {
 	Command,
-	FormattingOptions,
 	HandleDiagnosticsSignature,
 	LanguageClient,
 	ProvideCompletionItemsSignature,
-	ProvideDocumentFormattingEditsSignature,
 	ProvideDocumentLinksSignature,
 	RevealOutputChannelOn
 } from 'vscode-languageclient';
 import WebRequest = require('web-request');
-import { GoDefinitionProvider } from './goDeclaration';
-import { GoHoverProvider } from './goExtraInfo';
-import { GoDocumentFormattingEditProvider } from './goFormat';
-import { GoImplementationProvider } from './goImplementations';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
-import { parseLiveFile } from './goLiveErrors';
-import { GO_MODE } from './goMode';
-import { GoDocumentSymbolProvider } from './goOutline';
 import { getToolFromToolPath } from './goPath';
-import { GoReferenceProvider } from './goReferences';
-import { GoRenameProvider } from './goRename';
-import { GoSignatureHelpProvider } from './goSignature';
-import { GoCompletionItemProvider } from './goSuggest';
-import { GoWorkspaceSymbolProvider } from './goSymbol';
 import { getTool, Tool } from './goTools';
-import { GoTypeDefinitionProvider } from './goTypeDefinition';
 import { getBinPath, getCurrentGoPath, getGoConfig, getToolsEnvVars } from './util';
 
 interface LanguageServerConfig {
+	serverName: string;
+	path: string;
 	enabled: boolean;
 	flags: string[];
+	env: any;
 	features: {
 		diagnostics: boolean;
 		documentLink: boolean;
@@ -50,48 +39,91 @@ interface LanguageServerConfig {
 	checkForUpdates: boolean;
 }
 
-// registerLanguageFeatures registers providers for all the language features.
-// It looks to either the language server or the standard providers for these features.
-export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
+// Global variables used for management of the language client.
+// They are global so that the server can be easily restarted with
+// new configurations.
+let languageClient: LanguageClient;
+let languageServerDisposable: vscode.Disposable;
+let latestConfig: LanguageServerConfig;
+let serverOutputChannel: vscode.OutputChannel;
+
+// startLanguageServer starts the language server (if enabled), returning
+// true on success.
+export async function registerLanguageFeatures(ctx: vscode.ExtensionContext): Promise<boolean> {
 	// Subscribe to notifications for changes to the configuration of the language server.
 	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration((e) => watchLanguageServerConfiguration(e)));
 
 	const config = parseLanguageServerConfig();
-
-	// If the user has not enabled the language server,
-	// register the default language features and return.
 	if (!config.enabled) {
-		registerUsualProviders(ctx);
-		return;
+		return false;
 	}
 
-	// The user has opted into the language server.
-	const languageServerToolPath = getLanguageServerToolPath();
-	const toolName = getToolFromToolPath(languageServerToolPath);
-	if (!toolName) {
-		// language server binary is not installed yet.
-		// Return immediately. The information messages such as
-		// offering to install missing tools, and suggesting to
-		// reload the window after installing the language server
-		// should be presented by now.
-		return;
-	}
-	const env = getToolsEnvVars();
+	// Support a command to restart the language server, if it's enabled.
+	ctx.subscriptions.push(vscode.commands.registerCommand('go.languageserver.restart', () => {
+		return startLanguageServer(ctx, parseLanguageServerConfig());
+	}));
 
-	// If installed, check. The user may not have the most up-to-date version of the language server.
-	const tool = getTool(toolName);
-	const versionToUpdate = await shouldUpdateLanguageServer(tool, languageServerToolPath, config.checkForUpdates);
-
-	if (versionToUpdate) {
-		promptForUpdatingTool(toolName, versionToUpdate);
+	// If the language server is gopls, we can check if the user needs to
+	// update their gopls version.
+	if (config.serverName === 'gopls') {
+		const tool = getTool(config.serverName);
+		if (!tool) {
+			return false;
+		}
+		const versionToUpdate = await shouldUpdateLanguageServer(tool, config.path, config.checkForUpdates);
+		if (versionToUpdate) {
+			promptForUpdatingTool(tool.name);
+		}
 	}
 
-	const c = new LanguageClient(
-		toolName,
+	// This function handles the case when the server isn't started yet,
+	// so we can call it to start the language server.
+	return startLanguageServer(ctx, config);
+}
+
+async function startLanguageServer(ctx: vscode.ExtensionContext, config: LanguageServerConfig): Promise<boolean> {
+	// If the client has already been started, make sure to clear existing
+	// diagnostics and stop it.
+	if (languageClient) {
+		if (languageClient.diagnostics) {
+			languageClient.diagnostics.clear();
+		}
+		await languageClient.stop();
+		if (languageServerDisposable) {
+			languageServerDisposable.dispose();
+		}
+	}
+
+	// Check if we should recreate the language client. This may be necessary
+	// if the user has changed settings in their config.
+	if (!deepEqual(latestConfig, config)) {
+		// Track the latest config used to start the language server.
+		latestConfig = config;
+
+		// If the user has not enabled or installed the language server, return.
+		if (!config.enabled || !config.path) {
+			return false;
+		}
+		buildLanguageClient(config);
+	}
+
+	languageServerDisposable = languageClient.start();
+	ctx.subscriptions.push(languageServerDisposable);
+
+	return true;
+}
+
+function buildLanguageClient(config: LanguageServerConfig) {
+	// Reuse the same output channel for each instance of the server.
+	if (!serverOutputChannel) {
+		serverOutputChannel = vscode.window.createOutputChannel(config.serverName);
+	}
+	languageClient = new LanguageClient(
+		config.serverName,
 		{
-			command: languageServerToolPath,
+			command: config.path,
 			args: ['-mode=stdio', ...config.flags],
-			options: { env }
+			options: { env: config.env },
 		},
 		{
 			initializationOptions: {},
@@ -102,6 +134,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 					(uri.scheme ? uri : uri.with({ scheme: 'file' })).toString(),
 				protocol2Code: (uri: string) => vscode.Uri.parse(uri)
 			},
+			outputChannel: serverOutputChannel,
 			revealOutputChannelOn: RevealOutputChannelOn.Never,
 			middleware: {
 				handleDiagnostics: (
@@ -179,30 +212,14 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
 			}
 		}
 	);
-
-	c.onReady().then(() => {
-		const capabilities = c.initializeResult && c.initializeResult.capabilities;
+	languageClient.onReady().then(() => {
+		const capabilities = languageClient.initializeResult && languageClient.initializeResult.capabilities;
 		if (!capabilities) {
 			return vscode.window.showErrorMessage(
 				'The language server is not able to serve any features at the moment.'
 			);
 		}
 	});
-
-	let languageServerDisposable = c.start();
-	ctx.subscriptions.push(languageServerDisposable);
-
-	ctx.subscriptions.push(
-		vscode.commands.registerCommand('go.languageserver.restart', async () => {
-			if (c.diagnostics) {
-				c.diagnostics.clear();
-			}
-			await c.stop();
-			languageServerDisposable.dispose();
-			languageServerDisposable = c.start();
-			ctx.subscriptions.push(languageServerDisposable);
-		})
-	);
 }
 
 function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
@@ -242,8 +259,12 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 
 export function parseLanguageServerConfig(): LanguageServerConfig {
 	const goConfig = getGoConfig();
-
-	const config = {
+	const toolsEnv = getToolsEnvVars();
+	const languageServerPath = getLanguageServerToolPath();
+	const languageServerName = getToolFromToolPath(languageServerPath);
+	return {
+		serverName: languageServerName,
+		path: languageServerPath,
 		enabled: goConfig['useLanguageServer'],
 		flags: goConfig['languageServerFlags'] || [],
 		features: {
@@ -252,9 +273,9 @@ export function parseLanguageServerConfig(): LanguageServerConfig {
 			diagnostics: goConfig['languageServerExperimentalFeatures']['diagnostics'],
 			documentLink: goConfig['languageServerExperimentalFeatures']['documentLink']
 		},
+		env: toolsEnv,
 		checkForUpdates: goConfig['useGoProxyToCheckForToolUpdates']
 	};
-	return config;
 }
 
 /**
@@ -298,9 +319,10 @@ Please install it and reload this VS Code window.`
 		if (alternateTools['go-langserver']) {
 			vscode.window.showErrorMessage(`Support for "go-langserver" has been deprecated.
 The recommended language server is gopls. Delete the alternate tool setting for "go-langserver" to use gopls, or change "go-langserver" to "gopls" in your settings.json and reload the VS Code window.`);
+			return;
 		}
-		return;
 	}
+
 	// Prompt the user to install gopls.
 	promptForMissingTool('gopls');
 }
@@ -311,28 +333,6 @@ function allFoldersHaveSameGopath(): boolean {
 	}
 	const tempGopath = getCurrentGoPath(vscode.workspace.workspaceFolders[0].uri);
 	return vscode.workspace.workspaceFolders.find((x) => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
-}
-
-// registerUsualProviders registers the language feature providers if the language server is not enabled.
-function registerUsualProviders(ctx: vscode.ExtensionContext) {
-	const provider = new GoCompletionItemProvider(ctx.globalState);
-	ctx.subscriptions.push(provider);
-	ctx.subscriptions.push(vscode.languages.registerCompletionItemProvider(GO_MODE, provider, '.', '"'));
-	ctx.subscriptions.push(vscode.languages.registerHoverProvider(GO_MODE, new GoHoverProvider()));
-	ctx.subscriptions.push(vscode.languages.registerDefinitionProvider(GO_MODE, new GoDefinitionProvider()));
-	ctx.subscriptions.push(vscode.languages.registerReferenceProvider(GO_MODE, new GoReferenceProvider()));
-	ctx.subscriptions.push(vscode.languages.registerDocumentSymbolProvider(GO_MODE, new GoDocumentSymbolProvider()));
-	ctx.subscriptions.push(vscode.languages.registerWorkspaceSymbolProvider(new GoWorkspaceSymbolProvider()));
-	ctx.subscriptions.push(
-		vscode.languages.registerSignatureHelpProvider(GO_MODE, new GoSignatureHelpProvider(), '(', ',')
-	);
-	ctx.subscriptions.push(vscode.languages.registerImplementationProvider(GO_MODE, new GoImplementationProvider()));
-	ctx.subscriptions.push(
-		vscode.languages.registerDocumentFormattingEditProvider(GO_MODE, new GoDocumentFormattingEditProvider())
-	);
-	ctx.subscriptions.push(vscode.languages.registerTypeDefinitionProvider(GO_MODE, new GoTypeDefinitionProvider()));
-	ctx.subscriptions.push(vscode.languages.registerRenameProvider(GO_MODE, new GoRenameProvider()));
-	vscode.workspace.onDidChangeTextDocument(parseLiveFile, null, ctx.subscriptions);
 }
 
 const acceptGoplsPrerelease = true;  // For nightly, we accept the prerelease version.
@@ -454,7 +454,9 @@ async function latestGopls(tool: Tool): Promise<semver.SemVer> {
 			includePrerelease: true,
 			loose: true
 		});
-		versions.push(parsed);
+		if (parsed) {
+			versions.push(parsed);
+		}
 	}
 	if (versions.length === 0) {
 		return null;

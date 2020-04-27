@@ -1833,21 +1833,19 @@ class GoDebugSession extends LoggingDebugSession {
 		}
 
 		let errorMessage = err.toString();
-		// Handle unpropagated fatalpanic errors with a more user friendly message:
+		// Use a more user friendly message for an unpropagated SIGSEGV (EXC_BAD_ACCESS)
+		// signal that delve is unable to send back to the target process to be
+		// handled as a panic.
 		// https://github.com/microsoft/vscode-go/issues/1903#issuecomment-460126884
 		// https://github.com/go-delve/delve/issues/852
-		// This affects macOS only although we're agnostic of the OS at this stage, only handle the error
+		// This affects macOS only although we're agnostic of the OS at this stage.
 		if (errorMessage === 'bad access') {
+			// Reuse the panic message from the Go runtime.
 			errorMessage =
-				'unpropagated fatalpanic: signal SIGSEGV (EXC_BAD_ACCESS). This fatalpanic is not traceable on macOS, see https://github.com/go-delve/delve/issues/852';
+				`runtime error: invalid memory address or nil pointer dereference [signal SIGSEGV: segmentation violation]\nUnable to propogate EXC_BAD_ACCESS signal to target process and panic (see https://github.com/go-delve/delve/issues/852)`;
 		}
 
 		logError(message + ' - ' + errorMessage);
-
-		if (errorMessage === 'bad access') {
-			logError('WARNING: this stack might not be from the expected active goroutine');
-		}
-
 		this.dumpStacktrace();
 	}
 
