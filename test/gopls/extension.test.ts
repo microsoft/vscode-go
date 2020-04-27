@@ -87,7 +87,7 @@ async function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-suite('Go Extension Tests With Gopls', function() {
+suite('Go Extension Tests With Gopls', function () {
 	this.timeout(1000000);
 	const projectDir = path.join(__dirname, '..', '..', '..');
 	const env = new Env(projectDir);
