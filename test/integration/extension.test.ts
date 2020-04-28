@@ -163,6 +163,10 @@ suite('Go Extension Tests', function () {
 			path.join(fixturePath, 'importTest', 'singleImports.go')
 		);
 		fs.copySync(
+			path.join(fixtureSourcePath, 'importTest', 'cgoImports.go'),
+			path.join(fixturePath, 'importTest', 'cgoImports.go')
+		);
+		fs.copySync(
 			path.join(fixtureSourcePath, 'fillStruct', 'input_1.go'),
 			path.join(fixturePath, 'fillStruct', 'input_1.go')
 		);
@@ -1582,6 +1586,24 @@ encountered.
 			.replace(
 				'import "fmt"\nimport . "math" // comment',
 				'import (\n\t"bytes"\n\t"fmt"\n\t. "math" // comment\n)'
+			);
+		const edits = getTextEditForAddImport('bytes');
+		const edit = new vscode.WorkspaceEdit();
+		edit.set(document.uri, edits);
+		await vscode.workspace.applyEdit(edit);
+		assert.equal(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.getText(), expectedText);
+	});
+
+	test('Add imports and avoid pseudo package imports for cgo', async () => {
+		const uri = vscode.Uri.file(path.join(fixturePath, 'importTest', 'cgoImports.go'));
+		const document = await vscode.workspace.openTextDocument(uri);
+		await vscode.window.showTextDocument(document);
+
+		const expectedText = document
+			.getText()
+			.replace(
+				'import "math"',
+				'import (\n\t"bytes"\n\t"math"\n)'
 			);
 		const edits = getTextEditForAddImport('bytes');
 		const edit = new vscode.WorkspaceEdit();

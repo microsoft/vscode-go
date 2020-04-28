@@ -3,12 +3,13 @@
 * [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
     * Allow debugging when having multiple versions of Go. Fixes [Bug 3152](https://github.com/Microsoft/vscode-go/issues/3152) with [PR 3159](https://github.com/Microsoft/vscode-go/pull/3159)
     * Fix bug introduced in the last update where there is no prompt to install/update `gopls`. Fixes [Bug 3194](https://github.com/Microsoft/vscode-go/issues/3194) with [PR 3197](https://github.com/Microsoft/vscode-go/pull/3197)
-
-* [@tom-shan](https://github.com/tom-shan)
-    * Fix placeholder in the debug configuration snippet for debugging single file. Fixes [Bug 3154](https://github.com/Microsoft/vscode-go/issues/3154) with [PR 3155](https://github.com/Microsoft/vscode-go/pull/3155)
+    * Avoid grouping pseudo imports into an import block. Fixes [Bug 1701](https://github.com/Microsoft/vscode-go/issues/1701) with [PR 3045](https://github.com/Microsoft/vscode-go/pull/3045)
 
 * [Rebecca Stambler (@stamblerre)](https://github.com/stamblerre)
-    * When using the language server, drop support for disabling `format` and `highlight` features. [PR 3156](https://github.com/Microsoft/vscode-go/pull/3156)
+    * When using the language server, drop support for disabling `format` and `highlight` features as these features have stabilized in `gopls`.
+    Also fixes [Bug 2446](https://github.com/Microsoft/vscode-go/issues/2446) with [PR 3156](https://github.com/Microsoft/vscode-go/pull/3156) 
+    * When language server is restarted using the `Go: Restart Language Server` command, respect any changes to the related settings.
+    [PR 3186](https://github.com/Microsoft/vscode-go/pull/3186)
 
 * [Mike Patnode (@mpatnode)](https://github.com/mpatnode)
     * Add note to use WSL 2 for debugging to work in Windows Subsystem for Linux. [PR 3167](https://github.com/Microsoft/vscode-go/pull/3167)
@@ -28,6 +29,8 @@
 * [@polinasok](https://github.com/https://github.com/polinasok)
     * Improve the error message seen when debugging for "bad access". [PR 3196](https://github.com/Microsoft/vscode-go/pull/3196)
 
+* [@tom-shan](https://github.com/tom-shan)
+    * Fix placeholder in the debug configuration snippet for debugging single file. Fixes [Bug 3154](https://github.com/Microsoft/vscode-go/issues/3154) with [PR 3155](https://github.com/Microsoft/vscode-go/pull/3155)
 
 ## 0.14.1 - 15th April, 2020
 

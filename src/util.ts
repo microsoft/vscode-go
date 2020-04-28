@@ -156,11 +156,12 @@ export function parseFilePrelude(text: string): Prelude {
 		}
 		if (line.match(/^(\s)*import(\s)+\(/)) {
 			ret.imports.push({ kind: 'multi', start: i, end: -1, pkgs: [] });
-		}
-		if (line.match(/^(\s)*import(\s)+[^\(]/)) {
+		} else if (line.match(/^\s*import\s+"C"/)) {
+			ret.imports.push({ kind: 'pseudo', start: i, end: i, pkgs: [] });
+		} else if (line.match(/^(\s)*import(\s)+[^\(]/)) {
 			ret.imports.push({ kind: 'single', start: i, end: i, pkgs: [] });
 		}
-		if (line.match(/^(\s)*(\/\*.*\*\/)*\s*\)/)) {
+		if (line.match(/^(\s)*(\/\*.*\*\/)*\s*\)/)) {  // /* comments */
 			if (ret.imports[ret.imports.length - 1].end === -1) {
 				ret.imports[ret.imports.length - 1].end = i;
 			}
