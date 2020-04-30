@@ -356,7 +356,7 @@ Please try reinstalling it.`);
  */
 export function getLanguageServerToolPath(): string {
 	const goConfig = getGoConfig();
-	if (!goConfig['useLanguageServer'] === true) {
+	if (!goConfig['useLanguageServer']) {
 		return;
 	}
 	// Check that all workspace folders are configured with the same GOPATH.
