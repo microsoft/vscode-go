@@ -28,7 +28,7 @@ import {
 	installAllTools, installTools, offerToInstallTools, promptForMissingTool,
 	updateGoPathGoRootFromConfig
 } from './goInstallTools';
-import { registerLanguageFeatures } from './goLanguageServer';
+import { startLanguageServerWithFallback, watchLanguageServerConfiguration } from './goLanguageServer';
 import { lintCode } from './goLint';
 import { GO_MODE } from './goMode';
 import { addTags, removeTags } from './goModifytags';
@@ -55,6 +55,11 @@ import {
 export let buildDiagnosticCollection: vscode.DiagnosticCollection;
 export let lintDiagnosticCollection: vscode.DiagnosticCollection;
 export let vetDiagnosticCollection: vscode.DiagnosticCollection;
+
+// restartLanguageServer wraps all of the logic needed to restart the
+// language server. It can be used to enable, disable, or otherwise change
+// the configuration of the server.
+export let restartLanguageServer: () => {};
 
 export function activate(ctx: vscode.ExtensionContext): void {
 	setGlobalState(ctx.globalState);
@@ -112,9 +117,21 @@ export function activate(ctx: vscode.ExtensionContext): void {
 
 		offerToInstallTools();
 
-		// This handles all of the configurations and registrations for the language server.
-		// It also registers the necessary language feature providers that the language server may not support.
-		await registerLanguageFeatures(ctx);
+		// Subscribe to notifications for changes to the configuration
+		// of the language server, even if it's not currently in use.
+		ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(
+			(e) => watchLanguageServerConfiguration(e)
+		));
+
+		// Set the function that is used to restart the language server.
+		// This is necessary, even if the language server is not currently
+		// in use.
+		restartLanguageServer = async () => {
+			startLanguageServerWithFallback(ctx, false);
+		};
+
+		// Start the language server, or fallback to the default language providers.
+		startLanguageServerWithFallback(ctx, true);
 
 		if (
 			vscode.window.activeTextEditor &&

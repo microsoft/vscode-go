@@ -24,6 +24,7 @@ import { GoDocumentFormattingEditProvider } from './goFormat';
 import { GoImplementationProvider } from './goImplementations';
 import { promptForMissingTool, promptForUpdatingTool } from './goInstallTools';
 import { parseLiveFile } from './goLiveErrors';
+import { restartLanguageServer } from './goMain';
 import { GO_MODE } from './goMode';
 import { GoDocumentSymbolProvider } from './goOutline';
 import { getToolFromToolPath } from './goPath';
@@ -65,32 +66,10 @@ let defaultLanguageProviders: vscode.Disposable[] = [];
 // server.
 let restartCommand: vscode.Disposable;
 
-// restartLanguageServer wraps all of the logic needed to restart the
-// language server. It can be used to enable, disable, or otherwise change
-// the configuration of the server.
-export let restartLanguageServer: () => {};
-
-// registerLanguageFeatures starts the language server (if enabled).
-// It registers the default language providers if the server is disabled
-// or not possible to start.
-export async function registerLanguageFeatures(ctx: vscode.ExtensionContext) {
-	// Subscribe to notifications for changes to the configuration
-	// of the language server, even if it's not currently in use.
-	ctx.subscriptions.push(vscode.workspace.onDidChangeConfiguration(
-		(e) => watchLanguageServerConfiguration(e)
-	));
-
-	// Set the function that is used to restart the language server.
-	restartLanguageServer = async () => {
-		startLanguageServerWithFallback(ctx, false);
-	};
-	startLanguageServerWithFallback(ctx, true);
-}
-
 // startLanguageServerWithFallback starts the language server, if enabled,
 // or falls back to the default language providers.
-async function startLanguageServerWithFallback(ctx: vscode.ExtensionContext, activation: boolean) {
-	const cfg = parseLanguageServerConfig();
+export async function startLanguageServerWithFallback(ctx: vscode.ExtensionContext, activation: boolean) {
+	const cfg = buildLanguageServerConfig();
 	if (cfg.enabled) {
 		// If the language server is gopls, we can check if the user needs to
 		// update their gopls version. We do this only once per VS Code
@@ -161,11 +140,8 @@ async function startLanguageServer(ctx: vscode.ExtensionContext, config: Languag
 }
 
 async function buildLanguageClient(config: LanguageServerConfig): Promise<LanguageClient> {
-	if (!config.enabled) {
-		return null;
-	}
 	// Reuse the same output channel for each instance of the server.
-	if (!serverOutputChannel) {
+	if (config.enabled && !serverOutputChannel) {
 		serverOutputChannel = vscode.window.createOutputChannel(config.serverName);
 	}
 	const c = new LanguageClient(
@@ -312,7 +288,7 @@ function disposeDefaultProviders() {
 	defaultLanguageProviders = [];
 }
 
-function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
+export function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 	if (!e.affectsConfiguration('go')) {
 		return;
 	}
@@ -326,7 +302,7 @@ function watchLanguageServerConfiguration(e: vscode.ConfigurationChangeEvent) {
 	}
 }
 
-export function parseLanguageServerConfig(): LanguageServerConfig {
+export function buildLanguageServerConfig(): LanguageServerConfig {
 	const goConfig = getGoConfig();
 	const toolsEnv = getToolsEnvVars();
 	const cfg: LanguageServerConfig = {
