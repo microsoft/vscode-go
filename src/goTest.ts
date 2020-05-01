@@ -124,6 +124,10 @@ export function subTestAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: Te
 		vscode.window.showInformationMessage('No tests found. Current file is not a test file.');
 		return;
 	}
+	if (cmd !== 'test') {
+		vscode.window.showInformationMessage('Only the "test" is command supported for subtests');
+		return;
+	}
 
 	editor.document.save().then(async () => {
 		try {
@@ -142,7 +146,7 @@ export function subTestAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: Te
 			}
 
 			const testFunction = currentTestFunctions[0];
-			const runRegex = /t.Run\("(.*)"/;
+			const runRegex = /t.Run\("([^"]+)",/;
 			let lineText: string;
 			let match: RegExpMatchArray | null;
 			for (let i = editor.selection.start.line; i >= testFunction.range.start.line; i--) {
@@ -154,17 +158,13 @@ export function subTestAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: Te
 			}
 
 			if (!match) {
-				vscode.window.showInformationMessage('No sub test function found at cursor.');
+				vscode.window.showInformationMessage('No subtest function with a simple subtest name found at cursor');
 				return;
 			}
 
 			const subTestName = testFunctionName + '/' + match[1];
 
-			if (cmd === 'test') {
-				await runTestAtCursor(editor, subTestName, testFunctions, goConfig, cmd, args);
-			} else {
-				throw new Error('Unsupported command.');
-			}
+			await runTestAtCursor(editor, subTestName, testFunctions, goConfig, cmd, args);
 		} catch (err) {
 			console.error(err);
 		}
