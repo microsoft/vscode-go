@@ -83,6 +83,8 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 	}
 
 	const multis = imports.filter((x) => x.kind === 'multi');
+	const minusCgo = imports.filter((x) => x.kind !== 'pseudo');
+
 	if (multis.length > 0) {
 		// There is a multiple import declaration, add to the last one
 		const lastImportSection = multis[multis.length - 1];
@@ -92,12 +94,12 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 		}
 		// Add import at the start of the block so that goimports/goreturns can order them correctly
 		return [vscode.TextEdit.insert(new vscode.Position(lastImportSection.start + 1, 0), '\t"' + arg + '"\n')];
-	} else if (imports.length > 0) {
+	} else if (minusCgo.length > 0) {
 		// There are some number of single line imports, which can just be collapsed into a block import.
 		const edits = [];
 
-		edits.push(vscode.TextEdit.insert(new vscode.Position(imports[0].start, 0), 'import (\n\t"' + arg + '"\n'));
-		imports.forEach((element) => {
+		edits.push(vscode.TextEdit.insert(new vscode.Position(minusCgo[0].start, 0), 'import (\n\t"' + arg + '"\n'));
+		minusCgo.forEach((element) => {
 			const currentLine = vscode.window.activeTextEditor.document.lineAt(element.start).text;
 			const updatedLine = currentLine.replace(/^\s*import\s*/, '\t');
 			edits.push(
@@ -107,7 +109,7 @@ export function getTextEditForAddImport(arg: string): vscode.TextEdit[] {
 				)
 			);
 		});
-		edits.push(vscode.TextEdit.insert(new vscode.Position(imports[imports.length - 1].end + 1, 0), ')\n'));
+		edits.push(vscode.TextEdit.insert(new vscode.Position(minusCgo[minusCgo.length - 1].end + 1, 0), ')\n'));
 
 		return edits;
 	} else if (pkg && pkg.start >= 0) {
