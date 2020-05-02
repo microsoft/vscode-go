@@ -419,6 +419,17 @@ class Delve {
 					// Not applicable to exec mode in which case `program` need not point to source code under GOPATH
 					env['GOPATH'] = getInferredGopath(dirname) || env['GOPATH'];
 				}
+				if (
+					(env['GOOS'] && env['GOOS'] !== process.platform) ||
+					(env['GOARCH'] && env['GOARCH'] !== process.arch)
+				) {
+					logError(
+						`The debugger failed to launch because GOOS/GOARCH in go.toolsEnvVars is incompatible with this host`
+					);
+					return reject(
+						'The debugger failed to launch because GOOS/GOARCH in go.toolsEnvVars is incompatible with this host'
+					);
+				}
 				this.dlvEnv = env;
 				log(`Using GOPATH: ${env['GOPATH']}`);
 
