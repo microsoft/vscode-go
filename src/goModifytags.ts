@@ -128,7 +128,14 @@ function getTagsAndOptions(config: GoTagsConfig, commandArgs: GoTagsConfig): The
 					prompt: 'Enter comma separated options'
 				})
 				.then((inputOptions) => {
-					return [inputTags, inputOptions, transformValue];
+					return vscode.window
+						.showInputBox({
+							value: transformValue,
+							prompt: 'Enter transform value'
+						})
+						.then((transformOption) => {
+							return [inputTags, inputOptions, transformOption];
+						});
 				});
 		});
 }
