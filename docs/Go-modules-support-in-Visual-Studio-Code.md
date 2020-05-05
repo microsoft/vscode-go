@@ -1,4 +1,4 @@
-The Go language server [gopls](https://github.com/golang/tools/blob/master/gopls/README.md) provides support for [Go modules](https://blog.golang.org/modules2019).
+The Go language server [gopls](https://golang.org/s/gopls/README.md) provides support for [Go modules](https://blog.golang.org/modules2019).
 
 Add the below in your [settings](https://code.visualstudio.com/docs/getstarted/settings) to use Go modules.
 
@@ -8,16 +8,16 @@ Add the below in your [settings](https://code.visualstudio.com/docs/getstarted/s
 
 > **Note**: You will be prompted to install the latest stable version of `gopls` as and when the Go tools team tag a new version as stable.
 
-Extra settings to fine tune `gopls` are available. Please see the [documentation](https://github.com/golang/tools/blob/master/gopls/doc/vscode.md) for more information and recommended settings.
+Extra settings to fine tune `gopls` are available. Please see the [gopls documentation](https://golang.org/s/gopls/doc/vscode.md) for more information and recommended settings.
 
-* [Known issues](https://github.com/golang/tools/blob/master/gopls/doc/status.md#known-issues) in VS Code when using `gopls`
+* [Known issues](https://golang.org/s/gopls/doc/status.md#known-issues) in VS Code when using `gopls`
 
-* [Troubleshooting and reporing issues](https://github.com/golang/tools/blob/master/gopls/doc/troubleshooting.md)
+* [Troubleshooting and reporting issues](https://golang.org/s/gopls/doc/troubleshooting.md)
 
 In addition to the Go language server, VS Code extension may use additional [Go tools](Go-tools-that-the-Go-extension-depends-on.md) to provide features like code navigation, code completion, build, lint etc. Some tools may not have a good support for Go modules yet. Please report [an issue](https://github.com/microsoft/vscode-go/issues/new) if you encounter problems.
 
 
-If you don't want to use the language server for any reason, then please know that not all the [Go tools](Go-tools-that-the-Go-extension-depends-on.md) that this extension depends on supports Go modules. https://github.com/golang/go/issues/24661 is the issue used by the Go tools team to track the update of Go modules support in various Go tools.
+If you don't want to use the language server for any reason, then please know that not all the [Go tools](Go-tools-that-the-Go-extension-depends-on.md) that this extension depends on supports Go modules. https://golang.org/issues/24661 is the issue used by the Go tools team to track the update of Go modules support in various Go tools.
 
 ## FAQ
 
@@ -29,7 +29,7 @@ Yes, you can and this is the path forward for module support in VS Code. Please 
 
 Code navigation and code completion definitely works better when using `gopls`. So, please give that a try.
 
-If you are not using the language server, then this is mostly due to the limitation of the tools that power these features which are `godef` and `gocode` respectively. The Go tools team at Google are working on a [language server](https://github.com/golang/tools/blob/master/gopls) which will be the long term solution for all language features.
+If you are not using the language server, then this is mostly due to the limitation of the tools that power these features which are `godef` and `gocode` respectively. The Go tools team at Google are working on a [language server](https://golang.org/s/gopls/README.md) which will be the long term solution for all language features.
 
 Please try out the language server as described in the first section of this page.
 

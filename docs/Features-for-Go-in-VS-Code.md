@@ -1,11 +1,11 @@
+**NOTE:** If `go.useLanguageServer` is enabled, many of the following features will be
+offered through the Go language server `gopls`.
+
 ### IntelliSense
 
-- Auto Completion of symbols as you type (using `gocode`)
-- Signature Help for functions as you type (using `gogetdoc` or `godef`+`godoc`)
-- Quick Info on the symbol as you hover over it (using `gogetdoc` or `godef`+`godoc`)
-
-If `go.useLanguageServer` is enabled, most of the above features will be
-offered through the Go language server `gopls`.
+- Auto Completion of symbols as you type (using `gocode` or `gopls`)
+- Signature Help for functions as you type (using `gogetdoc` or `godef`+`godoc` or `gopls`)
+- Quick Info on the symbol as you hover over it (using `gogetdoc` or `godef`+`godoc` or `gopls`)
 
 ### Code Navigation
 
@@ -19,7 +19,7 @@ offered through the Go language server `gopls`.
 
 - Code Snippets for quick coding
 - Format code on file save as well as format manually (using `goreturns` or `goimports` or `gofmt` or `gopls`)
-- Symbol Rename (using `gorename` or `gopls`. Note: For Undo after rename to work in Windows you need to have `diff` tool in your path)
+- Symbol Rename (using `gorename` or `gopls`. Note: If not using `gopls`, then for undo after rename to work in Windows you need to have `diff` tool in your path)
 - Add Imports to current file (using `gopkgs` or `gopls`)
 - Add/Remove Tags on struct fields (using `gomodifytags`)
 - Generate method stubs for interfaces (using `impl`)
@@ -28,9 +28,9 @@ offered through the Go language server `gopls`.
 ### Diagnostics
 
 - Build-on-save to compile code and show build errors. (using `go build` and `go test`)
-- Vet-on-save to run `go vet` and show errors as warnings
-- Lint-on-save to show linting errors as warnings (using `golint`, `gometalinter`, `megacheck`, `golangci-lint` or `revive`)
-- Semantic/Syntactic error reporting as you type (using `gotype-live`)
+- Vet-on-save to run `go vet` and show errors as warnings (`gopls`)
+- Lint-on-save to show linting errors as warnings (using `golint`, `gometalinter`, `megacheck`, `golangci-lint` or `revive` or `gopls`)
+- Semantic/Syntactic error reporting as you type (using `gotype-live` or `gopls`)
 
 ### Testing
 

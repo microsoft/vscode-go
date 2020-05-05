@@ -96,18 +96,21 @@ without expected formatting or import. After 1.42, VS Code changed to
 surface the issue and let users either wait or cancel the entire file
 save operation.
 
-A workaround is either 1) disable "On Save" features, or 2) cancel the
-slow file saving operation and retry to save file without formatting
-using "Alt+k, s" ("File: Save Without Formatting" command).
-
 There are many reasons that cause the underlying tools to misbehave.
 Please file [an issue](https://github.com/microsoft/vscode-go/issues/new)
 with information about your settings and, if possible, with the workspace
-structure.
+structure (e.g., where is the workspace directory relative to `GOPATH`, 
+where is `go.mod`, in what directory you opened from the `code`, etc.).
 
 If you are using `gopls`, follow the
-[`gopls` troubleshooting documentation](https://github.com/golang/tools/blob/master/gopls/doc/troubleshooting.md) to capture gopls traces and
-include them in the issue.
+[`gopls` troubleshooting documentation](https://github.com/golang/tools/blob/master/gopls/doc/troubleshooting.md) 
+to capture gopls traces and include them in the issue.
+
+Workarounds such as 1) disabling "On Save" features, or 2) canceling the
+slow file saving operation and retrying to save file without formatting
+using "Alt+k, s" ("File: Save Without Formatting" command) exist but should 
+be used as a last resort because this skips all the formatting and auto import
+features.
 
 **Q: My imports have red lines saying "package not found"**
 
