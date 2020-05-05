@@ -70,15 +70,13 @@ let restartCommand: vscode.Disposable;
 // or falls back to the default language providers.
 export async function startLanguageServerWithFallback(ctx: vscode.ExtensionContext, activation: boolean) {
 	const cfg = buildLanguageServerConfig();
-	if (cfg.enabled) {
-		// If the language server is gopls, we can check if the user needs to
-		// update their gopls version. We do this only once per VS Code
-		// activation to avoid inundating the user.
-		if (activation && cfg.serverName === 'gopls') {
-			const tool = getTool(cfg.serverName);
-			if (!tool) {
-				return false;
-			}
+
+	// If the language server is gopls, we can check if the user needs to
+	// update their gopls version. We do this only once per VS Code
+	// activation to avoid inundating the user.
+	if (activation && cfg.enabled && cfg.serverName === 'gopls') {
+		const tool = getTool(cfg.serverName);
+		if (tool) {
 			const versionToUpdate = await shouldUpdateLanguageServer(tool, cfg.path, cfg.checkForUpdates);
 			if (versionToUpdate) {
 				promptForUpdatingTool(tool.name);
