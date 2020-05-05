@@ -7,7 +7,7 @@ import cp = require('child_process');
 import path = require('path');
 import vscode = require('vscode');
 import { installTools } from './goInstallTools';
-import { restartLanguageServer } from './goLanguageServer';
+import { restartLanguageServer } from './goMain';
 import { envPath, fixDriveCasingInWindows } from './goPath';
 import { getTool } from './goTools';
 import { getFromGlobalState, updateGlobalState } from './stateUtils';
