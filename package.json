@@ -1110,11 +1110,6 @@
         "go.languageServerExperimentalFeatures": {
           "type": "object",
           "properties": {
-            "format": {
-              "type": "boolean",
-              "default": false,
-              "description": "If true, gofmt is used by the language server to format files."
-            },
             "diagnostics": {
               "type": "boolean",
               "default": true,
@@ -1127,7 +1122,6 @@
             }
           },
           "default": {
-            "format": true,
             "diagnostics": true,
             "documentLink": true
           },
