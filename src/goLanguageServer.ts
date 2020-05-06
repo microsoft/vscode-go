@@ -119,7 +119,8 @@ function buildLanguageClient(config: LanguageServerConfig) {
 		serverOutputChannel = vscode.window.createOutputChannel(config.serverName);
 	}
 	languageClient = new LanguageClient(
-		config.serverName,
+		'go',  // id
+		config.serverName,  // name
 		{
 			command: config.path,
 			args: ['-mode=stdio', ...config.flags],

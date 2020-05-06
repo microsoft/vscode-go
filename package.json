@@ -1138,6 +1138,16 @@
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
         },
+        "go.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Trace the communication between VS Code and the Go language server."
+        },
         "go.useGoProxyToCheckForToolUpdates": {
           "type": "boolean",
           "default": true,
