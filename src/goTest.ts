@@ -12,11 +12,13 @@ import {
 	extractInstanceTestName,
 	findAllTestSuiteRuns,
 	getBenchmarkFunctions,
+	getDocumentSymbols,
 	getTestFlags,
 	getTestFunctionDebugArgs,
 	getTestFunctions,
 	getTestTags,
 	goTest,
+	hasMethodTests,
 	TestConfig
 } from './testUtils';
 import { getTempFilePath } from './util';
@@ -45,28 +47,31 @@ export function testAtCursor(goConfig: vscode.WorkspaceConfiguration, cmd: TestA
 		return;
 	}
 
+	const includeImports = cmd === 'benchmark' ? null : true;
 	const getFunctions = cmd === 'benchmark' ? getBenchmarkFunctions : getTestFunctions;
 
 	editor.document.save().then(async () => {
 		try {
-			const testFunctions = await getFunctions(editor.document, null);
+			const documentSymbols = await getDocumentSymbols(editor.document, null, includeImports);
+			const [methodTests, usingGoCheck] = hasMethodTests(documentSymbols);
+			const testFunctions = getFunctions(documentSymbols, methodTests);
 			// We use functionName if it was provided as argument
 			// Otherwise find any test function containing the cursor.
 			const testFunctionName =
 				args && args.functionName
 					? args.functionName
 					: testFunctions
-							.filter((func) => func.range.contains(editor.selection.start))
-							.map((el) => el.name)[0];
+						.filter((func) => func.range.contains(editor.selection.start))
+						.map((el) => el.name)[0];
 			if (!testFunctionName) {
 				vscode.window.showInformationMessage('No test function found at cursor.');
 				return;
 			}
 
 			if (cmd === 'debug') {
-				await debugTestAtCursor(editor, testFunctionName, testFunctions, goConfig);
+				await debugTestAtCursor(editor, testFunctionName, testFunctions, usingGoCheck, goConfig);
 			} else if (cmd === 'benchmark' || cmd === 'test') {
-				await runTestAtCursor(editor, testFunctionName, testFunctions, goConfig, cmd, args);
+				await runTestAtCursor(editor, testFunctionName, testFunctions, usingGoCheck, goConfig, cmd, args);
 			} else {
 				throw new Error('Unsupported command.');
 			}
@@ -83,6 +88,7 @@ async function runTestAtCursor(
 	editor: vscode.TextEditor,
 	testFunctionName: string,
 	testFunctions: vscode.DocumentSymbol[],
+	usingGoCheck: boolean,
 	goConfig: vscode.WorkspaceConfiguration,
 	cmd: TestAtCursorCmd,
 	args: any
@@ -100,7 +106,8 @@ async function runTestAtCursor(
 		functions: testConfigFns,
 		isBenchmark: cmd === 'benchmark',
 		isMod,
-		applyCodeCoverage: goConfig.get<boolean>('coverOnSingleTest')
+		applyCodeCoverage: goConfig.get<boolean>('coverOnSingleTest'),
+		usingGoCheck
 	};
 	// Remember this config as the last executed test.
 	lastTestConfig = testConfig;
@@ -114,9 +121,10 @@ async function debugTestAtCursor(
 	editor: vscode.TextEditor,
 	testFunctionName: string,
 	testFunctions: vscode.DocumentSymbol[],
+	usingGoCheck: boolean,
 	goConfig: vscode.WorkspaceConfiguration
 ) {
-	const args = getTestFunctionDebugArgs(editor.document, testFunctionName, testFunctions);
+	const args = getTestFunctionDebugArgs(editor.document, testFunctionName, testFunctions, usingGoCheck);
 	const tags = getTestTags(goConfig);
 	const buildFlags = tags ? ['-tags', tags] : [];
 	const flagsFromConfig = getTestFlags(goConfig);
@@ -229,31 +237,34 @@ export async function testCurrentFile(
 		return;
 	}
 
+	const includeImports = isBenchmark ? null : true;
 	const getFunctions = isBenchmark ? getBenchmarkFunctions : getTestFunctions;
 	const isMod = await isModSupported(editor.document.uri);
 
-	return editor.document
-		.save()
-		.then(() => {
-			return getFunctions(editor.document, null).then((testFunctions) => {
-				const testConfig: TestConfig = {
-					goConfig,
-					dir: path.dirname(editor.document.fileName),
-					flags: getTestFlags(goConfig, args),
-					functions: testFunctions.map((sym) => sym.name),
-					isBenchmark,
-					isMod,
-					applyCodeCoverage: goConfig.get<boolean>('coverOnSingleTestFile')
-				};
-				// Remember this config as the last executed test.
-				lastTestConfig = testConfig;
-				return goTest(testConfig);
-			});
-		})
-		.then(null, (err) => {
+	return editor.document.save().then(async () => {
+		try {
+			const documentSymbols = await getDocumentSymbols(editor.document, null, includeImports);
+			const [methodTests, usingGoCheck] = hasMethodTests(documentSymbols);
+			const testFunctions = getFunctions(documentSymbols, methodTests);
+
+			const testConfig: TestConfig = {
+				goConfig,
+				dir: path.dirname(editor.document.fileName),
+				flags: getTestFlags(goConfig, args),
+				functions: testFunctions.map((sym) => sym.name),
+				isBenchmark,
+				isMod,
+				applyCodeCoverage: goConfig.get<boolean>('coverOnSingleTestFile'),
+				usingGoCheck
+			};
+			// Remember this config as the last executed test.
+			lastTestConfig = testConfig;
+			return goTest(testConfig);
+		} catch (err) {
 			console.error(err);
 			return Promise.resolve(false);
-		});
+		}
+	});
 }
 
 /**

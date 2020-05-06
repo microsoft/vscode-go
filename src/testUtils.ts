@@ -37,6 +37,9 @@ const testFuncRegex = /^Test.*|^Example.*/;
 const testMethodRegex = /^\(([^)]+)\)\.(Test.*)$/;
 const benchmarkRegex = /^Benchmark.*/;
 
+const goCheckPkg = '"gopkg.in/check.v1"';
+const testifyPkg = '"github.com/stretchr/testify/suite"';
+
 /**
  * Input to goTest.
  */
@@ -77,6 +80,10 @@ export interface TestConfig {
 	 * Whether code coverage should be generated and applied.
 	 */
 	applyCodeCoverage?: boolean;
+	/**
+	 * Whether `gocheck` was found in current test file.
+	 */
+	usingGoCheck?: boolean;
 }
 
 export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
@@ -119,27 +126,55 @@ export function getTestTags(goConfig: vscode.WorkspaceConfiguration): string {
 /**
  * Returns all Go unit test functions in the given source file.
  *
- * @param the URI of a Go source file.
+ * @param symbols symbols in the Go source file.
+ * @param methodTests whether or not the file contains method tests.
  * @return test function symbols for the source file.
  */
 export function getTestFunctions(
+	symbols: vscode.DocumentSymbol[],
+	methodTests: boolean
+): vscode.DocumentSymbol[] {
+	return symbols.filter(
+		(sym) =>
+			sym.kind === vscode.SymbolKind.Function &&
+			(testFuncRegex.test(sym.name) || (methodTests && testMethodRegex.test(sym.name)))
+	);
+}
+
+/**
+ * Pull all symbols from the document.
+ */
+export function getDocumentSymbols(
 	doc: vscode.TextDocument,
-	token: vscode.CancellationToken
+	token: vscode.CancellationToken,
+	includeImports?: boolean
 ): Thenable<vscode.DocumentSymbol[]> {
-	const documentSymbolProvider = new GoDocumentSymbolProvider(true);
+	const documentSymbolProvider = new GoDocumentSymbolProvider(includeImports);
 	return documentSymbolProvider
 		.provideDocumentSymbols(doc, token)
-		.then((symbols) => symbols[0].children)
-		.then((symbols) => {
-			const testify = symbols.some(
-				(sym) => sym.kind === vscode.SymbolKind.Namespace && sym.name === '"github.com/stretchr/testify/suite"'
-			);
-			return symbols.filter(
-				(sym) =>
-					sym.kind === vscode.SymbolKind.Function &&
-					(testFuncRegex.test(sym.name) || (testify && testMethodRegex.test(sym.name)))
-			);
-		});
+		.then((symbols) => symbols[0].children);
+}
+
+/**
+ * Check symbols for the presence of test suites that use methods.
+ */
+export function hasMethodTests(
+	symbols: vscode.DocumentSymbol[]
+): boolean[] {
+	let usingGoChck = false;
+	const usingMethodTests = symbols.some(
+		(sym) => {
+			const isNamespace = sym.kind === vscode.SymbolKind.Namespace;
+			if (isNamespace && sym.name === goCheckPkg) {
+				usingGoChck = true;
+				return true;
+			} else {
+				return isNamespace && sym.name === testifyPkg;
+			}
+		}
+	);
+
+	return [usingMethodTests, usingGoChck];
 }
 
 /**
@@ -157,18 +192,44 @@ export function extractInstanceTestName(symbolName: string): string {
 }
 
 /**
+ * Extracts test method name and the method suite of a suite test function.
+ * For example a symbol with name "(*testSuite).TestMethod" will return ["testSuite", "TestMethod"].
+ *
+ * @param symbolName Symbol Name to extract method name from.
+ */
+export function extractInstanceTestNameWithSuite(symbolName: string): string[] {
+	const match = symbolName.match(testMethodRegex);
+	if (!match || match.length !== 3) {
+		return null;
+	}
+	const [suiteName, methodName] = match.slice(1, 3);
+	let trimmedSuiteName = suiteName;
+	if (trimmedSuiteName[0] === '*') {
+		trimmedSuiteName = trimmedSuiteName.substring(1);
+	}
+
+	return [trimmedSuiteName, methodName];
+}
+
+/**
  * Gets the appropriate debug arguments for a debug session on a test function.
  * @param document  The document containing the tests
  * @param testFunctionName The test function to get the debug args
  * @param testFunctions The test functions found in the document
+ * @param usingGoCheck Whether or not the file is using `gocheck`
  */
 export function getTestFunctionDebugArgs(
 	document: vscode.TextDocument,
 	testFunctionName: string,
-	testFunctions: vscode.DocumentSymbol[]
+	testFunctions: vscode.DocumentSymbol[],
+	usingGoCheck: boolean,
 ): string[] {
 	if (benchmarkRegex.test(testFunctionName)) {
 		return ['-test.bench', '^' + testFunctionName + '$', '-test.run', 'a^'];
+	}
+	if (usingGoCheck) {
+		const [suiteName, testName] = extractInstanceTestNameWithSuite(testFunctionName);
+		return ['-check.f', `${suiteName}.${testName}`];
 	}
 	const instanceMethod = extractInstanceTestName(testFunctionName);
 	if (instanceMethod) {
@@ -199,26 +260,20 @@ export function findAllTestSuiteRuns(
 /**
  * Returns all Benchmark functions in the given source file.
  *
- * @param the URI of a Go source file.
+ * @param symbols symbols in the Go source file.
  * @return benchmark function symbols for the source file.
  */
 export function getBenchmarkFunctions(
-	doc: vscode.TextDocument,
-	token: vscode.CancellationToken
-): Thenable<vscode.DocumentSymbol[]> {
-	const documentSymbolProvider = new GoDocumentSymbolProvider();
-	return documentSymbolProvider
-		.provideDocumentSymbols(doc, token)
-		.then((symbols) => symbols[0].children)
-		.then((symbols) =>
-			symbols.filter((sym) => sym.kind === vscode.SymbolKind.Function && benchmarkRegex.test(sym.name))
-		);
+	symbols: vscode.DocumentSymbol[],
+	_?: boolean
+): vscode.DocumentSymbol[] {
+	return symbols.filter((sym) => sym.kind === vscode.SymbolKind.Function && benchmarkRegex.test(sym.name));
 }
 
 /**
  * Runs go test and presents the output in the 'Go' channel.
  *
- * @param goConfig Configuration for the Go extension.
+ * @param testconfig Configuration for running tests.
  */
 export async function goTest(testconfig: TestConfig): Promise<boolean> {
 	const tmpCoverPath = getTempFilePath('go-code-cover');
@@ -444,11 +499,12 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 			params = ['-bench', util.format('^(%s)$', testconfig.functions.join('|'))];
 		} else {
 			let testFunctions = testconfig.functions;
-			let testifyMethods = testFunctions.filter((fn) => testMethodRegex.test(fn));
-			if (testifyMethods.length > 0) {
-				// filter out testify methods
+			const testMethods = testFunctions.filter((fn) => testMethodRegex.test(fn));
+			let testMethodsWithSuite: string[][] = [];
+			if (testMethods.length > 0) {
+				// filter out test methods
 				testFunctions = testFunctions.filter((fn) => !testMethodRegex.test(fn));
-				testifyMethods = testifyMethods.map(extractInstanceTestName);
+				testMethodsWithSuite = testMethods.map(extractInstanceTestNameWithSuite);
 			}
 
 			// we might skip the '-run' param when running only testify methods, which will result
@@ -457,8 +513,28 @@ function targetArgs(testconfig: TestConfig): Array<string> {
 			if (testFunctions.length > 0) {
 				params = params.concat(['-run', util.format('^(%s)$', testFunctions.join('|'))]);
 			}
-			if (testifyMethods.length > 0) {
-				params = params.concat(['-testify.m', util.format('^(%s)$', testifyMethods.join('|'))]);
+
+			const numMethods = testMethodsWithSuite.length;
+			if (numMethods > 0) {
+				if (testconfig.usingGoCheck) {
+					const testNames = testMethodsWithSuite.reduce((acc, [suiteName, instanceMethod], index) => {
+						if (index === numMethods - 1) {
+							return acc + `${suiteName}.${instanceMethod}`;
+						} else {
+							return acc + `${suiteName}.${instanceMethod}|`;
+						}
+					}, '');
+					params = params.concat(['-check.f', util.format('(%s)', testNames)]);
+				} else {
+					const testNames = testMethodsWithSuite.reduce((acc, [_, instanceMethod], index) => {
+						if (index === numMethods - 1) {
+							return acc + instanceMethod;
+						} else {
+							return acc + `${instanceMethod}|`;
+						}
+					}, '');
+					params = params.concat(['-testify.m', util.format('^(%s)$', testNames)]);
+				}
 			}
 		}
 		return params;
