@@ -30,7 +30,7 @@ If you see an error of the form `command <command-name-here> not found`, it mean
 
 **Q: Why do my spaces keep getting replaced with tabs when saving the file?**
 
-**A:** Because the formatting tools used by this extension either `goreturns`, `goimports` or `gofmt` all follow the rule of using tabs instead of spaces.
+**A:** Because the formatting tools used by this extension either `goreturns`, `goimports` or `gofmt` or `gopls` all follow the default Go formatting rule of using tabs instead of spaces.
 
 **Q: Shoudln't the formatting tools be using a tab size of 8?**
 
@@ -76,7 +76,7 @@ _Tip_: If you are looking for logs after doing a particular operation, first cle
 
 **Q: Auto-completions stopped working. What do I do?**
 - Check the logs for errors first. See the previous question on how to view logs from the extension.
-- If you are using the language server, then the dropdown for output pane in the previous step will have an entry for the language server. Check that out.
+- If you are using the language server, then the dropdown for output pane in the previous step will have an entry for the language server (i.e., `gopls`). Check that out.
 - If you are **not** using the language server,
      - and this is for symbols from external packages, then ensure they installed first. You can do this by either running `Go: Build Current Package` which will install all dependencies or install the dependencies manually yourself using `go install`.
      - If it still doesnt work, run `gocode close` or `gocode exit` in a terminal and try again. Use `gocode-gomod` instead of `gocode` if you are using Go modules.
@@ -85,9 +85,32 @@ _Tip_: If you are looking for logs after doing a particular operation, first cle
      - If you see expected results in the terminal, but not in VS Code, log an issue in the [vscode-go](https://github.com/Microsoft/vscode-go) repo, else 
 log an issue in the [gocode](https://github.com/mdempsky/gocode) repo. If you are using Go modules, log the issue in https://github.com/stamblerre/gocode
 
-**Q: Why doesn't formatting doesn't work on file save?**
+**Q: File saving is sometimes slow or stuck running save participants.**
 
-**A:** Check the logs (View -> Output -> Log (Extension Host) from the drop down in the top right corner) for messages like "Formatting took too long" or "Format On Save feature could be aborted". If you find such a message, then chances are formatted was aborted because it took too long and so can affect the save experience. You can control this timeout using the setting `editor.formatOnSaveTimeout`
+**A:** You may noticed this problem because of the window popup with a
+message such as "Running Save Participants ...". This indicates the
+underlying tools used for file formatting or other code action such as
+package imports take longer than desired. Before 1.42, VS Code aborted
+the code action and skipped formatting, which resulted in file saving
+without expected formatting or import. After 1.42, VS Code changed to
+surface the issue and let users either wait or cancel the entire file
+save operation.
+
+There are many reasons that cause the underlying tools to misbehave.
+Please file [an issue](https://github.com/microsoft/vscode-go/issues/new)
+with information about your settings and, if possible, with the workspace
+structure (e.g., where is the workspace directory relative to `GOPATH`, 
+where is `go.mod`, in what directory you opened from the `code`, etc.).
+
+If you are using `gopls`, follow the
+[`gopls` troubleshooting documentation](https://github.com/golang/tools/blob/master/gopls/doc/troubleshooting.md) 
+to capture gopls traces and include them in the issue.
+
+Workarounds such as 1) disabling "On Save" features, or 2) canceling the
+slow file saving operation and retrying to save file without formatting
+using "Alt+k, s" ("File: Save Without Formatting" command) exist but should 
+be used as a last resort because this skips all the formatting and auto import
+features.
 
 **Q: My imports have red lines saying "package not found"**
 
