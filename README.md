@@ -1,10 +1,11 @@
 # Go for Visual Studio Code
 
-[![Join the chat at https://gitter.im/Microsoft/vscode-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/vscode-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/Microsoft/vscode-go.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-go)
+[![Slack](https://img.shields.io/badge/slack-gophers-green.svg?style=flat)](https://gophers.slack.com/messages/vscode/)
+[![Build Status](https://travis-ci.org/Microsoft/vscode-go.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-go)
 
 This extension adds rich language support for the [Go language](https://golang.org/) to VS Code.
 
-Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
+Read the [Changelog](CHANGELOG.md) to know what has changed over the last few versions of this extension.
 
 ## Table of Contents
 
@@ -85,11 +86,11 @@ Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELO
 
 Install and open [Visual Studio Code](https://code.visualstudio.com). Press `Ctrl+Shift+X` or `Cmd+Shift+X` to open the Extensions pane. Find and install the Go extension. You can also install the extension from the [Marketplace](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go). Open any `.go` file in VS Code. The extension is now activated.
 
-This extension uses a set of Go tools to provide the various rich features. These tools are installed in your GOPATH by default. If you wish to have these tools in a separate location, provide the desired location in the setting `go.toolsGopath`. Read more about this and the tools at [Go tools that the Go extension depends on](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on).
+This extension uses a set of Go tools to provide the various rich features. These tools are installed in your GOPATH by default. If you wish to have these tools in a separate location, provide the desired location in the setting `go.toolsGopath`. Read more about this and the tools at [Go tools that the Go extension depends on](https://github.com/microsoft/vscode-go/blob/master/docs/Go-tools-that-the-Go-extension-depends-on.md).
 
 You will see `Analysis Tools Missing` in the bottom right, clicking this will offer to install all of the dependent Go tools. You can also run the [command](https://code.visualstudio.com/docs/getstarted/userinterface#_command-palette) `Go: Install/Update tools` to install/update the same. You need to have git installed for these tool installations to work.
 
-**Note 1**: Read [GOPATH in the VS Code Go extension](https://github.com/Microsoft/vscode-go/wiki/GOPATH-in-the-VS-Code-Go-extension) to learn about the different ways you can get the extension to set GOPATH.
+**Note 1**: Read [GOPATH in the VS Code Go extension](https://github.com/Microsoft/vscode-go/blob/master/docs/GOPATH-in-the-VS-Code-Go-extension.md) to learn about the different ways you can get the extension to set GOPATH.
 
 **Note 2**: The `Format on save` feature has a timeout of 750ms after which the formatting is aborted. You can change this timeout using the setting `editor.formatOnSaveTimeout`. This feature gets disabled when you have enabled the `Auto Save` feature in Visual Studio Code.
 
@@ -97,16 +98,15 @@ You will see `Analysis Tools Missing` in the bottom right, clicking this will of
 
 ### Customizing the Go extension features
 
-The Go extension is ready to use on the get go. If you want to customize the features, you can edit the settings in your User or Workspace settings. Read [All Settings & Commands in Visual Studio Code Go extension](https://github.com/Microsoft/vscode-go/wiki/All-Settings-&-Commands-in-Visual-Studio-Code-Go-extension) for the full list of options and their descriptions.
+The Go extension is ready to use on the get go. If you want to customize the features, you can edit the settings in your User or Workspace settings. Read [All Settings & Commands in Visual Studio Code Go extension](https://github.com/Microsoft/vscode-go/blob/master/docs/All-Settings-&-Commands-in-Visual-Studio-Code-Go-extension.md) for the full list of options and their descriptions.
 
 
 ### Go Language Server
 
-The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/wiki/Go-tools-that-the-Go-extension-depends-on) to provide the various language features. An alternative is to use a single language server that provides the same features using the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
+The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/blob/master/docs/Go-tools-that-the-Go-extension-depends-on.md) to provide the various language features. An alternative is to use a single language server that provides the same features using the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). [`gopls`](https://golang.org/s/gopls/README.md) is the official language server for the Go
+language and is currently in active development.
 
-Previously, we added support to use `go-langserver`, the [language server from Sourcegraph](https://github.com/sourcegraph/go-langserver). There is no active development for it anymore and it doesn't support Go modules. Therefore, we are now switching to use `gopls`, the [language server from Google](https://github.com/golang/go/wiki/gopls) which is currently in active development.
-
-- If you are already using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules. We do suggest you to move to using `gopls` though.
+- If you were using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules. We do suggest you to move to using `gopls` though.
     - To do so, delete the `go-langserver` binary/executable in your machine and this extension will prompt you to install `gopls` after a reload of the VS Code window.
 - If you are working on a project that uses Go modules, you will be prompted to use the language server from Google as it provides much better support for Go modules.
 - If you have never used language server before, and now opt to use it, you will be prompted to install and use the language server from Google as long as you are using a Go version > 1.10.
