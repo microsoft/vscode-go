@@ -144,7 +144,14 @@ export function parseEnvFile(envFilePath: string): { [key: string]: string } {
 	try {
 		const buffer = stripBOM(fs.readFileSync(envFilePath, 'utf8'));
 		buffer.split('\n').forEach((line) => {
-			const r = line.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
+			// Allow envFile to contain an export command, but remove it for processing
+			let l;
+			if (line.trim().substring(0,6) == 'export') {
+				l = line.replace("export ", '')
+			} else{
+				l = line
+			}
+			const r = l.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
 			if (r !== null) {
 				let value = r[2] || '';
 				if (value.length > 0 && value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
