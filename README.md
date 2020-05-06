@@ -1,10 +1,30 @@
-# Go for Visual Studio Code
+# Go Nightly for VS Code
 
-[![Join the chat at https://gitter.im/Microsoft/vscode-go](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/vscode-go?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/Microsoft/vscode-go.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-go)
+> ### **ATTENTION**
+>**Go Nightly for VS Code** is the insider version of
+[VS Code Go extension](https://github.com/microsoft/vscode-go)
+for early feedback and testing. This extension works best with
+[VS Code Insiders](https://code.visualstudio.com/insiders).
+Go Nightly contains previews of new features and bug fixes that are still
+under review or testing, so can be unstable. If you are looking for the stable version,
+please use [the stable version](https://marketplace.visualstudio.com/items?itemName=ms-vscode.go) instead.
+>
+> **NOTE:**
+If you have both stable (aka "Go") and nightly version (aka "Go Nightly") installed,
+you MUST DISABLE one of them. Docs on how to disable an extension can be found
+[here](https://code.visualstudio.com/docs/editor/extension-gallery#_disable-an-extension).
 
-This extension adds rich language support for the [Go language](https://golang.org/) to VS Code.
-
-Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
+> ### Difference between VS Code Go and VS Code Go Nightly
+> - Go Nightly is maintained and released by Go Tools team at Google.
+> - Go Nightly is released more frequently than the stable version.
+> - Go Nightly includes features and bug fixes that are still under testing or not finalized yet.
+> - Go Nightly may use the latest pre-release versions of tools (e.g. `gopls`) instead of release versions.
+> - For now, Go and Go Nightly maintain separate repositories. Both repositories
+>   welcome all contributors. For contribution to Go Nightly repo, see the Go
+>   project's [contribution guide](https://golang.org/doc/contribute.html).
+>   Go team members who has signed the Microsoft CLA will send a syncing PR upstream to
+>   https://github.com/microsoft/vscode-go every two weeks.
+> - [Here](https://github.com/microsoft/vscode-go/compare/master...golang:master) is the full list of local modifications.
 
 ## Table of Contents
 

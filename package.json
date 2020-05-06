@@ -1,11 +1,13 @@
 {
-  "name": "Go",
-  "version": "0.14.1",
-  "publisher": "ms-vscode",
-  "description": "Rich Go language support for Visual Studio Code",
+  "name": "go-nightly",
+  "displayName": "Go Nightly",
+  "version": "0.0.0",
+  "publisher": "golang",
+  "description": "Rich Go language support for Visual Studio Code (Nightly)",
   "author": {
-    "name": "Microsoft Corporation - Development Labs"
+    "name": "Go Team at Google"
   },
+  "preview": true,
   "license": "MIT",
   "icon": "images/go-logo-blue.png",
   "categories": [
@@ -22,7 +24,10 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-go.git"
+    "url": "https://github.com/golang/vscode-go"
+  },
+  "bugs": {
+    "url": "https://github.com/golang/vscode-go/issues"
   },
   "keywords": [
     "multi-root ready"
@@ -1132,6 +1137,16 @@
             "documentLink": true
           },
           "description": "Use this setting to enable/disable experimental features from the language server."
+        },
+        "go.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Trace the communication between VS Code and the Go language server."
         },
         "go.useGoProxyToCheckForToolUpdates": {
           "type": "boolean",

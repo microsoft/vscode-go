@@ -1,0 +1,93 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: ${{ matrix.os }} ${{ matrix.version }}
+    runs-on: ${{ matrix.os }}
+    
+    if: "!contains(github.event.head_commit.message, 'SKIP CI')"
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        version: ['stable']
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v1
+
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+
+      - name: Setup Go
+        uses: actions/setup-go@v1
+        with:
+         go-version: '1.14'
+
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Compile
+        run: npm run vscode:prepublish
+
+      - name: Install Go tools (Modules mode)
+        run: |
+            go version
+            go get github.com/acroca/go-symbols \
+               github.com/davidrjenni/reftools/cmd/fillstruct \
+               github.com/haya14busa/goplay/cmd/goplay \
+               github.com/mdempsky/gocode \
+               github.com/sqs/goreturns \
+               github.com/uudashr/gopkgs/v2/cmd/gopkgs \
+               github.com/zmb3/gogetdoc \
+               golang.org/x/lint/golint \
+               golang.org/x/tools/cmd/gorename
+        env:
+          GO111MODULE: on   
+          
+      - name: Install Go tools (GOPATH mode)
+        run: |
+          go version
+          go get github.com/cweill/gotests/... \
+            github.com/rogpeppe/godef \
+            github.com/ramya-rao-a/go-outline
+            # Because some tests depend on the source code checked in GOPATH. TODO: FIX THEM.
+        env:
+          GO111MODULE: off
+      
+      - name: Run unit tests
+        run: npm run unit-test
+        continue-on-error: true
+        
+      - name: Run tests
+        uses: GabrielBB/xvfb-action@v1.0
+        with:
+          run: npm run test
+        env:
+          CODE_VERSION: ${{ matrix.version }}
+        continue-on-error: ${{ matrix.version == 'insiders' }}
+
+  eslint:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'SKIP CI')"
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v1
+
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+
+      - name: Install Dependencies
+        run: 'npm install --frozen-lockfile'
+        shell: bash
+
+      - name: Lint check
+        run: npm run lint

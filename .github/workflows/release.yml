@@ -1,0 +1,84 @@
+name: release
+
+# Daily release on 15:00 UTC, monday-thursday.
+# Or, force to release by triggering repository_dispatch events by using
+#   curl -v -H "Accept: application/vnd.github.everest-preview+json" -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/repos/golang/vscode-go/dispatches -d '{ "event_type": "force-release" }'
+on:
+  schedule:
+    - cron: "0 15 * * MON-THU"  # 15 UTC, monday-thursday daily
+  repository_dispatch:
+    types: [force-release]
+
+env:
+  GOPATH: /tmp/go
+  # Because some tests require explicit setting of GOPATH. TODO: FIX THEM.
+
+jobs:
+  release:
+    name: Release Nightly
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v1
+
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+
+      - name: Setup Go
+        uses: actions/setup-go@v1
+        with:
+         go-version: '1.14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Go tools (Modules mode)
+        run: |
+            go version
+            go get github.com/acroca/go-symbols \
+               github.com/davidrjenni/reftools/cmd/fillstruct \
+               github.com/haya14busa/goplay/cmd/goplay \
+               github.com/mdempsky/gocode \
+               github.com/sqs/goreturns \
+               github.com/uudashr/gopkgs/v2/cmd/gopkgs \
+               github.com/zmb3/gogetdoc \
+               golang.org/x/lint/golint \
+               golang.org/x/tools/cmd/gorename
+        env:
+          GO111MODULE: on
+
+      - name: Install Go tools (GOPATH mode)
+        run: |
+          go version
+          go get github.com/cweill/gotests/... \
+            github.com/rogpeppe/godef \
+            github.com/ramya-rao-a/go-outline
+            # Because some tests depend on the source code checked in GOPATH. TODO: FIX THEM.
+        env:
+          GO111MODULE: off
+
+      - name: Prepare Release
+        run: build/all.bash prepare_nightly
+
+      - name: Run unit tests
+        run: npm run unit-test
+        continue-on-error: true
+
+      - name: Run tests
+        uses: GabrielBB/xvfb-action@v1.0
+        with:
+          run: npm run test
+        env:
+          CODE_VERSION: 'insiders'
+
+      - name: Publish
+        if: github.ref == 'refs/heads/master' && github.repository == 'golang/vscode-go'
+        uses: lannonbr/vsce-action@704da577da0f27de5cdb4ae018374c2f08b5f523
+        with:
+          args: "publish -p $VSCE_TOKEN"
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}

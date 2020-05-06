@@ -6,10 +6,10 @@
 import vscode = require('vscode');
 import TelemetryReporter from 'vscode-extension-telemetry';
 
-export const extensionId: string = 'ms-vscode.Go';
+export const extensionId: string = 'golang.go-nightly';
 const extension = vscode.extensions.getExtension(extensionId);
 const extensionVersion: string = extension ? extension.packageJSON.version : '';
-const aiKey: string = 'AIF-d9b70cd4-b9f9-4d70-929b-a071c400b217';
+const aiKey: string = '';  // Empty aiKey disables telemetry.
 
 export function sendTelemetryEventForModulesUsage() {
 	/* __GDPR__

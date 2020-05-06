@@ -143,7 +143,8 @@ async function buildLanguageClient(config: LanguageServerConfig): Promise<Langua
 		serverOutputChannel = vscode.window.createOutputChannel(config.serverName);
 	}
 	const c = new LanguageClient(
-		config.serverName,
+		'go',  // id
+		config.serverName,  // name
 		{
 			command: config.path,
 			args: ['-mode=stdio', ...config.flags],
@@ -401,7 +402,7 @@ function allFoldersHaveSameGopath(): boolean {
 	return vscode.workspace.workspaceFolders.find((x) => tempGopath !== getCurrentGoPath(x.uri)) ? false : true;
 }
 
-const acceptGoplsPrerelease = false;
+const acceptGoplsPrerelease = true;  // For nightly, we accept the prerelease version.
 const defaultLatestVersion = semver.coerce('0.3.1');
 const defaultLatestVersionTime = moment('2020-02-04', 'YYYY-MM-DD');
 async function shouldUpdateLanguageServer(
@@ -422,7 +423,7 @@ async function shouldUpdateLanguageServer(
 		return null;
 	}
 
-	// Get the latest gopls version.
+	// Get the latest gopls version. If it is for nightly, using the prereleased version is ok.
 	let latestVersion = makeProxyCall ? await latestGopls(tool) : defaultLatestVersion;
 
 	// If we failed to get the gopls version, pick the one we know to be latest at the time of this extension's last update

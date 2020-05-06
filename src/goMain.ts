@@ -5,7 +5,6 @@
 
 'use strict';
 
-import fs = require('fs');
 import * as path from 'path';
 import vscode = require('vscode');
 import { browsePackages } from './goBrowsePackage';

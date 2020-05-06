@@ -41,7 +41,7 @@ export class Node<K, V> {
 	 * @param key The key of the new node.
 	 * @param value The value of the new node.
 	 */
-	constructor(public key: K, public value: V) {}
+	constructor(public key: K, public value: V) { }
 
 	/**
 	 * Convenience function to get the height of the left child of the node,

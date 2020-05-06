@@ -1,0 +1,9 @@
+steps:
+- name: 'gcr.io/$PROJECT_ID/vscode-test-env'
+  entrypoint: "./build/all.bash"
+  args: ['ci']
+  env:
+    - 'BUILD=$BUILD_ID'
+    - 'PROJECT=$PROJECT_ID'
+    - 'REV=$REVISION_ID'
+timeout: 600s

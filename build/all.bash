@@ -51,6 +51,32 @@ run_test_in_docker() {
   docker run --workdir=/workspace -v "$(pwd):/workspace" vscode-test-env ci
 }
 
+prepare_nightly() {
+  # Version format: YYYY.MM.DDHH based on the latest commit timestamp.
+  # e.g. 2020.1.510 is the version built based on a commit that was made
+  #      on 2020/01/05 10:00
+  local VER=`git log -1 --format=%cd --date="format:%Y.%-m.%-d%H"`
+  local COMMIT=`git log -1 --format=%H`
+  echo "**** Preparing nightly release : $VER ***"
+
+  # Update package.json
+  (cat package.json | jq --arg VER "${VER}" '
+.version=$VER |
+.preview=true |
+.name="go-nightly" |
+.displayName="Go Nightly" |
+.publisher="golang" |
+.description="Rich Go language support for Visual Studio Code (Nightly)" |
+.author.name="Go Team at Google" |
+.repository.url="https://github.com/golang/vscode-go" |
+.bugs.url="https://github.com/golang/vscode-go/issues"
+') > /tmp/package.json && mv /tmp/package.json package.json
+
+  # Replace CHANGELOG.md with CHANGELOG.md.nightly + Release commit info.
+  # TODO(hyangah): Update README.md
+  printf "**Release ${VER} @ ${COMMIT}** \n\n" | cat - CHANGELOG.md.nightly > /tmp/CHANGELOG.md.new && mv /tmp/CHANGELOG.md.new CHANGELOG.md
+}
+
 main() {
   cd "$(root_dir)"  # always run from the script root.
   case "$1" in
@@ -69,6 +95,9 @@ main() {
       go_binaries_info
       setup_virtual_display
       run_test
+      ;;
+    "prepare_nightly")
+      prepare_nightly
       ;;
     *)
       usage
