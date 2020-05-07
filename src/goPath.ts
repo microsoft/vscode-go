@@ -146,10 +146,10 @@ export function parseEnvFile(envFilePath: string): { [key: string]: string } {
 		buffer.split('\n').forEach((line) => {
 			// Allow envFile to contain an export command, but remove it for processing
 			let l;
-			if (line.trim().substring(0,6) == 'export') {
-				l = line.replace("export ", '')
-			} else{
-				l = line
+			if (line.trim().substring(0, 6) == 'export') {
+				l = line.replace('export ', '');
+			} else {
+				l = line;
 			}
 			const r = l.match(/^\s*([\w\.\-]+)\s*=\s*(.*)?\s*$/);
 			if (r !== null) {
