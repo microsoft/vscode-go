@@ -146,7 +146,7 @@ export function parseEnvFile(envFilePath: string): { [key: string]: string } {
 		buffer.split('\n').forEach((line) => {
 			// Allow envFile to contain an export command, but remove it for processing
 			let l;
-			if (line.trim().substring(0, 6) == 'export') {
+			if (line.trim().substring(0, 6) === 'export') {
 				l = line.replace('export ', '');
 			} else {
 				l = line;
