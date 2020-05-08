@@ -72,7 +72,7 @@ export async function registerLanguageFeatures(ctx: vscode.ExtensionContext): Pr
 		}
 		const versionToUpdate = await shouldUpdateLanguageServer(tool, config.path, config.checkForUpdates);
 		if (versionToUpdate) {
-			promptForUpdatingTool(tool.name);
+			promptForUpdatingTool(tool.name, versionToUpdate);
 		}
 	}
 
@@ -336,8 +336,8 @@ function allFoldersHaveSameGopath(): boolean {
 }
 
 const acceptGoplsPrerelease = false;
-const defaultLatestVersion = semver.coerce('0.3.1');
-const defaultLatestVersionTime = moment('2020-02-04', 'YYYY-MM-DD');
+const defaultLatestVersion = semver.coerce('0.4.0');
+const defaultLatestVersionTime = moment('2020-04-08', 'YYYY-MM-DD');
 async function shouldUpdateLanguageServer(
 	tool: Tool,
 	languageServerToolPath: string,
