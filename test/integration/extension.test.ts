@@ -1458,7 +1458,10 @@ encountered.
 		const errors1 = await checkWithTags('randomtag');
 		assert.deepEqual(errors1, ['undefined: fmt.Prinln'], 'check with buildtag "randomtag" failed. Unexpected errors found.');
 
-		const errors2 = await checkWithTags('randomtag,other');
+		// TODO(hyangah): after go1.13, -tags expects a comma-separated tag list.
+		// For backwards compatibility, space-separated tag lists are still recognized,
+		// but change to a space-separated list once we stop testing with go1.12.
+		const errors2 = await checkWithTags('randomtag other');
 		assert.deepEqual(errors2, ['undefined: fmt.Prinln'],
 			'check with multiple buildtags "randomtag,other" failed. Unexpected errors found.');
 
