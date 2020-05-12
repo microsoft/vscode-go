@@ -1,4 +1,7 @@
-The Go extension for Visual Studio Code offers various Go tools that are installed in the user's GOPATH. Some of them are responsible for general language features like code navigation, auto-completions, symbol search etc. Others, while helpful, are optional for the Go extension to provide day-to-day language support.
+First, the Go extension for Visual Studio Code requires the Go tools to be already installed.
+See [Go's installation guide](https://golang.org/doc/install) and ensure the `go` command is available from your [`PATH`](https://en.wikipedia.org/wiki/PATH_(variable)).
+
+The Go extension for Visual Studio Code offers extra Go tools that are installed in the user's GOPATH. Some of them are responsible for general language features like code navigation, auto-completions, symbol search etc. Others, while helpful, are optional for the Go extension to provide day-to-day language support.
 
 Below are the tools essential for the general features of this extension. If you have chosen to use the [Go language server](https://github.com/microsoft/vscode-go#go-language-server), then most of the below tools are no longer needed as the corresponding features will be provided by the language server. Eventually, once the language server is stable, we will move to using it and deprecate the use of individual tools below.
 
