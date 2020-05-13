@@ -4,8 +4,31 @@
 
 This extension adds rich language support for the [Go language](https://golang.org/) to VS Code.
 
-Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
+> **_🏡 🚚 We are moving!_**
+>
+> Our new home will be https://github.com/golang/vscode-go.
+>
+> As the extension grows in popularity and supports more features, it requires more maintenance and support.
+> For the past few years, we closely collaborated with the Go team for the maintenance, and more recently, 
+> we were heavily involved in the development of [the Go language server](https://golang.org/s/gopls/README.md) 
+> and [the Go debug adapter service](https://github.com/go-delve/delve/tree/master/service/dap) in delve.
+>
+> Moving close to the home of other tools and libraries the Go extension depends on, we hope the proximity
+> to help us remaining abreast of relevant language changes and to encourage more gophers from the Go community
+> to participate in the extension development.
+>
+> Over the next few weeks, we are working on the migration, i.e., resolving open issues and PRs, transferring
+> resources, and switching the published extension's ID (`ms-vscode.Go`). Please follow the progress of the migration work 
+> [here](http://TODO).
+>
+> During the migration, this repository remains effectively frozen. 
+> Only PRs related to the migration or documentation will be accepted.
+> You can start opening new feature requests, bug reports, and PRs for new features in the new location.
+>
+> For questions and discussion, plese join us 
+> in the [`#vscode-dev`](https://gophers.slack.com/messages/vscode-dev) gophers slack channel.
 
+Read the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
 ## Table of Contents
 
 - [Language Features](#language-features)
