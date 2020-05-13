@@ -1,4 +1,4 @@
-## 0.14.2 - Coming Soon...
+## 0.14.2 - 14th May, 2020
 
 * [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
     * Allow debugging when having multiple versions of Go. Fixes [Bug 3152](https://github.com/Microsoft/vscode-go/issues/3152) with [PR 3159](https://github.com/Microsoft/vscode-go/pull/3159)
