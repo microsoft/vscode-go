@@ -58,7 +58,7 @@ During the migration, this repository remains effectively frozen.
 Pull requests not related to the migration or documentation will be asked to be moved to the new 
 repository along with new feature requests and bug resports.
 
-For questions and discussion, please join us in the [`#vscode-dev`](https://gophers.slack.com/messages/vscode-dev) gophers slack channel.
+For questions and discussion, please join us in the [`#vscode-dev`](https://gophers.slack.com/messages/vscode-dev) Gophers Slack channel.
 
 ## Language Features
 
