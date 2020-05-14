@@ -50,13 +50,11 @@ Moving to the [golang GitHub organization](https://github.com/golang) brings us 
 and libraries the Go extension depends on. We hope this will help keep the extension tightly coupled with the Go 
 language and encourage more Gophers to get involved.
 
-Over the next few weeks, we will work on the migration, including resolving open issues and PRs, and
-transferring relevant ones to the new repository. Please follow the progress of the migration work 
+As of May 2020, this repository is effectively frozen allowing us to focus on the migration where we
+resolve or transfer open issues and PRs, and update documentation. Critical bug fixes and PRs related
+to migration will still be accepted. You can open new feature requests, bug reports, and PRs in 
+the new repository: https://github.com/golang/vscode-go. Please follow the progress of the migration work 
 [here](http://TODO).
-
-During the migration, this repository remains effectively frozen. 
-Pull requests not related to the migration or documentation will be asked to be moved to the new 
-repository along with new feature requests and bug resports.
 
 For questions and discussion, please join us in the [`#vscode-dev`](https://gophers.slack.com/messages/vscode-dev) Gophers Slack channel.
 
