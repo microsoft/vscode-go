@@ -39,16 +39,16 @@ This extension adds rich language support for the [Go language](https://golang.o
 
 Our new home will be https://github.com/golang/vscode-go.
 
-As the extension grows in popularity and supports more features, it has required more maintenance and support.
-Ever since the introduction of Go modules, we have been collaborating with the Go team for module support.
-In 2019, we added support for `gopls`, the [Go language server](https://golang.org/s/gopls/README.md) from the
-Go team which has resulted in a closer collaboration. More exciting work is on the horizon with the
+As the extension grows in popularity and supports more features, it requires more maintenance and support.
+Since the introduction of Go modules, we have been collaborating with the Go team for module support.
+In 2019, we added support for `gopls`, the [Go language server](https://golang.org/s/gopls/README.md) which has
+resulted in closer collaboration with the Go team. More exciting work is on the horizon with the
 [Go debug adapter service](https://github.com/go-delve/delve/tree/master/service/dap) in delve which will help
-in having a better debugging experience altogether.
+improve the debugging experience.
 
-Moving to the [GitHub org for golang](https://github.com/golang) brings us closer to the home of other tools
-and libraries the Go extension depends on. We hope that this will help us remain abreast of relevant language
-changes and to encourage more gophers from the Go community to participate in the extension development.
+Moving to the [golang GitHub organization](https://github.com/golang) brings us closer to the home of other tools
+and libraries the Go extension depends on. We hope this will help keep the extension tightly coupled with the Go 
+language and encourage more Gophers to get involved.
 
 Over the next few weeks, we will work on the migration, including resolving open issues and PRs, and
 transferring relevant ones to the new repository. Please follow the progress of the migration work 
