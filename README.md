@@ -39,19 +39,18 @@ This extension adds rich language support for the [Go language](https://golang.o
 
 Our new home will be https://github.com/golang/vscode-go.
 
-As the extension grows in popularity and supports more features, it requires more maintenance and support.
-Since the introduction of Go modules, we have been collaborating with the Go team for module support.
-In 2019, we added support for `gopls`, the [Go language server](https://golang.org/s/gopls/README.md) which has
-resulted in closer collaboration with the Go team. More exciting work is on the horizon with the
-[Go debug adapter service](https://github.com/go-delve/delve/tree/master/service/dap) in delve which will help
+As the extension grows in features and popularity, it requires more maintenance and support.
+Since the introduction of Go modules, we have been collaborating with the Go team, particularly on support
+for `gopls`, the [Go language server](https://golang.org/s/gopls/README.md). More exciting work is on the horizon with the
+[debug adapter service](https://github.com/go-delve/delve/tree/master/service/dap) in delve which will help
 improve the debugging experience.
 
 Moving to the [golang GitHub organization](https://github.com/golang) brings us closer to the home of other tools
-and libraries the Go extension depends on. We hope this will help keep the extension tightly coupled with the Go 
+and libraries that the Go extension depends on. We hope this will help keep the extension tightly coupled with the Go 
 language and encourage more Gophers to get involved.
 
-As of May 2020, this repository is effectively frozen allowing us to focus on the migration where we
-resolve or transfer open issues and PRs, and update documentation. Critical bug fixes and PRs related
+As of May 2020, this repository is effectively frozen. We are currently focused on migration tasks, such as resolving
+and transferring open issues and PRs and updating documentation. Critical bug fixes and PRs related
 to migration will still be accepted. You can open new feature requests, bug reports, and PRs in 
 the new repository: https://github.com/golang/vscode-go. Please follow the progress of the migration work 
 [here](http://TODO).
