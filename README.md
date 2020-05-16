@@ -54,8 +54,7 @@ language and encourage more Gophers to get involved.
 As of May 2020, this repository is effectively frozen. We are currently focused on migration tasks, such as resolving
 and transferring open issues and PRs and updating documentation. Critical bug fixes and PRs related
 to migration will still be accepted. You can open new feature requests, bug reports, and PRs in 
-the new repository: https://github.com/golang/vscode-go. Please follow the progress of the migration work 
-[here](http://TODO).
+the new repository: https://github.com/golang/vscode-go.
 
 For questions and discussion, please join us in the [`#vscode-dev`](https://gophers.slack.com/messages/vscode-dev) Gophers Slack channel.
 
