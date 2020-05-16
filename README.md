@@ -131,14 +131,13 @@ The Go extension is ready to use on the get go. If you want to customize the fea
 
 ### Go Language Server
 
-The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/blob/master/docs/Go-tools-that-the-Go-extension-depends-on.md) to provide the various language features. An alternative is to use a single language server that provides the same features using the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
+The Go extension uses a host of [Go tools](https://github.com/Microsoft/vscode-go/blob/master/docs/Go-tools-that-the-Go-extension-depends-on.md) to provide the various language features. An alternative is to use a single language server that provides the same features using the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/). 
 
-Previously, we added support to use `go-langserver`, the [language server from Sourcegraph](https://github.com/sourcegraph/go-langserver). There is no active development for it anymore and it doesn't support Go modules. Therefore, we are now switching to use `gopls`, the [language server from Google](https://github.com/golang/go/wiki/gopls) which is currently in active development.
+[`gopls`](https://golang.org/s/gopls/README.md) from Google is the official language server for
+the Go language and is currently in active development. You can choose to use this by setting
+`go.useLanguageServer` to `true` in your settings.
 
-- If you are already using the language server from Sourcegraph, you can continue to use it as long as you are not using Go modules. We do suggest you to move to using `gopls` though.
-    - To do so, delete the `go-langserver` binary/executable in your machine and this extension will prompt you to install `gopls` after a reload of the VS Code window.
-- If you are working on a project that uses Go modules, you will be prompted to use the language server from Google as it provides much better support for Go modules.
-- If you have never used language server before, and now opt to use it, you will be prompted to install and use the language server from Google as long as you are using a Go version > 1.10.
+If you are working on a project that uses Go modules, you will be prompted to use the language server as it provides much better support for Go modules.
 
 > Note: The language server from Google supports Go version > 1.10 only
 
