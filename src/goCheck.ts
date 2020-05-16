@@ -30,19 +30,47 @@ export function removeTestStatus(e: vscode.TextDocumentChangeEvent) {
 }
 
 export function notifyIfGeneratedFile(this: void, e: vscode.TextDocumentChangeEvent) {
-	const ctx: any = this;
+	const ctx: any = this; 
+
 	if (e.document.isUntitled || e.document.languageId !== 'go') {
 		return;
 	}
-	if (
-		ctx.globalState.get('ignoreGeneratedCodeWarning') !== true &&
-		e.document.lineAt(0).text.match(/^\/\/ Code generated .* DO NOT EDIT\.$/)
-	) {
-		vscode.window.showWarningMessage('This file seems to be generated. DO NOT EDIT.', neverAgain).then((result) => {
-			if (result === neverAgain) {
-				ctx.globalState.update('ignoreGeneratedCodeWarning', true);
-			}
-		});
+
+	if ( ctx.globalState.get('ignoreGeneratedCodeWarning') === true ) {
+		return;
+	}
+
+	const doNotEditMessage = "This file seems to be generated. DO NOT EDIT." 
+	const maybeSaveNeverAgain = function(result: object) {
+		if (result === neverAgain) {
+			ctx.globalState.update('ignoreGeneratedCodeWarning', true);
+		}
+	}
+
+	const isGenerated = function(text: string): boolean {
+		return !!text.match(/^\/\/ .*DO NOT EDIT\.?$/);
+	} 
+
+	const filesLookupTbl: { [id: string ]: number; } = ctx.globalState.get( 'lookupsGenerated' ) || {};
+	
+	
+	if ( filesLookupTbl[e.document.fileName] ) { 
+		const previous = filesLookupTbl[e.document.fileName]
+		if ( previous <= e.document.lineCount && isGenerated( e.document.lineAt( previous ).text ) ){
+			vscode.window.showWarningMessage(doNotEditMessage, neverAgain).then( maybeSaveNeverAgain );
+			return;
+		}
+	}
+
+	for ( var line = 0; line < e.document.lineCount; line++ ) {
+		if ( e.document.lineAt(line).text.match( "^\s*$" ) ) {
+			continue;
+		} else if ( e.document.lineAt(line).text.slice(0,2) === "//" && isGenerated(e.document.lineAt(line).text)  ) {
+			filesLookupTbl[e.document.fileName] = line 
+			ctx.globalState.update( 'lookupsGenerated', filesLookupTbl)
+			vscode.window.showWarningMessage(doNotEditMessage, neverAgain).then(maybeSaveNeverAgain);
+			return;	 
+		}
 	}
 }
 
