@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question
+    url: https://invite.slack.golangbridge.org/
+    about: Ask and answer questions in the #vscode Gopher slack channel
+  - name: Feature Request
+    url: https://github.com/golang/vscode-go/issues/new?template=feature_request.md
+    about: Suggest ideas for improvement in the new repo
