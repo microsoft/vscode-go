@@ -2,15 +2,16 @@
 
 [![Slack](https://img.shields.io/badge/slack-gophers-green.svg?style=flat)](https://gophers.slack.com/messages/vscode/) [![Build Status](https://travis-ci.org/Microsoft/vscode-go.svg?branch=master)](https://travis-ci.org/Microsoft/vscode-go)
 
+> We're moving! Read more [here](#we-are-moving) and subscribe to [microsoft/vscode-go#3247](https://github.com/microsoft/vscode-go/issues/3247) for updates.
+
 This extension adds rich language support for the [Go language](https://golang.org/) to VS Code.
 
 See the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG.md) to know what has changed over the last few versions of this extension.
 
-> Read the [We are moving!](#we-are-moving!) section to learn about the new home for this extension.
-
 ## Table of Contents
 
-- [We are moving!](#we-are-moving!)
+[**We are moving!**](#we-are-moving)
+
 - [Language Features](#language-features)
 	- [IntelliSense](#intellisense)
 	- [Code Navigation](#code-navigation)
@@ -35,9 +36,7 @@ See the [Changelog](https://github.com/Microsoft/vscode-go/blob/master/CHANGELOG
 - [Code of Conduct](#code-of-conduct)
 - [License](#license)
 
-## We are moving!
-
-🏡 🚚 🏡 
+## We are moving! 🏡 🚚 🏡 
 
 Our new home will be https://github.com/golang/vscode-go.
 
