@@ -1,3 +1,8 @@
+## 0.14.3 - 21st May, 2020
+
+* [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
+    * Fix the bug introduced in the previous update where the code coverage does not disappear when edits to the file are saved.
+
 ## 0.14.2 - 14th May, 2020
 
 * [Hyang-Ah Hana Kim (@hyangah)](https://github.com/hyangah)
