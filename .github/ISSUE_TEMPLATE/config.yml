@@ -1,8 +1,11 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
   - name: Question
     url: https://invite.slack.golangbridge.org/
-    about: Ask and answer questions in the #vscode Gopher slack channel
+    about: Ask or answer questions in the \#vscode Gopher slack channel
+  - name: Bug Report
+    url: https://github.com/golang/vscode-go/issues/new?template=bug_report.md
+    about: Report a bug in the VS Code Go extension
   - name: Feature Request
     url: https://github.com/golang/vscode-go/issues/new?template=feature_request.md
-    about: Suggest ideas for improvement in the new repo
+    about: Suggest ideas for improvement
