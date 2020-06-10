@@ -3,7 +3,7 @@
 [![Slack](https://img.shields.io/badge/slack-gophers-green.svg?style=flat)](https://gophers.slack.com/messages/vscode/)
 
 
-## We are moving! 🏡 🚚 🏡 
+## We have moved! 🏡 🚚 🏡 
 
 As of June 2020, our new home is https://github.com/golang/vscode-go.
 
