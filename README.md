@@ -26,7 +26,7 @@ For questions and discussion, please join us in the [`#vscode-dev`](https://goph
 
 ## Contributing
 
-This project welcomes contributions and suggestions. Please go through the [Contributing Guide](https://github.com/golang/vscode-go/blob/master/CONTRIBUTING.md) in the new repository.
+This project welcomes contributions and suggestions. Please go through the [Contributing Guide](https://github.com/golang/vscode-go/blob/master/docs/contributing.md) in the new repository.
 
 ## Code of Conduct
 
